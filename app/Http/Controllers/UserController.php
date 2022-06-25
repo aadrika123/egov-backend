@@ -3,16 +3,25 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Requests\AuthUserRequest;
+use App\Http\Requests\LoginUserRequest;
 use App\Repository\Auth\EloquentAuthRepository;
 
 /*
   *  Controller for user data login, logout, changing password
   *  Child Repository => App\Repository\Auth
-*/
+  /**
+   * Creation Date:-24-06-2022
+   * Created By:- Anshu Kumar
+   * 
+   *  ** Code Test  **
+   * Code Tested By-Anil Mishra Sir
+   * Code Testing Date-24-06-2022
+   */
 
 class UserController extends Controller
 {
-    // INITIALIZING FOR REPOSITORY
+    // Initializing for Repository
     protected $eloquentAuth;
 
     public function __construct(EloquentAuthRepository $eloquentAuth)
@@ -20,31 +29,31 @@ class UserController extends Controller
         $this->EloquentAuth = $eloquentAuth;
     }
 
-    // STORE USER IN DATABASE
-    public function store(Request $request)
+    // Store User In Database
+    public function store(AuthUserRequest $request)
     {
         return $this->EloquentAuth->store($request);
     }
 
-    // USER AUTHENTICATION
-    public function loginAuth(Request $request)
+    // User Authentication
+    public function loginAuth(LoginUserRequest $request)
     {
         return $this->EloquentAuth->loginAuth($request);
     }
 
-    // USER LOGOUT
+    // User Logout
     public function logOut()
     {
         return $this->EloquentAuth->logOut();
     }
 
-    // CHANGING PASSWORD
+    // Changing Password
     public function changePass(Request $request)
     {
         return $this->EloquentAuth->changePass($request);
     }
 
-    // REDIS TEST FUNCTION 
+    // Redis Test Function
     public function testing()
     {
         return $this->EloquentAuth->testing();

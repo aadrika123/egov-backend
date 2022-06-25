@@ -2,6 +2,8 @@
 
 namespace App\Repository\Auth;
 
+use App\Http\Requests\AuthUserRequest;
+use App\Http\Requests\LoginUserRequest;
 use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\Validator;
@@ -24,11 +26,6 @@ use Illuminate\Support\Facades\Redis;
  * Code Testing Date - 24-06-2022
  * Feedback- 
  * 
- * * Function LoginAuth **
- * Check if the user Existing or Not    (OK)
- * Check if the User is Suspended or Not    (OK)
- * Check Data Present On Redis Database -> Check Password (OK)
- * If Data not Present on Redis Database -> Authentication Check by SQL Database    (OK)
  *
  */
 
@@ -36,28 +33,16 @@ use Illuminate\Support\Facades\Redis;
 class EloquentAuthRepository implements AuthRepository
 {
     // Parent Controller- function Store()
-    public function store(Request $request)
+    /**
+     * @param App\Http\Requests\AuthUserRequest
+     * @param App\Http\Requests\AuthUserRequest $request
+     */
+
+    public function store(AuthUserRequest $request)
     {
         try {
-            $rules = array(
-                'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-                'password' => [
-                    'required',
-                    'min:6',
-                    'max:255',
-                    'regex:/[a-z]/',      // must contain at least one lowercase letter
-                    'regex:/[A-Z]/',      // must contain at least one uppercase letter
-                    'regex:/[0-9]/',      // must contain at least one digit
-                    'regex:/[@$!%*#?&]/'  // must contain a special character
-                ]
-            );
-
-            $validator = Validator::make($request->input(), $rules);
-
-            if ($validator->fails()) {
-                return response()->json($validator->errors(), 400);
-            }
+            // Validation---@source-App\Http\Requests\AuthUserRequest
+            $validator = $request->validated();
 
             $user = new User;
             $user->UserName = $request->name;
@@ -73,28 +58,31 @@ class EloquentAuthRepository implements AuthRepository
         }
     }
 
-    // Parent Controller- function loginAuth()
-    public function loginAuth(Request $request)
+    /**
+     * @Parent Controller- function loginAuth()
+     * @param App\Http\Requests\LoginUserRequest
+     * @param App\Http\Requests\LoginUserRequest $request
+     * 
+     * * Function LoginAuth **
+     * validate email password
+     * Check if the user Existing or Not    (OK)
+     * Check if the User is Suspended or Not    (OK)
+     * Check UserExist && Data Present On Redis Database -> Check Password (OK)
+     * If Data not Present on Redis Database -> Authentication Check by SQL Database    (OK)
+     */
+
+    public function loginAuth(LoginUserRequest $request)
     {
         try {
-            $rules = array(
-                'email' => ['required', 'string', 'email'],
-                'password' => [
-                    'required'
-                ]
-            );
-
-            $validator = Validator::make($request->input(), $rules);
-
-            if ($validator->fails()) {
-                return response()->json($validator->errors(), 400);
-            }
+            // Validation
+            $validator = $request->validated();
 
             // checking user is existing or not
             $emailInfo = User::where('email', $request->email)->first();
-
-            // Redis Authentication if data already existing in redis database
-            $redis = Redis::connection();
+            if (!$emailInfo) {
+                $response = ['status' => false, 'message' => 'Oops! Given email does not exist'];
+                return response($response, 401);
+            }
 
             // check if suspended user
             if ($emailInfo->Suspended == -1) {
@@ -102,6 +90,8 @@ class EloquentAuthRepository implements AuthRepository
                 return response()->json($response, 401);
             }
 
+            // Redis Authentication if data already existing in redis database
+            $redis = Redis::connection();
             /*   if email exists then the condition applies  */
             if ($emailInfo && $user = Redis::get('user:' . $emailInfo->id)) {
                 $info = json_decode($user);
@@ -118,9 +108,12 @@ class EloquentAuthRepository implements AuthRepository
                             'id' => $emailInfo->id,
                             'email' => $request->email,
                             'password' => Hash::make($request->password),
-                            'remember_token' => $token
+                            'remember_token' => $token,
+                            'created_at' => $emailInfo->created_at,
+                            'updated_at' => $emailInfo->updated_at
                         ])
                     );
+
                     Redis::expire('user:' . $emailInfo->id, 18000);         // EXPIRE KEY AFTER 5 HOURS
                     $response = ['status' => 'You Have Logged In!', 'token' => $token];
                     return response($response, 200);
@@ -136,39 +129,37 @@ class EloquentAuthRepository implements AuthRepository
             // End Redis Authentication if data already existing in redis database 
 
             // Authentication Using Sql Database
-            else {
-                if (!$emailInfo) {
-                    $response = ['status' => false, 'message' => 'Oops! Given email does not exist'];
-                    return response($response, 401);
+            if ($emailInfo) {
+                // Authenticating Password
+                if (Hash::check($request->password, $emailInfo->password)) {
+                    $token = $emailInfo->createToken('my-app-token')->plainTextToken;
+                    $emailInfo->remember_token = $token;
+                    $emailInfo->save();
+
+
+                    $redis->set(
+                        'user:' . $emailInfo->id,
+                        json_encode([
+                            'id' => $emailInfo->id,
+                            'email' => $request->email,
+                            'password' => Hash::make($request->password),
+                            'remember_token' => $token,
+                            'created_at' => $emailInfo->created_at,
+                            'updated_at' => $emailInfo->updated_at
+                        ])
+                    );
+                    Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
+
+                    $response = ['status' => true, 'token' => $token];
+                    return response($response, 200);
                 } else {
-                    // Authenticating Password
-                    if (Hash::check($request->password, $emailInfo->password)) {
-                        $token = $emailInfo->createToken('my-app-token')->plainTextToken;
-                        $emailInfo->remember_token = $token;
-                        $emailInfo->save();
-
-
-                        $redis->set(
-                            'user:' . $emailInfo->id,
-                            json_encode([
-                                'id' => $emailInfo->id,
-                                'email' => $request->email,
-                                'password' => Hash::make($request->password),
-                                'remember_token' => $token
-                            ])
-                        );
-                        Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
-
-                        $response = ['status' => true, 'token' => $token];
-                        return response($response, 200);
-                    } else {
-                        $response = ['status' => false, 'message' => 'Incorrect Password'];
-                        return response($response, 401);
-                    }
+                    $response = ['status' => false, 'message' => 'Incorrect Password'];
+                    return response($response, 401);
                 }
             }
-            // Authentication Using Sql Database
-        } catch (Exception $e) {
+        }
+        // Authentication Using Sql Database
+        catch (Exception $e) {
             return $e;
         }
     }
@@ -247,9 +238,16 @@ class EloquentAuthRepository implements AuthRepository
         // $user = User::all();
         // $store = Redis::set('key', $user);
 
-        // $store = Redis::get('user:' . auth()->user()->email);
-        // $manage = json_decode($store);
-        // return response()->json($manage->remember_token, 200);
+        $store = Redis::get('user:' . auth()->user()->id);
+        $manage = json_decode($store);
+        return response()->json([
+            'id' => $manage->id,
+            'email' => $manage->email,
+            'password' => $manage->password,
+            'token' => $manage->remember_token,
+            'created_at' => getFormattedDate($manage->created_at, 'd-M-Y h:i'),
+            'updated_at' => getFormattedDate($manage->updated_at, 'd-M-Y h:i')
+        ]);
 
         // if (Redis::del('user:' . auth()->user()->id)) {
         //     return response()->json('Deleted');
@@ -257,6 +255,5 @@ class EloquentAuthRepository implements AuthRepository
         //     return response()->json('already Deleted');
         // }
 
-        return response()->json('Accessed');
     }
 }

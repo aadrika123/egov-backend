@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 
@@ -15,17 +14,26 @@ use App\Http\Controllers\UserController;
 |
 */
 
-// ROUTES USED FOR LOGIN AND REGISTER ONLY
+/**
+ * Creation Date:-24-06-2022
+ * Created By:- Anshu Kumar
+ * 
+ * ***Code Test***
+ * Code Tested By-Anil Mishra Sir
+ * Code Testing Date:-25-06-2022
+ */
+
+// Route Used for Login and Register the User
 Route::controller(UserController::class)->group(function () {
     Route::post('register', 'store');
     Route::post('login', 'loginAuth');
 });
 
-// INSIDE MIDDLEWARE ROUTES WITH API AUTHENTICATE ETC.
+// Inside Middleware Routes with API Authenticate 
 Route::group(['middleware' => ['cors', 'json.response', 'api.key', 'auth:sanctum']], function () {
-    // ROUTES FOR USER CONTROLLERS
+    // Routes for User Controller
     Route::controller(UserController::class)->group(function () {
-        Route::post('test', 'testing');
+        Route::get('test', 'testing');
         Route::post('logout', 'logOut');
         Route::post('change-password', 'changePass');
     });
