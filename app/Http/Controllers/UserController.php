@@ -2,22 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Http\Requests\AuthUserRequest;
-use App\Http\Requests\LoginUserRequest;
+use App\Http\Requests\Auth\AuthUserRequest;
+use App\Http\Requests\Auth\LoginUserRequest;
+use App\Http\Requests\Auth\ChangePassRequest;
 use App\Repository\Auth\EloquentAuthRepository;
 
-/*
-  *  Controller for user data login, logout, changing password
-  *  Child Repository => App\Repository\Auth
-  /**
-   * Creation Date:-24-06-2022
-   * Created By:- Anshu Kumar
-   * 
-   *  ** Code Test  **
-   * Code Tested By-Anil Mishra Sir
-   * Code Testing Date-24-06-2022
-   */
+/**
+ * Controller for user data login, logout, changing password
+ * Child Repository => App\Repository\Auth
+ * Creation Date:-24-06-2022
+ * Created By:- Anshu Kumar
+ * 
+ *  ** Code Test  **
+ * Code Tested By-Anil Mishra Sir
+ * Code Testing Date-24-06-2022
+ */
 
 class UserController extends Controller
 {
@@ -48,7 +47,7 @@ class UserController extends Controller
     }
 
     // Changing Password
-    public function changePass(Request $request)
+    public function changePass(ChangePassRequest $request)
     {
         return $this->EloquentAuth->changePass($request);
     }

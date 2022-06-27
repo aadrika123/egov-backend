@@ -2,14 +2,13 @@
 
 namespace App\Repository\Auth;
 
-use App\Http\Requests\AuthUserRequest;
-use App\Http\Requests\LoginUserRequest;
+use App\Http\Requests\Auth\AuthUserRequest;
+use App\Http\Requests\Auth\LoginUserRequest;
+use App\Http\Requests\Auth\ChangePassRequest;
 use App\Models\User;
 use Exception;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use App\Repository\Auth\AuthRepository;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redis;
 
@@ -164,7 +163,13 @@ class EloquentAuthRepository implements AuthRepository
         }
     }
 
-    // Parent Controller- function logOut()
+    /**
+     * @function function LogOut
+     * Save null on remember_token in users table 
+     * delete token
+     * delete user key in redis database
+     * @return message
+     */
     public function logOut()
     {
         try {
@@ -189,26 +194,17 @@ class EloquentAuthRepository implements AuthRepository
     }
 
     // Parent Controller- function changePass()
-    public function changePass(Request $request)
+    /**
+     * Parent @Controller- function changePass()
+     * @param App\Http\Requests\Request 
+     * @param App\Http\Requests\Request $request 
+     * 
+     * 
+     */
+    public function changePass(ChangePassRequest $request)
     {
         try {
-            $rules = array(
-                'password' => [
-                    'required',
-                    'min:6',
-                    'max:255',
-                    'regex:/[a-z]/',      // must contain at least one lowercase letter
-                    'regex:/[A-Z]/',      // must contain at least one uppercase letter
-                    'regex:/[0-9]/',      // must contain at least one digit
-                    'regex:/[@$!%*#?&]/'  // must contain a special character
-                ]
-            );
-
-            $validator = Validator::make($request->input(), $rules);
-
-            if ($validator->fails()) {
-                return response()->json($validator->errors(), 400);
-            }
+            $validator = $request->validated();
 
             $id = auth()->user()->id;
             $user = User::find($id);

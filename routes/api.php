@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\RoleController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 
@@ -31,10 +32,26 @@ Route::controller(UserController::class)->group(function () {
 
 // Inside Middleware Routes with API Authenticate 
 Route::group(['middleware' => ['cors', 'json.response', 'api.key', 'auth:sanctum']], function () {
-    // Routes for User Controller
+    /**
+     * Routes for User 
+     * Created By-Anshu Kumar
+     * Created On-20-06-2022 
+     * Modified On-27-06-2022 
+     */
     Route::controller(UserController::class)->group(function () {
         Route::get('test', 'testing');
         Route::post('logout', 'logOut');
         Route::post('change-password', 'changePass');
+    });
+
+    /**
+     * Route for Roles
+     * Created By-Anshu Kumar
+     * Created Date-27-06-2022
+     */
+    Route::controller(RoleController::class)->group(function () {
+        Route::post('save-role', 'storeRole');
+        Route::post('role-menu', 'roleMenu');
+        Route::post('role-user', 'roleUser');
     });
 });

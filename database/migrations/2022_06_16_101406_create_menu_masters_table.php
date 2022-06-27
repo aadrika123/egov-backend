@@ -19,8 +19,7 @@ class CreateMenuMastersTable extends Migration
             $table->mediumText('Description')->nullable();
             $table->mediumText('MenuString')->nullable();
             $table->integer('ParentSerial')->nullable();
-            $table->mediumText('ControllerName')->nullable();
-            $table->mediumText('ViewName')->nullable();
+            $table->mediumText('Route')->nullable();
             $table->mediumText('Icon')->nullable();
             $table->smallInteger('TopLevel')->nullable();
             $table->timestamps();

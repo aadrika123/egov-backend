@@ -1,22 +1,15 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Roles;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Traits\Validate\ValidateTrait;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-/**
- * Created On-25-06-2022 
- * Created By-Anshu Kumar
- * 
- * Purpose- Validating User while Log In 
- * 
- * Code Tested By-
- * Code Tested Date-
- */
-class LoginUserRequest extends FormRequest
+class RoleRequest extends FormRequest
 {
+    use ValidateTrait;
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -24,7 +17,7 @@ class LoginUserRequest extends FormRequest
      */
     public function authorize()
     {
-        return true;
+        return $this->a();
     }
 
     /**
@@ -35,10 +28,7 @@ class LoginUserRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => ['required', 'string', 'email'],
-            'password' => [
-                'required'
-            ]
+            'RoleName' => ['required', 'string', 'max:255', 'unique:role_masters']
         ];
     }
 
@@ -49,6 +39,7 @@ class LoginUserRequest extends FormRequest
      * @param  \Illuminate\Contracts\Validation\Validator;  $validator
      * @return Illuminate\Http\Exceptions\HttpResponseException
      */
+
 
     protected function failedValidation(Validator $validator)
     {
