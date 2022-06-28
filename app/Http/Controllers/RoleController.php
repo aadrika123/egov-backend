@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Repository\Roles\EloquentRoleRepository;
 use App\Http\Requests\Roles\RoleRequest;
 use App\Http\Requests\Roles\RoleMenuRequest;
 use App\Http\Requests\Roles\UserRoleRequest;
+use App\Http\Requests\Roles\RoleMenuLogRequest;
+use App\Http\Requests\Roles\RoleUserLogRequest;
 
 /**
  * Created By-Anshu Kumar
@@ -40,9 +41,20 @@ class RoleController extends Controller
     }
 
     // Storing Role User
-
     public function roleUser(UserRoleRequest $request)
     {
         return $this->EloquentRole->userRole($request);
+    }
+
+    // Storing Role Menu Log
+    public function roleMenuLogs(RoleMenuLogRequest $request)
+    {
+        return $this->EloquentRole->roleMenuLogs($request);
+    }
+
+    // Storing Role User Logs
+    public function roleUserLogs(RoleUserLogRequest $request)
+    {
+        return $this->EloquentRole->roleUserLogs($request);
     }
 }

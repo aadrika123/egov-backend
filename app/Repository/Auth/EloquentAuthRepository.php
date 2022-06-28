@@ -31,8 +31,10 @@ use Illuminate\Support\Facades\Redis;
 
 class EloquentAuthRepository implements AuthRepository
 {
-    // Parent Controller- function Store()
     /**
+     * -----------------------------------------------
+     * Parent Controller- function Store()
+     * -----------------------------------------------
      * @param App\Http\Requests\AuthUserRequest
      * @param App\Http\Requests\AuthUserRequest $request
      */
@@ -58,11 +60,14 @@ class EloquentAuthRepository implements AuthRepository
     }
 
     /**
+     * ------------------------------------------------
      * @Parent Controller- function loginAuth()
+     * ------------------------------------------------
      * @param App\Http\Requests\LoginUserRequest
      * @param App\Http\Requests\LoginUserRequest $request
-     * 
+     * -------------------------------------------------
      * * Function LoginAuth **
+     * -------------------------------------------------
      * validate email password
      * Check if the user Existing or Not    (OK)
      * Check if the User is Suspended or Not    (OK)
@@ -164,7 +169,9 @@ class EloquentAuthRepository implements AuthRepository
     }
 
     /**
+     * -----------------------------------------------
      * @function function LogOut
+     * -----------------------------------------------
      * Save null on remember_token in users table 
      * delete token
      * delete user key in redis database
@@ -193,9 +200,10 @@ class EloquentAuthRepository implements AuthRepository
         }
     }
 
-    // Parent Controller- function changePass()
     /**
+     * -----------------------------------------------
      * Parent @Controller- function changePass()
+     * -----------------------------------------------
      * @param App\Http\Requests\Request 
      * @param App\Http\Requests\Request $request 
      * 

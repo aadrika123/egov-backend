@@ -48,10 +48,13 @@ Route::group(['middleware' => ['cors', 'json.response', 'api.key', 'auth:sanctum
      * Route for Roles
      * Created By-Anshu Kumar
      * Created Date-27-06-2022
+     * Route are authorized for super admin only using Middleware
      */
     Route::controller(RoleController::class)->group(function () {
-        Route::post('save-role', 'storeRole');
-        Route::post('role-menu', 'roleMenu');
-        Route::post('role-user', 'roleUser');
+        Route::post('save-role', 'storeRole')->middleware('can:isSuperAdmin');
+        Route::post('role-menu', 'roleMenu')->middleware('can:isSuperAdmin');
+        Route::post('role-user', 'roleUser')->middleware('can:isSuperAdmin');
+        Route::post('role-menu-logs', 'roleMenuLogs')->middleware('can:isSuperAdmin');
+        Route::post('role-user-logs', 'roleUserLogs')->middleware('can:isSuperAdmin');
     });
 });

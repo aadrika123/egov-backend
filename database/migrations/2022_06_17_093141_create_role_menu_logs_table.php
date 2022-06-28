@@ -18,7 +18,6 @@ class CreateRoleMenuLogsTable extends Migration
             $table->integer('RoleID')->nullable();
             $table->integer('MenuID')->nullable();
             $table->boolean('Flag')->nullable();
-            $table->date('CreationDate')->nullable();
             $table->mediumText('CreatedBy')->nullable();
             $table->timestamps();
         });
