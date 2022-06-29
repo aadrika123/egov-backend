@@ -1,8 +1,9 @@
 <?php
 
-use App\Http\Controllers\RoleController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ApiMasterController;
+use App\Http\Controllers\RoleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +29,17 @@ use App\Http\Controllers\UserController;
 Route::controller(UserController::class)->group(function () {
     Route::post('register', 'store');
     Route::post('login', 'loginAuth');
+});
+
+/**
+ * Routes for API masters, api searchable and api edit
+ * CreatedOn-29-06-2022
+ */
+
+Route::controller(ApiMasterController::class)->group(function () {
+    Route::post('save-api', 'store');
+    Route::post('edit-api/{id}', 'update');
+    Route::post('search-api', 'search');
 });
 
 // Inside Middleware Routes with API Authenticate 
