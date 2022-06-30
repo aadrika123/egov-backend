@@ -43,7 +43,7 @@ Route::controller(ApiMasterController::class)->group(function () {
 });
 
 // Inside Middleware Routes with API Authenticate 
-Route::group(['middleware' => ['cors', 'json.response', 'api.key', 'auth:sanctum']], function () {
+Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum']], function () {
     /**
      * Routes for User 
      * Created By-Anshu Kumar
@@ -63,10 +63,21 @@ Route::group(['middleware' => ['cors', 'json.response', 'api.key', 'auth:sanctum
      * Route are authorized for super admin only using Middleware
      */
     Route::controller(RoleController::class)->group(function () {
-        Route::post('save-role', 'storeRole')->middleware('can:isSuperAdmin');
-        Route::post('role-menu', 'roleMenu')->middleware('can:isSuperAdmin');
-        Route::post('role-user', 'roleUser')->middleware('can:isSuperAdmin');
-        Route::post('role-menu-logs', 'roleMenuLogs')->middleware('can:isSuperAdmin');
-        Route::post('role-user-logs', 'roleUserLogs')->middleware('can:isSuperAdmin');
+        Route::group(['middleware' => ['can:isSuperAdmin']], function () {
+            Route::post('save-role', 'storeRole');
+            Route::post('edit-role/{id}', 'editRole');
+
+            Route::post('role-menu', 'roleMenu');
+            Route::post('edit-role-menu/{id}', 'editRoleMenu');
+
+            Route::post('role-user', 'roleUser');
+            Route::post('edit-role-user/{id}', 'editRoleUser');
+
+            Route::post('role-menu-logs', 'roleMenuLogs');
+            Route::post('edit-role-menu-logs/{id}', 'editRoleMenuLogs');
+
+            Route::post('role-user-logs', 'roleUserLogs');
+            Route::post('edit-role-user-logs/{id}', 'editRoleUserLogs');
+        });
     });
 });

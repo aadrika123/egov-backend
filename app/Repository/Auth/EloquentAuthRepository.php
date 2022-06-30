@@ -140,7 +140,7 @@ class EloquentAuthRepository implements AuthRepository
                     $emailInfo->remember_token = $token;
                     $emailInfo->save();
 
-
+                    $redis = Redis::connection();                   // Redis Connection
                     $redis->set(
                         'user:' . $emailInfo->id,
                         json_encode([
@@ -241,7 +241,7 @@ class EloquentAuthRepository implements AuthRepository
         // });
         // $user = User::all();
         // $store = Redis::set('key', $user);
-
+        Redis::connection();
         $store = Redis::get('user:' . auth()->user()->id);
         $manage = json_decode($store);
         return response()->json([

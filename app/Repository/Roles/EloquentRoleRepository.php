@@ -14,8 +14,7 @@ use App\Models\RoleMenu;
 use App\Models\RoleMenuLog;
 use App\Models\RoleUser;
 use App\Models\RoleUserLog;
-use App\Traits\Role\MenuRole;
-use App\Traits\Role\UserRole;
+use App\Traits\Role\Role;
 
 /**
  * Created By-Anshu Kumar
@@ -25,7 +24,7 @@ use App\Traits\Role\UserRole;
  */
 class EloquentRoleRepository implements RoleRepository
 {
-    use MenuRole, UserRole;
+    use Role;
     /**
      * -------------------------------------------
      * Storing Data in role_masters 
@@ -38,11 +37,26 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             $role = new RoleMaster();
-            $role->RoleName = $request->RoleName;
-            $role->RoleDescription = $request->description;
-            $role->Routes = $request->routes;
-            $role->save();
+            return $this->savingRole($role, $request);          //Trait for Storing Role Master
             return response()->json(['Successfully' => 'Successfully Saved'], 201);
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
+    }
+
+    /**
+     * Update Data in role_masters
+     * -------------------------------------------
+     * @param App\Http\Requests\RoleRequest 
+     * @param App\Http\Request\RoleRequest $request
+     * @response
+     */
+
+    public function editRole(RoleRequest $request, $id)
+    {
+        try {
+            $role = RoleMaster::find($id);
+            return $this->savingRole($role, $request);          //Trait for Updating Role Master
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -63,21 +77,43 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             // Checking data already existing 
-            $check = RoleMenu::where('RoleID', $request->roleId)
-                ->where('MenuID', $request->menuId)
-                ->first();
+            $check = $this->checkRoleMenu($request);
             if ($check) {
-                return MenuRole::falseRoleMenuLog();    // Response Message
+                return Role::failure('Menu', 'Role');    // Response Message
             }
             // if data is not existing
             if (!$check) {
                 $menu_role = new RoleMenu;
-                $menu_role->RoleID = $request->roleId;
-                $menu_role->MenuID = $request->menuId;
-                $menu_role->View = $request->view;
-                $menu_role->Modify = $request->modify;
-                $menu_role->save();
-                return MenuRole::success();             // Response Message
+                $this->savingRoleMenu($menu_role, $request);           //Trait for Storing Role Menu
+                return Role::success();             // Response Message
+            }
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
+    }
+    /**
+     * Editing Role Menus
+     * -----------------------------------------------
+     * @param App\Http\Requests\RoleMenuRequest 
+     * @param App\Http\Request\RoleMenuRequest $request
+     * check first if the data already existing or not
+     * Update in Database
+     * @response 
+     */
+
+    public function editRoleMenu(RoleMenuRequest $request, $id)
+    {
+        try {
+            // Checking data already existing 
+            $check = $this->checkRoleMenu($request);
+            if ($check) {
+                return Role::failure('Menu', 'Role');    // Response Message
+            }
+            // if data is not existing
+            if (!$check) {
+                $menu_role = RoleMenu::find($id);
+                $this->savingRoleMenu($menu_role, $request);           //Trait for updating Role Menu
+                return Role::success();                  // Response Message
             }
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -90,7 +126,7 @@ class EloquentRoleRepository implements RoleRepository
      * ---------------------------------------------
      * @param App\Http\Requests\UserRoleRequest
      * @param App\Http\Requests\UserRoleRequest $request
-     * @return response()
+     * @return response
      * Check if the given data already existing in db or not
      * Save
      * @response
@@ -99,21 +135,44 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             // Checking Role of any Particular User already existing or not
-            $check = RoleUser::where('UserID', $request->userId)
-                ->where('RoleID', $request->roleId)
-                ->first();
+            $check = $this->checkUserRole($request);        // Trait for Checking Role User
             if ($check) {
-                return UserRole::failure();
+                return Role::failure('Role', 'User');
             }
             // If Role of the user is not existing
             if (!$check) {
                 $role_user = new RoleUser();
-                $role_user->UserID = $request->userId;
-                $role_user->RoleID = $request->roleId;
-                $role_user->View = $request->view;
-                $role_user->Modify = $request->modify;
-                $role_user->save();
-                return UserRole::userRoleSuccess();
+                $this->savingRoleUser($role_user, $request);   // Trait for Updating Role User
+                return Role::success();
+            }
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
+    }
+
+    /**
+     * Edit Role Users
+     * ---------------------------------------------------
+     * @param App\Http\Requests\UserRoleRequest
+     * @param App\Http\Requests\UserRoleRequest $request
+     * @return response
+     * Check if the given data already existing in db or not
+     * Updating
+     * @response 
+     */
+    public function editRoleUser(UserRoleRequest $request, $id)
+    {
+        try {
+            // Checking Role of any Particular User already existing or not
+            $check = $this->checkUserRole($request);        // Trait for checking Role User
+            if ($check) {
+                return Role::failure('Role', 'User');
+            }
+            // If Role of the user is not existing
+            if (!$check) {
+                $role_user = RoleUser::find($id);
+                $this->savingRoleUser($role_user, $request);   // Trait for Updating Role User
+                return Role::success();
             }
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -134,11 +193,9 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             // Checking data already existing
-            $check = RoleMenuLog::where('RoleID', $request->roleId)
-                ->where('MenuID', $request->menuId)
-                ->first();
+            $check = $this->checkRoleMenuLog($request);
             if ($check) {
-                return MenuRole::falseRoleMenuLog();       // Response Message
+                return Role::failure('Menu', 'Role');       // Response Message
             }
             // if data is not existing
             if (!$check) {
@@ -148,7 +205,29 @@ class EloquentRoleRepository implements RoleRepository
                 $role_menu_logs->Flag = $request->flag;
                 $role_menu_logs->CreatedBy = auth()->user()->id;
                 $role_menu_logs->save();
-                return MenuRole::success();                 //Response Message
+                return Role::success();                 //Response Message
+            }
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
+    }
+
+    /**
+     * Edit Role Menu Logs
+     */
+    public function editRoleMenuLogs(RoleMenuLogRequest $request, $id)
+    {
+        try {
+            // Checking data already existing
+            $check = $this->checkRoleMenuLog($request);
+            if ($check) {
+                return Role::failure('Menu', 'Role');                       // Response Message
+            }
+            // if data is not existing
+            if (!$check) {
+                $role_menu_logs = RoleMenuLog::find($id);
+                $this->savingRoleMenuLog($role_menu_logs, $request);        // Update Using Trait
+                return Role::success();                                     //Response Message
             }
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -173,7 +252,7 @@ class EloquentRoleRepository implements RoleRepository
                 ->where('RoleID', $request->roleId)
                 ->first();
             if ($check) {
-                return UserRole::failure();                       // Failure Message
+                return Role::failure('Role', 'User');                       // Failure Message
             }
             // if data already not present
             if (!$check) {
@@ -183,7 +262,30 @@ class EloquentRoleRepository implements RoleRepository
                 $role_user_log->Flag = $request->flag;
                 $role_user_log->CreatedBy = auth()->user()->id;
                 $role_user_log->save();
-                return UserRole::userRoleSuccess();               // Success Message
+                return Role::success();               // Success Message
+            }
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
+    }
+
+
+    /**
+     * Updating Role User Log
+     */
+    public function editRoleUserLogs(RoleUserLogRequest $request)
+    {
+        try {
+            // checking data already present in our db 
+            $check = $this->checkRoleUserLog($request);
+            if ($check) {
+                return Role::failure('Role', 'User');                       // Failure Message
+            }
+            // if data already not present
+            if (!$check) {
+                $role_user_log = new RoleUserLog;
+                $this->savingRoleUserLog($role_user_log, $request);         // Update Role User Log
+                return Role::success();                                     // Success Message
             }
         } catch (Exception $e) {
             return response()->json($e, 400);

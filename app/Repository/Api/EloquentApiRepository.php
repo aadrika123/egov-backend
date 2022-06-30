@@ -50,7 +50,11 @@ class EloquentApiRepository implements ApiRepository
     {
         try {
             $api_master = ApiMaster::find($request->id);
-            return $this->saving($api_master, $request);  //Save using StoreApi Trait(Code Duplication Removed)
+            if ($api_master) {
+                return $this->saving($api_master, $request);  //Save using StoreApi Trait(Code Duplication Removed)
+            } else {
+                return response()->json('Id Not Found', 404);
+            }
         } catch (Exception $e) {
             return response()->json([$e, 400]);
         }
