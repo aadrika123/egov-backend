@@ -28,6 +28,12 @@ trait Role
         return response()->json(['Status' => false, 'Message' => $a . ' Already Existing For this ' . $b], 400);
     }
 
+    // Message for data not found
+    static public function noData()
+    {
+        return response()->json(['Status' => 'No Data Available'], 404);
+    }
+
     /**
      * Store and Update Role Master
      */

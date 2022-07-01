@@ -8,6 +8,7 @@ use App\Http\Requests\Roles\RoleMenuRequest;
 use App\Http\Requests\Roles\UserRoleRequest;
 use App\Http\Requests\Roles\RoleMenuLogRequest;
 use App\Http\Requests\Roles\RoleUserLogRequest;
+use Illuminate\Http\Request;
 
 /**
  * Created By-Anshu Kumar
@@ -35,10 +36,18 @@ class RoleController extends Controller
     }
 
     // Updating Role
-    public function editRole(RoleRequest $request, $id)
+    public function editRole(Request $request, $id)
     {
         return $this->EloquentRole->editRole($request, $id);
     }
+
+    // Get Role
+    public function getRole($id)
+    {
+        return $this->EloquentRole->getRole($id);
+    }
+
+    /*************************************************************************************************** */
 
     // Storing Role Menu
     public function roleMenu(RoleMenuRequest $request)
@@ -52,6 +61,13 @@ class RoleController extends Controller
         return $this->EloquentRole->editRoleMenu($request, $id);
     }
 
+    // Getting Role Menus
+    public function getRoleMenu($id)
+    {
+        return $this->EloquentRole->getRoleMenu($id);
+    }
+    /**************************************************************************************************** */
+
     // Storing Role User
     public function roleUser(UserRoleRequest $request)
     {
@@ -63,6 +79,14 @@ class RoleController extends Controller
     {
         return $this->EloquentRole->editRoleUser($request, $id);
     }
+
+    // Getting Role User by ID
+    public function getRoleUser($id)
+    {
+        return $this->EloquentRole->getRoleUser($id);
+    }
+
+    /***************************************************************************************************** */
 
     // Storing Role Menu Log
     public function roleMenuLogs(RoleMenuLogRequest $request)
@@ -76,6 +100,14 @@ class RoleController extends Controller
         return $this->EloquentRole->editRoleMenuLogs($request, $id);
     }
 
+    // Getting Role Menu Logs
+    public function getRoleMenuLogs($id)
+    {
+        return $this->EloquentRole->getRoleMenuLogs($id);
+    }
+
+    /***************************************************************************************************** */
+
     // Storing Role User Logs
     public function roleUserLogs(RoleUserLogRequest $request)
     {
@@ -83,8 +115,14 @@ class RoleController extends Controller
     }
 
     // Updating Role User logs
-    public function editRoleUserLogs(RoleUserLogRequest $request)
+    public function editRoleUserLogs(RoleUserLogRequest $request, $id)
     {
-        return $this->EloquentRole->editRoleUserLogs($request);
+        return $this->EloquentRole->editRoleUserLogs($request, $id);
+    }
+
+    // Getting Role User Logs
+    public function getRoleUserLogs($id)
+    {
+        return $this->EloquentRole->getRoleUserLogs($id);
     }
 }

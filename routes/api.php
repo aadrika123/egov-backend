@@ -38,7 +38,7 @@ Route::controller(UserController::class)->group(function () {
 
 Route::controller(ApiMasterController::class)->group(function () {
     Route::post('save-api', 'store');
-    Route::post('edit-api/{id}', 'update');
+    Route::put('edit-api/{id}', 'update');
     Route::post('search-api', 'search');
 });
 
@@ -65,19 +65,24 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum']], functi
     Route::controller(RoleController::class)->group(function () {
         Route::group(['middleware' => ['can:isSuperAdmin']], function () {
             Route::post('save-role', 'storeRole');
-            Route::post('edit-role/{id}', 'editRole');
+            Route::put('edit-role/{id}', 'editRole');
+            Route::get('get-role/{id}', 'getRole');
 
             Route::post('role-menu', 'roleMenu');
-            Route::post('edit-role-menu/{id}', 'editRoleMenu');
+            Route::put('edit-role-menu/{id}', 'editRoleMenu');
+            Route::get('get-role-menu/{id}', 'getRoleMenu');
 
             Route::post('role-user', 'roleUser');
-            Route::post('edit-role-user/{id}', 'editRoleUser');
+            Route::put('edit-role-user/{id}', 'editRoleUser');
+            Route::get('get-role-user/{id}', 'getRoleUser');
 
             Route::post('role-menu-logs', 'roleMenuLogs');
-            Route::post('edit-role-menu-logs/{id}', 'editRoleMenuLogs');
+            Route::put('edit-role-menu-logs/{id}', 'editRoleMenuLogs');
+            Route::get('get-role-menu-logs/{id}', 'getRoleMenuLogs');
 
             Route::post('role-user-logs', 'roleUserLogs');
-            Route::post('edit-role-user-logs/{id}', 'editRoleUserLogs');
+            Route::put('edit-role-user-logs/{id}', 'editRoleUserLogs');
+            Route::get('get-role-user-logs/{id}', 'getRoleUserLogs');
         });
     });
 });
