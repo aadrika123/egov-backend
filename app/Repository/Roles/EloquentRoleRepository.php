@@ -56,12 +56,11 @@ class EloquentRoleRepository implements RoleRepository
 
     public function editRole(Request $request, $id)
     {
+        // Validating
+        $request->validate([
+            'RoleName' => 'required', 'string', 'max:255'
+        ]);
         try {
-            // Validating
-            $request->validate([
-                'RoleName' => 'required', 'string', 'max:255'
-            ]);
-
             $role = RoleMaster::find($id);
             $stmt = $role->RoleName == $request->RoleName;
             if ($stmt) {
@@ -247,6 +246,9 @@ class EloquentRoleRepository implements RoleRepository
 
     /**
      * Getting Role User By ID
+     * @param $id
+     * @return response
+     * @return App\Traits\Trait\Role
      */
     public function getRoleUser($id)
     {
@@ -404,6 +406,7 @@ class EloquentRoleRepository implements RoleRepository
 
     /**
      * Getting Role User Logs data by id
+     * @return response
      * @return App\Traits\Roles\Role
      */
     public function getRoleUserLogs($id)

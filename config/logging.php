@@ -48,6 +48,13 @@ return [
     */
 
     'channels' => [
+
+        'apilogs' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/apilogs.log'),
+            'level' => 'info',
+        ],
+
         'stack' => [
             'driver' => 'stack',
             'channels' => ['single'],

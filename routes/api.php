@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UlbController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,9 +21,9 @@ use App\Http\Controllers\RoleController;
  * Creation Date:-24-06-2022
  * Created By:- Anshu Kumar
  * 
- * ***Code Test***
+ *-------------------Code Test-------------------------------------
  * Code Tested By-Anil Mishra Sir
- * Code Testing Date:-25-06-2022
+ * Code Testing Date:-25-06-2022 
  */
 
 // Route Used for Login and Register the User
@@ -43,7 +44,7 @@ Route::controller(ApiMasterController::class)->group(function () {
 });
 
 // Inside Middleware Routes with API Authenticate 
-Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum']], function () {
+Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request_logger']], function () {
     /**
      * Routes for User 
      * Created By-Anshu Kumar
@@ -84,5 +85,17 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum']], functi
             Route::put('edit-role-user-logs/{id}', 'editRoleUserLogs');
             Route::get('get-role-user-logs/{id}', 'getRoleUserLogs');
         });
+    });
+
+    /**
+     * Routes for Ulbs
+     * Created By-Anshu Kumar
+     * Creation Date-02-07-2022 
+     * Modified On-
+     */
+    Route::controller(UlbController::class)->group(function () {
+        Route::post('save-ulb', 'store');
+        Route::put('edit-ulb/{id}', 'edit');
+        Route::get('get-ulb/{id}', 'view');
     });
 });
