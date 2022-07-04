@@ -51,7 +51,7 @@ return [
 
         'apilogs' => [
             'driver' => 'single',
-            'path' => storage_path('logs/apilogs.log'),
+            'path' => storage_path('logs/api.log'),
             'level' => 'info',
         ],
 
