@@ -109,7 +109,7 @@ class EloquentUlbRepository implements UlbRepository
     {
         $data = UlbMaster::find($id);
         if ($data) {
-            return response()->json($data, 302);
+            return response()->json($data, 200);
         } else {
             return response()->json(['Message' => 'Data not found'], 404);
         }

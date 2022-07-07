@@ -5,6 +5,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UlbController;
+use App\Http\Controllers\WorkflowController;
 
 /*
 |--------------------------------------------------------------------------
@@ -97,5 +98,21 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
         Route::post('save-ulb', 'store');
         Route::put('edit-ulb/{id}', 'edit');
         Route::get('get-ulb/{id}', 'view');
+    });
+
+    /**
+     * Routes for Workflows
+     * Created By-Anshu Kumar
+     * Creation Date-06-07-2022 
+     * Modified On-
+     */
+    Route::controller(WorkflowController::class)->group(function () {
+        Route::post('add-workflow', 'storeWorkflow');
+        Route::get('view-workflow/{id}', 'viewWorkflow');
+        Route::put('edit-workflow/{id}', 'updateWorkflow');
+
+        Route::post('workflow-candidate', 'storeWorkflowCandidate');
+        Route::get('view-workflow-candidates/{id}', 'viewWorkflowCandidates');
+        Route::put('edit-workflow-candidates/{id}', 'editWorkflowCandidates');
     });
 });
