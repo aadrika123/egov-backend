@@ -21,15 +21,16 @@ use App\Http\Controllers\WorkflowController;
 /**
  * Creation Date:-24-06-2022
  * Created By:- Anshu Kumar
- * 
- *-------------------Code Test-------------------------------------
+ * -------------------------------------------------------------------------
+ * Code Test
+ * -------------------------------------------------------------------------
  * Code Tested By-Anil Mishra Sir
  * Code Testing Date:-25-06-2022 
+ * -------------------------------------------------------------------------
  */
 
 // Route Used for Login and Register the User
 Route::controller(UserController::class)->group(function () {
-    Route::post('register', 'store');
     Route::post('login', 'loginAuth');
 });
 
@@ -53,6 +54,7 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
      * Modified On-27-06-2022 
      */
     Route::controller(UserController::class)->group(function () {
+        Route::post('register', 'store');
         Route::get('test', 'testing');
         Route::post('logout', 'logOut');
         Route::post('change-password', 'changePass');
@@ -62,9 +64,9 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
      * Route for Roles
      * Created By-Anshu Kumar
      * Created Date-27-06-2022
-     * Route are authorized for super admin only using Middleware
      */
     Route::controller(RoleController::class)->group(function () {
+        // Route are authorized for super admin only using Middleware 
         Route::group(['middleware' => ['can:isSuperAdmin']], function () {
             Route::post('save-role', 'storeRole');
             Route::put('edit-role/{id}', 'editRole');

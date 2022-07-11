@@ -6,21 +6,22 @@ use App\Http\Requests\Auth\AuthUserRequest;
 use App\Http\Requests\Auth\LoginUserRequest;
 use App\Http\Requests\Auth\ChangePassRequest;
 use App\Models\User;
-use Exception;
-use Illuminate\Support\Str;
 use App\Repository\Auth\AuthRepository;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redis;
+use Exception;
 
 /*
-* @Source Controller:-App\Http\Controller\UserController 
-
+ * Parent Controller:-App\Http\Controller\UserController 
+ * ----------------------------------------------------------------------------------------------
  * Author Name-Anshu Kumar
- * 
+ * ----------------------------------------------------------------------------------------------
  * Start Date  - 24-06-2022
  * Finish Date - 24-06-2022
- * 
- * * Coding Test **
+ * ----------------------------------------------------------------------------------------------
+ * Coding Test
+ * ----------------------------------------------------------------------------------------------
  * Code Tested By - Anil Sir
  * Code Testing Date - 24-06-2022
  * Feedback- 
@@ -50,10 +51,11 @@ class EloquentAuthRepository implements AuthRepository
             $user->Mobile = $request->mobile;
             $user->email = $request->email;
             $user->password = Hash::make($request->password);
-            $token = Str::random(80);       //Generating Random Token for Initial
+            $user->UlbID = $request->ulb;
+            $token = Str::random(80);                       //Generating Random Token for Initial
             $user->remember_token = $token;
             $user->save();
-            return response()->json("Saved Successfully", 201);
+            return response()->json(["Registered Successfully", "Please Login to Continue"], 200);
         } catch (Exception $e) {
             return $e;
         }
@@ -66,7 +68,7 @@ class EloquentAuthRepository implements AuthRepository
      * @param App\Http\Requests\LoginUserRequest
      * @param App\Http\Requests\LoginUserRequest $request
      * -------------------------------------------------
-     * * Function LoginAuth **
+     * Function LoginAuth 
      * -------------------------------------------------
      * validate email password
      * Check if the user Existing or Not    (OK)
@@ -101,7 +103,6 @@ class EloquentAuthRepository implements AuthRepository
                 $info = json_decode($user);
                 // AUTHENTICATING PASSWORD IN HASH
                 if (Hash::check($request->password, $info->password)) {
-
                     $token = $emailInfo->createToken('my-app-token')->plainTextToken;
                     $emailInfo->remember_token = $token;
                     $emailInfo->save();
