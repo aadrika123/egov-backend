@@ -60,7 +60,7 @@ class UlbWorkflowController extends Controller
      */
     public function show($id)
     {
-        //
+        return $this->EloquentUlbWorkflow->show($id);
     }
 
     /**
@@ -83,7 +83,7 @@ class UlbWorkflowController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        return $this->EloquentUlbWorkflow->update($request, $id);
     }
 
     /**
@@ -94,6 +94,6 @@ class UlbWorkflowController extends Controller
      */
     public function destroy($id)
     {
-        //
+        return $this->EloquentUlbWorkflow->destroy($id);
     }
 }
