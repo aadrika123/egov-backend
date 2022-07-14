@@ -15,10 +15,10 @@ class CreateRoleUserLogsTable extends Migration
     {
         Schema::create('role_user_logs', function (Blueprint $table) {
             $table->id();
-            $table->integer('RoleID')->nullable();
-            $table->integer('UserID')->nullable();
-            $table->boolean('Flag')->nullable();
-            $table->mediumText('CreatedBy')->nullable();
+            $table->integer('role_id')->nullable();
+            $table->integer('user_id')->nullable();
+            $table->boolean('flag')->nullable();
+            $table->mediumText('created_by')->nullable();
             $table->timestamps();
         });
     }

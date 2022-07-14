@@ -15,16 +15,18 @@ class CreateUsersTable extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->integer('UserType')->nullable();
-            $table->integer('RollID')->nullable();
-            $table->integer('UlbID')->nullable();
-            $table->mediumText('UserName')->nullable();
-            $table->mediumText('Mobile')->nullable();
+            $table->mediumText('user_name')->nullable();
+            $table->mediumText('mobile')->nullable();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
+            $table->integer('user_type')->nullable();
+            $table->integer('roll_id')->nullable();
+            $table->integer('ulb_id')->nullable();
             $table->string('password');
-            $table->smallInteger('Suspended')->nullable();
-            $table->smallInteger('SuperUser')->nullable();
+            $table->smallInteger('suspended')->nullable();
+            $table->smallInteger('super_user')->nullable();
+            $table->mediumText('description')->nullable();
+            $table->mediumText('workflow_participant')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

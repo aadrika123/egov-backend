@@ -3,8 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
+use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UlbController;
+use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\WorkflowController;
 
 /*
@@ -32,6 +34,7 @@ use App\Http\Controllers\WorkflowController;
 // Route Used for Login and Register the User
 Route::controller(UserController::class)->group(function () {
     Route::post('login', 'loginAuth');
+    Route::post('register', 'store');
 });
 
 /**
@@ -54,7 +57,7 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
      * Modified On-27-06-2022 
      */
     Route::controller(UserController::class)->group(function () {
-        Route::post('register', 'store');
+
         Route::get('test', 'testing');
         Route::post('logout', 'logOut');
         Route::post('change-password', 'changePass');
@@ -117,4 +120,20 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
         Route::get('view-workflow-candidates/{id}', 'viewWorkflowCandidates');
         Route::put('edit-workflow-candidates/{id}', 'editWorkflowCandidates');
     });
+
+    /**
+     * APIs for Module Master
+     * Created By-Anshu Kumar
+     * Creation Date-14-07-2022
+     * Modified By-
+     */
+    Route::resource('crud/module-masters', ModuleController::class);
+
+    /**
+     * Api route for Ulb Module Master
+     * CreatedBy-Anshu Kumar
+     * Creation Date-14-07-2022 
+     * Modified By-
+     */
+    Route::resource('crud/ulb-workflow-masters', UlbWorkflowController::class);
 });

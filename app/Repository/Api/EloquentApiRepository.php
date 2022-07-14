@@ -70,8 +70,8 @@ class EloquentApiRepository implements ApiRepository
     public function search(ApiSearchRequest $request)
     {
         try {
-            $api_master = ApiMaster::where('EndPoint', $request->EndPoint)
-                ->orWhere('EndPoint', 'like', '%' . $request->EndPoint . '%')
+            $api_master = ApiMaster::where('end_point', $request->EndPoint)
+                ->orWhere('end_point', 'like', '%' . $request->EndPoint . '%')
                 ->get();
 
             if ($api_master->count() > 0) {

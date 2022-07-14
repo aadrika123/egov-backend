@@ -28,7 +28,7 @@ class AuthServiceProvider extends ServiceProvider
 
         /**Define for Super Admin Role */
         Gate::define('isSuperAdmin', function ($user) {
-            return $user->UserType == '1'
+            return $user->user_type == '1'
                 ? Response::allow()
                 : Response::deny('You Must be a Super Administrator');
         });

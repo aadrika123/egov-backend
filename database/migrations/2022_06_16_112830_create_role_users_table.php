@@ -15,10 +15,10 @@ class CreateRoleUsersTable extends Migration
     {
         Schema::create('role_users', function (Blueprint $table) {
             $table->id();
-            $table->integer('UserID')->nullable();
-            $table->integer('RoleID')->nullable();
-            $table->smallInteger('View')->nullable();
-            $table->smallInteger('Modify')->nullable();
+            $table->integer('user_id')->nullable();
+            $table->integer('role_id')->nullable();
+            $table->smallInteger('view')->nullable();
+            $table->smallInteger('modify')->nullable();
             $table->timestamps();
         });
     }

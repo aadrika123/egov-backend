@@ -58,17 +58,17 @@ class EloquentRoleRepository implements RoleRepository
     {
         // Validating
         $request->validate([
-            'RoleName' => 'required', 'string', 'max:255'
+            'role_name' => 'required', 'string', 'max:255'
         ]);
         try {
             $role = RoleMaster::find($id);
-            $stmt = $role->RoleName == $request->RoleName;
+            $stmt = $role->role_name == $request->role_name;
             if ($stmt) {
                 return $this->savingRole($role, $request);          //Trait for Updating Role Master
             }
             if (!$stmt) {
                 // Checking Role Name Already existing or not
-                $check = RoleMaster::where('RoleName', '=', $request->RoleName)->first();
+                $check = RoleMaster::where('role_name', '=', $request->role_name)->first();
                 if ($check) {
                     return response()->json(['Status' => false, 'message' => 'Role Name already Existing'], 400);
                 }
@@ -140,7 +140,7 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             $menu_role = RoleMenu::find($id);
-            $stmt = $menu_role->RoleID == $request->roleId && $menu_role->MenuID == $request->menuId;
+            $stmt = $menu_role->role_id == $request->RoleID && $menu_role->menu_id == $request->MenuID;
             if ($stmt) {
                 $this->savingRoleMenu($menu_role, $request);            //Trait for updating Role Menu
                 return Role::success();                                 // Response Message
@@ -221,7 +221,7 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             $role_user = RoleUser::find($id);
-            $stmt = $role_user->UserID == $request->userId && $role_user->RoleID == $request->roleId;
+            $stmt = $role_user->user_id == $request->UserID && $role_user->role_id == $request->RoleID;
             if ($stmt) {
                 $this->savingRoleUser($role_user, $request);   // Trait for Updating Role User
                 return Role::success();
@@ -303,7 +303,7 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             $role_menu_logs = RoleMenuLog::find($id);
-            $stmt = $role_menu_logs->RoleID == $request->roleId && $role_menu_logs->MenuID == $request->menuId;
+            $stmt = $role_menu_logs->role_id == $request->RoleID && $role_menu_logs->menu_id == $request->MenuID;
             if ($stmt) {
                 $this->savingRoleMenuLog($role_menu_logs, $request);        // Update Using Trait
                 return Role::success();                                     //Response Message
@@ -381,7 +381,7 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             $role_user_log = RoleUserLog::find($id);
-            $stmt = $role_user_log->UserID == $request->userId && $role_user_log->RoleID == $request->roleId;
+            $stmt = $role_user_log->user_id == $request->UserID && $role_user_log->role_id == $request->RoleID;
             if ($stmt) {
                 $this->savingRoleUserLog($role_user_log, $request);         // Update Role User Log
                 return Role::success();                                     // Success Message

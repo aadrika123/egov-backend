@@ -8,6 +8,7 @@ use App\Models\Workflow;
 use App\Models\WorkflowCandidate;
 use Exception;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Repository for Saving, editing Workflows
@@ -40,7 +41,7 @@ class EloquentWorkflowRepository implements WorkflowRepository
     {
         // Validating
         $request->validate([
-            'WorkflowName' => 'required|unique:workflows'
+            'workflow_name' => 'required|unique:workflows'
         ]);
 
         try {
@@ -84,17 +85,17 @@ class EloquentWorkflowRepository implements WorkflowRepository
     {
         // Validate
         $request->validate([
-            'WorkflowName' => 'required'
+            'workflow_name' => 'required'
         ]);
         $workflow = Workflow::find($id);
-        $stmt = $workflow->WorkflowName == $request->WorkflowName;
+        $stmt = $workflow->workflow_name == $request->workflow_name;
         if ($stmt) {
             return $this->savingWorkflow($workflow, $request);           // Trait for Storing
         }
         if (!$stmt) {
             // Checking Already Existing
             $request->validate([
-                'WorkflowName' => 'unique:workflows'
+                'workflow_name' => 'unique:workflows'
             ]);
             return $this->savingWorkflow($workflow, $request);           // Trait for Storing
         }
@@ -137,7 +138,21 @@ class EloquentWorkflowRepository implements WorkflowRepository
 
     public function viewWorkflowCandidates($id)
     {
-        $wc = WorkflowCandidate::find($id);
+        $wc = DB::table('workflow_candidates')
+            ->leftJoin('users', 'workflow_candidates.CreatedBy', '=', 'users.id')
+            ->leftJoin('workflows', 'workflow_candidates.WorkflowID', '=', 'workflows.id')
+            ->select(
+                'workflow_candidates.id',
+                'workflows.WorkflowName',
+                'workflow_candidates.JobDescription',
+                'workflow_candidates.ForwardID',
+                'workflow_candidates.BackwardID',
+                'workflow_candidates.FullMovement',
+                'workflow_candidates.IsAdmin',
+                'users.UserName as CreatedBy'
+            )
+            ->first();
+
         if ($wc) {
             return response()->json($wc, 200);
         } else {
@@ -168,7 +183,11 @@ class EloquentWorkflowRepository implements WorkflowRepository
 
         try {
             $wc = WorkflowCandidate::find($id);
-            return $this->savingWorkflowCandidates($wc, $request);          // Editing Using Trait
+            if ($wc) {
+                return $this->savingWorkflowCandidates($wc, $request);          // Editing Using Trait
+            } else {
+                return response()->json(['Data Not Found for this id'], 400);
+            }
         } catch (Exception $e) {
             return response()->json($e, 400);
         }

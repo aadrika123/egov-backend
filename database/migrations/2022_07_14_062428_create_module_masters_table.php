@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateWorkflowsTable extends Migration
+class CreateModuleMastersTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,10 @@ class CreateWorkflowsTable extends Migration
      */
     public function up()
     {
-        Schema::create('workflows', function (Blueprint $table) {
+        Schema::create('module_masters', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger('module_id')->nullable();
-            $table->mediumText('workflow_name')->nullable();
-            $table->boolean('deleted')->nullable();
+            $table->mediumText('module_name')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
@@ -29,6 +28,6 @@ class CreateWorkflowsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('workflows');
+        Schema::dropIfExists('module_masters');
     }
 }

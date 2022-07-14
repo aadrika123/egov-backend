@@ -15,10 +15,13 @@ class CreateWorkflowCandidatesTable extends Migration
     {
         Schema::create('workflow_candidates', function (Blueprint $table) {
             $table->id();
-            $table->integer('WorkflowID')->nullable();
-            $table->integer('EmployeeID')->nullable();
-            $table->mediumText('JobDescription')->nullable();
-            $table->mediumText('UserID')->nullable();
+            $table->integer('ulb_workflow_id')->nullable();
+            $table->bigInteger('user_id')->nullable();
+            $table->integer('forward_id')->nullable();
+            $table->integer('backward_id')->nullable();
+            $table->boolean('full_movement')->nullable();  // If this field is true then one can forward everyone otherwise he can forward only 2 persons(forward and backward) 
+            $table->boolean('IsAdmin')->nullable();
+            $table->boolean('deleted')->nullable();
             $table->timestamps();
         });
     }

@@ -15,10 +15,12 @@ class CreateUlbMastersTable extends Migration
     {
         Schema::create('ulb_masters', function (Blueprint $table) {
             $table->id();
-            $table->mediumText('UlbName')->nullable();
-            $table->mediumText('UlbType')->nullable();
-            $table->mediumText('Description')->nullable();
-            $table->date('IncorporationDate')->nullable();
+            $table->mediumText('ulb_name')->nullable();
+            $table->mediumText('ulb_type')->nullable();
+            $table->bigInteger('city_id')->nullable();
+            $table->mediumText('remarks')->nullable();
+            $table->boolean('deleted')->nullable();
+            $table->date('incorporation_date')->nullable();
             $table->timestamps();
         });
     }

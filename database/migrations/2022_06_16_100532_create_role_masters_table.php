@@ -15,9 +15,9 @@ class CreateRoleMastersTable extends Migration
     {
         Schema::create('role_masters', function (Blueprint $table) {
             $table->id();
-            $table->mediumText('RoleName')->nullable();
-            $table->mediumText('RoleDescription')->nullable();
-            $table->mediumText('Routes')->nullable();
+            $table->mediumText('role_name')->nullable();
+            $table->mediumText('role_description')->nullable();
+            $table->mediumText('routes')->nullable();
             $table->timestamps();
         });
     }

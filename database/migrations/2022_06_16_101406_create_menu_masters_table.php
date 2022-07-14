@@ -15,13 +15,13 @@ class CreateMenuMastersTable extends Migration
     {
         Schema::create('menu_masters', function (Blueprint $table) {
             $table->id();
-            $table->integer('Serial')->nullable();
-            $table->mediumText('Description')->nullable();
-            $table->mediumText('MenuString')->nullable();
-            $table->integer('ParentSerial')->nullable();
-            $table->mediumText('Route')->nullable();
-            $table->mediumText('Icon')->nullable();
-            $table->smallInteger('TopLevel')->nullable();
+            $table->integer('serial')->nullable();
+            $table->mediumText('description')->nullable();
+            $table->mediumText('menu_string')->nullable();
+            $table->integer('parent_serial')->nullable();
+            $table->mediumText('route')->nullable();
+            $table->mediumText('icon')->nullable();
+            $table->smallInteger('top_level')->nullable();
             $table->timestamps();
         });
     }

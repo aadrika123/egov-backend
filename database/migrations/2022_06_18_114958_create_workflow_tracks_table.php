@@ -15,11 +15,15 @@ class CreateWorkflowTracksTable extends Migration
     {
         Schema::create('workflow_tracks', function (Blueprint $table) {
             $table->id();
-            $table->mediumText('RenewalID')->nullable();
-            $table->dateTime('TrackDate')->nullable();
-            $table->mediumText('UserID')->nullable();
-            $table->mediumText('Remarks')->nullable();
-            $table->smallInteger('IsSMS')->nullable();
+            $table->bigInteger('workflow_candidate_id');
+            $table->bigInteger('citizen_id');
+            $table->bigInteger('module_id');
+            $table->mediumText('ref_table_dot_id')->nullable();         //eg- self.renewalid
+            $table->mediumText('ref_table_id_value')->nullable();
+            $table->mediumText('message')->nullable();
+            $table->dateTime('track_date')->nullable();
+            $table->mediumText('forwarded_to')->nullable();
+            $table->boolean('deleted')->nullable();
             $table->timestamps();
         });
     }

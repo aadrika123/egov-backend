@@ -15,11 +15,11 @@ class CreateEmployeeMastersTable extends Migration
     {
         Schema::create('employee_masters', function (Blueprint $table) {
             $table->id();
-            $table->integer('RoleID')->nullable();
-            $table->mediumText('EmployeeName')->nullable();
-            $table->mediumText('Mobile')->nullable();
-            $table->mediumText('Email')->nullable();
-            $table->mediumText('Address')->nullable();
+            $table->integer('role_id')->nullable();
+            $table->mediumText('employee_name')->nullable();
+            $table->mediumText('mobile')->nullable();
+            $table->mediumText('email')->nullable();
+            $table->mediumText('address')->nullable();
             $table->timestamps();
         });
     }

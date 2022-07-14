@@ -30,16 +30,17 @@ class EloquentUlbRepository implements UlbRepository
     {
         //Validation
         $request->validate([
-            'UlbName' => 'required|unique:ulb_masters'
+            'ulb_name' => 'required|unique:ulb_masters'
         ]);
 
         try {
             // Store
             $ulb = new UlbMaster;
-            $ulb->UlbName = $request->UlbName;
-            $ulb->UlbType = $request->ulbType;
-            $ulb->Description = $request->description;
-            $ulb->IncorporationDate = $request->incorporationDate;
+            $ulb->ulb_name = $request->ulb_name;
+            $ulb->ulb_type = $request->UlbType;
+            $ulb->city_id = $request->CityID;
+            $ulb->remarks = $request->Remarks;
+            $ulb->incorporation_date = $request->IncorporationDate;
             $ulb->save();
             return response()->json(['Status' => 'Successfully Saved'], 200);
         } catch (Exception $e) {
@@ -67,29 +68,34 @@ class EloquentUlbRepository implements UlbRepository
     {
         //Validation
         $request->validate([
-            'UlbName' => 'required'
+            'ulb_name' => 'required'
         ]);
         try {
             $ulb = UlbMaster::find($request->id);
-            $stmt = $ulb->UlbName == $request->UlbName;
+            $stmt = $ulb->ulb_name == $request->ulb_name;
             // Changing other fields
             if ($stmt) {
-                $ulb->Description = $request->description;
-                $ulb->IncorporationDate = $request->incorporationDate;
+                $ulb->ulb_type = $request->UlbType;
+                $ulb->city_id = $request->CityID;
+                $ulb->remarks = $request->Remarks;
+                $ulb->incorporation_date = $request->IncorporationDate;
+                $ulb->deleted = $request->Deleted;
                 $ulb->save();
                 return response()->json(['Status' => 'Successfully Saved'], 200);
             }
             if (!$stmt) {
-                $stmt1 = UlbMaster::where('UlbName', '=', $request->UlbName)->first();
+                $stmt1 = UlbMaster::where('ulb_name', '=', $request->ulb_name)->first();
                 // Checking already existing
                 if ($stmt1) {
-                    return response()->json(['Message' => 'UlbName is already Existing'], 400);
+                    return response()->json(['Message' => 'Ulb Name is already Existing'], 400);
                 }
                 if (!$stmt1) {
-                    $ulb->UlbName = $request->UlbName;
-                    $ulb->UlbType = $request->ulbType;
-                    $ulb->Description = $request->description;
-                    $ulb->IncorporationDate = $request->incorporationDate;
+                    $ulb->ulb_name = $request->ulb_name;
+                    $ulb->ulb_type = $request->UlbType;
+                    $ulb->city_id = $request->CityID;
+                    $ulb->remarks = $request->Remarks;
+                    $ulb->incorporation_date = $request->IncorporationDate;
+                    $ulb->deleted = $request->Deleted;
                     $ulb->save();
                     return response()->json(['Status' => 'Successfully Saved'], 200);
                 }

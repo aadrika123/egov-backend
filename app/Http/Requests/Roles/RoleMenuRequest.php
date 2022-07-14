@@ -28,8 +28,8 @@ class RoleMenuRequest extends FormRequest
     public function rules()
     {
         return [
-            'roleId' => ['required', 'int'],
-            'menuId' => ['required', 'int']
+            'RoleID' => ['required', 'int'],
+            'MenuID' => ['required', 'int']
         ];
     }
 

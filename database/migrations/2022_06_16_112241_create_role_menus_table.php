@@ -15,10 +15,10 @@ class CreateRoleMenusTable extends Migration
     {
         Schema::create('role_menus', function (Blueprint $table) {
             $table->id();
-            $table->integer('RoleID')->nullable();
-            $table->integer('MenuID')->nullable();
-            $table->smallInteger('View')->nullable();
-            $table->smallInteger('Modify')->nullable();
+            $table->integer('role_id')->nullable();
+            $table->integer('menu_id')->nullable();
+            $table->smallInteger('view')->nullable();
+            $table->smallInteger('modify')->nullable();
             $table->timestamps();
         });
     }

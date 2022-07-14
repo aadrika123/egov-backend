@@ -15,10 +15,10 @@ class CreateRoleMenuLogsTable extends Migration
     {
         Schema::create('role_menu_logs', function (Blueprint $table) {
             $table->id();
-            $table->integer('RoleID')->nullable();
-            $table->integer('MenuID')->nullable();
-            $table->boolean('Flag')->nullable();
-            $table->mediumText('CreatedBy')->nullable();
+            $table->integer('role_id')->nullable();
+            $table->integer('menu_id')->nullable();
+            $table->boolean('flag')->nullable();
+            $table->mediumText('created_by')->nullable();
             $table->timestamps();
         });
     }

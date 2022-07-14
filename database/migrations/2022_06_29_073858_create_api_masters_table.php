@@ -15,19 +15,19 @@ class CreateApiMastersTable extends Migration
     {
         Schema::create('api_masters', function (Blueprint $table) {
             $table->id();
-            $table->mediumText('Description')->nullable();
-            $table->mediumText('Category')->nullable();
-            $table->mediumText('EndPoint')->nullable();
-            $table->mediumText('Usage')->nullable();
-            $table->mediumText('PreCondition')->nullable();
-            $table->mediumText('RequestPayload')->nullable();         // IN JSON
-            $table->mediumText('ResponsePayload')->nullable();        // IN JSON
-            $table->mediumText('PostCondition')->nullable();
-            $table->mediumText('Version')->nullable();
-            $table->dateTime('CreatedOn')->nullable();
-            $table->mediumText('CreatedBy')->nullable();
-            $table->smallInteger('RevisionNo')->nullable();
-            $table->boolean('Discontinued')->nullable();
+            $table->mediumText('description')->nullable();
+            $table->mediumText('category')->nullable();
+            $table->mediumText('end_point')->nullable();
+            $table->mediumText('usage')->nullable();
+            $table->mediumText('pre_condition')->nullable();
+            $table->mediumText('request_payload')->nullable();         // IN JSON
+            $table->mediumText('response_payload')->nullable();        // IN JSON
+            $table->mediumText('post_condition')->nullable();
+            $table->mediumText('version')->nullable();
+            $table->dateTime('created_on')->nullable();
+            $table->mediumText('created_by')->nullable();
+            $table->smallInteger('revision_no')->nullable();
+            $table->boolean('discontinued')->nullable();
             $table->timestamps();
         });
     }

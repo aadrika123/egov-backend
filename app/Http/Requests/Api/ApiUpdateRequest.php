@@ -26,8 +26,8 @@ class ApiUpdateRequest extends FormRequest
     public function rules()
     {
         return [
-            'EndPoint' => ['required'],
-            'description' => ['required']
+            'end_point' => ['required'],
+            'Description' => ['required']
         ];
     }
 }

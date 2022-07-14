@@ -26,7 +26,6 @@ use Exception;
  * Code Testing Date - 24-06-2022
  * Feedback- 
  * 
- *
  */
 
 
@@ -47,11 +46,15 @@ class EloquentAuthRepository implements AuthRepository
             $validator = $request->validated();
 
             $user = new User;
-            $user->UserName = $request->name;
-            $user->Mobile = $request->mobile;
+            $user->user_name = $request->Name;
+            $user->mobile = $request->Mobile;
             $user->email = $request->email;
-            $user->password = Hash::make($request->password);
-            $user->UlbID = $request->ulb;
+            $user->password = Hash::make($request->Password);
+            $user->user_type = $request->UserType;
+            $user->ulb_id = $request->Ulb;
+            $user->roll_id = $request->Role;
+            $user->description = $request->Description;
+            $user->workflow_participant = $request->WorkflowParticipant;
             $token = Str::random(80);                       //Generating Random Token for Initial
             $user->remember_token = $token;
             $user->save();
@@ -91,7 +94,7 @@ class EloquentAuthRepository implements AuthRepository
             }
 
             // check if suspended user
-            if ($emailInfo->Suspended == -1) {
+            if ($emailInfo->suspended == -1) {
                 $response = ['status' => 'Cant logged in!! You Have Been Suspended !'];
                 return response()->json($response, 401);
             }
@@ -102,7 +105,7 @@ class EloquentAuthRepository implements AuthRepository
             if ($emailInfo && $user = Redis::get('user:' . $emailInfo->id)) {
                 $info = json_decode($user);
                 // AUTHENTICATING PASSWORD IN HASH
-                if (Hash::check($request->password, $info->password)) {
+                if (Hash::check($request->Password, $info->password)) {
                     $token = $emailInfo->createToken('my-app-token')->plainTextToken;
                     $emailInfo->remember_token = $token;
                     $emailInfo->save();
@@ -112,7 +115,7 @@ class EloquentAuthRepository implements AuthRepository
                         json_encode([
                             'id' => $emailInfo->id,
                             'email' => $request->email,
-                            'password' => Hash::make($request->password),
+                            'password' => Hash::make($request->Password),
                             'remember_token' => $token,
                             'created_at' => $emailInfo->created_at,
                             'updated_at' => $emailInfo->updated_at
@@ -136,7 +139,7 @@ class EloquentAuthRepository implements AuthRepository
             // Authentication Using Sql Database
             if ($emailInfo) {
                 // Authenticating Password
-                if (Hash::check($request->password, $emailInfo->password)) {
+                if (Hash::check($request->Password, $emailInfo->password)) {
                     $token = $emailInfo->createToken('my-app-token')->plainTextToken;
                     $emailInfo->remember_token = $token;
                     $emailInfo->save();
@@ -147,7 +150,7 @@ class EloquentAuthRepository implements AuthRepository
                         json_encode([
                             'id' => $emailInfo->id,
                             'email' => $request->email,
-                            'password' => Hash::make($request->password),
+                            'password' => Hash::make($request->Password),
                             'remember_token' => $token,
                             'created_at' => $emailInfo->created_at,
                             'updated_at' => $emailInfo->updated_at
@@ -217,7 +220,7 @@ class EloquentAuthRepository implements AuthRepository
 
             $id = auth()->user()->id;
             $user = User::find($id);
-            $user->password = Hash::make($request->password);
+            $user->password = Hash::make($request->Password);
             $user->save();
 
             Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
