@@ -17,7 +17,7 @@ class CreateWorkflowsTable extends Migration
             $table->id();
             $table->bigInteger('module_id')->nullable();
             $table->mediumText('workflow_name')->nullable();
-            $table->boolean('deleted')->nullable();
+            $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
         });
     }

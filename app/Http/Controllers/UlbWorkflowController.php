@@ -38,7 +38,7 @@ class UlbWorkflowController extends Controller
      */
     public function create()
     {
-        //
+        return $this->EloquentUlbWorkflow->create();
     }
 
     /**

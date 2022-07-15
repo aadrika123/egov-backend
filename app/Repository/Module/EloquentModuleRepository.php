@@ -52,7 +52,7 @@ class EloquentModuleRepository implements ModuleRepository
      */
     public function create()
     {
-        $data = ModuleMaster::all();
+        $data = ModuleMaster::orderByDesc('id')->get();
         return $data;
     }
 

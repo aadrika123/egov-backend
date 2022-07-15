@@ -29,14 +29,12 @@ trait Workflow
      */
     public function savingWorkflowCandidates($wc, $request)
     {
-        $wc->WorkflowID = $request->workflowID;
-        $wc->EmployeeID = $request->employeeID;
-        $wc->JobDescription = $request->jobDescription;
-        $wc->CreatedBy = auth()->user()->id;
-        $wc->ForwardID = $request->forwardID;
-        $wc->BackwardID = $request->backwardID;
-        $wc->FullMovement = $request->fullMovement;
-        $wc->IsAdmin = $request->isAdmin;
+        $wc->ulb_workflow_id = $request->ulb_workflow_id;
+        $wc->forward_id = $request->ForwardID;
+        $wc->backward_id = $request->BackwardID;
+        $wc->full_movement = $request->FullMovement;
+        $wc->is_admin = $request->IsAdmin;
+        $wc->user_id = auth()->user()->id;
         $wc->save();
         return response()->json('Successfully Saved the Workflow Candidates', 200);
     }

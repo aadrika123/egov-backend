@@ -19,7 +19,7 @@ class CreateUlbMastersTable extends Migration
             $table->mediumText('ulb_type')->nullable();
             $table->bigInteger('city_id')->nullable();
             $table->mediumText('remarks')->nullable();
-            $table->boolean('deleted')->nullable();
+            $table->timestamp('deleted_at')->nullable();
             $table->date('incorporation_date')->nullable();
             $table->timestamps();
         });

@@ -103,6 +103,8 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
         Route::post('save-ulb', 'store');
         Route::put('edit-ulb/{id}', 'edit');
         Route::get('get-ulb/{id}', 'view');
+        Route::get('get-all-ulb', 'getAllUlb');
+        Route::delete('delete-ulb/{id}', 'deleteUlb');
     });
 
     /**
@@ -115,10 +117,13 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
         Route::post('add-workflow', 'storeWorkflow');
         Route::get('view-workflow/{id}', 'viewWorkflow');
         Route::put('edit-workflow/{id}', 'updateWorkflow');
+        Route::delete('delete-workflow/{id}', 'deleteWorkflow');
+        Route::get('all-workflows', 'getAllWorkflows');
 
         Route::post('workflow-candidate', 'storeWorkflowCandidate');
         Route::get('view-workflow-candidates/{id}', 'viewWorkflowCandidates');
         Route::put('edit-workflow-candidates/{id}', 'editWorkflowCandidates');
+        Route::delete('delete-workflow-candidates/{id}', 'deleteWorkflowCandidates');
     });
 
     /**

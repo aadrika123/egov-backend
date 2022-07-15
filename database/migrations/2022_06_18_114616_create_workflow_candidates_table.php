@@ -20,8 +20,8 @@ class CreateWorkflowCandidatesTable extends Migration
             $table->integer('forward_id')->nullable();
             $table->integer('backward_id')->nullable();
             $table->boolean('full_movement')->nullable();  // If this field is true then one can forward everyone otherwise he can forward only 2 persons(forward and backward) 
-            $table->boolean('IsAdmin')->nullable();
-            $table->boolean('deleted')->nullable();
+            $table->boolean('is_admin')->nullable();
+            $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
         });
     }

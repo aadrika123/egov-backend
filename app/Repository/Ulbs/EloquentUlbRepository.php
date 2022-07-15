@@ -120,4 +120,23 @@ class EloquentUlbRepository implements UlbRepository
             return response()->json(['Message' => 'Data not found'], 404);
         }
     }
+
+    /**
+     * GetAll Ulbs
+     */
+    public function getAllUlb()
+    {
+        $ulb = UlbMaster::orderByDesc('id')->get();
+        return $ulb;
+    }
+
+    /**
+     * Delete Ulbs
+     */
+    public function deleteUlb($id)
+    {
+        $ulb = UlbMaster::find($id);
+        $ulb->delete();
+        return response()->json('Successfully Deleted', 200);
+    }
 }

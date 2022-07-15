@@ -59,12 +59,34 @@ class EloquentWorkflowRepository implements WorkflowRepository
      */
     public function viewWorkflow($id)
     {
-        $workflow = Workflow::find($id);
+        $workflow = DB::select("
+                        select w.* ,
+                        m.module_name
+                        from workflows w
+                        left join module_masters m on m.id=w.module_id
+                        where w.id=$id
+        ");
         if ($workflow) {
             return response()->json($workflow, 200);
         } else {
             return response()->json('Workflow Not Available for this id', 404);
         }
+    }
+
+    /**
+     * Get all workflows
+     */
+    public function getAllWorkflows()
+    {
+        $data = DB::select("
+                        select w.* ,
+                        m.module_name
+                        from workflows w
+                        left join module_masters m on m.id=w.module_id
+                        where w.deleted_at is null
+                        order by w.id desc
+                        ");
+        return $data;
     }
 
     /**
@@ -102,6 +124,20 @@ class EloquentWorkflowRepository implements WorkflowRepository
     }
 
     /**
+     * Delete Workflows
+     */
+    public function deleteWorkflow($id)
+    {
+        $workflow = Workflow::find($id);
+        if ($workflow == null) {
+            return response()->json('Workflow has been already deleted', 400);
+        } else {
+            $workflow->delete();
+        }
+        return response()->json('Successfully Deleted', 200);
+    }
+
+    /**
      * Store Workflow Candidates
      * @param Illuminate\Http\Request
      * @param Illuminate\Http\Request $request
@@ -117,8 +153,7 @@ class EloquentWorkflowRepository implements WorkflowRepository
     {
         // Validating
         $request->validate([
-            'workflowID' => 'required|int',
-            'employeeID' => 'required|int'
+            'ulb_workflow_id' => 'required|int|unique:workflow_candidates'
         ]);
 
         try {
@@ -138,26 +173,8 @@ class EloquentWorkflowRepository implements WorkflowRepository
 
     public function viewWorkflowCandidates($id)
     {
-        $wc = DB::table('workflow_candidates')
-            ->leftJoin('users', 'workflow_candidates.CreatedBy', '=', 'users.id')
-            ->leftJoin('workflows', 'workflow_candidates.WorkflowID', '=', 'workflows.id')
-            ->select(
-                'workflow_candidates.id',
-                'workflows.WorkflowName',
-                'workflow_candidates.JobDescription',
-                'workflow_candidates.ForwardID',
-                'workflow_candidates.BackwardID',
-                'workflow_candidates.FullMovement',
-                'workflow_candidates.IsAdmin',
-                'users.UserName as CreatedBy'
-            )
-            ->first();
-
-        if ($wc) {
-            return response()->json($wc, 200);
-        } else {
-            return response()->json('Data not Found', 404);
-        }
+        $wc = WorkflowCandidate::find($id);
+        return $wc;
     }
 
     /**
@@ -177,16 +194,23 @@ class EloquentWorkflowRepository implements WorkflowRepository
     {
         // Validating
         $request->validate([
-            'workflowID' => 'required|int',
-            'employeeID' => 'required|int'
+            'ulb_workflow_id' => 'required|int'
         ]);
 
         try {
             $wc = WorkflowCandidate::find($id);
-            if ($wc) {
+            $stmt = $wc->ulb_worflow_id == $request->ulb_workflow_id;
+            if ($stmt) {
                 return $this->savingWorkflowCandidates($wc, $request);          // Editing Using Trait
-            } else {
-                return response()->json(['Data Not Found for this id'], 400);
+            }
+            if (!$stmt) {
+                $check = WorkflowCandidate::where('ulb_workflow_id', $request->ulb_workflow_id)->first();
+                if ($check) {
+                    return response()->json('Ulb Workflow Id is already existing', 400);
+                }
+                if (!$check) {
+                    return $this->savingWorkflowCandidates($wc, $request);          // Editing Using Trait
+                }
             }
         } catch (Exception $e) {
             return response()->json($e, 400);

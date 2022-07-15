@@ -37,4 +37,16 @@ class UlbController extends Controller
     {
         return $this->EloquentUlb->view($id);
     }
+
+    // Get All Ulbs
+    public function getAllUlb()
+    {
+        return $this->EloquentUlb->getAllUlb();
+    }
+
+    // Delete Ulb
+    public function deleteUlb($id)
+    {
+        return $this->EloquentUlb->deleteUlb($id);
+    }
 }

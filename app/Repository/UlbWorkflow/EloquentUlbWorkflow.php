@@ -7,6 +7,7 @@ use App\Models\UlbWorkflowMaster;
 use Illuminate\Http\Request;
 use Exception;
 use App\Traits\UlbWorkflow as UlbWorkflowTrait;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Repository for Ulb Workflows Store, fetch, edit and destroy
@@ -27,16 +28,40 @@ class EloquentUlbWorkflow implements UlbWorkflow
     public function store(Request $request)
     {
         $request->validate([
-            'workflow_id' => "required|int|unique:ulb_workflow_masters"
+            'UlbID' => 'required',
+            'workflow_id' => "required|int"
         ]);
 
         try {
             $ulb_workflow = new UlbWorkflowMaster;
-            $this->saving($ulb_workflow, $request);
-            return response()->json('Successfully Saved the Ulb Workflow', 200);
+            $stmt = $this->checkExisting($request);    // Checking if the ulbID already existing for the workflowid or not
+            if ($stmt) {
+                return response()->json('Workflow is already existing to this Ulb ID', 400);
+            } else {
+                $this->saving($ulb_workflow, $request);
+                return response()->json('Successfully Saved the Ulb Workflow', 200);
+            }
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
+    }
+
+    /**
+     * 
+     */
+    public function create()
+    {
+        $data = DB::select("
+                select  uwm.*,
+                        um.ulb_name,
+                        w.workflow_name
+                        from ulb_workflow_masters uwm
+                        left join ulb_masters um on um.id=uwm.ulb_id
+                        left join workflows w on w.id=uwm.workflow_id
+                        where uwm.deleted_at is null
+                        order by uwm.id desc
+                ");
+        return $data;
     }
 
     /**
@@ -50,6 +75,7 @@ class EloquentUlbWorkflow implements UlbWorkflow
     public function update(Request $request, $id)
     {
         $request->validate([
+            'UlbID' => 'required',
             'workflow_id' => 'required|int'
         ]);
 
@@ -58,15 +84,13 @@ class EloquentUlbWorkflow implements UlbWorkflow
             $stmt = $ulb_workflow->workflow_id == $request->workflow_id;
             if ($stmt) {
                 $this->saving($ulb_workflow, $request);
-                return response()->json('Successfully Updated', 200);
+                return response()->json('Successfully Updated the Ulb Workflow', 200);
             }
             if (!$stmt) {
-                $check_workflow = UlbWorkflowMaster::where('workflow_id', '=', $request->workflow_id)
-                    ->get();
+                $check_workflow = $this->checkExisting($request);      // Checking if the ulb_workflow already existing or not
                 if ($check_workflow) {
-                    return response()->json('UlbWorkflow already Existing', 400);
-                }
-                if (!$check_workflow) {
+                    return response()->json('Workflow already Existing for this Ulb', 400);
+                } else {
                     $this->saving($ulb_workflow, $request);
                     return response()->json('Successfully Updated', 200);
                 }
@@ -98,7 +122,15 @@ class EloquentUlbWorkflow implements UlbWorkflow
      */
     public function show($id)
     {
-        $data = UlbWorkflowMaster::find($id);
+        $data = DB::select("
+        select  uwm.*,
+                um.ulb_name,
+                w.workflow_name
+                from ulb_workflow_masters uwm
+                left join ulb_masters um on um.id=uwm.ulb_id
+                left join workflows w on w.id=uwm.workflow_id
+            where uwm.id=$id
+        ");
         if ($data) {
             return $data;
         } else {
