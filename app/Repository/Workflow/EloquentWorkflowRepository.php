@@ -133,8 +133,8 @@ class EloquentWorkflowRepository implements WorkflowRepository
             return response()->json('Workflow has been already deleted', 400);
         } else {
             $workflow->delete();
+            return response()->json('Successfully Deleted', 200);
         }
-        return response()->json('Successfully Deleted', 200);
     }
 
     /**
@@ -144,8 +144,9 @@ class EloquentWorkflowRepository implements WorkflowRepository
      * -----------------------------------------------------------------------------------------
      * Business Logic
      * -----------------------------------------------------------------------------------------
-     * Validate WorkflowID and EmployeeID
+     * Validating Each WorkflowID has distinct UserID
      * Store
+     * Trait Used-App\Traits\Workflow\Workflow
      * @return response 
      */
 
@@ -153,13 +154,21 @@ class EloquentWorkflowRepository implements WorkflowRepository
     {
         // Validating
         $request->validate([
-            'ulb_workflow_id' => 'required|int|unique:workflow_candidates'
+            'UlbWorkflowID' => 'required|int',
+            'UserID' => 'required|int'
         ]);
 
         try {
-            // Storing
-            $wc = new WorkflowCandidate;
-            return $this->savingWorkflowCandidates($wc, $request);          // Editing Using Trait
+            // Checking duplication
+            $record = $this->checkExisting($request);
+            if ($record) {
+                return response()->json('User already existing for this workflow', 400);
+            }
+            if (!$record) {
+                // Storing
+                $wc = new WorkflowCandidate;
+                return $this->savingWorkflowCandidates($wc, $request);           // Editing Using Trait
+            }
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -173,7 +182,55 @@ class EloquentWorkflowRepository implements WorkflowRepository
 
     public function viewWorkflowCandidates($id)
     {
-        $wc = WorkflowCandidate::find($id);
+        $wc = DB::select("select wc.id,
+                            wc.ulb_workflow_id,
+                            w.workflow_name,
+                            wc.user_id,
+                            u.user_name as user_name,
+                            wc.forward_id,
+                            f.user_name as forward_user,
+                            wc.backward_id,
+                            b.user_name as backward_user,
+                            wc.full_movement,
+                            wc.is_admin
+                        from workflow_candidates wc
+                        left join ulb_workflow_masters uw on uw.id=wc.ulb_workflow_id
+                        left join workflows w on w.id=uw.workflow_id
+                        left join users u on u.id=wc.user_id
+                        left join users f on f.id=wc.forward_id
+                        left join users b on b.id=wc.backward_id
+                        where wc.id=$id");
+        if ($wc) {
+            return $wc;
+        } else {
+            return response()->json('Data not Available for this Id', 404);
+        }
+    }
+
+    /**
+     * View All Workflow Candidates
+     * 
+     */
+    public function allWorkflowCandidates()
+    {
+        $wc = DB::select("select wc.id,
+                            wc.ulb_workflow_id,
+                            w.workflow_name,
+                            wc.user_id,
+                            u.user_name as user_name,
+                            wc.forward_id,
+                            f.user_name as forward_user,
+                            wc.backward_id,
+                            b.user_name as backward_user,
+                            wc.full_movement,
+                            wc.is_admin
+                        from workflow_candidates wc
+                        left join ulb_workflow_masters uw on uw.id=wc.ulb_workflow_id
+                        left join workflows w on w.id=uw.workflow_id
+                        left join users u on u.id=wc.user_id
+                        left join users f on f.id=wc.forward_id
+                        left join users b on b.id=wc.backward_id
+                        order by wc.id desc");
         return $wc;
     }
 
@@ -194,23 +251,45 @@ class EloquentWorkflowRepository implements WorkflowRepository
     {
         // Validating
         $request->validate([
-            'ulb_workflow_id' => 'required|int'
+            'UlbWorkflowID' => 'required|int',
+            'UserID' => 'required|int'
         ]);
 
-        try {
-            $wc = WorkflowCandidate::find($id);
-            $stmt = $wc->ulb_worflow_id == $request->ulb_workflow_id;
+        $wc = WorkflowCandidate::find($id);
+        if ($wc) {
+            $stmt = $wc->ulb_workflow_id == $request->UlbWorkflowID && $wc->user_id == $request->UserID;
             if ($stmt) {
-                return $this->savingWorkflowCandidates($wc, $request);          // Editing Using Trait
+                return $this->savingWorkflowCandidates($wc, $request);              // Editing Using Trait
             }
             if (!$stmt) {
-                $check = WorkflowCandidate::where('ulb_workflow_id', $request->ulb_workflow_id)->first();
-                if ($check) {
-                    return response()->json('Ulb Workflow Id is already existing', 400);
+                // Checking duplication
+                $record = $this->checkExisting($request);
+                if ($record) {
+                    return response()->json('User already existing for this workflow', 400);
                 }
-                if (!$check) {
-                    return $this->savingWorkflowCandidates($wc, $request);          // Editing Using Trait
+                if (!$record) {
+                    // Updating
+                    return $this->savingWorkflowCandidates($wc, $request);            // Editing Using Trait
                 }
+            }
+        }
+        if (!$wc) {
+            return response()->json('No data for this Id', 404);
+        }
+    }
+
+    /**
+     * Deleting Workflow Candidates
+     */
+    public function deleteWorkflowCandidates($id)
+    {
+        try {
+            $wc = WorkflowCandidate::find($id);
+            if ($wc == null) {
+                return response()->json('Workflow Candidate already Deleted', 400);
+            } else {
+                $wc->delete();
+                return response()->json('Successfully Deleted', 200);
             }
         } catch (Exception $e) {
             return response()->json($e, 400);

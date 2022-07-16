@@ -6,6 +6,7 @@ use App\Http\Requests\Auth\AuthUserRequest;
 use App\Http\Requests\Auth\LoginUserRequest;
 use App\Http\Requests\Auth\ChangePassRequest;
 use App\Repository\Auth\EloquentAuthRepository;
+use Illuminate\Http\Request;
 
 /**
  * Controller for user data login, logout, changing password
@@ -34,6 +35,12 @@ class UserController extends Controller
         return $this->EloquentAuth->store($request);
     }
 
+    // Update User Details
+    public function update(Request $request, $id)
+    {
+        return $this->EloquentAuth->update($request, $id);
+    }
+
     // User Authentication
     public function loginAuth(LoginUserRequest $request)
     {
@@ -56,5 +63,17 @@ class UserController extends Controller
     public function testing()
     {
         return $this->EloquentAuth->testing();
+    }
+
+    // Get All Users
+    public function getAllUsers()
+    {
+        return $this->EloquentAuth->getAllUsers();
+    }
+
+    // Get User by Ids
+    public function getUser($id)
+    {
+        return $this->EloquentAuth->getUser($id);
     }
 }

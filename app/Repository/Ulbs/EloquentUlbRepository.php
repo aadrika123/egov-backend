@@ -79,7 +79,6 @@ class EloquentUlbRepository implements UlbRepository
                 $ulb->city_id = $request->CityID;
                 $ulb->remarks = $request->Remarks;
                 $ulb->incorporation_date = $request->IncorporationDate;
-                $ulb->deleted = $request->Deleted;
                 $ulb->save();
                 return response()->json(['Status' => 'Successfully Saved'], 200);
             }
@@ -95,7 +94,6 @@ class EloquentUlbRepository implements UlbRepository
                     $ulb->city_id = $request->CityID;
                     $ulb->remarks = $request->Remarks;
                     $ulb->incorporation_date = $request->IncorporationDate;
-                    $ulb->deleted = $request->Deleted;
                     $ulb->save();
                     return response()->json(['Status' => 'Successfully Saved'], 200);
                 }

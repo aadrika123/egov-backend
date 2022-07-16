@@ -47,7 +47,7 @@ class EloquentUlbWorkflow implements UlbWorkflow
     }
 
     /**
-     * 
+     * Show all Ulb Workflows
      */
     public function create()
     {
@@ -136,5 +136,29 @@ class EloquentUlbWorkflow implements UlbWorkflow
         } else {
             return response()->json('Data not found', 400);
         }
+    }
+
+    /**
+     * Display the Specific record of Ulb Workflows by their Ulbs
+     * 
+     * @param int $ulb_id
+     * @return \Illuminate\Http\Response
+     */
+    public function getUlbWorkflowByUlbID($ulb_id)
+    {
+        $workflow = DB::select("
+                                select u.id,
+                                um.ulb_name,
+                                u.workflow_id,
+                                w.workflow_name,
+                                u.initiator,
+                                u.finisher,
+                                u.remarks
+                        from ulb_workflow_masters u
+                        left join workflows w on w.id=u.workflow_id
+                        left join ulb_masters um on um.id=u.ulb_id
+                        where u.ulb_id=$ulb_id and u.deleted_at is null
+                    ");
+        return response()->json($workflow, 200);
     }
 }

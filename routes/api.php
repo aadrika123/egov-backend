@@ -57,10 +57,17 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
      * Modified On-27-06-2022 
      */
     Route::controller(UserController::class)->group(function () {
-
         Route::get('test', 'testing');
         Route::post('logout', 'logOut');
         Route::post('change-password', 'changePass');
+
+        // Route are authorized for super admin only using Middleware 
+        Route::group(['middleware' => ['can:isSuperAdmin']], function () {
+            Route::put('edit-user/{id}', 'update');
+            Route::delete('delete-user', 'deleteUser');
+            Route::get('get-user/{id}', 'getUser');
+            Route::get('get-all-users', 'getAllUsers');
+        });
     });
 
     /**
@@ -122,6 +129,7 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
 
         Route::post('workflow-candidate', 'storeWorkflowCandidate');
         Route::get('view-workflow-candidates/{id}', 'viewWorkflowCandidates');
+        Route::get('all-workflow-candidates', 'allWorkflowCandidates');
         Route::put('edit-workflow-candidates/{id}', 'editWorkflowCandidates');
         Route::delete('delete-workflow-candidates/{id}', 'deleteWorkflowCandidates');
     });
@@ -141,4 +149,7 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
      * Modified By-
      */
     Route::resource('crud/ulb-workflow-masters', UlbWorkflowController::class);
+
+    // Get Ulb Workflow details by Ulb Ids
+    Route::get('admin/workflows/{ulb_id}', [UlbWorkflowController::class, 'getUlbWorkflowByUlbID']);
 });

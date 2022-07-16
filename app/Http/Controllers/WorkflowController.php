@@ -69,6 +69,12 @@ class WorkflowController extends Controller
         return $this->eloquentWorkflow->viewWorkflowCandidates($id);
     }
 
+    // All Workflow Candidates
+    public function allWorkflowCandidates()
+    {
+        return $this->eloquentWorkflow->allWorkflowCandidates();
+    }
+
     // Edit Workflow Candidates
     public function editWorkflowCandidates(Request $request, $id)
     {
@@ -78,5 +84,6 @@ class WorkflowController extends Controller
     // Delete Workflow Candidates
     public function deleteWorkflowCandidates($id)
     {
+        return $this->eloquentWorkflow->deleteWorkflowCandidates($id);
     }
 }

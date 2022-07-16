@@ -10,7 +10,10 @@ use App\Repository\Auth\AuthRepository;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Http\Request;
 use Exception;
+use App\Traits\Auth;
+use Illuminate\Support\Facades\DB;
 
 /*
  * Parent Controller:-App\Http\Controller\UserController 
@@ -31,6 +34,7 @@ use Exception;
 
 class EloquentAuthRepository implements AuthRepository
 {
+    use Auth;
     /**
      * -----------------------------------------------
      * Parent Controller- function Store()
@@ -43,24 +47,66 @@ class EloquentAuthRepository implements AuthRepository
     {
         try {
             // Validation---@source-App\Http\Requests\AuthUserRequest
-            $validator = $request->validated();
-
             $user = new User;
-            $user->user_name = $request->Name;
-            $user->mobile = $request->Mobile;
-            $user->email = $request->email;
-            $user->password = Hash::make($request->Password);
-            $user->user_type = $request->UserType;
-            $user->ulb_id = $request->Ulb;
-            $user->roll_id = $request->Role;
-            $user->description = $request->Description;
-            $user->workflow_participant = $request->WorkflowParticipant;
-            $token = Str::random(80);                       //Generating Random Token for Initial
-            $user->remember_token = $token;
+            $this->saving($user, $request);                     // Storing data using Auth trait
             $user->save();
             return response()->json(["Registered Successfully", "Please Login to Continue"], 200);
         } catch (Exception $e) {
             return $e;
+        }
+    }
+
+    /**
+     * Editing Users
+     * @param Illuminate\Http\Request
+     * @param Illuminate\Http\Request $request
+     * @param user_id $id
+     * --------------------------------------------------------------------------------------------
+     * validate
+     * Checking if the request email is already existing of not
+     * update using AuthTrait
+     */
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'Name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'Password' => [
+                'required',
+                'min:6',
+                'max:255',
+                'regex:/[a-z]/',      // must contain at least one lowercase letter
+                'regex:/[A-Z]/',      // must contain at least one uppercase letter
+                'regex:/[0-9]/',      // must contain at least one digit
+                'regex:/[@$!%*#?&]/'  // must contain a special character
+            ]
+        ]);
+        try {
+            $user = User::find($id);
+            $stmt = $user->email == $request->email;
+            if ($stmt) {
+                $this->saving($user, $request);
+                $this->savingExtras($user, $request);
+                $user->save();
+                Redis::del('user:' . $id);                                  //Deleting Key from Redis Database
+                return response()->json('User Record Successfully Updated', 200);
+            }
+            if (!$stmt) {
+                $check = User::where('email', '=', $request->email)->first();
+                if ($check) {
+                    return response()->json('Email is already existing', 400);
+                }
+                if (!$check) {
+                    $this->saving($user, $request);
+                    $this->savingExtras($user, $request);
+                    $user->save();
+                    Redis::del('user:' . $id);                               //Deleting Key from Redis Database
+                    return response()->json('User Record Successfully Updated', 200);
+                }
+            }
+        } catch (Exception $e) {
+            return response()->json($e, 400);
         }
     }
 
@@ -228,6 +274,67 @@ class EloquentAuthRepository implements AuthRepository
             return response()->json(['Status' => 'True', 'Message' => 'Successfully Changed the Password'], 200);
         } catch (Exception $e) {
             return response()->json($e, 400);
+        }
+    }
+
+    /**
+     * Get All Users
+     */
+    public function getAllUsers()
+    {
+        $users = DB::select("select u.id,
+                        u.user_name,
+                        u.mobile,
+                        u.email,
+                        u.user_type,
+                        u.roll_id,
+                        r.role_name,
+                        u.ulb_id,
+                        um.ulb_name,
+                        u.suspended,
+                        u.super_user,
+                        u.description,
+                        u.workflow_participant,
+                        u.created_at,
+                        u.updated_at
+                from users u
+                left join role_masters r on r.id=u.roll_id
+                left join ulb_masters um on um.id=u.ulb_id
+                order by u.id desc
+                        ");
+        return $users;
+    }
+
+    /**
+     * Get User by IDs
+     * ----------------------------------------------------------------------------------------
+     * @param user_id $id
+     */
+    public function getUser($id)
+    {
+        $user = DB::select("select u.id,
+                                u.user_name,
+                                u.mobile,
+                                u.email,
+                                u.user_type,
+                                u.roll_id,
+                                r.role_name,
+                                u.ulb_id,
+                                um.ulb_name,
+                                u.suspended,
+                                u.super_user,
+                                u.description,
+                                u.workflow_participant,
+                                u.created_at,
+                                u.updated_at
+                            from users u
+                            left join role_masters r on r.id=u.roll_id
+                            left join ulb_masters um on um.id=u.ulb_id
+                            where u.id=$id");
+        if ($user) {
+            return $user;
+        } else {
+            return response()->json('User Not Available for this Id', 404);
         }
     }
 

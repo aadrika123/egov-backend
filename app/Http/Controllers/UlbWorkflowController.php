@@ -96,4 +96,13 @@ class UlbWorkflowController extends Controller
     {
         return $this->EloquentUlbWorkflow->destroy($id);
     }
+
+    /**
+     * Display the Specific record of Ulb Workflows by their Ulbs
+     * 
+     */
+    public function getUlbWorkflowByUlbID($ulb_id)
+    {
+        return $this->EloquentUlbWorkflow->getUlbWorkflowByUlbID($ulb_id);
+    }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Traits\Workflow;
 
+use App\Models\WorkflowCandidate;
+
 
 /**
  * Trait for Workflows
@@ -25,16 +27,26 @@ trait Workflow
     }
 
     /**
+     * Check workflow Candidate already existing
+     */
+    public function checkExisting($request)
+    {
+        return  WorkflowCandidate::where('ulb_workflow_id', '=', $request->UlbWorkflowID)
+            ->where('user_id', '=', $request->UserID)
+            ->first();
+    }
+
+    /**
      * Function for Saving and Editing Workflow Candidates
      */
     public function savingWorkflowCandidates($wc, $request)
     {
-        $wc->ulb_workflow_id = $request->ulb_workflow_id;
+        $wc->ulb_workflow_id = $request->UlbWorkflowID;
         $wc->forward_id = $request->ForwardID;
         $wc->backward_id = $request->BackwardID;
         $wc->full_movement = $request->FullMovement;
         $wc->is_admin = $request->IsAdmin;
-        $wc->user_id = auth()->user()->id;
+        $wc->user_id = $request->UserID;
         $wc->save();
         return response()->json('Successfully Saved the Workflow Candidates', 200);
     }

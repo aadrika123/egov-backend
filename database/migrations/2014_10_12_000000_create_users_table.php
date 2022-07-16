@@ -19,7 +19,7 @@ class CreateUsersTable extends Migration
             $table->mediumText('mobile')->nullable();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->integer('user_type')->nullable();
+            $table->mediumText('user_type')->nullable();
             $table->integer('roll_id')->nullable();
             $table->integer('ulb_id')->nullable();
             $table->string('password');
