@@ -7,7 +7,6 @@ use App\Http\Requests\Auth\LoginUserRequest;
 use App\Http\Requests\Auth\ChangePassRequest;
 use App\Models\User;
 use App\Repository\Auth\AuthRepository;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Http\Request;
@@ -156,17 +155,7 @@ class EloquentAuthRepository implements AuthRepository
                     $emailInfo->remember_token = $token;
                     $emailInfo->save();
 
-                    $redis->set(
-                        'user:' . $emailInfo->id,
-                        json_encode([
-                            'id' => $emailInfo->id,
-                            'email' => $request->email,
-                            'password' => Hash::make($request->Password),
-                            'remember_token' => $token,
-                            'created_at' => $emailInfo->created_at,
-                            'updated_at' => $emailInfo->updated_at
-                        ])
-                    );
+                    $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);         // EXPIRE KEY AFTER 5 HOURS
                     $response = ['status' => 'You Have Logged In!', 'token' => $token];
@@ -191,17 +180,9 @@ class EloquentAuthRepository implements AuthRepository
                     $emailInfo->save();
 
                     $redis = Redis::connection();                   // Redis Connection
-                    $redis->set(
-                        'user:' . $emailInfo->id,
-                        json_encode([
-                            'id' => $emailInfo->id,
-                            'email' => $request->email,
-                            'password' => Hash::make($request->Password),
-                            'remember_token' => $token,
-                            'created_at' => $emailInfo->created_at,
-                            'updated_at' => $emailInfo->updated_at
-                        ])
-                    );
+
+                    $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
+
                     Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
 
                     $response = ['status' => true, 'token' => $token];

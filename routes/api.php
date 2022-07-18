@@ -8,6 +8,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UlbController;
 use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\WorkflowController;
+use App\Http\Controllers\WorkflowTrackController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,7 +35,6 @@ use App\Http\Controllers\WorkflowController;
 // Route Used for Login and Register the User
 Route::controller(UserController::class)->group(function () {
     Route::post('login', 'loginAuth');
-    Route::post('register', 'store');
 });
 
 /**
@@ -57,6 +57,7 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
      * Modified On-27-06-2022 
      */
     Route::controller(UserController::class)->group(function () {
+        Route::post('register', 'store');
         Route::get('test', 'testing');
         Route::post('logout', 'logOut');
         Route::post('change-password', 'changePass');
@@ -132,6 +133,7 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
         Route::get('all-workflow-candidates', 'allWorkflowCandidates');
         Route::put('edit-workflow-candidates/{id}', 'editWorkflowCandidates');
         Route::delete('delete-workflow-candidates/{id}', 'deleteWorkflowCandidates');
+        Route::get('gen/workflow/workflow-candidates/{ulbworkflowid}', 'getWorkflowCandidatesByUlbWorkflowID');
     });
 
     /**
@@ -152,4 +154,10 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
 
     // Get Ulb Workflow details by Ulb Ids
     Route::get('admin/workflows/{ulb_id}', [UlbWorkflowController::class, 'getUlbWorkflowByUlbID']);
+
+    // Workflow Track
+    Route::controller(WorkflowTrackController::class)->group(function () {
+        Route::post('save-workflow-track', 'store');
+        Route::get('get-workflow-track/{id}', 'getWorkflowTrackByID');
+    });
 });

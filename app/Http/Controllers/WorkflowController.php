@@ -86,4 +86,12 @@ class WorkflowController extends Controller
     {
         return $this->eloquentWorkflow->deleteWorkflowCandidates($id);
     }
+
+    /**
+     * Get Workflow candidates by UlbWorkflow ids
+     */
+    public function getWorkflowCandidatesByUlbWorkflowID($ulbworkflowid)
+    {
+        return $this->eloquentWorkflow->getWorkflowCandidatesByUlbWorkflowID($ulbworkflowid);
+    }
 }

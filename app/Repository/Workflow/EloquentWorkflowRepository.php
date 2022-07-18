@@ -295,4 +295,37 @@ class EloquentWorkflowRepository implements WorkflowRepository
             return response()->json($e, 400);
         }
     }
+
+    /**
+     * Get Workflow Candidate by Ulb workflow Ids
+     * @param UlbWorkflowId $ulbworkflowid
+     */
+    public function getWorkflowCandidatesByUlbWorkflowID($ulbworkflowid)
+    {
+        $wc = DB::select("select wc.id,
+                            wc.ulb_workflow_id,
+                            w.workflow_name,
+                            wc.user_id,
+                            u.user_name as user_name,
+                            wc.forward_id,
+                            f.user_name as forward_user,
+                            wc.backward_id,
+                            b.user_name as backward_user,
+                            wc.full_movement,
+                            wc.is_admin
+                        from workflow_candidates wc
+                        left join ulb_workflow_masters uw on uw.id=wc.ulb_workflow_id
+                        left join workflows w on w.id=uw.workflow_id
+                        left join users u on u.id=wc.user_id
+                        left join users f on f.id=wc.forward_id
+                        left join users b on b.id=wc.backward_id
+                        where wc.ulb_workflow_id=$ulbworkflowid
+                        order by wc.id desc
+                        ");
+        if ($wc) {
+            return $wc;
+        } else {
+            return response()->json('Data not Available for this Id', 404);
+        }
+    }
 }

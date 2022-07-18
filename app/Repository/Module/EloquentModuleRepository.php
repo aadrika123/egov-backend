@@ -41,7 +41,7 @@ class EloquentModuleRepository implements ModuleRepository
     {
         try {
             $data = ModuleMaster::find($id);
-            return response()->json($data, 400);
+            return response()->json($data, 200);
         } catch (Exception $e) {
             return response()->json($e, 400);
         }

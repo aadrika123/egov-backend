@@ -16,6 +16,9 @@ use Illuminate\Support\Str;
 
 trait Auth
 {
+    /**
+     * Saving User Credentials 
+     */
     public function saving($user, $request)
     {
         $user->user_name = $request->Name;
@@ -31,9 +34,34 @@ trait Auth
         $user->remember_token = $token;
     }
 
+    /**
+     * Saving Extra User Credentials
+     */
+
     public function savingExtras($user, $request)
     {
         $user->suspended = $request->Suspended;
         $user->super_user = $request->SuperUser;
+    }
+
+    /**
+     * Save User Credentials On Redis 
+     */
+    public function redisStore($redis, $emailInfo, $request, $token)
+    {
+        $redis->set(
+            'user:' . $emailInfo->id,
+            json_encode([
+                'id' => $emailInfo->id,
+                'email' => $request->email,
+                'password' => Hash::make($request->Password),
+                'remember_token' => $token,
+                'user_type' => $emailInfo->user_type,
+                'roll_id' => $emailInfo->roll_id,
+                'ulb_id' => $emailInfo->ulb_id,
+                'created_at' => $emailInfo->created_at,
+                'updated_at' => $emailInfo->updated_at
+            ])
+        );
     }
 }
