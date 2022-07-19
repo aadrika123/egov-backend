@@ -23,8 +23,8 @@ class CreateUsersTable extends Migration
             $table->integer('roll_id')->nullable();
             $table->integer('ulb_id')->nullable();
             $table->string('password');
-            $table->smallInteger('suspended')->nullable();
-            $table->smallInteger('super_user')->nullable();
+            $table->boolean('suspended')->nullable();
+            $table->boolean('super_user')->nullable();
             $table->mediumText('description')->nullable();
             $table->mediumText('workflow_participant')->nullable();
             $table->rememberToken();

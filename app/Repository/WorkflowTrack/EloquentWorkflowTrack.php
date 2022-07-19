@@ -21,11 +21,7 @@ class EloquentWorkflowTrack implements WorkflowTrack
     public function store(Request $request)
     {
         $request->validate([
-            'CitizenID' => 'required|int',
-            'ModuleID' => 'required|int',
-            'RefTableDotID' => 'required',
-            'RefTableIDValue' => 'required',
-            'Message' => 'required'
+            'Message' => 'required',
         ]);
         try {
             $track = new Track;

@@ -30,7 +30,6 @@ use Illuminate\Support\Facades\DB;
  * 
  */
 
-
 class EloquentAuthRepository implements AuthRepository
 {
     use Auth;
@@ -139,7 +138,7 @@ class EloquentAuthRepository implements AuthRepository
             }
 
             // check if suspended user
-            if ($emailInfo->suspended == -1) {
+            if ($emailInfo->suspended == true) {
                 $response = ['status' => 'Cant logged in!! You Have Been Suspended !'];
                 return response()->json($response, 401);
             }
