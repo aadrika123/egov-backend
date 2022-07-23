@@ -34,7 +34,7 @@ use App\Http\Controllers\WorkflowTrackController;
 
 // Route Used for Login and Register the User
 Route::controller(UserController::class)->group(function () {
-    Route::post('login', 'loginAuth');
+    Route::post('login', 'loginAuth')->middleware('request_logger');
 });
 
 /**
