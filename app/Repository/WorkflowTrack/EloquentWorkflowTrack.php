@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Repository for Workflow Track messages tracking
  */
+
 class EloquentWorkflowTrack implements WorkflowTrack
 {
     /**
@@ -43,7 +44,8 @@ class EloquentWorkflowTrack implements WorkflowTrack
     /**
      * Get Workflow Track by its Workflow Id
      * @param WorkflowTrackId $id
-     *  */
+     * @return response
+     */
     public function getWorkflowTrackByID($id)
     {
         $track = DB::select("select t.id,

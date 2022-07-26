@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateSelfAdvertisementsTable extends Migration
+class RejectSelfAdvertisements extends Migration
 {
     /**
      * Run the migrations.
@@ -13,7 +13,7 @@ class CreateSelfAdvertisementsTable extends Migration
      */
     public function up()
     {
-        Schema::create('self_advertisements', function (Blueprint $table) {
+        Schema::create('reject_self_advertisements', function (Blueprint $table) {
             $table->id();
             $table->string('renewal_id', 15)->nullable();
             $table->string('old_renewal_id', 15)->nullable();
@@ -93,6 +93,6 @@ class CreateSelfAdvertisementsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('self_advertisements');
+        //
     }
 }

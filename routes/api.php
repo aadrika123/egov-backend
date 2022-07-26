@@ -5,6 +5,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SelfAdvertisementController;
 use App\Http\Controllers\UlbController;
 use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\WorkflowController;
@@ -159,5 +160,21 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
     Route::controller(WorkflowTrackController::class)->group(function () {
         Route::post('save-workflow-track', 'store');
         Route::get('get-workflow-track/{id}', 'getWorkflowTrackByID');
+    });
+
+    // Advertisement Updates, Fetch data
+    Route::controller(SelfAdvertisementController::class)->group(function () {
+        Route::put('crud/update-selfadvertisement/{id}', 'updateSelfAdvertisement');       // Update Self Advertisement
+        Route::get('crud/get-selfadvertisement-by-id/{id}', 'getSelfAdvertisementByID');   // Get Self Advertisement By Id
+        Route::get('crud/get-all-selfadvertisements', 'getAllSelfAdvertisements');         // Get All Self Advertisement Datas
+    });
+});
+
+Route::group(['middleware' => ['cors', 'json.response', 'request_logger']], function () {
+    /**
+     * API's for Self Advertisement Crud Operations
+     */
+    Route::controller(SelfAdvertisementController::class)->group(function () {
+        Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');      // Save Self Advertisement
     });
 });

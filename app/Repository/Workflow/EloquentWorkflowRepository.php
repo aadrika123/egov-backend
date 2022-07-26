@@ -124,7 +124,9 @@ class EloquentWorkflowRepository implements WorkflowRepository
     }
 
     /**
-     * Delete Workflows
+     * Delete Workflows by workflowID
+     * @param workflowID $id
+     * @return response
      */
     public function deleteWorkflow($id)
     {
@@ -149,8 +151,6 @@ class EloquentWorkflowRepository implements WorkflowRepository
      * Trait Used-App\Traits\Workflow\Workflow
      * @return response 
      */
-
-    //  ********************************************************************************************
 
     public function storeWorkflowCandidate(Request $request)
     {
@@ -178,7 +178,8 @@ class EloquentWorkflowRepository implements WorkflowRepository
 
     /**
      * View Workflow Candidates details by Id
-     * @param mixed $id
+     * @param WorkflowCandidateID $id
+     * @return response
      * -----------------------------------------------------------------------------------------
      */
 
@@ -281,8 +282,11 @@ class EloquentWorkflowRepository implements WorkflowRepository
     }
 
     /**
-     * Deleting Workflow Candidates
+     * Deleting Workflow Candidates by workflow Candidate ID
+     * @param WorkflowCandidateID $id
+     * @return response
      */
+
     public function deleteWorkflowCandidates($id)
     {
         try {
@@ -301,7 +305,9 @@ class EloquentWorkflowRepository implements WorkflowRepository
     /**
      * Get Workflow Candidate by Ulb workflow Ids
      * @param UlbWorkflowId $ulbworkflowid
+     * @return response
      */
+
     public function getWorkflowCandidatesByUlbWorkflowID($ulbworkflowid)
     {
         $wc = DB::select("select wc.id,
