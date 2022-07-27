@@ -9,6 +9,7 @@ use Exception;
 use Illuminate\Http\Request;
 use App\Traits\SelfAdvertisement as SelfAdvertisementTrait;
 use App\Helpers\helper;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Created On-25-07-2022 
@@ -19,6 +20,7 @@ use App\Helpers\helper;
  * Code Tested By-
  * Code Tested On-
  */
+
 class EloquentSelfAdvertisement implements SelfAdvertisement
 {
     use SelfAdvertisementTrait;
@@ -27,16 +29,32 @@ class EloquentSelfAdvertisement implements SelfAdvertisement
      * Save Using App\Traits\SelfAdvertisement
      * @param SelfAdvertisementRequest $request
      * @return response
+     * ================================================================================
+     * Find Initiator and CurrentUser
+     * ================================================================================
+     * --#refStmt= Sql Query for Finding Workflows
+     * --Find #workflow[] = Workflows(Initiator,Approver)
+     * --#helper = Creating new Object for Generating New UniqueID --App\Helpers\helper.php
      */
 
     public function storeSelfAdvertisement(SelfAdvertisementRequest $request)
     {
         try {
             $self_advertisement = new TempSelfAdvertisement;
+
+            $refStmt = "SELECT
+                        u.initiator,
+                        u.finisher
+                FROM ulb_workflow_masters u
+                WHERE u.ulb_id=2 AND u.workflow_id=1";
+
+            $workflow = DB::select($refStmt);
             $helper = new helper;
-            $self_advertisement->renewal_id = $helper->getNewRenewalID('SF');
-            $this->storing($self_advertisement, $request);          // Save Using Trait
-            $self_advertisement->save();
+            $self_advertisement->unique_id = $helper->getNewUniqueID('SF');
+            $this->storing($self_advertisement, $request);                      // Save Using Trait
+            $self_advertisement->initiator = $workflow[0]->initiator;
+            $self_advertisement->current_user = $workflow[0]->initiator;
+            $self_advertisement->save();                                        // Save
             return response()->json('Successfully Saved', 200);
         } catch (Exception $e) {
             return response()->json($e, 400);

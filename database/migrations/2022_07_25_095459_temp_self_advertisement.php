@@ -15,8 +15,7 @@ class TempSelfAdvertisement extends Migration
     {
         Schema::create('temp_self_advertisements', function (Blueprint $table) {
             $table->id();
-            $table->string('renewal_id', 15)->nullable();
-            $table->string('old_renewal_id', 15)->nullable();
+            $table->string('unique_id', 15)->nullable();
             $table->mediumText('license_year')->nullable();
 
             $table->mediumText('applicant')->nullable();

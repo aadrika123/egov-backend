@@ -46,6 +46,8 @@ Route::controller(UserController::class)->group(function () {
 Route::controller(ApiMasterController::class)->group(function () {
     Route::post('save-api', 'store');
     Route::put('edit-api/{id}', 'update');
+    Route::get('get-api-by-id/{id}', 'getApiByID');
+    Route::get('get-all-apis', 'getAllApis');
     Route::post('search-api', 'search');
 });
 

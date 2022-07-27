@@ -41,6 +41,18 @@ class ApiMasterController extends Controller
         return $this->EloquentApi->update($request);
     }
 
+    // Get Api By ID
+    public function getApiByID($id)
+    {
+        return $this->EloquentApi->getApiByID($id);
+    }
+
+    // Get All Apis
+    public function getAllApis()
+    {
+        return $this->EloquentApi->getAllApis();
+    }
+
     // Search By EndPoint
     public function search(ApiSearchRequest $request)
     {

@@ -27,9 +27,9 @@ class SelfAdvertisement extends FormRequest
             'LicenseYear' => 'required',
             'Applicant' => 'required',
             'Father' => 'required',
-            'Email' => 'required',
+            'Email' => 'required|email',
             'Mobile' => 'required',
-            'AadharNo' => 'required',
+            'AadharNo' => 'required|int',
             'EntityName' => 'required',
             'EntityAddress' => 'required'
         ];
