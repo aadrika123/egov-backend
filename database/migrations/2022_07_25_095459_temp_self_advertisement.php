@@ -17,7 +17,6 @@ class TempSelfAdvertisement extends Migration
             $table->id();
             $table->string('unique_id', 15)->nullable();
             $table->mediumText('license_year')->nullable();
-
             $table->mediumText('applicant')->nullable();
             $table->mediumText('father')->nullable();
             $table->mediumText('email')->nullable();
@@ -79,7 +78,7 @@ class TempSelfAdvertisement extends Migration
             $table->dateTime('draft_date')->nullable();
             $table->integer('modified_by')->nullable();
             $table->mediumText('signature_path')->nullable();
-
+            $table->softDeletes();
             $table->timestamps();
         });
     }
@@ -91,6 +90,6 @@ class TempSelfAdvertisement extends Migration
      */
     public function down()
     {
-        //
+        Schema::dropIfExists('temp_self_advertisements');
     }
 }

@@ -169,12 +169,13 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
         Route::put('crud/update-selfadvertisement/{id}', 'updateSelfAdvertisement');       // Update Self Advertisement
         Route::get('crud/get-selfadvertisement-by-id/{id}', 'getSelfAdvertisementByID');   // Get Self Advertisement By Id
         Route::get('crud/get-all-selfadvertisements', 'getAllSelfAdvertisements');         // Get All Self Advertisement Datas
+        Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');       // Delete Self Advertisement By ID
     });
 });
 
 Route::group(['middleware' => ['cors', 'json.response', 'request_logger']], function () {
     /**
-     * API's for Self Advertisement Crud Operations
+     * API's for Self Advertisement Save
      */
     Route::controller(SelfAdvertisementController::class)->group(function () {
         Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');      // Save Self Advertisement

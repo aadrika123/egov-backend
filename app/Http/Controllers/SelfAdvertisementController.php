@@ -7,14 +7,13 @@ use App\Repository\SelfAdvertisement\EloquentSelfAdvertisement;
 use App\Http\Requests\SelfAdvertisement as SelfAdvertisementRequest;
 
 /**
- * Created On-25-07-2022 
- * Created By-Anshu Kumar
- * -----------------------------------------------------------------------------------------------
- * Created For-Self Advertisement all Modules Save, Edit, View etc.
- * -----------------------------------------------------------------------------------------------
- * Code Tested by-
- * Code Tested On-
- * 
+ *| Created On-25-07-2022 
+ *| Created By-Anshu Kumar
+ *| -----------------------------------------------------------------------------------------------
+ *| Created For-Self Advertisement all Modules Save, Edit, View etc.
+ *| -----------------------------------------------------------------------------------------------
+ *| Code Tested by-
+ *| Code Tested On-
  */
 
 class SelfAdvertisementController extends Controller
@@ -48,5 +47,11 @@ class SelfAdvertisementController extends Controller
     public function getAllSelfAdvertisements()
     {
         return $this->RepositorySelfAdvertisement->getAllSelfAdvertisements();
+    }
+
+    // Delete Self Advertisement By ID
+    public function deleteSelfAdvertisement($id)
+    {
+        return $this->RepositorySelfAdvertisement->deleteSelfAdvertisement($id);
     }
 }

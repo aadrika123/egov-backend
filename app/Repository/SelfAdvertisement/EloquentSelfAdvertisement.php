@@ -11,30 +11,32 @@ use App\Traits\SelfAdvertisement as SelfAdvertisementTrait;
 use App\Helpers\helper;
 use Illuminate\Support\Facades\DB;
 
+
 /**
- * Created On-25-07-2022 
- * Created By-Anshu Kumar
- * -----------------------------------------------------------------------------------------------
- * Created For- The Crud operations as well as more operations for Self Advertissements
- * -----------------------------------------------------------------------------------------------
- * Code Tested By-
- * Code Tested On-
+ *| Created On-25-07-2022 
+ *| Created By-Anshu Kumar
+ *| -----------------------------------------------------------------------------------------------
+ *| Created For- The Crud operations as well as more operations for Self Advertissements
+ *| -----------------------------------------------------------------------------------------------
+ *| Code Tested By-
+ *| Code Tested On-
  */
 
 class EloquentSelfAdvertisement implements SelfAdvertisement
 {
-    use SelfAdvertisementTrait;
+    use SelfAdvertisementTrait;                  // Trait Used
+
     /**
-     * Storing Self Advertisement applied by the users
-     * Save Using App\Traits\SelfAdvertisement
-     * @param SelfAdvertisementRequest $request
-     * @return response
-     * ================================================================================
-     * Find Initiator and CurrentUser
-     * ================================================================================
-     * --#refStmt= Sql Query for Finding Workflows
-     * --Find #workflow[] = Workflows(Initiator,Approver)
-     * --#helper = Creating new Object for Generating New UniqueID --App\Helpers\helper.php
+     *| @desc Storing Self Advertisement applied by the users
+     *| Save Using App\Traits\SelfAdvertisement
+     *| @param SelfAdvertisementRequest $request
+     *| @return response
+     *| ================================================================================
+     *| Find Initiator and CurrentUser
+     *| ================================================================================
+     *| --#refStmt= Sql Query for Finding Workflows
+     *| --Find #workflow[] = Workflows(Initiator,Approver)
+     *| --#helper = Creating new Object for Generating New UniqueID --App\Helpers\helper.php
      */
 
     public function storeSelfAdvertisement(SelfAdvertisementRequest $request)
@@ -43,10 +45,10 @@ class EloquentSelfAdvertisement implements SelfAdvertisement
             $self_advertisement = new TempSelfAdvertisement;
 
             $refStmt = "SELECT
-                        u.initiator,
-                        u.finisher
-                FROM ulb_workflow_masters u
-                WHERE u.ulb_id=2 AND u.workflow_id=1";
+                            u.initiator,
+                            u.finisher
+                        FROM ulb_workflow_masters u
+                        WHERE u.ulb_id=2 AND u.workflow_id=1";
 
             $workflow = DB::select($refStmt);
             $helper = new helper;
@@ -62,10 +64,10 @@ class EloquentSelfAdvertisement implements SelfAdvertisement
     }
 
     /**
-     * update Self Advertisement byIds
-     * update using App\Traits\SelfAdvertisement
-     * @param Request $request
-     * @return response
+     *| update Self Advertisement byIds
+     *| update using App\Traits\SelfAdvertisement
+     *| @param Request $request
+     *| @return response
      */
 
     public function updateSelfAdvertisement(SelfAdvertisementRequest $request, $id)
@@ -82,8 +84,8 @@ class EloquentSelfAdvertisement implements SelfAdvertisement
 
     /**
      * Get Self Advertisement By ID
-     * @param temp_selfadvertisement_id $id
-     * @return response
+     *| @param temp_selfadvertisement_id $id
+     *| @return response
      */
 
     public function getSelfAdvertisementByID($id)
@@ -109,6 +111,26 @@ class EloquentSelfAdvertisement implements SelfAdvertisement
         try {
             $data = TempSelfAdvertisement::orderBy('id', 'desc')->get();
             return $data;
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
+    }
+
+    /**
+     * Delete Self Advertisement By ID
+     *| @param SelfAdvertisement $id
+     *| @return response
+     */
+    public function deleteSelfAdvertisement($id)
+    {
+        try {
+            $self_advertisement = TempSelfAdvertisement::find($id);
+            if ($self_advertisement) {
+                $self_advertisement->delete();
+                return response()->json('Successfully Deleted', 200);
+            } else {
+                return response()->json('Data Not Found for this ID', 404);
+            }
         } catch (Exception $e) {
             return response()->json($e, 400);
         }

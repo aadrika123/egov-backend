@@ -26,7 +26,7 @@ class ApiStoreRequest extends FormRequest
     public function rules()
     {
         return [
-            'end_point' => ['required', 'unique:api_masters'],
+            'end_point' => ['required'],
             'Description' => ['required']
         ];
     }
