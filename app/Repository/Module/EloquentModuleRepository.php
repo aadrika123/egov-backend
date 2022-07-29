@@ -40,8 +40,17 @@ class EloquentModuleRepository implements ModuleRepository
     public function show($id)
     {
         try {
-            $data = ModuleMaster::find($id);
-            return response()->json($data, 200);
+            $module = ModuleMaster::where('id', $id)->get();
+            $arr = array();
+            foreach ($module as $modules) {
+                $val['id'] = $modules->id ?? '';
+                $val['module_name'] = $modules->module_name ?? '';
+                $val['deleted_at'] = $modules->deleted_at ?? '';
+                $val['created_at'] = $modules->created_at ?? '';
+                $val['updated_at'] = $modules->updated_at ?? '';
+                array_push($arr, $val);
+            }
+            return $arr;
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -52,8 +61,17 @@ class EloquentModuleRepository implements ModuleRepository
      */
     public function create()
     {
-        $data = ModuleMaster::orderByDesc('id')->get();
-        return $data;
+        $module = ModuleMaster::orderByDesc('id')->get();
+        $arr = array();
+        foreach ($module as $modules) {
+            $val['id'] = $modules->id ?? '';
+            $val['module_name'] = $modules->module_name ?? '';
+            $val['deleted_at'] = $modules->deleted_at ?? '';
+            $val['created_at'] = $modules->created_at ?? '';
+            $val['updated_at'] = $modules->updated_at ?? '';
+            array_push($arr, $val);
+        }
+        return response()->json($arr, 200);
     }
 
     /**

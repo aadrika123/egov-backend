@@ -67,7 +67,8 @@ class EloquentWorkflowRepository implements WorkflowRepository
                         where w.id=$id
         ");
         if ($workflow) {
-            return response()->json($workflow, 200);
+            $arr = array();
+            return $this->fetchWorkflow($workflow, $arr);
         } else {
             return response()->json('Workflow Not Available for this id', 404);
         }
@@ -78,7 +79,7 @@ class EloquentWorkflowRepository implements WorkflowRepository
      */
     public function getAllWorkflows()
     {
-        $data = DB::select("
+        $workflow = DB::select("
                         select w.* ,
                         m.module_name
                         from workflows w
@@ -86,7 +87,8 @@ class EloquentWorkflowRepository implements WorkflowRepository
                         where w.deleted_at is null
                         order by w.id desc
                         ");
-        return $data;
+        $arr = array();
+        return $this->fetchWorkflow($workflow, $arr);
     }
 
     /**
@@ -204,7 +206,8 @@ class EloquentWorkflowRepository implements WorkflowRepository
                         left join users b on b.id=wc.backward_id
                         where wc.id=$id");
         if ($wc) {
-            return $wc;
+            $arr = array();
+            return $this->fetchWorkflowCandidates($wc, $arr);
         } else {
             return response()->json('Data not Available for this Id', 404);
         }
@@ -234,7 +237,8 @@ class EloquentWorkflowRepository implements WorkflowRepository
                         left join users f on f.id=wc.forward_id
                         left join users b on b.id=wc.backward_id
                         order by wc.id desc");
-        return $wc;
+        $arr = array();
+        return $this->fetchWorkflowCandidates($wc, $arr);
     }
 
     /**
@@ -331,7 +335,8 @@ class EloquentWorkflowRepository implements WorkflowRepository
                         order by wc.id desc
                         ");
         if ($wc) {
-            return $wc;
+            $arr = array();
+            return $this->fetchWorkflowCandidates($wc, $arr);
         } else {
             return response()->json('Data not Available for this Id', 404);
         }

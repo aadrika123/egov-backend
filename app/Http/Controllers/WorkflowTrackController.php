@@ -37,4 +37,10 @@ class WorkflowTrackController extends Controller
     {
         return $this->EloquentWorkflowTrack->getWorkflowTrackByID($id);
     }
+
+    // Get Workflow Track By RefTableID and Value
+    public function getWorkflowTrackByTableIDValue($ref_table_id, $ref_table_value)
+    {
+        return $this->EloquentWorkflowTrack->getWorkflowTrackByTableIDValue($ref_table_id, $ref_table_value);
+    }
 }

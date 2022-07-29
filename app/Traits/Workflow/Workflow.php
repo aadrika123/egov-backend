@@ -50,4 +50,40 @@ trait Workflow
         $wc->save();
         return response()->json('Successfully Saved the Workflow Candidates', 200);
     }
+
+    // Fetching workflows as array
+    public function fetchWorkflow($workflow, $arr)
+    {
+        foreach ($workflow as $workflows) {
+            $val['id'] = $workflows->id ?? '';
+            $val['module_id'] = $workflows->module_id ?? '';
+            $val['workflow_name'] = $workflows->workflow_name ?? '';
+            $val['module_name'] = $workflows->module_name ?? '';
+            $val['deleted_at'] = $workflows->deleted_at ?? '';
+            $val['created_at'] = $workflows->created_at ?? '';
+            $val['updated_at'] = $workflows->updated_at ?? '';
+            array_push($arr, $val);
+        }
+        return response()->json($arr, 200);
+    }
+
+    // Fetching Workflow Candidates
+    public function fetchWorkflowCandidates($wc, $arr)
+    {
+        foreach ($wc as $wcs) {
+            $val['id'] = $wcs->id ?? '';
+            $val['ulb_workflow_id'] = $wcs->ulb_workflow_id ?? '';
+            $val['workflow_name'] = $wcs->workflow_name ?? '';
+            $val['user_id'] = $wcs->user_id ?? '';
+            $val['user_name'] = $wcs->user_name ?? '';
+            $val['forward_id'] = $wcs->forward_id ?? '';
+            $val['forward_user'] = $wcs->forward_user ?? '';
+            $val['backward_id'] = $wcs->backward_id ?? '';
+            $val['backward_user'] = $wcs->backward_user ?? '';
+            $val['full_movement'] = $wcs->full_movement ?? '';
+            $val['is_admin'] = $wcs->is_admin ?? '';
+            array_push($arr, $val);
+        }
+        return response()->json($arr, 200);
+    }
 }

@@ -51,7 +51,7 @@ class EloquentUlbWorkflow implements UlbWorkflow
      */
     public function create()
     {
-        $data = DB::select("
+        $ulb_workflow = DB::select("
                 select  uwm.*,
                         um.ulb_name,
                         w.workflow_name
@@ -61,7 +61,8 @@ class EloquentUlbWorkflow implements UlbWorkflow
                         where uwm.deleted_at is null
                         order by uwm.id desc
                 ");
-        return $data;
+        $arr = array();
+        return $this->fetchUlbWorkflow($ulb_workflow, $arr);
     }
 
     /**
@@ -122,7 +123,7 @@ class EloquentUlbWorkflow implements UlbWorkflow
      */
     public function show($id)
     {
-        $data = DB::select("
+        $ulb_workflow = DB::select("
         select  uwm.*,
                 um.ulb_name,
                 w.workflow_name
@@ -131,8 +132,9 @@ class EloquentUlbWorkflow implements UlbWorkflow
                 left join workflows w on w.id=uwm.workflow_id
             where uwm.id=$id
         ");
-        if ($data) {
-            return $data;
+        if ($ulb_workflow) {
+            $arr = array();
+            return $this->fetchUlbWorkflow($ulb_workflow, $arr);
         } else {
             return response()->json('Data not found', 400);
         }

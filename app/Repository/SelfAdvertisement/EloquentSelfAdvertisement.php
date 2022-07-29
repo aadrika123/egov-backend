@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\DB;
 
 class EloquentSelfAdvertisement implements SelfAdvertisement
 {
-    use SelfAdvertisementTrait;                  // Trait Used
+    use SelfAdvertisementTrait;                             // Trait Used
 
     /**
      *| @desc Storing Self Advertisement applied by the users

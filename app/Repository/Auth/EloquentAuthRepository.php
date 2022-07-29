@@ -340,8 +340,8 @@ class EloquentAuthRepository implements AuthRepository
             'email' => $manage->email,
             'password' => $manage->password,
             'token' => $manage->remember_token,
-            'created_at' => getFormattedDate($manage->created_at, 'd-M-Y h:i'),
-            'updated_at' => getFormattedDate($manage->updated_at, 'd-M-Y h:i')
+            'created_at' => $manage->created_at,
+            'updated_at' => $manage->updated_at
         ]);
 
         // if (Redis::del('user:' . auth()->user()->id)) {

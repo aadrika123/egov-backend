@@ -160,8 +160,9 @@ Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request
 
     // Workflow Track
     Route::controller(WorkflowTrackController::class)->group(function () {
-        Route::post('save-workflow-track', 'store');
-        Route::get('get-workflow-track/{id}', 'getWorkflowTrackByID');
+        Route::post('save-workflow-track', 'store');                                       // Save Workflow Track Messages
+        Route::get('get-workflow-track/{id}', 'getWorkflowTrackByID');                     // Get Workflow Track Message By TrackID
+        Route::get('gen/workflow-track/{RefTableID}/{RefTableValue}', 'getWorkflowTrackByTableIDValue');                     // Get WorkflowTrack By TableRefID and RefTableValue
     });
 
     // Advertisement Updates, Fetch data

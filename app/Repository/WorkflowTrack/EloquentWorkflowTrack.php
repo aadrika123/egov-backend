@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\WorkflowTrack as Track;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use App\Traits\WorkflowTrack as TrackTrait;
 
 /**
  * Repository for Workflow Track messages tracking
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class EloquentWorkflowTrack implements WorkflowTrack
 {
+    use TrackTrait;
     /**
      * Save workflow Track
      * @param Illuminate\Http\Request
@@ -42,30 +44,49 @@ class EloquentWorkflowTrack implements WorkflowTrack
     }
 
     /**
-     * Get Workflow Track by its Workflow Id
-     * @param WorkflowTrackId $id
-     * @return response
+     *| Get Workflow Track by its Workflow Id
+     *| @param WorkflowTrackId $id
+     *| @return response
+     *|---------------------------------------------------------------------------------------
+     *| DEFINING VARIABLE
+     *| --------------------------------------------------------------------------------------
+     *| #ref_table_stmt= select operation for selecting required fields
+     *| #conditional_stmt= Condition for Select operation with where
+     *| #query = concating both variables and establish final query result 
+     *| @return fetchData() as trait function 
+     *| --------------------------------------------------------------------------------------
      */
     public function getWorkflowTrackByID($id)
     {
-        $track = DB::select("select t.id,
-                            t.user_id,
-                            u.user_name,
-                            t.citizen_id,
-                            t.module_id,
-                            m.module_name,
-                            t.ref_table_dot_id,
-                            t.ref_table_id_value,
-                            t.message,
-                            t.track_date,
-                            t.forwarded_to,
-                            uu.user_name as forwarded_user
-                            
-                    from workflow_tracks t
-                    left join users u on u.id=t.user_id
-                    left join module_masters m on m.id=t.module_id
-                    left join users uu on uu.id=t.forwarded_to
-                    where t.id=$id");
-        return $track;
+        $ref_table_stmt = $this->refQuery();                            // Trait function for Select operations
+        $conditional_stmt = "where t.id=$id";
+        $query = $ref_table_stmt . $conditional_stmt;
+        $track = DB::select($query);
+        $arr = array();
+        return $this->fetchData($arr, $track);                             // Trait function for Fetch data on array format
+    }
+
+    /**
+     *| Get WorkflowTrack By Reference Table ID and Reference Table Value
+     *| @param ReferenceTableID $ref_table_id
+     *| @param ReferenceTableValue $refereceTableValue
+     *|---------------------------------------------------------------------------------------
+     *| DEFINING VARIABLE
+     *| --------------------------------------------------------------------------------------
+     *| #ref_table_stmt= select operation for selecting required fields
+     *| #conditional_stmt= Condition for Select operation with where
+     *| #query = concating both variables and establish final query result 
+     *| $arr = array that contains all the response payload
+     *| @return fetchData() as trait function 
+     *| --------------------------------------------------------------------------------------
+     */
+    public function getWorkflowTrackByTableIDValue($ref_table_id, $ref_table_value)
+    {
+        $ref_table_stmt = $this->refQuery();                        // Trait function for Select operations
+        $conditional_stmt = "WHERE t.ref_table_dot_id='$ref_table_id' AND t.ref_table_id_value='$ref_table_value' ORDER BY id DESC";
+        $query = $ref_table_stmt . $conditional_stmt;
+        $track = DB::select($query);
+        $arr = array();
+        return $this->fetchData($arr, $track);                      // Trait function for Fetch data on array format
     }
 }
