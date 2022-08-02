@@ -53,7 +53,7 @@ Route::controller(ApiMasterController::class)->group(function () {
 });
 
 // Inside Middleware Routes with API Authenticate 
-Route::group(['middleware' => ['cors', 'json.response', 'auth:sanctum', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     /**
      * Routes for User 
      * Created By-Anshu Kumar
