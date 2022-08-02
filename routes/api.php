@@ -49,6 +49,7 @@ Route::controller(ApiMasterController::class)->group(function () {
     Route::get('get-api-by-id/{id}', 'getApiByID');
     Route::get('get-all-apis', 'getAllApis');
     Route::post('search-api', 'search');
+    Route::get('search-api-by-tag', 'searchApiByTag');
 });
 
 // Inside Middleware Routes with API Authenticate 

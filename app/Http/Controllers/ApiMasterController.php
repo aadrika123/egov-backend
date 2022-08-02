@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Repository\Api\EloquentApiRepository;
 use App\Http\Requests\Api\ApiStoreRequest;
-use App\Http\Requests\Api\ApiUpdateRequest;
 use App\Http\Requests\Api\ApiSearchRequest;
+use Illuminate\Http\Request;
 
 class ApiMasterController extends Controller
 {
@@ -36,7 +36,7 @@ class ApiMasterController extends Controller
     }
 
     // Update
-    public function update(ApiUpdateRequest $request)
+    public function update(ApiStoreRequest $request)
     {
         return $this->EloquentApi->update($request);
     }
@@ -57,5 +57,11 @@ class ApiMasterController extends Controller
     public function search(ApiSearchRequest $request)
     {
         return $this->EloquentApi->search($request);
+    }
+
+    // Search Api by Tag
+    public function searchApiByTag(Request $request)
+    {
+        return $this->EloquentApi->searchApiByTag($request);
     }
 }

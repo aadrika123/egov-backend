@@ -16,6 +16,7 @@ class CreateUlbWorkflowMastersTable extends Migration
         Schema::create('ulb_workflow_masters', function (Blueprint $table) {
             $table->id();
             $table->bigInteger('ulb_id')->nullable();
+            $table->bigInteger('module_id')->nullable();
             $table->bigInteger('workflow_id')->nullable();
             $table->mediumText('initiator')->nullable();
             $table->mediumText('finisher')->nullable();

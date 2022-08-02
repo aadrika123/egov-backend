@@ -26,7 +26,7 @@ class ApiSearchRequest extends FormRequest
     public function rules()
     {
         return [
-            'EndPoint' => ['required']
+            'endPoint' => ['required']
         ];
     }
 }

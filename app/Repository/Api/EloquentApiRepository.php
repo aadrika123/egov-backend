@@ -4,11 +4,13 @@ namespace App\Repository\Api;
 
 use App\Repository\Api\ApiRepository;
 use App\Http\Requests\Api\ApiStoreRequest;
-use App\Http\Requests\Api\ApiUpdateRequest;
 use App\Http\Requests\Api\ApiSearchRequest;
 use App\Models\ApiMaster;
 use Exception;
 use App\Traits\Api\StoreApi;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Repository for Storing, Modifing, Fetching The Api master 
@@ -41,12 +43,12 @@ class EloquentApiRepository implements ApiRepository
 
     /**
      * Modifying APIs
-     * @param App\Http\Requests\Api\ApiUpdateRequest
-     * @param \App\Http\Requests\Api\ApiUpdateRequest $request
+     * @param App\Http\Requests\Api\ApiStoreRequest
+     * @param \App\Http\Requests\Api\ApiStoreRequest $request
      * @return App\Traits\Api\StoreApi Trait
      */
 
-    public function update(ApiUpdateRequest $request)
+    public function update(ApiStoreRequest $request)
     {
         try {
             $api_master = ApiMaster::find($request->id);
@@ -69,9 +71,9 @@ class EloquentApiRepository implements ApiRepository
     public function getApiByID($id)
     {
         try {
-            $api = ApiMaster::find($id);
+            $api = DB::select("select * from api_masters where id=$id");
             if ($api) {
-                return response()->json($api, 200);
+                return $this->getApiDetails($api);                         // Fetching Data Using Trait
             } else {
                 return response()->json('Api not found for this id', 404);
             }
@@ -86,8 +88,16 @@ class EloquentApiRepository implements ApiRepository
      */
     public function getAllApis()
     {
-        $apis = ApiMaster::orderBy('id', 'desc')->get();
-        return response()->json($apis, 200);
+        try {
+            $api = DB::select("select * from api_masters order by id desc");
+            if ($api) {
+                return $this->getApiDetails($api);                         // Fetching Data Using Trait
+            } else {
+                return response()->json('Api not found for this id', 404);
+            }
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
     }
 
     /**
@@ -100,17 +110,40 @@ class EloquentApiRepository implements ApiRepository
     public function search(ApiSearchRequest $request)
     {
         try {
-            $api_master = ApiMaster::where('end_point', $request->EndPoint)
-                ->orWhere('end_point', 'like', '%' . $request->EndPoint . '%')
+            $api = ApiMaster::where('end_point', $request->endPoint)
+                ->orWhere('end_point', 'like', '%' . $request->endPoint . '%')
                 ->get();
 
-            if ($api_master->count() > 0) {
-                return response()->json($api_master, 302);
+            if ($api->count() > 0) {
+                return $this->getApiDetails($api);                                  // Fetching Data Using Trait
             } else {
                 return response()->json(['Message' => 'No End Point Available'], 404);
             }
         } catch (Exception $e) {
             return response()->json([$e, 400]);
         }
+    }
+
+    /**
+     * Searching Api By Tag
+     * @param Request 
+     * @param Request $request
+     * @return json Response
+     * --------------------------------------------------------------------------------
+     */
+    public function searchApiByTag(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'tags' => array('required')
+        ]);
+        if ($validator->fails()) {
+            return [
+                'message' => $validator->errors()->first()
+            ];
+        }
+
+        $query = "SELECT * FROM api_masters WHERE tags LIKE '%$request->tags%'";
+        $api = DB::select($query);
+        return $this->getApiDetails($api);                                  // Fetching Data Using Trait
     }
 }

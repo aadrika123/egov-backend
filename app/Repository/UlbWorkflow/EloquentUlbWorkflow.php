@@ -24,6 +24,11 @@ class EloquentUlbWorkflow implements UlbWorkflow
      * @param Illuminate\Http\Request
      * @param Illuminate\Http\Request $request
      * @return response
+     * --------------------------------------------------------------------------------------
+     * @desc Check the duplication of Module for the UlbID 
+     * #check_ulb_module=Statement for checking the already existance for UlbID and ModuleID
+     * --------------------------------------------------------------------------------------
+     * Save Using Trait
      */
     public function store(Request $request)
     {
@@ -34,12 +39,12 @@ class EloquentUlbWorkflow implements UlbWorkflow
 
         try {
             $ulb_workflow = new UlbWorkflowMaster;
-            $stmt = $this->checkExisting($request);    // Checking if the ulbID already existing for the workflowid or not
-            if ($stmt) {
-                return response()->json('Workflow is already existing to this Ulb ID', 400);
-            } else {
-                $this->saving($ulb_workflow, $request);
-                return response()->json('Successfully Saved the Ulb Workflow', 200);
+            $check_ulb_module = $this->checkUlbModuleExistance($request);    // Checking if the ulbID already existing for the workflowid or not
+            if ($check_ulb_module) {
+                return response()->json('Module is already existing to this Ulb ID', 400);
+            }
+            if (!$check_ulb_module) {
+                return $this->saving($ulb_workflow, $request);
             }
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -71,6 +76,11 @@ class EloquentUlbWorkflow implements UlbWorkflow
      * @param Illuminate\Http\Request
      * @param Illuminate\Http\Request $request
      * @return response
+     * -------------------------------------------------------------------------------------
+     * #stmt= Statement for checking already existance of Module ID for UlbID
+     * Update Ulb Workflow Masters
+     * In case of Workflow Candidates First delete the existing records of UlbWorkflowCandidates and Then add New
+     * 
      */
 
     public function update(Request $request, $id)
@@ -82,21 +92,21 @@ class EloquentUlbWorkflow implements UlbWorkflow
 
         try {
             $ulb_workflow = UlbWorkflowMaster::find($id);
-            $stmt = $ulb_workflow->workflow_id == $request->workflow_id;
+            $stmt = $ulb_workflow->module_id == $request->ModuleID;
             if ($stmt) {
-                $this->saving($ulb_workflow, $request);
-                return response()->json('Successfully Updated the Ulb Workflow', 200);
+                // $this->saving($ulb_workflow, $request);
+                return $this->deleteExistingCandidates($id);
+                // return response()->json('Successfully Updated the Ulb Workflow', 200);
             }
             if (!$stmt) {
-                $check_workflow = $this->checkExisting($request);      // Checking if the ulb_workflow already existing or not
-                if ($check_workflow) {
-                    return response()->json('Workflow already Existing for this Ulb', 400);
+                $check_module = $this->checkUlbModuleExistance($request);      // Checking if the ulb_workflow already existing or not
+                if ($check_module) {
+                    return response()->json('Module already Existing for this Ulb', 400);
                 } else {
-                    $this->saving($ulb_workflow, $request);
-                    return response()->json('Successfully Updated', 200);
+                    return $this->deleteExistingCandidates($id);                       // Deleting Existing Candidates
+                    // return $this->saving($ulb_workflow, $request);
                 }
             }
-            return response()->json('Successfully Updated');
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -146,6 +156,7 @@ class EloquentUlbWorkflow implements UlbWorkflow
      * @param int $ulb_id
      * @return \Illuminate\Http\Response
      */
+
     public function getUlbWorkflowByUlbID($ulb_id)
     {
         $workflow = DB::select("

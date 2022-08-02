@@ -16,6 +16,8 @@ class CreateApiMastersTable extends Migration
         Schema::create('api_masters', function (Blueprint $table) {
             $table->id();
             $table->mediumText('description')->nullable();
+            $table->mediumText('remarks')->nullable();
+            $table->mediumText('tags')->nullable();
             $table->mediumText('category')->nullable();
             $table->mediumText('end_point')->nullable();
             $table->mediumText('usage')->nullable();
