@@ -56,18 +56,18 @@ class EloquentUlbWorkflow implements UlbWorkflow
      */
     public function create()
     {
-        $ulb_workflow = DB::select("
-                select  uwm.*,
-                        um.ulb_name,
-                        w.workflow_name
-                        from ulb_workflow_masters uwm
-                        left join ulb_masters um on um.id=uwm.ulb_id
-                        left join workflows w on w.id=uwm.workflow_id
-                        where uwm.deleted_at is null
-                        order by uwm.id desc
-                ");
-        $arr = array();
-        return $this->fetchUlbWorkflow($ulb_workflow, $arr);
+        // $ulb_workflow = DB::select("
+        //         select  uwm.*,
+        //                 um.ulb_name,
+        //                 w.workflow_name
+        //                 from ulb_workflow_masters uwm
+        //                 left join ulb_masters um on um.id=uwm.ulb_id
+        //                 left join workflows w on w.id=uwm.workflow_id
+        //                 where uwm.deleted_at is null
+        //                 order by uwm.id desc
+        //         ");
+        // $arr = array();
+        // return $this->fetchUlbWorkflow($ulb_workflow, $arr);
     }
 
     /**
@@ -133,15 +133,29 @@ class EloquentUlbWorkflow implements UlbWorkflow
      */
     public function show($id)
     {
-        $ulb_workflow = DB::select("
-        select  uwm.*,
-                um.ulb_name,
-                w.workflow_name
-                from ulb_workflow_masters uwm
-                left join ulb_masters um on um.id=uwm.ulb_id
-                left join workflows w on w.id=uwm.workflow_id
-            where uwm.id=$id
-        ");
+        $stmt1 = "SELECT  uwm.*,
+                    um.ulb_name,
+                    w.workflow_name,
+                    mm.module_name,
+                    u.user_name AS initiator_name,
+                    u1.user_name AS finisher_name,
+                    String_Agg(cast(wc.user_id AS VARCHAR),',') AS candidate_id,
+                    String_Agg(cast(u2.user_name AS VARCHAR),',') AS candidate_name
+                    FROM ulb_workflow_masters uwm
+                    
+                    INNER JOIN ulb_masters um ON um.id=uwm.ulb_id
+                    INNER JOIN workflows w ON w.id=uwm.workflow_id
+                    INNER JOIN module_masters mm ON mm.id=uwm.module_id
+                    INNER JOIN users u ON u.id=uwm.initiator
+                    INNER JOIN users u1 ON u1.id=uwm.finisher
+                    INNER JOIN workflow_candidates wc ON wc.ulb_workflow_id=uwm.id
+                    INNER JOIN users u2 ON u2.id=wc.user_id
+                    
+                WHERE uwm.id=$id
+                GROUP BY uwm.id,um.ulb_name,w.workflow_name,mm.module_name,u.user_name,u1.user_name
+                ";
+
+        $ulb_workflow = DB::select($stmt1);
         if ($ulb_workflow) {
             $arr = array();
             return $this->fetchUlbWorkflow($ulb_workflow, $arr);

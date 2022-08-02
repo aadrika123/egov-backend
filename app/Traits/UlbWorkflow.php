@@ -83,6 +83,7 @@ trait UlbWorkflow
             $val['id'] = $ulb_workflows->id ?? '';
             $val['ulb_id'] = $ulb_workflows->ulb_id ?? '';
             $val['ulb_name'] = $ulb_workflows->ulb_name ?? '';
+            $val['module_id'] = $ulb_workflows->module_id ?? '';
             $val['workflow_id'] = $ulb_workflows->workflow_id ?? '';
             $val['workflow_name'] = $ulb_workflows->workflow_name ?? '';
             $val['initiator'] = $ulb_workflows->initiator ?? '';
@@ -92,6 +93,14 @@ trait UlbWorkflow
             $val['deleted_at'] = $ulb_workflows->deleted_at ?? '';
             $val['created_at'] = $ulb_workflows->created_at ?? '';
             $val['updated_at'] = $ulb_workflows->updated_at ?? '';
+
+            $arr_canid = explode(',', $ulb_workflows->candidate_id);                // Exploding Candidate id as an array format
+            $arr_canname = explode(',', $ulb_workflows->candidate_name);            // Exploding Candidate id as array format
+
+            $val['candidate_id'] = $arr_canid ?? '';
+            $val['candidate_name'] = $arr_canname ?? '';
+
+
             array_push($arr, $val);
         }
         return response($arr);
