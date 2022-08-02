@@ -4,8 +4,7 @@ namespace App\Traits;
 
 use App\Models\UlbWorkflowMaster;
 use App\Models\WorkflowCandidate;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Trait for saving,editing,fetching and deleting UlbWorkflow
@@ -17,8 +16,8 @@ trait UlbWorkflow
      */
     public function checkUlbModuleExistance($request)
     {
-        return UlbWorkflowMaster::where('ulb_id', $request->UlbID)
-            ->where('module_id', $request->ModuleID)
+        return UlbWorkflowMaster::where('ulb_id', $request->ulbID)
+            ->where('module_id', $request->moduleID)
             ->first();
     }
 
@@ -32,43 +31,49 @@ trait UlbWorkflow
      */
     public function saving($ulb_workflow, $request)
     {
-        $ulb_workflow->workflow_id = $request->workflow_id;
-        $ulb_workflow->module_id = $request->ModuleID;
-        $ulb_workflow->ulb_id = $request->UlbID;
-        $ulb_workflow->initiator = $request->Initiator;
-        $ulb_workflow->finisher = $request->Finisher;
-        $ulb_workflow->one_step_movement = $request->OneStepMovement;
-        $ulb_workflow->remarks = $request->Remarks;
+        $ulb_workflow->workflow_id = $request->workflowID;
+        $ulb_workflow->module_id = $request->moduleID;
+        $ulb_workflow->ulb_id = $request->ulbID;
+        $ulb_workflow->initiator = $request->initiator;
+        $ulb_workflow->finisher = $request->finisher;
+        $ulb_workflow->one_step_movement = $request->oneStepMovement;
+        $ulb_workflow->remarks = $request->remarks;
         $ulb_workflow->save();
 
+        $this->storeNewCandidates($ulb_workflow, $request);   // Save Candidate ID with array with looping
+        return response()->json([
+            'workflow_id' => $request->workflowID,
+            'module_id' => $request->moduleID,
+            'ulb_id' => $request->ulbID
+        ], 200);
+    }
+
+    /**
+     * Function for Fresh Add or Update the Workflow Candidates
+     */
+    public function storeNewCandidates($ulb_workflow, $request)
+    {
         // Save Candidate ID with array with looping
-        $ref_cand = $request['Candidates'];
+        $ref_cand = $request['candidates'];
         foreach ($ref_cand as $ref_cands) {
             $wc = new WorkflowCandidate;
             $wc->ulb_workflow_id = $ulb_workflow->id;
             $wc->user_id = $ref_cands;
             $wc->save();
         }
-        return response()->json([
-            'WorkflowID' => $request->workflow_id,
-            'ModuleID' => $request->ModuleID,
-            'ULBID' => $request->UlbID
-        ], 200);
     }
 
     /**
-     * Delete Existing Workflow Candidates
+     * @desc Function for deleting the existing Candidates which are required to delete 
      */
     public function deleteExistingCandidates($id)
     {
-        // $candidate = WorkflowCandidate::select('id')
-        //     ->where('ulb_workflow_id', $id)->get();
-        // $mUrl = URL::to('/');
-        // foreach ($candidate as $candidates) {
-        //     $api = $mUrl . "/api/delete-workflow-candidates/" . $candidates->id;
-        //     array_push($a, $api);
-        //     Http::delete($api);
-        // }
+        $query = "select * from workflow_candidates where ulb_workflow_id=$id";
+        $candidate = DB::select($query);
+        foreach ($candidate as $candidates) {
+            $workflow_candidates = WorkflowCandidate::find($candidates->id);
+            $workflow_candidates->forceDelete();
+        }
     }
 
     // Fetch ulb Workflow in array

@@ -33,8 +33,8 @@ class EloquentUlbWorkflow implements UlbWorkflow
     public function store(Request $request)
     {
         $request->validate([
-            'UlbID' => 'required',
-            'workflow_id' => "required|int"
+            'ulbID' => 'required',
+            'workflowID' => "required|int"
         ]);
 
         try {
@@ -86,25 +86,25 @@ class EloquentUlbWorkflow implements UlbWorkflow
     public function update(Request $request, $id)
     {
         $request->validate([
-            'UlbID' => 'required',
-            'workflow_id' => 'required|int'
+            'ulbID' => 'required',
+            'workflowID' => 'required|int'
         ]);
 
         try {
             $ulb_workflow = UlbWorkflowMaster::find($id);
-            $stmt = $ulb_workflow->module_id == $request->ModuleID;
+            $stmt = $ulb_workflow->module_id == $request->moduleID;
             if ($stmt) {
                 // $this->saving($ulb_workflow, $request);
-                return $this->deleteExistingCandidates($id);
-                // return response()->json('Successfully Updated the Ulb Workflow', 200);
+                $this->deleteExistingCandidates($id);
+                return $this->saving($ulb_workflow, $request);
             }
             if (!$stmt) {
                 $check_module = $this->checkUlbModuleExistance($request);      // Checking if the ulb_workflow already existing or not
                 if ($check_module) {
                     return response()->json('Module already Existing for this Ulb', 400);
                 } else {
-                    return $this->deleteExistingCandidates($id);                       // Deleting Existing Candidates
-                    // return $this->saving($ulb_workflow, $request);
+                    $this->deleteExistingCandidates($id);                       // Deleting Existing Candidates
+                    return $this->saving($ulb_workflow, $request);
                 }
             }
         } catch (Exception $e) {
