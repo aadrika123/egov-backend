@@ -84,10 +84,13 @@ trait UlbWorkflow
             $val['ulb_id'] = $ulb_workflows->ulb_id ?? '';
             $val['ulb_name'] = $ulb_workflows->ulb_name ?? '';
             $val['module_id'] = $ulb_workflows->module_id ?? '';
+            $val['module_name'] = $ulb_workflows->module_name ?? '';
             $val['workflow_id'] = $ulb_workflows->workflow_id ?? '';
             $val['workflow_name'] = $ulb_workflows->workflow_name ?? '';
             $val['initiator'] = $ulb_workflows->initiator ?? '';
+            $val['initiator_name'] = $ulb_workflows->initiator_name ?? '';
             $val['finisher'] = $ulb_workflows->finisher ?? '';
+            $val['finisher_name'] = $ulb_workflows->finisher_name ?? '';
             $val['one_step_movement'] = $ulb_workflows->one_step_movement ?? '';
             $val['remarks'] = $ulb_workflows->remarks ?? '';
             $val['deleted_at'] = $ulb_workflows->deleted_at ?? '';
