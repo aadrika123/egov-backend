@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Exception;
 use App\Traits\UlbWorkflow as UlbWorkflowTrait;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * Repository for Ulb Workflows Store, fetch, edit and destroy
@@ -53,28 +54,20 @@ class EloquentUlbWorkflow implements UlbWorkflow
 
     /**
      * Show all Ulb Workflows
+     * -----------------------------------------------------------------------------------
+     * required variable to be used in our functions
+     * -----------------------------------------------------------------------------------
+     * #ref_stmt= The reference Statement sql query for fetching data using Trait
+     * #condition = required condition for data
+     * #query = Final query merging both variables
+     * 
      */
     public function create()
     {
-        $stmt = "SELECT uwm.*,
-                    um.ulb_name,
-                    w.workflow_name,
-                    mm.module_name,
-                    u.user_name AS initiator_name,
-                    u1.user_name AS finisher_name,
-                    String_Agg(cast(wc.user_id AS VARCHAR),',') AS candidate_id,
-                    String_Agg(cast(u2.user_name AS VARCHAR),',') AS candidate_name
-                    FROM ulb_workflow_masters uwm
-                    
-                    INNER JOIN ulb_masters um ON um.id=uwm.ulb_id
-                    INNER JOIN workflows w ON w.id=uwm.workflow_id
-                    INNER JOIN module_masters mm ON mm.id=uwm.module_id
-                    INNER JOIN users u ON u.id=uwm.initiator
-                    INNER JOIN users u1 ON u1.id=uwm.finisher
-                    INNER JOIN workflow_candidates wc ON wc.ulb_workflow_id=uwm.id
-                    INNER JOIN users u2 ON u2.id=wc.user_id
-                GROUP BY uwm.id,um.ulb_name,w.workflow_name,mm.module_name,u.user_name,u1.user_name";
-        $ulb_workflow = DB::select($stmt);
+        $ref_stmt = $this->queryStatement();                                // Fetching Data using Trait
+        $condition = "WHERE uwm.deleted_at IS NULL GROUP BY uwm.id,um.ulb_name,w.workflow_name,mm.module_name,u.user_name,u1.user_name";
+        $query = $ref_stmt . ' ' . $condition;                              // Final Query
+        $ulb_workflow = DB::select($query);
         $arr = array();
         return $this->fetchUlbWorkflow($ulb_workflow, $arr);
     }
@@ -89,6 +82,7 @@ class EloquentUlbWorkflow implements UlbWorkflow
      * #stmt= Statement for checking already existance of Module ID for UlbID
      * Update Ulb Workflow Masters
      * In case of Workflow Candidates First delete the existing records of UlbWorkflowCandidates and Then add New
+     * Delete Redis Data if already existing
      * 
      */
 
@@ -100,11 +94,13 @@ class EloquentUlbWorkflow implements UlbWorkflow
         ]);
 
         try {
+            $redis = Redis::connection();
             $ulb_workflow = UlbWorkflowMaster::find($id);
             $stmt = $ulb_workflow->module_id == $request->moduleID;
             if ($stmt) {
                 // $this->saving($ulb_workflow, $request);
                 $this->deleteExistingCandidates($id);
+                $redis->del('ulb_workflow:' . $id);
                 return $this->saving($ulb_workflow, $request);
             }
             if (!$stmt) {
@@ -113,6 +109,7 @@ class EloquentUlbWorkflow implements UlbWorkflow
                     return response()->json('Module already Existing for this Ulb', 400);
                 } else {
                     $this->deleteExistingCandidates($id);                       // Deleting Existing Candidates
+                    $redis->del('ulb_workflow:' . $id);
                     return $this->saving($ulb_workflow, $request);
                 }
             }
@@ -129,6 +126,8 @@ class EloquentUlbWorkflow implements UlbWorkflow
     {
         try {
             $ulb_workflow = UlbWorkflowMaster::find($id);
+            $redis = Redis::connection();
+            $redis->del('ulb_workflow:' . $id);                 // Redis Flash
             $ulb_workflow->delete();
             return response()->json('Successfully Deleted', 200);
         } catch (Exception $e) {
@@ -139,37 +138,67 @@ class EloquentUlbWorkflow implements UlbWorkflow
     /**
      * Get UlbWorkflows By Id
      * @param id
+     * ----------------------------------------------------------------------------------
+     * required variable to be used in our functions
+     * -----------------------------------------------------------------------------------
+     * #redis= Establishing the connection between redis server
+     * #redis_existing = Get The Redis Data values if exist
+     * #ref_stmt= The reference Statement sql query for fetching data using Trait
+     * #condition = required condition for data
+     * #query = Final query merging both variables
+     * #ulb_workflow = All the query executed Data
+     * -----------------------------------------------------------------------------------
+     * Check if the data already present on redis 
+     * If present give the data from redis server using Trait
+     * If Data not present the give the data using sql query and Store the data on redis-server
      */
     public function show($id)
     {
-        $stmt1 = "SELECT  uwm.*,
-                    um.ulb_name,
-                    w.workflow_name,
-                    mm.module_name,
-                    u.user_name AS initiator_name,
-                    u1.user_name AS finisher_name,
-                    String_Agg(cast(wc.user_id AS VARCHAR),',') AS candidate_id,
-                    String_Agg(cast(u2.user_name AS VARCHAR),',') AS candidate_name
-                    FROM ulb_workflow_masters uwm
-                    
-                    INNER JOIN ulb_masters um ON um.id=uwm.ulb_id
-                    INNER JOIN workflows w ON w.id=uwm.workflow_id
-                    INNER JOIN module_masters mm ON mm.id=uwm.module_id
-                    INNER JOIN users u ON u.id=uwm.initiator
-                    INNER JOIN users u1 ON u1.id=uwm.finisher
-                    INNER JOIN workflow_candidates wc ON wc.ulb_workflow_id=uwm.id
-                    INNER JOIN users u2 ON u2.id=wc.user_id
-                    
-                WHERE uwm.id=$id
-                GROUP BY uwm.id,um.ulb_name,w.workflow_name,mm.module_name,u.user_name,u1.user_name
-                ";
+        $redis = Redis::connection();
+        $redis_existing = array(json_decode($redis->get('ulb_workflow:' . $id)));
+        if ($redis_existing[0]) {
+            $arr = array();
+            return $this->fetchUlbWorkflow($redis_existing, $arr);          // Fetching Data Using Trait
+        }
 
-        $ulb_workflow = DB::select($stmt1);
+        $ref_stmt = $this->queryStatement();                                // Fetching Data using Trait
+        $condition = "where uwm.id=$id GROUP BY uwm.id,um.ulb_name,w.workflow_name,mm.module_name,u.user_name,u1.user_name";
+        $query = $ref_stmt . ' ' . $condition;                              // Final Query
+        $ulb_workflow = DB::select($query);
+        //  If Data Available
         if ($ulb_workflow) {
             $arr = array();
+
+            // Set data On Redis Server
+            $redis->set(
+                'ulb_workflow:' . $ulb_workflow[0]->id,
+                json_encode([
+                    'id' => $ulb_workflow[0]->id,
+                    'ulb_id' => $ulb_workflow[0]->ulb_id,
+                    'ulb_name' => $ulb_workflow[0]->ulb_name,
+                    'module_id' => $ulb_workflow[0]->module_id,
+                    'module_name' => $ulb_workflow[0]->module_name,
+                    'workflow_id' => $ulb_workflow[0]->workflow_id,
+                    'workflow_name' => $ulb_workflow[0]->workflow_name,
+                    'initiator' => $ulb_workflow[0]->initiator,
+                    'initiator_name' => $ulb_workflow[0]->initiator_name,
+                    'finisher' => $ulb_workflow[0]->finisher,
+                    'finisher_name' => $ulb_workflow[0]->finisher_name,
+                    'one_step_movement' => $ulb_workflow[0]->one_step_movement,
+                    'remarks' => $ulb_workflow[0]->remarks,
+                    'deleted_at' => $ulb_workflow[0]->deleted_at,
+                    'created_at' => $ulb_workflow[0]->created_at,
+                    'updated_at' => $ulb_workflow[0]->updated_at,
+                    'candidate_id' => $ulb_workflow[0]->candidate_id,
+                    'candidate_name' => $ulb_workflow[0]->candidate_name
+                ])
+            );
+
             return $this->fetchUlbWorkflow($ulb_workflow, $arr);
-        } else {
-            return response()->json('Data not found', 400);
+        }
+        // If Data Not Available
+        if (!$ulb_workflow) {
+            return response()->json('Data Not Found for this id', 404);
         }
     }
 
