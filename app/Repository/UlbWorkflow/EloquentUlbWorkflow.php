@@ -56,7 +56,7 @@ class EloquentUlbWorkflow implements UlbWorkflow
      */
     public function create()
     {
-        $stmt = "SELECT  uwm.*,
+        $stmt = "SELECT uwm.*,
                     um.ulb_name,
                     w.workflow_name,
                     mm.module_name,
