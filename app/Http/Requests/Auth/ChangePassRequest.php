@@ -39,7 +39,7 @@ class ChangePassRequest extends FormRequest
     public function rules()
     {
         return [
-            'Password' => [
+            'password' => [
                 'required',
                 'min:6',
                 'max:255',

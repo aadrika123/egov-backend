@@ -68,9 +68,9 @@ class EloquentAuthRepository implements AuthRepository
     public function update(Request $request, $id)
     {
         $request->validate([
-            'Name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
-            'Password' => [
+            'password' => [
                 'required',
                 'min:6',
                 'max:255',
@@ -149,7 +149,7 @@ class EloquentAuthRepository implements AuthRepository
             if ($emailInfo && $user = Redis::get('user:' . $emailInfo->id)) {
                 $info = json_decode($user);
                 // AUTHENTICATING PASSWORD IN HASH
-                if (Hash::check($request->Password, $info->password)) {
+                if (Hash::check($request->password, $info->password)) {
                     $token = $emailInfo->createToken('my-app-token')->plainTextToken;
                     $emailInfo->remember_token = $token;
                     $emailInfo->save();
@@ -173,7 +173,7 @@ class EloquentAuthRepository implements AuthRepository
             // Authentication Using Sql Database
             if ($emailInfo) {
                 // Authenticating Password
-                if (Hash::check($request->Password, $emailInfo->password)) {
+                if (Hash::check($request->password, $emailInfo->password)) {
                     $token = $emailInfo->createToken('my-app-token')->plainTextToken;
                     $emailInfo->remember_token = $token;
                     $emailInfo->save();
@@ -246,7 +246,7 @@ class EloquentAuthRepository implements AuthRepository
 
             $id = auth()->user()->id;
             $user = User::find($id);
-            $user->password = Hash::make($request->Password);
+            $user->password = Hash::make($request->password);
             $user->save();
 
             Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY

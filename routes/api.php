@@ -36,6 +36,11 @@ use App\Http\Controllers\WorkflowTrackController;
 // Route Used for Login and Register the User
 Route::controller(UserController::class)->group(function () {
     Route::post('login', 'loginAuth')->middleware('request_logger');
+    Route::post('register', 'store');
+    Route::put('edit-user/{id}', 'update');
+    Route::delete('delete-user', 'deleteUser');
+    Route::get('get-user/{id}', 'getUser');
+    Route::get('get-all-users', 'getAllUsers');
 });
 
 /**
@@ -61,17 +66,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * Modified On-27-06-2022 
      */
     Route::controller(UserController::class)->group(function () {
-        Route::post('register', 'store');
         Route::get('test', 'testing');
         Route::post('logout', 'logOut');
         Route::post('change-password', 'changePass');
 
         // Route are authorized for super admin only using Middleware 
         Route::group(['middleware' => ['can:isSuperAdmin']], function () {
-            Route::put('edit-user/{id}', 'update');
-            Route::delete('delete-user', 'deleteUser');
-            Route::get('get-user/{id}', 'getUser');
-            Route::get('get-all-users', 'getAllUsers');
+            // Route::put('edit-user/{id}', 'update');
+            // Route::delete('delete-user', 'deleteUser');
+            // Route::get('get-user/{id}', 'getUser');
+            // Route::get('get-all-users', 'getAllUsers');
         });
     });
 
