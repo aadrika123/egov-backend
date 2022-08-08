@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\ActiveSafController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
+use App\Http\Controllers\CitizenController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SelfAdvertisementController;
@@ -55,6 +57,14 @@ Route::controller(ApiMasterController::class)->group(function () {
     Route::get('get-all-apis', 'getAllApis');
     Route::post('search-api', 'search');
     Route::get('search-api-by-tag', 'searchApiByTag');
+});
+
+/**
+ * | Citizen Registration
+ * | Created On-08-08-2022 
+ */
+Route::controller(CitizenController::class)->group(function () {
+    Route::post('citizen-register', 'citizenRegister');         // Citizen Registration
 });
 
 // Inside Middleware Routes with API Authenticate 
@@ -177,6 +187,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('crud/get-all-selfadvertisements', 'getAllSelfAdvertisements');         // Get All Self Advertisement Datas
         Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');       // Delete Self Advertisement By ID
     });
+
+    // Citizen Register
+    Route::controller(CitizenController::class)->group(function () {
+        Route::get('get-citizen-by-id/{id}', 'getCitizenByID');     // Get Citizen By ID
+        Route::get('get-all-citizens', 'getAllCitizens');           // Get All Citizens
+        Route::post('edit-citizen-by-id/{id}', 'editCitizenByID');         // Approve Or Reject Citizen by Id
+    });
 });
 
 Route::group(['middleware' => ['cors', 'json.response', 'request_logger']], function () {
@@ -186,4 +203,16 @@ Route::group(['middleware' => ['cors', 'json.response', 'request_logger']], func
     Route::controller(SelfAdvertisementController::class)->group(function () {
         Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');      // Save Self Advertisement
     });
+});
+
+/**
+ * ----------------------------------------------------------------------------------------
+ * | Property Modules
+ * ----------------------------------------------------------------------------------------
+ */
+
+// SAF 
+
+Route::controller(ActiveSafController::class)->group(function () {
+    Route::post('apply-for-saf', 'applySaf');                               // Applying Saf Route
 });

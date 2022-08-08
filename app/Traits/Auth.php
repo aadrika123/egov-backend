@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * Trait for saving and editing the Users 
+ * Trait for saving and editing the Users and Citizen register also
  * Created for reducing the duplication for the Saving and editing codes
  * --------------------------------------------------------------------------------------------------------
  * Created by-Anshu Kumar
