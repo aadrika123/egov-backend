@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\ActiveSafController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
@@ -12,6 +11,7 @@ use App\Http\Controllers\UlbController;
 use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowTrackController;
+use App\Http\Controllers\ActiveSafController;
 
 /*
 |--------------------------------------------------------------------------
@@ -197,7 +197,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     /**
      * ----------------------------------------------------------------------------------------
-     * | Property Modules
+     * | Property Module Routes
      * ----------------------------------------------------------------------------------------
      */
 
