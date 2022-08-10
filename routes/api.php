@@ -194,6 +194,17 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-all-citizens', 'getAllCitizens');           // Get All Citizens
         Route::post('edit-citizen-by-id/{id}', 'editCitizenByID');         // Approve Or Reject Citizen by Id
     });
+
+    /**
+     * ----------------------------------------------------------------------------------------
+     * | Property Modules
+     * ----------------------------------------------------------------------------------------
+     */
+
+    // SAF 
+    Route::controller(ActiveSafController::class)->group(function () {
+        Route::post('apply-for-saf', 'applySaf');                               // Applying Saf Route
+    });
 });
 
 Route::group(['middleware' => ['cors', 'json.response', 'request_logger']], function () {
@@ -203,16 +214,4 @@ Route::group(['middleware' => ['cors', 'json.response', 'request_logger']], func
     Route::controller(SelfAdvertisementController::class)->group(function () {
         Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');      // Save Self Advertisement
     });
-});
-
-/**
- * ----------------------------------------------------------------------------------------
- * | Property Modules
- * ----------------------------------------------------------------------------------------
- */
-
-// SAF 
-
-Route::controller(ActiveSafController::class)->group(function () {
-    Route::post('apply-for-saf', 'applySaf');                               // Applying Saf Route
 });

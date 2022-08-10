@@ -79,7 +79,7 @@ class EloquentCitizenRepository implements CitizenRepository
      */
     public function getCitizenByID($id)
     {
-        $citizen = ActiveCitizen::select('user_name', 'mobile', 'email', 'user_type', 'ulb_id', 'is_approved', 'ulb_name')
+        $citizen = ActiveCitizen::select('active_citizens.id', 'user_name', 'mobile', 'email', 'user_type', 'ulb_id', 'is_approved', 'ulb_name')
             ->where('active_citizens.id', $id)
             ->leftJoin('ulb_masters', 'active_citizens.ulb_id', '=', 'ulb_masters.id')
             ->get();
@@ -92,7 +92,7 @@ class EloquentCitizenRepository implements CitizenRepository
      */
     public function getAllCitizens()
     {
-        $citizen = ActiveCitizen::select('user_name', 'mobile', 'email', 'user_type', 'ulb_id', 'is_approved', 'ulb_name')
+        $citizen = ActiveCitizen::select('active_citizens.id', 'user_name', 'mobile', 'email', 'user_type', 'ulb_id', 'is_approved', 'ulb_name')
             ->where('is_approved', null)
             ->leftJoin('ulb_masters', 'active_citizens.ulb_id', '=', 'ulb_masters.id')
             ->get();
