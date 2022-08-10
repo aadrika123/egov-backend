@@ -104,44 +104,11 @@ class EloquentSafRepository implements SafRepository
             $saf->save();
 
             // SAF Owner Details
-            // $owner_name = $request['ownerName'];
-            // $guardian_name = $request['guardianName'];
-            // $relation = $request['relation'];
-            // $mobileNo = $request['mobileNo'];
-            // $email = $request['email'];
-            // $pan = $request['pan'];
-            // $aadhar = $request['aadhar'];
-            // $emp_detail = $request['empDetail'];
-            // $rmc_saf_owner_dtl = $request['rmcSafOwnerDtl'];
-            // $rmc_saf_detail = $request['rmcSafDetail'];
-            // $gender = $request['gender'];
-            // $dob = $request['dob'];
-            // $is_armed_force = $request['isArmedForce'];
-            // $is_specially_abled = $request['isSpeciallyAbled'];
+            $owner = $request['owner'];
 
-            // $final_owner = array_merge([
-            //     $owner_name,
-            //     $guardian_name,
-            //     $relation,
-            //     $mobileNo,
-            //     $email,
-            //     $pan,
-            //     $aadhar,
-            //     $emp_detail,
-            //     $rmc_saf_owner_dtl,
-            //     $rmc_saf_detail,
-            //     $gender,
-            //     $dob,
-            //     $is_armed_force,
-            //     $is_specially_abled
-            // ]);
-
-            // return $final_owner;
-            // for ($i = 0; $i < $final_owner; $i++) {
-            //     for ($j = 0; $j < $final_owner[$i]; $j++) {
-            //         $a = $final_owner;
-            //     }
-            // }
+            /**
+             * | Looping to save the saf owner
+             */
 
             DB::commit();
             return response()->json('Successfully Submitted Your Application', 200);

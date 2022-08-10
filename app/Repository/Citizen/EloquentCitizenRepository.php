@@ -82,7 +82,7 @@ class EloquentCitizenRepository implements CitizenRepository
         $citizen = ActiveCitizen::select('active_citizens.id', 'user_name', 'mobile', 'email', 'user_type', 'ulb_id', 'is_approved', 'ulb_name')
             ->where('active_citizens.id', $id)
             ->leftJoin('ulb_masters', 'active_citizens.ulb_id', '=', 'ulb_masters.id')
-            ->get();
+            ->first();
         return $citizen;
     }
 
