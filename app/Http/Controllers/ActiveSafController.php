@@ -26,4 +26,10 @@ class ActiveSafController extends Controller
     {
         return $this->Repository->applySaf($request);
     }
+
+    // Get Workflow Candidate By WorkflowID
+    public function getSafCandByWorkflowId($id)
+    {
+        return $this->Repository->getSafCandByWorkflowId($id);
+    }
 }

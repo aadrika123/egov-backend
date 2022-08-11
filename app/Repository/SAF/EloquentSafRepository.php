@@ -7,8 +7,11 @@ use Illuminate\Http\Request;
 use App\Models\ActiveSafDetail;
 use App\Models\ActiveSafFloorDetail;
 use App\Models\ActiveSafOwnerDetail;
+use App\Models\UlbWorkflowMaster;
 use Exception;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
 
 /**
  * | Created On-10-08-2022
@@ -24,12 +27,26 @@ class EloquentSafRepository implements SafRepository
      * | @param Illuminate\Http\Request
      * | @param Request $request
      * | @param response
+     * --------------------------------------------------------------------------------
+     * | Determining Ulb Workflow for Initiator and Finisher
+     * --------------------------------------------------------------------------------
+     * | #workflow_id= To determine the id for the module in workflow masters
+     * | #ulb_id = To determine the ulb_id for the current loggined Citizen
+     * | #workflows= Fetching initiator and finisher from ulb_workflow_masters table
+     * 
      */
     public function applySaf(Request $request)
     {
         // dd($request->all());
         DB::beginTransaction();
         try {
+            // Determining the initiator and finisher id
+            $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            $ulb_id = auth()->user()->ulb_id;
+            $workflows = UlbWorkflowMaster::select('initiator', 'finisher')
+                ->where('ulb_id', $ulb_id)
+                ->where('workflow_id', $workflow_id)
+                ->first();
             $saf = new ActiveSafDetail;
             $saf->has_previous_holding_no = $request->hasPreviousHoldingNo;
             $saf->previous_holding_id = $request->previousHoldingId;
@@ -102,7 +119,12 @@ class EloquentSafRepository implements SafRepository
             $saf->new_ward_mstr_id = $request->newWard;
             $saf->percentage_of_property_transfer = $request->percOfPropertyTransfer;
             $saf->apartment_details_id = $request->apartmentDetail;
-            $saf->ulb_id = auth()->user()->ulb_id;
+            // workflows
+            $saf->current_user = $workflows->initiator;
+            $saf->initiator_id = $workflows->initiator;
+            $saf->finisher_id = $workflows->finisher;
+            $saf->workflow_id = $workflow_id;
+            $saf->ulb_id = $ulb_id;
             $saf->save();
 
             // SAF Owner Details
@@ -152,6 +174,32 @@ class EloquentSafRepository implements SafRepository
         } catch (Exception $e) {
             DB::rollBack();
             return response()->json($e, 400);
+        }
+    }
+
+
+    /**
+     * | Get All Workflow Candidates Regarding With the moduleID and workflowID
+     * | @param WorkflowID $id
+     * | #module_id = Get Module ID for property
+     * | #stmt = Statement for the sql query
+     */
+
+    public function getSafCandByWorkflowId($id)
+    {
+        $module_id = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $stmt = "SELECT wc.user_id,
+                        u1.user_name
+                       FROM workflow_candidates wc
+                       LEFT JOIN ulb_workflow_masters u ON u.id=wc.ulb_workflow_id
+                       LEFT JOIN ulb_masters m ON m.id=u.workflow_id
+                       LEFT JOIN users u1 ON u1.id=wc.user_id
+                WHERE u.workflow_id=$id AND u.module_id=$module_id";
+        $candidates = DB::select($stmt);
+        if ($candidates) {
+            return $candidates;
+        } else {
+            return response()->json('Candidates Not Found', 404);
         }
     }
 }
