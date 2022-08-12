@@ -5,11 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Repository\SAF\EloquentSafRepository;
 
-
-# traits imports
-use App\Traits\Saf\SafLable;
-use Illuminate\Support\Facades\DB;
-
 class ActiveSafController extends Controller
 {    
     /**

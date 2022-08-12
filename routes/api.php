@@ -205,6 +205,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     // SAF 
     Route::controller(ActiveSafController::class)->group(function () {
         Route::post('apply-for-saf', 'applySaf');                               // Applying Saf Route
+        Route::get('get-saf-candidates-by-workflow-id/{id}', 'getSafCandByWorkflowId');  // Get SAF Candidates by WorkflowID
     });
 
     //inbox && outbox

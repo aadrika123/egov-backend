@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 use App\Models\ActiveSafDetail;
 use App\Models\ActiveSafFloorDetail;
 use App\Models\ActiveSafOwnerDetail;
+use App\Models\UlbWorkflowMaster;
 use Exception;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -30,6 +32,13 @@ class EloquentSafRepository implements SafRepository
         // dd($request->all());
         DB::beginTransaction();
         try {
+            // Determining the initiator and finisher id
+            $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            $ulb_id = auth()->user()->ulb_id;
+            $workflows = UlbWorkflowMaster::select('initiator', 'finisher')
+                ->where('ulb_id', $ulb_id)
+                ->where('workflow_id', $workflow_id)
+                ->first();
             $saf = new ActiveSafDetail;
             $saf->has_previous_holding_no = $request->hasPreviousHoldingNo;
             $saf->previous_holding_id = $request->previousHoldingId;
@@ -102,7 +111,12 @@ class EloquentSafRepository implements SafRepository
             $saf->new_ward_mstr_id = $request->newWard;
             $saf->percentage_of_property_transfer = $request->percOfPropertyTransfer;
             $saf->apartment_details_id = $request->apartmentDetail;
-            $saf->ulb_id = auth()->user()->ulb_id;
+            // workflows
+            $saf->current_user = $workflows->initiator;
+            $saf->initiator_id = $workflows->initiator;
+            $saf->finisher_id = $workflows->finisher;
+            $saf->workflow_id = $workflow_id;
+            $saf->ulb_id = $ulb_id;
             $saf->save();
 
             // SAF Owner Details
