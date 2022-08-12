@@ -64,4 +64,25 @@ trait Auth
             ])
         );
     }
+
+    /**
+     * | response Messages for Success Login
+     * | @param BearerToken $token
+     * | @return Response
+     */
+    public function tResponseSuccess($token)
+    {
+        $response = ['status' => true, 'data' => $token, 'message' => 'You Have Logged In!!'];
+        return $response;
+    }
+
+    /**
+     * | response messages for failure login
+     * | @param Msg The conditional messages 
+     */
+    public function tResponseFail($msg)
+    {
+        $response = ['status' => false, 'data' => '', 'message' => $msg];
+        return $response;
+    }
 }

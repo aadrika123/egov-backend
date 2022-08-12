@@ -133,14 +133,16 @@ class EloquentAuthRepository implements AuthRepository
             // checking user is existing or not
             $emailInfo = User::where('email', $request->email)->first();
             if (!$emailInfo) {
-                $response = ['status' => false, 'message' => 'Oops! Given email does not exist'];
-                return response($response, 401);
+                $msg = "Oops! Given email does not exist";
+                $message = $this->tResponseFail($msg);               // Response Message Using Trait
+                return response($message, 200);
             }
 
             // check if suspended user
             if ($emailInfo->suspended == true) {
-                $response = ['status' => false, 'message' => 'Cant logged in!! You Have Been Suspended !'];
-                return response()->json($response, 401);
+                $msg = "Cant logged in!! You Have Been Suspended !";
+                $message = $this->tResponseFail($msg);               // Response Message Using Trait
+                return response($message, 200);
             }
 
             // Redis Authentication if data already existing in redis database
@@ -157,13 +159,14 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);         // EXPIRE KEY AFTER 5 HOURS
-                    $response = ['status' => true, 'message' => 'You Have Logged In !!', 'token' => $token];
-                    return response($response, 200);
+                    $message = $this->tResponseSuccess($token);               // Response Message Using Trait
+                    return response()->json($message, 200);
                 }
                 // AUTHENTICATING PASSWORD IN HASH
                 else {
-                    $response = ['status' => false, 'message' => 'Incorrect Password'];
-                    return response($response, 401);
+                    $msg = "Incorrect Password";
+                    $message = $this->tResponseFail($msg);               // Response Message Using Trait
+                    return response($message, 200);
                 }
             }
             /*  End if email exists then the condition applies  */
@@ -183,12 +186,12 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
-
-                    $response = ['status' => true, 'message' => 'You Have Logged In!!', 'token' => $token];
-                    return response($response, 200);
+                    $message = $this->tResponseSuccess($token);           // Response Message Using Trait
+                    return response()->json($message, 200);
                 } else {
-                    $response = ['status' => false, 'message' => 'Incorrect Password'];
-                    return response($response, 401);
+                    $msg = "Incorrect Password";
+                    $message = $this->tResponseFail($msg);               // Response Message Using Trait
+                    return response($message, 200);
                 }
             }
         }
