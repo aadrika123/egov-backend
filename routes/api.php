@@ -12,6 +12,7 @@ use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowTrackController;
 use App\Http\Controllers\ActiveSafController;
+use App\Http\Controllers\Demo;
 
 /*
 |--------------------------------------------------------------------------
@@ -205,6 +206,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(ActiveSafController::class)->group(function () {
         Route::post('apply-for-saf', 'applySaf');                               // Applying Saf Route
     });
+
+    //inbox && outbox
+    Route::controller(ActiveSafController::class)->group(function () {
+        Route::get('saf-inbox/{id?}', 'inbox');                               
+        Route::get('saf-outbox/{id?}', 'outbox');                              
+    });
 });
 
 Route::group(['middleware' => ['cors', 'json.response', 'request_logger']], function () {
@@ -214,4 +221,10 @@ Route::group(['middleware' => ['cors', 'json.response', 'request_logger']], func
     Route::controller(SelfAdvertisementController::class)->group(function () {
         Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');      // Save Self Advertisement
     });
+});
+
+#testing api not permanent api it will remove on production level;
+Route::controller(Demo::class)->group(function(){
+    Route::post('collection_test','collection_test');
+    Route::get('query_test','query_test');
 });

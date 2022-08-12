@@ -5,8 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Repository\SAF\EloquentSafRepository;
 
+
+# traits imports
+use App\Traits\Saf\SafLable;
+use Illuminate\Support\Facades\DB;
+
 class ActiveSafController extends Controller
-{
+{    
     /**
      * | Created On-08-08-2022 
      * | Created By-Anshu Kumar
@@ -25,5 +30,15 @@ class ActiveSafController extends Controller
     public function applySaf(Request $request)
     {
         return $this->Repository->applySaf($request);
+    }
+    public function inbox(Request $request)
+    {
+        $data =$this->Repository->inbox($request->id);
+        return $data;
+    }
+    public function outbox(Request $request)
+    {
+        $data =$this->Repository->outbox($request->id);
+        return $data;
     }
 }
