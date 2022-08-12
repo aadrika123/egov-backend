@@ -206,12 +206,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(ActiveSafController::class)->group(function () {
         Route::post('apply-for-saf', 'applySaf');                               // Applying Saf Route
         Route::get('get-saf-candidates-by-workflow-id/{id}', 'getSafCandByWorkflowId');  // Get SAF Candidates by WorkflowID
-    });
-
-    //inbox && outbox
-    Route::controller(ActiveSafController::class)->group(function () {
-        Route::get('saf-inbox/{id?}', 'inbox');                               
-        Route::get('saf-outbox/{id?}', 'outbox');                              
+        Route::get('saf-inbox/{id?}', 'inbox');                             // Saf workflow Inbox and Inbox By ID
+        Route::get('saf-outbox/{id?}', 'outbox');                           // Saf Workflow Outbox and Outbox By ID
     });
 });
 
@@ -222,10 +218,4 @@ Route::group(['middleware' => ['cors', 'json.response', 'request_logger']], func
     Route::controller(SelfAdvertisementController::class)->group(function () {
         Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');      // Save Self Advertisement
     });
-});
-
-#testing api not permanent api it will remove on production level;
-Route::controller(Demo::class)->group(function(){
-    Route::post('collection_test','collection_test');
-    Route::get('query_test','query_test');
 });

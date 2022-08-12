@@ -165,7 +165,7 @@ class EloquentSafRepository implements SafRepository
             return response()->json('Successfully Submitted Your Application', 200);
         } catch (Exception $e) {
             DB::rollBack();
-            return response()->json($e, 400);
+            return $e;
         }
     }
 
@@ -179,48 +179,50 @@ class EloquentSafRepository implements SafRepository
     public function inbox($saf_id)
     {
         $user_id = auth()->user()->id;
-        $data = ActiveSafDetail::select(DB::raw("string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
+        $data = ActiveSafDetail::select(
+            DB::raw("string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
                                                 string_agg(active_saf_owner_details.guardian_name,', ') as guardian_name ,
                                                 string_agg(active_saf_owner_details.mobile_no::text,', ') as mobile_no,
                                                 'SAF' as assesment_type,
-                                        'VacentLande' as assesment_type") ,
-                                        "active_saf_details.id",
-                                        "active_saf_details.saf_no",
-                                        "active_saf_details.id") 
-                                        ->leftJoin("active_saf_owner_details",function($join){
-                                            $join->on("active_saf_owner_details.saf_dtl_id","=","active_saf_details.id")
-                                            ->where("active_saf_owner_details.status",1);
-                                        })
-                                        ->where("active_saf_details.current_user",$user_id)
-                                        ->where("active_saf_details.status",1);
-                                        if($saf_id)
-                                        {
-                                            $data= $data->where("active_saf_details.id",$saf_id);
-                                        }
-                                        $saf=$data->groupBy("active_saf_details.id")
-                                            ->get() ->map(function($data) {
-                                                if ( ! $data->owner_name) {
-                                                    $data->owner_name = '';
-                                                }
-                                                if ( ! $data->guardian_name) {
-                                                    $data->guardian_name = '';
-                                                } 
-                                                if ( ! $data->mobile_no) {
-                                                    $data->mobile_no = '';
-                                                } 
+                                        'VacentLande' as assesment_type,
+                                        active_saf_details.created_at::date as apply_date"),
+            "active_saf_details.id",
+            "active_saf_details.saf_no",
+            "active_saf_details.id"
+        )
+            ->leftJoin("active_saf_owner_details", function ($join) {
+                $join->on("active_saf_owner_details.saf_dtl_id", "=", "active_saf_details.id")
+                    ->where("active_saf_owner_details.status", 1);
+            })
+            ->where("active_saf_details.current_user", $user_id)
+            ->where("active_saf_details.status", 1);
+        if ($saf_id) {
+            $data = $data->where("active_saf_details.id", $saf_id);
+        }
+        $saf = $data->groupBy("active_saf_details.id")
+            ->get()->map(function ($data) {
+                if (!$data->owner_name) {
+                    $data->owner_name = '';
+                }
+                if (!$data->guardian_name) {
+                    $data->guardian_name = '';
+                }
+                if (!$data->mobile_no) {
+                    $data->mobile_no = '';
+                }
 
-                                                if ( ! $data->assesment_type) {
-                                                    $data->assesment_type = '';
-                                                }
-                                                if ( ! $data->id) {
-                                                    $data->id = '';
-                                                } 
-                                                if ( ! $data->saf_no) {
-                                                    $data->saf_no = '';
-                                                }                                                
-                                                return $data;
-                                            });
-        if(sizeof($saf)==1)
+                if (!$data->assesment_type) {
+                    $data->assesment_type = '';
+                }
+                if (!$data->id) {
+                    $data->id = '';
+                }
+                if (!$data->saf_no) {
+                    $data->saf_no = '';
+                }
+                return $data;
+            });
+        if (sizeof($saf) == 1)
             return $saf[0];
         return $saf;
     }
@@ -228,56 +230,57 @@ class EloquentSafRepository implements SafRepository
     #OutBox
     public function outbox($saf_id)
     {
-        $user_id = auth()->user()->id;        
+        $user_id = auth()->user()->id;
         $data = ActiveSafDetail::select(
-                    DB::raw("string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
+            DB::raw("string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
                                     string_agg(active_saf_owner_details.guardian_name,', ') as guardian_name ,
                                     string_agg(active_saf_owner_details.mobile_no::text,', ') as mobile_no,
                                     'SAF' as assesment_type,
-                            'VacentLande' as assesment_type") ,
-                            "active_saf_details.id",
-                            "active_saf_details.saf_no",
-                            "active_saf_details.id")  
-                            ->leftJoin("active_saf_owner_details",function($join){
-                                $join->on("active_saf_owner_details.saf_dtl_id","=","active_saf_details.id")
-                                ->where("active_saf_owner_details.status",1);
-                            })
-                            ->where(
-                                function($query) use($user_id){
-                                    return $query
-                                    ->where('active_saf_details.current_user', '<>', $user_id)
-                                    ->orwhereNull('active_saf_details.current_user');
-                            })
-                            ->where("active_saf_details.status",1);
-                            if($saf_id)
-                            {
-                                $data= $data->where("active_saf_details.id",$saf_id);
-                            }
-                            $saf=$data->groupBy("active_saf_details.id")
-                            ->get()
-                            ->map(function($data) {
-                                if ( ! $data->owner_name) {
-                                    $data->owner_name = '';
-                                }
-                                if ( ! $data->guardian_name) {
-                                    $data->guardian_name = '';
-                                } 
-                                if ( ! $data->mobile_no) {
-                                    $data->mobile_no = '';
-                                } 
+                            'VacentLande' as assesment_type"),
+            "active_saf_details.id",
+            "active_saf_details.saf_no",
+            "active_saf_details.id"
+        )
+            ->leftJoin("active_saf_owner_details", function ($join) {
+                $join->on("active_saf_owner_details.saf_dtl_id", "=", "active_saf_details.id")
+                    ->where("active_saf_owner_details.status", 1);
+            })
+            ->where(
+                function ($query) use ($user_id) {
+                    return $query
+                        ->where('active_saf_details.current_user', '<>', $user_id)
+                        ->orwhereNull('active_saf_details.current_user');
+                }
+            )
+            ->where("active_saf_details.status", 1);
+        if ($saf_id) {
+            $data = $data->where("active_saf_details.id", $saf_id);
+        }
+        $saf = $data->groupBy("active_saf_details.id")
+            ->get()
+            ->map(function ($data) {
+                if (!$data->owner_name) {
+                    $data->owner_name = '';
+                }
+                if (!$data->guardian_name) {
+                    $data->guardian_name = '';
+                }
+                if (!$data->mobile_no) {
+                    $data->mobile_no = '';
+                }
 
-                                if ( ! $data->assesment_type) {
-                                    $data->assesment_type = '';
-                                }
-                                if ( ! $data->id) {
-                                    $data->id = '';
-                                } 
-                                if ( ! $data->saf_no) {
-                                    $data->saf_no = '';
-                                }                                                
-                                return $data;
-                            });
-        if(sizeof($saf)==1)
+                if (!$data->assesment_type) {
+                    $data->assesment_type = '';
+                }
+                if (!$data->id) {
+                    $data->id = '';
+                }
+                if (!$data->saf_no) {
+                    $data->saf_no = '';
+                }
+                return $data;
+            });
+        if (sizeof($saf) == 1)
             return $saf[0];
         return $saf;
     }
@@ -285,6 +288,5 @@ class EloquentSafRepository implements SafRepository
     #Saf Details
     public function details($saf_id)
     {
-        
     }
 }
