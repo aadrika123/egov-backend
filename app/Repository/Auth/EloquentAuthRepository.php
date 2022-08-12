@@ -139,7 +139,7 @@ class EloquentAuthRepository implements AuthRepository
 
             // check if suspended user
             if ($emailInfo->suspended == true) {
-                $response = ['status' => 'Cant logged in!! You Have Been Suspended !'];
+                $response = ['status' => false, 'message' => 'Cant logged in!! You Have Been Suspended !'];
                 return response()->json($response, 401);
             }
 
@@ -157,7 +157,7 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);         // EXPIRE KEY AFTER 5 HOURS
-                    $response = ['status' => 'You Have Logged In!', 'token' => $token];
+                    $response = ['status' => true, 'message' => 'You Have Logged In !!', 'token' => $token];
                     return response($response, 200);
                 }
                 // AUTHENTICATING PASSWORD IN HASH
@@ -184,7 +184,7 @@ class EloquentAuthRepository implements AuthRepository
 
                     Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
 
-                    $response = ['status' => true, 'token' => $token];
+                    $response = ['status' => true, 'message' => 'You Have Logged In!!', 'token' => $token];
                     return response($response, 200);
                 } else {
                     $response = ['status' => false, 'message' => 'Incorrect Password'];
