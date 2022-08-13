@@ -180,14 +180,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('gen/workflow-track/{RefTableID}/{RefTableValue}', 'getWorkflowTrackByTableIDValue');                     // Get WorkflowTrack By TableRefID and RefTableValue
     });
 
-    // Advertisement Updates, Fetch data
-    Route::controller(SelfAdvertisementController::class)->group(function () {
-        Route::put('crud/update-selfadvertisement/{id}', 'updateSelfAdvertisement');       // Update Self Advertisement
-        Route::get('crud/get-selfadvertisement-by-id/{id}', 'getSelfAdvertisementByID');   // Get Self Advertisement By Id
-        Route::get('crud/get-all-selfadvertisements', 'getAllSelfAdvertisements');         // Get All Self Advertisement Datas
-        Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');       // Delete Self Advertisement By ID
-    });
-
     // Citizen Register
     Route::controller(CitizenController::class)->group(function () {
         Route::get('get-citizen-by-id/{id}', 'getCitizenByID');     // Get Citizen By ID
@@ -220,6 +212,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     // Self Advertisement
     Route::controller(SelfAdvertisementController::class)->group(function () {
         Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');      // Save Self Advertisement
+        Route::get('crud/get-all-selfadvertisements-inbox', 'getAllSelfAdvertisementsInbox');         // Get All Self Advertisement Datas in Inbox
+        Route::get('crud/get-all-selfadvertisements-outbox', 'getAllSelfAdvertisementsOutbox');         // Get All Self Advertisement Datas in Outbox
+        Route::get('crud/get-selfadvertisement-by-id/{id}', 'getSelfAdvertisementByID');   // Get Self Advertisement By Id
+        Route::put('crud/update-selfadvertisement/{id}', 'updateSelfAdvertisement');       // Update Self Advertisement
+        Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');       // Delete Self Advertisement By ID
     });
 });
 

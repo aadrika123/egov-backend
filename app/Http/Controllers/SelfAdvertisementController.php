@@ -43,10 +43,16 @@ class SelfAdvertisementController extends Controller
         return $this->RepositorySelfAdvertisement->getSelfAdvertisementByID($id);
     }
 
-    // Get All Self Advertisements 
-    public function getAllSelfAdvertisements()
+    // Get All Self Advertisements in Inbox
+    public function getAllSelfAdvertisementsInbox()
     {
-        return $this->RepositorySelfAdvertisement->getAllSelfAdvertisements();
+        return $this->RepositorySelfAdvertisement->getAllSelfAdvertisementsInbox();
+    }
+
+    // Get All Self Advertisement in Outbox
+    public function getAllSelfAdvertisementsOutbox()
+    {
+        return $this->RepositorySelfAdvertisement->getAllSelfAdvertisementsOutbox();
     }
 
     // Delete Self Advertisement By ID
