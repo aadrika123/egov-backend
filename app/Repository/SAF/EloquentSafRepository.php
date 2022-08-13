@@ -39,6 +39,11 @@ class EloquentSafRepository implements SafRepository
                 ->where('ulb_id', $ulb_id)
                 ->where('workflow_id', $workflow_id)
                 ->first();
+            if(!$workflows)
+            {
+                $message=["status"=>false,"data"=>[],"message"=>"Workflow Not Available"];
+                return response()->json($message,200);
+            }
             $saf = new ActiveSafDetail;
             $saf->has_previous_holding_no = $request->hasPreviousHoldingNo;
             $saf->previous_holding_id = $request->previousHoldingId;
@@ -175,118 +180,182 @@ class EloquentSafRepository implements SafRepository
         * Created by :Sandeep Bara
         #==================================================
     */
-    #Inbox
-    public function inbox($saf_id)
-    {
-        $user_id = auth()->user()->id;
-        $data = ActiveSafDetail::select(
-            DB::raw("string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
-                                                string_agg(active_saf_owner_details.guardian_name,', ') as guardian_name ,
-                                                string_agg(active_saf_owner_details.mobile_no::text,', ') as mobile_no,
-                                                'SAF' as assesment_type,
-                                        'VacentLande' as assesment_type,
-                                        active_saf_details.created_at::date as apply_date"),
-            "active_saf_details.id",
-            "active_saf_details.saf_no",
-            "active_saf_details.id"
-        )
-            ->leftJoin("active_saf_owner_details", function ($join) {
-                $join->on("active_saf_owner_details.saf_dtl_id", "=", "active_saf_details.id")
-                    ->where("active_saf_owner_details.status", 1);
-            })
-            ->where("active_saf_details.current_user", $user_id)
-            ->where("active_saf_details.status", 1);
-        if ($saf_id) {
-            $data = $data->where("active_saf_details.id", $saf_id);
-        }
-        $saf = $data->groupBy("active_saf_details.id")
-            ->get()->map(function ($data) {
-                if (!$data->owner_name) {
-                    $data->owner_name = '';
-                }
-                if (!$data->guardian_name) {
-                    $data->guardian_name = '';
-                }
-                if (!$data->mobile_no) {
-                    $data->mobile_no = '';
-                }
+   #Inbox
+   public function inbox($key)
+   {
+       
+       $user_id = auth()->user()->id;
+       $data = ActiveSafDetail::select(DB::raw("owner_name,
+                                                guardian_name ,
+                                                mobile_no,
+                                               'SAF' as assesment_type,
+                                                'VacentLand' as property_type,
+                                                '15A' as ward_no") ,
+                                       "active_saf_details.id",
+                                       "active_saf_details.saf_no",
+                                       "active_saf_details.id") 
+                                       ->leftJoin(
+                                           DB::raw("(SELECT active_saf_owner_details.saf_dtl_id,
+                                                           string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
+                                                           string_agg(active_saf_owner_details.guardian_name,', ') as guardian_name,
+                                                           string_agg(active_saf_owner_details.mobile_no::text,', ') as mobile_no
+                                                      FROM active_saf_owner_details 
+                                                      WHERE active_saf_owner_details.status = 1
+                                                      GROUP BY active_saf_owner_details.saf_dtl_id
+                                                      )active_saf_owner_details
+                                                       "),
+                                           function($join){
+                                               $join->on("active_saf_owner_details.saf_dtl_id","=","active_saf_details.id")
+                                               ;
+                                           }
+                                       )
+                                       ->where("active_saf_details.current_user",$user_id)
+                                       ->where("active_saf_details.status",1);
+       if($key)
+       {
+           $data= $data->where(function($query) use($key)
+                           {
+                               $query->orwhere('active_saf_details.holding_no', 'ILIKE', '%'.$key.'%')
+                               ->orwhere('active_saf_details.saf_no', 'ILIKE', '%'.$key.'%')
+                               ->orwhere('active_saf_owner_details.owner_name', 'ILIKE', '%'.$key.'%')
+                               ->orwhere('active_saf_owner_details.guardian_name', 'ILIKE', '%'.$key.'%')
+                               ->orwhere('active_saf_owner_details.mobile_no', 'ILIKE', '%'.$key.'%');
+                           });
+       }
+       $saf=$data->get() ->map(function($data) {
+               if ( ! $data->owner_name) {
+                   $data->owner_name = '';
+               }
+               if ( ! $data->guardian_name) {
+                   $data->guardian_name = '';
+               } 
+               if ( ! $data->mobile_no) {
+                   $data->mobile_no = '';
+               }
+               if ( ! $data->assessment_type) {
+                   $data->assessment_type = '';
+               }
+               if ( ! $data->ward_no) {
+                $data->ward_no = '';
+               }
+               if ( ! $data->property_type) {
+                $data->property_type = '';
+               }
+               if ( ! $data->id) {
+                   $data->id = '';
+               } 
+               if ( ! $data->saf_no) {
+                   $data->saf_no = '';
+               }                                                
+               return $data;
+           }); 
+       if(sizeof($saf)==1)
+           return $saf[0];
+       return $saf;
+   }
 
-                if (!$data->assesment_type) {
-                    $data->assesment_type = '';
-                }
-                if (!$data->id) {
-                    $data->id = '';
-                }
-                if (!$data->saf_no) {
-                    $data->saf_no = '';
-                }
-                return $data;
-            });
-        if (sizeof($saf) == 1)
-            return $saf[0];
-        return $saf;
-    }
+   #OutBox
+   public function outbox($key)
+   {
+       $user_id = auth()->user()->id;        
+       $data = ActiveSafDetail::select(
+                           DB::raw("owner_name,
+                               guardian_name ,
+                               mobile_no,
+                               'SAF' as assesment_type,
+                                'VacentLand' as property_type,
+                                '15A' as ward_no") ,
+                           "active_saf_details.id",
+                           "active_saf_details.saf_no",
+                           "active_saf_details.id")  
+                           ->leftJoin(
+                               DB::raw("(SELECT active_saf_owner_details.saf_dtl_id,
+                                               string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
+                                               string_agg(active_saf_owner_details.guardian_name,', ') as guardian_name,
+                                               string_agg(active_saf_owner_details.mobile_no::text,', ') as mobile_no
+                                          FROM active_saf_owner_details 
+                                          WHERE active_saf_owner_details.status = 1
+                                          GROUP BY active_saf_owner_details.saf_dtl_id
+                                          )active_saf_owner_details
+                                           "),
+                               function($join){
+                                   $join->on("active_saf_owner_details.saf_dtl_id","=","active_saf_details.id")
+                                   ;
+                               }
+                           )
+                           ->where(
+                               function($query) use($user_id){
+                                   return $query
+                                   ->where('active_saf_details.current_user', '<>', $user_id)
+                                   ->orwhereNull('active_saf_details.current_user');
+                           })
+                           ->where("active_saf_details.status",1);
+                           if($key)
+                           {
+                               $data= $data->where(function($query) use($key)
+                                               {
+                                                   $query->orwhere('active_saf_details.holding_no', 'ILIKE', '%'.$key.'%')
+                                                   ->orwhere('active_saf_details.saf_no', 'ILIKE', '%'.$key.'%')
+                                                   ->orwhere('active_saf_owner_details.owner_name', 'ILIKE', '%'.$key.'%')
+                                                   ->orwhere('active_saf_owner_details.guardian_name', 'ILIKE', '%'.$key.'%')
+                                                   ->orwhere('active_saf_owner_details.mobile_no', 'ILIKE', '%'.$key.'%');
+                                               });
+                           }
+                           $saf=$data->get()
+                           ->map(function($data) {
+                               if ( ! $data->owner_name) {
+                                   $data->owner_name = '';
+                               }
+                               if ( ! $data->guardian_name) {
+                                   $data->guardian_name = '';
+                               } 
+                               if ( ! $data->mobile_no) {
+                                   $data->mobile_no = '';
+                               }
+                               if ( ! $data->assessment_type) {
+                                    $data->assessment_type = '';
+                                }
+                                if ( ! $data->ward_no) {
+                                $data->ward_no = '';
+                                }
+                                if ( ! $data->property_type) {
+                                $data->property_type = '';
+                                }
+                               if ( ! $data->id) {
+                                   $data->id = '';
+                               } 
+                               if ( ! $data->saf_no) {
+                                   $data->saf_no = '';
+                               }                                                
+                               return $data;
+                           });
+       if(sizeof($saf)==1)
+           return $saf[0];
+       return $saf;
+   }
 
-    #OutBox
-    public function outbox($saf_id)
-    {
-        $user_id = auth()->user()->id;
-        $data = ActiveSafDetail::select(
-            DB::raw("string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
-                                    string_agg(active_saf_owner_details.guardian_name,', ') as guardian_name ,
-                                    string_agg(active_saf_owner_details.mobile_no::text,', ') as mobile_no,
-                                    'SAF' as assesment_type,
-                            'VacentLande' as assesment_type"),
-            "active_saf_details.id",
-            "active_saf_details.saf_no",
-            "active_saf_details.id"
-        )
-            ->leftJoin("active_saf_owner_details", function ($join) {
-                $join->on("active_saf_owner_details.saf_dtl_id", "=", "active_saf_details.id")
-                    ->where("active_saf_owner_details.status", 1);
-            })
-            ->where(
-                function ($query) use ($user_id) {
-                    return $query
-                        ->where('active_saf_details.current_user', '<>', $user_id)
-                        ->orwhereNull('active_saf_details.current_user');
-                }
-            )
-            ->where("active_saf_details.status", 1);
-        if ($saf_id) {
-            $data = $data->where("active_saf_details.id", $saf_id);
-        }
-        $saf = $data->groupBy("active_saf_details.id")
-            ->get()
-            ->map(function ($data) {
-                if (!$data->owner_name) {
-                    $data->owner_name = '';
-                }
-                if (!$data->guardian_name) {
-                    $data->guardian_name = '';
-                }
-                if (!$data->mobile_no) {
-                    $data->mobile_no = '';
-                }
-
-                if (!$data->assesment_type) {
-                    $data->assesment_type = '';
-                }
-                if (!$data->id) {
-                    $data->id = '';
-                }
-                if (!$data->saf_no) {
-                    $data->saf_no = '';
-                }
-                return $data;
-            });
-        if (sizeof($saf) == 1)
-            return $saf[0];
-        return $saf;
-    }
-
-    #Saf Details
-    public function details($saf_id)
-    {
-    }
+   #Saf Details
+   public function details($saf_id)
+   {
+       $saf_data = ActiveSafDetail::select(DB::raw("'VacantLand' as property_type,
+                                                   'NewSaf' as assesment_type,
+                                                   active_saf_details.id as saf_id
+                                                   "),
+                                           "active_saf_details.*"
+                                           )
+                                           ->where('active_saf_details.id',"=",$saf_id)                                            
+                                           ->get();
+       $data['saf_dtl'] = remove_null($saf_data);
+       $owner_dtl = ActiveSafOwnerDetail::select('*')
+                                               ->where('status',1)
+                                               ->where('saf_dtl_id',$saf_id)
+                                               ->get();
+       $data['owner_dtl'] =  remove_null($owner_dtl); 
+       $floor = ActiveSafFloorDetail::select("*")
+                                   ->where('status',1)
+                                   ->where('saf_dtl_id',$saf_id)   
+                                   ->get(); 
+       $data['floor'] =  remove_null($floor);                              
+       return(collect($data));
+   }
 }

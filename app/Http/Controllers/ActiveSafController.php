@@ -28,12 +28,17 @@ class ActiveSafController extends Controller
     }
     public function inbox(Request $request)
     {
-        $data =$this->Repository->inbox($request->id);
+        $data =$this->Repository->inbox($request->key);
         return $data;
     }
     public function outbox(Request $request)
     {
-        $data =$this->Repository->outbox($request->id);
+        $data =$this->Repository->outbox($request->key);
+        return $data;
+    }
+    public function details(Request $request)
+    {
+        $data =$this->Repository->details($request->id);
         return $data;
     }
 }

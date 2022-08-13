@@ -25,11 +25,6 @@ if(!function_exists("remove_null"))
 {
     function remove_null($data)
     {
-        $filtered = $data->filter(function ($value, $key) {
-            return $value != null;
-        });
-        return $filtered;
-
         $collection = collect($data)->map(function ($name) {            
             if(is_object($name))
             {
