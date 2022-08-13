@@ -102,11 +102,13 @@ class EloquentSelfAdvertisement implements SelfAdvertisement
     public function getSelfAdvertisementByID($id)
     {
         try {
-            $data = TempSelfAdvertisement::find($id);
-            if ($data) {
-                return $data;
+            $self_Adv = TempSelfAdvertisement::find($id);
+            if ($self_Adv) {
+                $message = ['status' => true, 'message' => 'Data Available', 'data' => $self_Adv];
+                return response()->json($message, 200);
             } else {
-                return response()->json('Data Not Found For This ID', 404);
+                $message = ['status' => false, 'message' => 'Data Not Available', 'data' => ''];
+                return response()->json($message, 200);
             }
         } catch (Exception $e) {
             return response()->json($e, 400);
