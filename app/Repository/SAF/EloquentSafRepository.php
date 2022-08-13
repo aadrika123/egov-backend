@@ -338,7 +338,8 @@ class EloquentSafRepository implements SafRepository
    public function details($saf_id)
    {
        $saf_data = ActiveSafDetail::select(DB::raw("'VacantLand' as property_type,
-                                                   'NewSaf' as assesment_type,
+                                                   'NewSaf' as assessment_type,
+                                                   '15A' as word_no,
                                                    active_saf_details.id as saf_id
                                                    "),
                                            "active_saf_details.*"

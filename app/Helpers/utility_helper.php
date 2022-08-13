@@ -21,6 +21,7 @@ if(!function_exists("adjToArray"))
     }
 }
 
+// Changes Done
 if(!function_exists("remove_null"))
 {
     function remove_null($data)
