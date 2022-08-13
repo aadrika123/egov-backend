@@ -347,8 +347,8 @@ class EloquentSafRepository implements SafRepository
                                            "active_saf_details.*"
                                            )
                                            ->where('active_saf_details.id',"=",$saf_id)                                            
-                                           ->get();
-       $data['saf_dtl'] = remove_null($saf_data);
+                                           ->first();
+       $data= remove_null($saf_data);
        $owner_dtl = ActiveSafOwnerDetail::select('*')
                                                ->where('status',1)
                                                ->where('saf_dtl_id',$saf_id)
