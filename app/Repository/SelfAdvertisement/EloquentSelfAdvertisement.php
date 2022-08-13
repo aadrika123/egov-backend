@@ -57,7 +57,8 @@ class EloquentSelfAdvertisement implements SelfAdvertisement
             // $self_advertisement->initiator = $workflow[0]->initiator;
             // $self_advertisement->current_user = $workflow[0]->initiator;
             $self_advertisement->save();                                        // Save
-            return response()->json('Successfully Saved', 200);
+            $message = ['Status' => true, 'data' => '', 'message' => 'Successfully Submitted Your Application'];
+            return response()->json($message, 200);
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
