@@ -24,14 +24,14 @@ class SelfAdvertisement extends FormRequest
     public function rules()
     {
         return [
-            'LicenseYear' => 'required',
-            'Applicant' => 'required',
-            'Father' => 'required',
-            'Email' => 'required|email',
-            'Mobile' => 'required',
-            'AadharNo' => 'required|int',
-            'EntityName' => 'required',
-            'EntityAddress' => 'required'
+            'licenseYear' => 'required',
+            'applicant' => 'required',
+            'father' => 'required',
+            'email' => 'required|email',
+            'mobile' => 'required',
+            'aadharNo' => 'required|int',
+            'entityName' => 'required',
+            'entityAddress' => 'required'
         ];
     }
 }
