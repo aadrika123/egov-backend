@@ -44,18 +44,18 @@ class EloquentSelfAdvertisement implements SelfAdvertisement
         try {
             $self_advertisement = new TempSelfAdvertisement;
 
-            $refStmt = "SELECT
-                            u.initiator,
-                            u.finisher
-                        FROM ulb_workflow_masters u
-                        WHERE u.ulb_id=2 AND u.workflow_id=1";
+            // $refStmt = "SELECT
+            //                 u.initiator,
+            //                 u.finisher
+            //             FROM ulb_workflow_masters u
+            //             WHERE u.ulb_id=2 AND u.workflow_id=1";
 
-            $workflow = DB::select($refStmt);
+            // $workflow = DB::select($refStmt);
             $helper = new helper;
             $self_advertisement->unique_id = $helper->getNewUniqueID('SF');
             $this->storing($self_advertisement, $request);                      // Save Using Trait
-            $self_advertisement->initiator = $workflow[0]->initiator;
-            $self_advertisement->current_user = $workflow[0]->initiator;
+            // $self_advertisement->initiator = $workflow[0]->initiator;
+            // $self_advertisement->current_user = $workflow[0]->initiator;
             $self_advertisement->save();                                        // Save
             return response()->json('Successfully Saved', 200);
         } catch (Exception $e) {

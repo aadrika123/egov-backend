@@ -208,13 +208,24 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('saf-inbox/{id?}', 'inbox');                             // Saf workflow Inbox and Inbox By ID
         Route::get('saf-outbox/{id?}', 'outbox');                           // Saf Workflow Outbox and Outbox By ID
     });
-});
 
-Route::group(['middleware' => ['cors', 'json.response', 'request_logger']], function () {
     /**
-     * API's for Self Advertisement Save
+     * -----------------------------------------------------------------------------------------------
+     * | Created By - Anshu Kumar
+     * | Advertisement Module
+     * -----------------------------------------------------------------------------------------------
      */
+
+    // Self Advertisement
     Route::controller(SelfAdvertisementController::class)->group(function () {
         Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');      // Save Self Advertisement
     });
+});
+
+
+
+
+
+// Routes used where authentication not required
+Route::group(['middleware' => ['cors', 'json.response', 'request_logger']], function () {
 });
