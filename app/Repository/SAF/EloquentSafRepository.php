@@ -190,7 +190,8 @@ class EloquentSafRepository implements SafRepository
                                                 mobile_no,
                                                'SAF' as assesment_type,
                                                 'VacentLand' as property_type,
-                                                '15A' as ward_no") ,
+                                                '15A' as ward_no,
+                                                active_saf_details.created_at::date as apply_date") ,
                                        "active_saf_details.id",
                                        "active_saf_details.saf_no",
                                        "active_saf_details.id") 
@@ -264,7 +265,8 @@ class EloquentSafRepository implements SafRepository
                                mobile_no,
                                'SAF' as assesment_type,
                                 'VacentLand' as property_type,
-                                '15A' as ward_no") ,
+                                '15A' as ward_no,
+                                active_saf_details.created_at::date as apply_date") ,
                            "active_saf_details.id",
                            "active_saf_details.saf_no",
                            "active_saf_details.id")  
