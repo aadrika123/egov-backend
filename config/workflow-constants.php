@@ -7,5 +7,6 @@
  */
 
 return [
-    "SAF_WORKFLOW_ID" => "6"
+    "SAF_WORKFLOW_ID" => "6",
+    "SELF_ADVERTISEMENT_WORKFLOW_ID" => "4"
 ];

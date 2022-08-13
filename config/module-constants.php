@@ -7,5 +7,6 @@
  */
 
 return [
-    "PROPERTY_MODULE_ID" => "2"
+    "PROPERTY_MODULE_ID" => "2",
+    "ADVERTISEMENT_MODULE_ID" => "1"
 ];

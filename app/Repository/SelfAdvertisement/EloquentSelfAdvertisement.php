@@ -9,6 +9,8 @@ use Exception;
 use Illuminate\Http\Request;
 use App\Traits\SelfAdvertisement as SelfAdvertisementTrait;
 use App\Helpers\helper;
+use App\Models\UlbWorkflowMaster;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 
@@ -42,22 +44,29 @@ class EloquentSelfAdvertisement implements SelfAdvertisement
     public function storeSelfAdvertisement(SelfAdvertisementRequest $request)
     {
         try {
+
+
+            $refWorkflowID = Config::get('workflow-constants.SELF_ADVERTISEMENT_WORKFLOW_ID');
+
+            $workflow = UlbWorkflowMaster::select('initiator', 'finisher')
+                ->where('ulb_id', auth()->user()->ulb_id)
+                ->where('workflow_id', $refWorkflowID)
+                ->first();
+
+            if (!$workflow) {
+                $message = ['status' => false, 'data' => '', 'message' => 'Workflow Not Available'];
+                return response()->json($message, 200);
+            }
+
             $self_advertisement = new TempSelfAdvertisement;
-
-            // $refStmt = "SELECT
-            //                 u.initiator,
-            //                 u.finisher
-            //             FROM ulb_workflow_masters u
-            //             WHERE u.ulb_id=2 AND u.workflow_id=1";
-
-            // $workflow = DB::select($refStmt);
             $helper = new helper;
             $self_advertisement->unique_id = $helper->getNewUniqueID('SF');
             $this->storing($self_advertisement, $request);                      // Save Using Trait
-            // $self_advertisement->initiator = $workflow[0]->initiator;
-            // $self_advertisement->current_user = $workflow[0]->initiator;
+            $self_advertisement->initiator = $workflow->initiator;
+            $self_advertisement->current_user = $workflow->initiator;
+            $self_advertisement->approver = $workflow->finisher;
             $self_advertisement->save();                                        // Save
-            $message = ['Status' => true, 'data' => '', 'message' => 'Successfully Submitted Your Application'];
+            $message = ['status' => true, 'data' => '', 'message' => 'Successfully Submitted Your Application'];
             return response()->json($message, 200);
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -77,7 +86,8 @@ class EloquentSelfAdvertisement implements SelfAdvertisement
             $self_advertisement = TempSelfAdvertisement::find($id);
             $this->storing($self_advertisement, $request);              // Update Using Trait
             $self_advertisement->save();
-            return response()->json('Successfully Updated', 200);
+            $message = ['status' => true, 'data' => '', 'message' => 'Successfully Updated The Application'];
+            return response()->json($message, 200);
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -104,14 +114,36 @@ class EloquentSelfAdvertisement implements SelfAdvertisement
     }
 
     /**
-     * Get All Self Advertisements 
+     * Get All Self Advertisements in Inbox
      * @return response
      */
-    public function getAllSelfAdvertisements()
+    public function getAllSelfAdvertisementsInbox()
     {
         try {
-            $data = TempSelfAdvertisement::orderBy('id', 'desc')->get();
-            return $data;
+            $user = auth()->user()->id;
+            $self_Adv = TempSelfAdvertisement::where('current_user', $user)
+                ->orderBy('id', 'desc')
+                ->get();
+            $message = ['status' => true, 'message' => 'Data Available', 'data' => $self_Adv];
+            return response()->json($message, 200);
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
+    }
+
+    /**
+     * | Get All Self Advertisements In Outbox
+     * | @return Response
+     */
+    public function getAllSelfAdvertisementsOutbox()
+    {
+        try {
+            $user = auth()->user()->id;
+            $self_Adv = TempSelfAdvertisement::where('current_user', '<>', $user)
+                ->orderBy('id', 'desc')
+                ->get();
+            $message = ['status' => true, 'message' => 'Data Available', 'data' => $self_Adv];
+            return response()->json($message, 200);
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
