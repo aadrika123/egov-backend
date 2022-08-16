@@ -41,4 +41,22 @@ class ActiveSafController extends Controller
         $data =$this->Repository->details($request->id);
         return $data;
     }
+
+    public function special(Request $request)
+    {
+        $data =$this->Repository->special($request);
+        return $data;
+    }
+
+    public function specialInbox(Request $request)
+    {
+        $data =$this->Repository->specialInbox($request->key);
+        return $data;
+    }
+
+    public function postNextLevel(Request $request)
+    {
+        $data =$this->Repository->postNextLevel($request);        
+        return $data;
+    }
 }
