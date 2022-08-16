@@ -100,22 +100,27 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
             Route::post('save-role', 'storeRole');
             Route::put('edit-role/{id}', 'editRole');
             Route::get('get-role/{id}', 'getRole');
+            Route::get('get-all-roles', 'getAllRoles');
 
             Route::post('role-menu', 'roleMenu');
             Route::put('edit-role-menu/{id}', 'editRoleMenu');
             Route::get('get-role-menu/{id}', 'getRoleMenu');
+            Route::get('get-all-role-menus', 'getAllRoleMenus');
 
             Route::post('role-user', 'roleUser');
             Route::put('edit-role-user/{id}', 'editRoleUser');
             Route::get('get-role-user/{id}', 'getRoleUser');
+            Route::get('get-all-role-users', 'getAllRoleUsers');
 
             Route::post('role-menu-logs', 'roleMenuLogs');
             Route::put('edit-role-menu-logs/{id}', 'editRoleMenuLogs');
             Route::get('get-role-menu-logs/{id}', 'getRoleMenuLogs');
+            Route::get('get-all-role-menu-logs', 'getAllRoleMenuLogs');
 
             Route::post('role-user-logs', 'roleUserLogs');
             Route::put('edit-role-user-logs/{id}', 'editRoleUserLogs');
             Route::get('get-role-user-logs/{id}', 'getRoleUserLogs');
+            Route::get('get-all-role-user-logs', 'getAllRoleUserLogs');
         });
     });
 
