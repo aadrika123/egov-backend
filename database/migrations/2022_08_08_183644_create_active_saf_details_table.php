@@ -75,6 +75,7 @@ class CreateActiveSafDetailsTable extends Migration
             $table->timestamp('updated_on')->nullable();
             $table->integer('status')->nullable()->default(1);            
             $table->smallInteger('is_escalate')->nullable()->default(0);
+            $table->bigInteger('escalate_by')->nullable(true);
             $table->date('apply_date')->nullable();
             $table->integer('saf_pending_status')->nullable()->default(0);
             $table->string('assessment_type', 100)->nullable();

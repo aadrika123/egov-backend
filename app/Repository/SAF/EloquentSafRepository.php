@@ -381,14 +381,13 @@ class EloquentSafRepository implements SafRepository
 
         $rules=[
             "escalateStatus"=>"required|int",
-            "safId"=>"required",
-            "SenderId"=>"required|int", 
+            "safId"=>"required", 
         ];
         $message = [
             "escalateStatus.required"=>"Escalate Status Is Required",
             "safId.required"=>"Saf Id Is Required",
-            "SenderId.int"=>"Serder User Id Must Be Integer",
-            "SenderId.required"=>"SenderId User Id Is Required",
+            // "SenderId.int"=>"Serder User Id Must Be Integer",
+            // "SenderId.required"=>"SenderId User Id Is Required",
         ];
         // dd($rules);
         $validator = Validator::make($request->all(),$rules,$message);  
@@ -409,7 +408,8 @@ class EloquentSafRepository implements SafRepository
             return response()->json($message,200);
         }
         DB::beginTransaction();
-        $data->is_escalate=$request->escalateStatus;        
+        $data->is_escalate=$request->escalateStatus;  
+        $data->escalate_by=$user_id;        
         $data->save();
         DB::commit();
         $messages = ["status"=>true,"data"=>[],"message"=>($request->escalateStatus==1?'Saf is Escalated':"Saf is removed from Escalated")];
@@ -549,7 +549,7 @@ class EloquentSafRepository implements SafRepository
                     "message"=>$request->comment,
                     "forwardedTo"=>$request->receiverDesignationId
             ];
-            $workfloes = $this->wordflow($inputs);
+            $workfloes = $this->workflowTracks($inputs);
             if($workfloes['status']==false)
             {
                 DB::rollBack();
@@ -567,7 +567,8 @@ class EloquentSafRepository implements SafRepository
         
    }
 
-   public function wordflow(array $inputs)
+   # add workflow_tracks
+   public function workflowTracks(array $inputs)
    { 
         try {
             $track = new WorkflowTrack();
