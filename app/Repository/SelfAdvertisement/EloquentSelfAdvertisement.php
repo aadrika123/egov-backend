@@ -6,12 +6,10 @@ use App\Repository\SelfAdvertisement\SelfAdvertisement;
 use App\Http\Requests\SelfAdvertisement as SelfAdvertisementRequest;
 use App\Models\TempSelfAdvertisement;
 use Exception;
-use Illuminate\Http\Request;
 use App\Traits\SelfAdvertisement as SelfAdvertisementTrait;
 use App\Helpers\helper;
 use App\Models\UlbWorkflowMaster;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 
 
 /**

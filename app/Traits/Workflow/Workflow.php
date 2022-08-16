@@ -84,6 +84,7 @@ trait Workflow
             $val['is_admin'] = $wcs->is_admin ?? '';
             array_push($arr, $val);
         }
-        return response()->json($arr, 200);
+        $message = ["status" => true, "message" => "Date Fetched", "data" => $arr];
+        return response()->json($message, 200);
     }
 }

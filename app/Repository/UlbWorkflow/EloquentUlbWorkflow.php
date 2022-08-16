@@ -42,7 +42,7 @@ class EloquentUlbWorkflow implements UlbWorkflow
             $ulb_workflow = new UlbWorkflowMaster;
             $check_ulb_module = $this->checkUlbModuleExistance($request);    // Checking if the ulbID already existing for the workflowid or not
             if ($check_ulb_module) {
-                return response()->json('Module is already existing to this Ulb ID', 400);
+                return response()->json('Module is already existing to this Ulb ID', 200);
             }
             if (!$check_ulb_module) {
                 return $this->saving($ulb_workflow, $request);
@@ -106,7 +106,7 @@ class EloquentUlbWorkflow implements UlbWorkflow
             if (!$stmt) {
                 $check_module = $this->checkUlbModuleExistance($request);      // Checking if the ulb_workflow already existing or not
                 if ($check_module) {
-                    return response()->json('Module already Existing for this Ulb', 400);
+                    return response()->json('Module already Existing for this Ulb', 200);
                 } else {
                     $this->deleteExistingCandidates($id);                       // Deleting Existing Candidates
                     $redis->del('ulb_workflow:' . $id);

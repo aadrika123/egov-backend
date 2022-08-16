@@ -24,20 +24,21 @@ class EloquentWorkflowTrack implements WorkflowTrack
     public function store(Request $request)
     {
         $request->validate([
-            'Message' => 'required',
+            'message' => 'required',
         ]);
         try {
             $track = new Track;
-            $track->user_id = auth()->user()->id;
-            $track->citizen_id = $request->CitizenID;
-            $track->module_id = $request->ModuleID;
-            $track->ref_table_dot_id = $request->RefTableDotID;
-            $track->ref_table_id_value = $request->RefTableIDValue;
-            $track->message = $request->Message;
+            $track->workflow_candidate_id = $request->workflowCandidateID;
+            $track->citizen_id = $request->citizenID;
+            $track->module_id = $request->moduleID;
+            $track->ref_table_dot_id = $request->refTableDotID;
+            $track->ref_table_id_value = $request->refTableIDValue;
+            $track->message = $request->message;
             $track->track_date = date('Y-m-d H:i:s');
-            $track->forwarded_to = $request->ForwardedTo;
+            $track->forwarded_to = $request->forwardedTo;
             $track->save();
-            return response()->json('Successfully Saved the Remarks', 200);
+            $message = ["status" => true, "message" => "Successfully Saved The Remarks", "data" => ''];
+            return response()->json($message, 200);
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
