@@ -38,7 +38,9 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             $role = new RoleMaster();
-            return $this->savingRole($role, $request);          //Trait for Storing Role Master
+            $this->savingRole($role, $request);          //Trait for Storing Role Master
+            $message = ["status" => true, "message" => "Successfully Saved", "data" => ''];
+            return response()->json($message, 200);
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -64,16 +66,20 @@ class EloquentRoleRepository implements RoleRepository
             $role = RoleMaster::find($id);
             $stmt = $role->role_name == $request->role_name;
             if ($stmt) {
-                return $this->savingRole($role, $request);          //Trait for Updating Role Master
+                $this->savingRole($role, $request);          //Trait for Updating Role Master
+                $message = ["status" => true, "message" => "Successfully Updated", "data" => ''];
+                return response()->json($message, 200);
             }
             if (!$stmt) {
                 // Checking Role Name Already existing or not
                 $check = RoleMaster::where('role_name', '=', $request->role_name)->first();
                 if ($check) {
-                    return response()->json(['Status' => false, 'message' => 'Role Name already Existing'], 400);
+                    return response()->json(['status' => false, 'message' => 'Role Name already Existing', 'data' => ''], 200);
                 }
                 if (!$check) {
-                    return $this->savingRole($role, $request);          //Trait for Updating Role Master
+                    $this->savingRole($role, $request);          //Trait for Updating Role Master
+                    $message = ["status" => true, "message" => "Successfully Updated", "data" => ''];
+                    return response()->json($message, 200);
                 }
             }
         } catch (Exception $e) {
@@ -89,13 +95,26 @@ class EloquentRoleRepository implements RoleRepository
     {
         $roles = RoleMaster::find($id);
         if ($roles) {
-            return response()->json($roles, 302);
+            $message = ["status" => true, "message" => "Data Fetched", "data" => $roles];
+            return response()->json($message, 200);
         } else {
-            return response()->json(['Status' => 'No Data Available'], 404);
+            $message = ["status" => true, "message" => "Data not Found", "data" => ''];
+            return response()->json($message, 200);
         }
     }
 
     /**
+     * | Get All Roles by Order By Id Desc
+     */
+    public function getAllRoles()
+    {
+        $roles = RoleMaster::orderByDesc('id')->get();
+        $data = remove_null($roles);                        // Filteration of null to blank using helper function
+        return $data;
+    }
+
+    /**
+     * --------------------------------------------------------------------------------------
      * --------------------------------------------
      * storing Role Menus
      * --------------------------------------------
@@ -112,13 +131,13 @@ class EloquentRoleRepository implements RoleRepository
             // Checking data already existing 
             $check = $this->checkRoleMenu($request);
             if ($check) {
-                return Role::failure('Menu', 'Role');    // Response Message
+                return Role::failure('Menu', 'Role');                   // Response Message
             }
             // if data is not existing
             if (!$check) {
                 $menu_role = new RoleMenu;
                 $this->savingRoleMenu($menu_role, $request);           //Trait for Storing Role Menu
-                return Role::success();             // Response Message
+                return Role::success();                                 // Response Message
             }
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -140,7 +159,7 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             $menu_role = RoleMenu::find($id);
-            $stmt = $menu_role->role_id == $request->RoleID && $menu_role->menu_id == $request->MenuID;
+            $stmt = $menu_role->role_id == $request->roleID && $menu_role->menu_id == $request->menuID;
             if ($stmt) {
                 $this->savingRoleMenu($menu_role, $request);            //Trait for updating Role Menu
                 return Role::success();                                 // Response Message
@@ -149,12 +168,12 @@ class EloquentRoleRepository implements RoleRepository
                 // Checking data already existing 
                 $check = $this->checkRoleMenu($request);
                 if ($check) {
-                    return Role::failure('Menu', 'Role');    // Response Message
+                    return Role::failure('Menu', 'Role');                   // Response Message
                 }
                 // if data is not existing
                 if (!$check) {
                     $this->savingRoleMenu($menu_role, $request);           //Trait for updating Role Menu
-                    return Role::success();                  // Response Message
+                    return Role::success();                                 // Response Message
                 }
             }
         } catch (Exception $e) {
@@ -165,15 +184,28 @@ class EloquentRoleRepository implements RoleRepository
     /**
      * Getting Role Menus
      * @return App\Traits\Roles\Role
+     * | remove_null is a helper function which removes null values and add blank value during fetching data
      */
     public function getRoleMenu($id)
     {
         $role_menu = RoleMenu::find($id);
         if ($role_menu) {
-            return response()->json($role_menu, 302);
+            $message = ["status" => false, "message" => "Data Fetched", "data" => remove_null($role_menu)];
+            return response()->json($message, 200);
         } else {
             return Role::noData();                          // Trait
         }
+    }
+
+    /**
+     * | Get All Role Menus
+     */
+
+    public function getAllRoleMenus()
+    {
+        $role_menu = RoleMenu::all();
+        $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($role_menu)];
+        return response($message, 200);
     }
 
     /**
@@ -221,7 +253,7 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             $role_user = RoleUser::find($id);
-            $stmt = $role_user->user_id == $request->UserID && $role_user->role_id == $request->RoleID;
+            $stmt = $role_user->user_id == $request->userID && $role_user->role_id == $request->roleID;
             if ($stmt) {
                 $this->savingRoleUser($role_user, $request);   // Trait for Updating Role User
                 return Role::success();
@@ -254,12 +286,22 @@ class EloquentRoleRepository implements RoleRepository
     {
         $role_user = RoleUser::find($id);
         if ($role_user) {
-            return response()->json($role_user, 302);
+            $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($role_user)];
+            return response()->json($message, 200);
         } else {
             return Role::noData();
         }
     }
 
+    /**
+     * | Getting all Role Users 
+     */
+    public function getAllRoleUsers()
+    {
+        $role_users = RoleUser::orderByDesc('id')->get();
+        $message = ["status" => true, "message" => "Data Fetched", "data" => $role_users];
+        return response($message);
+    }
 
     /**
      * -----------------------------------------------
@@ -303,7 +345,7 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             $role_menu_logs = RoleMenuLog::find($id);
-            $stmt = $role_menu_logs->role_id == $request->RoleID && $role_menu_logs->menu_id == $request->MenuID;
+            $stmt = $role_menu_logs->role_id == $request->roleID && $role_menu_logs->menu_id == $request->menuID;
             if ($stmt) {
                 $this->savingRoleMenuLog($role_menu_logs, $request);        // Update Using Trait
                 return Role::success();                                     //Response Message
@@ -333,10 +375,21 @@ class EloquentRoleRepository implements RoleRepository
     {
         $role_menu_logs = RoleMenuLog::find($id);
         if ($role_menu_logs) {
-            return response()->json($role_menu_logs, 302);
+            $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($role_menu_logs)];
+            return response()->json($message, 200);
         } else {
             return Role::noData();                      // Trait
         }
+    }
+
+    /**
+     * | Get All role menu logs
+     */
+    public function getAllRoleMenuLogs()
+    {
+        $logs = RoleMenuLog::orderByDesc("id")->get();
+        $message = ["status" => true, "message" => "Data Fetched", "data" => $logs];
+        return response($message);
     }
 
     /** 
@@ -381,7 +434,7 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             $role_user_log = RoleUserLog::find($id);
-            $stmt = $role_user_log->user_id == $request->UserID && $role_user_log->role_id == $request->RoleID;
+            $stmt = $role_user_log->user_id == $request->userID && $role_user_log->role_id == $request->roleID;
             if ($stmt) {
                 $this->savingRoleUserLog($role_user_log, $request);         // Update Role User Log
                 return Role::success();                                     // Success Message
@@ -413,9 +466,20 @@ class EloquentRoleRepository implements RoleRepository
     {
         $role_user_logs = RoleUserLog::find($id);
         if ($role_user_logs) {
-            return response()->json($role_user_logs, 302);
+            $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($role_user_logs)];
+            return response()->json($message, 200);
         } else {
             return Role::noData();                          // Trait
         }
+    }
+
+    /**
+     * | Getting all Role User Logs
+     */
+    public function getAllRoleUserLogs()
+    {
+        $logs = RoleUserLog::orderByDesc("id")->get();
+        $message = ["status" => true, "message" => "Data Fetched", "data" => $logs];
+        return response($message);
     }
 }

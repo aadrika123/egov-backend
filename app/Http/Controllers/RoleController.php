@@ -47,6 +47,12 @@ class RoleController extends Controller
         return $this->EloquentRole->getRole($id);
     }
 
+    // Get All Roles
+    public function getAllRoles()
+    {
+        return $this->EloquentRole->getAllRoles();
+    }
+
     /*************************************************************************************************** */
 
     // Storing Role Menu
@@ -66,6 +72,12 @@ class RoleController extends Controller
     {
         return $this->EloquentRole->getRoleMenu($id);
     }
+
+    // Getting all Role Menus
+    public function getAllRoleMenus()
+    {
+        return $this->EloquentRole->getAllRoleMenus();
+    }
     /**************************************************************************************************** */
 
     // Storing Role User
@@ -84,6 +96,12 @@ class RoleController extends Controller
     public function getRoleUser($id)
     {
         return $this->EloquentRole->getRoleUser($id);
+    }
+
+    // Getting all Role Users
+    public function getAllRoleUsers()
+    {
+        return $this->EloquentRole->getAllRoleUsers();
     }
 
     /***************************************************************************************************** */
@@ -106,6 +124,12 @@ class RoleController extends Controller
         return $this->EloquentRole->getRoleMenuLogs($id);
     }
 
+    // Getting all role menu logs
+    public function getAllRoleMenuLogs()
+    {
+        return $this->EloquentRole->getAllRoleMenuLogs();
+    }
+
     /***************************************************************************************************** */
 
     // Storing Role User Logs
@@ -124,5 +148,11 @@ class RoleController extends Controller
     public function getRoleUserLogs($id)
     {
         return $this->EloquentRole->getRoleUserLogs($id);
+    }
+
+    // Getting All Role User Logs
+    public function getAllRoleUserLogs()
+    {
+        return $this->EloquentRole->getAllRoleUserLogs();
     }
 }
