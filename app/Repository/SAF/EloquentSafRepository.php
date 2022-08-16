@@ -8,8 +8,8 @@ use App\Models\ActiveSafDetail;
 use App\Models\ActiveSafFloorDetail;
 use App\Models\ActiveSafOwnerDetail;
 use App\Models\UlbWorkflowMaster;
-use App\Models\Workflow;
 use App\Models\WorkflowCandidate;
+use App\Models\WorkflowTrack;
 use Exception;
 use Illuminate\Auth\Events\Validated;
 use Illuminate\Support\Facades\Config;
@@ -364,7 +364,17 @@ class EloquentSafRepository implements SafRepository
                                    ->where('status',1)
                                    ->where('saf_dtl_id',$saf_id)   
                                    ->get(); 
-       $data['floor'] =  remove_null($floor);                              
+       $data['floor'] =  remove_null($floor); 
+       $time_line =  DB::table('workflow_tracks')->select("workflow_tracks.message","role_masters.role_name",
+                                                            DB::raw("workflow_tracks.track_date::date as track_date")
+                                                            )                            
+                                ->leftjoin('users',"users.id","workflow_tracks.citizen_id")
+                                ->leftjoin('role_masters','role_masters.id','users.roll_id')
+                                ->where('ref_table_dot_id','active_saf_details.id')
+                                ->where('ref_table_id_value',$saf_id)
+                                ->orderBy('track_date','desc')
+                                ->get();
+        $data['time_line'] =  remove_null($time_line);                       
        return(collect($data));
    }
 
@@ -375,18 +385,13 @@ class EloquentSafRepository implements SafRepository
         $rules=[
             "escalateStatus"=>"required|int",
             "safId"=>"required",
-            "SenderId"=>"required|int",
-            "designationId"=>"required|int",
-            "ulbId"=>"required",         
+            "SenderId"=>"required|int", 
         ];
         $message = [
             "escalateStatus.required"=>"Escalate Status Is Required",
             "safId.required"=>"Saf Id Is Required",
             "SenderId.int"=>"Serder User Id Must Be Integer",
             "SenderId.required"=>"SenderId User Id Is Required",
-            "designationId.required"=>"Designation Id Is Required",
-            "designationId.int"=>"Designation Must Be Integer",
-            "ulbId.required"=>"ulbId Is required",
         ];
         // dd($rules);
         $validator = Validator::make($request->all(),$rules,$message);  
@@ -422,7 +427,7 @@ class EloquentSafRepository implements SafRepository
         $data = ActiveSafDetail::select(DB::raw("owner_name,
                                                 guardian_name ,
                                                 mobile_no,
-                                                'SAF' as assesment_type,
+                                                'SAF' as assessment_type,
                                                 'VacentLand' as property_type,
                                                 '15A' as ward_no,
                                                 active_saf_details.created_at::date as apply_date") ,
@@ -544,7 +549,7 @@ class EloquentSafRepository implements SafRepository
             $inputs=['workflowCandidateID'=>$work_flow_candidate->id,
                     "citizenID"=>$user_id,
                     "moduleID"=>$work_flow_candidate->module_id,
-                    "refTableDotID"=>'active_saf_details',
+                    "refTableDotID"=>'active_saf_details.id',
                     "refTableIDValue"=>$saf_id,
                     "message"=>$request->comment,
                     "forwardedTo"=>$request->receiverDesignationId
@@ -570,7 +575,7 @@ class EloquentSafRepository implements SafRepository
    public function wordflow(array $inputs)
    { 
         try {
-            $track = new Workflow();
+            $track = new WorkflowTrack();
             $track->workflow_candidate_id = $inputs['workflowCandidateID']??null;
             $track->citizen_id = $inputs['citizenID']??null;
             $track->module_id = $inputs['moduleID']??null;
@@ -585,5 +590,5 @@ class EloquentSafRepository implements SafRepository
         } catch (Exception $e) {
             return  ['status'=>false,'message'=>$e->getMessage()];
         }
-    }
+   }
 }
