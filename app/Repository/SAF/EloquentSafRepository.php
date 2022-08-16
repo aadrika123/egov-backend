@@ -9,8 +9,10 @@ use App\Models\ActiveSafFloorDetail;
 use App\Models\ActiveSafOwnerDetail;
 use App\Models\UlbWorkflowMaster;
 use Exception;
+use Illuminate\Auth\Events\Validated;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * | Created On-10-08-2022
@@ -211,7 +213,7 @@ class EloquentSafRepository implements SafRepository
                                            }
                                        )
                                        ->where("active_saf_details.current_user",$user_id)
-                                       ->where("active_saf_details.status",1);
+                                       ->where("active_saf_details.status",1);        
        if($key)
        {
            $data= $data->where(function($query) use($key)
@@ -341,7 +343,7 @@ class EloquentSafRepository implements SafRepository
    {
        $saf_data = ActiveSafDetail::select(DB::raw("'VacantLand' as property_type,
                                                    'NewSaf' as assessment_type,
-                                                   '15A' as word_no,
+                                                   '15A' as ward_no,
                                                    active_saf_details.id as saf_id
                                                    "),
                                            "active_saf_details.*"
@@ -360,5 +362,170 @@ class EloquentSafRepository implements SafRepository
                                    ->get(); 
        $data['floor'] =  remove_null($floor);                              
        return(collect($data));
+   }
+
+   #Add Inbox  special category
+   public function special(Request $request)
+   {
+
+        $rules=[
+            "escalateStatus"=>"required|int",
+            "safId"=>"required",
+            "SenderId"=>"required|int",
+            "designationId"=>"required|int",
+            "ulbId"=>"required",         
+        ];
+        $message = [
+            "escalateStatus.required"=>"Escalate Status Is Required",
+            "safId.required"=>"Saf Id Is Required",
+            "SenderId.int"=>"Serder User Id Must Be Integer",
+            "SenderId.required"=>"SenderId User Id Is Required",
+            "designationId.required"=>"Designation Id Is Required",
+            "designationId.int"=>"Designation Must Be Integer",
+            "ulbId.required"=>"ulbId Is required",
+        ];
+        // dd($rules);
+        $validator = Validator::make($request->all(),$rules,$message);  
+        if($validator->fails())
+        { 
+            $messages = ["status"=>false,"data"=>$request->all(),"message"=>$validator->errors()];
+            return response()->json($messages,200);
+        }
+
+        $user_id = auth()->user()->id;
+        $saf = new ActiveSafDetail;
+        
+        $saf_id = $request->id??$request->safId;
+        $data = $saf->where('current_user',$user_id)->find($saf_id);
+        if(!$data)
+        {
+            $message=["status"=>false,"data"=>$request->all(),"message"=>"Saf Not Found"];
+            return response()->json($message,200);
+        }
+        DB::beginTransaction();
+        $data->is_escalate=$request->escalateStatus;        
+        $data->save();
+        DB::commit();
+        $messages = ["status"=>true,"data"=>[],"message"=>($request->escalateStatus==1?'Saf is Scalated':"Saf is removed from Scalated")];
+        return response()->json($messages,200);
+   }
+
+   #Inbox  special category
+   public function specialInbox($key)
+   {
+
+        $user_id = auth()->user()->id;
+        $data = ActiveSafDetail::select(DB::raw("owner_name,
+                                                guardian_name ,
+                                                mobile_no,
+                                                'SAF' as assesment_type,
+                                                'VacentLand' as property_type,
+                                                '15A' as ward_no,
+                                                active_saf_details.created_at::date as apply_date") ,
+                                        "active_saf_details.id",
+                                        "active_saf_details.saf_no",
+                                        "active_saf_details.id") 
+                                        ->leftJoin(
+                                            DB::raw("(SELECT active_saf_owner_details.saf_dtl_id,
+                                                            string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
+                                                            string_agg(active_saf_owner_details.guardian_name,', ') as guardian_name,
+                                                            string_agg(active_saf_owner_details.mobile_no::text,', ') as mobile_no
+                                                    FROM active_saf_owner_details 
+                                                    WHERE active_saf_owner_details.status = 1
+                                                    GROUP BY active_saf_owner_details.saf_dtl_id
+                                                    )active_saf_owner_details
+                                                        "),
+                                            function($join){
+                                                $join->on("active_saf_owner_details.saf_dtl_id","=","active_saf_details.id")
+                                                ;
+                                            }
+                                        )
+                                        ->where("active_saf_details.current_user",$user_id)
+                                        ->where("active_saf_details.status",1)        
+                                        ->where('is_escalate',1);
+       
+        if($key)
+        {
+            $data= $data->where(function($query) use($key)
+                            {
+                                $query->orwhere('active_saf_details.holding_no', 'ILIKE', '%'.$key.'%')
+                                ->orwhere('active_saf_details.saf_no', 'ILIKE', '%'.$key.'%')
+                                ->orwhere('active_saf_owner_details.owner_name', 'ILIKE', '%'.$key.'%')
+                                ->orwhere('active_saf_owner_details.guardian_name', 'ILIKE', '%'.$key.'%')
+                                ->orwhere('active_saf_owner_details.mobile_no', 'ILIKE', '%'.$key.'%');
+                            });
+        }
+        $saf=$data->get() ->map(function($data) {
+                if ( ! $data->owner_name) {
+                    $data->owner_name = '';
+                }
+                if ( ! $data->guardian_name) {
+                    $data->guardian_name = '';
+                } 
+                if ( ! $data->mobile_no) {
+                    $data->mobile_no = '';
+                }
+                if ( ! $data->assessment_type) {
+                    $data->assessment_type = '';
+                }
+                if ( ! $data->ward_no) {
+                $data->ward_no = '';
+                }
+                if ( ! $data->property_type) {
+                $data->property_type = '';
+                }
+                if ( ! $data->id) {
+                    $data->id = '';
+                } 
+                if ( ! $data->saf_no) {
+                    $data->saf_no = '';
+                }                                                
+                return $data;
+            }); 
+        if(sizeof($saf)==1)
+            return $saf[0];
+        return $saf;
+   }
+
+   # postNextLevel
+   public function postNextLevel(Request $request)
+   {    
+        $user_id = auth()->user()->id;
+        $saf = new ActiveSafDetail;
+        $saf_id = $request->id??$request->safId;
+        $data = $saf->where('current_user',$user_id)->find($saf_id);
+        if(!$data)
+        {
+            $message=["status"=>false,"data"=>$request->all(),"message"=>"Saf Not Found"];
+            return response()->json($message,200);
+        }
+        $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\\s]+$/';
+        $rules=[
+            "ulbId"=>"required", 
+            "senderDesignationId"=>"required|int",
+            "receiverId"=>"required|int",
+            "comment"=>"required|min:10|regex:$regex",
+        ];
+        $message = [
+            "ulbId.required"=>"Ulb Id Is Required",
+            "senderDesignationId.required"=>"Sender User Id Is Required",
+            "senderDesignationId.int"=>"Serder User Id Must Be Integer",
+            "receiverId.required"=>"Receiver User Id Is Required",
+            "receiverId.int"=>"Receiver User Id Must Be Integer",
+            "comment.required"=>"Comment Is Required",
+            "comment.min"=>"Comment Length At Least 10 Charecters",
+        ];
+        $validator = Validator::make($request->all(),$rules,$message);  
+        if($validator->fails())
+        { 
+            $messages = ["status"=>false,"data"=>$request->all(),"message"=>$validator->errors()];
+            return response()->json($messages,200);
+        }
+        DB::beginTransaction();
+        $data->current_user=$request->senderDesignationId;
+        $data->save();
+        DB::commit();
+        $messages = ["status"=>true,"data"=>[],"message"=>'Saf Forworded'];
+        return response()->json($messages,200);
    }
 }
