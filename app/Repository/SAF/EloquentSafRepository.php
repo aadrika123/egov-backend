@@ -256,8 +256,7 @@ class EloquentSafRepository implements SafRepository
                }                                                
                return $data;
            }); 
-       if(sizeof($saf)==1)
-           return $saf[0];
+       
        return $saf;
    }
 
@@ -336,9 +335,7 @@ class EloquentSafRepository implements SafRepository
                                    $data->saf_no = '';
                                }                                                
                                return $data;
-                           });
-       if(sizeof($saf)==1)
-           return $saf[0];
+                           });       
        return $saf;
    }
 
@@ -490,9 +487,7 @@ class EloquentSafRepository implements SafRepository
                     $data->saf_no = '';
                 }                                                
                 return $data;
-            }); 
-        if(sizeof($saf)==1)
-            return $saf[0];
+            });         
         return $saf;
    }
 
