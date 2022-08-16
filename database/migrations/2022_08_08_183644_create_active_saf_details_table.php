@@ -74,7 +74,7 @@ class CreateActiveSafDetailsTable extends Migration
             $table->timestamp('created_on')->nullable();
             $table->timestamp('updated_on')->nullable();
             $table->integer('status')->nullable()->default(1);            
-            $table->integer('is_escalate')->nullable()->default(0);
+            $table->smallInteger('is_escalate')->nullable()->default(0);
             $table->date('apply_date')->nullable();
             $table->integer('saf_pending_status')->nullable()->default(0);
             $table->string('assessment_type', 100)->nullable();
@@ -88,7 +88,8 @@ class CreateActiveSafDetailsTable extends Migration
             $table->bigInteger('property_assessment_id')->nullable();
             $table->bigInteger('new_ward_mstr_id')->nullable();
             $table->smallInteger('percentage_of_property_transfer')->nullable();
-            $table->bigInteger('apartment_details_id')->nullable();
+            $table->bigInteger('apartment_details_id')->nullable()->default(0);
+            $table->bigInteger('citizen_id')->nullable();
             $table->integer('current_user')->nullable();
             $table->integer('initiator_id')->nullable();
             $table->integer('finisher_id')->nullable();

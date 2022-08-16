@@ -8,6 +8,8 @@ use App\Models\ActiveSafDetail;
 use App\Models\ActiveSafFloorDetail;
 use App\Models\ActiveSafOwnerDetail;
 use App\Models\UlbWorkflowMaster;
+use App\Models\Workflow;
+use App\Models\WorkflowCandidate;
 use Exception;
 use Illuminate\Auth\Events\Validated;
 use Illuminate\Support\Facades\Config;
@@ -32,6 +34,7 @@ class EloquentSafRepository implements SafRepository
     public function applySaf(Request $request)
     {
         // dd($request->all());
+        $user_id = auth()->user()->id;
         DB::beginTransaction();
         try {
             // Determining the initiator and finisher id
@@ -119,6 +122,7 @@ class EloquentSafRepository implements SafRepository
             $saf->percentage_of_property_transfer = $request->percOfPropertyTransfer;
             $saf->apartment_details_id = $request->apartmentDetail;
             // workflows
+            $saf->citizen_id = $user_id;
             $saf->current_user = $workflows->initiator;
             $saf->initiator_id = $workflows->initiator;
             $saf->finisher_id = $workflows->finisher;
@@ -406,7 +410,7 @@ class EloquentSafRepository implements SafRepository
         $data->is_escalate=$request->escalateStatus;        
         $data->save();
         DB::commit();
-        $messages = ["status"=>true,"data"=>[],"message"=>($request->escalateStatus==1?'Saf is Scalated':"Saf is removed from Scalated")];
+        $messages = ["status"=>true,"data"=>[],"message"=>($request->escalateStatus==1?'Saf is Escalated':"Saf is removed from Escalated")];
         return response()->json($messages,200);
    }
 
@@ -490,42 +494,96 @@ class EloquentSafRepository implements SafRepository
    # postNextLevel
    public function postNextLevel(Request $request)
    {    
-        $user_id = auth()->user()->id;
-        $saf = new ActiveSafDetail;
-        $saf_id = $request->id??$request->safId;
-        $data = $saf->where('current_user',$user_id)->find($saf_id);
-        if(!$data)
-        {
-            $message=["status"=>false,"data"=>$request->all(),"message"=>"Saf Not Found"];
-            return response()->json($message,200);
-        }
-        $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\\s]+$/';
-        $rules=[
-            "ulbId"=>"required", 
-            "senderDesignationId"=>"required|int",
-            "receiverId"=>"required|int",
-            "comment"=>"required|min:10|regex:$regex",
-        ];
-        $message = [
-            "ulbId.required"=>"Ulb Id Is Required",
-            "senderDesignationId.required"=>"Sender User Id Is Required",
-            "senderDesignationId.int"=>"Serder User Id Must Be Integer",
-            "receiverId.required"=>"Receiver User Id Is Required",
-            "receiverId.int"=>"Receiver User Id Must Be Integer",
-            "comment.required"=>"Comment Is Required",
-            "comment.min"=>"Comment Length At Least 10 Charecters",
-        ];
-        $validator = Validator::make($request->all(),$rules,$message);  
-        if($validator->fails())
-        { 
-            $messages = ["status"=>false,"data"=>$request->all(),"message"=>$validator->errors()];
+        $messages = ["status"=>false,"data"=>$request->all(),"message"=>''];    
+        try{
+            $user_id = auth()->user()->id;
+            $saf = new ActiveSafDetail;
+            $saf_id = $request->id??$request->safId;
+            $data = $saf->where('current_user',$user_id)->find($saf_id);
+            if(!$data)
+            {
+                $message=["status"=>false,"data"=>$request->all(),"message"=>"Saf Not Found"];
+                return response()->json($message,200);
+            }
+            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\\s]+$/';
+            $rules=[
+                "ulbId"=>"required", 
+                "senderDesignationId"=>"required|int",
+                "receiverDesignationId"=>"required|int",
+                "comment"=>"required|min:10|regex:$regex",
+            ];
+            $message = [
+                "ulbId.required"=>"Ulb Id Is Required",
+                "senderDesignationId.required"=>"Sender User Id Is Required",
+                "senderDesignationId.int"=>"Serder User Id Must Be Integer",
+                "receiverDesignationId.required"=>"Receiver User Id Is Required",
+                "receiverDesignationId.int"=>"Receiver User Id Must Be Integer",
+                "comment.required"=>"Comment Is Required",
+                "comment.min"=>"Comment Length At Least 10 Charecters",
+            ];
+            $validator = Validator::make($request->all(),$rules,$message);  
+            if($validator->fails())
+            { 
+                $messages["message"] = $validator->errors();
+                return response()->json($messages,200);
+            }
+            $work_flow_candidate = WorkflowCandidate::select('workflow_candidates.id',"ulb_workflow_masters.module_id")
+                                    ->join('ulb_workflow_masters','ulb_workflow_masters.id','workflow_candidates.ulb_workflow_id')
+                                    ->where('workflow_candidates.user_id',$user_id)
+                                    ->where('ulb_workflow_masters.ulb_id',$request->ulbId)
+                                    ->first();
+            //dd($user_id);die;
+            if(!$work_flow_candidate)
+            {
+                $messages["message"] = "work_flow_candidate not found";
+                return response()->json($messages,200);
+            }
+            DB::beginTransaction();
+            $data->current_user=$request->senderDesignationId;
+            $data->save();
+            $inputs=['workflowCandidateID'=>$work_flow_candidate->id,
+                    "citizenID"=>$user_id,
+                    "moduleID"=>$work_flow_candidate->module_id,
+                    "refTableDotID"=>'active_saf_details',
+                    "refTableIDValue"=>$saf_id,
+                    "message"=>$request->comment,
+                    "forwardedTo"=>$request->receiverDesignationId
+            ];
+            $workfloes = $this->wordflow($inputs);
+            if($workfloes['status']==false)
+            {
+                DB::rollBack();
+                $messages["message"] = $workfloes['message'];
+                return response()->json($messages,200);
+            }
+            DB::commit();
+            $messages = ["status"=>true,"data"=>[],"message"=>'Saf Forworded'];
             return response()->json($messages,200);
         }
-        DB::beginTransaction();
-        $data->current_user=$request->senderDesignationId;
-        $data->save();
-        DB::commit();
-        $messages = ["status"=>true,"data"=>[],"message"=>'Saf Forworded'];
-        return response()->json($messages,200);
+        catch(Exception $e)
+        {
+            return response()->json($e, 400);
+        }
+        
    }
+
+   public function wordflow(array $inputs)
+   { 
+        try {
+            $track = new Workflow();
+            $track->workflow_candidate_id = $inputs['workflowCandidateID']??null;
+            $track->citizen_id = $inputs['citizenID']??null;
+            $track->module_id = $inputs['moduleID']??null;
+            $track->ref_table_dot_id = $inputs['refTableDotID']??null;
+            $track->ref_table_id_value = $inputs['refTableIDValue']??null;
+            $track->message = $inputs['message']??null;
+            $track->track_date = date('Y-m-d H:i:s');
+            $track->forwarded_to = $inputs['forwardedTo']??null;
+            $track->save();
+            $message = ["status" => true, "message" => "Successfully Saved The Remarks", "data" => ''];
+            return $message;
+        } catch (Exception $e) {
+            return  ['status'=>false,'message'=>$e->getMessage()];
+        }
+    }
 }
