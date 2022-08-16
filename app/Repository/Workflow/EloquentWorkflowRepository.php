@@ -338,7 +338,28 @@ class EloquentWorkflowRepository implements WorkflowRepository
             $arr = array();
             return $this->fetchWorkflowCandidates($wc, $arr);
         } else {
-            return response()->json('Data not Available for this Id', 404);
+            $message = ["status" => true, "message" => "Data Not Available", "data" => ''];
+            return response()->json($message, 200);
+        }
+    }
+
+    /**
+     * | Get All Workflow Candidates by ulb-workflow-id
+     */
+    public function getCandByUlbWorkflowId($id)
+    {
+        try {
+            $candidates = WorkflowCandidate::where('ulb_workflow_id', $id)
+                ->first();
+            if ($candidates) {
+                $message = ["status" => true, "message" => "Date Fetched", "data" => $candidates];
+                return response()->json($message, 200);
+            } else {
+                $message = ["status" => false, "message" => "Date Not Found", "data" => ''];
+                return response()->json($message, 200);
+            }
+        } catch (Exception $e) {
+            return response()->json($e, 400);
         }
     }
 }

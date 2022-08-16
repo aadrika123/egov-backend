@@ -151,7 +151,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('all-workflow-candidates', 'allWorkflowCandidates');
         Route::put('edit-workflow-candidates/{id}', 'editWorkflowCandidates');
         Route::delete('delete-workflow-candidates/{id}', 'deleteWorkflowCandidates');
-        Route::get('gen/workflow/workflow-candidates/{ulbworkflowid}', 'getWorkflowCandidatesByUlbWorkflowID');
+        Route::get('gen/workflow/workflow-candidates/{ulbworkflowid}', 'getWorkflowCandidatesByUlbWorkflowID');  // Get Workflow Candidates by ulb-workflow-id
     });
 
     /**
@@ -196,7 +196,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     // SAF 
     Route::controller(ActiveSafController::class)->group(function () {
         Route::post('apply-for-saf', 'applySaf');                               // Applying Saf Route
-        Route::get('get-saf-candidates-by-workflow-id/{id}', 'getSafCandByWorkflowId');  // Get SAF Candidates by WorkflowID
         Route::get('saf-inbox/{key?}', 'inbox');                             // Saf workflow Inbox and Inbox By search key
         Route::get('saf-outbox/{key?}', 'outbox');                           // Saf Workflow Outbox and Outbox By search key
         Route::get('saf-details/{id}', 'details');                           // Saf Workflow safDetails and safDetails By ID
