@@ -12,6 +12,7 @@ use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowTrackController;
 use App\Http\Controllers\ActiveSafController;
+use App\Http\Controllers\PaymentMasterController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,6 +66,15 @@ Route::controller(ApiMasterController::class)->group(function () {
  */
 Route::controller(CitizenController::class)->group(function () {
     Route::post('citizen-register', 'citizenRegister');         // Citizen Registration
+});
+
+/**
+ * | Created On-147-08-2022 
+ * | Created By-Anshu Kumar
+ * | Get all Ulbs by Ulb ID
+ */
+Route::controller(UlbController::class)->group(function () {
+    Route::get('get-all-ulb', 'getAllUlb');
 });
 
 // Inside Middleware Routes with API Authenticate 
@@ -134,7 +144,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('save-ulb', 'store');
         Route::put('edit-ulb/{id}', 'edit');
         Route::get('get-ulb/{id}', 'view');
-        Route::get('get-all-ulb', 'getAllUlb');
         Route::delete('delete-ulb/{id}', 'deleteUlb');
     });
 
@@ -232,5 +241,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
 
 // Routes used where authentication not required
-Route::group(['middleware' => ['cors', 'json.response', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'request_logger']], function () {
+
+    /**
+     * | Created On-17-08-2022 
+     * | Created By- Anshu Kumar
+     * | Payment Master for Testing Payment Gateways
+     */
+    Route::controller(PaymentMasterController::class)->group(function () {
+        Route::post('store-payment', 'storePayment');           // Store Payment in payment Masters
+        Route::get('get-payment-by-id/{id}', 'getPaymentByID');      // Get Payment by Id
+        Route::get('get-all-payments', 'getAllPayments');       // Get All Payments
+    });
 });
