@@ -299,7 +299,7 @@ class EloquentRoleRepository implements RoleRepository
     public function getAllRoleUsers()
     {
         $role_users = RoleUser::orderByDesc('id')->get();
-        $message = ["status" => true, "message" => "Data Fetched", "data" => $role_users];
+        $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($role_users)];
         return response($message);
     }
 
