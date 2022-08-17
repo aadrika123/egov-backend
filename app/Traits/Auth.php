@@ -85,4 +85,21 @@ trait Auth
         $response = ['status' => false, 'data' => '', 'message' => $msg];
         return $response;
     }
+
+    /**     
+     * Save put Workflow_candidate On User Credentials On Redis 
+     */
+
+    public function Workflow_candidate($redis,$user_id ,$Workflow_candidate)
+    {
+        // dd($user_id);die;
+        $redis->set(
+                'workflow_candidate:'.$user_id ,
+                json_encode([
+                    'id' => $Workflow_candidate->id,
+                    'module_id' => $Workflow_candidate->module_id,
+                ])
+            );
+    }
+     
 }
