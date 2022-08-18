@@ -234,14 +234,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::put('crud/update-selfadvertisement/{id}', 'updateSelfAdvertisement');       // Update Self Advertisement
         Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');       // Delete Self Advertisement By ID
     });
-});
-
-
-
-
-
-// Routes used where authentication not required
-Route::group(['middleware' => ['json.response', 'request_logger']], function () {
 
     /**
      * | Created On-17-08-2022 
@@ -253,4 +245,8 @@ Route::group(['middleware' => ['json.response', 'request_logger']], function () 
         Route::get('get-payment-by-id/{id}', 'getPaymentByID');      // Get Payment by Id
         Route::get('get-all-payments', 'getAllPayments');       // Get All Payments
     });
+});
+
+// Routes used where authentication not required
+Route::group(['middleware' => ['json.response', 'request_logger']], function () {
 });
