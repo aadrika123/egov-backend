@@ -26,7 +26,8 @@ use Illuminate\Support\Facades\Validator;
  */
 class EloquentSafRepository implements SafRepository
 {
-    use Auth;
+    use Auth;               // Trait Used added by sandeep bara date 17-08-2022
+
     /**
      * | Citizens Applying For SAF
      * | Proper Validation will be applied after 
@@ -177,7 +178,8 @@ class EloquentSafRepository implements SafRepository
             }
 
             DB::commit();
-            return response()->json('Successfully Submitted Your Application', 200);
+            $message=["status"=>true,"data"=>[],"message"=>"Successfully Submitted Your Application Your SAF No. ".$request->safNo];
+            return response()->json('', 200);
         } catch (Exception $e) {
             DB::rollBack();
             return $e;
@@ -190,6 +192,18 @@ class EloquentSafRepository implements SafRepository
         * Created by :Sandeep Bara
         #==================================================
     */
+
+    /**
+     *| @desc Get Saf WorkFlow Application  By  Authorized users 
+     *| @param SelfAdvertisementRequest $request
+     *| @return response
+     *| ================================================================================
+     *| Find Initiator and CurrentUser
+     *| ================================================================================
+     *| --#refStmt= Sql Query for Finding Workflows
+     *| --Find #workflow[] = Workflows(Initiator,Approver)
+     *| --#helper = Creating new Object for Generating New UniqueID --App\Helpers\helper.php
+     */
    #Inbox
    public function inbox($key)
    {
