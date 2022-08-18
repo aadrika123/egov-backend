@@ -374,18 +374,23 @@ class EloquentAuthRepository implements AuthRepository
         $redis = Redis::get('user:' . $user_id);
         if ($redis) {
             $data = json_decode($redis);
-            $collection = collect($data);
-            $filtered = $collection->filter(function ($value, $key) {
-                if ($key == 'id' or $key == 'email' or $key == 'name' or $key == 'mobile' or $key == 'role_id' or $key == 'role_name' or $key == 'ulb_id' or $key == 'ulb_name') {
-                    return $value;
-                }
-            });
-            $message = ["status" => true, "message" => "Data Fetched", "data" => $filtered];
+            $collection = [
+                'id' => $data->id,
+                'name' => $data->name,
+                'mobile' => $data->mobile,
+                'email' => $data->email,
+                "role_id" => $data->role_id,
+                'role_name' => $data->role_name,
+                'ulb_id' => $data->ulb_id,
+                'ulb_name' => $data->ulb_name
+            ];
+            $filtered = collect($collection);
+            $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($filtered)];
             return $message;                                    // Filteration using Collection
         }
         if (!$redis) {
             $details = DB::select($this->query($user_id));
-            $message = ["status" => true, "message" => "Data Fetched", "data" => $details[0]];
+            $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($details[0])];
             return $message;
         }
     }
