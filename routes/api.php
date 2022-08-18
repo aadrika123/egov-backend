@@ -90,6 +90,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('logout', 'logOut');
         Route::post('change-password', 'changePass');
 
+        // User Profile APIs
+        Route::get('my-profile-details', 'myProfileDetails');   // For get My profile Details
+        Route::put('edit-my-profile', 'editMyProfile');          // For Edit My profile Details
+
         // Route are authorized for super admin only using Middleware 
         Route::group(['middleware' => ['can:isSuperAdmin']], function () {
             // Route::put('edit-user/{id}', 'update');

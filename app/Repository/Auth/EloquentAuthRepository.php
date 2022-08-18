@@ -67,18 +67,10 @@ class EloquentAuthRepository implements AuthRepository
 
     public function update(Request $request, $id)
     {
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255'],
-            'password' => [
-                'required',
-                'min:6',
-                'max:255',
-                'regex:/[a-z]/',      // must contain at least one lowercase letter
-                'regex:/[A-Z]/',      // must contain at least one uppercase letter
-                'regex:/[0-9]/',      // must contain at least one digit
-                'regex:/[@$!%*#?&]/'  // must contain a special character
-            ]
+            'email' => ['required', 'string', 'email', 'max:255']
         ]);
         try {
             $user = User::find($id);
@@ -88,19 +80,22 @@ class EloquentAuthRepository implements AuthRepository
                 $this->savingExtras($user, $request);
                 $user->save();
                 Redis::del('user:' . $id);                                  //Deleting Key from Redis Database
-                return response()->json('User Record Successfully Updated', 200);
+                $message = ["status" => true, "message" => "Successfully Updated", "data" => ''];
+                return response()->json($message, 200);
             }
             if (!$stmt) {
                 $check = User::where('email', '=', $request->email)->first();
                 if ($check) {
-                    return response()->json('Email is already existing', 400);
+                    $message = ["status" => false, "message" => "Email Is Already Existing", "data" => ''];
+                    return response()->json($message, 200);
                 }
                 if (!$check) {
                     $this->saving($user, $request);
                     $this->savingExtras($user, $request);
                     $user->save();
                     Redis::del('user:' . $id);                               //Deleting Key from Redis Database
-                    return response()->json('User Record Successfully Updated', 200);
+                    $message = ["status" => true, "message" => "Successfully Updated", "data" => ''];
+                    return response()->json($message, 200);
                 }
             }
         } catch (Exception $e) {
@@ -156,7 +151,8 @@ class EloquentAuthRepository implements AuthRepository
                     $emailInfo->remember_token = $token;
                     $emailInfo->save();
 
-                    $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
+                    $ulb_role = DB::select($this->query($emailInfo->id));                 // select ulb and role from db
+                    $this->redisStore($redis, $emailInfo, $request, $token, $ulb_role);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);         // EXPIRE KEY AFTER 5 HOURS
                     $message = $this->tResponseSuccess($token);               // Response Message Using Trait
@@ -181,9 +177,11 @@ class EloquentAuthRepository implements AuthRepository
                     $emailInfo->remember_token = $token;
                     $emailInfo->save();
 
+                    $ulb_role = DB::select($this->query($emailInfo->id));           // Select ulb and role from trait
+
                     $redis = Redis::connection();                   // Redis Connection
 
-                    $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
+                    $this->redisStore($redis, $emailInfo, $request, $token, $ulb_role);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
                     $message = $this->tResponseSuccess($token);           // Response Message Using Trait
@@ -354,5 +352,53 @@ class EloquentAuthRepository implements AuthRepository
         //     return response()->json('already Deleted');
         // }
 
+    }
+
+
+    /**
+     * --------------------------------------------------------------------------------------
+     * My(user) Profiles 
+     * --------------------------------------------------------------------------------------
+     */
+
+    /**
+     * | For Showing Logged In User Details 
+     * | #user_id= Get the id of current user 
+     * | #redis= Find the details On Redis Server
+     * | if $redis available then get the value from redis key
+     * | if $redis not available then get the value from sql database
+     */
+    public function myProfileDetails()
+    {
+        $user_id = auth()->user()->id;
+        $redis = Redis::get('user:' . $user_id);
+        if ($redis) {
+            $data = json_decode($redis);
+            $collection = collect($data);
+            $filtered = $collection->filter(function ($value, $key) {
+                if ($key == 'id' or $key == 'email' or $key == 'name' or $key == 'mobile' or $key == 'role_id' or $key == 'role_name' or $key == 'ulb_id' or $key == 'ulb_name') {
+                    return $value;
+                }
+            });
+            $message = ["status" => true, "message" => "Data Fetched", "data" => $filtered];
+            return $message;                                    // Filteration using Collection
+        }
+        if (!$redis) {
+            $details = DB::select($this->query($user_id));
+            $message = ["status" => true, "message" => "Data Fetched", "data" => $details[0]];
+            return $message;
+        }
+    }
+
+
+    /**
+     * | Edit Citizen Profile
+     * | @param Request $request 
+     * | @return function update()
+     */
+    public function editMyProfile(Request $request)
+    {
+        $id = auth()->user()->id;
+        return $this->update($request, $id);
     }
 }

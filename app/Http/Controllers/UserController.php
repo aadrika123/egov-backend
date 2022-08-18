@@ -76,4 +76,21 @@ class UserController extends Controller
     {
         return $this->EloquentAuth->getUser($id);
     }
+
+    /**
+     * ----------------------------------------------------------------------------------
+     * Current Logged In Users
+     * ----------------------------------------------------------------------------------
+     */
+    // My Profile Details
+    public function myProfileDetails()
+    {
+        return $this->EloquentAuth->myProfileDetails();
+    }
+
+    // Edit My Profile Details
+    public function editMyProfile(Request $request)
+    {
+        return $this->EloquentAuth->editMyProfile($request);
+    }
 }
