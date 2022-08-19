@@ -50,13 +50,28 @@ trait Role
         $role->save();
     }
 
-    // Check Existance for Role Name
+    // Check Existance for Role Name and Ulb Id
     public function checkRoleExistance($request)
     {
         $check = RoleMaster::where('ulb_id', '=', $request->ulbID)
             ->where('role_name', '=', $request->roleName)
             ->first();
         return $check;
+    }
+
+    // Query stmt for fetching data of Role Masters
+    public function fetchRoles($roles)
+    {
+        return $roles
+            ->select(
+                'role_masters.id',
+                'role_masters.role_name',
+                'role_masters.role_description',
+                'role_masters.routes',
+                'role_masters.ulb_id',
+                'ulb_masters.ulb_name'
+            )
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'role_masters.id');
     }
 
     // Check Role Menu

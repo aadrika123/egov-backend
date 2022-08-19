@@ -62,6 +62,8 @@ class EloquentRoleRepository implements RoleRepository
      * @param App\Http\Request\Request $request
      * -------------------------------------------
      * | #stmt > statement condition for updating the role
+     * | #check_existing > Check the already existance of Role and Ulb
+     * | @return Response
      */
 
     public function editRole(RoleRequest $request, $id)
@@ -89,18 +91,18 @@ class EloquentRoleRepository implements RoleRepository
     }
 
     /**
-     * Getting Roles by their Respective IDs Table-role_masters
-     * --------------------------------------------------------
+     * | Getting Roles by their Respective IDs Table-role_masters and ulb_masters
+     * | Fetch Data using fetchRoles Trait
+     * ------------------------------------------------------------------------
      */
     public function getRole($id)
     {
-        $roles = RoleMaster::find($id);
+        $roles = RoleMaster::where('role_masters.id', $id);
         if ($roles) {
-            $message = ["status" => true, "message" => "Data Fetched", "data" => $roles];
-            return response()->json($message, 200);
+            $data = $this->fetchRoles($roles)->first();
+            return responseMsg(true, "Data Fetched", remove_null($data));
         } else {
-            $message = ["status" => true, "message" => "Data not Found", "data" => ''];
-            return response()->json($message, 200);
+            return responseMsg(false, "Data Not Found", '');
         }
     }
 
@@ -109,9 +111,9 @@ class EloquentRoleRepository implements RoleRepository
      */
     public function getAllRoles()
     {
-        $roles = RoleMaster::orderByDesc('id')->get();
-        $data = remove_null($roles);                        // Filteration of null to blank using helper function
-        return $data;
+        $roles = RoleMaster::orderByDesc('id');
+        $data = $this->fetchRoles($roles)->get();
+        return responseMsg(true, 'Data Fetched', remove_null($data));
     }
 
     /**
