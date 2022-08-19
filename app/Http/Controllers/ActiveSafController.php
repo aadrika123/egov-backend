@@ -59,4 +59,9 @@ class ActiveSafController extends Controller
         $data =$this->Repository->postNextLevel($request);        
         return $data;
     }
+    public function propertyObjection(Request $request)
+    {
+        $data =$this->Repository->propertyObjection($request);        
+        return $data;
+    }
 }

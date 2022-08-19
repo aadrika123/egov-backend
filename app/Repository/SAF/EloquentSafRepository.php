@@ -7,7 +7,12 @@ use Illuminate\Http\Request;
 use App\Models\ActiveSafDetail;
 use App\Models\ActiveSafFloorDetail;
 use App\Models\ActiveSafOwnerDetail;
+use App\Models\Hoarding;
+use App\Models\ObjectionTypeMstr;
+use App\Models\PropertyObjection;
+use App\Models\PropertyObjectionDetail;
 use App\Models\UlbWorkflowMaster;
+use App\Models\WardMstr;
 use App\Models\WorkflowCandidate;
 use App\Models\WorkflowTrack;
 use App\Traits\Auth;
@@ -39,6 +44,7 @@ class EloquentSafRepository implements SafRepository
     public function applySaf(Request $request)
     {
         // dd($request->all());
+        $message=["status"=>false,"data"=>$request->all(),"message"=>""];
         $user_id = auth()->user()->id;
         DB::beginTransaction();
         try {
@@ -50,17 +56,18 @@ class EloquentSafRepository implements SafRepository
                 ->where('workflow_id', $workflow_id)
                 ->first();
             if(!$workflows)
-            {
-                $message=["status"=>false,"data"=>[],"message"=>"Workflow Not Available"];
+            { 
+                $message["message"]='Workflow Not Available';
                 return response()->json($message,200);
             }
+            $safNo = $this->safNo($request->ward,2,$user_id);
             $saf = new ActiveSafDetail;
             $saf->has_previous_holding_no = $request->hasPreviousHoldingNo;
             $saf->previous_holding_id = $request->previousHoldingId;
             $saf->previous_ward_mstr_id = $request->previousWard;
             $saf->is_owner_changed = $request->isOwnerChanged;
             $saf->transfer_mode_mstr_id = $request->transferMode;
-            $saf->saf_no = $request->safNo;
+            $saf->saf_no = $safNo;
             $saf->holding_no = $request->holdingNo;
             $saf->ward_mstr_id = $request->ward;
             $saf->ownership_type_mstr_id = $request->ownershipType;
@@ -178,7 +185,7 @@ class EloquentSafRepository implements SafRepository
             }
 
             DB::commit();
-            $message=["status"=>true,"data"=>[],"message"=>"Successfully Submitted Your Application Your SAF No. ".$request->safNo];
+            $message=["status"=>true,"data"=>[],"message"=>"Successfully Submitted Your Application Your SAF No. $safNo"];
             return response()->json($message, 200);
         } catch (Exception $e) {
             DB::rollBack();
@@ -194,16 +201,40 @@ class EloquentSafRepository implements SafRepository
     */
 
     /**
-     *| @desc Get Saf WorkFlow Application  By  Authorized users 
-     *| @param SelfAdvertisementRequest $request
-     *| @return response
-     *| ================================================================================
-     *| Find Initiator and CurrentUser
-     *| ================================================================================
-     *| --#refStmt= Sql Query for Finding Workflows
-     *| --Find #workflow[] = Workflows(Initiator,Approver)
-     *| --#helper = Creating new Object for Generating New UniqueID --App\Helpers\helper.php
-     */
+         * desc This function return the safNo of the application
+         * format: SAF/application_type/ward_no/count active application on the basise of ward_id
+         *         3 |       02       |   03   |            05    ;
+         * request : ward_id,assessment_type,ulb_id;
+         * #==========================================
+         * --------Tables------------
+         * activ_saf_details  -> for counting;
+         * ward_matrs   -> for ward_no;
+         * ===========================================
+         * #count <- count(activ_saf_details.*)
+         * #ward_no <- ward_matrs.ward_no
+         * #safNo <- "SAF/".str_pad($assessment_type,2,'0',STR_PAD_LEFT)."/".str_pad($word_no,3,'0',STR_PAD_LEFT)."/".str_pad($count,5,'0',STR_PAD_LEFT)
+    */
+    public function safNo($ward_id,$assessment_type,$ulb_id)
+    {
+        $count = ActiveSafDetail::where('ward_mstr_id',$ward_id)
+                                ->where('ulb_id',$ulb_id)
+                                ->where('status',1)
+                                ->count()+1;
+        $ward_no = WardMstr::select("ward_no")->where('id',$ward_id)->first()->ward_no;        
+        return $safNo = "SAF/".str_pad($assessment_type,2,'0',STR_PAD_LEFT)."/".str_pad($ward_no,3,'0',STR_PAD_LEFT)."/".str_pad($count,5,'0',STR_PAD_LEFT);
+    }
+    /**
+         * desc This function list the application according to permmited ward_no for the user_roll
+         * request : key (optional) for seraching
+         * #---------------Tables------------------
+         * activ_saf_details                |
+         * active_saf_owner_details         |  for listing data
+         * workflow_candidates              |  
+         * ulb_workflow_masters             |  for check loging user is authorized or Not for WorkFlow
+         * users                           ->  for get ulb_id
+         * ===================================================
+         * 
+    */
    #Inbox
    public function inbox($key)
    {
@@ -245,11 +276,15 @@ class EloquentSafRepository implements SafRepository
                                                 mobile_no,
                                                'SAF' as assessment_type,
                                                 'VacentLand' as property_type,
-                                                '15A' as ward_no,
+                                                ward_mstrs.ward_no as ward_no,
                                                 active_saf_details.created_at::date as apply_date") ,
                                        "active_saf_details.id",
                                        "active_saf_details.saf_no",
                                        "active_saf_details.id") 
+                                       ->join('ward_mstrs', function($join){
+                                            $join->on("ward_mstrs.id","=","active_saf_details.ward_mstr_id")
+                                            ->where("ward_mstrs.status",1);
+                                        })
                                        ->leftJoin(
                                            DB::raw("(SELECT active_saf_owner_details.saf_dtl_id,
                                                            string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
@@ -318,6 +353,18 @@ class EloquentSafRepository implements SafRepository
         return $data;
    }
 
+   /**
+         * desc This function list the application according to permmited ward_no for the user_roll
+         * request : key (optional) for seraching
+         * #---------------Tables------------------
+         * activ_saf_details                |
+         * active_saf_owner_details         |  for listing data
+         * workflow_candidates              |  
+         * ulb_workflow_masters             |  for check loging user is authorized or Not for WorkFlow
+         * users                           ->  for get ulb_id
+         * ===================================================
+         * 
+   */    
    #OutBox
    public function outbox($key)
    {
@@ -359,11 +406,15 @@ class EloquentSafRepository implements SafRepository
                                mobile_no,
                                'SAF' as assessment_type,
                                 'VacentLand' as property_type,
-                                '15A' as ward_no,
+                                ward_mstrs.ward_no as ward_no,
                                 active_saf_details.created_at::date as apply_date") ,
                            "active_saf_details.id",
                            "active_saf_details.saf_no",
-                           "active_saf_details.id")  
+                           "active_saf_details.id") 
+                           ->join('ward_mstrs', function($join){
+                                $join->on("ward_mstrs.id","=","active_saf_details.ward_mstr_id")
+                                ->where("ward_mstrs.status",1);
+                            }) 
                            ->leftJoin(
                                DB::raw("(SELECT active_saf_owner_details.saf_dtl_id,
                                                string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
@@ -438,16 +489,35 @@ class EloquentSafRepository implements SafRepository
         return $data;
    }
 
+   /**
+        * desc This function get the application brief details 
+        * request : saf_id (requirde)
+        * ---------------Tables-----------------
+        * active_saf_details            |
+        * ward_mastrs                   | Saf details
+        * property_type                 |
+        * active_saf_owner_details      -> Saf Owner details
+        * active_saf_floore_details     -> Saf Floore Details
+        * workflow_tracks               |  
+        * users                         | Comments and  date rolles
+        * role_masters                  |
+        * =======================================
+        * helpers : Helpers/utility_helper.php   ->remove_null() -> for remove  null values
+   */
    #Saf Details
    public function details($saf_id)
    {
        $saf_data = ActiveSafDetail::select(DB::raw("'VacantLand' as property_type,
                                                    'NewSaf' as assessment_type,
-                                                   '15A' as ward_no,
+                                                   ward_mstrs.ward_no as ward_no,
                                                    active_saf_details.id as saf_id
                                                    "),
                                            "active_saf_details.*"
                                            )
+                                           ->join('ward_mstrs', function($join){
+                                                $join->on("ward_mstrs.id","=","active_saf_details.ward_mstr_id")
+                                                ->where("ward_mstrs.status",1);
+                                            })
                                            ->where('active_saf_details.id',"=",$saf_id)                                            
                                            ->first();
        $data= remove_null($saf_data);
@@ -474,6 +544,17 @@ class EloquentSafRepository implements SafRepository
        return(collect($data));
    }
 
+   /**
+    * desc This function set OR remove application on special category
+    * request : escalateStatus (required, int type), safId(required)
+    * -----------------Tables---------------------
+    *  active_saf_details
+    * ============================================
+    * active_saf_details.is_escalate <- request->escalateStatus 
+    * active_saf_details.escalate_by <- request->escalateStatus 
+    * ============================================
+    * #message -> return response 
+   */
    #Add Inbox  special category
    public function special(Request $request)
    {
@@ -512,6 +593,17 @@ class EloquentSafRepository implements SafRepository
         return response()->json($messages,200);
    }
 
+   /**
+    * desc This function get the Special Category Application
+    * request : key (optional) -> for searching
+    * #---------------Tables------------------
+    * activ_saf_details                |
+    * active_saf_owner_details         |  for listing data
+    * workflow_candidates              |  
+    * ulb_workflow_masters             |  for check loging user is authorized or Not for WorkFlow
+    * users                           ->  for get ulb_id
+    * ===================================================
+   */
    #Inbox  special category
    public function specialInbox($key)
    {
@@ -553,11 +645,15 @@ class EloquentSafRepository implements SafRepository
                                                 mobile_no,
                                                 'SAF' as assessment_type,
                                                 'VacentLand' as property_type,
-                                                '15A' as ward_no,
+                                                ward_mstrs.ward_no as ward_no,
                                                 active_saf_details.created_at::date as apply_date") ,
                                         "active_saf_details.id",
                                         "active_saf_details.saf_no",
                                         "active_saf_details.id") 
+                                        ->join('ward_mstrs', function($join){
+                                            $join->on("ward_mstrs.id","=","active_saf_details.ward_mstr_id")
+                                            ->where("ward_mstrs.status",1);
+                                        })
                                         ->leftJoin(
                                             DB::raw("(SELECT active_saf_owner_details.saf_dtl_id,
                                                             string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
@@ -628,18 +724,32 @@ class EloquentSafRepository implements SafRepository
         return $data;
    }
 
-   # postNextLevel
-   public function postNextLevel(Request $request)
-   {    
-     /**
+   /**
       * CURRENT USER SENDS APPLICATION TO NEXT LEVEL
       * # HANDLE TO CASES- 1. SEND TO ANY MEMBER, 2. SEND NEXT LEVEL UP/DOWN
       * # Update current_user of table active_saf_details for next user
-      * # Save comments to workflowtracks table
+      * # Save comments to workflowtracks table using function workflowTracks()
+      *----------------Tables--------------------
+      * active_saf_details
+      * workflow_candidates
+      * ulb_workflow_masters
+      * users
       * #====================================
       * varialbles
-      * # $messages 
-      */
+      * $messages -> for reapons 1. status 2. data 3. Message
+      * $user_id <- users.id
+      * $saf_id <- request->id??request->safId;
+      * $saf <- ActiveSafDetail ->obj (instanse create)
+      * $data <- ActiveSafDetail -> find and store active_saf_details data ** [if data is not found return error Message] **
+      * $work_flow_candidate  <- 'workflow_candidates.id',"ulb_workflow_masters.module_id" -> check loging user is authorize for this workFlow or not
+      * active_saf_details.current_user <- request->receiverId
+      * coll workflowTracks() for comment store
+      * 
+   */
+   # postNextLevel
+   public function postNextLevel(Request $request)
+   {    
+     
         $messages = ["status"=>false,"data"=>$request->all(),"message"=>''];    
         try{
             $user_id = auth()->user()->id;
@@ -675,14 +785,13 @@ class EloquentSafRepository implements SafRepository
                                     ->where('workflow_candidates.user_id',$user_id)
                                     ->where('ulb_workflow_masters.ulb_id',$request->ulbId)
                                     ->first();
-            //dd($user_id);die;
             if(!$work_flow_candidate)
             {
                 $messages["message"] = "work_flow_candidate not found";
                 return response()->json($messages,200);
             }
             DB::beginTransaction();
-            $data->current_user=$request->senderDesignationId;
+            $data->current_user=$request->receiverId;
             $data->save();
             $inputs=['workflowCandidateID'=>$work_flow_candidate->id,
                     "citizenID"=>$user_id,
@@ -690,7 +799,7 @@ class EloquentSafRepository implements SafRepository
                     "refTableDotID"=>'active_saf_details.id',
                     "refTableIDValue"=>$saf_id,
                     "message"=>$request->comment,
-                    "forwardedTo"=>$request->receiverDesignationId
+                    "forwardedTo"=>$request->receiverId
             ];
             $workfloes = $this->workflowTracks($inputs);
             if($workfloes['status']==false)
@@ -728,6 +837,291 @@ class EloquentSafRepository implements SafRepository
             return $message;
         } catch (Exception $e) {
             return  ['status'=>false,'message'=>$e->getMessage()];
+        }
+   }
+
+   /*
+     desc this function checkn property is approve or not and add objection     
+    */
+   #apply Objection Holding
+   public function propertyObjection(Request $request)
+   {         
+        $massage = ['status'=>false,"data"=>$request->all(),'message'=>''];
+        $user_id = auth()->user()->id;
+        DB::beginTransaction();
+        try{
+            $rules = [
+                "saf_dtl_id"=>"required",
+                // "objection_form"=>"required",
+                // "evidence_document"=>"required",               
+               
+                'RanHarwestingStatus'=>"required|bool",
+
+                "RoadWidthStatus"=>"required|bool",
+
+                "PropertyTypeStatus"=>"required|bool",
+
+                "AreaOfPlotStatus"=>"required|bool",
+
+                "MobileTowerStatus"=>"required|bool",
+
+                "HoardingBoardStatus"=>"required|bool",
+
+                "FloorDetailStatus"=>"required|bool",
+            ];
+            if($request->RanHarwestingStatus)
+            {
+                $rules['RanHarwestingValues']= "required|bool";
+                $rules['RanHarwestingId']= "required|int";
+            }
+            if($request->RoadWidthStatus)
+            {
+                $rules['RoadWidthValues']= "required";
+                $rules['RoadWidthId']= "required|int";
+            }
+            if($request->PropertyTypeStatus)
+            {
+                $rules['PropertyTypeValues']= "required";
+                $rules['PropertyTypeId']= "required|int";
+            }
+            if($request->AreaOfPlotStatus)
+            {
+                $rules['AreaOfPlotValues']= "required";
+                $rules['AreaOfPlotId']= "required|int";
+            }
+            if($request->MobileTowerStatus)
+            {
+                $rules['MobileTowerValues']= "required";
+                $rules['MobileTowerId']= "required|int";
+            }
+            if($request->HoardingBoardStatus)
+            {
+                $rules['HoardingBoardValues']= "required";
+                $rules['HoardingBoardId']= "required|int";
+            }
+            if($request->FloorDetailStatus)
+            {
+                $rules['FloorDetailValues']= "required|array";
+                $rules['FloorDetailId']= "required|int";
+            }
+
+            $validator = Validator::make($request->all(),$rules);  
+            if($validator->fails())
+            {
+                $messages["message"] = $validator->errors();
+                return response()->json($messages,200);
+            }
+            // 1	Typographical Error
+            // 2	Rainwater Harvesting
+            // 3	Road Width
+            // 4	Property Type
+            // 5	Area of Plot
+            // 6	Mobile Tower
+            // 7	Hoarding Board
+            // 8	Other
+            // 9	Floor Detail
+            $property = Hoarding::find($request->id);
+            if(!$property)
+            {
+                return ;
+            }
+            $objection = new PropertyObjection ;
+            $objection->prop_dtl_id=$request->id;
+            $objection->saf_dtl_id=$request->saf_dtl_id;    
+            $objection->holding_no=$request->holding_no;            
+            $objection->ward_id=$request->ward_id;
+            $objection->user_id=$user_id;
+            // $objection->objection_form_doc=$request->saf_dtl_id;    
+            // $objection->evidence_document=$request->holding_no;
+            $objection->save();
+            $objection_id = $objection->id;
+            # Rainwater Harvesting
+            // if($request->RanHarwestingStatus)
+            // {
+            //     $objdtl=[
+            //                 "objection_id"=> $objection_id,
+            //                 "objection_type_id"=> Config::get('workflow-constants.OBJECTION')['RanHarwesting'];
+            //                 "according_assessment"=> $data["is_water_harvesting"],
+            //                 "assess_area"=> null,
+            //                 "assess_date"=> null,
+            //                 "according_applicant"=> $inputs["is_water_harvesting"],
+            //                 "applicant_area"=> null,
+            //                 "applicant_date"=> null,
+            //                 "objection_by"=> "Citizen",
+            //                 "user_id"=> $data["emp_details"]["id"],
+            //     ];
+            //     $objection_dtl_id = $this->ObjectionModel->InsertObjectionDetails($objdtl);
+            // }
+
+            // # Road Width
+            // if($obj_type_id==3)
+            // {
+            //     $objdtl=[
+            //                 "objection_id"=> $objection_id,
+            //                 "objection_type_id"=> $obj_type_id,
+            //                 "according_assessment"=> $data["road_type_mstr_id"],
+            //                 "assess_area"=> null,
+            //                 "assess_date"=> null,
+            //                 "according_applicant"=> $inputs["road_type_mstr_id"],
+            //                 "applicant_area"=> null,
+            //                 "applicant_date"=> null,
+            //                 "objection_by"=> "Citizen",
+            //                 "user_id"=> $data["emp_details"]["id"],
+            //     ];
+            //     $objection_dtl_id = $this->ObjectionModel->InsertObjectionDetails($objdtl);
+                
+            // }
+
+            // # Property Type
+            // if($obj_type_id==4)
+            // {
+            //     $objdtl=[
+            //                 "objection_id"=> $objection_id,
+            //                 "objection_type_id"=> $obj_type_id,
+            //                 "according_assessment"=> $data["prop_type_mstr_id"],
+            //                 "assess_area"=> null,
+            //                 "assess_date"=> null,
+            //                 "according_applicant"=> $inputs["property_type_id"],
+            //                 "applicant_area"=> null,
+            //                 "applicant_date"=> null,
+            //                 "objection_by"=> "Citizen",
+            //                 "user_id"=> $data["emp_details"]["id"],
+            //     ];
+            //     $objection_dtl_id = $this->ObjectionModel->InsertObjectionDetails($objdtl);
+            // }
+
+            // # Area of plot
+            // if($obj_type_id==5)
+            // {
+            //     $objdtl=[
+            //                 "objection_id"=> $objection_id,
+            //                 "objection_type_id"=> $obj_type_id,
+            //                 "according_assessment"=> $data["area_of_plot"],
+            //                 "assess_area"=> null,
+            //                 "assess_date"=> null,
+            //                 "according_applicant"=> $inputs["area_of_plot"],
+            //                 "applicant_area"=> null,
+            //                 "applicant_date"=> null,
+            //                 "objection_by"=> "Citizen",
+            //                 "user_id"=> $data["emp_details"]["id"],
+            //     ];
+            //     $objection_dtl_id = $this->ObjectionModel->InsertObjectionDetails($objdtl);
+                
+            // }
+
+            // # Mobile Tower
+            // if($obj_type_id==6)
+            // {
+            //     $objdtl=[
+            //                 "objection_id"=> $objection_id,
+            //                 "objection_type_id"=> $obj_type_id,
+            //                 "according_assessment"=> $data["is_mobile_tower"],
+            //                 "assess_area"=> $data["tower_area"],
+            //                 "assess_date"=> $data["tower_installation_date"],
+            //                 "according_applicant"=> $inputs["is_mobile_tower"],
+            //                 "applicant_area"=> $inputs["tower_area"],
+            //                 "applicant_date"=> $inputs["tower_installation_date"],
+            //                 "objection_by"=> "Citizen",
+            //                 "user_id"=> $data["emp_details"]["id"],
+            //     ];
+            //     $objection_dtl_id = $this->ObjectionModel->InsertObjectionDetails($objdtl);
+                
+            // }
+
+            // # Hording Board
+            // if($obj_type_id==7)
+            // {
+            //     $objdtl=[
+            //                 "objection_id"=> $objection_id,
+            //                 "objection_type_id"=> $obj_type_id,
+            //                 "according_assessment"=> $data["is_hoarding_board"],
+            //                 "assess_area"=> $data["tower_area"],
+            //                 "assess_date"=> $data["tower_installation_date"],
+            //                 "according_applicant"=> $inputs["is_hoarding_board"],
+            //                 "applicant_area"=> $inputs["hoarding_area"],
+            //                 "applicant_date"=> $inputs["hoarding_installation_date"],
+            //                 "objection_by"=> "Citizen",
+            //                 "user_id"=> $data["emp_details"]["id"],
+            //     ];
+            //     $objection_dtl_id = $this->ObjectionModel->InsertObjectionDetails($objdtl);
+            // }
+
+            // # Floor Details
+            // if($obj_type_id==9)
+            // {
+            //     $i=0;
+            //     foreach($data['prop_floor_details'] as $floor)
+            //     {
+            //         $floordtl=[
+            //                     "prop_dtl_id"=> $floor["prop_dtl_id"],
+            //                     "objection_id"=> $objection_id,
+            //                     "objection_type_id"=> $obj_type_id,
+            //                     "prop_floor_dtl_id"=> $floor["id"],
+            //                     "floor_mstr_id"=> $floor["floor_mstr_id"],
+            //                     "usage_type_mstr_id"=> $floor["usage_type_mstr_id"],
+            //                     "occupancy_type_mstr_id"=> $floor["occupancy_type_mstr_id"],
+            //                     "const_type_mstr_id"=> $floor["const_type_mstr_id"],
+            //                     "builtup_area"=> $floor["builtup_area"],
+            //                     "carpet_area"=> $floor["carpet_area"],
+            //                     "date_from"=> $floor["date_from"],
+            //                     "date_upto"=> $floor["date_upto"],
+            //                     "remarks"=> null,
+            //                     "objection_by"=> 'Assessment',
+            //                 ];
+            //         $this->ObjectionModel->InsertFloorObjectionDetails($floordtl);
+                    
+            //         if($inputs["usage_type_mstr_id"][$i]==1)
+            //         $objection_carpet_area=$inputs["builtup_area"][$i]*0.7;
+            //         else
+            //         $objection_carpet_area=$inputs["builtup_area"][$i]*0.8;
+                    
+                    
+            //         $floordtl=[
+            //             "prop_dtl_id"=> $floor["prop_dtl_id"],
+            //             "objection_id"=> $objection_id,
+            //             "objection_type_id"=> $obj_type_id,
+            //             "prop_floor_dtl_id"=> $floor["id"],
+            //             "floor_mstr_id"=> $inputs["floor_mstr_id"][$i],
+            //             "usage_type_mstr_id"=> $inputs["usage_type_mstr_id"][$i],
+            //             "occupancy_type_mstr_id"=> $inputs["occupancy_type_mstr_id"][$i],
+            //             "const_type_mstr_id"=> $inputs["const_type_mstr_id"][$i],
+            //             "builtup_area"=> $inputs["builtup_area"][$i],
+            //             "carpet_area"=> $objection_carpet_area,
+            //             "date_from"=> $floor["date_from"],
+            //             "date_upto"=> $floor["date_upto"],
+            //             "remarks"=> null,
+            //             "objection_by"=> 'Citizen',
+            //         ];
+            //         $this->ObjectionModel->InsertFloorObjectionDetails($floordtl);
+            //         $i++;
+            //     }
+            // }
+
+
+
+
+        }
+        catch(Exception $e)
+        {
+            DB::rollBack();
+            return $e;
+        }
+   }
+
+   public function getObjectionType($ulb_id)
+   {
+        try{
+            $workflow_id= Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            $workflow = ObjectionTypeMstr::select('id','type','workflow_id')
+                                        ->where('status',1)
+                                        ->where('ulb_id',$ulb_id)
+                                        ->where('workflow_id',$workflow_id)
+                                        ->get();
+            return($workflow);
+        }
+        catch(Exception $e)
+        {
+            return $e;
         }
    }
 }
