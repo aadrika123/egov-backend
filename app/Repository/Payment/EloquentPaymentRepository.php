@@ -34,6 +34,7 @@ class EloquentPaymentRepository implements PaymentRepository
             $payment->email = $request->email;
             $payment->phone = $request->phone;
             $payment->module = $request->module;
+            $payment->payment_status = $request->paymentStatus;
             $payment->save();
             $message = ["status" => true, "message" => "Payment Successfully Done", "data" => ""];
             return response($message, 200);

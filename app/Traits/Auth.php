@@ -24,12 +24,19 @@ trait Auth
         $user->user_name = $request->name;
         $user->mobile = $request->mobile;
         $user->email = $request->email;
-        $user->password = Hash::make($request->password);
-        $user->user_type = $request->userType;
         $user->ulb_id = $request->ulb;
-        $user->roll_id = $request->role;
-        $user->description = $request->description;
-        $user->workflow_participant = $request->workflowParticipant;
+        if ($request->role) {
+            $user->roll_id = $request->role;
+        }
+        if ($request->userType) {
+            $user->user_type = $request->userType;
+        }
+        if ($request->description) {
+            $user->description = $request->description;
+        }
+        if ($request->workflowParticipant) {
+            $user->workflow_participant = $request->workflowParticipant;
+        }
         $token = Str::random(80);                       //Generating Random Token for Initial
         $user->remember_token = $token;
     }
@@ -40,25 +47,33 @@ trait Auth
 
     public function savingExtras($user, $request)
     {
-        $user->suspended = $request->Suspended;
-        $user->super_user = $request->SuperUser;
+        if ($request->suspended) {
+            $user->suspended = $request->suspended;
+        }
+        if ($request->superUser) {
+            $user->super_user = $request->superUser;
+        }
     }
 
     /**
      * Save User Credentials On Redis 
      */
-    public function redisStore($redis, $emailInfo, $request, $token)
+    public function redisStore($redis, $emailInfo, $request, $token, $ulb_role)
     {
         $redis->set(
             'user:' . $emailInfo->id,
             json_encode([
                 'id' => $emailInfo->id,
+                'name' => $emailInfo->user_name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'remember_token' => $token,
+                'mobile' => $emailInfo->mobile,
                 'user_type' => $emailInfo->user_type,
-                'roll_id' => $emailInfo->roll_id,
+                'role_id' => $emailInfo->roll_id,
+                'role_name' => $ulb_role[0]->role_name,
                 'ulb_id' => $emailInfo->ulb_id,
+                'ulb_name' => $ulb_role[0]->ulb_name,
                 'created_at' => $emailInfo->created_at,
                 'updated_at' => $emailInfo->updated_at
             ])
@@ -90,16 +105,37 @@ trait Auth
      * Save put Workflow_candidate On User Credentials On Redis 
      */
 
-    public function Workflow_candidate($redis,$user_id ,$Workflow_candidate)
+    public function Workflow_candidate($redis, $user_id, $Workflow_candidate)
     {
         // dd($user_id);die;
         $redis->set(
-                'workflow_candidate:'.$user_id ,
-                json_encode([
-                    'id' => $Workflow_candidate->id,
-                    'module_id' => $Workflow_candidate->module_id,
-                ])
-            );
+            'workflow_candidate:' . $user_id,
+            json_encode([
+                'id' => $Workflow_candidate->id,
+                'module_id' => $Workflow_candidate->module_id,
+            ])
+        );
     }
-     
+
+    /**
+     * | query for save ulb and role on user login
+     */
+    public function query($id)
+    {
+        $query = "SELECT 
+        u.id,
+        u.user_name AS NAME,
+        u.mobile AS mobile,
+        u.email AS email,
+        u.roll_id AS role_id,
+        r.role_name,
+        u.ulb_id,
+        um.ulb_name
+            FROM users u 
+            
+            LEFT JOIN ulb_masters um ON um.id=u.ulb_id
+            LEFT JOIN role_masters r ON r.id=u.roll_id
+            WHERE u.id=$id";
+        return $query;
+    }
 }

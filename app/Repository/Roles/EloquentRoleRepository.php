@@ -33,14 +33,23 @@ class EloquentRoleRepository implements RoleRepository
      * @param App\Http\Requests\RoleRequest 
      * @param App\Http\Request\RoleRequest $request
      * @return App\Traits\Roles\Role savingRole 
+     * -------------------------------------------
+     * | Request Validate
+     * | Check if the role is already existing for the given ulb or not
+     * | #check_existance > Checks the given data is already existing on masters or not on Trait function
      */
     public function roleStore(RoleRequest $request)
     {
         try {
+            // Check if the role name is already existing or not 
+            $check_existing = $this->checkRoleExistance($request);
+            if ($check_existing) {
+                return responseMsg(false, "Role Is Already Existing for the Ulb", ""); // Response Static Message by Helper function
+            }
+
             $role = new RoleMaster();
             $this->savingRole($role, $request);          //Trait for Storing Role Master
-            $message = ["status" => true, "message" => "Successfully Saved", "data" => ''];
-            return response()->json($message, 200);
+            return responseMsg(true, "Successfully Saved the Role", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -51,36 +60,28 @@ class EloquentRoleRepository implements RoleRepository
      * -------------------------------------------
      * @param App\Http\Requests\Request 
      * @param App\Http\Request\Request $request
-     * @var stmt If the RoleName is same as previous then update other fields
-     * If Role name is not same then check if it is same as others or not then save the fields
-     * @return App\Traits\Roles\Role savingRole 
+     * -------------------------------------------
+     * | #stmt > statement condition for updating the role
      */
 
-    public function editRole(Request $request, $id)
+    public function editRole(RoleRequest $request, $id)
     {
-        // Validating
-        $request->validate([
-            'role_name' => 'required', 'string', 'max:255'
-        ]);
+
         try {
             $role = RoleMaster::find($id);
-            $stmt = $role->role_name == $request->role_name;
+            $stmt = $role->role_id == $request->roleID && $role->ulb_id == $request->ulbID;
             if ($stmt) {
-                $this->savingRole($role, $request);          //Trait for Updating Role Master
-                $message = ["status" => true, "message" => "Successfully Updated", "data" => ''];
-                return response()->json($message, 200);
+                $this->savingRole($role, $request);          //Trait for Storing Role Master
+                return responseMsg(true, "Successfully Saved the Role", "");
             }
-            if (!$stmt) {
-                // Checking Role Name Already existing or not
-                $check = RoleMaster::where('role_name', '=', $request->role_name)->first();
-                if ($check) {
-                    return response()->json(['status' => false, 'message' => 'Role Name already Existing', 'data' => ''], 200);
-                }
-                if (!$check) {
-                    $this->savingRole($role, $request);          //Trait for Updating Role Master
-                    $message = ["status" => true, "message" => "Successfully Updated", "data" => ''];
-                    return response()->json($message, 200);
-                }
+
+            // Check if the role name is already existing or not 
+            $check_existing = $this->checkRoleExistance($request);
+            if ($check_existing) {
+                return responseMsg(false, "Role Is Already Existing for the Ulb", ""); // Response Static Message by Helper function
+            } else {
+                $this->savingRole($role, $request);          //Trait for Storing Role Master
+                return responseMsg(true, "Successfully Saved the Role", "");
             }
         } catch (Exception $e) {
             return response()->json($e, 400);

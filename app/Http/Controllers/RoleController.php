@@ -36,7 +36,7 @@ class RoleController extends Controller
     }
 
     // Updating Role
-    public function editRole(Request $request, $id)
+    public function editRole(RoleRequest $request, $id)
     {
         return $this->EloquentRole->editRole($request, $id);
     }

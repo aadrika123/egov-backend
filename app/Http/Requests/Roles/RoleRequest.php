@@ -28,7 +28,8 @@ class RoleRequest extends FormRequest
     public function rules()
     {
         return [
-            'role_name' => ['required', 'string', 'max:255', 'unique:role_masters']
+            'ulbID' => ['required', 'integer'],
+            'roleName' => ['required', 'string', 'max:255']
         ];
     }
 

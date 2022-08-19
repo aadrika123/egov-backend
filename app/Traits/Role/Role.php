@@ -6,6 +6,7 @@ use App\Models\RoleMenu;
 use App\Models\RoleUser;
 use App\Models\RoleMenuLog;
 use App\Models\RoleUserLog;
+use App\Models\RoleMaster;
 
 /**
  * Created On-30-06-2022 
@@ -42,10 +43,20 @@ trait Role
      */
     public function savingRole($role, $request)
     {
-        $role->role_name = $request->role_name;
+        $role->ulb_id = $request->ulbID;
+        $role->role_name = $request->roleName;
         $role->role_description = $request->description;
         $role->routes = $request->routes;
         $role->save();
+    }
+
+    // Check Existance for Role Name
+    public function checkRoleExistance($request)
+    {
+        $check = RoleMaster::where('ulb_id', '=', $request->ulbID)
+            ->where('role_name', '=', $request->roleName)
+            ->first();
+        return $check;
     }
 
     // Check Role Menu

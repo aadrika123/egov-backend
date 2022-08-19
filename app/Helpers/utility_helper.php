@@ -4,6 +4,15 @@ use Illuminate\Support\Facades\DB;
 
 // Helper made by Sandeep Bara
 
+// function for Static Message
+if (!function_exists("responseMsg")) {
+    function responseMsg($status, $message, $data)
+    {
+        $response = ['status' => $status, "message" => $message, "data" => $data];
+        return response()->json($response, 200);
+    }
+}
+
 if (!function_exists("print_var")) {
     function print_var($data = '')
     {
