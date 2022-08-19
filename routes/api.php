@@ -13,6 +13,7 @@ use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowTrackController;
 use App\Http\Controllers\ActiveSafController;
 use App\Http\Controllers\PaymentMasterController;
+use App\Http\Controllers\WardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -250,6 +251,18 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('store-payment', 'storePayment');           // Store Payment in payment Masters
         Route::get('get-payment-by-id/{id}', 'getPaymentByID');      // Get Payment by Id
         Route::get('get-all-payments', 'getAllPayments');       // Get All Payments
+    });
+
+    /**
+     * | Created On-19-08-2022 
+     * | Created by-Anshu Kumar
+     * | Ulb Wards operations
+     */
+    Route::controller(WardController::class)->group(function () {
+        Route::post('store-ulb-wards', 'storeUlbWard');          // Save Ulb Ward
+        Route::put('edit-ulb-ward/{id}', 'editUlbWard');         // Edit Ulb Ward
+        Route::get('get-ulb-ward/{id}', 'getUlbWardByID');       // Get Ulb Ward Details by ID
+        Route::get('get-all-ulb-wards', 'getAllUlbWards');       // Get All Ulb Wards
     });
 });
 
