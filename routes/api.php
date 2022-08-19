@@ -111,20 +111,21 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(RoleController::class)->group(function () {
         // Route are authorized for super admin only using Middleware 
         Route::group(['middleware' => ['can:isSuperAdmin']], function () {
-            Route::post('save-role', 'storeRole');
-            Route::put('edit-role/{id}', 'editRole');
-            Route::get('get-role/{id}', 'getRole');
-            Route::get('get-all-roles', 'getAllRoles');
+            Route::post('save-role', 'storeRole');          // Save Role
+            Route::put('edit-role/{id}', 'editRole');       // edit Role 
+            Route::get('get-role/{id}', 'getRole');         // Get Role By Id
+            Route::get('get-all-roles', 'getAllRoles');     // Get All Roles
+            Route::delete('delete-role/{id}', 'deleteRole');      // Delete Role
 
             Route::post('role-menu', 'roleMenu');
             Route::put('edit-role-menu/{id}', 'editRoleMenu');
             Route::get('get-role-menu/{id}', 'getRoleMenu');
             Route::get('get-all-role-menus', 'getAllRoleMenus');
 
-            Route::post('role-user', 'roleUser');
-            Route::put('edit-role-user/{id}', 'editRoleUser');
-            Route::get('get-role-user/{id}', 'getRoleUser');
-            Route::get('get-all-role-users', 'getAllRoleUsers');
+            Route::post('role-user', 'roleUser');                   // Save user roles
+            Route::put('edit-role-user/{id}', 'editRoleUser');      // edit user roles 
+            Route::get('get-role-user/{id}', 'getRoleUser');        // get role user by id   
+            Route::get('get-all-role-users', 'getAllRoleUsers');    // get all role users
 
             Route::post('role-menu-logs', 'roleMenuLogs');
             Route::put('edit-role-menu-logs/{id}', 'editRoleMenuLogs');
@@ -219,7 +220,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('saf-details/{id}', 'details');                           // Saf Workflow safDetails and safDetails By ID
         Route::post('saf-escalate{id?}', 'special');                                // Saf Workflow special and safDetails By id
         Route::get('saf-escalate-inbox/{key?}', 'specialInbox');                             // Saf workflow Inbox and Inbox By search key
-        Route::post('saf-post-level/{id?}', 'postNextLevel');  
+        Route::post('saf-post-level/{id?}', 'postNextLevel');
         Route::post('property-objection/{id}', 'propertyObjection');                // Saf Workflow special and safDetails By key
     });
 

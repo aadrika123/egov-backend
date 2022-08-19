@@ -19,6 +19,7 @@ class CreateRoleMastersTable extends Migration
             $table->mediumText('role_name')->nullable();
             $table->mediumText('role_description')->nullable();
             $table->mediumText('routes')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
