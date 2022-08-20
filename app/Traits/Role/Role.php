@@ -50,13 +50,28 @@ trait Role
         $role->save();
     }
 
-    // Check Existance for Role Name
+    // Check Existance for Role Name and Ulb Id
     public function checkRoleExistance($request)
     {
         $check = RoleMaster::where('ulb_id', '=', $request->ulbID)
             ->where('role_name', '=', $request->roleName)
             ->first();
         return $check;
+    }
+
+    // Query stmt for fetching data of Role Masters
+    public function fetchRoles($roles)
+    {
+        return $roles
+            ->select(
+                'role_masters.id',
+                'role_masters.role_name',
+                'role_masters.role_description',
+                'role_masters.routes',
+                'role_masters.ulb_id',
+                'ulb_masters.ulb_name'
+            )
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'role_masters.ulb_id');
     }
 
     // Check Role Menu
@@ -79,6 +94,8 @@ trait Role
         $menu_role->save();
     }
 
+    // //////////////////////////////////////////////////////////////////////////////////////////
+
     // Check Role of any Particular User already existing or not
     public function checkUserRole($request)
     {
@@ -96,6 +113,18 @@ trait Role
         $role_user->modify = $request->modify;
         $role_user->save();
     }
+
+    // Fetch Role Users
+    public function fetchRoleUsers($role_user)
+    {
+        return $role_user
+            ->select('role_users.*', 'users.user_name', 'role_masters.role_name')
+            ->join('users', 'users.id', '=', 'role_users.user_id')
+            ->join('role_masters', 'role_masters.id', '=', 'role_users.role_id');
+    }
+
+
+    // ////////////////////////////////////////////////////////////////////////////////////////////
 
 
     // Check Role Menu Log
@@ -116,6 +145,7 @@ trait Role
         $role_menu_logs->save();
     }
 
+    // ////////////////////////////////////////////////////////////////////////////////////////////
     // Check Role User Log
     public function checkRoleUserLog($request)
     {

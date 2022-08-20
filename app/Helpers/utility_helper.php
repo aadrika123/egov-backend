@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\DB;
-
 // Helper made by Sandeep Bara
 
 // function for Static Message

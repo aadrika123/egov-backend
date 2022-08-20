@@ -1,13 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Ward;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-class RoleMaster extends Model
+class WardUser extends Model
 {
     use HasFactory;
-    use SoftDeletes;
 }

@@ -8,7 +8,6 @@ use App\Http\Requests\Roles\RoleMenuRequest;
 use App\Http\Requests\Roles\UserRoleRequest;
 use App\Http\Requests\Roles\RoleMenuLogRequest;
 use App\Http\Requests\Roles\RoleUserLogRequest;
-use Illuminate\Http\Request;
 
 /**
  * Created By-Anshu Kumar
@@ -51,6 +50,12 @@ class RoleController extends Controller
     public function getAllRoles()
     {
         return $this->EloquentRole->getAllRoles();
+    }
+
+    // Delete Role
+    public function deleteRole($id)
+    {
+        return $this->EloquentRole->deleteRole($id);
     }
 
     /*************************************************************************************************** */
