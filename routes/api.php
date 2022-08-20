@@ -13,7 +13,8 @@ use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowTrackController;
 use App\Http\Controllers\ActiveSafController;
 use App\Http\Controllers\PaymentMasterController;
-use App\Http\Controllers\WardController;
+use App\Http\Controllers\Ward\WardController;
+use App\Http\Controllers\Ward\WardUserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -249,7 +250,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(PaymentMasterController::class)->group(function () {
         Route::post('store-payment', 'storePayment');           // Store Payment in payment Masters
-        Route::get('get-payment-by-id/{id}', 'getPaymentByID');      // Get Payment by Id
+        Route::get('get-payment-by-id/{id}', 'getPaymentByID'); // Get Payment by Id
         Route::get('get-all-payments', 'getAllPayments');       // Get All Payments
     });
 
@@ -263,6 +264,18 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::put('edit-ulb-ward/{id}', 'editUlbWard');         // Edit Ulb Ward
         Route::get('get-ulb-ward/{id}', 'getUlbWardByID');       // Get Ulb Ward Details by ID
         Route::get('get-all-ulb-wards', 'getAllUlbWards');       // Get All Ulb Wards
+    });
+
+    /**
+     * | Created On-20-08-2022 
+     * | Created By-Anshu Kumar
+     * | Ward Users Masters Operations
+     */
+    Route::controller(WardUserController::class)->group(function () {
+        Route::post('ward-user', 'storeWardUser');               // Save Ward User
+        Route::put('ward-user', 'updateWardUser');               // Edit Ward User
+        Route::get('ward-user/{id}', 'getWardUserByID');         // Get Ward User By ID
+        Route::get('ward-user', 'getAllWardUsers');              // Get All Ward Users
     });
 });
 

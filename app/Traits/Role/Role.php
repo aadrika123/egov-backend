@@ -71,7 +71,7 @@ trait Role
                 'role_masters.ulb_id',
                 'ulb_masters.ulb_name'
             )
-            ->join('ulb_masters', 'ulb_masters.id', '=', 'role_masters.id');
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'role_masters.ulb_id');
     }
 
     // Check Role Menu

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Ward;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UlbWardRequest extends FormRequest
+class WardUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,8 +24,8 @@ class UlbWardRequest extends FormRequest
     public function rules()
     {
         return [
-            "ulbID" => "required|integer",
-            "wardName" => "required"
+            'userID' => 'required|integer',
+            'ulbWardID' => 'required'
         ];
     }
 }

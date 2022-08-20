@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Ward;
 
-use App\Http\Requests\UlbWardRequest;
-use Illuminate\Http\Request;
+use App\Http\Requests\Ward\UlbWardRequest;
+use App\Http\Controllers\Controller;
 use App\Repository\Ward\EloquentWardRepository;
 
 /**

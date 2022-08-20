@@ -2,7 +2,7 @@
 
 namespace App\Repository\Ward;
 
-use App\Http\Requests\UlbWardRequest;
+use App\Http\Requests\Ward\UlbWardRequest;
 use App\Repository\Ward\WardRepository;
 use App\Models\UlbWardMaster;
 use Exception;
