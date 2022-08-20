@@ -54,3 +54,4 @@ if (!function_exists("remove_null")) {
         return $collection;
     }
 }
+
