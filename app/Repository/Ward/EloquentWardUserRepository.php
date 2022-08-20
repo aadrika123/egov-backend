@@ -65,6 +65,8 @@ class EloquentWardUserRepository implements WardRepository
             $del_exist = WardUser::where('user_id', $request->userID)->get();
             foreach ($del_exist as $del_exists) {
                 $del_exists->delete();
+                $redis_conn = Redis::connection();
+                $redis_conn->del('ward_user:' . $del_exists->id);        // Deleting Redis Cache
             }
             // Fresh Save
             $ulb_ward = $request['ulbWardID'];
@@ -77,7 +79,7 @@ class EloquentWardUserRepository implements WardRepository
             return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
             DB::rollBack();
-            return response()->json($e, 400);
+            return response($e);
         }
     }
 
@@ -86,36 +88,36 @@ class EloquentWardUserRepository implements WardRepository
      * | @param WardUserID $id
      * | #query > Query Statement for Fetching data regarding ward users
      * | #ward_user > Establish the DB Query
+     * | #redis_conn > Establish Redis Connection
+     * | #fWardUser > Find Ward User Existance
      * | @return response
      */
     public function getWardUserByID($id)
     {
         $redis_conn = Redis::connection();
-        $fWardUser = WardUser::find($id);
-        if ($fWardUser) {
-            $redis_existance = $redis_conn->get('ward_user:' . $id);
-            if ($redis_existance) {
-                return $redis_existance;
-            }
-            $query = $this->qWardUser() . " where w.id=$id";
-            $ward_user = DB::select($query);
-            $redis_conn->set(
-                'ward_user:' . $id,
-                json_encode([
-                    'id' => $ward_user[0]->id ?? '',
-                    'user_id' => $ward_user[0]->user_id ?? '',
-                    'user_name' => $ward_user[0]->user_name ?? '',
-                    'ulb_ward_id' => $ward_user[0]->ulb_ward_id ?? '',
-                    'is_admin' => $ward_user[0]->is_admin ?? '',
-                    'ulb_id' => $ward_user[0]->ulb_id ?? '',
-                    'ulb_name' => $ward_user[0]->ulb_name ?? '',
-                    'ward_name' => $ward_user[0]->ward_name ?? '',
-                    'old_ward_name' => $ward_user[0]->old_ward_name ?? '',
-                ])
-            );
-            return responseMsg(true, "Data Fetched", $ward_user[0]);
-        } else
-            return responseMsg(false, "Data Not Available for this ID", "");
+        // If Redis Exists
+        $redis_existance = $redis_conn->get('ward_user:' . $id);
+        if ($redis_existance) {
+            return responseMsg(true, "Data Fetched", json_decode($redis_existance));
+        }
+        $query = $this->qWardUser() . " where w.id=$id";
+        $ward_user = DB::select($query);
+        // Set Key on Redis
+        $redis_conn->set(
+            'ward_user:' . $id,
+            json_encode([
+                'id' => $ward_user[0]->id ?? '',
+                'user_id' => $ward_user[0]->user_id ?? '',
+                'user_name' => $ward_user[0]->user_name ?? '',
+                'ulb_ward_id' => $ward_user[0]->ulb_ward_id ?? '',
+                'is_admin' => $ward_user[0]->is_admin ?? '',
+                'ulb_id' => $ward_user[0]->ulb_id ?? '',
+                'ulb_name' => $ward_user[0]->ulb_name ?? '',
+                'ward_name' => $ward_user[0]->ward_name ?? '',
+                'old_ward_name' => $ward_user[0]->old_ward_name ?? '',
+            ])
+        );
+        return responseMsg(true, "Data Fetched", $ward_user[0]);
     }
 
     /**
