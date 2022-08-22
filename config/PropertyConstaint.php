@@ -75,7 +75,151 @@ return [
         "SELF OCCUPIED"  =>"2",
 
     ],
-    "usage-type"=>[
-        ""
+    "USAGE-TYPE"=>[
+        "1"=>["CODE"=>"A",
+        "TYPE"=>"RESIDENTIAL"
+        ],
+        "6"=>["CODE"=>"G",
+            "TYPE"=>"COMMERCIAL ESTABLISHMENTS AND UNDERTAKING OF STATE AND CENTRAL GOVERNMENT"
+        ],
+        "8"=>["CODE"=>"I",
+            "TYPE"=>"STATE AND CENTRAL GOVERNMENT OFFICES OTHER THAN COMMERCIAL ESTABLISHMENT AND UNDERTAKINGS"
+        ],
+        "10"=>["CODE"=>"K",
+            "TYPE"=>"RELIGIOUS AND SPIRITUAL PLACES"
+        ],
+        "12"=>["CODE"=>"B",
+            "TYPE"=>"HOTEL"
+        ],
+        "13"=>["CODE"=>"B",
+            "TYPE"=>"BARS"
+        ],
+        "14"=>["CODE"=>"B",
+            "TYPE"=>"CLUBS"
+        ],
+
+        "15"=>["CODE"=>"B",
+            "TYPE"=>"HEALTH CLUB"
+        ],
+        "16"=>["CODE"=>"B",
+            "TYPE"=>"MARRIAGE HALLS"
+        ],
+        "17"=>["CODE"=>"C",
+            "TYPE"=>"SHOP WITH LESS THAN 250 SQ. FEET"
+        ],
+        "18"=>["CODE"=>"D",
+            "TYPE"=>"SHOW ROOM"
+        ],
+        "19"=>["CODE"=>"D",
+            "TYPE"=>"SHOPPING MALLS"
+        ],
+        "20"=>["TYPE"=>"CINEMA HOUSES",
+        "CODE"=>"D"
+        ],
+        "21"=>["CODE"=>"D",
+        "TYPE"=>"MULTIPLEXES",
+
+        ],
+        "22"=>["CODE"=>"D",
+        "TYPE"=>"DISPENSARIES",
+
+        ],
+        "23"=>["CODE"=>"D",
+        "TYPE"=>"LABORATORIES",
+
+        ],
+        "24"=>["CODE"=>"D",
+        "TYPE"=>"RESTURANTS",
+
+        ],
+        "25"=>["CODE"=>"D",
+        "TYPE"=>"GUEST HOUSES",
+
+        ],
+        "26"=>["CODE"=>"E",
+        "TYPE"=>"COMMERCIAL OFFICES",
+
+        ],
+        "27"=>["CODE"=>"E",
+        "TYPE"=>"FINANCIAL INSTITUTIONS",
+
+        ],
+        "28"=>["CODE"=>"E",
+        "TYPE"=>"BANKS",
+
+        ],
+        "29"=>["CODE"=>"E",
+        "TYPE"=>"INSURANCE OFFICES",
+
+        ],
+        "30"=>["CODE"=>"E",
+        "TYPE"=>"PRIVATE HOSPITALS",
+
+        ],
+        "31"=>["CODE"=>"E",
+        "TYPE"=>"NURSING HOMES",
+
+        ],
+        "32"=>["CODE"=>"F",
+        "TYPE"=>"INDUSTRIES",
+
+        ],
+        "33"=>["CODE"=>"F",
+        "TYPE"=>"WORKSHOPS",
+
+        ],
+        "34"=>["CODE"=>"F",
+        "TYPE"=>"STORAGE",
+
+        ],
+        "35"=>["CODE"=>"F",
+        "TYPE"=>"GODOWNS",
+
+        ],
+        "36"=>["CODE"=>"F",
+        "TYPE"=>"WARE HOUSES",
+
+        ],
+        "37"=>["CODE"=>"H",
+        "TYPE"=>"COACHING CLASSES",
+
+        ],
+        "38"=>["CODE"=>"H",
+        "TYPE"=>"GUIDANCE & TRAINING CENTRES & THEIR HOSTELS",
+
+        ],
+        "39"=>["CODE"=>"J",
+        "TYPE"=>"PRIVATE SCHOOLS",
+
+        ],
+        "40"=>["CODE"=>"J",
+        "TYPE"=>"PRIVATE COLLEGES",
+
+        ],
+        "41"=>["CODE"=>"J",
+        "TYPE"=>"PRIVATE RESEARCH INSTITUTION AND OTHER PRIVATE EDUCATIONAL INSTITUTIONS AND THEIT HOSTELS",
+
+        ],
+        "42"=>["CODE"=>"L",
+        "TYPE"=>"EDUCATIONAL & SOCIAL INSTITUTIONS RUN BY TRUST",
+
+        ],
+        "43"=>["CODE"=>"L",
+        "TYPE"=>"NGOS ON NO-PROFIT",
+
+        ],
+        "44"=>["CODE"=>"L",
+        "TYPE"=>"NO-LOSS BASIS",
+
+        ],
+        "45"=>["CODE"=>"M",
+        "TYPE"=>"OTHERS",
+
+        ],
+    ],
+    "CONSTRUCTION-TYPE"=>[
+        "1"=>"Pucca with RCC Roof (RCC)",
+        "2"=>"Pucca with Asbestos/Corrugated Sheet (ACC)",
+        "3"=>"Kuttcha with Clay Roof (Other)",
     ]
 ];

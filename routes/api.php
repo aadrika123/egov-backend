@@ -223,7 +223,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('saf-escalate{id?}', 'special');                                // Saf Workflow special and safDetails By id
         Route::get('saf-escalate-inbox/{key?}', 'specialInbox');                             // Saf workflow Inbox and Inbox By search key
         Route::post('saf-post-level/{id?}', 'postNextLevel');  
-        Route::post('property-objection/{id}', 'propertyObjection');                // Saf Workflow special and safDetails By key
+        Route::match(["get","post"],'property-objection/{id}', 'propertyObjection');                // Saf Workflow special and safDetails By key
     });
 
     /**

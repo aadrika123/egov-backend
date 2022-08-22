@@ -907,13 +907,13 @@ class EloquentSafRepository implements SafRepository
                     $flooar_type = Config::get('PropertyConstaint.FLOOR-TYPE');
                     $data['flooar_type'] = remove_null($flooar_type);
 
-                    $occupency_types = PropParamOccupancyType::where('status',1)->get();
+                    $occupency_types = Config::get('PropertyConstaint.OCCUPENCY-TYPE');
                     $data['occupency_types'] = remove_null($occupency_types);
 
-                    $usage_types = PropParamUsageType::where('status',1)->get();
+                    $usage_types = Config::get('PropertyConstaint.USAGE-TYPE');
                     $data['usage_types'] = remove_null($usage_types);
 
-                    $constunction_type = PropParamConstructionType::where('status',1)->get();
+                    $constunction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE');
                     $data['constunction_type'] = remove_null($constunction_type);
                     return responseMsg(true,"",$data);
                 }
