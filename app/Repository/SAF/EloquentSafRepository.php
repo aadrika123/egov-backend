@@ -850,34 +850,67 @@ class EloquentSafRepository implements SafRepository
         * ==============Referance Table==========================
         * ------------------------------------------------------------
         * PropPropertie
-        * PropertyObjection
         * Saf
         * PropFloorDetail
-        * PropOwner
+        * PropOwner        
+        * PropertyObjection
         *------------------------------------------------------------
         * ============ Referance Constaint And Tables ==============
         * -----------------------------------------------------------
         * Config/PorpertyConstaint.php
         * constaint Name            Tables
-        * 
+        * ==============          ==================
         * OBJECTION          ->   ObjectionTypeMstr 
         * PROPERTY-TYPE      ->   PropParamPropertyType
         * FLOOR-TYPE         ->   PropParamFloorType
-        * OCCUPENCY-TYPE     -> 
-        * ===== findARRNewVacantMstr
-        * #newRate <- rate
+        * OCCUPENCY-TYPE     ->   PropParamOccupancyType
+        * USAGE-TYPE         ->   PropParamUsageType
+        * CONSTRUCTION-TYPE  ->   PropParamConstructionType
+        * -----------------------------------------------------------
+        * ===== PropertyObjection
+        * #user_id               = User.id;
+        * #ulb_id                = User.ulb_id;
+        * #roll_id               = User.role_id;
+        * #objection             = PropertyObjection()
+        * #objection.prop_dtl_id = PropPropertie.id
+        * #objection.saf_dtl_id  = PropPropertie.saf_id;    
+        * #objection.holding_no  = PropPropertie.holding_no;            
+        * #objection.ward_id     = PropPropertie.ward_mstr_id;
+        * #objection.user_id     = user_id;
+        * #objection_id          = objection.id;
+        * #no                    = "OBP".objection_id;
+        * #objection.objection_no= no;
         * ------------------------------------------------------------
         * Request
         * ------------------------------------------------------------
-        * #reqRoadTypeMstrId
-        * #reqAreaOfPlot
-        * ------------------------------------------------------------
-        * Calculation
-        * ------------------------------------------------------------
-        * reqAreaOfPlot =   | Case 1) Road is not available then
-                            |       (a) convert area of plot DECIMAL to ACRE
-                            | Case 2) Road is available then not need to conver area of plot
-        * #yearlyTax = #newRate X #reqAreaOfPlot
+        * ===== PropertyObjectionDetail ================
+        * call Methods inserObjection(array inputs)
+        *  -----------------------------------------------------------------------------
+        * FOR  Rainwater Harvesting
+        * | #objdtl["objection_id"]          = objection_id                             |
+        * | #objdtl["objection_type_id"]     = OBJECTION.RanHarwesting                  |
+        * | #objdtl["according_assessment"]  = PropPropertie.is_water_harvesting        |
+        * | #objdtl["according_applicant"]   = $request->RanHarwestingValues?"t":'f'    |
+        * | #objdtl["objection_by"]          = "Citizen"                                |
+        * | #objdtl["user_id"]               = user_id                                  |
+        * ------------------------------------------------------------------------------
+        * ------------------------------------------------------------------------------
+        * FOR Road Width
+        * | #objdtl["objection_id"]           = objection_id                            |
+        * | #objdtl["objection_type_id"]      = OBJECTION.RoadWidth                     |
+        * | #objdtl["according_assessment"]   = PropPropertie.road_type_mstr_id         |
+        * | #objdtl["according_applicant"]    = $request->RoadWidthValues               |
+        * | #objdtl[ "objection_by"]          = "Citizen"                               |
+        * | #objdtl["user_id"]                = user_id                                 |
+        * ------------------------------------------------------------------------------
+        * ------------------------------------------------------------------------------
+        *  FOR Property Type
+        *#objdtl["objection_id"]          =objection_id,
+        *#objdtl["objection_type_id"]     =OBJECTION.PropertyType
+        *#objdtl["according_assessment"   => 1,
+        *#objdtl["according_applicant"    => 1,
+        *#objdtl["objection_by"           => "Citizen",
+        *#objdtl["user_id"                => $user_id,
    */
    #apply Objection Holding
    public function propertyObjection(Request $request)
@@ -919,23 +952,28 @@ class EloquentSafRepository implements SafRepository
                     $floors = remove_null($floors); 
                     $data['floors']= $floors; 
 
-                    $bjection_type = Config::get('PropertyConstaint.OBJECTION');                                 
-                    $data['bjection_type']= $bjection_type;
+                    $bjection_type = Config::get('PropertyConstaint.OBJECTION');   
+                    $bjection_type =ConstToArray($bjection_type,"type");                             
+                    $data['bjection_type']= remove_null($bjection_type);
 
                     $property_type = Config::get('PropertyConstaint.PROPERTY-TYPE');
-                    $property_type  =remove_null($property_type); 
-                    $data['property_type']= $property_type;
+                    $property_type  =ConstToArray($property_type ,"type") ;
+                    $data['property_type']= remove_null($property_type);
 
                     $flooar_type = Config::get('PropertyConstaint.FLOOR-TYPE');
+                    $flooar_type  =ConstToArray($flooar_type ,"name") ;
                     $data['flooar_type'] = remove_null($flooar_type);
 
                     $occupency_types = Config::get('PropertyConstaint.OCCUPENCY-TYPE');
+                    $occupency_types  =ConstToArray($occupency_types ,"type") ;
                     $data['occupency_types'] = remove_null($occupency_types);
 
                     $usage_types = Config::get('PropertyConstaint.USAGE-TYPE');
+                    $usage_types  =ConstToArray($usage_types ,"type") ;
                     $data['usage_types'] = remove_null($usage_types);
 
                     $constunction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE');
+                    $constunction_type  =ConstToArray($constunction_type ,"type") ;
                     $data['constunction_type'] = remove_null($constunction_type);
                     return responseMsg(true,"",$data);
                 }
@@ -1047,12 +1085,12 @@ class EloquentSafRepository implements SafRepository
                 if($request->RoadWidthStatus)
                 {
                     $objdtl=[
-                                "objection_id"=> $objection_id,
-                                "objection_type_id"=> Config::get('PropertyConstaint.OBJECTION')['RoadWidth'],
-                                "according_assessment"=> 't',
-                                "according_applicant"=> $request->RoadWidthValues?"t":'f',
-                                "objection_by"=> "Citizen",
-                                "user_id"=> $user_id,
+                                "objection_id"         => $objection_id,
+                                "objection_type_id"    => Config::get('PropertyConstaint.OBJECTION')['RoadWidth'],
+                                "according_assessment" => 't',
+                                "according_applicant"  => $request->RoadWidthValues?"t":'f',
+                                "objection_by"         => "Citizen",
+                                "user_id"              => $user_id,
                     ];
                     if(!$this->inserObjection($objdtl))
                     {
@@ -1064,12 +1102,12 @@ class EloquentSafRepository implements SafRepository
                 if($request->PropertyTypeStatus)
                 {
                     $objdtl=[
-                                "objection_id"=> $objection_id,
-                                "objection_type_id"=> Config::get('PropertyConstaint.OBJECTION')['PropertyType'],
+                                "objection_id"        => $objection_id,
+                                "objection_type_id"   => Config::get('PropertyConstaint.OBJECTION')['PropertyType'],
                                 "according_assessment"=> 1,
-                                "according_applicant"=> 1,
-                                "objection_by"=> "Citizen",
-                                "user_id"=> $user_id,
+                                "according_applicant" => 1,
+                                "objection_by"        => "Citizen",
+                                "user_id"             => $user_id,
                     ];
                     if(!$this->inserObjection($objdtl))
                     {
