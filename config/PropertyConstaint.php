@@ -221,5 +221,15 @@ return [
         "1"=>"Pucca with RCC Roof (RCC)",
         "2"=>"Pucca with Asbestos/Corrugated Sheet (ACC)",
         "3"=>"Kuttcha with Clay Roof (Other)",
+    ],
+    #role_master ulb 2 (RMC)
+    "ROLES"=>[
+        "2" =>[
+            "1" =>["id"=>1,"role_name"=>"Dealing Assistent"],
+            "2" => ["id"=>2,"role_name"=>"Agency Tax Collecter"],
+            "3" => ["id"=>3,"role_name"=>"Ulb Tax Collecter"],
+            "4" => ["id"=>4,"role_name"=>"Section Incharge"],
+            "5" => ["id"=>5,"role_name"=>"Exicutive Officer"]
+        ]
     ]
 ];

@@ -18,12 +18,14 @@ use App\Models\PropParamFloorType;
 use App\Models\PropParamOccupancyType;
 use App\Models\PropParamPropertyType;
 use App\Models\PropParamUsageType;
+use App\Models\RoleMaster;
 use App\Models\Saf;
 use App\Models\UlbWorkflowMaster;
 use App\Models\WardMstr;
 use App\Models\WorkflowCandidate;
 use App\Models\WorkflowTrack;
 use App\Traits\Auth;
+use Brick\Math\BigInteger;
 use Exception;
 use Illuminate\Auth\Events\Validated;
 use Illuminate\Support\Facades\Config;
@@ -514,6 +516,9 @@ class EloquentSafRepository implements SafRepository
    #Saf Details
    public function details($saf_id)
    {
+       $user_id = auth()->user()->id;
+       $role_id = auth()->user()->roll_id;
+       $ulb_id = auth()->user()->ulb_id;
        $saf_data = ActiveSafDetail::select(DB::raw("'VacantLand' as property_type,
                                                    'NewSaf' as assessment_type,
                                                    ward_mstrs.ward_no as ward_no,
@@ -537,7 +542,7 @@ class EloquentSafRepository implements SafRepository
                                    ->where('status',1)
                                    ->where('saf_dtl_id',$saf_id)   
                                    ->get(); 
-       $data['floor'] =  remove_null($floor); 
+       $data['floor'] =  remove_null($floor);
        $time_line =  DB::table('workflow_tracks')->select("workflow_tracks.message","role_masters.role_name",
                                                             DB::raw("workflow_tracks.track_date::date as track_date")
                                                             )                            
@@ -547,8 +552,20 @@ class EloquentSafRepository implements SafRepository
                                 ->where('ref_table_id_value',$saf_id)
                                 ->orderBy('track_date','desc')
                                 ->get();
-        $data['time_line'] =  remove_null($time_line);                       
-       return(collect($data));
+        $data['time_line'] =  remove_null($time_line);
+        if(in_array($role_id,['1']))
+        {
+            $rol_type = RoleMaster::where('ulb_id',$ulb_id)
+                                    ->get();
+        }
+        $forward_backword = [];
+        return $data;
+   }
+   public function getRoleUsersForBck(BigInteger $role_id,$ulb_id) //curernt user Roll id
+   {        
+        $backWord = Config::get('PropertyConstaint.ROLES').[$ulb_id][$role_id-1];
+        $forWord = Config::get('PropertyConstaint.ROLES').[$ulb_id][$role_id+1];
+        // return ['backwored'=]
    }
 
    /**
@@ -1001,31 +1018,31 @@ class EloquentSafRepository implements SafRepository
                     $owneres = remove_null($owneres);
                     $data['owneres']= $owneres;
                     $floors = remove_null($floors); 
-                    $data['floors']= $floors; 
+                    $data['prop_floors']= $floors; 
 
                     $bjection_type = Config::get('PropertyConstaint.OBJECTION');   
                     $bjection_type =ConstToArray($bjection_type,"type");                             
-                    $data['bjection_type']= remove_null($bjection_type);
+                    $data['bjection_master']= remove_null($bjection_type);
 
                     $property_type = Config::get('PropertyConstaint.PROPERTY-TYPE');
                     $property_type  =ConstToArray($property_type ,"type") ;
-                    $data['property_type']= remove_null($property_type);
+                    $data['property_master']= remove_null($property_type);
 
-                    $flooar_type = Config::get('PropertyConstaint.FLOOR-TYPE');
-                    $flooar_type  =ConstToArray($flooar_type ,"name") ;
-                    $data['flooar_type'] = remove_null($flooar_type);
+                    $floor_type = Config::get('PropertyConstaint.FLOOR-TYPE');
+                    $floor_type  =ConstToArray($floor_type ,"name") ;
+                    $data['floor_master'] = remove_null($floor_type);
 
                     $occupency_types = Config::get('PropertyConstaint.OCCUPENCY-TYPE');
                     $occupency_types  =ConstToArray($occupency_types ,"type") ;
-                    $data['occupency_types'] = remove_null($occupency_types);
+                    $data['occupency_master'] = remove_null($occupency_types);
 
                     $usage_types = Config::get('PropertyConstaint.USAGE-TYPE');
                     $usage_types  =ConstToArray($usage_types ,"type") ;
-                    $data['usage_types'] = remove_null($usage_types);
+                    $data['usage_master'] = remove_null($usage_types);
 
                     $constunction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE');
                     $constunction_type  =ConstToArray($constunction_type ,"type") ;
-                    $data['constunction_type'] = remove_null($constunction_type);
+                    $data['constunction_master'] = remove_null($constunction_type);
                     return responseMsg(true,"",$data);
                 }
             }

@@ -65,12 +65,12 @@ if(!function_exists("ConstToArray"))
             {
                 foreach ($value as $keys => $val)
                 {
-                    $arra[$keys] = $val;
+                    $arra[strtolower($keys)] = $val;
                 }
             }
             else
             {
-                $arra[$type] = $value;
+                $arra[strtolower($type)] = $value;
             }
             $retuen [] = $arra;
         }
