@@ -7,15 +7,25 @@ use Illuminate\Http\Request;
 use App\Models\ActiveSafDetail;
 use App\Models\ActiveSafFloorDetail;
 use App\Models\ActiveSafOwnerDetail;
-use App\Models\Hoarding;
+use App\Models\PropPropertie;
 use App\Models\ObjectionTypeMstr;
 use App\Models\PropertyObjection;
 use App\Models\PropertyObjectionDetail;
+use App\Models\PropFloorDetail;
+use App\Models\PropOwner;
+use App\Models\PropParamConstructionType;
+use App\Models\PropParamFloorType;
+use App\Models\PropParamOccupancyType;
+use App\Models\PropParamPropertyType;
+use App\Models\PropParamUsageType;
+use App\Models\RoleMaster;
+use App\Models\Saf;
 use App\Models\UlbWorkflowMaster;
 use App\Models\WardMstr;
 use App\Models\WorkflowCandidate;
 use App\Models\WorkflowTrack;
 use App\Traits\Auth;
+use Brick\Math\BigInteger;
 use Exception;
 use Illuminate\Auth\Events\Validated;
 use Illuminate\Support\Facades\Config;
@@ -238,12 +248,11 @@ class EloquentSafRepository implements SafRepository
    #Inbox
    public function inbox($key)
    {
-       
         $user_id = auth()->user()->id;
         $redis=Redis::connection();  // Redis Connection
         $redis_data = json_decode(Redis::get('user:' . $user_id),true);
         $ulb_id = $redis_data['ulb_id'];
-        $roll_id =  $redis_data['roll_id']; 
+        $roll_id =  $redis_data['role_id']; 
         $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
         $work_flow_candidate = json_decode(Redis::get('workflow_candidate:' . $user_id),true)??null;        
         if($work_flow_candidate)
@@ -300,7 +309,7 @@ class EloquentSafRepository implements SafRepository
                                                ;
                                            }
                                        )
-                                       ->where("active_saf_details.current_user",$user_id)
+                                       ->where("active_saf_details.current_user",$roll_id)
                                        ->where("active_saf_details.status",1) 
                                        ->where("active_saf_details.ulb_id",$ulb_id);       
         if($key)
@@ -313,7 +322,7 @@ class EloquentSafRepository implements SafRepository
                                 ->orwhere('active_saf_owner_details.guardian_name', 'ILIKE', '%'.$key.'%')
                                 ->orwhere('active_saf_owner_details.mobile_no', 'ILIKE', '%'.$key.'%');
                             });
-        }
+        }        
         $saf=$data->get() ->map(function($data) {
                 if ( ! $data->owner_name) {
                     $data->owner_name = '';
@@ -372,7 +381,7 @@ class EloquentSafRepository implements SafRepository
         $redis=Redis::connection();  // Redis Connection
         $redis_data = json_decode(Redis::get('user:' . $user_id),true);
         $ulb_id = $redis_data['ulb_id'];
-        $roll_id =  $redis_data['roll_id']; 
+        $roll_id =  $redis_data['role_id']; 
         $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
         $work_flow_candidate = json_decode(Redis::get('workflow_candidate:' . $user_id),true)??null;        
         if($work_flow_candidate)
@@ -426,14 +435,13 @@ class EloquentSafRepository implements SafRepository
                                           )active_saf_owner_details
                                            "),
                                function($join){
-                                   $join->on("active_saf_owner_details.saf_dtl_id","=","active_saf_details.id")
-                                   ;
+                                   $join->on("active_saf_owner_details.saf_dtl_id","=","active_saf_details.id");
                                }
                            )
                            ->where(
-                               function($query) use($user_id){
+                               function($query) use($roll_id){
                                    return $query
-                                   ->where('active_saf_details.current_user', '<>', $user_id)
+                                   ->where('active_saf_details.current_user', '<>', $roll_id)
                                    ->orwhereNull('active_saf_details.current_user');
                            })
                            ->where("active_saf_details.status",1)
@@ -507,6 +515,9 @@ class EloquentSafRepository implements SafRepository
    #Saf Details
    public function details($saf_id)
    {
+       $user_id = auth()->user()->id;
+       $role_id = auth()->user()->roll_id;
+       $ulb_id = auth()->user()->ulb_id;
        $saf_data = ActiveSafDetail::select(DB::raw("'VacantLand' as property_type,
                                                    'NewSaf' as assessment_type,
                                                    ward_mstrs.ward_no as ward_no,
@@ -530,7 +541,7 @@ class EloquentSafRepository implements SafRepository
                                    ->where('status',1)
                                    ->where('saf_dtl_id',$saf_id)   
                                    ->get(); 
-       $data['floor'] =  remove_null($floor); 
+       $data['floor'] =  remove_null($floor);
        $time_line =  DB::table('workflow_tracks')->select("workflow_tracks.message","role_masters.role_name",
                                                             DB::raw("workflow_tracks.track_date::date as track_date")
                                                             )                            
@@ -540,8 +551,25 @@ class EloquentSafRepository implements SafRepository
                                 ->where('ref_table_id_value',$saf_id)
                                 ->orderBy('track_date','desc')
                                 ->get();
-        $data['time_line'] =  remove_null($time_line);                       
-       return(collect($data));
+        $data['time_line'] =  remove_null($time_line);
+        if(in_array($role_id,['1']))
+        {
+            $rol_type =  $this->getRoleUsersForBck(null,$ulb_id); 
+            $data['work_flow_candidate'] =  remove_null(ConstToArray($rol_type));         
+        }
+        $forward_backword = $this->getRoleUsersForBck($role_id,$ulb_id);        
+        $data['forward_backward'] =  remove_null($forward_backword);        
+        return $data;
+   }
+   public function getRoleUsersForBck($role_id,$ulb_id) //curernt user Roll id
+   {    
+        if(is_null($role_id))
+        {
+            return Config::get("PropertyConstaint.ROLES.$ulb_id");
+        }    
+        $backWord = Config::get("PropertyConstaint.ROLES.$ulb_id.".($role_id-1))??[];
+        $forWord = Config::get("PropertyConstaint.ROLES.$ulb_id.".($role_id+1))??[];
+        return ['backward'=>$backWord,"forward"=>$forWord];
    }
 
    /**
@@ -612,7 +640,7 @@ class EloquentSafRepository implements SafRepository
         $redis=Redis::connection();  // Redis Connection
         $redis_data = json_decode(Redis::get('user:' . $user_id),true);
         $ulb_id = $redis_data['ulb_id'];
-        $roll_id =  $redis_data['roll_id']; 
+        $roll_id =  $redis_data['role_id']; 
         $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
         $work_flow_candidate = json_decode(Redis::get('workflow_candidate:' . $user_id),true)??null;        
         if($work_flow_candidate)
@@ -669,7 +697,7 @@ class EloquentSafRepository implements SafRepository
                                                 ;
                                             }
                                         )
-                                        ->where("active_saf_details.current_user",$user_id)
+                                        ->where("active_saf_details.current_user",$roll_id)
                                         ->where("active_saf_details.status",1)   
                                         ->where("active_saf_details.ulb_id",$ulb_id)          
                                         ->where('is_escalate',1);
@@ -839,267 +867,448 @@ class EloquentSafRepository implements SafRepository
             return  ['status'=>false,'message'=>$e->getMessage()];
         }
    }
+   /**
+        * Objection No. formate
+        * "OBP".objection_id 
+        * ==============Referance Table==========================
+        * ------------------------------------------------------------
+        * PropPropertie
+        * Saf
+        * PropFloorDetail
+        * PropOwner        
+        * PropertyObjection
+        *------------------------------------------------------------
+        * ============ Referance Constaint And Tables ==============
+        * -----------------------------------------------------------
+        * Config/PorpertyConstaint.php
+        * constaint Name            Tables
+        * ==============          ==================
+        * OBJECTION          ->   ObjectionTypeMstr 
+        * PROPERTY-TYPE      ->   PropParamPropertyType
+        * FLOOR-TYPE         ->   PropParamFloorType
+        * OCCUPENCY-TYPE     ->   PropParamOccupancyType
+        * USAGE-TYPE         ->   PropParamUsageType
+        * CONSTRUCTION-TYPE  ->   PropParamConstructionType
+        * -----------------------------------------------------------
+        * ===== PropertyObjection
+        * #user_id               = User.id;
+        * #ulb_id                = User.ulb_id;
+        * #roll_id               = User.role_id;
+        * #objection             = PropertyObjection()
+        * #objection.prop_dtl_id = PropPropertie.id
+        * #objection.saf_dtl_id  = PropPropertie.saf_id;    
+        * #objection.holding_no  = PropPropertie.holding_no;            
+        * #objection.ward_id     = PropPropertie.ward_mstr_id;
+        * #objection.user_id     = user_id;
+        * #objection_id          = objection.id;
+        * #no                    = "OBP".objection_id;
+        * #objection.objection_no= no;
+        * ------------------------------------------------------------
+        * Request
+        * ------------------------------------------------------------
+        * ===== PropertyObjectionDetail ================  
+        * inserObjection(array inputs)      
+        *  -----------------------------------------------------------------------------
+        * FOR  Rainwater Harvesting 2
+        * | #objdtl["objection_id"]          = objection_id                             |
+        * | #objdtl["objection_type_id"]     = 2                                        |
+        * | #objdtl["according_assessment"]  = PropPropertie.is_water_harvesting        |
+        * | #objdtl["according_applicant"]   = $request->RanHarwestingValues?"t":'f'    |
+        * | #objdtl["objection_by"]          = "Citizen"                                |
+        * | #objdtl["user_id"]               = user_id                                  |
+        * inserObjection(objdtl)
+        * ------------------------------------------------------------------------------
+        * ------------------------------------------------------------------------------
+        * FOR Road Width 3
+        * | #objdtl["objection_id"]           = objection_id                            |
+        * | #objdtl["objection_type_id"]      = 3                                       |
+        * | #objdtl["according_assessment"]   = PropPropertie.road_type_mstr_id         |
+        * | #objdtl["according_applicant"]    = $request->RoadWidthValues               |
+        * | #objdtl[ "objection_by"]          = "Citizen"                               |
+        * | #objdtl["user_id"]                = user_id                                 |
+        * inserObjection(objdtl)
+        * ------------------------------------------------------------------------------
+        * ------------------------------------------------------------------------------
+        *  FOR Property Type 4
+        * | #objdtl["objection_id"]            = objection_id                           |
+        * | #objdtl["objection_type_id"]       = 4                                      |
+        * | #objdtl["according_assessment"]    = PropPropertie.prop_type_mstr_id        |
+        * | #objdtl["according_applicant"]     = $request->PropertyTypeValues           |
+        * | #objdtl["objection_by"]            = "Citizen"                              |
+        * | #objdtl["user_id"]                 = user_id                                |
+        * inserObjection(objdtl)
+        * ------------------------------------------------------------------------------
+        *-------------------------------------------------------------------------------
+        *  FOR Area of plot5
+        * | #objdtl["objection_id"]        = objection_id                               |
+        * | #objdtl["objection_type_id"]   = 5                                          |
+        * | #objdtl["according_assessment] = PropPropertie.area_of_plot                 |              
+        * | #objdtl["according_applicant"] = $request->AreaOfPlotValues                 |              
+        * | #objdtl["objection_by"]        = "Citizen"                                  |
+        * | #objdtl["user_id"]             = user_id                                    |
+        * inserObjection(objdtl)
+        * ------------------------------------------------------------------------------
+        * ------------------------------------------------------------------------------
+        *  Mobile Tower 6
+        * | #objdtl["objection_id"]          = objection_id                             |
+        * | #objdtl["objection_type_id"]     = '6'                                      |
+        * | #objdtl["according_assessment"]  = PropPropertie.is_mobile_tower            |
+        * | #objdtl["assess_area"]           = PropPropertie.tower_area                 |
+        * | #objdtl["assess_date"]           = PropPropertie.tower_installation_date    |
+        * | #objdtl["according_applicant"]   = request->MobileTowerValue?'t':'f'        |
+        * | #objdtl["applicant_area"]        = request->MobileTowerArea                 |
+        * | #objdtl["applicant_date"]        = request->MobileTowerDate                 |
+        * | #objdtl["objection_by"]          = "Citizen"                                |
+        * | #objdtl["user_id"]               = user_id                                  |
+        * inserObjection(objdtl)
+        * ------------------------------------------------------------------------------
+        *-------------------------------------------------------------------------------
+        * FOR Hording Board 7
+        * | #objdtl["objection_id"]            = objection_id                           |
+        * | #objdtl["objection_type_id"]       = '7'                                    |
+        * | #objdtl["according_assessment"]    = PropPropertie.is_hoarding_board        |
+        * | #objdtl["assess_area"]             = PropPropertie.hoarding_area            |
+        * | #objdtl["assess_date"]             = PropPropertie.hoarding_installation_date|
+        * | #objdtl["according_applicant"]     = $request->HoardingBoardValue ?'t':'f'  |
+        * | #objdtl["applicant_area"]          = $request->HoardingBoardArea            |
+        * | #objdtl["applicant_date"]          = $request->HoardingBoardDate            |
+        * | #objdtl["objection_by"]            = "Citizen"                              |
+        * | #objdtl["user_id"]                 = user_id                                |
+        * inserObjection(objdtl)
+        * ------------------------------------------------------------------------------
+        * ------------------------------------------------------------------------------
+        * # Floor Details 9
+        
+        * =========================== helpers use =====================================
+        * remove_null() -> Helpers\utility_helper.php
+        * ConstToArray() -> Helpers\utility_helper.php
 
-   /*
-     desc this function checkn property is approve or not and add objection     
     */
    #apply Objection Holding
    public function propertyObjection(Request $request)
-   {         
-        $massage = ['status'=>false,"data"=>$request->all(),'message'=>''];
+   {   
         $user_id = auth()->user()->id;
+        $ulb_id = auth()->user()->ulb_id;
+        $roll_id = auth()->user()->role_id;        
         DB::beginTransaction();
         try{
-            $rules = [
-                "saf_dtl_id"=>"required",
-                // "objection_form"=>"required",
-                // "evidence_document"=>"required",               
-               
-                'RanHarwestingStatus'=>"required|bool",
-
-                "RoadWidthStatus"=>"required|bool",
-
-                "PropertyTypeStatus"=>"required|bool",
-
-                "AreaOfPlotStatus"=>"required|bool",
-
-                "MobileTowerStatus"=>"required|bool",
-
-                "HoardingBoardStatus"=>"required|bool",
-
-                "FloorDetailStatus"=>"required|bool",
-            ];
-            if($request->RanHarwestingStatus)
-            {
-                $rules['RanHarwestingValues']= "required|bool";
-                $rules['RanHarwestingId']= "required|int";
-            }
-            if($request->RoadWidthStatus)
-            {
-                $rules['RoadWidthValues']= "required";
-                $rules['RoadWidthId']= "required|int";
-            }
-            if($request->PropertyTypeStatus)
-            {
-                $rules['PropertyTypeValues']= "required";
-                $rules['PropertyTypeId']= "required|int";
-            }
-            if($request->AreaOfPlotStatus)
-            {
-                $rules['AreaOfPlotValues']= "required";
-                $rules['AreaOfPlotId']= "required|int";
-            }
-            if($request->MobileTowerStatus)
-            {
-                $rules['MobileTowerValues']= "required";
-                $rules['MobileTowerId']= "required|int";
-            }
-            if($request->HoardingBoardStatus)
-            {
-                $rules['HoardingBoardValues']= "required";
-                $rules['HoardingBoardId']= "required|int";
-            }
-            if($request->FloorDetailStatus)
-            {
-                $rules['FloorDetailValues']= "required|array";
-                $rules['FloorDetailId']= "required|int";
-            }
-
-            $validator = Validator::make($request->all(),$rules);  
-            if($validator->fails())
-            {
-                $messages["message"] = $validator->errors();
-                return response()->json($messages,200);
-            }
-            // 1	Typographical Error
-            // 2	Rainwater Harvesting
-            // 3	Road Width
-            // 4	Property Type
-            // 5	Area of Plot
-            // 6	Mobile Tower
-            // 7	Hoarding Board
-            // 8	Other
-            // 9	Floor Detail
-            $property = Hoarding::find($request->id);
+            $property = PropPropertie::find($request->id);
             if(!$property)
             {
-                return ;
+                return responseMsg(false,"Property Not Found",$request->all());
             }
-            $objection = new PropertyObjection ;
-            $objection->prop_dtl_id=$request->id;
-            $objection->saf_dtl_id=$request->saf_dtl_id;    
-            $objection->holding_no=$request->holding_no;            
-            $objection->ward_id=$request->ward_id;
-            $objection->user_id=$user_id;
-            // $objection->objection_form_doc=$request->saf_dtl_id;    
-            // $objection->evidence_document=$request->holding_no;
-            $objection->save();
-            $objection_id = $objection->id;
-            # Rainwater Harvesting
-            // if($request->RanHarwestingStatus)
-            // {
-            //     $objdtl=[
-            //                 "objection_id"=> $objection_id,
-            //                 "objection_type_id"=> Config::get('workflow-constants.OBJECTION')['RanHarwesting'];
-            //                 "according_assessment"=> $data["is_water_harvesting"],
-            //                 "assess_area"=> null,
-            //                 "assess_date"=> null,
-            //                 "according_applicant"=> $inputs["is_water_harvesting"],
-            //                 "applicant_area"=> null,
-            //                 "applicant_date"=> null,
-            //                 "objection_by"=> "Citizen",
-            //                 "user_id"=> $data["emp_details"]["id"],
-            //     ];
-            //     $objection_dtl_id = $this->ObjectionModel->InsertObjectionDetails($objdtl);
-            // }
+            $count = PropertyObjection::where('prop_dtl_id',$request->id) 
+                                        ->where('status',1)->count();            
+            if($count)
+            {
+                return responseMsg(false,"Objection is Allredy Apply For This Property",$count);
+            }
+            if($request->getMethod()=='GET')
+            {  
+                $approved_saf = Saf::where('id',$property->saf_id)->where('status',1)->first();
+                if(!$approved_saf)
+                {
+                    return responseMsg(false,"Saf Not Approved","");
+                }
+                else
+                {
+                    $floors = PropFloorDetail::where('status',1)
+                                            ->where('property_id',$request->id)
+                                            ->get();
+                    $owneres = PropOwner::where('status',1)
+                                            ->where('property_id',$request->id)
+                                            ->get();
+                    $data = remove_null($property);
+                    $owneres = remove_null($owneres);
+                    $data['owneres']= $owneres;
+                    $floors = remove_null($floors); 
+                    $data['prop_floors']= $floors; 
 
-            // # Road Width
-            // if($obj_type_id==3)
-            // {
-            //     $objdtl=[
-            //                 "objection_id"=> $objection_id,
-            //                 "objection_type_id"=> $obj_type_id,
-            //                 "according_assessment"=> $data["road_type_mstr_id"],
-            //                 "assess_area"=> null,
-            //                 "assess_date"=> null,
-            //                 "according_applicant"=> $inputs["road_type_mstr_id"],
-            //                 "applicant_area"=> null,
-            //                 "applicant_date"=> null,
-            //                 "objection_by"=> "Citizen",
-            //                 "user_id"=> $data["emp_details"]["id"],
-            //     ];
-            //     $objection_dtl_id = $this->ObjectionModel->InsertObjectionDetails($objdtl);
-                
-            // }
+                    $objection_type = Config::get('PropertyConstaint.OBJECTION');   
+                    $objection_type =ConstToArray($objection_type,"type");                             
+                    $data['objection_master']= remove_null($objection_type);
 
-            // # Property Type
-            // if($obj_type_id==4)
-            // {
-            //     $objdtl=[
-            //                 "objection_id"=> $objection_id,
-            //                 "objection_type_id"=> $obj_type_id,
-            //                 "according_assessment"=> $data["prop_type_mstr_id"],
-            //                 "assess_area"=> null,
-            //                 "assess_date"=> null,
-            //                 "according_applicant"=> $inputs["property_type_id"],
-            //                 "applicant_area"=> null,
-            //                 "applicant_date"=> null,
-            //                 "objection_by"=> "Citizen",
-            //                 "user_id"=> $data["emp_details"]["id"],
-            //     ];
-            //     $objection_dtl_id = $this->ObjectionModel->InsertObjectionDetails($objdtl);
-            // }
+                    $property_type = Config::get('PropertyConstaint.PROPERTY-TYPE');
+                    $property_type  =ConstToArray($property_type ,"type") ;
+                    $data['property_master']= remove_null($property_type);
 
-            // # Area of plot
-            // if($obj_type_id==5)
-            // {
-            //     $objdtl=[
-            //                 "objection_id"=> $objection_id,
-            //                 "objection_type_id"=> $obj_type_id,
-            //                 "according_assessment"=> $data["area_of_plot"],
-            //                 "assess_area"=> null,
-            //                 "assess_date"=> null,
-            //                 "according_applicant"=> $inputs["area_of_plot"],
-            //                 "applicant_area"=> null,
-            //                 "applicant_date"=> null,
-            //                 "objection_by"=> "Citizen",
-            //                 "user_id"=> $data["emp_details"]["id"],
-            //     ];
-            //     $objection_dtl_id = $this->ObjectionModel->InsertObjectionDetails($objdtl);
-                
-            // }
+                    $floor_type = Config::get('PropertyConstaint.FLOOR-TYPE');
+                    $floor_type  =ConstToArray($floor_type ,"name") ;
+                    $data['floor_master'] = remove_null($floor_type);
 
-            // # Mobile Tower
-            // if($obj_type_id==6)
-            // {
-            //     $objdtl=[
-            //                 "objection_id"=> $objection_id,
-            //                 "objection_type_id"=> $obj_type_id,
-            //                 "according_assessment"=> $data["is_mobile_tower"],
-            //                 "assess_area"=> $data["tower_area"],
-            //                 "assess_date"=> $data["tower_installation_date"],
-            //                 "according_applicant"=> $inputs["is_mobile_tower"],
-            //                 "applicant_area"=> $inputs["tower_area"],
-            //                 "applicant_date"=> $inputs["tower_installation_date"],
-            //                 "objection_by"=> "Citizen",
-            //                 "user_id"=> $data["emp_details"]["id"],
-            //     ];
-            //     $objection_dtl_id = $this->ObjectionModel->InsertObjectionDetails($objdtl);
-                
-            // }
+                    $occupency_types = Config::get('PropertyConstaint.OCCUPENCY-TYPE');
+                    $occupency_types  =ConstToArray($occupency_types ,"type") ;
+                    $data['occupency_master'] = remove_null($occupency_types);
 
-            // # Hording Board
-            // if($obj_type_id==7)
-            // {
-            //     $objdtl=[
-            //                 "objection_id"=> $objection_id,
-            //                 "objection_type_id"=> $obj_type_id,
-            //                 "according_assessment"=> $data["is_hoarding_board"],
-            //                 "assess_area"=> $data["tower_area"],
-            //                 "assess_date"=> $data["tower_installation_date"],
-            //                 "according_applicant"=> $inputs["is_hoarding_board"],
-            //                 "applicant_area"=> $inputs["hoarding_area"],
-            //                 "applicant_date"=> $inputs["hoarding_installation_date"],
-            //                 "objection_by"=> "Citizen",
-            //                 "user_id"=> $data["emp_details"]["id"],
-            //     ];
-            //     $objection_dtl_id = $this->ObjectionModel->InsertObjectionDetails($objdtl);
-            // }
+                    $usage_types = Config::get('PropertyConstaint.USAGE-TYPE');
+                    $usage_types  =ConstToArray($usage_types ,"type") ;
+                    $data['usage_master'] = remove_null($usage_types);
 
-            // # Floor Details
-            // if($obj_type_id==9)
-            // {
-            //     $i=0;
-            //     foreach($data['prop_floor_details'] as $floor)
-            //     {
-            //         $floordtl=[
-            //                     "prop_dtl_id"=> $floor["prop_dtl_id"],
-            //                     "objection_id"=> $objection_id,
-            //                     "objection_type_id"=> $obj_type_id,
-            //                     "prop_floor_dtl_id"=> $floor["id"],
-            //                     "floor_mstr_id"=> $floor["floor_mstr_id"],
-            //                     "usage_type_mstr_id"=> $floor["usage_type_mstr_id"],
-            //                     "occupancy_type_mstr_id"=> $floor["occupancy_type_mstr_id"],
-            //                     "const_type_mstr_id"=> $floor["const_type_mstr_id"],
-            //                     "builtup_area"=> $floor["builtup_area"],
-            //                     "carpet_area"=> $floor["carpet_area"],
-            //                     "date_from"=> $floor["date_from"],
-            //                     "date_upto"=> $floor["date_upto"],
-            //                     "remarks"=> null,
-            //                     "objection_by"=> 'Assessment',
-            //                 ];
-            //         $this->ObjectionModel->InsertFloorObjectionDetails($floordtl);
+                    $constunction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE');
+                    $constunction_type  =ConstToArray($constunction_type ,"type") ;
+                    $data['constunction_master'] = remove_null($constunction_type);
+                    return responseMsg(true,"",$data);
+                }
+            }
+            elseif($request->getMethod()=='POST')
+            {                
+                $rules = [
+                    "saf_dtl_id"=>"required",
+                    // "objection_form"=>"required",
+                    // "evidence_document"=>"required",               
+                   
+                    'RanHarwestingStatus'=>"required|bool",
+    
+                    "RoadWidthStatus"=>"required|bool",
+    
+                    "PropertyTypeStatus"=>"required|bool",
+    
+                    "AreaOfPlotStatus"=>"required|bool",
+    
+                    "MobileTowerStatus"=>"required|bool",
+    
+                    "HoardingBoardStatus"=>"required|bool",
+    
+                    "FloorDetailStatus"=>"required|bool",
+                ];
+                if($request->RanHarwestingStatus)
+                {
+                    $rules['RanHarwestingValues']= "required|bool";
+                    // $rules['RanHarwestingId']= "required|int";
+                }
+                if($request->RoadWidthStatus)
+                {
+                    $rules['RoadWidthValues']= "required";
+                    // $rules['RoadWidthId']= "required|int";
+                }
+                if($request->PropertyTypeStatus)
+                {
+                    $rules['PropertyTypeValues']= "required";
+                    // $rules['PropertyTypeId']= "required|int";
+                }
+                if($request->AreaOfPlotStatus)
+                {
+                    $rules['AreaOfPlotValues']= "required";
+                    // $rules['AreaOfPlotId']= "required|int";
+                }
+                if($request->MobileTowerStatus)
+                {
+                    $rules['MobileTowerValues']= "required";
+                    $rules['MobileTowerArea']= "required|numeric";
+                    $rules['MobileTowerDate']= "required|date";
+                    // $rules['MobileTowerId']= "required|int";
+                }
+                if($request->HoardingBoardStatus)
+                {
+                    $rules['HoardingBoardValues']= "required";
+                    $rules['HoardingBoardArea'] = "required|numeric";
+                    $rules['HoardingBoardArea'] = "required|date";
+                    // $rules['HoardingBoardId']= "required|int";
+                }
+                if($request->FloorDetailStatus)
+                {
+                    $rules['FloorDetailValues']= "required|array";
+                    // $rules['FloorDetailId']= "required|int";
+                }
+    
+                $validator = Validator::make($request->all(),$rules);  
+                if($validator->fails())
+                {
+                    $messages["message"] = $validator->errors();
+                    return responseMsg(false,$validator->errors(),$request->all());
+                }
+                    // 1	Typographical Error
+                    // 2	Rainwater Harvesting
+                    // 3	Road Width
+                    // 4	Property Type
+                    // 5	Area of Plot
+                    // 6	Mobile Tower
+                    // 7	Hoarding Board
+                    // 8	Other
+                    // 9	Floor Detail                
+                            
+                $objection = new PropertyObjection ;
+                $objection->prop_dtl_id=$request->id;
+                $objection->saf_dtl_id=$request->saf_dtl_id;    
+                $objection->holding_no=$request->holding_no;            
+                $objection->ward_id=$request->ward_id;
+                $objection->user_id=$user_id;
+                // $objection->objection_form_doc=$request->saf_dtl_id;    
+                // $objection->evidence_document=$request->holding_no;
+                $objection->save();
+                $objection_id = $objection->id;
+                $no= "OBP".$objection_id;
+                $objection->objection_no=$no;
+                $objection->save();                
+                # Rainwater Harvesting 2
+                if($request->RanHarwestingStatus)
+                {
+                    $objdtl=[
+                                "objection_id"=> $objection_id,
+                                "objection_type_id"=> '2',
+                                "according_assessment"=> 't',
+                                "according_applicant"=> $request->RanHarwestingValues?"t":'f',
+                                "objection_by"=> "Citizen",
+                                "user_id"=> $user_id,
+                    ];
+                    if(!$this->inserObjection($objdtl))
+                    {
+                        return responseMsg(false,'Some Error Ocures Plese Contact To Admin',$request->all());
+                    }                    
+                }
+    
+                # Road Width 3
+                if($request->RoadWidthStatus)
+                {
+                    $objdtl=[
+                                "objection_id"         => $objection_id,
+                                "objection_type_id"    => '3',
+                                "according_assessment" => 't',
+                                "according_applicant"  => $request->RoadWidthValues?"t":'f',
+                                "objection_by"         => "Citizen",
+                                "user_id"              => $user_id,
+                    ];
+                    if(!$this->inserObjection($objdtl))
+                    {
+                        return responseMsg(false,'Some Error Ocures Plese Contact To Admin',$request->all());
+                    }
+                }
+    
+                # Property Type 4
+                if($request->PropertyTypeStatus)
+                {
+                    $objdtl=[
+                                "objection_id"        => $objection_id,
+                                "objection_type_id"   => '4',
+                                "according_assessment"=> 1,
+                                "according_applicant" => 1,
+                                "objection_by"        => "Citizen",
+                                "user_id"             => $user_id,
+                    ];
+                    if(!$this->inserObjection($objdtl))
+                    {
+                        return responseMsg(false,'Some Error Ocures Plese Contact To Admin',$request->all());
+                    }
+                }
+    
+                # Area of plot 5
+                if($request->AreaOfPlotStatus)
+                {
+                    $objdtl=[
+                                "objection_id"=> $objection_id,
+                                "objection_type_id"=> '5',
+                                "according_assessment"=> 500,                                
+                                "according_applicant"=> 200,                                
+                                "objection_by"=> "Citizen",
+                                "user_id"=> $user_id,
+                    ];
+                    if(!$this->inserObjection($objdtl))
+                    {
+                        return responseMsg(false,'Some Error Ocures Plese Contact To Admin',$request->all());
+                    }
                     
-            //         if($inputs["usage_type_mstr_id"][$i]==1)
-            //         $objection_carpet_area=$inputs["builtup_area"][$i]*0.7;
-            //         else
-            //         $objection_carpet_area=$inputs["builtup_area"][$i]*0.8;
+                }
+    
+                # Mobile Tower 6
+                if($request->MobileTowerStatus)
+                {
                     
+                    $objdtl=[
+                                "objection_id"=> $objection_id,
+                                "objection_type_id"=> '6',
+                                "according_assessment"=> 't',
+                                "assess_area"=> 200,
+                                "assess_date"=> date('Y-m-d'),
+                                "according_applicant"=> $request->MobileTowerValue?'t':'f',
+                                "applicant_area"=> 200,
+                                "applicant_date"=>  date('Y-m-d'),
+                                "objection_by"=> "Citizen",
+                                "user_id"=> $user_id,
+                    ];
+                    if(!$this->inserObjection($objdtl))
+                    {
+                        return responseMsg(false,'Some Error Ocures Plese Contact To Admin',$request->all());
+                    }
                     
-            //         $floordtl=[
-            //             "prop_dtl_id"=> $floor["prop_dtl_id"],
-            //             "objection_id"=> $objection_id,
-            //             "objection_type_id"=> $obj_type_id,
-            //             "prop_floor_dtl_id"=> $floor["id"],
-            //             "floor_mstr_id"=> $inputs["floor_mstr_id"][$i],
-            //             "usage_type_mstr_id"=> $inputs["usage_type_mstr_id"][$i],
-            //             "occupancy_type_mstr_id"=> $inputs["occupancy_type_mstr_id"][$i],
-            //             "const_type_mstr_id"=> $inputs["const_type_mstr_id"][$i],
-            //             "builtup_area"=> $inputs["builtup_area"][$i],
-            //             "carpet_area"=> $objection_carpet_area,
-            //             "date_from"=> $floor["date_from"],
-            //             "date_upto"=> $floor["date_upto"],
-            //             "remarks"=> null,
-            //             "objection_by"=> 'Citizen',
-            //         ];
-            //         $this->ObjectionModel->InsertFloorObjectionDetails($floordtl);
-            //         $i++;
-            //     }
-            // }
-
-
-
-
+                }
+    
+                # Hording Board 7
+                if($request->HoardingBoardStatus)
+                {
+                    $objdtl=[
+                                "objection_id"=> $objection_id,
+                                "objection_type_id"=> '7',
+                                "according_assessment"=> 'f',
+                                "assess_area"=> 400,
+                                "assess_date"=> date('Y-m-d'),
+                                "according_applicant"=> $request->HoardingBoardValue?'t':'f',
+                                "applicant_area"=> 200,
+                                "applicant_date"=> date('Y-m-d'),
+                                "objection_by"=> "Citizen",
+                                "user_id"=> $user_id,
+                    ];
+                    if(!$this->inserObjection($objdtl))
+                    {
+                        return responseMsg(false,'Some Error Ocures Plese Contact To Admin',$request->all());
+                    }
+                }
+    
+                // # Floor Details 9
+                // if($request->FloorDetailStatus)
+                // {
+                //     $floor_detail = $request['floor'];
+                //     $inputs = $floor_detail;
+                //     $i=0;
+                //     foreach($prop_floors as $floor)
+                //     {
+                //         $floordtl=[
+                //                     "prop_dtl_id"=> $floor["prop_dtl_id"],
+                //                     "objection_id"=> $objection_id,
+                //                     "objection_type_id"=> '9',
+                //                     "prop_floor_dtl_id"=> $floor["id"],
+                //                     "floor_mstr_id"=> $floor["floor_mstr_id"],
+                //                     "usage_type_mstr_id"=> $floor["usage_type_mstr_id"],
+                //                     "occupancy_type_mstr_id"=> $floor["occupancy_type_mstr_id"],
+                //                     "const_type_mstr_id"=> $floor["const_type_mstr_id"],
+                //                     "builtup_area"=> $floor["builtup_area"],
+                //                     "carpet_area"=> $floor["carpet_area"],
+                //                     "date_from"=> $floor["date_from"],
+                //                     "date_upto"=> $floor["date_upto"],
+                //                     "remarks"=> null,
+                //                     "objection_by"=> 'Assessment',
+                //                 ];
+                //         $this->inserObjectionFloor($floordtl);
+                        
+                //         if($inputs["usage_type_mstr_id"][$i]==1)
+                //             $objection_carpet_area=$inputs["builtup_area"][$i]*0.7;
+                //         else
+                //             $objection_carpet_area=$inputs["builtup_area"][$i]*0.8;
+                        
+                        
+                //         $floordtlobj=[
+                //             "prop_dtl_id"=> $floor["prop_dtl_id"],
+                //             "objection_id"=> $objection_id,
+                //             "objection_type_id"=> Config::get('workflow-constants.OBJECTION')['FloorDetail'],
+                //             "prop_floor_dtl_id"=> $floor["id"],
+                //             "floor_mstr_id"=> $inputs["floor_mstr_id"][$i],
+                //             "usage_type_mstr_id"=> $inputs["usage_type_mstr_id"][$i],
+                //             "occupancy_type_mstr_id"=> $inputs["occupancy_type_mstr_id"][$i],
+                //             "const_type_mstr_id"=> $inputs["const_type_mstr_id"][$i],
+                //             "builtup_area"=> $inputs["builtup_area"][$i],
+                //             "carpet_area"=> $objection_carpet_area,
+                //             "date_from"=> $floor["date_from"],
+                //             "date_upto"=> $floor["date_upto"],
+                //             "remarks"=> null,
+                //             "objection_by"=> 'Citizen',
+                //         ];
+                //         $this->inserObjectionFloor($floordtlobj);
+                //         $i++;
+                //     }
+                // }
+                // DB::commit();
+                return responseMsg(true,'Objection Is Successfully Apply',$no);
+                
+            }  
         }
         catch(Exception $e)
         {
@@ -1108,16 +1317,58 @@ class EloquentSafRepository implements SafRepository
         }
    }
 
-   public function getObjectionType($ulb_id)
+   public function inserObjection( array $data)
    {
         try{
-            $workflow_id= Config::get('workflow-constants.SAF_WORKFLOW_ID');
-            $workflow = ObjectionTypeMstr::select('id','type','workflow_id')
-                                        ->where('status',1)
-                                        ->where('ulb_id',$ulb_id)
-                                        ->where('workflow_id',$workflow_id)
+            
+            return $lastInsertId = DB::table('property_objection_details')->insertGetId($data);
+        }
+        catch(Exception $e)
+        {
+            return $e;
+        }
+   }
+   public function inserObjectionFloor( array $data)
+   {
+        try{
+            
+            return $lastInsertId = DB::table('property_objection_floor_details')->insertGetId($data);
+        }
+        catch(Exception $e)
+        {
+            return $e;
+        }
+   }
+
+   public function propObjectionList($key)
+   {
+        try{
+            $data =PropertyObjection::select(DB::raw("property_objections.id as objection_id,
+                                                    property_objections.created_at as apply_date,
+                                                    prop_properties.id as property_id,
+                                                    ulb_ward_masters.ward_name as ward_no
+                                            "), 
+                                            'property_objections.objection_no',
+                                            'prop_properties.holding_no' ,
+                                            'owners.owner_name',
+                                            'owners.mobile_no',
+                                        )
+                                        ->join('prop_properties','property_objections.prop_dtl_id','prop_properties.id')
+                                        ->join('ulb_ward_masters','ulb_ward_masters.id','prop_properties.ward_mstr_id')
+                                        ->leftjoin(DB::raw("(SELECT prop_owners.property_id,
+                                                                string_agg(prop_owners.owner_name,', ') as owner_name,
+                                                                string_agg(prop_owners.guardian_name,', ') as guardian_name,
+                                                                string_agg(prop_owners.mobile_no::text,', ') as mobile_no
+                                                        FROM prop_owners 
+                                                        WHERE prop_owners.status = 1
+                                                        GROUP BY prop_owners.property_id
+                                                        )owners
+                                                            "),function($join){
+                                            $join->on('owners.property_id','=','prop_properties.id');
+                                        })
                                         ->get();
-            return($workflow);
+            $data = remove_null($data);
+            return responseMsg(true,'',$data);
         }
         catch(Exception $e)
         {

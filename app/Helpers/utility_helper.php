@@ -28,7 +28,6 @@ if (!function_exists("adjToArray")) {
     }
 }
 
-// Changes Done
 if (!function_exists("remove_null")) {
     function remove_null($data)
     {
@@ -52,3 +51,30 @@ if (!function_exists("remove_null")) {
         return $collection;
     }
 }
+
+if(!function_exists("ConstToArray"))
+{
+    function ConstToArray( array $data,$type='')
+    {
+        $arra=[];
+        $retuen = [];
+        foreach ($data as $key => $value)
+        {
+            $arra['id'] = $key;
+            if(is_array($value))
+            {
+                foreach ($value as $keys => $val)
+                {
+                    $arra[strtolower($keys)] = $val;
+                }
+            }
+            else
+            {
+                $arra[strtolower($type)] = $value;
+            }
+            $retuen [] = $arra;
+        }
+        return $retuen;
+    }
+}
+
