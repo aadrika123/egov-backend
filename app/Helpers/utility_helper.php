@@ -52,27 +52,29 @@ if (!function_exists("remove_null")) {
     }
 }
 
-// if(!function_exists())
-function ConstToArray( array $data,$type='')
+if(!function_exists("ConstToArray"))
 {
-    $arra=[];
-    $retuen = [];
-    foreach ($data as $key => $value)
+    function ConstToArray( array $data,$type='')
     {
-        $arra['id'] = $key;
-        if(is_array($value))
+        $arra=[];
+        $retuen = [];
+        foreach ($data as $key => $value)
         {
-            foreach ($value as $keys => $val)
+            $arra['id'] = $key;
+            if(is_array($value))
             {
-                $arra[$keys] = $val;
+                foreach ($value as $keys => $val)
+                {
+                    $arra[$keys] = $val;
+                }
             }
+            else
+            {
+                $arra[$type] = $value;
+            }
+            $retuen [] = $arra;
         }
-        else
-        {
-            $arra[$type] = $value;
-        }
-        $retuen [] = $arra;
+        return $retuen;
     }
-    return $retuen;
 }
 

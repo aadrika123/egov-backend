@@ -847,6 +847,8 @@ class EloquentSafRepository implements SafRepository
         }
    }
    /**
+        * Objection No. formate
+        * "OBP".objection_id 
         * ==============Referance Table==========================
         * ------------------------------------------------------------
         * PropPropertie
@@ -883,35 +885,84 @@ class EloquentSafRepository implements SafRepository
         * ------------------------------------------------------------
         * Request
         * ------------------------------------------------------------
-        * ===== PropertyObjectionDetail ================
-        * call Methods inserObjection(array inputs)
+        * ===== PropertyObjectionDetail ================  
+        * inserObjection(array inputs)      
         *  -----------------------------------------------------------------------------
-        * FOR  Rainwater Harvesting
+        * FOR  Rainwater Harvesting 2
         * | #objdtl["objection_id"]          = objection_id                             |
-        * | #objdtl["objection_type_id"]     = OBJECTION.RanHarwesting                  |
+        * | #objdtl["objection_type_id"]     = 2                                        |
         * | #objdtl["according_assessment"]  = PropPropertie.is_water_harvesting        |
         * | #objdtl["according_applicant"]   = $request->RanHarwestingValues?"t":'f'    |
         * | #objdtl["objection_by"]          = "Citizen"                                |
         * | #objdtl["user_id"]               = user_id                                  |
+        * inserObjection(objdtl)
         * ------------------------------------------------------------------------------
         * ------------------------------------------------------------------------------
-        * FOR Road Width
+        * FOR Road Width 3
         * | #objdtl["objection_id"]           = objection_id                            |
-        * | #objdtl["objection_type_id"]      = OBJECTION.RoadWidth                     |
+        * | #objdtl["objection_type_id"]      = 3                                       |
         * | #objdtl["according_assessment"]   = PropPropertie.road_type_mstr_id         |
         * | #objdtl["according_applicant"]    = $request->RoadWidthValues               |
         * | #objdtl[ "objection_by"]          = "Citizen"                               |
         * | #objdtl["user_id"]                = user_id                                 |
+        * inserObjection(objdtl)
         * ------------------------------------------------------------------------------
         * ------------------------------------------------------------------------------
-        *  FOR Property Type
-        *#objdtl["objection_id"]          =objection_id,
-        *#objdtl["objection_type_id"]     =OBJECTION.PropertyType
-        *#objdtl["according_assessment"   => 1,
-        *#objdtl["according_applicant"    => 1,
-        *#objdtl["objection_by"           => "Citizen",
-        *#objdtl["user_id"                => $user_id,
-   */
+        *  FOR Property Type 4
+        * | #objdtl["objection_id"]            = objection_id                           |
+        * | #objdtl["objection_type_id"]       = 4                                      |
+        * | #objdtl["according_assessment"]    = PropPropertie.prop_type_mstr_id        |
+        * | #objdtl["according_applicant"]     = $request->PropertyTypeValues           |
+        * | #objdtl["objection_by"]            = "Citizen"                              |
+        * | #objdtl["user_id"]                 = user_id                                |
+        * inserObjection(objdtl)
+        * ------------------------------------------------------------------------------
+        *-------------------------------------------------------------------------------
+        *  FOR Area of plot5
+        * | #objdtl["objection_id"]        = objection_id                               |
+        * | #objdtl["objection_type_id"]   = 5                                          |
+        * | #objdtl["according_assessment] = PropPropertie.area_of_plot                 |              
+        * | #objdtl["according_applicant"] = $request->AreaOfPlotValues                 |              
+        * | #objdtl["objection_by"]        = "Citizen"                                  |
+        * | #objdtl["user_id"]             = user_id                                    |
+        * inserObjection(objdtl)
+        * ------------------------------------------------------------------------------
+        * ------------------------------------------------------------------------------
+        *  Mobile Tower 6
+        * | #objdtl["objection_id"]          = objection_id                             |
+        * | #objdtl["objection_type_id"]     = '6'                                      |
+        * | #objdtl["according_assessment"]  = PropPropertie.is_mobile_tower            |
+        * | #objdtl["assess_area"]           = PropPropertie.tower_area                 |
+        * | #objdtl["assess_date"]           = PropPropertie.tower_installation_date    |
+        * | #objdtl["according_applicant"]   = request->MobileTowerValue?'t':'f'        |
+        * | #objdtl["applicant_area"]        = request->MobileTowerArea                 |
+        * | #objdtl["applicant_date"]        = request->MobileTowerDate                 |
+        * | #objdtl["objection_by"]          = "Citizen"                                |
+        * | #objdtl["user_id"]               = user_id                                  |
+        * inserObjection(objdtl)
+        * ------------------------------------------------------------------------------
+        *-------------------------------------------------------------------------------
+        * FOR Hording Board 7
+        * | #objdtl["objection_id"]            = objection_id                           |
+        * | #objdtl["objection_type_id"]       = '7'                                    |
+        * | #objdtl["according_assessment"]    = PropPropertie.is_hoarding_board        |
+        * | #objdtl["assess_area"]             = PropPropertie.hoarding_area            |
+        * | #objdtl["assess_date"]             = PropPropertie.hoarding_installation_date|
+        * | #objdtl["according_applicant"]     = $request->HoardingBoardValue ?'t':'f'  |
+        * | #objdtl["applicant_area"]          = $request->HoardingBoardArea            |
+        * | #objdtl["applicant_date"]          = $request->HoardingBoardDate            |
+        * | #objdtl["objection_by"]            = "Citizen"                              |
+        * | #objdtl["user_id"]                 = user_id                                |
+        * inserObjection(objdtl)
+        * ------------------------------------------------------------------------------
+        * ------------------------------------------------------------------------------
+        * # Floor Details 9
+        
+        * =========================== helpers use =====================================
+        * remove_null() -> Helpers\utility_helper.php
+        * ConstToArray() -> Helpers\utility_helper.php
+
+    */
    #apply Objection Holding
    public function propertyObjection(Request $request)
    {   
@@ -1022,11 +1073,15 @@ class EloquentSafRepository implements SafRepository
                 if($request->MobileTowerStatus)
                 {
                     $rules['MobileTowerValues']= "required";
+                    $rules['MobileTowerArea']= "required|numeric";
+                    $rules['MobileTowerDate']= "required|date";
                     // $rules['MobileTowerId']= "required|int";
                 }
                 if($request->HoardingBoardStatus)
                 {
                     $rules['HoardingBoardValues']= "required";
+                    $rules['HoardingBoardArea'] = "required|numeric";
+                    $rules['HoardingBoardArea'] = "required|date";
                     // $rules['HoardingBoardId']= "required|int";
                 }
                 if($request->FloorDetailStatus)
@@ -1064,12 +1119,12 @@ class EloquentSafRepository implements SafRepository
                 $no= "OBP".$objection_id;
                 $objection->objection_no=$no;
                 $objection->save();                
-                # Rainwater Harvesting
+                # Rainwater Harvesting 2
                 if($request->RanHarwestingStatus)
                 {
                     $objdtl=[
                                 "objection_id"=> $objection_id,
-                                "objection_type_id"=> Config::get('PropertyConstaint.OBJECTION')['RanHarwesting'],
+                                "objection_type_id"=> '2',
                                 "according_assessment"=> 't',
                                 "according_applicant"=> $request->RanHarwestingValues?"t":'f',
                                 "objection_by"=> "Citizen",
@@ -1081,12 +1136,12 @@ class EloquentSafRepository implements SafRepository
                     }                    
                 }
     
-                # Road Width
+                # Road Width 3
                 if($request->RoadWidthStatus)
                 {
                     $objdtl=[
                                 "objection_id"         => $objection_id,
-                                "objection_type_id"    => Config::get('PropertyConstaint.OBJECTION')['RoadWidth'],
+                                "objection_type_id"    => '3',
                                 "according_assessment" => 't',
                                 "according_applicant"  => $request->RoadWidthValues?"t":'f',
                                 "objection_by"         => "Citizen",
@@ -1098,12 +1153,12 @@ class EloquentSafRepository implements SafRepository
                     }
                 }
     
-                # Property Type
+                # Property Type 4
                 if($request->PropertyTypeStatus)
                 {
                     $objdtl=[
                                 "objection_id"        => $objection_id,
-                                "objection_type_id"   => Config::get('PropertyConstaint.OBJECTION')['PropertyType'],
+                                "objection_type_id"   => '4',
                                 "according_assessment"=> 1,
                                 "according_applicant" => 1,
                                 "objection_by"        => "Citizen",
@@ -1115,12 +1170,12 @@ class EloquentSafRepository implements SafRepository
                     }
                 }
     
-                # Area of plot
+                # Area of plot 5
                 if($request->AreaOfPlotStatus)
                 {
                     $objdtl=[
                                 "objection_id"=> $objection_id,
-                                "objection_type_id"=> Config::get('PropertyConstaint.OBJECTION')['AreaOfPlot'],
+                                "objection_type_id"=> '5',
                                 "according_assessment"=> 500,                                
                                 "according_applicant"=> 200,                                
                                 "objection_by"=> "Citizen",
@@ -1133,17 +1188,17 @@ class EloquentSafRepository implements SafRepository
                     
                 }
     
-                # Mobile Tower
+                # Mobile Tower 6
                 if($request->MobileTowerStatus)
                 {
                     
                     $objdtl=[
                                 "objection_id"=> $objection_id,
-                                "objection_type_id"=> Config::get('PropertyConstaint.OBJECTION')['MobileTower'],
+                                "objection_type_id"=> '6',
                                 "according_assessment"=> 't',
                                 "assess_area"=> 200,
                                 "assess_date"=> date('Y-m-d'),
-                                "according_applicant"=> $request->RanHarwestingValue?'t':'f',
+                                "according_applicant"=> $request->MobileTowerValue?'t':'f',
                                 "applicant_area"=> 200,
                                 "applicant_date"=>  date('Y-m-d'),
                                 "objection_by"=> "Citizen",
@@ -1156,12 +1211,12 @@ class EloquentSafRepository implements SafRepository
                     
                 }
     
-                # Hording Board
+                # Hording Board 7
                 if($request->HoardingBoardStatus)
                 {
                     $objdtl=[
                                 "objection_id"=> $objection_id,
-                                "objection_type_id"=> Config::get('PropertyConstaint.OBJECTION')['HoardingBoard'],
+                                "objection_type_id"=> '7',
                                 "according_assessment"=> 'f',
                                 "assess_area"=> 400,
                                 "assess_date"=> date('Y-m-d'),
@@ -1177,7 +1232,7 @@ class EloquentSafRepository implements SafRepository
                     }
                 }
     
-                // # Floor Details
+                // # Floor Details 9
                 // if($request->FloorDetailStatus)
                 // {
                 //     $floor_detail = $request['floor'];
@@ -1188,7 +1243,7 @@ class EloquentSafRepository implements SafRepository
                 //         $floordtl=[
                 //                     "prop_dtl_id"=> $floor["prop_dtl_id"],
                 //                     "objection_id"=> $objection_id,
-                //                     "objection_type_id"=> Config::get('PropertyConstaint.OBJECTION')['FloorDetail'],
+                //                     "objection_type_id"=> '9',
                 //                     "prop_floor_dtl_id"=> $floor["id"],
                 //                     "floor_mstr_id"=> $floor["floor_mstr_id"],
                 //                     "usage_type_mstr_id"=> $floor["usage_type_mstr_id"],
@@ -1229,7 +1284,7 @@ class EloquentSafRepository implements SafRepository
                 //         $i++;
                 //     }
                 // }
-                DB::commit();
+                // DB::commit();
                 return responseMsg(true,'Objection Is Successfully Apply',$no);
                 
             }  
