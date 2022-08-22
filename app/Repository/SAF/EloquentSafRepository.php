@@ -248,7 +248,6 @@ class EloquentSafRepository implements SafRepository
    #Inbox
    public function inbox($key)
    {
-       
         $user_id = auth()->user()->id;
         $redis=Redis::connection();  // Redis Connection
         $redis_data = json_decode(Redis::get('user:' . $user_id),true);
@@ -555,17 +554,22 @@ class EloquentSafRepository implements SafRepository
         $data['time_line'] =  remove_null($time_line);
         if(in_array($role_id,['1']))
         {
-            $rol_type = RoleMaster::where('ulb_id',$ulb_id)
-                                    ->get();
+            $rol_type =  $this->getRoleUsersForBck(null,$ulb_id); 
+            $data['work_flow_candidate'] =  remove_null(ConstToArray($rol_type));         
         }
-        $forward_backword = [];
+        $forward_backword = $this->getRoleUsersForBck($role_id,$ulb_id);        
+        $data['forward_backward'] =  remove_null($forward_backword);        
         return $data;
    }
-   public function getRoleUsersForBck(BigInteger $role_id,$ulb_id) //curernt user Roll id
-   {        
-        $backWord = Config::get('PropertyConstaint.ROLES').[$ulb_id][$role_id-1];
-        $forWord = Config::get('PropertyConstaint.ROLES').[$ulb_id][$role_id+1];
-        // return ['backwored'=]
+   public function getRoleUsersForBck($role_id,$ulb_id) //curernt user Roll id
+   {    
+        if(is_null($role_id))
+        {
+            return Config::get("PropertyConstaint.ROLES.$ulb_id");
+        }    
+        $backWord = Config::get("PropertyConstaint.ROLES.$ulb_id.".($role_id-1))??[];
+        $forWord = Config::get("PropertyConstaint.ROLES.$ulb_id.".($role_id+1))??[];
+        return ['backward'=>$backWord,"forward"=>$forWord];
    }
 
    /**
@@ -1020,9 +1024,9 @@ class EloquentSafRepository implements SafRepository
                     $floors = remove_null($floors); 
                     $data['prop_floors']= $floors; 
 
-                    $bjection_type = Config::get('PropertyConstaint.OBJECTION');   
-                    $bjection_type =ConstToArray($bjection_type,"type");                             
-                    $data['bjection_master']= remove_null($bjection_type);
+                    $objection_type = Config::get('PropertyConstaint.OBJECTION');   
+                    $objection_type =ConstToArray($objection_type,"type");                             
+                    $data['objection_master']= remove_null($objection_type);
 
                     $property_type = Config::get('PropertyConstaint.PROPERTY-TYPE');
                     $property_type  =ConstToArray($property_type ,"type") ;

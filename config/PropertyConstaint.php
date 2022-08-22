@@ -8,7 +8,7 @@
 
 return [
     "OBJECTION"=>[
-        "2"     =>"RanHarwesting",
+        "2"     =>"RainHarvesting",
         "3"     =>"RoadWidth"    ,
         "4"     =>"PropertyType" ,
         "5"     =>"AreaOfPlot"   ,
@@ -225,6 +225,7 @@ return [
     #role_master ulb 2 (RMC)
     "ROLES"=>[
         "2" =>[
+            "0"=>['id'=>"6","role_name"=>"Back Office"],
             "1" =>["id"=>1,"role_name"=>"Dealing Assistent"],
             "2" => ["id"=>2,"role_name"=>"Agency Tax Collecter"],
             "3" => ["id"=>3,"role_name"=>"Ulb Tax Collecter"],
