@@ -848,7 +848,8 @@ class EloquentSafRepository implements SafRepository
    }
 
    /*
-     desc this function checkn property is approve or not and add objection     
+     desc this function checkn property is approve or not and add objection    
+     # uncompleted 
     */
    #apply Objection Holding
    public function propertyObjection(Request $request)
