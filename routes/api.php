@@ -125,7 +125,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
             Route::get('get-all-role-menus', 'getAllRoleMenus');
 
             Route::post('role-user', 'roleUser');                   // Save user roles
-            Route::put('edit-role-user/{id}', 'editRoleUser');      // edit user roles 
+            Route::put('edit-role-user', 'editRoleUser');      // edit user roles 
             Route::get('get-role-user/{id}', 'getRoleUser');        // get role user by id   
             Route::get('get-all-role-users', 'getAllRoleUsers');    // get all role users
 
@@ -173,6 +173,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::put('edit-workflow-candidates/{id}', 'editWorkflowCandidates');
         Route::delete('delete-workflow-candidates/{id}', 'deleteWorkflowCandidates');
         Route::get('gen/workflow/workflow-candidates/{ulbworkflowid}', 'getWorkflowCandidatesByUlbWorkflowID');  // Get Workflow Candidates by ulb-workflow-id
+
+        // Workflow Roles
     });
 
     /**

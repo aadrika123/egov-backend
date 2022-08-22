@@ -92,9 +92,9 @@ class RoleController extends Controller
     }
 
     // Updating Role User
-    public function editRoleUser(UserRoleRequest $request, $id)
+    public function editRoleUser(UserRoleRequest $request)
     {
-        return $this->EloquentRole->editRoleUser($request, $id);
+        return $this->EloquentRole->editRoleUser($request);
     }
 
     // Getting Role User by ID

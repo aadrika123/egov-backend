@@ -17,8 +17,8 @@ class CreateRoleUsersTable extends Migration
             $table->id();
             $table->integer('user_id')->nullable();
             $table->integer('role_id')->nullable();
-            $table->smallInteger('view')->nullable();
-            $table->smallInteger('modify')->nullable();
+            $table->boolean('view')->nullable();
+            $table->boolean('modify')->nullable();
             $table->timestamps();
         });
     }
