@@ -846,11 +846,39 @@ class EloquentSafRepository implements SafRepository
             return  ['status'=>false,'message'=>$e->getMessage()];
         }
    }
-
-   /*
-     desc this function checkn property is approve or not and add objection    
-     # uncompleted 
-    */
+   /**
+        * ==============Referance Table==========================
+        * ------------------------------------------------------------
+        * PropPropertie
+        * PropertyObjection
+        * Saf
+        * PropFloorDetail
+        * PropOwner
+        *------------------------------------------------------------
+        * ============ Referance Constaint And Tables ==============
+        * -----------------------------------------------------------
+        * Config/PorpertyConstaint.php
+        * constaint Name            Tables
+        * 
+        * OBJECTION          ->   ObjectionTypeMstr 
+        * PROPERTY-TYPE      ->   PropParamPropertyType
+        * FLOOR-TYPE         ->   PropParamFloorType
+        * OCCUPENCY-TYPE     -> 
+        * ===== findARRNewVacantMstr
+        * #newRate <- rate
+        * ------------------------------------------------------------
+        * Request
+        * ------------------------------------------------------------
+        * #reqRoadTypeMstrId
+        * #reqAreaOfPlot
+        * ------------------------------------------------------------
+        * Calculation
+        * ------------------------------------------------------------
+        * reqAreaOfPlot =   | Case 1) Road is not available then
+                            |       (a) convert area of plot DECIMAL to ACRE
+                            | Case 2) Road is available then not need to conver area of plot
+        * #yearlyTax = #newRate X #reqAreaOfPlot
+   */
    #apply Objection Holding
    public function propertyObjection(Request $request)
    {   
@@ -871,16 +899,8 @@ class EloquentSafRepository implements SafRepository
                 return responseMsg(false,"Objection is Allredy Apply For This Property",$count);
             }
             if($request->getMethod()=='GET')
-            {
-                $rules = [
-                    "saf_dtl_id"=>"required",
-                ];
-                $validator = Validator::make($request->all(),$rules);  
-                if($validator->fails())
-                {
-                    return responseMsg(false,$validator->errors(),"");
-                }
-                $approved_saf = Saf::where('id',$request->saf_dtl_id)->where('status',1)->first();
+            {  
+                $approved_saf = Saf::where('id',$property->saf_id)->where('status',1)->first();
                 if(!$approved_saf)
                 {
                     return responseMsg(false,"Saf Not Approved","");
@@ -897,8 +917,9 @@ class EloquentSafRepository implements SafRepository
                     $owneres = remove_null($owneres);
                     $data['owneres']= $owneres;
                     $floors = remove_null($floors); 
-                    $data['floors']= $floors;                   
-                    $bjection_type = $this->getObjectionType($ulb_id);                                 
+                    $data['floors']= $floors; 
+
+                    $bjection_type = Config::get('PropertyConstaint.OBJECTION');                                 
                     $data['bjection_type']= $bjection_type;
 
                     $property_type = Config::get('PropertyConstaint.PROPERTY-TYPE');
@@ -1182,23 +1203,6 @@ class EloquentSafRepository implements SafRepository
         }
    }
 
-   public function getObjectionType($ulb_id)
-   {
-        try{
-            $workflow_id= Config::get('workflow-constants.SAF_WORKFLOW_ID');
-            // $workflow = ObjectionTypeMstr::select('id','type','workflow_id')
-            //                             ->where('status',1)
-            //                             ->where('ulb_id',$ulb_id)
-            //                             ->where('workflow_id',$workflow_id)
-            //                             ->get();
-            $workflow = Config::get('PropertyConstaint.OBJECTION');             
-            return($workflow);
-        }
-        catch(Exception $e)
-        {
-            return $e;
-        }
-   }
    public function inserObjection( array $data)
    {
         try{
