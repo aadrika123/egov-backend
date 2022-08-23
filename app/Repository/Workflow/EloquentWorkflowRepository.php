@@ -2,7 +2,7 @@
 
 namespace App\Repository\Workflow;
 
-use App\Repository\Workflow\WorkflowRepository;
+use App\Repository\Workflow\iWorkflowRepository;
 use Illuminate\Http\Request;
 use App\Models\Workflow;
 use App\Models\WorkflowCandidate;
@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\DB;
  * 
  */
 
-class EloquentWorkflowRepository implements WorkflowRepository
+class EloquentWorkflowRepository implements iWorkflowRepository
 {
     use WorkflowTrait;
 

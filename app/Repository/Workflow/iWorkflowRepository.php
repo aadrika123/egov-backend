@@ -9,6 +9,6 @@ use Illuminate\Http\Request;
  * Created by-Anshu Kumar
  * Created On-06-07-2022 
  */
-interface WorkflowRepository
+interface iWorkflowRepository
 {
 }
