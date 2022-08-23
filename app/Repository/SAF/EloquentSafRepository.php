@@ -21,6 +21,7 @@ use App\Models\PropParamUsageType;
 use App\Models\RoleMaster;
 use App\Models\Saf;
 use App\Models\UlbWorkflowMaster;
+use App\Models\Ward\WardUser;
 use App\Models\WardMstr;
 use App\Models\WorkflowCandidate;
 use App\Models\WorkflowTrack;
@@ -254,32 +255,52 @@ class EloquentSafRepository implements SafRepository
         $ulb_id = $redis_data['ulb_id'];
         $roll_id =  $redis_data['role_id']; 
         $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-        $work_flow_candidate = json_decode(Redis::get('workflow_candidate:' . $user_id),true)??null;        
-        if($work_flow_candidate)
-        {
-            $work_flow_candidate = collect($work_flow_candidate);
-        }
-        else
-        {
-            $work_flow_candidate = WorkflowCandidate::select('workflow_candidates.id',"ulb_workflow_masters.module_id")
-                                        ->join('ulb_workflow_masters','ulb_workflow_masters.id','workflow_candidates.ulb_workflow_id')
-                                        ->where('workflow_candidates.user_id',$user_id)
-                                        ->where('ulb_workflow_masters.ulb_id',$ulb_id )
-                                        ->first();
-            if(!$work_flow_candidate)
-            {
-                $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
-                return response()->json($message,200);
-            }
-            $this->Workflow_candidate($redis,$user_id,$work_flow_candidate);   
+        // $work_flow_candidate = json_decode(Redis::get('workflow_candidate:' . $user_id),true)??null;        
+        // if($work_flow_candidate)
+        // {
+        //     $work_flow_candidate = collect($work_flow_candidate);
+        // }
+        // else
+        // {
+        //     $work_flow_candidate = WorkflowCandidate::select('workflow_candidates.id',"ulb_workflow_masters.module_id")
+        //                                 ->join('ulb_workflow_masters','ulb_workflow_masters.id','workflow_candidates.ulb_workflow_id')
+        //                                 ->where('workflow_candidates.user_id',$user_id)
+        //                                 ->where('ulb_workflow_masters.ulb_id',$ulb_id )
+        //                                 ->first();
+        //     if(!$work_flow_candidate)
+        //     {
+        //         $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
+        //         return response()->json($message,200);
+        //     }
+        //     $this->Workflow_candidate($redis,$user_id,$work_flow_candidate);   
 
-        }
+        // }
+        $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
         if(!$work_flow_candidate)
         {
             $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
             return response()->json($message,200);
-        }
+        }        
         $work_flow_candidate = collect($work_flow_candidate); 
+        // $ward_permission = json_decode(Redis::get('WardPermission:' . $user_id),true)??null; 
+        // if($ward_permission)
+        // {   
+        //     Redis::del('WardPermission:' . $user_id);
+        // }
+        // else
+        // {
+        //     $ward_permission =WardUser::select("ulb_ward_id")
+        //                              ->where('user_id',$user_id)
+        //                              ->orderBy('ulb_ward_id')
+        //                              ->get();
+        //     $ward_permission = adjToArray($ward_permission);
+        //     $this->WardPermission($redis,$user_id, $ward_permission);
+        // }
+        $ward_permission = $this->WardPermission($user_id);
+        $ward_ids = array_map(function($val)
+                    {
+                        return $val['ulb_ward_id'];
+                    },$ward_permission); 
         $data = ActiveSafDetail::select(DB::raw("owner_name,
                                                 guardian_name ,
                                                 mobile_no,
@@ -311,7 +332,8 @@ class EloquentSafRepository implements SafRepository
                                        )
                                        ->where("active_saf_details.current_user",$roll_id)
                                        ->where("active_saf_details.status",1) 
-                                       ->where("active_saf_details.ulb_id",$ulb_id);       
+                                       ->where("active_saf_details.ulb_id",$ulb_id)  
+                                       ->whereIn('ward_mstr_id',$ward_ids) ;    
         if($key)
         {
             $data= $data->where(function($query) use($key)
@@ -360,6 +382,44 @@ class EloquentSafRepository implements SafRepository
                         ]
                         );
         return $data;
+   }
+
+   public function work_flow_candidate($user_id,$ulb_id)
+   {
+        $redis=Redis::connection();
+        $work_flow_candidate = json_decode(Redis::get('workflow_candidate:' . $user_id),true)??null;        
+        if(!$work_flow_candidate)
+        {
+            $work_flow_candidate = WorkflowCandidate::select('workflow_candidates.id',"ulb_workflow_masters.module_id")
+                                        ->join('ulb_workflow_masters','ulb_workflow_masters.id','workflow_candidates.ulb_workflow_id')
+                                        ->where('workflow_candidates.user_id',$user_id)
+                                        ->where('ulb_workflow_masters.ulb_id',$ulb_id )
+                                        ->first();
+            if(!$work_flow_candidate)
+            {
+                $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
+                return response()->json($message,200);
+            }
+            $this->WorkflowCandidateSet($redis,$user_id,$work_flow_candidate);   
+
+        }
+        return $work_flow_candidate;
+   }
+   public function WardPermission($user_id)
+   { 
+        $redis=Redis::connection();
+        $ward_permission = json_decode(Redis::get('WardPermission:' . $user_id),true)??null; 
+        if(!$ward_permission)
+        { 
+            Redis::del('WardPermission:' . $user_id);
+            $ward_permission =WardUser::select("ulb_ward_id")
+                                     ->where('user_id',$user_id)
+                                     ->orderBy('ulb_ward_id')
+                                     ->get();
+            $ward_permission = adjToArray($ward_permission);
+            $this->WardPermissionSet($redis,$user_id, $ward_permission);
+        }
+        return $ward_permission;
    }
 
    /**
@@ -552,24 +612,29 @@ class EloquentSafRepository implements SafRepository
                                 ->orderBy('track_date','desc')
                                 ->get();
         $data['time_line'] =  remove_null($time_line);
-        if(in_array($role_id,['1']))
+        // if(in_array($role_id,['1']))
+        if($saf_data->is_escalate)
         {
-            $rol_type =  $this->getRoleUsersForBck(null,$ulb_id); 
+            $rol_type =  $this->getRoleUsersForBck($ulb_id,null); 
             $data['work_flow_candidate'] =  remove_null(ConstToArray($rol_type));         
         }
-        $forward_backword = $this->getRoleUsersForBck($role_id,$ulb_id);        
+        $forward_backword = $this->getRoleUsersForBck($ulb_id,$role_id,$saf_data->finisher_id);  
         $data['forward_backward'] =  remove_null($forward_backword);        
         return $data;
    }
-   public function getRoleUsersForBck($role_id,$ulb_id) //curernt user Roll id
-   {    
+   public function getRoleUsersForBck($ulb_id,$role_id,$finisher=null) //curernt user Roll id
+   {         
+        $roll_id = Config::get("PropertyConstaint.ROLES.INDEX$ulb_id.$role_id");
         if(is_null($role_id))
         {
             return Config::get("PropertyConstaint.ROLES.$ulb_id");
         }    
-        $backWord = Config::get("PropertyConstaint.ROLES.$ulb_id.".($role_id-1))??[];
-        $forWord = Config::get("PropertyConstaint.ROLES.$ulb_id.".($role_id+1))??[];
-        return ['backward'=>$backWord,"forward"=>$forWord];
+        $backWord = Config::get("PropertyConstaint.ROLES.$ulb_id.".($roll_id-1))??[];
+        $forWord = Config::get("PropertyConstaint.ROLES.$ulb_id.".($roll_id+1))??[];
+        return ['backward'=>$backWord,"forward"=>($finisher==$role_id?[]:$forWord),'btc'=>
+                 (!in_array($roll_id,[1,6])) ?(Config::get("PropertyConstaint.ROLES.$ulb_id.0")):[]
+                
+            ];
    }
 
    /**
@@ -1057,57 +1122,57 @@ class EloquentSafRepository implements SafRepository
                     // "objection_form"=>"required",
                     // "evidence_document"=>"required",               
                    
-                    'RanHarwestingStatus'=>"required|bool",
+                    'harvestingToggleStatus'=>"required|bool",
     
-                    "RoadWidthStatus"=>"required|bool",
+                    "roadWidthToggleStatus"=>"required|bool",
     
-                    "PropertyTypeStatus"=>"required|bool",
+                    "propertyTypeToggleStatus"=>"required|bool",
     
-                    "AreaOfPlotStatus"=>"required|bool",
+                    "ploatAreaToggleStatus"=>"required|bool",
     
-                    "MobileTowerStatus"=>"required|bool",
+                    "mobileTowerToggleStatus"=>"required|bool",
     
-                    "HoardingBoardStatus"=>"required|bool",
+                    "hoardigToggleStatus"=>"required|bool",
     
-                    "FloorDetailStatus"=>"required|bool",
+                    "floorToggleStatus"=>"required|bool",
                 ];
-                if($request->RanHarwestingStatus)
+                if($request->harvestingToggleStatus)
                 {
-                    $rules['RanHarwestingValues']= "required|bool";
+                    $rules['harvestingObjValue']= "required|bool";
                     // $rules['RanHarwestingId']= "required|int";
                 }
-                if($request->RoadWidthStatus)
+                if($request->roadWidthToggleStatus)
                 {
-                    $rules['RoadWidthValues']= "required";
+                    $rules['roadWidthObjValue']= "required";
                     // $rules['RoadWidthId']= "required|int";
                 }
-                if($request->PropertyTypeStatus)
+                if($request->propertyTypeToggleStatus)
                 {
-                    $rules['PropertyTypeValues']= "required";
+                    $rules['propertyTypeObjValue']= "required";
                     // $rules['PropertyTypeId']= "required|int";
                 }
-                if($request->AreaOfPlotStatus)
+                if($request->ploatAreaToggleStatus)
                 {
-                    $rules['AreaOfPlotValues']= "required";
+                    $rules['plotAreaObjValue']= "required";
                     // $rules['AreaOfPlotId']= "required|int";
                 }
-                if($request->MobileTowerStatus)
+                if($request->mobileTowerToggleStatus)
                 {
-                    $rules['MobileTowerValues']= "required";
-                    $rules['MobileTowerArea']= "required|numeric";
-                    $rules['MobileTowerDate']= "required|date";
+                    $rules['mobileTowerObjValue']= "required";
+                    $rules['mobileTowerObjArea']= "required|numeric";
+                    $rules['mobileTowerObjDate']= "required|date";
                     // $rules['MobileTowerId']= "required|int";
                 }
-                if($request->HoardingBoardStatus)
+                if($request->hoardigToggleStatus)
                 {
-                    $rules['HoardingBoardValues']= "required";
-                    $rules['HoardingBoardArea'] = "required|numeric";
-                    $rules['HoardingBoardArea'] = "required|date";
+                    $rules['hoardingObjValue']= "required";
+                    $rules['hoardingObjArea'] = "required|numeric";
+                    $rules['hoardingObjArea'] = "required|date";
                     // $rules['HoardingBoardId']= "required|int";
                 }
-                if($request->FloorDetailStatus)
+                if($request->floorToggleStatus)
                 {
-                    $rules['FloorDetailValues']= "required|array";
+                    $rules['floorObjValues']= "required|array";
                     // $rules['FloorDetailId']= "required|int";
                 }
     
@@ -1141,13 +1206,13 @@ class EloquentSafRepository implements SafRepository
                 $objection->objection_no=$no;
                 $objection->save();                
                 # Rainwater Harvesting 2
-                if($request->RanHarwestingStatus)
+                if($request->harvestingToggleStatus)
                 {
                     $objdtl=[
                                 "objection_id"=> $objection_id,
                                 "objection_type_id"=> '2',
                                 "according_assessment"=> 't',
-                                "according_applicant"=> $request->RanHarwestingValues?"t":'f',
+                                "according_applicant"=> $request->harvestingObjValue?"t":'f',
                                 "objection_by"=> "Citizen",
                                 "user_id"=> $user_id,
                     ];
@@ -1158,13 +1223,13 @@ class EloquentSafRepository implements SafRepository
                 }
     
                 # Road Width 3
-                if($request->RoadWidthStatus)
+                if($request->roadWidthToggleStatus)
                 {
                     $objdtl=[
                                 "objection_id"         => $objection_id,
                                 "objection_type_id"    => '3',
                                 "according_assessment" => 't',
-                                "according_applicant"  => $request->RoadWidthValues?"t":'f',
+                                "according_applicant"  => $request->roadWidthObjValue?"t":'f',
                                 "objection_by"         => "Citizen",
                                 "user_id"              => $user_id,
                     ];
@@ -1175,7 +1240,7 @@ class EloquentSafRepository implements SafRepository
                 }
     
                 # Property Type 4
-                if($request->PropertyTypeStatus)
+                if($request->propertyTypeToggleStatus)
                 {
                     $objdtl=[
                                 "objection_id"        => $objection_id,
@@ -1192,7 +1257,7 @@ class EloquentSafRepository implements SafRepository
                 }
     
                 # Area of plot 5
-                if($request->AreaOfPlotStatus)
+                if($request->ploatAreaToggleStatus)
                 {
                     $objdtl=[
                                 "objection_id"=> $objection_id,
@@ -1210,7 +1275,7 @@ class EloquentSafRepository implements SafRepository
                 }
     
                 # Mobile Tower 6
-                if($request->MobileTowerStatus)
+                if($request->mobileTowerToggleStatus)
                 {
                     
                     $objdtl=[
@@ -1219,9 +1284,9 @@ class EloquentSafRepository implements SafRepository
                                 "according_assessment"=> 't',
                                 "assess_area"=> 200,
                                 "assess_date"=> date('Y-m-d'),
-                                "according_applicant"=> $request->MobileTowerValue?'t':'f',
-                                "applicant_area"=> 200,
-                                "applicant_date"=>  date('Y-m-d'),
+                                "according_applicant"=> $request->mobileTowerObjValue?'t':'f',
+                                "applicant_area"=> $request->mobileTowerObjArea,
+                                "applicant_date"=>  $request->mobileTowerObjDate,
                                 "objection_by"=> "Citizen",
                                 "user_id"=> $user_id,
                     ];
@@ -1233,7 +1298,7 @@ class EloquentSafRepository implements SafRepository
                 }
     
                 # Hording Board 7
-                if($request->HoardingBoardStatus)
+                if($request->hoardigToggleStatus)
                 {
                     $objdtl=[
                                 "objection_id"=> $objection_id,
@@ -1241,9 +1306,9 @@ class EloquentSafRepository implements SafRepository
                                 "according_assessment"=> 'f',
                                 "assess_area"=> 400,
                                 "assess_date"=> date('Y-m-d'),
-                                "according_applicant"=> $request->HoardingBoardValue?'t':'f',
-                                "applicant_area"=> 200,
-                                "applicant_date"=> date('Y-m-d'),
+                                "according_applicant"=> $request->hoardingObjValue?'t':'f',
+                                "applicant_area"=> $request->hoardingObjArea,
+                                "applicant_date"=> $request->hoardingObjArea,
                                 "objection_by"=> "Citizen",
                                 "user_id"=> $user_id,
                     ];

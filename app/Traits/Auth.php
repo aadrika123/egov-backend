@@ -105,9 +105,8 @@ trait Auth
      * Save put Workflow_candidate On User Credentials On Redis 
      */
 
-    public function Workflow_candidate($redis, $user_id, $Workflow_candidate)
+    public function WorkflowCandidateSet($redis, $user_id, $Workflow_candidate)
     {
-        // dd($user_id);die;
         $redis->set(
             'workflow_candidate:' . $user_id,
             json_encode([
@@ -115,6 +114,16 @@ trait Auth
                 'module_id' => $Workflow_candidate->module_id,
             ])
         );
+        $redis->expire('workflow_candidate:' . $user_id, 18000);
+    }
+
+    public function WardPermissionSet($redis, $user_id, array $Workflow_candidate)
+    {
+        $redis->set(
+            'WardPermission:' . $user_id,
+            json_encode($Workflow_candidate)
+        );
+        $redis->expire('WardPermission:' . $user_id, 18000);
     }
 
     /**
