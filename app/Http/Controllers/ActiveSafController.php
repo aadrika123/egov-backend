@@ -64,9 +64,9 @@ class ActiveSafController extends Controller
         $data =$this->Repository->propertyObjection($request);        
         return $data;
     }
-    public function propObjectionList(Request $request)
+    public function propObjectionInbox(Request $request)
     {
-        $data =$this->Repository->propObjectionList($request->key);
+        $data =$this->Repository->propObjectionInbox($request->key);
         return $data;
     }
 }

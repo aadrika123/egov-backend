@@ -882,6 +882,10 @@ class EloquentSafRepository implements SafRepository
         * PropFloorDetail
         * PropOwner        
         * PropertyObjection
+        * PropParamFloorType
+        * PropParamUsageType
+        * PropParamOccupancyType
+        * PropParamConstructionType
         *------------------------------------------------------------
         * ============ Referance Constaint And Tables ==============
         * -----------------------------------------------------------
@@ -1063,17 +1067,17 @@ class EloquentSafRepository implements SafRepository
                     $floor_type  =ConstToArray($floor_type ,"name") ;
                     $data['floor_master'] = remove_null($floor_type);
 
-                    $occupency_types = Config::get('PropertyConstaint.OCCUPENCY-TYPE');
-                    $occupency_types  =ConstToArray($occupency_types ,"type") ;
-                    $data['occupency_master'] = remove_null($occupency_types);
+                    $occupancy_types = Config::get('PropertyConstaint.OCCUPANCY-TYPE');
+                    $occupancy_types  =ConstToArray($occupancy_types ,"type") ;
+                    $data['occupancy_master'] = remove_null($occupancy_types);
 
                     $usage_types = Config::get('PropertyConstaint.USAGE-TYPE');
                     $usage_types  =ConstToArray($usage_types ,"type") ;
                     $data['usage_master'] = remove_null($usage_types);
 
-                    $constunction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE');
-                    $constunction_type  =ConstToArray($constunction_type ,"type") ;
-                    $data['constunction_master'] = remove_null($constunction_type);
+                    $construction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE');
+                    $construction_type  =ConstToArray($construction_type ,"type") ;
+                    $data['construction_master'] = remove_null($construction_type);
                     return responseMsg(true,"",$data);
                 }
             }
@@ -1367,7 +1371,7 @@ class EloquentSafRepository implements SafRepository
         }
    }
 
-   public function propObjectionList($key)
+   public function propObjectionInbox($key)
    {
         try{
             $user_id = auth()->user()->id;
@@ -1413,8 +1417,19 @@ class EloquentSafRepository implements SafRepository
                                             $join->on('owners.property_id','=','prop_properties.id');
                                         })
                                         ->where("prop_properties.ulb_id",$ulb_id)  
-                                       ->whereIn('prop_properties.ward_mstr_id',$ward_ids) 
-                                        ->get();
+                                       ->whereIn('prop_properties.ward_mstr_id',$ward_ids);
+                            if($key)
+                            {
+                                $data= $data->where(function($query) use($key)
+                                                {
+                                                    $query->orwhere('prop_properties.holding_no', 'ILIKE', '%'.$key.'%')
+                                                    ->orwhere('property_objections.objection_no', 'ILIKE', '%'.$key.'%')
+                                                    ->orwhere('owners.owner_name', 'ILIKE', '%'.$key.'%')
+                                                    ->orwhere('owners.guardian_name', 'ILIKE', '%'.$key.'%')
+                                                    ->orwhere('owners.mobile_no', 'ILIKE', '%'.$key.'%');
+                                                });
+                            } 
+                            $data = $data->get(); 
             $data = remove_null($data);
             return responseMsg(true,'',$data);
         }
