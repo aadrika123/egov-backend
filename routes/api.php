@@ -225,10 +225,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('saf-inbox/{key?}', 'inbox');                             // Saf workflow Inbox and Inbox By search key
         Route::get('saf-outbox/{key?}', 'outbox');                           // Saf Workflow Outbox and Outbox By search key
         Route::get('saf-details/{id}', 'details');                           // Saf Workflow safDetails and safDetails By ID
-        Route::post('saf-escalate{id?}', 'special');                                // Saf Workflow special and safDetails By id
-        Route::get('saf-escalate-inbox/{key?}', 'specialInbox');                             // Saf workflow Inbox and Inbox By search key
+        Route::post('saf-escalate{id?}', 'special');                          // Saf Workflow special and safDetails By id
+        Route::get('saf-escalate-inbox/{key?}', 'specialInbox');               // Saf workflow Inbox and Inbox By search key
         Route::post('saf-post-level/{id?}', 'postNextLevel');
-        Route::match(["get", "post"], 'property-objection/{id}', 'propertyObjection');                // Saf Workflow special and safDetails By key
+        Route::match(["get", "post"], 'property-objection/{id}', 'propertyObjection');// Saf Workflow special and safDetails By key
+        Route::get('prop-objection-list/{key?}', 'propObjectionList');// Saf Workflow special and safDetails By key
     });
 
     /**
