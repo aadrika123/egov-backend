@@ -9,12 +9,13 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SelfAdvertisementController;
 use App\Http\Controllers\UlbController;
 use App\Http\Controllers\UlbWorkflowController;
-use App\Http\Controllers\WorkflowController;
-use App\Http\Controllers\WorkflowTrackController;
+use App\Http\Controllers\Workflows\WorkflowController;
+use App\Http\Controllers\Workflows\WorkflowTrackController;
 use App\Http\Controllers\ActiveSafController;
 use App\Http\Controllers\PaymentMasterController;
 use App\Http\Controllers\Ward\WardController;
 use App\Http\Controllers\Ward\WardUserController;
+use App\Http\Controllers\Workflows\WorkflowRolesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -114,10 +115,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(RoleController::class)->group(function () {
         // Route are authorized for super admin only using Middleware 
         Route::group(['middleware' => ['can:isSuperAdmin']], function () {
-            Route::post('save-role', 'storeRole');          // Save Role
-            Route::put('edit-role/{id}', 'editRole');       // edit Role 
-            Route::get('get-role/{id}', 'getRole');         // Get Role By Id
-            Route::get('get-all-roles', 'getAllRoles');     // Get All Roles
+            Route::post('save-role', 'storeRole');                // Save Role
+            Route::put('edit-role/{id}', 'editRole');             // edit Role 
+            Route::get('get-role/{id}', 'getRole');               // Get Role By Id
+            Route::get('get-all-roles', 'getAllRoles');           // Get All Roles
             Route::delete('delete-role/{id}', 'deleteRole');      // Delete Role
 
             Route::post('role-menu', 'roleMenu');
@@ -126,7 +127,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
             Route::get('get-all-role-menus', 'getAllRoleMenus');
 
             Route::post('role-user', 'roleUser');                   // Save user roles
-            Route::put('edit-role-user', 'editRoleUser');      // edit user roles 
+            Route::put('edit-role-user', 'editRoleUser');           // edit user roles 
             Route::get('get-role-user/{id}', 'getRoleUser');        // get role user by id   
             Route::get('get-all-role-users', 'getAllRoleUsers');    // get all role users
 
@@ -174,9 +175,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::put('edit-workflow-candidates/{id}', 'editWorkflowCandidates');
         Route::delete('delete-workflow-candidates/{id}', 'deleteWorkflowCandidates');
         Route::get('gen/workflow/workflow-candidates/{ulbworkflowid}', 'getWorkflowCandidatesByUlbWorkflowID');  // Get Workflow Candidates by ulb-workflow-id
-
-        // Workflow Roles
     });
+
+    // Workflow Roles Rest Apis
+    Route::resource('workflow/workflow-roles', WorkflowRolesController::class);
 
     /**
      * APIs for Module Master

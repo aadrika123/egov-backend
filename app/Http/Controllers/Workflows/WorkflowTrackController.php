@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Workflows;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Repository\WorkflowTrack\EloquentWorkflowTrack;
 
@@ -17,6 +18,7 @@ class WorkflowTrackController extends Controller
     /**
      * Initializing Repository
      */
+
     protected $eloquentWorkflowTrack;
 
     public function __construct(EloquentWorkflowTrack $eloquentWorkflowTrack)
