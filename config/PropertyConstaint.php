@@ -225,12 +225,20 @@ return [
     #role_master ulb 2 (RMC)
     "ROLES"=>[
         "2" =>[
-            "0"=>['id'=>"6","role_name"=>"Back Office"],
-            "1" =>["id"=>1,"role_name"=>"Dealing Assistent"],
+            "0" => ['id'=>6,"role_name"=>"Back Office"],
+            "1" => ["id"=>1,"role_name"=>"Dealing Assistent"],
             "2" => ["id"=>2,"role_name"=>"Agency Tax Collecter"],
             "3" => ["id"=>3,"role_name"=>"Ulb Tax Collecter"],
             "4" => ["id"=>4,"role_name"=>"Section Incharge"],
             "5" => ["id"=>5,"role_name"=>"Exicutive Officer"]
+        ],
+        "INDEX2"=>[
+            "6"=>"0",
+            "1" =>"1",
+            "2" =>"2",
+            "3" =>"3",
+            "4" =>"4",
+            "5" =>"5"
         ]
     ]
 ];
