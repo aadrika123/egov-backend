@@ -42,10 +42,6 @@ use App\Http\Controllers\Ward\WardUserController;
 Route::controller(UserController::class)->group(function () {
     Route::post('login', 'loginAuth')->middleware('request_logger');
     Route::post('register', 'store');
-    Route::put('edit-user/{id}', 'update');
-    Route::delete('delete-user', 'deleteUser');
-    Route::get('get-user/{id}', 'getUser');
-    Route::get('get-all-users', 'getAllUsers');
 });
 
 /**
@@ -96,6 +92,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('my-profile-details', 'myProfileDetails');   // For get My profile Details
         Route::put('edit-my-profile', 'editMyProfile');          // For Edit My profile Details
 
+        Route::put('edit-user/{id}', 'update');
+        Route::delete('delete-user', 'deleteUser');
+        Route::get('get-user/{id}', 'getUser');
+        Route::get('get-all-users', 'getAllUsers');
+
         // Route are authorized for super admin only using Middleware 
         Route::group(['middleware' => ['can:isSuperAdmin']], function () {
             // Route::put('edit-user/{id}', 'update');
@@ -125,7 +126,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
             Route::get('get-all-role-menus', 'getAllRoleMenus');
 
             Route::post('role-user', 'roleUser');                   // Save user roles
-            Route::put('edit-role-user/{id}', 'editRoleUser');      // edit user roles 
+            Route::put('edit-role-user', 'editRoleUser');      // edit user roles 
             Route::get('get-role-user/{id}', 'getRoleUser');        // get role user by id   
             Route::get('get-all-role-users', 'getAllRoleUsers');    // get all role users
 
@@ -173,6 +174,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::put('edit-workflow-candidates/{id}', 'editWorkflowCandidates');
         Route::delete('delete-workflow-candidates/{id}', 'deleteWorkflowCandidates');
         Route::get('gen/workflow/workflow-candidates/{ulbworkflowid}', 'getWorkflowCandidatesByUlbWorkflowID');  // Get Workflow Candidates by ulb-workflow-id
+
+        // Workflow Roles
     });
 
     /**
@@ -222,8 +225,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('saf-details/{id}', 'details');                           // Saf Workflow safDetails and safDetails By ID
         Route::post('saf-escalate{id?}', 'special');                                // Saf Workflow special and safDetails By id
         Route::get('saf-escalate-inbox/{key?}', 'specialInbox');                             // Saf workflow Inbox and Inbox By search key
-        Route::post('saf-post-level/{id?}', 'postNextLevel');  
-        Route::match(["get","post"],'property-objection/{id}', 'propertyObjection');                // Saf Workflow special and safDetails By key
+        Route::post('saf-post-level/{id?}', 'postNextLevel');
+        Route::match(["get", "post"], 'property-objection/{id}', 'propertyObjection');                // Saf Workflow special and safDetails By key
     });
 
     /**

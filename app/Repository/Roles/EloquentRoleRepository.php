@@ -15,6 +15,7 @@ use App\Models\RoleMenuLog;
 use App\Models\RoleUser;
 use App\Models\RoleUserLog;
 use App\Traits\Role\Role;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Created By-Anshu Kumar
@@ -240,18 +241,24 @@ class EloquentRoleRepository implements RoleRepository
     public function userRole(UserRoleRequest $request)
     {
         try {
+            DB::beginTransaction();
+            $role = $request['roles'];
             // Checking Role of any Particular User already existing or not
-            $check = $this->checkUserRole($request);        // Trait for Checking Role User
-            if ($check) {
-                return Role::failure('Role', 'User');
+            foreach ($role as $roles) {
+                $check = $this->checkUserRole($roles, $request);        // Trait for Checking Role User
+                if ($check) {
+                    return Role::failure('Role', 'User');
+                }
             }
+
             // If Role of the user is not existing
             if (!$check) {
-                $role_user = new RoleUser();
-                $this->savingRoleUser($role_user, $request);   // Trait for Updating Role User
+                $this->savingRoleUser($role, $request);                 // Trait for Updating Role User
+                DB::commit();
                 return Role::success();
             }
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json($e, 400);
         }
     }
@@ -263,33 +270,26 @@ class EloquentRoleRepository implements RoleRepository
      * @param App\Http\Requests\UserRoleRequest $request
      * @return response
      * @param App\Http\Requests\Roles\RoleUserLogRequest $request
-     * @var $stmt checks if the RoleID and UserID remains same as previous then update, other fields other not need to check
-     * @var !$stmt Checking Data User is already existing for the given Role or Not
+     * @var #role > Contains All The Roles with Permissions
+     * @var $exist_role > Contains All the Role Users which have user_id Regarding the User
      * @return Response
      */
-    public function editRoleUser(UserRoleRequest $request, $id)
+    public function editRoleUser(UserRoleRequest $request)
     {
         try {
-            $role_user = RoleUser::find($id);
-            $stmt = $role_user->user_id == $request->userID && $role_user->role_id == $request->roleID;
-            if ($stmt) {
-                $this->savingRoleUser($role_user, $request);   // Trait for Updating Role User
-                return Role::success();
+            DB::beginTransaction();
+            $role = $request['roles'];
+            $exist_role = RoleUser::where('user_id', $request->userID)->get();
+            // Deleting All Existing Roles
+            foreach ($exist_role as $exist_roles) {
+                $exist_roles->delete();
             }
-            if (!$stmt) {
-                // Checking Role of any Particular User already existing or not
-                $check = $this->checkUserRole($request);          // Trait for checking Role User
-                if ($check) {
-                    return Role::failure('Role', 'User');
-                }
-                // If Role of the user is not existing
-                if (!$check) {
-
-                    $this->savingRoleUser($role_user, $request);   // Trait for Updating Role User
-                    return Role::success();
-                }
-            }
+            // Fresh Insert Roles
+            $this->savingRoleUser($role, $request);                 // Trait for Updating Role User
+            DB::commit();
+            return Role::success();
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json($e, 400);
         }
     }
@@ -302,13 +302,16 @@ class EloquentRoleRepository implements RoleRepository
      */
     public function getRoleUser($id)
     {
-        $role_user = RoleUser::where('users.id', $id);
-        if ($role_user) {
-            $data = $this->fetchRoleUsers($role_user)->first();
-            return responseMsg(true, "Data Fetched", remove_null($data));
-        } else {
-            return responseMsg(false, "Data Not Available", '');
-        }
+        $tRoleUserQuery = $this->fetchRoleUsers() . " where ru.user_id=$id GROUP BY ru.user_id,u.user_name";
+        $role_users = DB::select($tRoleUserQuery);
+        $collection = [
+            "user_id" => $role_users[0]->user_id,
+            "user_name" => $role_users[0]->user_name,
+            "role_id" => explode(',', $role_users[0]->role_id),
+            "can_modify" => explode(',', $role_users[0]->can_modify),
+            "role_name" => explode(',', $role_users[0]->role_name),
+        ];
+        return responseMsg(true, "Data Fetched", $collection);
     }
 
     /**
@@ -318,9 +321,9 @@ class EloquentRoleRepository implements RoleRepository
      */
     public function getAllRoleUsers()
     {
-        $role_users = RoleUser::orderByDesc('id');
-        $data = $this->fetchRoleUsers($role_users)->get();
-        return responseMsg(true, "Data Fetched", remove_null($data));
+        $tRoleUserQuery = $this->fetchRoleUsers() . " GROUP BY ru.user_id,u.user_name";
+        $role_users = DB::select($tRoleUserQuery);
+        return responseMsg(true, "Data Fetched", $role_users);
     }
 
     /**

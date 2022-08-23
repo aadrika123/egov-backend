@@ -28,8 +28,7 @@ class UserRoleRequest extends FormRequest
     public function rules()
     {
         return [
-            'userID' => ['required', 'int'],
-            'roleID' => ['required', 'int']
+            'userID' => ['required', 'int']
         ];
     }
 

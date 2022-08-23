@@ -264,27 +264,27 @@ class EloquentAuthRepository implements AuthRepository
      */
     public function getAllUsers()
     {
-        $users = DB::select("select u.id,
-                        u.user_name,
-                        u.mobile,
-                        u.email,
-                        u.user_type,
-                        u.roll_id,
-                        r.role_name,
-                        u.ulb_id,
-                        um.ulb_name,
-                        u.suspended,
-                        u.super_user,
-                        u.description,
-                        u.workflow_participant,
-                        u.created_at,
-                        u.updated_at
-                from users u
-                left join role_masters r on r.id=u.roll_id
-                left join ulb_masters um on um.id=u.ulb_id
-                order by u.id desc
-                        ");
-        return $users;
+        $query = "SELECT 
+                    u.id,
+                    u.user_name,
+                    u.mobile,
+                    u.email,
+                    u.user_type,
+                    u.suspended,
+                    u.super_user,
+                    u.workflow_participant,
+                    string_agg(ru.role_id::VARCHAR,',') AS role_id,
+                    string_agg(rm.role_name::VARCHAR,',') AS role_name
+                    
+                    FROM users u
+                    LEFT JOIN role_users ru ON ru.user_id=u.id
+                    LEFT JOIN role_masters rm ON rm.id=ru.role_id
+                    WHERE u.user_type!='Citizen'
+                    GROUP BY u.id
+                    ORDER BY u.id ASC
+                    ";
+        $users = DB::select($query);
+        return responseMsg(true, "Data Fetched", remove_null($users));
     }
 
     /**

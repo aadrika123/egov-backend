@@ -97,30 +97,38 @@ trait Role
     // //////////////////////////////////////////////////////////////////////////////////////////
 
     // Check Role of any Particular User already existing or not
-    public function checkUserRole($request)
+    public function checkUserRole($roles, $request)
     {
         return RoleUser::where('user_id', $request->userID)
-            ->where('role_id', $request->roleID)
+            ->where('role_id', $roles['roleID'])
             ->first();
     }
 
     // Save Or update Role User
-    public function savingRoleUser($role_user, $request)
+    public function savingRoleUser($role, $request)
     {
-        $role_user->user_id = $request->userID;
-        $role_user->role_id = $request->roleID;
-        $role_user->view = $request->view;
-        $role_user->modify = $request->modify;
-        $role_user->save();
+        foreach ($role as $roles) {
+            $role_user = new RoleUser();
+            $role_user->user_id = $request->userID;
+            $role_user->role_id = $roles['roleID'];
+            $role_user->can_modify = $roles['canModify'];
+            $role_user->save();
+        }
     }
 
     // Fetch Role Users
-    public function fetchRoleUsers($role_user)
+    public function fetchRoleUsers()
     {
-        return $role_user
-            ->select('role_users.*', 'users.user_name', 'role_masters.role_name')
-            ->join('users', 'users.id', '=', 'role_users.user_id')
-            ->join('role_masters', 'role_masters.id', '=', 'role_users.role_id');
+        $query = "SELECT 	
+                    ru.user_id,
+                    u.user_name,
+                    string_agg(cast(ru.role_id AS VARCHAR),',') AS role_id,
+                    string_agg(CAST(ru.can_modify AS VARCHAR),',') AS can_modify,
+                    string_agg(CAST(rm.role_name AS VARCHAR),',') AS role_name
+                    FROM role_users ru
+                    INNER JOIN role_masters rm ON rm.id=ru.role_id
+                    INNER JOIN users u ON u.id=ru.user_id";
+        return $query;
     }
 
 
