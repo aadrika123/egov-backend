@@ -254,48 +254,14 @@ class EloquentSafRepository implements SafRepository
         $redis_data = json_decode(Redis::get('user:' . $user_id),true);
         $ulb_id = $redis_data['ulb_id'];
         $roll_id =  $redis_data['role_id']; 
-        $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-        // $work_flow_candidate = json_decode(Redis::get('workflow_candidate:' . $user_id),true)??null;        
-        // if($work_flow_candidate)
-        // {
-        //     $work_flow_candidate = collect($work_flow_candidate);
-        // }
-        // else
-        // {
-        //     $work_flow_candidate = WorkflowCandidate::select('workflow_candidates.id',"ulb_workflow_masters.module_id")
-        //                                 ->join('ulb_workflow_masters','ulb_workflow_masters.id','workflow_candidates.ulb_workflow_id')
-        //                                 ->where('workflow_candidates.user_id',$user_id)
-        //                                 ->where('ulb_workflow_masters.ulb_id',$ulb_id )
-        //                                 ->first();
-        //     if(!$work_flow_candidate)
-        //     {
-        //         $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
-        //         return response()->json($message,200);
-        //     }
-        //     $this->Workflow_candidate($redis,$user_id,$work_flow_candidate);   
-
-        // }
+        $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');        
         $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
         if(!$work_flow_candidate)
         {
             $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
             return response()->json($message,200);
         }        
-        $work_flow_candidate = collect($work_flow_candidate); 
-        // $ward_permission = json_decode(Redis::get('WardPermission:' . $user_id),true)??null; 
-        // if($ward_permission)
-        // {   
-        //     Redis::del('WardPermission:' . $user_id);
-        // }
-        // else
-        // {
-        //     $ward_permission =WardUser::select("ulb_ward_id")
-        //                              ->where('user_id',$user_id)
-        //                              ->orderBy('ulb_ward_id')
-        //                              ->get();
-        //     $ward_permission = adjToArray($ward_permission);
-        //     $this->WardPermission($redis,$user_id, $ward_permission);
-        // }
+        $work_flow_candidate = collect($work_flow_candidate);         
         $ward_permission = $this->WardPermission($user_id);
         $ward_ids = array_map(function($val)
                     {
@@ -443,32 +409,18 @@ class EloquentSafRepository implements SafRepository
         $ulb_id = $redis_data['ulb_id'];
         $roll_id =  $redis_data['role_id']; 
         $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-        $work_flow_candidate = json_decode(Redis::get('workflow_candidate:' . $user_id),true)??null;        
-        if($work_flow_candidate)
-        {
-            $work_flow_candidate = collect($work_flow_candidate);
-        }
-        else
-        {
-            $work_flow_candidate = WorkflowCandidate::select('workflow_candidates.id',"ulb_workflow_masters.module_id")
-                                        ->join('ulb_workflow_masters','ulb_workflow_masters.id','workflow_candidates.ulb_workflow_id')
-                                        ->where('workflow_candidates.user_id',$user_id)
-                                        ->where('ulb_workflow_masters.ulb_id',$ulb_id )
-                                        ->first();
-            if(!$work_flow_candidate)
-            {
-                $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
-                return response()->json($message,200);
-            }
-            $this->Workflow_candidate($redis,$user_id,$work_flow_candidate);   
-
-        }
+        $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
         if(!$work_flow_candidate)
         {
             $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
             return response()->json($message,200);
         }
-        $work_flow_candidate = collect($work_flow_candidate);    
+        $work_flow_candidate = collect($work_flow_candidate);
+        $ward_permission = $this->WardPermission($user_id);
+        $ward_ids = array_map(function($val)
+                    {
+                        return $val['ulb_ward_id'];
+                    },$ward_permission);             
         $data = ActiveSafDetail::select(
                            DB::raw("owner_name,
                                guardian_name ,
@@ -505,7 +457,8 @@ class EloquentSafRepository implements SafRepository
                                    ->orwhereNull('active_saf_details.current_user');
                            })
                            ->where("active_saf_details.status",1)
-                           ->where("active_saf_details.ulb_id",$ulb_id);
+                           ->where("active_saf_details.ulb_id",$ulb_id)
+                           ->whereIn('ward_mstr_id',$ward_ids) ;
                            if($key)
                            {
                                $data= $data->where(function($query) use($key)
@@ -707,32 +660,18 @@ class EloquentSafRepository implements SafRepository
         $ulb_id = $redis_data['ulb_id'];
         $roll_id =  $redis_data['role_id']; 
         $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-        $work_flow_candidate = json_decode(Redis::get('workflow_candidate:' . $user_id),true)??null;        
-        if($work_flow_candidate)
-        {
-            $work_flow_candidate = collect($work_flow_candidate);
-        }
-        else
-        {
-            $work_flow_candidate = WorkflowCandidate::select('workflow_candidates.id',"ulb_workflow_masters.module_id")
-                                        ->join('ulb_workflow_masters','ulb_workflow_masters.id','workflow_candidates.ulb_workflow_id')
-                                        ->where('workflow_candidates.user_id',$user_id)
-                                        ->where('ulb_workflow_masters.ulb_id',$ulb_id )
-                                        ->first();
-            if(!$work_flow_candidate)
-            {
-                $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
-                return response()->json($message,200);
-            }
-            $this->Workflow_candidate($redis,$user_id,$work_flow_candidate);   
-
-        }
+        $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
         if(!$work_flow_candidate)
         {
             $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
             return response()->json($message,200);
-        }
+        }        
         $work_flow_candidate = collect($work_flow_candidate); 
+        $ward_permission = $this->WardPermission($user_id);
+        $ward_ids = array_map(function($val)
+                    {
+                        return $val['ulb_ward_id'];
+                    },$ward_permission);             
         $data = ActiveSafDetail::select(DB::raw("owner_name,
                                                 guardian_name ,
                                                 mobile_no,
@@ -765,7 +704,8 @@ class EloquentSafRepository implements SafRepository
                                         ->where("active_saf_details.current_user",$roll_id)
                                         ->where("active_saf_details.status",1)   
                                         ->where("active_saf_details.ulb_id",$ulb_id)          
-                                        ->where('is_escalate',1);
+                                        ->where('is_escalate',1)
+                                        ->whereIn('ward_mstr_id',$ward_ids) ;
        
         if($key)
         {
@@ -942,6 +882,10 @@ class EloquentSafRepository implements SafRepository
         * PropFloorDetail
         * PropOwner        
         * PropertyObjection
+        * PropParamFloorType
+        * PropParamUsageType
+        * PropParamOccupancyType
+        * PropParamConstructionType
         *------------------------------------------------------------
         * ============ Referance Constaint And Tables ==============
         * -----------------------------------------------------------
@@ -978,7 +922,7 @@ class EloquentSafRepository implements SafRepository
         * | #objdtl["objection_id"]          = objection_id                             |
         * | #objdtl["objection_type_id"]     = 2                                        |
         * | #objdtl["according_assessment"]  = PropPropertie.is_water_harvesting        |
-        * | #objdtl["according_applicant"]   = $request->RanHarwestingValues?"t":'f'    |
+        * | #objdtl["according_applicant"]   = $request->harvestingObjValue?"t":'f'    |
         * | #objdtl["objection_by"]          = "Citizen"                                |
         * | #objdtl["user_id"]               = user_id                                  |
         * inserObjection(objdtl)
@@ -988,7 +932,7 @@ class EloquentSafRepository implements SafRepository
         * | #objdtl["objection_id"]           = objection_id                            |
         * | #objdtl["objection_type_id"]      = 3                                       |
         * | #objdtl["according_assessment"]   = PropPropertie.road_type_mstr_id         |
-        * | #objdtl["according_applicant"]    = $request->RoadWidthValues               |
+        * | #objdtl["according_applicant"]    = $request->roadWidthObjValue               |
         * | #objdtl[ "objection_by"]          = "Citizen"                               |
         * | #objdtl["user_id"]                = user_id                                 |
         * inserObjection(objdtl)
@@ -998,7 +942,7 @@ class EloquentSafRepository implements SafRepository
         * | #objdtl["objection_id"]            = objection_id                           |
         * | #objdtl["objection_type_id"]       = 4                                      |
         * | #objdtl["according_assessment"]    = PropPropertie.prop_type_mstr_id        |
-        * | #objdtl["according_applicant"]     = $request->PropertyTypeValues           |
+        * | #objdtl["according_applicant"]     = $request->propertyTypeObjValue           |
         * | #objdtl["objection_by"]            = "Citizen"                              |
         * | #objdtl["user_id"]                 = user_id                                |
         * inserObjection(objdtl)
@@ -1008,7 +952,7 @@ class EloquentSafRepository implements SafRepository
         * | #objdtl["objection_id"]        = objection_id                               |
         * | #objdtl["objection_type_id"]   = 5                                          |
         * | #objdtl["according_assessment] = PropPropertie.area_of_plot                 |              
-        * | #objdtl["according_applicant"] = $request->AreaOfPlotValues                 |              
+        * | #objdtl["according_applicant"] = $request->plotAreaObjValue                 |              
         * | #objdtl["objection_by"]        = "Citizen"                                  |
         * | #objdtl["user_id"]             = user_id                                    |
         * inserObjection(objdtl)
@@ -1020,9 +964,9 @@ class EloquentSafRepository implements SafRepository
         * | #objdtl["according_assessment"]  = PropPropertie.is_mobile_tower            |
         * | #objdtl["assess_area"]           = PropPropertie.tower_area                 |
         * | #objdtl["assess_date"]           = PropPropertie.tower_installation_date    |
-        * | #objdtl["according_applicant"]   = request->MobileTowerValue?'t':'f'        |
-        * | #objdtl["applicant_area"]        = request->MobileTowerArea                 |
-        * | #objdtl["applicant_date"]        = request->MobileTowerDate                 |
+        * | #objdtl["according_applicant"]   = request->mobileTowerObjValue?'t':'f'        |
+        * | #objdtl["applicant_area"]        = request->mobileTowerObjArea                 |
+        * | #objdtl["applicant_date"]        = request->mobileTowerObjDate                 |
         * | #objdtl["objection_by"]          = "Citizen"                                |
         * | #objdtl["user_id"]               = user_id                                  |
         * inserObjection(objdtl)
@@ -1034,9 +978,9 @@ class EloquentSafRepository implements SafRepository
         * | #objdtl["according_assessment"]    = PropPropertie.is_hoarding_board        |
         * | #objdtl["assess_area"]             = PropPropertie.hoarding_area            |
         * | #objdtl["assess_date"]             = PropPropertie.hoarding_installation_date|
-        * | #objdtl["according_applicant"]     = $request->HoardingBoardValue ?'t':'f'  |
-        * | #objdtl["applicant_area"]          = $request->HoardingBoardArea            |
-        * | #objdtl["applicant_date"]          = $request->HoardingBoardDate            |
+        * | #objdtl["according_applicant"]     = $request->hoardingObjValue ?'t':'f'  |
+        * | #objdtl["applicant_area"]          = $request->hoardingObjArea            |
+        * | #objdtl["applicant_date"]          = $request->hoardingObjDate            |
         * | #objdtl["objection_by"]            = "Citizen"                              |
         * | #objdtl["user_id"]                 = user_id                                |
         * inserObjection(objdtl)
@@ -1077,8 +1021,30 @@ class EloquentSafRepository implements SafRepository
                 }
                 else
                 {
-                    $floors = PropFloorDetail::where('status',1)
-                                            ->where('property_id',$request->id)
+                    $floors = PropFloorDetail::select("prop_floor_details.*",
+                                                        "prop_param_floor_types.floor_name",
+                                                        "prop_param_usage_types.usage_type",
+                                                        "prop_param_occupancy_types.occupancy_type",
+                                                        "prop_param_construction_types.construction_type"
+                                            )
+                                            ->join('prop_param_floor_types',function($join){
+                                                $join->on("prop_param_floor_types.id","prop_floor_details.floor_mstr_id")
+                                                ->whereAnd("prop_param_floor_types.status",1);
+                                            })
+                                            ->join('prop_param_usage_types',function($join){
+                                                $join->on("prop_param_usage_types.id","prop_floor_details.usage_type_mstr_id")
+                                                ->whereAnd("prop_param_usage_types.status",1);
+                                            })
+                                            ->join('prop_param_occupancy_types',function($join){
+                                                $join->on("prop_param_occupancy_types.id","prop_floor_details.occupancy_type_mstr_id")
+                                                ->whereAnd("prop_param_usage_types.status",1);
+                                            })
+                                            ->join('prop_param_construction_types',function($join){
+                                                $join->on("prop_param_construction_types.id","prop_floor_details.const_type_mstr_id")
+                                                ->whereAnd("prop_param_usage_types.status",1);
+                                            })
+                                            ->where('prop_floor_details.status',1)
+                                            ->where('prop_floor_details.property_id',$request->id)
                                             ->get();
                     $owneres = PropOwner::where('status',1)
                                             ->where('property_id',$request->id)
@@ -1101,17 +1067,17 @@ class EloquentSafRepository implements SafRepository
                     $floor_type  =ConstToArray($floor_type ,"name") ;
                     $data['floor_master'] = remove_null($floor_type);
 
-                    $occupency_types = Config::get('PropertyConstaint.OCCUPENCY-TYPE');
-                    $occupency_types  =ConstToArray($occupency_types ,"type") ;
-                    $data['occupency_master'] = remove_null($occupency_types);
+                    $occupancy_types = Config::get('PropertyConstaint.OCCUPANCY-TYPE');
+                    $occupancy_types  =ConstToArray($occupancy_types ,"type") ;
+                    $data['occupancy_master'] = remove_null($occupancy_types);
 
                     $usage_types = Config::get('PropertyConstaint.USAGE-TYPE');
                     $usage_types  =ConstToArray($usage_types ,"type") ;
                     $data['usage_master'] = remove_null($usage_types);
 
-                    $constunction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE');
-                    $constunction_type  =ConstToArray($constunction_type ,"type") ;
-                    $data['constunction_master'] = remove_null($constunction_type);
+                    $construction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE');
+                    $construction_type  =ConstToArray($construction_type ,"type") ;
+                    $data['construction_master'] = remove_null($construction_type);
                     return responseMsg(true,"",$data);
                 }
             }
@@ -1167,7 +1133,7 @@ class EloquentSafRepository implements SafRepository
                 {
                     $rules['hoardingObjValue']= "required";
                     $rules['hoardingObjArea'] = "required|numeric";
-                    $rules['hoardingObjArea'] = "required|date";
+                    $rules['hoardingObjDate'] = "required|date";
                     // $rules['HoardingBoardId']= "required|int";
                 }
                 if($request->floorToggleStatus)
@@ -1281,9 +1247,9 @@ class EloquentSafRepository implements SafRepository
                     $objdtl=[
                                 "objection_id"=> $objection_id,
                                 "objection_type_id"=> '6',
-                                "according_assessment"=> 't',
-                                "assess_area"=> 200,
-                                "assess_date"=> date('Y-m-d'),
+                                "according_assessment"=> $property->is_mobile_tower,
+                                "assess_area"=> $property->tower_area,
+                                "assess_date"=> $property->tower_installation_date,
                                 "according_applicant"=> $request->mobileTowerObjValue?'t':'f',
                                 "applicant_area"=> $request->mobileTowerObjArea,
                                 "applicant_date"=>  $request->mobileTowerObjDate,
@@ -1303,9 +1269,9 @@ class EloquentSafRepository implements SafRepository
                     $objdtl=[
                                 "objection_id"=> $objection_id,
                                 "objection_type_id"=> '7',
-                                "according_assessment"=> 'f',
-                                "assess_area"=> 400,
-                                "assess_date"=> date('Y-m-d'),
+                                "according_assessment"=> $property->is_hoarding_board,
+                                "assess_area"=> $property->hoarding_area,
+                                "assess_date"=> $property->hoarding_installation_date,
                                 "according_applicant"=> $request->hoardingObjValue?'t':'f',
                                 "applicant_area"=> $request->hoardingObjArea,
                                 "applicant_date"=> $request->hoardingObjArea,
@@ -1405,9 +1371,28 @@ class EloquentSafRepository implements SafRepository
         }
    }
 
-   public function propObjectionList($key)
+   public function propObjectionInbox($key)
    {
         try{
+            $user_id = auth()->user()->id;
+            $redis=Redis::connection();  // Redis Connection
+            $redis_data = json_decode(Redis::get('user:' . $user_id),true);
+            $ulb_id = $redis_data['ulb_id'];
+            $roll_id =  $redis_data['role_id']; 
+            $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
+            if(!$work_flow_candidate)
+            {
+                $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
+                return response()->json($message,200);
+            }        
+            $work_flow_candidate = collect($work_flow_candidate);         
+            $ward_permission = $this->WardPermission($user_id);
+            $ward_ids = array_map(function($val)
+                        {
+                            return $val['ulb_ward_id'];
+                        },$ward_permission); 
+            
             $data =PropertyObjection::select(DB::raw("property_objections.id as objection_id,
                                                     property_objections.created_at as apply_date,
                                                     prop_properties.id as property_id,
@@ -1431,7 +1416,20 @@ class EloquentSafRepository implements SafRepository
                                                             "),function($join){
                                             $join->on('owners.property_id','=','prop_properties.id');
                                         })
-                                        ->get();
+                                        ->where("prop_properties.ulb_id",$ulb_id)  
+                                       ->whereIn('prop_properties.ward_mstr_id',$ward_ids);
+                            if($key)
+                            {
+                                $data= $data->where(function($query) use($key)
+                                                {
+                                                    $query->orwhere('prop_properties.holding_no', 'ILIKE', '%'.$key.'%')
+                                                    ->orwhere('property_objections.objection_no', 'ILIKE', '%'.$key.'%')
+                                                    ->orwhere('owners.owner_name', 'ILIKE', '%'.$key.'%')
+                                                    ->orwhere('owners.guardian_name', 'ILIKE', '%'.$key.'%')
+                                                    ->orwhere('owners.mobile_no', 'ILIKE', '%'.$key.'%');
+                                                });
+                            } 
+                            $data = $data->get(); 
             $data = remove_null($data);
             return responseMsg(true,'',$data);
         }

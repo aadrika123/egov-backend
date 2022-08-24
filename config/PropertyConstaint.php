@@ -70,7 +70,7 @@ return [
         "27"  => "25th Floor"  ,
 
     ],
-    "OCCUPENCY-TYPE"=>[
+    "OCCUPANCY-TYPE"=>[
         "1" =>  "TENANTED"    ,
         "2" =>  "SELF OCCUPIED",
 
