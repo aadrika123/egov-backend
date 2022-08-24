@@ -307,9 +307,6 @@ class EloquentRoleRepository implements RoleRepository
                     rm.role_name,
                     rm.role_description,
                     rm.routes,
-                    ru.user_id,
-                    u1.user_name,
-                    ru.role_id,
                     ru.can_modify,
                     (CASE 
                         WHEN role_id IS NOT NULL THEN true
