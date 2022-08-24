@@ -302,16 +302,28 @@ class EloquentRoleRepository implements RoleRepository
      */
     public function getRoleUser($id)
     {
-        $tRoleUserQuery = $this->fetchRoleUsers() . " where ru.user_id=$id GROUP BY ru.user_id,u.user_name";
-        $role_users = DB::select($tRoleUserQuery);
-        $collection = [
-            "user_id" => $role_users[0]->user_id,
-            "user_name" => $role_users[0]->user_name,
-            "role_id" => explode(',', $role_users[0]->role_id),
-            "can_modify" => explode(',', $role_users[0]->can_modify),
-            "role_name" => explode(',', $role_users[0]->role_name),
-        ];
-        return responseMsg(true, "Data Fetched", $collection);
+        $query = "SELECT 
+                    rm.id,
+                    rm.role_name,
+                    rm.role_description,
+                    rm.routes,
+                    ru.user_id,
+                    u1.user_name,
+                    ru.role_id,
+                    ru.can_modify,
+                    (CASE 
+                        WHEN role_id IS NOT NULL THEN true
+                        ELSE false
+                    END) AS permission_status
+                    
+                    FROM role_masters rm
+                    
+                    LEFT JOIN (SELECT * FROM role_users u WHERE u.user_id=$id) ru ON ru.role_id=rm.id
+                    LEFT JOIN users u1 ON u1.id=ru.user_id
+                    
+                    ORDER BY rm.id asc";
+        $collection = DB::select($query);
+        return responseMsg(true, "Data Fetched", remove_null($collection));
     }
 
     /**
