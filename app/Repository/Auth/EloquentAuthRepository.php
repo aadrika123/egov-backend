@@ -260,10 +260,14 @@ class EloquentAuthRepository implements AuthRepository
     }
 
     /**
-     * Get All Users
+     * | Get All Users
+     * | #u_ulb_id > Logged User Ulb ID
+     * | #query > Query stmt for Ulb wise all Users and their Roles
+     * | #users > All Users Data
      */
     public function getAllUsers()
     {
+        $u_ulb_id = auth()->user()->ulb_id;
         $query = "SELECT 
                     u.id,
                     u.user_name,
@@ -279,7 +283,7 @@ class EloquentAuthRepository implements AuthRepository
                     FROM users u
                     LEFT JOIN role_users ru ON ru.user_id=u.id
                     LEFT JOIN role_masters rm ON rm.id=ru.role_id
-                    WHERE u.user_type!='Citizen'
+                    WHERE u.user_type!='Citizen' AND u.ulb_id=$u_ulb_id
                     GROUP BY u.id
                     ORDER BY u.id ASC
                     ";
