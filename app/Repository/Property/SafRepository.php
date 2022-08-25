@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repository\SAF;
+namespace App\Repository\Property;
 
 /**
  * | Created On-10-08-2022 

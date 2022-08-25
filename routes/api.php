@@ -11,8 +11,9 @@ use App\Http\Controllers\UlbController;
 use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\Workflows\WorkflowController;
 use App\Http\Controllers\Workflows\WorkflowTrackController;
-use App\Http\Controllers\ActiveSafController;
+use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\PaymentMasterController;
+use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Ward\WardController;
 use App\Http\Controllers\Ward\WardUserController;
 use App\Http\Controllers\Workflows\WorkflowRolesController;
@@ -221,15 +222,18 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     // SAF 
     Route::controller(ActiveSafController::class)->group(function () {
-        Route::post('apply-for-saf', 'applySaf');                               // Applying Saf Route
+        Route::post('apply-for-saf', 'applySaf');                            // Applying Saf Route
         Route::get('saf-inbox/{key?}', 'inbox');                             // Saf workflow Inbox and Inbox By search key
         Route::get('saf-outbox/{key?}', 'outbox');                           // Saf Workflow Outbox and Outbox By search key
         Route::get('saf-details/{id}', 'details');                           // Saf Workflow safDetails and safDetails By ID
-        Route::post('saf-escalate{id?}', 'special');                          // Saf Workflow special and safDetails By id
-        Route::get('saf-escalate-inbox/{key?}', 'specialInbox');               // Saf workflow Inbox and Inbox By search key
+        Route::post('saf-escalate{id?}', 'special');                         // Saf Workflow special and safDetails By id
+        Route::get('saf-escalate-inbox/{key?}', 'specialInbox');              // Saf workflow Inbox and Inbox By search key
         Route::post('saf-post-level/{id?}', 'postNextLevel');
+    });
+    //Property Objection
+    Route::controller(ObjectionController::class)->group(function (){        
         Route::match(["get", "post"], 'property-objection/{id}', 'propertyObjection');// Saf Workflow special and safDetails By key
-        Route::get('prop-objection-inbox/{key?}', 'propObjectionInbox');// Saf Workflow special and safDetails By key
+        Route::get('prop-objection-inbox/{key?}', 'propObjectionInbox');        // Saf Workflow special and safDetails By key
     });
 
     /**

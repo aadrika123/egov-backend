@@ -9,4 +9,5 @@
 return [
     "SAF_WORKFLOW_ID" => "6",
     "SELF_ADVERTISEMENT_WORKFLOW_ID" => "4", 
+    "PROPPERTY_OBJECTION_ID"=>"7",
 ];

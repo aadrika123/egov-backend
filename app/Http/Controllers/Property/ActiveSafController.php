@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Property;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Repository\SAF\EloquentSafRepository;
+use App\Repository\Property\EloquentSafRepository;
 
 class ActiveSafController extends Controller
 {    
@@ -58,15 +59,5 @@ class ActiveSafController extends Controller
     {
         $data =$this->Repository->postNextLevel($request);        
         return $data;
-    }
-    public function propertyObjection(Request $request)
-    {
-        $data =$this->Repository->propertyObjection($request);        
-        return $data;
-    }
-    public function propObjectionInbox(Request $request)
-    {
-        $data =$this->Repository->propObjectionInbox($request->key);
-        return $data;
-    }
+    }    
 }

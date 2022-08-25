@@ -23,6 +23,12 @@ class CreatePropertyObjectionsTable extends Migration
             $table->text('objection_form_doc')->nullable();
             $table->text('evidence_document')->nullable();
             $table->bigInteger('user_id')->nullable();
+            $table->bigInteger('current_user')->nullable();
+            $table->bigInteger('initiator_id')->nullable();
+            $table->bigInteger('finisher_id')->nullable();
+            $table->bigInteger('workflow_id')->nullable();
+            $table->smallInteger('is_escalate')->nullable();
+            $table->bigInteger('escalate_by')->nullable();
             $table->smallInteger('status')->nullable()->default(1);
             $table->smallInteger('level_status')->nullable()->default(1)->comment('0 Rejected, 1 Pending at IT Head, 2 Tax Collector, 3 Section Head, 4 Executive Officer, 5 Approved');
             $table->timestamp('created_at')->nullable()->useCurrent();
