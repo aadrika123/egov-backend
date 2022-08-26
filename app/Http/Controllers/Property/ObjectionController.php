@@ -31,4 +31,14 @@ class ObjectionController extends Controller
         $data =$this->Repository->propObjectionInbox($request->key);
         return $data;
     }
+    public function propObjectionOutbox(Request $request)
+    {
+        $data =$this->Repository->propObjectionOutbox($request->key);
+        return $data;
+    }
+    public function specialObjectionInbox(Request $request)
+    { 
+        $data =$this->Repository->specialObjectionInbox($request->key);
+        return $data;
+    }
 }

@@ -232,8 +232,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
     //Property Objection
     Route::controller(ObjectionController::class)->group(function (){        
-        Route::match(["get", "post"], 'property-objection/{id}', 'propertyObjection');// Saf Workflow special and safDetails By key
-        Route::get('prop-objection-inbox/{key?}', 'propObjectionInbox');        // Saf Workflow special and safDetails By key
+        Route::match(["get", "post"], 'property-objection/{id}', 'propertyObjection');// Objection Workflow Apply By id
+        Route::get('property/objection/inbox/{key?}', 'propObjectionInbox');          // Objection Workflow Inbox  By key
+        Route::get('property/objection/outbox/{key?}', 'propObjectionOutbox');        // Objection Workflow Outbox  By key
+        Route::get('property/objection/escalate-inbox/{key?}', 'specialObjectionInbox');        // Objection Workflow special Inbox  By key
     });
 
     /**

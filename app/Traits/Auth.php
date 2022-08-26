@@ -126,6 +126,15 @@ trait Auth
         $redis->expire('WardPermission:' . $user_id, 18000);
     }
 
+    public function WorkFlowRolesSet($redis, $user_id, array $workflow_rolse)
+    {
+        $redis->set(
+            'WorkFlowRoles:' . $user_id,
+            json_encode($workflow_rolse)
+        );
+        $redis->expire('WorkFlowRoles:' . $user_id, 18000);
+    }
+
     /**
      * | query for save ulb and role on user login
      */

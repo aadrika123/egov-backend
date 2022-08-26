@@ -4,7 +4,11 @@ namespace App\Traits\Property;
 
 use App\Models\Ward\WardUser;
 use App\Models\WorkflowCandidate;
+use App\Models\Workflows\WorkflowRole;
+use App\Traits\Auth;
+use Exception;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 /**
@@ -16,7 +20,7 @@ use Illuminate\Support\Facades\Redis;
  * --------------------------------------------------------------------------------------------------------
  */
 trait WardPermission
-{
+{ use Auth;
    public function work_flow_candidate($user_id,$ulb_id)
    {
         $redis=Redis::connection();
@@ -55,23 +59,123 @@ trait WardPermission
         return $ward_permission;
    }
 
-   public function getRoleUsersForBck($ulb_id,$work_flow_id,$role_id,$finisher=null) //curernt user Roll id
-   {  
-        $roll_id = Config::get("PropertyConstaint.ROLES.INDEX"."$ulb_id"."_$work_flow_id".".$role_id");
-        if(is_null($role_id))
-        {
-            return Config::get("PropertyConstaint.ROLES".".$ulb_id"."_$work_flow_id");
-        }    
-        $backWord = Config::get("PropertyConstaint.ROLES".".$ulb_id"."_$work_flow_id".".".($roll_id-1))??[];
-        $forWord = Config::get("PropertyConstaint.ROLES".".$ulb_id"."_$work_flow_id".".".($roll_id+1))??[];        
-        return ['backward'=>$backWord,"forward"=>($finisher==$role_id?[]:$forWord),'btc'=>
-                 (!in_array($roll_id,[1,6])) ?(Config::get("PropertyConstaint.ROLES".".$ulb_id"."_$work_flow_id".".0")):[]
+//    public function getRoleUsersForBck($ulb_id,$work_flow_id,$role_id,$finisher=null) //curernt user Roll id
+//    {  
+//         $roll_id = Config::get("PropertyConstaint.ROLES.INDEX"."$ulb_id"."_$work_flow_id".".$role_id");
+//         if(is_null($role_id))
+//         {
+//             return Config::get("PropertyConstaint.ROLES".".$ulb_id"."_$work_flow_id");
+//         }    
+//         $backWord = Config::get("PropertyConstaint.ROLES".".$ulb_id"."_$work_flow_id".".".($roll_id-1))??[];
+//         $forWord = Config::get("PropertyConstaint.ROLES".".$ulb_id"."_$work_flow_id".".".($roll_id+1))??[];        
+//         return ['backward'=>$backWord,"forward"=>($finisher==$role_id?[]:$forWord),'btc'=>
+//                  (!in_array($roll_id,[1,6])) ?(Config::get("PropertyConstaint.ROLES".".$ulb_id"."_$work_flow_id".".0")):[]
                 
-            ];
+//             ];
+//    }
+
+   public function getWorkFlowRoles( $user_id,int $ulb_id, int $work_flow_id)
+   {
+        $redis =Redis::connection();
+        $workflow_rolse = json_decode(Redis::get('WorkFlowRoles:' . $user_id),true)??null;
+        if(!$workflow_rolse)
+        {
+            $workflow_rolse = WorkflowRole::select(
+                            DB::raw("workflows.id as workflow_id"),
+                            "role_masters.id",
+                            "role_masters.role_name",
+                            "workflow_roles.forward_id",
+                            "workflow_roles.backward_id",
+                            "workflow_roles.show_full_list",
+                            "ulb_workflow_masters.ulb_id",
+                            "module_masters.module_name",
+                            "workflows.workflow_name"
+                        )
+                        ->join("role_masters","role_masters.id","workflow_roles.role_id")
+                        ->join("ulb_workflow_masters",function($join) use($ulb_id){
+                            $join->on("ulb_workflow_masters.id","workflow_roles.ulb_workflow_id")
+                            ->where("ulb_workflow_masters.ulb_id",$ulb_id);
+                        })
+                        ->join("module_masters","module_masters.id","ulb_workflow_masters.module_id")
+                        ->join("workflows",function($join) use($work_flow_id){
+                            $join->on("workflows.module_id","module_masters.id")
+                            ->where("workflows.id",$work_flow_id);
+                        })
+                        ->get();
+            $workflow_rolse = adjToArray($workflow_rolse);
+            $this->WorkFlowRolesSet($redis,$user_id, $workflow_rolse);
+        }
+        return $workflow_rolse;
    }
 
-   public function getWorkFlowCondidate()
+   public function getForwordBackwordRoll($user_id,int $ulb_id, int $work_flow_id,int $role_id,$finisher=null)
    {
-    
+        $retuns = [];
+        $workflow_rolse = $this-> getWorkFlowRoles($user_id,$ulb_id,$work_flow_id);
+        $backwordForword = array_filter($workflow_rolse,function($val)use($role_id){
+            return $val['id']==$role_id;
+        });
+        $backwordForword =array_values($backwordForword)[0]??[];
+        if( $backwordForword)
+        {
+            $data = array_map(function($val) use($backwordForword){
+                if($val['id']==$backwordForword['forward_id'])
+                {
+                    return ['forward'=>['id'=>$val['id'],'role_name'=>$val['role_name']]];
+                }
+                if($val['id']==$backwordForword['backward_id'])
+                {
+                    return ['backward'=>['id'=>$val['id'],'role_name'=>$val['role_name']]];
+                }
+            },$workflow_rolse);
+            $data = array_filter($data,function($val){
+                return is_array($val);
+            }); 
+            $data = array_values($data);
+
+            $forward = array_map(function($val){
+                return $val['forward']??false;
+            },$data);
+
+            $forward =array_filter($forward,function($val){
+                return is_array($val);
+            }); 
+            $forward = array_values($forward)[0]??[];
+
+            $backward = array_map(function($val){
+                return $val['backward']??false;
+            },$data);
+
+            $backward =array_filter($backward,function($val){
+                return is_array($val);
+            }); 
+            $backward = array_values($backward)[0]??[];
+            // dd($backward);
+            $retuns["backward"]=$backward;
+            $retuns["forward"]=$forward;
+            
+        }        
+        return $retuns;
    }
+
+   public function getAllRoles($user_id,int $ulb_id, int $work_flow_id,int $role_id)
+   {
+        try{
+            $data = $this->getWorkFlowRoles($user_id,$ulb_id, $work_flow_id,$role_id);
+            $curentUser = array_filter($data,function($val)use($role_id){
+                return $val['id']==$role_id;
+            });
+            $curentUser=array_values($curentUser)[0];
+            $data = array_filter($data,function($val)use($curentUser){
+                return (!in_array($val['id'],[$curentUser['forward_id'],$curentUser['backward_id']]));
+            });
+            return($data);
+        }
+        catch(Exception $e)
+        {
+            return response()->json($e, 400);
+        }
+        
+   }
+   
 }

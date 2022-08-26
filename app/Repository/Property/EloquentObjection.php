@@ -160,16 +160,16 @@ class EloquentObjection implements ObjectionRepository
         $roll_id = auth()->user()->role_id;        
         DB::beginTransaction();
         try{
-            // $workflow_id = Config::get('workflow-constants.PROPPERTY_OBJECTION_ID');
-            // $workflows = UlbWorkflowMaster::select('initiator', 'finisher')
-            //     ->where('ulb_id', $ulb_id)
-            //     ->where('workflow_id', $workflow_id)
-            //     ->first();
-            // if(!$workflows)
-            // { 
-            //     $message='Workflow Not Available';
-            //     return responseMsg(false,$message,'');
-            // }
+            $workflow_id = Config::get('workflow-constants.PROPPERTY_OBJECTION_ID');
+            $workflows = UlbWorkflowMaster::select('initiator', 'finisher')
+                ->where('ulb_id', $ulb_id)
+                ->where('workflow_id', $workflow_id)
+                ->first();
+            if(!$workflows)
+            { 
+                $message='Workflow Not Available';
+                return responseMsg(false,$message,'');
+            }
             $property = PropPropertie::find($request->id);
             if(!$property)
             {
@@ -575,7 +575,7 @@ class EloquentObjection implements ObjectionRepository
                                                     ulb_ward_masters.ward_name as ward_no
                                             "), 
                                             'property_objections.objection_no',
-                                            'prop_properties.holding_no' ,
+                                            'prop_properties.new_holding_no' ,
                                             'owners.owner_name',
                                             'owners.mobile_no',
                                         )
@@ -593,7 +593,7 @@ class EloquentObjection implements ObjectionRepository
                                             $join->on('owners.property_id','=','prop_properties.id');
                                         })
                                         ->where("property_objections.current_user", $roll_id) 
-                                        ->whereAnd("prop_properties.ulb_id",$ulb_id)  
+                                        ->where("prop_properties.ulb_id",$ulb_id)  
                                         ->whereIn('prop_properties.ward_mstr_id',$ward_ids)
                                         ->whereIn('prop_properties.ward_mstr_id',$ward_ids) ;
                             if($key)
@@ -619,7 +619,7 @@ class EloquentObjection implements ObjectionRepository
    public function propObjectionOutbox($key)
    {
         try{
-            $user_id = auth()->user()->id;
+            $user_id = auth()->user()->id; 
             $redis=Redis::connection();  // Redis Connection
             $redis_data = json_decode(Redis::get('user:' . $user_id),true);
             $ulb_id = $redis_data['ulb_id'];
@@ -644,7 +644,7 @@ class EloquentObjection implements ObjectionRepository
                                                     ulb_ward_masters.ward_name as ward_no
                                             "), 
                                             'property_objections.objection_no',
-                                            'prop_properties.holding_no' ,
+                                            'prop_properties.new_holding_no' ,
                                             'owners.owner_name',
                                             'owners.mobile_no',
                                         )
@@ -664,10 +664,10 @@ class EloquentObjection implements ObjectionRepository
                                         ->where(
                                             function($query) use($roll_id){
                                                 return $query
-                                                ->where('active_saf_details.current_user', '<>', $roll_id)
-                                                ->orwhereNull('active_saf_details.current_user');
+                                                ->where('property_objections.current_user', '<>', $roll_id)
+                                                ->orwhereNull('property_objections.current_user');
                                         }) 
-                                        ->whereAnd("prop_properties.ulb_id",$ulb_id)  
+                                        ->where("prop_properties.ulb_id",$ulb_id)  
                                         ->whereIn('prop_properties.ward_mstr_id',$ward_ids)
                                         ->whereIn('prop_properties.ward_mstr_id',$ward_ids) ;
                             if($key)
@@ -682,6 +682,76 @@ class EloquentObjection implements ObjectionRepository
                                                 });
                             } 
                             $data = $data->get(); 
+            $data = remove_null($data);
+            return responseMsg(true,'',$data);
+        }
+        catch(Exception $e)
+        {
+            return $e;
+        }
+   }
+   #Inbox  special category
+   public function specialObjectionInbox($key)
+   { 
+        try{
+            $user_id = auth()->user()->id;
+            $redis=Redis::connection();  // Redis Connection
+            $redis_data = json_decode(Redis::get('user:' . $user_id),true);
+            $ulb_id = $redis_data['ulb_id'];
+            $roll_id =  $redis_data['role_id']; 
+            $workflow_id = Config::get('workflow-constants.PROPPERTY_OBJECTION_ID');
+            $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
+            if(!$work_flow_candidate)
+            {
+                $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
+                return response()->json($message,200);
+            }        
+            $work_flow_candidate = collect($work_flow_candidate);         
+            $ward_permission = $this->WardPermission($user_id);
+            $ward_ids = array_map(function($val)
+                        {
+                            return $val['ulb_ward_id'];
+                        },$ward_permission); 
+            DB::enableQueryLog();
+            $data =PropertyObjection::select(DB::raw("property_objections.id as objection_id,
+                                                    property_objections.created_at as apply_date,
+                                                    prop_properties.id as property_id,
+                                                    ulb_ward_masters.ward_name as ward_no
+                                            "), 
+                                            'property_objections.objection_no',
+                                            'prop_properties.new_holding_no' ,
+                                            'owners.owner_name',
+                                            'owners.mobile_no',
+                                        )
+                                        ->join('prop_properties','property_objections.prop_dtl_id','prop_properties.id')
+                                        ->join('ulb_ward_masters','ulb_ward_masters.id','prop_properties.ward_mstr_id')
+                                        ->leftjoin(DB::raw("(SELECT prop_owners.property_id,
+                                                                string_agg(prop_owners.owner_name,', ') as owner_name,
+                                                                string_agg(prop_owners.guardian_name,', ') as guardian_name,
+                                                                string_agg(prop_owners.mobile_no::text,', ') as mobile_no
+                                                        FROM prop_owners 
+                                                        WHERE prop_owners.status = 1
+                                                        GROUP BY prop_owners.property_id
+                                                        )owners
+                                                            "),function($join){
+                                            $join->on('owners.property_id','=','prop_properties.id');
+                                        })
+                                        ->where("property_objections.current_user", $roll_id) 
+                                        ->where("property_objections.is_escalate", 1) 
+                                        ->where("prop_properties.ulb_id",$ulb_id) 
+                                        ->whereIn('prop_properties.ward_mstr_id',$ward_ids) ;
+                            if($key)
+                            {
+                                $data= $data->where(function($query) use($key)
+                                                {
+                                                    $query->orwhere('prop_properties.holding_no', 'ILIKE', '%'.$key.'%')
+                                                    ->orwhere('property_objections.objection_no', 'ILIKE', '%'.$key.'%')
+                                                    ->orwhere('owners.owner_name', 'ILIKE', '%'.$key.'%')
+                                                    ->orwhere('owners.guardian_name', 'ILIKE', '%'.$key.'%')
+                                                    ->orwhere('owners.mobile_no', 'ILIKE', '%'.$key.'%');
+                                                });
+                            } 
+                            $data = $data->get();
             $data = remove_null($data);
             return responseMsg(true,'',$data);
         }

@@ -529,13 +529,13 @@ class EloquentSafRepository implements SafRepository
                                 ->orderBy('track_date','desc')
                                 ->get();
         $data['time_line'] =  remove_null($time_line);
-        // if(in_array($role_id,['1']))
+        $data['work_flow_candidate']=[];
         if($saf_data->is_escalate)
         {
-            $rol_type =  $this->getRoleUsersForBck($ulb_id,$saf_data->workflow_id,null); 
+            $rol_type =  $this->getAllRoles($user_id,$ulb_id,$saf_data->workflow_id,$role_id); 
             $data['work_flow_candidate'] =  remove_null(ConstToArray($rol_type));         
         }
-        $forward_backword = $this->getRoleUsersForBck($ulb_id,$saf_data->workflow_id,$role_id,$saf_data->finisher_id);  
+        $forward_backword =  $this->getForwordBackwordRoll($user_id,$ulb_id,$saf_data->workflow_id,$role_id);        
         $data['forward_backward'] =  remove_null($forward_backword);        
         return $data;
    }   
