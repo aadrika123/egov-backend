@@ -128,9 +128,17 @@ class EloquentSafRepository implements SafRepository
                 $data['construction_type']=$constructionType;
                 if(in_array($request->assessment_type,["Reassessment","Mutation"]))
                 {
-                    $property_dtl = $this->property->getPropertyById($request->old_holding_id);
-                    $data['property_dtl']= remove_null($property_dtl);
-                    
+                    $propertyDtltl = $this->property->getPropertyById($request->old_holding_id);
+                    $data['property_dtl']= remove_null($propertyDtltl);
+                    $ownerDtl = $this->property->getOwnerDtlByPropId($request->old_holding_id);
+                    $data['owner_dtl']= remove_null($ownerDtl);
+                    $foolDtl = $this->property->getFloorDtlByPropId($request->old_holding_id);
+                    $data['fool_dtl']= remove_null($foolDtl);
+                }
+                if(in_array($request->assessment_type,["Mutation"]))
+                {
+                    $mutationMaster = $this->property->getAllTransferMode();
+                    $data['mutation_master']= remove_null($mutationMaster);
                 }
                 return  responseMsg(true,'',$data);
             }

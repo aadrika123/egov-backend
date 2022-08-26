@@ -2,7 +2,10 @@
 
 namespace App\Repository\Property;
 
+use App\Models\PropFloorDetail;
+use App\Models\PropOwner;
 use App\Models\PropPropertie;
+use App\Models\TransferModeMaster;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -59,13 +62,68 @@ class EloquentProperty implements PropertyRepository
     }
     public function getPropertyById($id)
     {
-        if(!is_numeric($id))
-        {
-            $id = Crypt::decryptString($id);
+        try{
+            if(!is_numeric($id))
+            {
+                $id = Crypt::decryptString($id);
+            }
+            $data = PropPropertie::select("*")
+                            ->where('id',$id)
+                            ->first();
+            return $data;
         }
-        $data = PropPropertie::select("*")
-                        ->where('id',$id)
-                        ->first();
-        return $data;
+        catch(Exception $e){
+            echo $e->getMessage();
+        }
+        
+    }
+    public function getOwnerDtlByPropId($prop_id)
+    {
+        try{
+            if(!is_numeric($prop_id))
+            {
+                $prop_id = Crypt::decryptString($prop_id);
+            }
+            $data = PropOwner::select("*")
+                            ->where('status',1)
+                            ->where('property_id',$prop_id)
+                            ->get();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+    public function getFloorDtlByPropId($prop_id)
+    {
+        try{
+            if(!is_numeric($prop_id))
+            {
+                $prop_id = Crypt::decryptString($prop_id);
+            }
+            $data = PropFloorDetail::select("*")
+                            ->where('status',1)
+                            ->where('property_id',$prop_id)
+                            ->get();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+    public function getAllTransferMode()
+    {
+        try{
+            $data = TransferModeMaster::select("id","transfer_mode")
+                                ->where("status",1)
+                                ->get();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
     }
 }
