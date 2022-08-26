@@ -553,8 +553,8 @@ class EloquentObjection implements ObjectionRepository
             $user_id = auth()->user()->id;
             $redis=Redis::connection();  // Redis Connection
             $redis_data = json_decode(Redis::get('user:' . $user_id),true);
-            $ulb_id = $redis_data['ulb_id'];
-            $roll_id =  $redis_data['role_id']; 
+            $ulb_id = $redis_data['ulb_id']??auth()->user()->ulb_id;;
+            $roll_id =  $redis_data['role_id']??auth()->user()->roll_id;; 
             $workflow_id = Config::get('workflow-constants.PROPPERTY_OBJECTION_ID');
             $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
             if(!$work_flow_candidate)
@@ -622,8 +622,8 @@ class EloquentObjection implements ObjectionRepository
             $user_id = auth()->user()->id; 
             $redis=Redis::connection();  // Redis Connection
             $redis_data = json_decode(Redis::get('user:' . $user_id),true);
-            $ulb_id = $redis_data['ulb_id'];
-            $roll_id =  $redis_data['role_id']; 
+            $ulb_id = $redis_data['ulb_id']??auth()->user()->ulb_id;;
+            $roll_id =  $redis_data['role_id']??auth()->user()->roll_id;; 
             $workflow_id = Config::get('workflow-constants.PROPPERTY_OBJECTION_ID');
             $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
             if(!$work_flow_candidate)
@@ -697,8 +697,8 @@ class EloquentObjection implements ObjectionRepository
             $user_id = auth()->user()->id;
             $redis=Redis::connection();  // Redis Connection
             $redis_data = json_decode(Redis::get('user:' . $user_id),true);
-            $ulb_id = $redis_data['ulb_id'];
-            $roll_id =  $redis_data['role_id']; 
+            $ulb_id = $redis_data['ulb_id']??auth()->user()->ulb_id;;
+            $roll_id =  $redis_data['role_id']??auth()->user()->roll_id; 
             $workflow_id = Config::get('workflow-constants.PROPPERTY_OBJECTION_ID');
             $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
             if(!$work_flow_candidate)

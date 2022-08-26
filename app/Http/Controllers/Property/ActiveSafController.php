@@ -60,4 +60,9 @@ class ActiveSafController extends Controller
         $data =$this->Repository->postNextLevel($request);        
         return $data;
     }    
+    public function getPropIdByWardNoHodingNo(Request $request)
+    {
+        $data =$this->Repository->getPropIdByWardNoHodingNo($request);        
+        return $data;
+    }
 }
