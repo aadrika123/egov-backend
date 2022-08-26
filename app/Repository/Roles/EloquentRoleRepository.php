@@ -133,6 +133,20 @@ class EloquentRoleRepository implements RoleRepository
     }
 
     /**
+     * | Get All Roles by Ulb ID
+     * | @var userUlb > get the UlbID for the current logged in user
+     * | @var roles > Get all the roles list
+     */
+    public function getRoleListByUlb()
+    {
+        $userUlb = auth()->user()->ulb_id;
+        $roles = RoleMaster::where('ulb_id', $userUlb)
+            ->orderBy('id', 'desc')
+            ->get();
+        return responseMsg(true, "Data Fetched", remove_null($roles));
+    }
+
+    /**
      * --------------------------------------------------------------------------------------
      * --------------------------------------------
      * storing Role Menus
@@ -272,6 +286,7 @@ class EloquentRoleRepository implements RoleRepository
      * | @param App\Http\Requests\Roles\RoleUserLogRequest $request
      * ----------------------------------------------------
      * | If permission status is true Then Add The Data
+     * | If the permission already given and someone wants to update only modify permission then update the data
      * | If Permission Status Is False then Delete The Data
      * ---------------------------------------------------
      * | @var checkExisting finds the id where the Data is already Existing
@@ -280,6 +295,17 @@ class EloquentRoleRepository implements RoleRepository
     {
         try {
             if ($request->permission == 1) {
+                // if the permission already given and want to modify only view/modify permission
+                $checkExisting = RoleUser::where('user_id', $request->userID)
+                    ->where('role_id', $request->roleID)
+                    ->first();
+                if ($checkExisting) {
+                    $checkExisting->user_id = $request->userID;
+                    $checkExisting->role_id = $request->roleID;
+                    $checkExisting->can_modify = $request->canModify;
+                    $checkExisting->save();
+                    return responseMsg(true, "Successfully Enabled the Permission", "");
+                }
                 // Add the Data
                 $roleUser = new RoleUser();
                 $roleUser->user_id = $request->userID;
@@ -296,7 +322,7 @@ class EloquentRoleRepository implements RoleRepository
                 if ($checkExisting) {
                     $checkExisting->delete();
                 }
-                return responseMsg(false, "Successfully Disabled The Role", "");
+                return responseMsg(true, "Successfully Disabled The Role", "");
             }
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -330,7 +356,7 @@ class EloquentRoleRepository implements RoleRepository
                     
                     LEFT JOIN (SELECT * FROM role_users u WHERE u.user_id=$id) ru ON ru.role_id=rm.id
                     LEFT JOIN users u1 ON u1.id=ru.user_id
-                    
+                    WHERE rm.deleted_at IS NULL
                     ORDER BY rm.id asc";
         $collection = DB::select($query);
         return responseMsg(true, "Data Fetched", remove_null($collection));
@@ -348,6 +374,20 @@ class EloquentRoleRepository implements RoleRepository
         $t_role_user_query = $this->fetchRoleUsers() . " GROUP BY ru.user_id,u.user_name";
         $role_users = DB::select($t_role_user_query);
         return responseMsg(true, "Data Fetched", $role_users);
+    }
+
+    /**
+     * | Get users By Role
+     * | @param id roleID
+     * | @var users Get All the users of role_id
+     */
+    public function getUserByRoleID($id)
+    {
+        $users = RoleUser::where('role_id', $id)
+            ->select('users.id as user_id', 'users.user_name as name', 'users.email', 'users.mobile')
+            ->join('users', 'users.id', '=', 'role_users.user_id')
+            ->get();
+        return responseMsg(true, "Data Fetched", remove_null($users));
     }
 
     /**
