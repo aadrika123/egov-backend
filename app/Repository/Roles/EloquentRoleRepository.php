@@ -264,44 +264,57 @@ class EloquentRoleRepository implements RoleRepository
     }
 
     /**
-     * Edit Role Users
+     * | Edit Role Users
      * ---------------------------------------------------
-     * @param App\Http\Requests\UserRoleRequest
-     * @param App\Http\Requests\UserRoleRequest $request
-     * @return response
-     * @param App\Http\Requests\Roles\RoleUserLogRequest $request
-     * @var #role > Contains All The Roles with Permissions
-     * @var $exist_role > Contains All the Role Users which have user_id Regarding the User
-     * @return Response
+     * | @param App\Http\Requests\UserRoleRequest
+     * | @param App\Http\Requests\UserRoleRequest $request
+     * | @return response
+     * | @param App\Http\Requests\Roles\RoleUserLogRequest $request
+     * ----------------------------------------------------
+     * | If permission status is true Then Add The Data
+     * | If Permission Status Is False then Delete The Data
+     * ---------------------------------------------------
+     * | @var checkExisting finds the id where the Data is already Existing
      */
     public function editRoleUser(UserRoleRequest $request)
     {
         try {
-            DB::beginTransaction();
-            $role = $request['roles'];
-            $exist_role = RoleUser::where('user_id', $request->userID)->get();
-            // Deleting All Existing Roles
-            foreach ($exist_role as $exist_roles) {
-                $exist_roles->delete();
+            if ($request->permission == 1) {
+                // Add the Data
+                $roleUser = new RoleUser();
+                $roleUser->user_id = $request->userID;
+                $roleUser->role_id = $request->roleID;
+                $roleUser->can_modify = $request->canModify;
+                $roleUser->save();
+                return responseMsg(true, "Successfully Enabled The Role", "");
             }
-            // Fresh Insert Roles
-            $this->savingRoleUser($role, $request);                 // Trait for Updating Role User
-            DB::commit();
-            return Role::success();
+            if ($request->permission == 0) {
+                // Delete The Data
+                $checkExisting = RoleUser::where('user_id', $request->userID)
+                    ->where('role_id', $request->roleID)
+                    ->first();
+                if ($checkExisting) {
+                    $checkExisting->delete();
+                }
+                return responseMsg(false, "Successfully Disabled The Role", "");
+            }
         } catch (Exception $e) {
-            DB::rollBack();
             return response()->json($e, 400);
         }
     }
 
     /**
-     * Getting Role User By ID
-     * @param $id
-     * @return response
-     * @return App\Traits\Trait\Role
+     * | Getting Role User By ID
+     * | @param $id
+     * | @return response
+     * | @return App\Traits\Trait\Role
+     * | $query > Query stmt for getting All Roles by user permission
+     * | $collection > all the resultant query Data
+     * 
      */
     public function getRoleUser($id)
     {
+        // Query Stmt
         $query = "SELECT 
                     rm.id,
                     rm.role_name,
@@ -327,11 +340,13 @@ class EloquentRoleRepository implements RoleRepository
      * | Getting all Role Users 
      * | Fetching Data using Trait
      * | @return responseMsg utility_helper@responseMsg
+     * | #t_role_user_query > query stmt for getting all Users Roles using Trait
+     * | #role_users > Fetching All the Data using Query
      */
     public function getAllRoleUsers()
     {
-        $tRoleUserQuery = $this->fetchRoleUsers() . " GROUP BY ru.user_id,u.user_name";
-        $role_users = DB::select($tRoleUserQuery);
+        $t_role_user_query = $this->fetchRoleUsers() . " GROUP BY ru.user_id,u.user_name";
+        $role_users = DB::select($t_role_user_query);
         return responseMsg(true, "Data Fetched", $role_users);
     }
 
