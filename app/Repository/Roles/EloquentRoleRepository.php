@@ -133,6 +133,20 @@ class EloquentRoleRepository implements RoleRepository
     }
 
     /**
+     * | Get All Roles by Ulb ID
+     * | @var userUlb > get the UlbID for the current logged in user
+     * | @var roles > Get all the roles list
+     */
+    public function getRoleListByUlb()
+    {
+        $userUlb = auth()->user()->ulb_id;
+        $roles = RoleMaster::where('ulb_id', $userUlb)
+            ->orderBy('id', 'desc')
+            ->get();
+        return responseMsg(true, "Data Fetched", remove_null($roles));
+    }
+
+    /**
      * --------------------------------------------------------------------------------------
      * --------------------------------------------
      * storing Role Menus
@@ -360,6 +374,20 @@ class EloquentRoleRepository implements RoleRepository
         $t_role_user_query = $this->fetchRoleUsers() . " GROUP BY ru.user_id,u.user_name";
         $role_users = DB::select($t_role_user_query);
         return responseMsg(true, "Data Fetched", $role_users);
+    }
+
+    /**
+     * | Get users By Role
+     * | @param id roleID
+     * | @var users Get All the users of role_id
+     */
+    public function getUserByRoleID($id)
+    {
+        $users = RoleUser::where('role_id', $id)
+            ->select('users.id as user_id', 'users.user_name as name', 'users.email', 'users.mobile')
+            ->join('users', 'users.id', '=', 'role_users.user_id')
+            ->get();
+        return responseMsg(true, "Data Fetched", remove_null($users));
     }
 
     /**

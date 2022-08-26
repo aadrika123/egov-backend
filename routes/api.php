@@ -115,33 +115,35 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(RoleController::class)->group(function () {
         // Route are authorized for super admin only using Middleware 
-        Route::group(['middleware' => ['can:isSuperAdmin']], function () {
-            Route::post('save-role', 'storeRole');                // Save Role
-            Route::put('edit-role/{id}', 'editRole');             // edit Role 
-            Route::get('get-role/{id}', 'getRole');               // Get Role By Id
-            Route::get('get-all-roles', 'getAllRoles');           // Get All Roles
-            Route::delete('delete-role/{id}', 'deleteRole');      // Delete Role
+        // Route::group(['middleware' => ['can:isSuperAdmin']], function () {
+        Route::post('save-role', 'storeRole');                      // Save Role
+        Route::put('edit-role/{id}', 'editRole');                   // edit Role 
+        Route::get('get-role/{id}', 'getRole');                     // Get Role By Id
+        Route::get('get-all-roles', 'getAllRoles');                 // Get All Roles
+        Route::delete('delete-role/{id}', 'deleteRole');            // Delete Role
+        Route::get('master/roles/ulb-roles', 'getRoleListByUlb');   // Get All Roles by UlbID
 
-            Route::post('role-menu', 'roleMenu');
-            Route::put('edit-role-menu/{id}', 'editRoleMenu');
-            Route::get('get-role-menu/{id}', 'getRoleMenu');
-            Route::get('get-all-role-menus', 'getAllRoleMenus');
+        Route::post('role-menu', 'roleMenu');
+        Route::put('edit-role-menu/{id}', 'editRoleMenu');
+        Route::get('get-role-menu/{id}', 'getRoleMenu');
+        Route::get('get-all-role-menus', 'getAllRoleMenus');
 
-            Route::post('role-user', 'roleUser');                   // Save user roles
-            Route::put('edit-role-user', 'editRoleUser');           // edit user roles 
-            Route::get('get-role-user/{id}', 'getRoleUser');        // get role user by id   
-            Route::get('get-all-role-users', 'getAllRoleUsers');    // get all role users
+        Route::post('role-user', 'roleUser');                                   // Save user roles
+        Route::put('edit-role-user', 'editRoleUser');                           // edit user roles 
+        Route::get('get-role-user/{id}', 'getRoleUser');                        // get role user by id   
+        Route::get('get-all-role-users', 'getAllRoleUsers');                    // get all role users
+        Route::get('master/users/user-by-role-id/{id}', 'getUserByRoleID');     // Get Users List By Role ID
 
-            Route::post('role-menu-logs', 'roleMenuLogs');
-            Route::put('edit-role-menu-logs/{id}', 'editRoleMenuLogs');
-            Route::get('get-role-menu-logs/{id}', 'getRoleMenuLogs');
-            Route::get('get-all-role-menu-logs', 'getAllRoleMenuLogs');
+        Route::post('role-menu-logs', 'roleMenuLogs');
+        Route::put('edit-role-menu-logs/{id}', 'editRoleMenuLogs');
+        Route::get('get-role-menu-logs/{id}', 'getRoleMenuLogs');
+        Route::get('get-all-role-menu-logs', 'getAllRoleMenuLogs');
 
-            Route::post('role-user-logs', 'roleUserLogs');
-            Route::put('edit-role-user-logs/{id}', 'editRoleUserLogs');
-            Route::get('get-role-user-logs/{id}', 'getRoleUserLogs');
-            Route::get('get-all-role-user-logs', 'getAllRoleUserLogs');
-        });
+        Route::post('role-user-logs', 'roleUserLogs');
+        Route::put('edit-role-user-logs/{id}', 'editRoleUserLogs');
+        Route::get('get-role-user-logs/{id}', 'getRoleUserLogs');
+        Route::get('get-all-role-user-logs', 'getAllRoleUserLogs');
+        // });
     });
 
     /**
@@ -231,8 +233,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('saf-post-level/{id?}', 'postNextLevel');
     });
     //Property Objection
-    Route::controller(ObjectionController::class)->group(function (){        
-        Route::match(["get", "post"], 'property-objection/{id}', 'propertyObjection');// Objection Workflow Apply By id
+    Route::controller(ObjectionController::class)->group(function () {
+        Route::match(["get", "post"], 'property-objection/{id}', 'propertyObjection'); // Objection Workflow Apply By id
         Route::get('property/objection/inbox/{key?}', 'propObjectionInbox');          // Objection Workflow Inbox  By key
         Route::get('property/objection/outbox/{key?}', 'propObjectionOutbox');        // Objection Workflow Outbox  By key
         Route::get('property/objection/escalate-inbox/{key?}', 'specialObjectionInbox');        // Objection Workflow special Inbox  By key

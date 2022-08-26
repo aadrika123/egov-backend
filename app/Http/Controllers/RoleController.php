@@ -58,6 +58,12 @@ class RoleController extends Controller
         return $this->EloquentRole->deleteRole($id);
     }
 
+    // Get Role List by Ulb ID
+    public function getRoleListByUlb()
+    {
+        return $this->EloquentRole->getRoleListByUlb();
+    }
+
     /*************************************************************************************************** */
 
     // Storing Role Menu
@@ -107,6 +113,12 @@ class RoleController extends Controller
     public function getAllRoleUsers()
     {
         return $this->EloquentRole->getAllRoleUsers();
+    }
+
+    // Get Users LIst by ROle ID
+    public function getUserByRoleID($id)
+    {
+        return $this->EloquentRole->getUserByRoleID($id);
     }
 
     /***************************************************************************************************** */
