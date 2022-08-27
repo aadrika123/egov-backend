@@ -79,16 +79,9 @@ class EloquentSafRepository implements SafRepository
                 $message["message"]='Workflow Not Available';
                 return response()->json($message,200);
             }
-            // $rules=[
-            //     "assessmentType"=>"required|in:New Assessment,Reassessment,Mutation",
-            // ];
-            $message = [
-                "assessmentType.required"=>"assessmentType",
-                "assessmentType.in"=>"assessment_type In [New Assessment,Reassessment,Mutation]",
-            ];
-            if(!in_array($request->assessmentType,["New Assessment","Reassessment","Mutation"]))
+            if(!in_array($request->assessmentType,["NewAssessment","Reassessment","Mutation"]))
             {
-                return responseMsg(false,"INvalid Assessment Type",$request->all());  
+                return responseMsg(false,"Invalid Assessment Type",$request->all());  
             }
             $rules=[];
             if(in_array($request->assessmentType,["Reassessment","Mutation"]))
@@ -150,65 +143,129 @@ class EloquentSafRepository implements SafRepository
             }
             elseif($request->getMethod()=="POST")
             {
-                $rules["ward"]          ="required|int";
-                $message["ward.required"]="Ward No. Required";
-                $message["ward.int"]="Ward ID Must Be Int Type";
+                // $rules["ward"]="required|int";
+                // $message["ward.required"]="Ward No. Required";
+                // $message["ward.int"]="Ward ID Must Be Int Type";
 
-                $rules["ownershipType"] ="required|int";
-                $message["ownershipType.required"]="Ownership Type Is Required";
-                $message["ownershipType.int"]="Ownership Type ID Must Be Int Type";
+                // $rules["ownershipType"] ="required|int";
+                // $message["ownershipType.required"]="Ownership Type Is Required";
+                // $message["ownershipType.int"]="Ownership Type ID Must Be Int Type";
 
-                $rules["propertyType"]  ="required|int";
-                $message["propertyType.required"]="Property Type Is Required";
-                $message["propertyType.int"]="Property Type ID Must Be Int Type";
+                // $rules["propertyType"]  ="required|int";
+                // $message["propertyType.required"]="Property Type Is Required";
+                // $message["propertyType.int"]="Property Type ID Must Be Int Type";
 
-                $rules["roadType"]      ="required|numeric";
-                $message["roadType.required"]="Road Type Is Required";
-                $message["propertyType.numeric"]="Road Type Must Be Numeric Type";
+                // $rules["roadType"]      ="required|numeric";
+                // $message["roadType.required"]="Road Type Is Required";
+                // $message["propertyType.numeric"]="Road Type Must Be Numeric Type";
 
-                $rules["areaOfPlot"]    ="required|numeric";
-                $message["areaOfPlot.required"]="AreaOfPlot Is Required";
-                $message["propertyType.numeric"]="AreaOfPlot Must Be Numeric Type";
+                // $rules["areaOfPlot"]    ="required|numeric";
+                // $message["areaOfPlot.required"]="AreaOfPlot Is Required";
+                // $message["propertyType.numeric"]="AreaOfPlot Must Be Numeric Type";
 
-                $rules["isMobileTower"] ="required|bool";
-                $message["isMobileTower.required"]="isMobileTower Is Required";
-                $message["isMobileTower.bool"]="isMobileTower Must Be Boolean Type";
+                // $rules["isMobileTower"] ="required|bool";
+                // $message["isMobileTower.required"]="isMobileTower Is Required";
+                // $message["isMobileTower.bool"]="isMobileTower Must Be Boolean Type";
 
-                $rules["isHoardingBoard"]="required|bool";
-                $message["isHoardingBoard.required"]="isHoardingBoard Is Required";
-                $message["isHoardingBoard.bool"]="isHoardingBoard Must Be Boolean Type";
+                // $rules["isHoardingBoard"]="required|bool";
+                // $message["isHoardingBoard.required"]="isHoardingBoard Is Required";
+                // $message["isHoardingBoard.bool"]="isHoardingBoard Must Be Boolean Type";
 
-                $rules["owner"]         ="required|array";
-                $message["owner.required"]= "Owner Required";
-                $message["owner.array"]= "Owner Full Detail Is Require";
-                if($isCitizen)
-                {
-                   
-                }
+                // $rules["owner"]         ="required|array";
+                // $message["owner.required"]= "Owner Required";
+                // $message["owner.array"]= "Owner Full Detail Is Require";
+                
 
-                if(in_array($request->assessmentType,["Reassessment","Mutation"]))
-                {
-                    $rules["oldHoldingId"]="required";
-                    $message["oldHoldingId.required"]="Old Property Id Requird";                
-                }
-                if(in_array($request->assessmentType,["Mutation"]))
-                {
-                    $rules["transferMode"]="required";
-                    $message["transferMode.required"]="Transfer Mode Required";                
-                }
-                if(!in_array($request->propertyType,[1]))
-                {
-                    $rules["floor"]="required";
-                    $message["floor.required"]="Floor Is Required";
+                // if(in_array($request->assessmentType,["Reassessment","Mutation"]))
+                // {
+                //     $rules["oldHoldingId"]="required";
+                //     $message["oldHoldingId.required"]="Old Property Id Requird";                
+                // }
+                // if(in_array($request->assessmentType,["Mutation"]))
+                // {
+                //     $rules["transferMode"]="required";
+                //     $message["transferMode.required"]="Transfer Mode Required";                
+                // }
+                // if(!in_array($request->propertyType,[4]))
+                // {
+                //     $rules["floor"]="required";
+                //     $message["floor.required"]="Floor Is Required";
 
-                    $rules["isPetrolPump"]="required";
-                    $rules["isWaterHarvesting"]="required";                
-                }
+                //     if($request->propertyType==1)
+                //     {
+                //         $rules["isPetrolPump"]="required|bool";
+                //         $message["isPetrolPump.required"]="isPetrolPump Is Required";
+                //         $message["isPetrolPump.bool"]="isPetrolPump Is Boolian Type";
+                //     }
+
+                //     $rules["isWaterHarvesting"]="required|bool";   
+                //     $message["isWaterHarvesting.required"]="isWaterHarvesting Is Required";   
+                //     $message["isWaterHarvesting.bool"]="isWaterHarvesting Is Boolian Type";          
+                // }
+                // if($request->isPetrolPump)
+                // {
+                //     $rules["undergroundArea"]="required|numeric";
+                //     $message["undergroundArea.required"]="Underground Area Is Required";
+
+                //     $rules["petrolPumpCompletionDate"]="required|date";
+                //     $message["petrolPumpCompletionDate.required"]="Petrol Pump Completion Date Is Required";
+                // }
+                // if($request->isHoardingBoard)
+                // {
+                //     $rules["hoardingArea"]="required|numeric";
+                //     $message["hoardingArea.required"]="Hoarding Area Is Required";
+
+                //     $rules["hoardingInstallationDate"]="required|date";
+                //     $message["hoardingInstallationDate.required"]="Hoarding Installation Date Is Required";
+                // }
+                // if($request->isMobileTower)
+                // {
+                //     $rules["towerArea"]="required|numeric";
+                //     $message["towerArea.required"]="Tower Area Is Required";
+
+                //     $rules["towerInstallationDate"]="required|date";
+                //     $message["towerInstallationDate.required"]="Tower Installation Date Is Required";
+                // }
+                // if($request->floor)
+                // { 
+                //     $rules["floor.*.floorNo"] = "required|int";
+                //     $rules["floor.*.useType"] = "required|int";
+                //     $rules["floor.*.constructionType"]="required|int";
+                //     $rules["floor.*.occupancyType"]="required|int";
+                //     $rules["floor.*.buildupArea"]="required|int";
+                //     $rules["floor.*.dateFrom"]="required|date";
+                //     $rules["floor.*.dateUpto"]="required|date";
+                // }
+                // if($request->owner)
+                // { 
+                //     $rules["owner.*.floorNo"]="required|int";
+                //     $rules["owner.*.useType"]="required|int";
+                //     $rules["owner.*.constructionType"]="required|int";
+                //     $rules["owner.*.occupancyType"]="required|int";
+                //     $rules["owner.*.buildupArea"]="required|int";
+                //     $rules["owner.*.dateFrom"]="required|date";
+                //     $rules["owner.*.dateUpto"]="required|date";
+                // }
+
+
+
+                // $floor->floor_mstr_id = $floor_details['floorNo'];
+                // $floor->usage_type_mstr_id = $floor_details['useType'];
+                // $floor->const_type_mstr_id = $floor_details['constructionType'];
+                // $floor->occupancy_type_mstr_id = $floor_details['occupancyType'];
+                // $floor->builtup_area = $floor_details['buildupArea'];
+                // $floor->date_from = $floor_details['dateFrom'];
+                // $floor->date_upto = $floor_details['dateUpto'];
+                // $floor->prop_floor_details_id = $floor_details['propFloorDetail'];
+
                 $validator = Validator::make($request->all(),$rules,$message);  
                 if($validator->fails())
                 {  
                     return responseMsg(false,$request->all(),$validator->errors());
                 }
+
+                $request->assessmentType = $request->assessmentType=="NewAssessment"?"New Assessment":$request->assessmentType;
+                
                 DB::beginTransaction();
                 $safNo = $this->safNo($request->ward,2,$user_id);
                 $saf = new ActiveSafDetail;
