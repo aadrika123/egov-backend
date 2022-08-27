@@ -143,7 +143,7 @@ class EloquentSafRepository implements SafRepository
             }
             elseif($request->getMethod()=="POST")
             {
-                // $rules["ward"]="required|int";
+                $rules["ward"]="required|int";
                 // $message["ward.required"]="Ward No. Required";
                 // $message["ward.int"]="Ward ID Must Be Int Type";
 
@@ -247,17 +247,6 @@ class EloquentSafRepository implements SafRepository
                 //     $rules["owner.*.dateUpto"]="required|date";
                 // }
 
-
-
-                // $floor->floor_mstr_id = $floor_details['floorNo'];
-                // $floor->usage_type_mstr_id = $floor_details['useType'];
-                // $floor->const_type_mstr_id = $floor_details['constructionType'];
-                // $floor->occupancy_type_mstr_id = $floor_details['occupancyType'];
-                // $floor->builtup_area = $floor_details['buildupArea'];
-                // $floor->date_from = $floor_details['dateFrom'];
-                // $floor->date_upto = $floor_details['dateUpto'];
-                // $floor->prop_floor_details_id = $floor_details['propFloorDetail'];
-
                 $validator = Validator::make($request->all(),$rules,$message);  
                 if($validator->fails())
                 {  
@@ -355,20 +344,20 @@ class EloquentSafRepository implements SafRepository
                     foreach ($owner_detail as $owner_details) {
                         $owner = new ActiveSafOwnerDetail;
                         $owner->saf_dtl_id = $saf->id;
-                        $owner->owner_name = $owner_details['ownerName'];
-                        $owner->guardian_name = $owner_details['guardianName'];
-                        $owner->relation_type = $owner_details['relation'];
-                        $owner->mobile_no = $owner_details['mobileNo'];
-                        $owner->email = $owner_details['email'];
-                        $owner->pan_no = $owner_details['pan'];
-                        $owner->aadhar_no = $owner_details['aadhar'];
-                        $owner->emp_details_id = $owner_details['empDetail'];
-                        $owner->rmc_saf_owner_dtl_id = $owner_details['rmcSafOwnerDtl'];
-                        $owner->rmc_saf_dtl_id = $owner_details['rmcSafDetail'];
-                        $owner->gender = $owner_details['gender'];
-                        $owner->dob = $owner_details['dob'];
-                        $owner->is_armed_force = $owner_details['isArmedForce'];
-                        $owner->is_specially_abled = $owner_details['isSpeciallyAbled'];
+                        $owner->owner_name = $owner_details['ownerName']??null;
+                        $owner->guardian_name = $owner_details['guardianName']??null;
+                        $owner->relation_type = $owner_details['relation']??null;
+                        $owner->mobile_no = $owner_details['mobileNo']??null;
+                        $owner->email = $owner_details['email']??null;
+                        $owner->pan_no = $owner_details['pan']??null;
+                        $owner->aadhar_no = $owner_details['aadhar']??null;
+                        $owner->emp_details_id = $owner_details['empDetail']??null;
+                        $owner->rmc_saf_owner_dtl_id = $owner_details['rmcSafOwnerDtl']??null;
+                        $owner->rmc_saf_dtl_id = $owner_details['rmcSafDetail']??null;
+                        $owner->gender = $owner_details['gender']??null;
+                        $owner->dob = $owner_details['dob']??null;
+                        $owner->is_armed_force = $owner_details['isArmedForce']??null;
+                        $owner->is_specially_abled = $owner_details['isSpeciallyAbled']??null;
                         $owner->save();
                     }
                 }
@@ -379,14 +368,14 @@ class EloquentSafRepository implements SafRepository
                     foreach ($floor_detail as $floor_details) {
                         $floor = new ActiveSafFloorDetail();
                         $floor->saf_dtl_id = $saf->id;
-                        $floor->floor_mstr_id = $floor_details['floorNo'];
-                        $floor->usage_type_mstr_id = $floor_details['useType'];
-                        $floor->const_type_mstr_id = $floor_details['constructionType'];
-                        $floor->occupancy_type_mstr_id = $floor_details['occupancyType'];
-                        $floor->builtup_area = $floor_details['buildupArea'];
-                        $floor->date_from = $floor_details['dateFrom'];
-                        $floor->date_upto = $floor_details['dateUpto'];
-                        $floor->prop_floor_details_id = $floor_details['propFloorDetail'];
+                        $floor->floor_mstr_id = $floor_details['floorNo']??null;
+                        $floor->usage_type_mstr_id = $floor_details['useType']??null;
+                        $floor->const_type_mstr_id = $floor_details['constructionType']??null;
+                        $floor->occupancy_type_mstr_id = $floor_details['occupancyType']??null;
+                        $floor->builtup_area = $floor_details['buildupArea']??null;
+                        $floor->date_from = $floor_details['dateFrom']??null;
+                        $floor->date_upto = $floor_details['dateUpto']??null;
+                        $floor->prop_floor_details_id = $floor_details['propFloorDetail']??null;
                         $floor->save();
                     }
                 }
