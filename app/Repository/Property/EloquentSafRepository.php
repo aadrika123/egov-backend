@@ -393,12 +393,12 @@ class EloquentSafRepository implements SafRepository
     {
         try{
             $rules=[
-                "ward_id"=>"required",
-                "holding_no"=>"required",
+                "wardId"=>"required",
+                "holdingNo"=>"required",
             ];
             $message = [
-                "ward_id.required"=>"Ward id required",
-                "holding_no.required"=>"Holding No required",
+                "wardId.required"=>"Ward id required",
+                "holdingNo.required"=>"Holding No required",
             ];         
             $validator = Validator::make($request->all(),$rules,$message);  
             if($validator->fails())
