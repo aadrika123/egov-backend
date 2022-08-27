@@ -126,13 +126,13 @@ trait Auth
         $redis->expire('WardPermission:' . $user_id, 18000);
     }
 
-    public function WorkFlowRolesSet($redis, $user_id, array $workflow_rolse)
+    public function WorkFlowRolesSet($redis, $user_id, array $workflow_rolse,$work_flow_id)
     {
         $redis->set(
-            'WorkFlowRoles:' . $user_id,
+            'WorkFlowRoles:' . $user_id.":".$work_flow_id,
             json_encode($workflow_rolse)
         );
-        $redis->expire('WorkFlowRoles:' . $user_id, 18000);
+        $redis->expire('WorkFlowRoles:' . $user_id.":".$work_flow_id, 18000);
     }
 
     /**

@@ -77,7 +77,7 @@ trait WardPermission
    public function getWorkFlowRoles( $user_id,int $ulb_id, int $work_flow_id)
    {
         $redis =Redis::connection();
-        $workflow_rolse = json_decode(Redis::get('WorkFlowRoles:' . $user_id),true)??null;
+        $workflow_rolse = json_decode(Redis::get('WorkFlowRoles:' . $user_id.":".$work_flow_id),true)??null;
         if(!$workflow_rolse)
         {
             $workflow_rolse = WorkflowRole::select(
@@ -103,7 +103,7 @@ trait WardPermission
                         })
                         ->get();
             $workflow_rolse = adjToArray($workflow_rolse);
-            $this->WorkFlowRolesSet($redis,$user_id, $workflow_rolse);
+            $this->WorkFlowRolesSet($redis,$user_id, $workflow_rolse,$work_flow_id);
         }
         return $workflow_rolse;
    }

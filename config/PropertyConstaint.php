@@ -222,43 +222,11 @@ return [
         "2"=>"Pucca with Asbestos/Corrugated Sheet (ACC)",
         "3"=>"Kuttcha with Clay Roof (Other)",
     ],
-    #role_master ulb 2 (RMC)
-    "ROLES"=>[
-        # FOR SAF WORKFLOW_ID(6)
-        "2_6" =>[
-            "0" => ['id'=>6,"role_name"=>"Back Office"],
-            "1" => ["id"=>1,"role_name"=>"Dealing Assistent"],
-            "2" => ["id"=>2,"role_name"=>"Agency Tax Collecter"],
-            "3" => ["id"=>3,"role_name"=>"Ulb Tax Collecter"],
-            "4" => ["id"=>4,"role_name"=>"Section Incharge"],
-            "5" => ["id"=>5,"role_name"=>"Exicutive Officer"]
-        ],
-        "INDEX2_6"=>[
-            "6"=>"0",
-            "1" =>"1",
-            "2" =>"2",
-            "3" =>"3",
-            "4" =>"4",
-            "5" =>"5"
-        ],
-        # FOR SAF Objection(7)
-        "2_7"=>[
-            "0" => ['id'=>6,"role_name"=>"Back Office"],
-            "1" => ["id"=>8,"role_name"=>"IT Head"],
-            "2" => ["id"=>1,"role_name"=>"Dealing Assistent"],
-            "3" => ["id"=>2,"role_name"=>"Agency Tax Collecter"],
-            "4" => ["id"=>3,"role_name"=>"Ulb Tax Collecter"],
-            "5" => ["id"=>4,"role_name"=>"Section Incharge"],
-            "6" => ["id"=>5,"role_name"=>"Exicutive Officer"]
-        ],
-        "INDEX2_7"=>[
-            "6" =>"0",
-            "8" =>"1",
-            "1" =>"2",
-            "2" =>"3",
-            "3" =>"4",
-            "4" =>"5",
-            "5" =>"6"
-        ],
+    "ASSESSMENT-TYPE"=>
+    [
+        "NewAssessment"=>"1",
+        "New Assessment"=>"1",
+        "Reassessment"=>"2",
+        "Mutation"=>"3"
     ]
 ];

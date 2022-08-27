@@ -86,8 +86,10 @@ class EloquentSafRepository implements SafRepository
             $rules=[];
             if(in_array($request->assessmentType,["Reassessment","Mutation"]))
             {
-                $rules["oldHoldingId"]="required";
-                $message["oldHoldingId.required"]="Old Property Id Requird";                
+                $rules["previousHoldingId"]="required";
+                $message["previousHoldingId.required"]="Old Property Id Requird";   
+                $rules["holdingNo"] ="required";   
+                $message["holdingNo.required"]="holding No. Is Requird";         
             }        
             $validator = Validator::make($request->all(),$rules,$message);  
             if($validator->fails())
@@ -127,11 +129,11 @@ class EloquentSafRepository implements SafRepository
                 $data['construction_type']=$constructionType;
                 if(in_array($request->assessmentType,["Reassessment","Mutation"]))
                 {
-                    $propertyDtltl = $this->property->getPropertyById($request->oldHoldingId);
+                    $propertyDtltl = $this->property->getPropertyById($request->previousHoldingId);
                     $data['property_dtl']= remove_null($propertyDtltl);
-                    $ownerDtl = $this->property->getOwnerDtlByPropId($request->oldHoldingId);
+                    $ownerDtl = $this->property->getOwnerDtlByPropId($request->previousHoldingId);
                     $data['owner_dtl']= remove_null($ownerDtl);
-                    $foolDtl = $this->property->getFloorDtlByPropId($request->oldHoldingId);
+                    $foolDtl = $this->property->getFloorDtlByPropId($request->previousHoldingId);
                     $data['fool_dtl']= remove_null($foolDtl);
                 }
                 if(in_array($request->assessmentType,["Mutation"]))
@@ -143,7 +145,7 @@ class EloquentSafRepository implements SafRepository
             }
             elseif($request->getMethod()=="POST")
             {
-                $rules["ward"]="required|int";
+                // $rules["ward"]="required|int";
                 // $message["ward.required"]="Ward No. Required";
                 // $message["ward.int"]="Ward ID Must Be Int Type";
 
@@ -173,8 +175,6 @@ class EloquentSafRepository implements SafRepository
 
                 // $rules["owner"]         ="required|array";
                 // $message["owner.required"]= "Owner Required";
-                // $message["owner.array"]= "Owner Full Detail Is Require";
-                
 
                 // if(in_array($request->assessmentType,["Reassessment","Mutation"]))
                 // {
@@ -232,19 +232,22 @@ class EloquentSafRepository implements SafRepository
                 //     $rules["floor.*.useType"] = "required|int";
                 //     $rules["floor.*.constructionType"]="required|int";
                 //     $rules["floor.*.occupancyType"]="required|int";
-                //     $rules["floor.*.buildupArea"]="required|int";
+                //     $rules["floor.*.buildupArea"]="required|numeric";
                 //     $rules["floor.*.dateFrom"]="required|date";
                 //     $rules["floor.*.dateUpto"]="required|date";
                 // }
                 // if($request->owner)
                 // { 
-                //     $rules["owner.*.floorNo"]="required|int";
-                //     $rules["owner.*.useType"]="required|int";
-                //     $rules["owner.*.constructionType"]="required|int";
-                //     $rules["owner.*.occupancyType"]="required|int";
-                //     $rules["owner.*.buildupArea"]="required|int";
-                //     $rules["owner.*.dateFrom"]="required|date";
-                //     $rules["owner.*.dateUpto"]="required|date";
+                //     #"/^([a-zA-Z]+)(\s[a-zA-Z]+)*$/" "[a-zA-Z0-9- ]+$/i"
+                //     $rules["owner.*.ownerName"]="required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
+                //     $rules["owner.*.guardianName"]="regex:/^([a-zA-Z]+)(\s[a-zA-Z]+)*$/";
+                //     $rules["owner.*.relation"]="in:S/O,C/O,W/O,D/O,";
+                //     $rules["owner.*.mobileNo"]="required|digits:10|regex:/[0-9]{10}/";
+                //     $rules["owner.*.email"]="email";
+                //     // $rules["owner.*.pan"]="required";
+                //     $rules["owner.*.aadhar"]="digits:12|regex:/[0-9]{12}/";
+                //     $rules["owner.*.isArmedForce"]="required|bool";
+                //     $rules["owner.*.isSpeciallyAbled"]="required|bool";
                 // }
 
                 $validator = Validator::make($request->all(),$rules,$message);  
@@ -254,9 +257,17 @@ class EloquentSafRepository implements SafRepository
                 }
 
                 $request->assessmentType = $request->assessmentType=="NewAssessment"?"New Assessment":$request->assessmentType;
-                
+                if($request->roadType<=0)
+                    $request->roadType=4;
+                elseif($request->roadType>0 && $request->roadType<20)
+                    $request->roadType=3;
+                elseif($request->roadType>=20 && $request->roadType<=39)
+                    $request->roadType=2;
+                elseif($request->roadType>40)
+                    $request->roadType=1;
                 DB::beginTransaction();
-                $safNo = $this->safNo($request->ward,2,$user_id);
+                $assessmentTypeId=Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$request->assessmentType);
+                $safNo = $this->safNo($request->ward,$assessmentTypeId,$ulb_id);
                 $saf = new ActiveSafDetail;
                 $saf->has_previous_holding_no = $request->hasPreviousHoldingNo;
                 $saf->previous_holding_id = $request->previousHoldingId;
@@ -336,8 +347,9 @@ class EloquentSafRepository implements SafRepository
                 $saf->finisher_id = $workflows->finisher;
                 $saf->workflow_id = $workflow_id;
                 $saf->ulb_id = $ulb_id;
+                
                 $saf->save();
-    
+                
                 // SAF Owner Details
                 if ($request['owner']) {
                     $owner_detail = $request['owner'];
@@ -382,7 +394,7 @@ class EloquentSafRepository implements SafRepository
     
                 DB::commit();
                 $message=["status"=>true,"data"=>[],"message"=>"Successfully Submitted Your Application Your SAF No. $safNo"];
-                return response()->json($message, 200);
+                return responseMsg(true,["safNo"=>$safNo],"Successfully Submitted Your Application Your SAF No. $safNo");
             }
         } catch (Exception $e) {
             DB::rollBack();
@@ -443,7 +455,7 @@ class EloquentSafRepository implements SafRepository
          * #safNo <- "SAF/".str_pad($assessment_type,2,'0',STR_PAD_LEFT)."/".str_pad($word_no,3,'0',STR_PAD_LEFT)."/".str_pad($count,5,'0',STR_PAD_LEFT)
     */
     public function safNo($ward_id,$assessment_type,$ulb_id)
-    {
+    { 
         $count = ActiveSafDetail::where('ward_mstr_id',$ward_id)
                                 ->where('ulb_id',$ulb_id)
                                 ->where('status',1)
