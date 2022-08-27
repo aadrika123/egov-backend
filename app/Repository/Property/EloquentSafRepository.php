@@ -64,7 +64,9 @@ class EloquentSafRepository implements SafRepository
     {
         $message=["status"=>false,"data"=>$request->all(),"message"=>""];
         $user_id = auth()->user()->id;
+        $isCitizen = auth()->user()->user_type=="Citizen"?true:false;
         try {
+            
             // Determining the initiator and finisher id
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             $ulb_id = auth()->user()->ulb_id;
@@ -77,13 +79,18 @@ class EloquentSafRepository implements SafRepository
                 $message["message"]='Workflow Not Available';
                 return response()->json($message,200);
             }
-            $rules=[
-                "assessmentType"=>"required|in:New Assessment,Reassessment,Mutation",
-            ];
+            // $rules=[
+            //     "assessmentType"=>"required|in:New Assessment,Reassessment,Mutation",
+            // ];
             $message = [
                 "assessmentType.required"=>"assessmentType",
                 "assessmentType.in"=>"assessment_type In [New Assessment,Reassessment,Mutation]",
             ];
+            if(!in_array($request->assessmentType,["New Assessment","Reassessment","Mutation"]))
+            {
+                return responseMsg(false,"INvalid Assessment Type",$request->all());  
+            }
+            $rules=[];
             if(in_array($request->assessmentType,["Reassessment","Mutation"]))
             {
                 $rules["oldHoldingId"]="required";
@@ -92,7 +99,7 @@ class EloquentSafRepository implements SafRepository
             $validator = Validator::make($request->all(),$rules,$message);  
             if($validator->fails())
             {  
-                return responseMsg(false,$request->all(),$validator->errors());
+                return responseMsg(false,$validator->errors(),$request->all());
             }
             if($request->getMethod()=="GET")
             {
@@ -143,14 +150,42 @@ class EloquentSafRepository implements SafRepository
             }
             elseif($request->getMethod()=="POST")
             {
-                // $rules["ward"]          ="required|int";
-                // $rules["ownershipType"] ="required|int";
-                // $rules["propertyType"]  ="required|int";
-                // $rules["roadType"]      ="required|numeric";
-                // $rules["areaOfPlot"]    ="required|numeric";
-                // $rules["isMobileTower"] ="required|bool";
-                // $rules["isHoardingBoard"]="required|bool";
-                // $rules["owner"]         ="required";
+                $rules["ward"]          ="required|int";
+                $message["ward.required"]="Ward No. Required";
+                $message["ward.int"]="Ward ID Must Be Int Type";
+
+                $rules["ownershipType"] ="required|int";
+                $message["ownershipType.required"]="Ownership Type Is Required";
+                $message["ownershipType.int"]="Ownership Type ID Must Be Int Type";
+
+                $rules["propertyType"]  ="required|int";
+                $message["propertyType.required"]="Property Type Is Required";
+                $message["propertyType.int"]="Property Type ID Must Be Int Type";
+
+                $rules["roadType"]      ="required|numeric";
+                $message["roadType.required"]="Road Type Is Required";
+                $message["propertyType.numeric"]="Road Type Must Be Numeric Type";
+
+                $rules["areaOfPlot"]    ="required|numeric";
+                $message["areaOfPlot.required"]="AreaOfPlot Is Required";
+                $message["propertyType.numeric"]="AreaOfPlot Must Be Numeric Type";
+
+                $rules["isMobileTower"] ="required|bool";
+                $message["isMobileTower.required"]="isMobileTower Is Required";
+                $message["isMobileTower.bool"]="isMobileTower Must Be Boolean Type";
+
+                $rules["isHoardingBoard"]="required|bool";
+                $message["isHoardingBoard.required"]="isHoardingBoard Is Required";
+                $message["isHoardingBoard.bool"]="isHoardingBoard Must Be Boolean Type";
+
+                $rules["owner"]         ="required|array";
+                $message["owner.required"]= "Owner Required";
+                $message["owner.array"]= "Owner Full Detail Is Require";
+                if($isCitizen)
+                {
+                   
+                }
+
                 if(in_array($request->assessmentType,["Reassessment","Mutation"]))
                 {
                     $rules["oldHoldingId"]="required";
@@ -159,7 +194,7 @@ class EloquentSafRepository implements SafRepository
                 if(in_array($request->assessmentType,["Mutation"]))
                 {
                     $rules["transferMode"]="required";
-                    $message["transferMode.required"]="Transfer Type Required";                
+                    $message["transferMode.required"]="Transfer Mode Required";                
                 }
                 if(!in_array($request->propertyType,[1]))
                 {
