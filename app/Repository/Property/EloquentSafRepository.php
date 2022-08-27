@@ -62,7 +62,6 @@ class EloquentSafRepository implements SafRepository
     }
     public function applySaf(Request $request)
     {
-        // dd($request->all());
         $message=["status"=>false,"data"=>$request->all(),"message"=>""];
         $user_id = auth()->user()->id;
         try {
@@ -79,16 +78,16 @@ class EloquentSafRepository implements SafRepository
                 return response()->json($message,200);
             }
             $rules=[
-                "assessment_type"=>"required|in:New Assessment,Reassessment,Mutation",
+                "assessmentType"=>"required|in:New Assessment,Reassessment,Mutation",
             ];
             $message = [
-                "assessment_type.required"=>"assessment_type",
-                "assessment_type.in"=>"assessment_type In [New Assessment,Reassessment,Mutation]",
+                "assessmentType.required"=>"assessmentType",
+                "assessmentType.in"=>"assessment_type In [New Assessment,Reassessment,Mutation]",
             ];
-            if(in_array($request->assessment_type,["Reassessment","Mutation"]))
+            if(in_array($request->assessmentType,["Reassessment","Mutation"]))
             {
-                $rules["old_holding_id"]="required";
-                $message["old_holding_id.required"]="Old Property Id Requird";                
+                $rules["oldHoldingId"]="required";
+                $message["oldHoldingId.required"]="Old Property Id Requird";                
             }        
             $validator = Validator::make($request->all(),$rules,$message);  
             if($validator->fails())
@@ -126,16 +125,16 @@ class EloquentSafRepository implements SafRepository
                                      ->where('status',1)
                                      ->get();
                 $data['construction_type']=$constructionType;
-                if(in_array($request->assessment_type,["Reassessment","Mutation"]))
+                if(in_array($request->assessmentType,["Reassessment","Mutation"]))
                 {
-                    $propertyDtltl = $this->property->getPropertyById($request->old_holding_id);
+                    $propertyDtltl = $this->property->getPropertyById($request->oldHoldingId);
                     $data['property_dtl']= remove_null($propertyDtltl);
-                    $ownerDtl = $this->property->getOwnerDtlByPropId($request->old_holding_id);
+                    $ownerDtl = $this->property->getOwnerDtlByPropId($request->oldHoldingId);
                     $data['owner_dtl']= remove_null($ownerDtl);
-                    $foolDtl = $this->property->getFloorDtlByPropId($request->old_holding_id);
+                    $foolDtl = $this->property->getFloorDtlByPropId($request->oldHoldingId);
                     $data['fool_dtl']= remove_null($foolDtl);
                 }
-                if(in_array($request->assessment_type,["Mutation"]))
+                if(in_array($request->assessmentType,["Mutation"]))
                 {
                     $mutationMaster = $this->property->getAllTransferMode();
                     $data['mutation_master']= remove_null($mutationMaster);
@@ -144,15 +143,31 @@ class EloquentSafRepository implements SafRepository
             }
             elseif($request->getMethod()=="POST")
             {
-                if(in_array($request->assessment_type,["Reassessment","Mutation"]))
+                // $rules["ward"]          ="required|int";
+                // $rules["ownershipType"] ="required|int";
+                // $rules["propertyType"]  ="required|int";
+                // $rules["roadType"]      ="required|numeric";
+                // $rules["areaOfPlot"]    ="required|numeric";
+                // $rules["isMobileTower"] ="required|bool";
+                // $rules["isHoardingBoard"]="required|bool";
+                // $rules["owner"]         ="required";
+                if(in_array($request->assessmentType,["Reassessment","Mutation"]))
                 {
-                    $rules["old_holding_id"]="required";
-                    $message["old_holding_id.required"]="Old Property Id Requird";                
+                    $rules["oldHoldingId"]="required";
+                    $message["oldHoldingId.required"]="Old Property Id Requird";                
                 }
-                if(in_array($request->assessment_type,["Mutation"]))
+                if(in_array($request->assessmentType,["Mutation"]))
                 {
-                    $rules["transfer_mode"]="required";
-                    $message["transfer_mode.required"]="Transfer Type Required";                
+                    $rules["transferMode"]="required";
+                    $message["transferMode.required"]="Transfer Type Required";                
+                }
+                if(!in_array($request->propertyType,[1]))
+                {
+                    $rules["floor"]="required";
+                    $message["floor.required"]="Floor Is Required";
+
+                    $rules["isPetrolPump"]="required";
+                    $rules["isWaterHarvesting"]="required";                
                 }
                 $validator = Validator::make($request->all(),$rules,$message);  
                 if($validator->fails())
