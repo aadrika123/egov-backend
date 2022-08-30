@@ -3,6 +3,9 @@
 // Helper made by Sandeep Bara
 
 // function for Static Message
+
+use Illuminate\Support\Facades\Crypt;
+
 if (!function_exists("responseMsg")) {
     function responseMsg($status, $message, $data)
     {
@@ -29,20 +32,20 @@ if (!function_exists("adjToArray")) {
 }
 
 if (!function_exists("remove_null")) {
-    function remove_null($data)
-    {
-        $collection = collect($data)->map(function ($name) {
+    function remove_null($data,$encrypt=false,$key="id")
+    {     
+        $collection = collect($data)->map(function ($name,$index) use($encrypt,$key){             
             if (is_object($name)) {
-                $paren_c =  collect($name)->map(function ($v) {
-
-                    if (is_null($v))
-                        return "";
-                    else
-                        return $v;
-                });
-                return ($paren_c);
-            } else {
-                if (is_null($name))
+                
+                return remove_null($name,$encrypt,$key);
+            } 
+            else 
+            { 
+                if($encrypt && (strtolower($key)==strtolower($index)))
+                { 
+                    return Crypt::encrypt($name);
+                }
+                elseif (is_null($name))
                     return "";
                 else
                     return $name;
