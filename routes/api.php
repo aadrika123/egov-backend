@@ -229,8 +229,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('saf/outbox/{key?}', 'outbox');                           // Saf Workflow Outbox and Outbox By search key
         Route::get('saf/details/{id}', 'details');                           // Saf Workflow safDetails and safDetails By ID
         Route::post('saf/escalate/{id?}', 'special');                         // Saf Workflow special and safDetails By id
-        Route::get('saf/escalate-inbox/{key?}', 'specialInbox');              // Saf workflow Inbox and Inbox By search key
-        Route::post('saf/post-level', 'postNextLevel');
+        Route::get('saf/escalate/inbox/{key?}', 'specialInbox');              // Saf workflow Inbox and Inbox By search key
+        Route::post('saf/post/level', 'postNextLevel');
         Route::post('property/getProperty', 'getPropIdByWardNoHodingNo');      // get Property (search) by ward no and holding no
     });
     //Property Objection
@@ -238,7 +238,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::match(["get", "post"], 'property-objection/{id}', 'propertyObjection'); // Objection Workflow Apply By id
         Route::get('property/objection/inbox/{key?}', 'propObjectionInbox');          // Objection Workflow Inbox  By key
         Route::get('property/objection/outbox/{key?}', 'propObjectionOutbox');        // Objection Workflow Outbox  By key
-        Route::get('property/objection/escalate-inbox/{key?}', 'specialObjectionInbox');        // Objection Workflow special Inbox  By key
+        Route::get('property/objection/escalate/inbox/{key?}', 'specialObjectionInbox');        // Objection Workflow special Inbox  By key
     });
 
     /**
