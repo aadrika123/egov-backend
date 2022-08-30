@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Ward;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Repository\Ward\EloquentWardUserRepository;
 use App\Http\Requests\Ward\WardUserRequest;
 
@@ -21,27 +22,58 @@ class WardUserController extends Controller
         $this->Repository = $eloquent_ward;
     }
 
-    // Store New Ward Users
-    public function storeWardUser(WardUserRequest $request)
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        return $this->Repository->getAllWardUsers();
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(WardUserRequest $request)
     {
         return $this->Repository->storeWardUser($request);
     }
 
-    // Update Existing Ward Users
-    public function updateWardUser(WardUserRequest $request)
-    {
-        return $this->Repository->updateWardUser($request);
-    }
-
-    // Get Ward Users by ID
-    public function getWardUserByID($id)
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
     {
         return $this->Repository->getWardUserByID($id);
     }
 
-    // Get All Ward Users
-    public function getAllWardUsers()
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(WardUserRequest $request, $id)
     {
-        return $this->Repository->getAllWardUsers();
+        return $this->Repository->updateWardUser($request);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        //
     }
 }

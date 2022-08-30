@@ -25,7 +25,8 @@ class WardUserRequest extends FormRequest
     {
         return [
             'userID' => 'required|integer',
-            'ulbWardID' => 'required'
+            'ulbWardID' => 'required|integer',
+            'status' => 'required|integer'
         ];
     }
 }
