@@ -29,7 +29,6 @@ class WardUserController extends Controller
      */
     public function index()
     {
-        return $this->Repository->getAllWardUsers();
     }
 
     /**
@@ -63,7 +62,6 @@ class WardUserController extends Controller
      */
     public function update(WardUserRequest $request, $id)
     {
-        return $this->Repository->updateWardUser($request);
     }
 
     /**

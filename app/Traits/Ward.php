@@ -37,31 +37,4 @@ trait Ward
     }
 
     // //////////////////////////////////////////////////////////////////////////////
-    // Save Ward Users
-    public function savingWardUser($ward_user, $request, $ulb_wards)
-    {
-        $ward_user->user_id = $request->userID;
-        $ward_user->ulb_ward_id = $ulb_wards;
-        $ward_user->is_admin = $request->isAdmin;
-    }
-
-    // Query for Get Ward Users By WARD User ID
-    public function qWardUser()
-    {
-        $query = "SELECT 
-                    w.id,
-                    w.user_id,
-                    u.user_name,
-                    w.ulb_ward_id,
-                    w.is_admin,
-                    uwm.ulb_id,
-                    um.ulb_name,
-                    uwm.ward_name,
-                    uwm.old_ward_name
-                    FROM ward_users w
-                    INNER JOIN users u ON u.id=w.user_id
-                    INNER JOIN ulb_ward_masters uwm ON uwm.id=w.ulb_ward_id
-                    INNER JOIN ulb_masters um ON um.id=uwm.ulb_id";
-        return $query;
-    }
 }
