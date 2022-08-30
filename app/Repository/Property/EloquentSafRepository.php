@@ -395,7 +395,7 @@ class EloquentSafRepository implements SafRepository
     
                 DB::commit();
                 $message=["status"=>true,"data"=>[],"message"=>"Successfully Submitted Your Application Your SAF No. $safNo"];
-                return responseMsg(true,["safNo"=>$safNo],"Successfully Submitted Your Application Your SAF No. $safNo");
+                return responseMsg(true,"Successfully Submitted Your Application Your SAF No. $safNo",["safNo"=>$safNo]);
             }
         } catch (Exception $e) {
             DB::rollBack();
