@@ -8,6 +8,7 @@ use App\Repository\Ward\WardRepository;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use App\Traits\Ward;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Redis;
 
 /**
@@ -32,7 +33,19 @@ class EloquentWardUserRepository implements WardRepository
      */
     public function storeWardUser(WardUserRequest $request)
     {
-        dd($request->all());
+
+        try {
+            $dUlbWardID = Crypt::decrypt($request->ulbWardID);
+            // if status is false then delete the ward
+            if ($request->status == 0) {
+            }
+            // if status if true then add the ward
+            if ($request->status == 1) {
+            }
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
+
         // try {
         //     $ulb_ward = $request['ulbWardID'];
         //     foreach ($ulb_ward as $ulb_wards) {
@@ -112,7 +125,7 @@ class EloquentWardUserRepository implements WardRepository
 
             WHERE uwm.ulb_id=$ulbID";
         $wardUsers = DB::select($query);
-        return responseMsg(true, "Data Fetched", remove_null($wardUsers));
+        return responseMsg(true, "Data Fetched", remove_null($wardUsers, true, 'ulb_ward_id'));
     }
 
     /**
