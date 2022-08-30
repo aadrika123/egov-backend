@@ -126,4 +126,43 @@ class EloquentProperty implements PropertyRepository
             echo $e->getMessage();
         }
     }
+    public function transFerSafToProperty($saf_id,$current_user)
+    {
+        if(!is_numeric($saf_id))
+        {
+            $saf_id = Crypt::decrypt($saf_id);
+        }
+        $sql = " insert into safs(
+            has_previous_holding_no ,previous_holding_id ,previous_ward_mstr_id, transfer_mode_mstr_id ,saf_no ,holding_no ,
+            ward_mstr_id , ownership_type_mstr_id, prop_type_mstr_id ,appartment_name ,flat_registry_date ,zone_mstr_id,
+            no_electric_connection ,elect_consumer_no ,elect_acc_no ,elect_bind_book_no, elect_cons_category ,
+            building_plan_approval_no , building_plan_approval_date ,water_conn_no , water_conn_date,khata_no,plot_no ,
+            village_mauja_name ,road_type_mstr_id ,area_of_plot ,prop_address,prop_city , prop_dist ,prop_pin_code ,
+            is_corr_add_differ , corr_address ,corr_city ,corr_dist , corr_pin_code , is_mobile_tower,tower_area ,
+            tower_installation_date ,is_hoarding_board ,hoarding_area , hoarding_installation_date , is_petrol_pump ,under_ground_area ,
+            petrol_pump_completion_date,is_water_harvesting,land_occupation_date ,payment_status, doc_verify_status ,
+            doc_verify_date ,doc_verify_emp_details_id,doc_verify_cancel_remarks , field_verify_status , field_verify_date ,
+            field_verify_emp_details_id,emp_details_id ,status , apply_date , saf_pending_status,assessment_type , doc_upload_status ,
+            saf_distributed_dtl_id, prop_dtl_id, prop_state,corr_state ,holding_type, ip_address , property_assessment_id ,
+            new_ward_mstr_id, percentage_of_property_transfer ,apartment_details_id , ".'"current_user"'." ,initiator_id , finisher_id ,
+            workflow_id , ulb_id,is_escalate , citizen_id ,escalate_by,deleted_at ,created_at ,updated_at 
+        )
+        
+        select has_previous_holding_no ,previous_holding_id ,previous_ward_mstr_id, transfer_mode_mstr_id ,saf_no ,holding_no ,
+            ward_mstr_id , ownership_type_mstr_id, prop_type_mstr_id ,appartment_name ,flat_registry_date ,zone_mstr_id,
+            no_electric_connection ,elect_consumer_no ,elect_acc_no ,elect_bind_book_no, elect_cons_category ,
+            building_plan_approval_no , building_plan_approval_date ,water_conn_no , water_conn_date,khata_no,plot_no ,
+            village_mauja_name ,road_type_mstr_id ,area_of_plot ,prop_address,prop_city , prop_dist ,prop_pin_code ,
+            is_corr_add_differ , corr_address ,corr_city ,corr_dist , corr_pin_code , is_mobile_tower,tower_area ,
+            tower_installation_date ,is_hoarding_board ,hoarding_area , hoarding_installation_date , is_petrol_pump ,under_ground_area ,
+            petrol_pump_completion_date,is_water_harvesting,land_occupation_date ,payment_status, doc_verify_status ,
+            doc_verify_date ,doc_verify_emp_details_id,doc_verify_cancel_remarks , field_verify_status , field_verify_date ,
+            field_verify_emp_details_id,emp_details_id ,status , apply_date , saf_pending_status,assessment_type , doc_upload_status ,
+            saf_distributed_dtl_id, prop_dtl_id, prop_state,corr_state ,holding_type, ip_address , property_assessment_id ,
+            new_ward_mstr_id, percentage_of_property_transfer ,apartment_details_id , $current_user ,initiator_id , finisher_id ,
+            workflow_id , ulb_id,is_escalate , citizen_id ,escalate_by,deleted_at ,created_at ,updated_at 
+        from active_saf_details 
+        where id =  $saf_id ";
+        DB::query($sql);
+    }
 }

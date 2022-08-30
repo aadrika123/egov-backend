@@ -33,6 +33,7 @@ use App\Traits\Property\WardPermission;
 
 use Exception;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
@@ -363,7 +364,7 @@ class EloquentSafRepository implements SafRepository
                         $owner->email = $owner_details['email']??null;
                         $owner->pan_no = $owner_details['pan']??null;
                         $owner->aadhar_no = $owner_details['aadhar']??null;
-                        $owner->emp_details_id = $owner_details['empDetail']??null;
+                        $owner->emp_details_id =  $user_id ??null;
                         $owner->rmc_saf_owner_dtl_id = $owner_details['rmcSafOwnerDtl']??null;
                         $owner->rmc_saf_dtl_id = $owner_details['rmcSafDetail']??null;
                         $owner->gender = $owner_details['gender']??null;
@@ -615,16 +616,24 @@ class EloquentSafRepository implements SafRepository
                            DB::raw("owner_name,
                                guardian_name ,
                                mobile_no,
-                               'SAF' as assessment_type,
-                                'VacentLand' as property_type,
+                               assessment_type as assessment_type,
+                               property_type as property_type,
                                 ulb_ward_masters.ward_name as ward_no,
-                                active_saf_details.created_at::date as apply_date") ,
-                           "active_saf_details.id",
-                           "active_saf_details.saf_no",
-                           "active_saf_details.id") 
+                                active_saf_details.created_at::date as apply_date,
+                                active_saf_details.id") ,
+                           
+                           "active_saf_details.saf_no") 
                            ->join('ulb_ward_masters', function($join){
                                 $join->on("ulb_ward_masters.id","=","active_saf_details.ward_mstr_id");
                             }) 
+                            ->join('prop_param_property_types', function($join){
+                                $join->on("prop_param_property_types.id","=","active_saf_details.prop_type_mstr_id")
+                                ->where("prop_param_property_types.status",1);
+                            })
+                            ->join('prop_param_ownership_types', function($join){
+                                $join->on("prop_param_ownership_types.id","=","active_saf_details.ownership_type_mstr_id")
+                                ->where("prop_param_ownership_types.status",1);
+                            })
                            ->leftJoin(
                                DB::raw("(SELECT active_saf_owner_details.saf_dtl_id,
                                                string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
@@ -659,43 +668,16 @@ class EloquentSafRepository implements SafRepository
                                                    ->orwhere('active_saf_owner_details.mobile_no', 'ILIKE', '%'.$key.'%');
                                                });
                            }
-        $saf=$data->get()
-        ->map(function($data) {
-            if ( ! $data->owner_name) {
-                $data->owner_name = '';
-            }
-            if ( ! $data->guardian_name) {
-                $data->guardian_name = '';
-            } 
-            if ( ! $data->mobile_no) {
-                $data->mobile_no = '';
-            }
-            if ( ! $data->assessment_type) {
-                $data->assessment_type = '';
-            }
-            if ( ! $data->ward_no) {
-            $data->ward_no = '';
-            }
-            if ( ! $data->property_type) {
-            $data->property_type = '';
-            }
-            if ( ! $data->id) {
-                $data->id = '';
-            } 
-            if ( ! $data->saf_no) {
-                $data->saf_no = '';
-            }                                                
-            return $data;
-        });       
-        $data=collect(['ulb_id'=>$ulb_id,
+        $saf=$data->get(); 
+        $data=remove_null(['ulb_id'=>$ulb_id,
             'user_id'=>$user_id,
             'roll_id'=>$roll_id,
             'workflow_id'=>$workflow_id,
             'work_flow_candidate_id'=>$work_flow_candidate['id'],
             'module_id'=>$work_flow_candidate['module_id'],
-            "data_list"=>$saf
-            ]
-        );
+            "data_list"=>$saf,
+            ],true);
+       
         return $data;
    }
 
@@ -716,24 +698,30 @@ class EloquentSafRepository implements SafRepository
    */
    #Saf Details
    public function details($saf_id)
-   {
+   { 
        $user_id = auth()->user()->id;
        $role_id = auth()->user()->roll_id;
        $ulb_id = auth()->user()->ulb_id;
-       $saf_data = ActiveSafDetail::select(DB::raw("'VacantLand' as property_type,
-                                                   'NewSaf' as assessment_type,
-                                                   ward_mstrs.ward_no as ward_no,
-                                                   active_saf_details.id as saf_id
+       $saf_data = ActiveSafDetail::select(DB::raw("prop_param_property_types.property_type as property_type,
+                                                    prop_param_ownership_types.ownership_type,
+                                                    ulb_ward_masters.ward_name as ward_no
                                                    "),
                                            "active_saf_details.*"
                                            )
-                                           ->join('ward_mstrs', function($join){
-                                                $join->on("ward_mstrs.id","=","active_saf_details.ward_mstr_id")
-                                                ->where("ward_mstrs.status",1);
+                                           ->join('ulb_ward_masters', function($join){
+                                                $join->on("ulb_ward_masters.id","=","active_saf_details.ward_mstr_id");
                                             })
-                                           ->where('active_saf_details.id',"=",$saf_id)                                            
+                                            ->join('prop_param_property_types', function($join){
+                                                $join->on("prop_param_property_types.id","=","active_saf_details.prop_type_mstr_id")
+                                                ->where("prop_param_property_types.status",1);
+                                            })
+                                            ->join('prop_param_ownership_types', function($join){
+                                                $join->on("prop_param_ownership_types.id","=","active_saf_details.ownership_type_mstr_id")
+                                                ->where("prop_param_ownership_types.status",1);
+                                            })
+                                           ->where('active_saf_details.id',"=",$saf_id)             
                                            ->first();
-       $data= remove_null($saf_data);
+       $data = remove_null($saf_data,true); 
        $owner_dtl = ActiveSafOwnerDetail::select('*')
                                                ->where('status',1)
                                                ->where('saf_dtl_id',$saf_id)
@@ -961,8 +949,13 @@ class EloquentSafRepository implements SafRepository
         $messages = ["status"=>false,"data"=>$request->all(),"message"=>''];    
         try{
             $user_id = auth()->user()->id;
+            $rol_type_id = auth()->user()->role_id;
             $saf = new ActiveSafDetail;
-            $saf_id = $request->id??$request->safId;
+            $saf_id = $request->safId;
+            if(!is_numeric($saf_id))
+            {
+                $saf_id = Crypt::decrypt($saf_id);
+            }
             $data = $saf->where('current_user',$user_id)->find($saf_id);  
             if(!$data)
             {
@@ -999,8 +992,15 @@ class EloquentSafRepository implements SafRepository
                 return response()->json($messages,200);
             }
             DB::beginTransaction();
-            $data->current_user=$request->receiverId;
-            $data->save();
+            if($data->finisher_id = $rol_type_id && strtoupper($request->btn)=="APPROVE")
+            {
+                $this->property->transFerSafToProperty($saf_id,$rol_type_id);
+            }
+            else
+            {
+                $data->current_user=$request->receiverId;
+                $data->save();
+            }
             $inputs=['workflowCandidateID'=>$work_flow_candidate->id,
                     "citizenID"=>$user_id,
                     "moduleID"=>$work_flow_candidate->module_id,

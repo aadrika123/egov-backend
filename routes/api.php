@@ -230,7 +230,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('saf/details/{id}', 'details');                           // Saf Workflow safDetails and safDetails By ID
         Route::post('saf/escalate/{id?}', 'special');                         // Saf Workflow special and safDetails By id
         Route::get('saf/escalate-inbox/{key?}', 'specialInbox');              // Saf workflow Inbox and Inbox By search key
-        Route::post('saf/post-level/{id?}', 'postNextLevel');
+        Route::post('saf/post-level', 'postNextLevel');
         Route::post('property/getProperty', 'getPropIdByWardNoHodingNo');      // get Property (search) by ward no and holding no
     });
     //Property Objection
