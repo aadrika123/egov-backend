@@ -131,7 +131,7 @@ class EloquentCitizenRepository implements CitizenRepository
                 $user->email = $citizen->email;
                 $user->password = $citizen->password;
                 $user->user_type = 'Citizen';
-                $user->ulb_id = $citizen->ulb;
+                $user->ulb_id = $citizen->ulb_id;
                 $token = Str::random(80);                       //Generating Random Token for Initial
                 $user->remember_token = $token;
                 $user->save();
