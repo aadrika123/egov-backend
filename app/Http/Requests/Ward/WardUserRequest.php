@@ -24,8 +24,9 @@ class WardUserRequest extends FormRequest
     public function rules()
     {
         return [
-            'userID' => 'required|integer',
-            'ulbWardID' => 'required'
+            'userID' => 'required',
+            'ulbWardID' => 'required',
+            'status' => 'required'
         ];
     }
 }

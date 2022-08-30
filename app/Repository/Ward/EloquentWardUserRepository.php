@@ -8,6 +8,7 @@ use App\Repository\Ward\WardRepository;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use App\Traits\Ward;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Redis;
 
 /**
@@ -16,7 +17,6 @@ use Illuminate\Support\Facades\Redis;
  * ------------------------------------------------------------------------------------
  * | Ward User Crud Operations
  */
-
 
 class EloquentWardUserRepository implements WardRepository
 {
@@ -33,23 +33,36 @@ class EloquentWardUserRepository implements WardRepository
      */
     public function storeWardUser(WardUserRequest $request)
     {
+
         try {
-            $ulb_ward = $request['ulbWardID'];
-            foreach ($ulb_ward as $ulb_wards) {
-                $check = WardUser::where('user_id', $request->userID)
-                    ->where('ulb_ward_id', $ulb_wards)
-                    ->first();
-                if ($check) {
-                    return responseMsg(false, "Ward Permission Is Already Existing for User ID !! Please Edit Your Ward Permission for this User", "");
-                }
-                $ward_user = new WardUser();
-                $this->savingWardUser($ward_user, $request, $ulb_wards);
-                $ward_user->save();
+            $dUlbWardID = Crypt::decrypt($request->ulbWardID);
+            // if status is false then delete the ward
+            if ($request->status == 0) {
             }
-            return responseMsg(true, "Successfully Saved", "");
+            // if status if true then add the ward
+            if ($request->status == 1) {
+            }
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
+
+        // try {
+        //     $ulb_ward = $request['ulbWardID'];
+        //     foreach ($ulb_ward as $ulb_wards) {
+        //         $check = WardUser::where('user_id', $request->userID)
+        //             ->where('ulb_ward_id', $ulb_wards)
+        //             ->first();
+        //         if ($check) {
+        //             return responseMsg(false, "Ward Permission Is Already Existing for User ID !! Please Edit Your Ward Permission for this User", "");
+        //         }
+        //         $ward_user = new WardUser();
+        //         $this->savingWardUser($ward_user, $request, $ulb_wards);
+        //         $ward_user->save();
+        //     }
+        //     return responseMsg(true, "Successfully Saved", "");
+        // } catch (Exception $e) {
+        //     return response()->json($e, 400);
+        // }
     }
 
     /**
@@ -85,39 +98,34 @@ class EloquentWardUserRepository implements WardRepository
 
     /**
      * | Get Ward Users By ID
-     * | @param WardUserID $id
-     * | #query > Query Statement for Fetching data regarding ward users
-     * | #ward_user > Establish the DB Query
-     * | #redis_conn > Establish Redis Connection
-     * | #fWardUser > Find Ward User Existance
+     * | @param UserID $id
+     * | @var ulbID current logged in user id
+     * | @var query contains query for executing sql query
+     * | @var wardUsers container value of executed sql query
      * | @return response
      */
     public function getWardUserByID($id)
     {
-        $redis_conn = Redis::connection();
-        // If Redis Exists
-        $redis_existance = $redis_conn->get('ward_user:' . $id);
-        if ($redis_existance) {
-            return responseMsg(true, "Data Fetched", json_decode($redis_existance));
-        }
-        $query = $this->qWardUser() . " where w.id=$id";
-        $ward_user = DB::select($query);
-        // Set Key on Redis
-        $redis_conn->set(
-            'ward_user:' . $id,
-            json_encode([
-                'id' => $ward_user[0]->id ?? '',
-                'user_id' => $ward_user[0]->user_id ?? '',
-                'user_name' => $ward_user[0]->user_name ?? '',
-                'ulb_ward_id' => $ward_user[0]->ulb_ward_id ?? '',
-                'is_admin' => $ward_user[0]->is_admin ?? '',
-                'ulb_id' => $ward_user[0]->ulb_id ?? '',
-                'ulb_name' => $ward_user[0]->ulb_name ?? '',
-                'ward_name' => $ward_user[0]->ward_name ?? '',
-                'old_ward_name' => $ward_user[0]->old_ward_name ?? '',
-            ])
-        );
-        return responseMsg(true, "Data Fetched", $ward_user[0]);
+
+        $ulbID = auth()->user()->ulb_id;
+        $query = "SELECT 
+                    uwm.id AS ulb_ward_id,
+                    uwm.ward_name,
+                    wu.user_id,
+                    wu.ulb_ward_id,
+                    wu.is_admin,
+                    (CASE 
+                        WHEN user_id IS NOT NULL THEN TRUE
+                        ELSE false
+                    END) AS status
+
+                    FROM ulb_ward_masters uwm
+                    
+            LEFT JOIN (SELECT * FROM ward_users WHERE user_id=$id) wu ON wu.ulb_ward_id=uwm.id
+
+            WHERE uwm.ulb_id=$ulbID";
+        $wardUsers = DB::select($query);
+        return responseMsg(true, "Data Fetched", remove_null($wardUsers, true, 'ulb_ward_id'));
     }
 
     /**
@@ -127,6 +135,6 @@ class EloquentWardUserRepository implements WardRepository
     {
         $query = $this->qWardUser();
         $ward_users = DB::select($query);
-        return responseMsg(true, "Data Fetched", $ward_users);
+        return responseMsg(true, "Data Fetched", remove_null($ward_users));
     }
 }

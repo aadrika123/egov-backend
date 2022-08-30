@@ -224,7 +224,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     // SAF 
     Route::controller(ActiveSafController::class)->group(function () {
-        Route::match(["get", "post"],'saf/apply/{assessmentType}', 'applySaf');                            // Applying Saf Route
+        Route::match(["get", "post"], 'saf/apply/{assessmentType}', 'applySaf');                            // Applying Saf Route
         Route::get('saf/inbox/{key?}', 'inbox');                             // Saf workflow Inbox and Inbox By search key
         Route::get('saf/outbox/{key?}', 'outbox');                           // Saf Workflow Outbox and Outbox By search key
         Route::get('saf/details/{id}', 'details');                           // Saf Workflow safDetails and safDetails By ID
@@ -286,12 +286,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | Created By-Anshu Kumar
      * | Ward Users Masters Operations
      */
-    Route::controller(WardUserController::class)->group(function () {
-        Route::post('ward-user', 'storeWardUser');               // Save Ward User
-        Route::put('ward-user', 'updateWardUser');               // Edit Ward User
-        Route::get('ward-user/{id}', 'getWardUserByID');         // Get Ward User By ID
-        Route::get('ward-user', 'getAllWardUsers');              // Get All Ward Users
-    });
+    Route::resource('ward/masters/ward-user', WardUserController::class);
+    // Route::controller(WardUserController::class)->group(function () {
+    //     Route::post('ward-user', 'storeWardUser');               // Save Ward User
+    //     Route::put('ward-user', 'updateWardUser');               // Edit Ward User
+    //     Route::get('ward-user/{id}', 'getWardUserByID');         // Get Ward User By ID
+    //     Route::get('ward-user', 'getAllWardUsers');              // Get All Ward Users
+    // });
 });
 
 // Routes used where authentication not required
