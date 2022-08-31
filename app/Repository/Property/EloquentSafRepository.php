@@ -698,58 +698,72 @@ class EloquentSafRepository implements SafRepository
    #Saf Details
    public function details($saf_id)
    { 
-       $user_id = auth()->user()->id;
-       $role_id = auth()->user()->roll_id;
-       $ulb_id = auth()->user()->ulb_id;
-       $saf_data = ActiveSafDetail::select(DB::raw("prop_param_property_types.property_type as property_type,
-                                                    prop_param_ownership_types.ownership_type,
-                                                    ulb_ward_masters.ward_name as ward_no
-                                                   "),
-                                           "active_saf_details.*"
-                                           )
-                                           ->join('ulb_ward_masters', function($join){
-                                                $join->on("ulb_ward_masters.id","=","active_saf_details.ward_mstr_id");
-                                            })
-                                            ->join('prop_param_property_types', function($join){
-                                                $join->on("prop_param_property_types.id","=","active_saf_details.prop_type_mstr_id")
-                                                ->where("prop_param_property_types.status",1);
-                                            })
-                                            ->join('prop_param_ownership_types', function($join){
-                                                $join->on("prop_param_ownership_types.id","=","active_saf_details.ownership_type_mstr_id")
-                                                ->where("prop_param_ownership_types.status",1);
-                                            })
-                                           ->where('active_saf_details.id',"=",$saf_id)             
-                                           ->first();
-       $data = remove_null($saf_data,true); 
-       $owner_dtl = ActiveSafOwnerDetail::select('*')
-                                               ->where('status',1)
-                                               ->where('saf_dtl_id',$saf_id)
-                                               ->get();
-       $data['owner_dtl'] =  remove_null($owner_dtl); 
-       $floor = ActiveSafFloorDetail::select("*")
-                                   ->where('status',1)
-                                   ->where('saf_dtl_id',$saf_id)   
-                                   ->get(); 
-       $data['floor'] =  remove_null($floor);
-       $time_line =  DB::table('workflow_tracks')->select("workflow_tracks.message","role_masters.role_name",
-                                                            DB::raw("workflow_tracks.track_date::date as track_date")
-                                                            )                            
-                                ->leftjoin('users',"users.id","workflow_tracks.citizen_id")
-                                ->leftjoin('role_masters','role_masters.id','users.roll_id')
-                                ->where('ref_table_dot_id','active_saf_details.id')
-                                ->where('ref_table_id_value',$saf_id)
-                                ->orderBy('track_date','desc')
-                                ->get();
-        $data['time_line'] =  remove_null($time_line);
-        $data['work_flow_candidate']=[];
-        if($saf_data->is_escalate)
-        {
-            $rol_type =  $this->getAllRoles($user_id,$ulb_id,$saf_data->workflow_id,$role_id); 
-            $data['work_flow_candidate'] =  remove_null(ConstToArray($rol_type));         
-        }
-        $forward_backword =  $this->getForwordBackwordRoll($user_id,$ulb_id,$saf_data->workflow_id,$role_id);        
-        $data['forward_backward'] =  remove_null($forward_backword);        
-        return $data;
+      try{
+          if(!is_numeric($saf_id))
+          {
+            $saf_id = Crypt::decrypt($saf_id);
+          }
+          $user_id = auth()->user()->id;
+          $role_id = auth()->user()->roll_id;
+          $ulb_id = auth()->user()->ulb_id;
+          $saf_data = ActiveSafDetail::select(DB::raw("prop_param_property_types.property_type as property_type,
+                                                       prop_param_ownership_types.ownership_type,
+                                                       ulb_ward_masters.ward_name as ward_no
+                                                      "),
+                                              "active_saf_details.*"
+                                              )
+                                              ->join('ulb_ward_masters', function($join){
+                                                   $join->on("ulb_ward_masters.id","=","active_saf_details.ward_mstr_id");
+                                               })
+                                               ->join('prop_param_property_types', function($join){
+                                                   $join->on("prop_param_property_types.id","=","active_saf_details.prop_type_mstr_id")
+                                                   ->where("prop_param_property_types.status",1);
+                                               })
+                                               ->join('prop_param_ownership_types', function($join){
+                                                   $join->on("prop_param_ownership_types.id","=","active_saf_details.ownership_type_mstr_id")
+                                                   ->where("prop_param_ownership_types.status",1);
+                                               })
+                                              ->where('active_saf_details.id',"=",$saf_id)             
+                                              ->first();
+          $data = remove_null($saf_data,true); 
+          if(!$saf_data->workflow_id )
+          {
+              throw new Exception("Workflow Not Found of This SAF !...");
+          }
+          $owner_dtl = ActiveSafOwnerDetail::select('*')
+                                                  ->where('status',1)
+                                                  ->where('saf_dtl_id',$saf_id)
+                                                  ->get();
+          $data['owner_dtl'] =  remove_null($owner_dtl); 
+          $floor = ActiveSafFloorDetail::select("*")
+                                      ->where('status',1)
+                                      ->where('saf_dtl_id',$saf_id)   
+                                      ->get(); 
+          $data['floor'] =  remove_null($floor);
+          $time_line =  DB::table('workflow_tracks')->select("workflow_tracks.message","role_masters.role_name",
+                                                               DB::raw("workflow_tracks.track_date::date as track_date")
+                                                               )                            
+                                   ->leftjoin('users',"users.id","workflow_tracks.citizen_id")
+                                   ->leftjoin('role_masters','role_masters.id','users.roll_id')
+                                   ->where('ref_table_dot_id','active_saf_details.id')
+                                   ->where('ref_table_id_value',$saf_id)
+                                   ->orderBy('track_date','desc')
+                                   ->get();
+           $data['time_line'] =  remove_null($time_line);
+           $data['work_flow_candidate']=[];
+           if($saf_data->is_escalate)
+           {
+               $rol_type =  $this->getAllRoles($user_id,$ulb_id,$saf_data->workflow_id,$role_id); 
+               $data['work_flow_candidate'] =  remove_null(ConstToArray($rol_type));         
+           }
+           $forward_backword =  $this->getForwordBackwordRoll($user_id,$ulb_id,$saf_data->workflow_id,$role_id);        
+           $data['forward_backward'] =  remove_null($forward_backword);        
+           return responseMsg(true,'',$data);
+      }
+      catch(Exception $e)
+      {
+        return responseMsg(false,$e->getMessage(),$saf_id);
+      }
    }   
 
    /**
