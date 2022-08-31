@@ -71,7 +71,6 @@ class EloquentWardUserRepository implements WardRepository
                     uwm.id AS ulb_ward_id,
                     uwm.ward_name,
                     wu.user_id,
-                    wu.ulb_ward_id,
                     wu.is_admin,
                     (CASE 
                         WHEN user_id IS NOT NULL THEN TRUE
