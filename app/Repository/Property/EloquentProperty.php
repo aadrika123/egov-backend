@@ -127,7 +127,7 @@ class EloquentProperty implements PropertyRepository
             echo $e->getMessage();
         }
     }
-    public function transFerSafToProperty($activeSaf,$current_user)
+    public function transFerSafToProperty($activeSaf,$current_user_id)
     { 
         
          try{
@@ -295,7 +295,7 @@ class EloquentProperty implements PropertyRepository
             $property->petrol_pump_completion_date  = $saf->petrol_pump_completion_date;
             $property->is_water_harvesting          = $saf->is_water_harvesting;
             $property->occupation_date              = $saf->occupation_date;
-            $property->emp_details_id               = $saf->emp_details_id;
+            $property->emp_details_id               = $current_user_id;
             $property->status                       = $saf->status;
             $property->saf_hold_status              = $saf->saf_hold_status;
             $property->prop_state                   = $saf->prop_state;
@@ -328,7 +328,7 @@ class EloquentProperty implements PropertyRepository
                     status ,carpet_area ,prop_floor_details_id ,now() ,updated_at
                 from active_saf_floor_details
                 where saf_dtl_id = $saf_id ";
-            DB::insert($sql);
+            DB::insert($sql); 
             return['property_id'=>$prop_id,"holding_no"=>$holdingNo,"saf_id"=>$id,"active_id"=>$saf_id];
         }
         catch(Exception $e)
