@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 | ----------------------------------------------------------------------------------------------------
 */
 
-class WorkflowRolesRepository implements iWorkflowRepository
+class UlbWorkflowRolesRepository implements iWorkflowRepository
 {
     /**
      * | Store Request Resource In DB

@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Workflows;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Repository\Workflow\WorkflowRolesRepository;
+use App\Repository\Workflow\UlbWorkflowRolesRepository;
 
-class WorkflowRolesController extends Controller
+class UlbWorkflowRolesController extends Controller
 {
     // Initializing Construct Function 
     protected $eloquent_repository;
-    public function __construct(WorkflowRolesRepository $eloquent_repository)
+    public function __construct(UlbWorkflowRolesRepository $eloquent_repository)
     {
         $this->Repository = $eloquent_repository;
     }

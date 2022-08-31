@@ -13,7 +13,7 @@ class CreateWorkflowRolesTable extends Migration
      */
     public function up()
     {
-        Schema::create('workflow_roles', function (Blueprint $table) {
+        Schema::create('ulb_workflow_roles', function (Blueprint $table) {
             $table->id();
             $table->integer('ulb_workflow_id');
             $table->integer('role_id');
