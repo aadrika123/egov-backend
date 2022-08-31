@@ -4,6 +4,7 @@ namespace App\Traits\Property;
 
 use App\Models\Ward\WardUser;
 use App\Models\WorkflowCandidate;
+use App\Models\Workflows\UlbWorkflowRole;
 use App\Models\Workflows\WorkflowRole;
 use App\Repository\UlbWorkflow\UlbWorkflow;
 use App\Traits\Auth;
@@ -81,28 +82,28 @@ trait WardPermission
         $workflow_rolse = json_decode(Redis::get('WorkFlowRoles:' . $user_id.":".$work_flow_id),true)??null;
         if(!$workflow_rolse)
         {
-            // $workflow_rolse = UlbWor::select(
-            //                 DB::raw("workflows.id as workflow_id"),
-            //                 "role_masters.id",
-            //                 "role_masters.role_name",
-            //                 "ulb_workflow_roles.forward_id",
-            //                 "ulb_workflow_roles.backward_id",
-            //                 "ulb_workflow_roles.show_full_list",
-            //                 "ulb_workflow_masters.ulb_id",
-            //                 "module_masters.module_name",
-            //                 "workflows.workflow_name"
-            //             )
-            //             ->join("role_masters","role_masters.id","ulb_workflow_roles.role_id")
-            //             ->join("ulb_workflow_masters",function($join) use($ulb_id){
-            //                 $join->on("ulb_workflow_masters.id","ulb_workflow_roles.ulb_workflow_id")
-            //                 ->where("ulb_workflow_masters.ulb_id",$ulb_id);
-            //             })
-            //             ->join("module_masters","module_masters.id","ulb_workflow_masters.module_id")
-            //             ->join("workflows",function($join) use($work_flow_id){
-            //                 $join->on("workflows.module_id","module_masters.id")
-            //                 ->where("workflows.id",$work_flow_id);
-            //             })
-            //             ->get();
+            $workflow_rolse = UlbWorkflowRole::select(
+                            DB::raw("workflows.id as workflow_id"),
+                            "role_masters.id",
+                            "role_masters.role_name",
+                            "ulb_workflow_roles.forward_id",
+                            "ulb_workflow_roles.backward_id",
+                            "ulb_workflow_roles.show_full_list",
+                            "ulb_workflow_masters.ulb_id",
+                            "module_masters.module_name",
+                            "workflows.workflow_name"
+                        )
+                        ->join("role_masters","role_masters.id","ulb_workflow_roles.role_id")
+                        ->join("ulb_workflow_masters",function($join) use($ulb_id){
+                            $join->on("ulb_workflow_masters.id","ulb_workflow_roles.ulb_workflow_id")
+                            ->where("ulb_workflow_masters.ulb_id",$ulb_id);
+                        })
+                        ->join("module_masters","module_masters.id","ulb_workflow_masters.module_id")
+                        ->join("workflows",function($join) use($work_flow_id){
+                            $join->on("workflows.module_id","module_masters.id")
+                            ->where("workflows.id",$work_flow_id);
+                        })
+                        ->get();
             $workflow_rolse = adjToArray($workflow_rolse);
             $this->WorkFlowRolesSet($redis,$user_id, $workflow_rolse,$work_flow_id);
         }
