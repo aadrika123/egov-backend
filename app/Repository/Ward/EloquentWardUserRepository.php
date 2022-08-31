@@ -26,7 +26,6 @@ class EloquentWardUserRepository implements WardRepository
      * | @param WardUserRequest $request
      * | @return Response
      * ------------------------------------------------------
-     * | $dUlbWardID > contains the value of the decrypted ulbwardID
      * | If status is 0 then delete the record
      * | If status is 1 then add the record
      */
@@ -34,11 +33,10 @@ class EloquentWardUserRepository implements WardRepository
     {
 
         try {
-            $dUlbWardID = Crypt::decrypt($request->ulbWardID);
             // if status is false then delete the ward
             if ($request->status == 0) {
                 $wardUser = WardUser::where('user_id', $request->userID)
-                    ->where('ulb_ward_id', $dUlbWardID)
+                    ->where('ulb_ward_id', $request->ulbWardID)
                     ->first();
                 $wardUser->delete();
                 return responseMsg(true, 'Successfully disabled', "");
@@ -47,7 +45,7 @@ class EloquentWardUserRepository implements WardRepository
             if ($request->status == 1) {
                 $wardUser = new WardUser();
                 $wardUser->user_id = $request->userID;
-                $wardUser->ulb_ward_id = $dUlbWardID;
+                $wardUser->ulb_ward_id = $request->ulbWardID;
                 $wardUser->is_admin = $request->isAdmin;
                 $wardUser->save();
                 return responseMsg(true, "Successfully Enabled the Ward", "");
@@ -86,6 +84,6 @@ class EloquentWardUserRepository implements WardRepository
 
             WHERE uwm.ulb_id=$ulbID";
         $wardUsers = DB::select($query);
-        return responseMsg(true, "Data Fetched", remove_null($wardUsers, true, 'ulb_ward_id'));
+        return responseMsg(true, "Data Fetched", remove_null($wardUsers));
     }
 }

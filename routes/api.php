@@ -287,12 +287,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | Ward Users Masters Operations
      */
     Route::resource('ward/masters/ward-user', WardUserController::class);
-    // Route::controller(WardUserController::class)->group(function () {
-    //     Route::post('ward-user', 'storeWardUser');               // Save Ward User
-    //     Route::put('ward-user', 'updateWardUser');               // Edit Ward User
-    //     Route::get('ward-user/{id}', 'getWardUserByID');         // Get Ward User By ID
-    //     Route::get('ward-user', 'getAllWardUsers');              // Get All Ward Users
-    // });
 });
 
 // Routes used where authentication not required
