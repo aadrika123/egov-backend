@@ -32,7 +32,7 @@ if (!function_exists("adjToArray")) {
 }
 
 if (!function_exists("remove_null")) {
-    function remove_null($data,$encrypt=false,$key="id")
+    function remove_null($data,$encrypt=false,array $key=["id"])
     {     
         $collection = collect($data)->map(function ($name,$index) use($encrypt,$key){             
             if (is_object($name)) {
@@ -41,7 +41,7 @@ if (!function_exists("remove_null")) {
             } 
             else 
             { 
-                if($encrypt && (strtolower($key)==strtolower($index)))
+                if($encrypt && (in_array(strtolower($index),array_map(function($keys){return strtolower($keys);},$key))))
                 { 
                     return Crypt::encrypt($name);
                 }

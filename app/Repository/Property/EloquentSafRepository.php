@@ -483,7 +483,7 @@ class EloquentSafRepository implements SafRepository
         $redis=Redis::connection();  // Redis Connection
         $redis_data = json_decode(Redis::get('user:' . $user_id),true);
         $ulb_id = $redis_data['ulb_id']??auth()->user()->ulb_id;;
-        $roll_id =  $redis_data['role_id']??auth()->user()->roll_id;; 
+        $roll_id =  $redis_data['role_id']??auth()->user()->roll_id;
         $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');        
         $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
         if(!$work_flow_candidate)
@@ -567,15 +567,14 @@ class EloquentSafRepository implements SafRepository
                 }                                                
                 return $data;
         });
-        $data=collect(['ulb_id'=>$ulb_id,
-                        'user_id'=>$user_id,
-                        'roll_id'=>$roll_id,
-                        'workflow_id'=>$workflow_id,
-                        'work_flow_candidate_id'=>$work_flow_candidate['id'],
-                        'module_id'=>$work_flow_candidate['module_id'],
-                        "data_list"=>$saf
-                        ]
-                        );
+        $data=remove_null(['ulb_id'=>$ulb_id,
+            'user_id'=>$user_id,
+            'roll_id'=>$roll_id,
+            'workflow_id'=>$workflow_id,
+            'work_flow_candidate_id'=>$work_flow_candidate['id'],
+            'module_id'=>$work_flow_candidate['module_id'],
+            "data_list"=>$saf,
+            ],true,['ulb_id','user_id','roll_id','workflow_id','module_id','id']);
         return $data;
    }
 
@@ -676,7 +675,7 @@ class EloquentSafRepository implements SafRepository
             'work_flow_candidate_id'=>$work_flow_candidate['id'],
             'module_id'=>$work_flow_candidate['module_id'],
             "data_list"=>$saf,
-            ],true);
+            ],true,['ulb_id','user_id','roll_id','workflow_id','module_id','id']);
        
         return $data;
    }
@@ -908,15 +907,14 @@ class EloquentSafRepository implements SafRepository
                 }                                                
                 return $data;
             });         
-        $data=collect(['ulb_id'=>$ulb_id,
+        $data=remove_null(['ulb_id'=>$ulb_id,
             'user_id'=>$user_id,
             'roll_id'=>$roll_id,
             'workflow_id'=>$workflow_id,
             'work_flow_candidate_id'=>$work_flow_candidate['id'],
             'module_id'=>$work_flow_candidate['module_id'],
-            "data_list"=>$saf
-            ]
-        );
+            "data_list"=>$saf,
+            ],true,['ulb_id','user_id','roll_id','workflow_id','module_id','id']);
         return $data;
    }
 
@@ -949,14 +947,14 @@ class EloquentSafRepository implements SafRepository
         $messages = ["status"=>false,"data"=>$request->all(),"message"=>''];    
         try{
             $user_id = auth()->user()->id;
-            $rol_type_id = auth()->user()->role_id;
+            $roll_type_id = auth()->user()->roll_id;
             $saf = new ActiveSafDetail;
             $saf_id = $request->safId;
             if(!is_numeric($saf_id))
             {
                 $saf_id = Crypt::decrypt($saf_id);
             }
-            $data = $saf->where('current_user',$user_id)->find($saf_id);  
+            $data = $saf->where('current_user',$roll_type_id)->find($saf_id);
             if(!$data)
             {
                 $message=["status"=>false,"data"=>$request->all(),"message"=>"Saf Not Found"];
@@ -992,9 +990,10 @@ class EloquentSafRepository implements SafRepository
                 return response()->json($messages,200);
             }
             DB::beginTransaction();
-            if($data->finisher_id = $rol_type_id && strtoupper($request->btn)=="APPROVE")
+            $dd=[];
+            if($data->finisher_id = $roll_type_id && strtoupper($request->btn)=="APPROVE")
             {
-                $this->property->transFerSafToProperty($saf_id,$rol_type_id);
+                $dd = $this->property->transFerSafToProperty($data,$roll_type_id);
             }
             else
             {
@@ -1013,12 +1012,13 @@ class EloquentSafRepository implements SafRepository
             if($workfloes['status']==false)
             {
                 DB::rollBack();
-                $messages["message"] = $workfloes['message'];
-                return response()->json($messages,200);
+                return responseMsg(false,$workfloes['message'],$request->all());
             }
             DB::commit();
-            $messages = ["status"=>true,"data"=>[],"message"=>'Saf Forworded'];
-            return response()->json($messages,200);
+            if($dd)
+                return responseMsg(true,'Saf Forworded',["holding_no"=>$dd["holding_no"]]);
+           
+            return responseMsg(true,'Saf Forworded','');
         }
         catch(Exception $e)
         {
