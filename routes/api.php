@@ -16,7 +16,7 @@ use App\Http\Controllers\PaymentMasterController;
 use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Ward\WardController;
 use App\Http\Controllers\Ward\WardUserController;
-use App\Http\Controllers\Workflows\WorkflowRolesController;
+use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -181,7 +181,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 
     // Workflow Roles Rest Apis
-    Route::resource('workflow/workflow-roles', WorkflowRolesController::class);
+    Route::resource('workflow/workflow-roles', UlbWorkflowRolesController::class);
 
     /**
      * APIs for Module Master
