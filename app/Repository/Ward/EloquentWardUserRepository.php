@@ -35,14 +35,19 @@ class EloquentWardUserRepository implements WardRepository
         try {
             // if status is false then delete the ward
             if ($request->status == 0) {
-                $wardUser = WardUser::where('user_id', $request->userID)
-                    ->where('ulb_ward_id', $request->ulbWardID)
-                    ->first();
-                $wardUser->delete();
-                return responseMsg(true, 'Successfully disabled', "");
+                $wardUser = $this->checkWardUserExisting($request);         // check ward user existing using trait
+                if ($wardUser) {
+                    $wardUser->delete();
+                    return responseMsg(true, 'Successfully disabled', "");
+                } else
+                    return responseMsg(true, 'Successfully Disabled', "");
             }
             // if status if true then add the ward
             if ($request->status == 1) {
+                $checkExisting = $this->checkWardUserExisting($request);    // check ward user existing using trait
+                if ($checkExisting) {
+                    return responseMsg(true, "Successfully Enabled the Ward", "");
+                }
                 $wardUser = new WardUser();
                 $wardUser->user_id = $request->userID;
                 $wardUser->ulb_ward_id = $request->ulbWardID;

@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\UlbWardMaster;
+use App\Models\Ward\WardUser;
 
 /**
  * | Created On-19-08-2022 
@@ -37,4 +38,11 @@ trait Ward
     }
 
     // //////////////////////////////////////////////////////////////////////////////
+    // Check Ward User Existing
+    public function checkWardUserExisting($request)
+    {
+        return WardUser::where('user_id', $request->userID)
+            ->where('ulb_ward_id', $request->ulbWardID)
+            ->first();
+    }
 }
