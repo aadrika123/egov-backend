@@ -35,6 +35,8 @@ class UlbWorkflowRolesRepository implements iWorkflowRepository
                         rm.role_name,
                         rm.role_description,
                         rm.ulb_id,
+                        $refUlbWorkflowID->id as ulb_workflow_id,
+
                         (CASE 
                         WHEN role_id IS NOT NULL THEN true
                         ELSE false
@@ -56,14 +58,26 @@ class UlbWorkflowRolesRepository implements iWorkflowRepository
      */
     public function store(Request $request)
     {
-        $refUlbWorkflowID = UlbWorkflowMaster::where('ulb_id', $request->ulbID)
-            ->where('workflow_id', $request->workflowID)
-            ->first();
         if ($request->status == 1) {
-            $role = new UlbWorkflowRole();
-            $role->ulb_workflow_id = $refUlbWorkflowID->id;
-            $role->role_id = $request->roleID;
-            $role->save();
+            $check = UlbWorkflowRole::where('ulb_workflow_id', $request->ulbWorkflowID)
+                ->where('role_id', $request->roleID)
+                ->first();
+            if (!$check) {
+                $role = new UlbWorkflowRole();
+                $role->ulb_workflow_id = $request->ulbWorkflowID;
+                $role->role_id = $request->roleID;
+                $role->save();
+            }
+            return responseMsg(true, "Successfully Enabled the Ulb Workflow role", "");
+        }
+        if ($request->status == 0) {
+            $role = UlbWorkflowRole::where('ulb_workflow_id', $request->ulbWorkflowID)
+                ->where('role_id', $request->roleID)
+                ->first();
+            if ($role) {
+                $role->forceDelete();
+            }
+            return responseMsg(true, "Successfully Disabled the Ulb Workflow Roles", "");
         }
     }
 }

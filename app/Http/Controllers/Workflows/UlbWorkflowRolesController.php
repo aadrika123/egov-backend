@@ -32,7 +32,7 @@ class UlbWorkflowRolesController extends Controller
      */
     public function store(Request $request)
     {
-        $this->Repository->store($request);
+        return $this->Repository->store($request);
     }
 
     /**
