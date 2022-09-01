@@ -3,6 +3,7 @@
 namespace App\Repository\Workflow;
 
 use App\Models\UlbWorkflowMaster;
+use App\Models\Workflows\UlbWorkflowRole;
 use App\Repository\Workflow\iWorkflowRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,10 @@ class UlbWorkflowRolesRepository implements iWorkflowRepository
 {
     /**
      * | Get All Roles by Ulb Workflow ID
+     * | @param Request $request
+     * | @var refUlbWorkflowID > Get the id of UlbWorkflowMaster
+     * | @var query the db query 
+     * | @var result the resulant data
      */
     public function getAllRolesByUlbWorkflowID(Request $request)
     {
@@ -51,6 +56,14 @@ class UlbWorkflowRolesRepository implements iWorkflowRepository
      */
     public function store(Request $request)
     {
-        dd($request->all());
+        $refUlbWorkflowID = UlbWorkflowMaster::where('ulb_id', $request->ulbID)
+            ->where('workflow_id', $request->workflowID)
+            ->first();
+        if ($request->status == 1) {
+            $role = new UlbWorkflowRole();
+            $role->ulb_workflow_id = $refUlbWorkflowID->id;
+            $role->role_id = $request->roleID;
+            $role->save();
+        }
     }
 }
