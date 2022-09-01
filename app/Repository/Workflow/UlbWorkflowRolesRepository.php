@@ -2,8 +2,10 @@
 
 namespace App\Repository\Workflow;
 
+use App\Models\UlbWorkflowMaster;
 use App\Repository\Workflow\iWorkflowRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /*
 | ---------------------------------------------------------------------------------------------------
@@ -15,6 +17,33 @@ use Illuminate\Http\Request;
 
 class UlbWorkflowRolesRepository implements iWorkflowRepository
 {
+    /**
+     * | Get All Roles by Ulb Workflow ID
+     */
+    public function getAllRolesByUlbWorkflowID(Request $request)
+    {
+        $refUlbWorkflowID = UlbWorkflowMaster::where('ulb_id', $request->ulbID)
+            ->where('workflow_id', $request->workflowID)
+            ->first();
+
+        $query = "SELECT rm.id AS role_id,
+                        rm.role_name,
+                        rm.role_description,
+                        rm.ulb_id,
+                        (CASE 
+                        WHEN role_id IS NOT NULL THEN true
+                        ELSE false
+                        END) AS permission_status
+                    FROM role_masters rm
+
+
+                LEFT JOIN (SELECT * FROM ulb_workflow_roles WHERE ulb_workflow_id=$refUlbWorkflowID->id) uwr ON uwr.role_id=rm.id
+
+                WHERE rm.ulb_id=$request->ulbID";
+        $result = DB::select($query);
+        return responseMsg(true, "Data Fetched", remove_null($result));
+    }
+
     /**
      * | Store Request Resource In DB
      * | @param Request

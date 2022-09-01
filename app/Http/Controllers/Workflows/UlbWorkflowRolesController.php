@@ -15,13 +15,13 @@ class UlbWorkflowRolesController extends Controller
         $this->Repository = $eloquent_repository;
     }
     /**
-     * Display a listing of the resource.
+     * Display a listing of Roles assigned on Workflow
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        return $this->Repository->getAllRolesByUlbWorkflowID($request);
     }
 
     /**
