@@ -55,6 +55,12 @@ class UlbWorkflowRolesRepository implements iWorkflowRepository
      * | Store Request Resource In DB
      * | @param Request
      * | @param Request $request
+     * | -------------------------------------------------------------------------------------------------
+     * | If the Request status is 1 then add the data 
+     * | If the request status is 0 then delete the data
+     * | @var check check if the role is already present or not 
+     * | if the Data is already present in database then only response the message else add the data
+     * | Delete if the data is already present else response the msg only
      */
     public function store(Request $request)
     {
