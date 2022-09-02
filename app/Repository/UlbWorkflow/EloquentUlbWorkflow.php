@@ -224,6 +224,6 @@ class EloquentUlbWorkflow implements UlbWorkflow
                         left join ulb_masters um on um.id=u.ulb_id
                         where u.ulb_id=$ulb_id and u.deleted_at is null
                     ");
-        return response()->json($workflow, 200);
+        return responseMsg(true, "Data Fetched", remove_null($workflow));
     }
 }
