@@ -5,7 +5,6 @@ namespace App\Traits\Property;
 use App\Models\Ward\WardUser;
 use App\Models\WorkflowCandidate;
 use App\Models\Workflows\UlbWorkflowRole;
-use App\Models\Workflows\WorkflowRole;
 use App\Repository\UlbWorkflow\UlbWorkflow;
 use App\Traits\Auth;
 use Exception;
@@ -60,22 +59,6 @@ trait WardPermission
         }
         return $ward_permission;
    }
-
-//    public function getRoleUsersForBck($ulb_id,$work_flow_id,$role_id,$finisher=null) //curernt user Roll id
-//    {  
-//         $roll_id = Config::get("PropertyConstaint.ROLES.INDEX"."$ulb_id"."_$work_flow_id".".$role_id");
-//         if(is_null($role_id))
-//         {
-//             return Config::get("PropertyConstaint.ROLES".".$ulb_id"."_$work_flow_id");
-//         }    
-//         $backWord = Config::get("PropertyConstaint.ROLES".".$ulb_id"."_$work_flow_id".".".($roll_id-1))??[];
-//         $forWord = Config::get("PropertyConstaint.ROLES".".$ulb_id"."_$work_flow_id".".".($roll_id+1))??[];        
-//         return ['backward'=>$backWord,"forward"=>($finisher==$role_id?[]:$forWord),'btc'=>
-//                  (!in_array($roll_id,[1,6])) ?(Config::get("PropertyConstaint.ROLES".".$ulb_id"."_$work_flow_id".".0")):[]
-                
-//             ];
-//    }
-
    public function getWorkFlowRoles( $user_id,int $ulb_id, int $work_flow_id)
    {
         $redis =Redis::connection();

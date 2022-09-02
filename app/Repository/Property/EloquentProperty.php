@@ -132,7 +132,6 @@ class EloquentProperty implements PropertyRepository
         
          try{
             $saf = new Saf();
-            $saf->cluster_id              = $activeSaf->id;
             $saf->has_previous_holding_no = $activeSaf->has_previous_holding_no;
             $saf->previous_holding_id     = $activeSaf->previous_holding_id; 
             $saf->previous_ward_mstr_id   = $activeSaf->previous_holding_id; 
