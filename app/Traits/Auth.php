@@ -136,6 +136,14 @@ trait Auth
         );
         $redis->expire('AllVacantLandRentalRate', 18000);
     }
+    public function AllRentalValueSet($redis, array $rentalVal)
+    {
+        $redis->set(
+            'AllRentalValue',
+            json_encode($rentalVal)
+        );
+        $redis->expire('AllRentalValue', 18000);
+    }
 
     /**
      * | query for save ulb and role on user login

@@ -67,7 +67,7 @@ class EloquentSafRepository implements SafRepository
     public function applySaf(Request $request)
     {
         $message=["status"=>false,"data"=>$request->all(),"message"=>""];
-        $user_id = auth()->user()->id; return $this->getOccuPencyFacter();
+        $user_id = auth()->user()->id; return $this->buildinRulSet1(200,2,1,2,'1942-03-26');
         $isCitizen = auth()->user()->user_type=="Citizen"?true:false;
         try {
             
