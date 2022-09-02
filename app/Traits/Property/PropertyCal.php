@@ -61,10 +61,19 @@ trait PropertyCal
         $road_type = $this->getRodeType($road_width_in_sft, $effective_date,$ulb_type_id);        
         return $road_type[0]->rate??0.00;
     }
-    // public function getOccuPencyFacter($usege_type):object
-    // {
-        
-    // }
+    public function getOccuPencyFacter($usege_type=null):object
+    {
+        $redis = Redis::connection();
+        $OccuPencyFacter = json_decode(Redis::get('OccuPencyFacter'))??null;
+        if(!$OccuPencyFacter)
+        {
+            $OccuPencyFacter = DB::select("select * from prop_occupency_facters where status =1 ");
+
+        }
+        if($usege_type)
+        $OccuPencyFacter = $OccuPencyFacter->find($usege_type);
+        return  $OccuPencyFacter;
+    }
     /**
      * Tax = area(sqmt) x rental_rate x occupancy_factor;
      * ==============OCCUPANCY FACTER ==================
