@@ -228,5 +228,10 @@ return [
         "New Assessment"=>"1",
         "Reassessment"=>"2",
         "Mutation"=>"3"
+    ],
+    "ULB-TYPE-ID"=>[
+        "Municipal Carporation"=>1,
+        "Nagar Parishad"=>2,
+        "Nagar Panchayat"=>3
     ]
 ];

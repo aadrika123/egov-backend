@@ -134,6 +134,14 @@ trait Auth
         );
         $redis->expire('WorkFlowRoles:' . $user_id.":".$work_flow_id, 18000);
     }
+    public function AllVacantLandRentalRateSet($redis, array $rentalVal)
+    {
+        $redis->set(
+            'AllVacantLandRentalRate',
+            json_encode($rentalVal)
+        );
+        $redis->expire('AllVacantLandRentalRate', 18000);
+    }
 
     /**
      * | query for save ulb and role on user login

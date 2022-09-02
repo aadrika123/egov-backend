@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\ActiveSafDetail;
 use App\Models\ActiveSafFloorDetail;
 use App\Models\ActiveSafOwnerDetail;
+use App\Models\ActiveSafTaxe;
 use App\Models\PropPropertie;
 use App\Models\ObjectionTypeMstr;
 use App\Models\PropertyObjection;
@@ -29,6 +30,7 @@ use App\Models\WorkflowCandidate;
 use App\Models\WorkflowTrack;
 
 use App\Traits\Auth;
+use App\Traits\Property\PropertyCal;
 use App\Traits\Property\WardPermission;
 
 use Exception;
@@ -48,6 +50,7 @@ class EloquentSafRepository implements SafRepository
 {
     use Auth;               // Trait Used added by sandeep bara date 17-08-2022
     use WardPermission;
+    use PropertyCal;
 
     /**
      * | Citizens Applying For SAF
@@ -64,7 +67,7 @@ class EloquentSafRepository implements SafRepository
     public function applySaf(Request $request)
     {
         $message=["status"=>false,"data"=>$request->all(),"message"=>""];
-        $user_id = auth()->user()->id;
+        $user_id = auth()->user()->id; 
         $isCitizen = auth()->user()->user_type=="Citizen"?true:false;
         try {
             
@@ -267,6 +270,7 @@ class EloquentSafRepository implements SafRepository
                     $request->roadType=1;
                 DB::beginTransaction();
                 $assessmentTypeId=Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$request->assessmentType);
+                // dd($request->ward);
                 $safNo = $this->safNo($request->ward,$assessmentTypeId,$ulb_id);
                 $saf = new ActiveSafDetail;
                 $saf->has_previous_holding_no = $request->hasPreviousHoldingNo;
@@ -433,14 +437,6 @@ class EloquentSafRepository implements SafRepository
         }
         
     }
-
-    /*
-        #traits for comman function Inbox and Outbox of Saf
-        * Created On : 11-08-2022 
-        * Created by :Sandeep Bara
-        #==================================================
-    */
-
     /**
          * desc This function return the safNo of the application
          * format: SAF/application_type/ward_no/count active application on the basise of ward_id
@@ -459,11 +455,16 @@ class EloquentSafRepository implements SafRepository
     { 
         $count = ActiveSafDetail::where('ward_mstr_id',$ward_id)
                                 ->where('ulb_id',$ulb_id)
-                                ->where('status',1)
                                 ->count()+1;
-        $ward_no = UlbWardMaster::select("ward_name")->where('id',$ward_id)->first()->ward_name;        
+        $ward_no = UlbWardMaster::select("ward_name")->where('id',$ward_id)->first()->ward_name;    
         return $safNo = "SAF/".str_pad($assessment_type,2,'0',STR_PAD_LEFT)."/".str_pad($ward_no,3,'0',STR_PAD_LEFT)."/".str_pad($count,5,'0',STR_PAD_LEFT);
     }
+
+    public function taxCalculater(Request $request)
+    {
+
+    }
+
     /**
          * desc This function list the application according to permmited ward_no for the user_roll
          * request : key (optional) for seraching
@@ -482,8 +483,8 @@ class EloquentSafRepository implements SafRepository
         try{
             $user_id = auth()->user()->id;
             $redis=Redis::connection();  // Redis Connection
-            $redis_data = json_decode(Redis::get('user:' . $user_id),true);
-            $ulb_id = $redis_data['ulb_id']??auth()->user()->ulb_id;;
+            $redis_data = json_decode(Redis::get('user:' . $user_id),true);dd( $redis_data);
+            $ulb_id = $redis_data['ulb_id']??auth()->user()->ulb_id;
             $roll_id =  $redis_data['role_id']??auth()->user()->roll_id;
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');        
             $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
@@ -616,7 +617,7 @@ class EloquentSafRepository implements SafRepository
             $ward_ids = array_map(function($val)
                         {
                             return $val['ulb_ward_id'];
-                        },$ward_permission);             
+                        },$ward_permission);        
             $data = ActiveSafDetail::select(
                                DB::raw("owner_name,
                                    guardian_name ,
@@ -1068,6 +1069,9 @@ class EloquentSafRepository implements SafRepository
             if($dd)
             {
                 ActiveSafDetail::where('id',$saf_id)->delete();
+                ActiveSafOwnerDetail::where('saf_dtl_id',$saf_id)->delete();
+                ActiveSafFloorDetail::where('saf_dtl_id',$saf_id)->delete();
+                ActiveSafTaxe::where('saf_dtl_id',$saf_id)->delete();
                 return responseMsg(true,'Saf Forworded',["holding_no"=>$dd["holding_no"]]);
             }
            
