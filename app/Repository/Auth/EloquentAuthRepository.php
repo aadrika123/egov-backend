@@ -49,7 +49,6 @@ class EloquentAuthRepository implements AuthRepository
             $this->saving($user, $request);                     // Storing data using Auth trait
             $user->password = $request->password;
             $user->save();
-            Redis::delete('all_users');
             return responseMsg(true, "User Registered Successfully !! Please Continue to Login", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -82,7 +81,6 @@ class EloquentAuthRepository implements AuthRepository
                 $this->savingExtras($user, $request);
                 $user->save();
                 Redis::del('user:' . $id);                                  //Deleting Key from Redis Database
-                Redis::delete('all_users');
                 $message = ["status" => true, "message" => "Successfully Updated", "data" => ''];
                 return response()->json($message, 200);
             }
@@ -97,7 +95,6 @@ class EloquentAuthRepository implements AuthRepository
                     $this->savingExtras($user, $request);
                     $user->save();
                     Redis::del('user:' . $id);                               //Deleting Key from Redis Database
-                    Redis::delete('all_users');
                     $message = ["status" => true, "message" => "Successfully Updated", "data" => ''];
                     return response()->json($message, 200);
                 }
@@ -252,7 +249,6 @@ class EloquentAuthRepository implements AuthRepository
             $user->save();
 
             Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
-            Redis::delete('all_users');
 
             return response()->json(['Status' => 'True', 'Message' => 'Successfully Changed the Password'], 200);
         } catch (Exception $e) {
@@ -265,15 +261,11 @@ class EloquentAuthRepository implements AuthRepository
      * | #uUlbID > Logged User Ulb ID
      * | #query > Query stmt for Ulb wise all Users and their Roles
      * | #users > All Users Data
+     * | @var redis exta
      */
     public function getAllUsers()
     {
         $redis = Redis::connection();
-        $existance = Redis::get('all_users');
-        if ($existance) {
-            $data = json_decode($existance);
-            return responseMsg(true, "Data Fetched", remove_null($data));
-        }
         $uUlbID = auth()->user()->ulb_id;
         $query = "SELECT 
                     u.id,
@@ -295,7 +287,6 @@ class EloquentAuthRepository implements AuthRepository
                     ORDER BY u.id ASC
                     ";
         $users = DB::select($query);
-        $redis->set('all_users', json_encode($users));
         return responseMsg(true, "Data Fetched", remove_null($users));
     }
 
