@@ -25,9 +25,6 @@ trait Auth
         $user->mobile = $request->mobile;
         $user->email = $request->email;
         $user->ulb_id = $request->ulb;
-        if ($request->role) {
-            $user->roll_id = $request->role;
-        }
         if ($request->userType) {
             $user->user_type = $request->userType;
         }
@@ -58,7 +55,7 @@ trait Auth
     /**
      * Save User Credentials On Redis 
      */
-    public function redisStore($redis, $emailInfo, $request, $token, $ulb_role)
+    public function redisStore($redis, $emailInfo, $request, $token)
     {
         $redis->set(
             'user:' . $emailInfo->id,
@@ -70,10 +67,7 @@ trait Auth
                 'remember_token' => $token,
                 'mobile' => $emailInfo->mobile,
                 'user_type' => $emailInfo->user_type,
-                'role_id' => $emailInfo->roll_id,
-                'role_name' => $ulb_role[0]->role_name,
                 'ulb_id' => $emailInfo->ulb_id,
-                'ulb_name' => $ulb_role[0]->ulb_name,
                 'created_at' => $emailInfo->created_at,
                 'updated_at' => $emailInfo->updated_at
             ])
@@ -126,13 +120,13 @@ trait Auth
         $redis->expire('WardPermission:' . $user_id, 18000);
     }
 
-    public function WorkFlowRolesSet($redis, $user_id, array $workflow_rolse,$work_flow_id)
+    public function WorkFlowRolesSet($redis, $user_id, array $workflow_rolse, $work_flow_id)
     {
         $redis->set(
-            'WorkFlowRoles:' . $user_id.":".$work_flow_id,
+            'WorkFlowRoles:' . $user_id . ":" . $work_flow_id,
             json_encode($workflow_rolse)
         );
-        $redis->expire('WorkFlowRoles:' . $user_id.":".$work_flow_id, 18000);
+        $redis->expire('WorkFlowRoles:' . $user_id . ":" . $work_flow_id, 18000);
     }
 
     /**
@@ -145,14 +139,11 @@ trait Auth
         u.user_name AS NAME,
         u.mobile AS mobile,
         u.email AS email,
-        u.roll_id AS role_id,
-        r.role_name,
         u.ulb_id,
         um.ulb_name
             FROM users u 
             
             LEFT JOIN ulb_masters um ON um.id=u.ulb_id
-            LEFT JOIN role_masters r ON r.id=u.roll_id
             WHERE u.id=$id";
         return $query;
     }

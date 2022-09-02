@@ -47,10 +47,12 @@ class EloquentAuthRepository implements AuthRepository
             // Validation---@source-App\Http\Requests\AuthUserRequest
             $user = new User;
             $this->saving($user, $request);                     // Storing data using Auth trait
+            $user->password = $request->password;
             $user->save();
-            return response()->json(["Registered Successfully", "Please Login to Continue"], 200);
+            Redis::delete('all_users');
+            return responseMsg(true, "User Registered Successfully !! Please Continue to Login", "");
         } catch (Exception $e) {
-            return $e;
+            return response()->json($e, 400);
         }
     }
 
@@ -80,6 +82,7 @@ class EloquentAuthRepository implements AuthRepository
                 $this->savingExtras($user, $request);
                 $user->save();
                 Redis::del('user:' . $id);                                  //Deleting Key from Redis Database
+                Redis::delete('all_users');
                 $message = ["status" => true, "message" => "Successfully Updated", "data" => ''];
                 return response()->json($message, 200);
             }
@@ -94,6 +97,7 @@ class EloquentAuthRepository implements AuthRepository
                     $this->savingExtras($user, $request);
                     $user->save();
                     Redis::del('user:' . $id);                               //Deleting Key from Redis Database
+                    Redis::delete('all_users');
                     $message = ["status" => true, "message" => "Successfully Updated", "data" => ''];
                     return response()->json($message, 200);
                 }
@@ -130,14 +134,14 @@ class EloquentAuthRepository implements AuthRepository
             if (!$emailInfo) {
                 $msg = "Oops! Given email does not exist";
                 $message = $this->tResponseFail($msg);               // Response Message Using Trait
-                return response($message, 200);
+                return responseMsg(true, $message, "");
             }
 
             // check if suspended user
             if ($emailInfo->suspended == true) {
                 $msg = "Cant logged in!! You Have Been Suspended !";
                 $message = $this->tResponseFail($msg);               // Response Message Using Trait
-                return response($message, 200);
+                return responseMsg(true, $message, "");
             }
 
             // Redis Authentication if data already existing in redis database
@@ -151,8 +155,7 @@ class EloquentAuthRepository implements AuthRepository
                     $emailInfo->remember_token = $token;
                     $emailInfo->save();
 
-                    $ulb_role = DB::select($this->query($emailInfo->id));                 // select ulb and role from db
-                    $this->redisStore($redis, $emailInfo, $request, $token, $ulb_role);   // Trait for update Redis
+                    $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);         // EXPIRE KEY AFTER 5 HOURS
                     $message = $this->tResponseSuccess($token);               // Response Message Using Trait
@@ -176,12 +179,9 @@ class EloquentAuthRepository implements AuthRepository
                     $token = $emailInfo->createToken('my-app-token')->plainTextToken;
                     $emailInfo->remember_token = $token;
                     $emailInfo->save();
-
-                    $ulb_role = DB::select($this->query($emailInfo->id));           // Select ulb and role from trait
-
                     $redis = Redis::connection();                   // Redis Connection
 
-                    $this->redisStore($redis, $emailInfo, $request, $token, $ulb_role);   // Trait for update Redis
+                    $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
                     $message = $this->tResponseSuccess($token);           // Response Message Using Trait
@@ -252,6 +252,7 @@ class EloquentAuthRepository implements AuthRepository
             $user->save();
 
             Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
+            Redis::delete('all_users');
 
             return response()->json(['Status' => 'True', 'Message' => 'Successfully Changed the Password'], 200);
         } catch (Exception $e) {
@@ -261,13 +262,19 @@ class EloquentAuthRepository implements AuthRepository
 
     /**
      * | Get All Users
-     * | #u_ulb_id > Logged User Ulb ID
+     * | #uUlbID > Logged User Ulb ID
      * | #query > Query stmt for Ulb wise all Users and their Roles
      * | #users > All Users Data
      */
     public function getAllUsers()
     {
-        $u_ulb_id = auth()->user()->ulb_id;
+        $redis = Redis::connection();
+        $existance = Redis::get('all_users');
+        if ($existance) {
+            $data = json_decode($existance);
+            return responseMsg(true, "Data Fetched", remove_null($data));
+        }
+        $uUlbID = auth()->user()->ulb_id;
         $query = "SELECT 
                     u.id,
                     u.user_name,
@@ -283,11 +290,12 @@ class EloquentAuthRepository implements AuthRepository
                     FROM users u
                     LEFT JOIN role_users ru ON ru.user_id=u.id
                     LEFT JOIN role_masters rm ON rm.id=ru.role_id
-                    WHERE u.user_type!='Citizen' AND u.ulb_id=$u_ulb_id
+                    WHERE u.user_type!='Citizen' AND u.ulb_id=$uUlbID
                     GROUP BY u.id
                     ORDER BY u.id ASC
                     ";
         $users = DB::select($query);
+        $redis->set('all_users', json_encode($users));
         return responseMsg(true, "Data Fetched", remove_null($users));
     }
 
@@ -383,8 +391,6 @@ class EloquentAuthRepository implements AuthRepository
                 'name' => $data->name,
                 'mobile' => $data->mobile,
                 'email' => $data->email,
-                "role_id" => $data->role_id,
-                'role_name' => $data->role_name,
                 'ulb_id' => $data->ulb_id,
                 'ulb_name' => $data->ulb_name
             ];
