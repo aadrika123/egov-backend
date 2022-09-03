@@ -6,6 +6,8 @@
 
 use Illuminate\Support\Facades\Crypt;
 
+use function PHPSTORM_META\elementType;
+
 if (!function_exists("responseMsg")) {
     function responseMsg($status, $message, $data)
     {
@@ -35,8 +37,7 @@ if (!function_exists("remove_null")) {
     function remove_null($data,$encrypt=false,array $key=["id"])
     {     
         $collection = collect($data)->map(function ($name,$index) use($encrypt,$key){             
-            if (is_object($name)) {
-                
+            if (is_object($name) || is_array($name)) {
                 return remove_null($name,$encrypt,$key);
             } 
             else 
@@ -80,4 +81,5 @@ if(!function_exists("ConstToArray"))
         return $retuen;
     }
 }
+
 

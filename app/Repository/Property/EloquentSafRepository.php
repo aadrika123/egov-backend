@@ -480,13 +480,13 @@ class EloquentSafRepository implements SafRepository
     */
    #Inbox
    public function inbox($key)
-   { 
+   {  
         try{
             $user_id = auth()->user()->id;
             $redis=Redis::connection();  // Redis Connection
-            $redis_data = json_decode(Redis::get('user:' . $user_id),true);dd( $redis_data);
+            $redis_data = json_decode(Redis::get('user:' . $user_id),true);
             $ulb_id = $redis_data['ulb_id']??auth()->user()->ulb_id;
-            $roll_id =  $redis_data['role_id']??auth()->user()->roll_id;
+            $roll_id = 1;// $redis_data['role_id']??auth()->user()->roll_id;
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');        
             $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
             if(!$work_flow_candidate)
@@ -575,7 +575,7 @@ class EloquentSafRepository implements SafRepository
                 'workflow_id'=>$workflow_id,
                 'work_flow_candidate_id'=>$work_flow_candidate['id'],
                 'module_id'=>$work_flow_candidate['module_id'],
-                "data_list"=>$saf,
+                "data_list"=>adjToArray($saf),
                 ],true,['ulb_id','user_id','roll_id','workflow_id','module_id','id']);
             return responseMsg(true,'',$data);
         }
@@ -1125,50 +1125,72 @@ class EloquentSafRepository implements SafRepository
    public function setWorkFlowForwordBackword(Request $request)
    {
     try{
-        
+        $rules = [
+            "ulbID"=>"required",
+            "workflowsID"=>"required"
+        ];
+        $validator = Validator::make($request->all(),$rules);
+        if($validator->fails())
+        {  
+            return responseMsg(false,$validator->errors(),$request->all());
+        }
+        $ulbID = $request->ulbID;
+        $workflowsID = $request->workflowsID;
+        // if(!is_numeric($ulbID))
+        // {
+        //     $ulbID = Crypt::decrypt($ulbID);
+        // }
+        // if(!is_numeric($workflowsID))
+        // {
+        //     $workflowsID = Crypt::decrypt($workflowsID);
+        // } dd("hhhh"); 
+        $data = Workflow::select(DB::raw(" ulb_workflow_masters.ulb_id, 
+                                            workflows.id as workflows_id,
+                                            workflow_name,
+                                            role_name,
+                                            role_masters.id as rolle_id,
+                                            case when show_full_list = true then  show_full_list 
+                                                else false end as show_full_list
+                                            "))
+                        ->join("ulb_workflow_masters",function($join){
+                                $join->on("workflows.id","=","ulb_workflow_masters.workflow_id");
+                        })
+                        ->join("ulb_workflow_roles",function($join){
+                            $join->on("ulb_workflow_roles.ulb_workflow_id","=","ulb_workflow_masters.id");
+                        })
+                        ->join("role_masters",function($join){
+                            $join->on("role_masters.id","=","ulb_workflow_roles.role_id");
+                        })
+                        ->where("ulb_workflow_masters.ulb_id",$ulbID)
+                        ->where("workflows.id",$workflowsID)
+                        ->orderBy("role_masters.id")
+                        ->get();
+                        // DB::enableQueryLog();
+        $initiator = DB::select("select role_masters.id , role_name                             
+                        from ulb_workflow_masters
+                        inner join role_masters on role_masters.id = ulb_workflow_masters.initiator
+                        where ulb_workflow_masters.ulb_id = $ulbID and ulb_workflow_masters.workflow_id = $workflowsID
+                        and ulb_workflow_masters.deleted_at is null");
+            // dd(DB::getQueryLog());
+        // $finisher = UlbWorkflowMaster::select("role_masters.id","role_name",)
+        //         ->join("role_masters",function($join){
+        //             $join->on("role_masters.id","=","ulb_workflow_roles.finisher");
+        //         })
+        //         ->where("ulb_workflow_masters.ulb_id",$ulbID)
+        //         ->where("ulb_workflow_masters.workflow_id",$workflowsID)
+        //         ->get();
+                        // DB::enableQueryLog();
+        $finisher = DB::select("select role_masters.id , role_name                             
+            from ulb_workflow_masters
+            inner join role_masters on role_masters.id = ulb_workflow_masters.finisher
+            where ulb_workflow_masters.ulb_id = $ulbID and ulb_workflow_masters.workflow_id = $workflowsID
+            and ulb_workflow_masters.deleted_at is null");
         if($request->getMethod()=="GET")
         {
-            $rules = [
-                "ulbID"=>"required",
-                "workflowsID"=>"required"
-            ];
-            $validator = Validator::make($request->all(),$rules);
-            if($validator->fails())
-            {  
-                return responseMsg(false,$validator->errors(),$request->all());
-            }
-            $ulbID = $request->ulbID;
-            $workflowsID = $request->workflowsID;
-            // if(!is_numeric($ulbID))
-            // {
-            //     $ulbID = Crypt::decrypt($ulbID);
-            // }
-            // if(!is_numeric($workflowsID))
-            // {
-            //     $workflowsID = Crypt::decrypt($workflowsID);
-            // } dd("hhhh"); 
-            $data = Workflow::select(DB::raw(" ulb_workflow_masters.ulb_id, 
-                                                workflows.id as workflows_id,
-                                                workflow_name,
-                                                role_name,
-                                                role_masters.id as rolle_id,
-                                                case when show_full_list = true then  show_full_list 
-                                                    else false end as show_full_list
-                                                "))
-                            ->join("ulb_workflow_masters",function($join){
-                                    $join->on("workflows.id","=","ulb_workflow_masters.workflow_id");
-                            })
-                            ->join("ulb_workflow_roles",function($join){
-                                $join->on("ulb_workflow_roles.ulb_workflow_id","=","ulb_workflow_masters.id");
-                            })
-                            ->join("role_masters",function($join){
-                                $join->on("role_masters.id","=","ulb_workflow_roles.role_id");
-                            })
-                            ->where("ulb_workflow_masters.ulb_id",$ulbID)
-                            ->where("workflows.id",$workflowsID)
-                            ->orderBy("role_masters.id")
-                            ->get();
-            return responseMsg(true,'',remove_null($data));
+            $response["rolls"] = $data;
+            $response["initiator"] =$initiator;
+            $response["finisher"] =$finisher;
+            return responseMsg(true,'',remove_null($response));
         }
         elseif($request->getMethod()=="POST")
         {
@@ -1187,21 +1209,87 @@ class EloquentSafRepository implements SafRepository
             {  
                 return responseMsg(false,$validator->errors(),$request->all());
             }
+            $data = array_map(function($val){
+                return $val['rolle_id'];
+            },adjToArray($data));
             $initiator = $request->initiator;
             $finisher = $request->finisher;
             $Rolles = $request->rolles;
-            $test = array_filter($Rolles,function($val) use($initiator,$finisher){
+
+            $message = array_map(function($val) use($initiator,$finisher,$data){
                 if($val['ID']==$initiator && $val['backwodID'])
-                    return true;
+                    return "Initiator Has No Backword Id";
                 elseif($val['ID']==$finisher && $val['forwodID'])
-                    return true;
+                    return "Finisher Has No Forwrod Id";
                 elseif((!$val['backwodID'] || !$val['forwodID']) && !in_array($val['ID'],[$initiator,$finisher]))
-                    return true;
-                elseif(!in_array($val['ID'],[$initiator,$finisher]))
-                    return true;
+                    return $val['ID']." Have Forword And Backword Id ";
+                elseif($val['ID'] == $val['forwodID'] || $val['ID'] == $val['forwodID'] )
+                    return " Rolle ".$val['ID']." Can't Forword And Backword Itself ";
+                elseif(!in_array($val['ID'],$data))
+                    return " Undefind Role Id ".$val['ID'];
+            },$Rolles); //dd($message);
 
-            }); //dd($test);
+            $message["initiator"] = array_filter($Rolles,function($val) use($initiator){
+                if($val['ID']==$initiator)
+                    return true ;
+            });
+            $message["finisher"] = array_filter($Rolles,function($val) use($finisher){
+                if($val['ID']==$finisher)
+                    return true ;
+            });
+            if(sizeof($message["finisher"])>1)
+                $message["finisher"]="Finisher Id Is Multyple Time";
+            if(!$message["finisher"])
+                $message["finisher"]="Finisher Is Not Inclueded"; 
+            else
+                $message["finisher"] =[];       
+            if(sizeof($message["initiator"])>1)
+                $message["initiator"]="Initiator Id Is Multyple Time";           
+            if(!$message["initiator"])
+                $message["initiator"]="Initiator Is Not Inclueded"; 
+                
+            $mapping = array_map(function($val)use($Rolles){
+                $ID = $val['ID'];
+                $FID = $val['forwodID'];
+                $BID = $val['backwodID']; //echo"uid =$ID <br> fid=$FID <br>bid=$BID <br>";
+                $m = array_map(function($v)use($ID,$FID,$BID){
+                    // echo"<br>";
+                    // print_r($v);echo"<br>";
+                    if($v['ID']==$FID && $v['backwodID']!=$ID)
+                        return " $ID Has No Proper Forword Id";
+                    elseif($v['ID']==$BID && $v['forwodID']!=$ID)
+                        return " $ID Has No Proper Backword Id";
+                },$Rolles);
+                $m = array_filter($m,function($val){
+                    return $val;
+                });
+                $m = array_values($m)[0]??[];
+                if(!empty($m))
+                    return ($m)  ;
+            },$Rolles);
+            if(is_array($message["initiator"]))
+                $message["initiator"] = [];
+            if(is_array($message["finisher"]))
+                $message["finisher"] = [];
+            $message = array_filter($message,function($val){return $val;});
+            $message = array_values($message);
+            $mapping = array_filter($mapping,function($val){return $val;});
+            $mapping = array_values($mapping);
 
+            if($mapping){
+                foreach ($mapping as $key => $value) {
+                    $message[]=$value;
+                }
+            }
+            if($message)
+            {
+                return responseMsg(false,$message,$request->all());
+            }
+            DB::beginTransaction();
+            $UlbWorkflowMaster=  UlbWorkflowMaster::where("workflow_id",$workflowsID)
+                                ->where("ulb_id",$ulbID)
+                                ->update(["initiator"=>$initiator,"finisher"=>$finisher]);
+            dd($UlbWorkflowMaster);
             return responseMsg(true,"Workflow Memeber Add Succsessfully","");
         }
     }
