@@ -65,4 +65,10 @@ class ActiveSafController extends Controller
         $data =$this->Repository->getPropIdByWardNoHodingNo($request);        
         return $data;
     }
+
+    public function setWorkFlowForwordBackword(Request $request)
+    { 
+        $data =$this->Repository->setWorkFlowForwordBackword($request);        
+        return $data;
+    }
 }

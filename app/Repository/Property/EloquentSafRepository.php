@@ -26,6 +26,7 @@ use App\Models\UlbWardMaster;
 use App\Models\UlbWorkflowMaster;
 use App\Models\Ward\WardUser;
 use App\Models\WardMstr;
+use App\Models\Workflow;
 use App\Models\WorkflowCandidate;
 use App\Models\WorkflowTrack;
 
@@ -67,7 +68,7 @@ class EloquentSafRepository implements SafRepository
     public function applySaf(Request $request)
     {
         $message=["status"=>false,"data"=>$request->all(),"message"=>""];
-        $user_id = auth()->user()->id; return $this->buildinRulSet1(200,2,1,2,'1942-03-26');
+        $user_id = auth()->user()->id; 
         $isCitizen = auth()->user()->user_type=="Citizen"?true:false;
         try {
             
@@ -1119,6 +1120,96 @@ class EloquentSafRepository implements SafRepository
             return  ['status'=>false,'message'=>$e->getMessage()];
         }
         
+   }
+
+   public function setWorkFlowForwordBackword(Request $request)
+   {
+    try{
+        
+        if($request->getMethod()=="GET")
+        {
+            $rules = [
+                "ulbID"=>"required",
+                "workflowsID"=>"required"
+            ];
+            $validator = Validator::make($request->all(),$rules);
+            if($validator->fails())
+            {  
+                return responseMsg(false,$validator->errors(),$request->all());
+            }
+            $ulbID = $request->ulbID;
+            $workflowsID = $request->workflowsID;
+            // if(!is_numeric($ulbID))
+            // {
+            //     $ulbID = Crypt::decrypt($ulbID);
+            // }
+            // if(!is_numeric($workflowsID))
+            // {
+            //     $workflowsID = Crypt::decrypt($workflowsID);
+            // } dd("hhhh"); 
+            $data = Workflow::select(DB::raw(" ulb_workflow_masters.ulb_id, 
+                                                workflows.id as workflows_id,
+                                                workflow_name,
+                                                role_name,
+                                                role_masters.id as rolle_id,
+                                                case when show_full_list = true then  show_full_list 
+                                                    else false end as show_full_list
+                                                "))
+                            ->join("ulb_workflow_masters",function($join){
+                                    $join->on("workflows.id","=","ulb_workflow_masters.workflow_id");
+                            })
+                            ->join("ulb_workflow_roles",function($join){
+                                $join->on("ulb_workflow_roles.ulb_workflow_id","=","ulb_workflow_masters.id");
+                            })
+                            ->join("role_masters",function($join){
+                                $join->on("role_masters.id","=","ulb_workflow_roles.role_id");
+                            })
+                            ->where("ulb_workflow_masters.ulb_id",$ulbID)
+                            ->where("workflows.id",$workflowsID)
+                            ->orderBy("role_masters.id")
+                            ->get();
+            return responseMsg(true,'',remove_null($data));
+        }
+        elseif($request->getMethod()=="POST")
+        {
+            $rules = [
+                "ulbID"         =>"required",
+                "workflowsID"   =>"required",
+                "initiator"      =>"required",
+                "finisher"      =>"required",
+                "rolles"       =>"required|array",
+                "rolles.*.ID"   =>"required",
+                "rolles.*.forwodID" =>"required",
+                "rolles.*.backwodID" =>"required",
+            ];
+            $validator = Validator::make($request->all(),$rules);
+            if($validator->fails())
+            {  
+                return responseMsg(false,$validator->errors(),$request->all());
+            }
+            $initiator = $request->initiator;
+            $finisher = $request->finisher;
+            $Rolles = $request->rolles;
+            $test = array_filter($Rolles,function($val) use($initiator,$finisher){
+                if($val['ID']==$initiator && $val['backwodID'])
+                    return true;
+                elseif($val['ID']==$finisher && $val['forwodID'])
+                    return true;
+                elseif((!$val['backwodID'] || !$val['forwodID']) && !in_array($val['ID'],[$initiator,$finisher]))
+                    return true;
+                elseif(!in_array($val['ID'],[$initiator,$finisher]))
+                    return true;
+
+            }); //dd($test);
+
+            return responseMsg(true,"Workflow Memeber Add Succsessfully","");
+        }
+    }
+    catch(Exception $e)
+    {
+        return responseMsg(false,$e->getMessage(),$request->all());
+    }
+
    }
    
 }
