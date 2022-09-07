@@ -136,13 +136,37 @@ trait Auth
         );
         $redis->expire('AllVacantLandRentalRate', 18000);
     }
-    public function AllRentalValueSet($redis, array $rentalVal)
+    public function AllRentalValueSet($redis,int $ulb_id, array $rentalVal)
     {
         $redis->set(
-            'AllRentalValue',
+            "AllRentalValue:$ulb_id",
             json_encode($rentalVal)
         );
-        $redis->expire('AllRentalValue', 18000);
+        $redis->expire("AllRentalValue:$ulb_id", 18000);
+    }
+    public function AllBuildingUsageFacterSet($redis, array $rentalVal)
+    {
+        $redis->set(
+            "AllBuildingUsageFacter",
+            json_encode($rentalVal)
+        );
+        $redis->expire("AllBuildingUsageFacter", 18000);
+    }
+    public function AllBuildingRentalValueSet($redis,int $ulb_id, array $rentalVal)
+    {
+        $redis->set(
+            "AllBuildingRentalValue:$ulb_id",
+            json_encode($rentalVal)
+        );
+        $redis->expire("AllBuildingRentalValue:$ulb_id", 18000);
+    }
+    public function OccuPencyFacterSet($redis, array $OccuPencyFacter)
+    {
+        $redis->set(
+            "OccuPencyFacter",
+            json_encode($OccuPencyFacter)
+        );
+        $redis->expire("OccuPencyFacter", 18000);
     }
 
     /**

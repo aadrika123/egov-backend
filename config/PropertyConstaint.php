@@ -233,5 +233,17 @@ return [
         "Municipal Carporation"=>1,
         "Nagar Parishad"=>2,
         "Nagar Panchayat"=>3
-    ]
+    ],
+    "MATRIX-FACTOR"=>[
+        "2"=>[
+            "1"=>1,
+            "2"=>1,
+            "3"=>0.5,            
+        ],
+        "3"=>[
+            "1"=>0.8,
+            "2"=>0.8,
+            "3"=>0.4
+        ],
+    ],
 ];

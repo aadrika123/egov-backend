@@ -83,3 +83,11 @@ if(!function_exists("ConstToArray"))
 }
 
 
+if (!function_exists("floatRound"))
+{
+    function floatRound(float $number, int $roundUpto=0)
+    {
+        return round($number,$roundUpto);
+    }
+}
+
