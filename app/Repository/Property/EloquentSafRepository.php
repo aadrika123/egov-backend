@@ -71,10 +71,6 @@ class EloquentSafRepository implements SafRepository
         $message=["status"=>false,"data"=>$request->all(),"message"=>""];
         $user_id = auth()->user()->id; 
         $isCitizen = auth()->user()->user_type=="Citizen"?true:false;
-        // return $this->buildingRulSet1(auth()->user()->ulb_id,500,1,1,1,2,true,'1540-04-01');
-        // return $this->buildingRulSet2(auth()->user()->ulb_id,500,12,2,40,1,'2020-04-01');
-        return $this->buildingRulSet3(auth()->user()->ulb_id,500,12,2,19.9919,1,true,'2020-04-01');
-
         try {
             
             // Determining the initiator and finisher id
@@ -105,12 +101,13 @@ class EloquentSafRepository implements SafRepository
             {  
                 return responseMsg(false,$validator->errors(),$request->all());
             }
+            
+            $wardMaster = UlbWardMaster::select('id','ward_name')
+                            ->where('ulb_id',$ulb_id)
+                            ->get();            
             if($request->getMethod()=="GET")
             {
                 $data=[];
-                $wardMaster = UlbWardMaster::select('id','ward_name')
-                                ->where('ulb_id',$ulb_id)
-                                ->get();
                 $data['ward_master']=$wardMaster;
                 $ownershipTypes = PropParamOwnershipType::select('id','ownership_type')
                                     ->where('status',1)
@@ -154,6 +151,15 @@ class EloquentSafRepository implements SafRepository
             }
             elseif($request->getMethod()=="POST")
             {
+                $ward_no = array_filter(adjToArray($wardMaster),function($val){
+                    return $val['id'] ==111;
+                });
+                $ward_no = array_values($ward_no)[0]['ward_name'];
+                
+                // return $this->buildingRulSet1(auth()->user()->ulb_id,500,1,1,1,2,true,'1540-04-01');
+                // return $this->buildingRulSet2(auth()->user()->ulb_id,500,12,2,40,1,'2020-04-01');
+                return $this->buildingRulSet3(auth()->user()->ulb_id,500,12,2,19.9919,1,true,1,$ward_no,'2020-04-01');                
+
                 // $rules["ward"]="required|int";
                 // $message["ward.required"]="Ward No. Required";
                 // $message["ward.int"]="Ward ID Must Be Int Type";

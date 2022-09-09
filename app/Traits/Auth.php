@@ -168,6 +168,14 @@ trait Auth
         );
         $redis->expire("OccuPencyFacter", 18000);
     }
+    public function AllCircleRateSet($redis,int $ulb_id, array $OccuPencyFacter)
+    {
+        $redis->set(
+            "AllCircleRate:$ulb_id",
+            json_encode($OccuPencyFacter)
+        );
+        $redis->expire("AllCircleRate:$ulb_id", 18000);
+    }
 
     /**
      * | query for save ulb and role on user login

@@ -246,4 +246,19 @@ return [
             "3"=>0.4
         ],
     ],
+    "CIRCALE-RATE-ROAD" =>[
+        "1"=>"_principle",
+        "2"=>"_main",
+        "3"=>"_other",
+    ],
+    "CIRCALE-RATE-PROP" =>[
+        "0"=>"_apt",
+        "1"=>"_pakka",
+        "2"=>"_pakka",
+        "3"=>"_kuccha",
+    ],
+    "CIRCALE-RATE-USAGE" =>[
+        "1"=>"res",
+        "2"=>"com",
+    ]
 ];

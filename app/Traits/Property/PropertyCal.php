@@ -76,7 +76,7 @@ trait PropertyCal
          * 1. getAllVacantLandRentalRate()
          * 
          * ================ Dependent Function ===============
-         * 1. getRentalRate()
+         * 1. RentalRate()
          * 
          * ================ Requst ===========================
          * 1. $with_in_arear_sft        -> Road Width in SquereFeet
@@ -117,7 +117,7 @@ trait PropertyCal
             die;
         }
     }
-    public function getRentalRate(float $road_width_in_sft, $effective_date, int $ulb_type_id):float
+    public function RentalRate(float $road_width_in_sft, $effective_date, int $ulb_type_id):float
     {
         /**
          * Description -> This Function Return Rental Value For Vacant Land. Do Operation Depending Upton Given StbClass Object Array By  getRodeType()
@@ -167,7 +167,7 @@ trait PropertyCal
          *                                         Case 2.) If No Sypply Usage Type Then Return All OccupencyFacter
          * 
          * ================= Dependend Function===================
-         * 1. getOccuPencyFacter()
+         * 1. OccuPencyFacter()
          * 
          * ================= Response ============================
          * Stdcl Object Array 
@@ -203,7 +203,7 @@ trait PropertyCal
         }
     }
 
-    public function getOccuPencyFacter(string $usege_type):float
+    public function OccuPencyFacter(string $usege_type):float
     {
         /**
          * Description  -> This Function Perform Filteration Depending On Retrive Stdcl Object Array Return Occupency Facter 
@@ -292,7 +292,7 @@ trait PropertyCal
          * $AllRentalValue  -> Stdcl Objects Array
          * 
          * ====================== Dependent Function =================
-         * 1. getRentalValue()
+         * 1. RentalValue()
          * 
          * =====================Function Usage ======================
          * AllRentalValueSet($redis,$ulb_id,$AllRentalValue)  // Trate/Auth.php
@@ -308,7 +308,7 @@ trait PropertyCal
 
     }
 
-    public function getRentalValue(int $ulb_id,int $usege_type_id, int $zone_id, int $construction_type_id):float
+    public function RentalValue(int $ulb_id,int $usege_type_id, int $zone_id, int $construction_type_id):float
     {
         /**
          * Description  -> This Function  Filter Stdcl Object Array  From  getAllRentalValue() Depending Upon Pass Data ($usege_type_id,$zone_id,$construction_type_id)
@@ -449,7 +449,7 @@ trait PropertyCal
          *                                          | x
          * 
          * ===================Dependent Function ================
-         * getBuildingRentalValue()
+         * BuildingRentalValue()
          * 
          * ===================Function Used ======================
          * AllBuildingRentalValueSet($redis,$ulb_id,$AllBuildingRentalValue)  -> For Set Data In Redis 
@@ -485,7 +485,7 @@ trait PropertyCal
         return  array_values($AllBuildingRentalValue);
     }
 
-    public function getBuildingRentalValue(int $ulb_id,int $RoadTypeId, int $constructionTypeID,$effectiveDate) :float
+    public function BuildingRentalValue(int $ulb_id,int $RoadTypeId, int $constructionTypeID,$effectiveDate) :float
     {
         /**
          * Description ->  This Function Filter Data(Stdcl Object) Recived From getAllBuildingRentalValue() And Find The Rental Rate
@@ -527,9 +527,44 @@ trait PropertyCal
         
     }
 
+    public function getAllCircleRate(int $ulb_id):array //Stdcl object array
+    {
+        $redis = Redis::connection();//Redis::del("AllCircleRate:$ulb_id");
+        $CircleRate = json_decode(Redis::get("AllCircleRate:$ulb_id"))??null;
+        if(!$CircleRate)
+        {
+            $CircleRate = DB::select("SELECT *
+                                    FROM prop_param_capital_value_rate_raw
+                                    WHERE ulb_id = $ulb_id");            
+            $this->AllCircleRateSet($redis,$ulb_id,$CircleRate);
+        }
+        return  $CircleRate;
+    }
+    public function CircleRate(int $ulb_id,string $ward_no,string $columnName):float
+    {   
+        try{
+            $AllCircleRate = $this->getAllCircleRate($ulb_id);
+            $CircleRate = array_filter($AllCircleRate,function($val) use($ward_no){
+                return $val->ward_no == $ward_no;
+            });
+            $CircleRate = array_values($CircleRate);
+           
+            if(!$CircleRate)
+            {
+                throw new Exception("Circle Rate Note Faound");
+            }
+            return $CircleRate[0]->$columnName;
+        }
+        catch(Exception  $e)
+        {
+            echo $e->getMessage();
+            die;
+        }
+
+    }
+
     # ===================RuleSet Start ===================================
     /**
-     * Tax = area(sqmt) x rental_rate x occupancy_factor;
      * ==============OCCUPANCY FACTER ==================
      * SELF     -> 1
      * TENATED  -> 1.5 
@@ -552,8 +587,8 @@ trait PropertyCal
          * | Tax = Area(sqmt) X Rental Rate X Occupancy Facter  |
          * ------------------------------------------------------
          * Area             = DecimalToSqtMeter($area_in_dml)
-         * Rental Rate      = getRentalRate($road_width_in_sft,"2016-04-01",$ulb_type_id)
-         * Occupancy Facter = getOccuPencyFacter($usege_type)
+         * Rental Rate      = RentalRate($road_width_in_sft,"2016-04-01",$ulb_type_id)
+         * Occupancy Facter = OccuPencyFacter($usege_type)
          * 
          * =============== Request ================================
          * $road_width_in_sft       -> road width in sft
@@ -564,8 +599,8 @@ trait PropertyCal
          * ==============Response ================================
          * $Tax (Yearly TAX Of Vacand Land )
         */
-        $rate = $this->getRentalRate($road_width_in_sft,"2016-04-01",$ulb_type_id);
-        return $Tax = $this->DecimalToSqtMeter($area_in_dml) * $rate * $this->getOccuPencyFacter($usege_type);
+        $rate = $this->RentalRate($road_width_in_sft,"2016-04-01",$ulb_type_id);
+        return $Tax = $this->DecimalToSqtMeter($area_in_dml) * $rate * $this->OccuPencyFacter($usege_type);
     }
     public function vacantRulSet2(float $road_width_in_sft,float $area_in_dml,int $ulb_type_id, string $usege_type):float
     {
@@ -577,8 +612,8 @@ trait PropertyCal
          * | Tax = Area(sqmt) X Rental Rate X Occupancy Facter  |
          * ------------------------------------------------------
          * Area             = DecimalToSqtMeter($area_in_dml)
-         * Rental Rate      = getRentalRate($road_width_in_sft,"2022-04-01",$ulb_type_id)
-         * Occupancy Facter = getOccuPencyFacter($usege_type)
+         * Rental Rate      = RentalRate($road_width_in_sft,"2022-04-01",$ulb_type_id)
+         * Occupancy Facter = OccuPencyFacter($usege_type)
          * 
          * =============== Request ================================
          * $road_width_in_sft       -> road width in sft
@@ -589,8 +624,8 @@ trait PropertyCal
          * ==============Response ================================
          * $Tax (Yearly TAX Of Vacand Land ) 
         */
-        $rate = $this->getRentalRate($road_width_in_sft,"2022-04-01",$ulb_type_id);
-        return $Tax = $this->DecimalToSqtMeter($area_in_dml) * $rate * $this->getOccuPencyFacter($usege_type);
+        $rate = $this->RentalRate($road_width_in_sft,"2022-04-01",$ulb_type_id);
+        return $Tax = $this->DecimalToSqtMeter($area_in_dml) * $rate * $this->OccuPencyFacter($usege_type);
     }
     
     public function buildingRulSet1(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID, int $zoneID, int $constructionTypeID,int $PropertyTypeID, bool $Residential100, $buildupDate ):array 
@@ -615,7 +650,7 @@ trait PropertyCal
          * ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ 
          * =======================Reference Variable====================
          * Buildup Area         = $buildupAreaSqft
-         * Rental Value         = getRentalValue($ulb_id,$usegeTypeID,$zoneID,$constructionTypeID)
+         * Rental Value         = RentalValue($ulb_id,$usegeTypeID,$zoneID,$constructionTypeID)
          * Tax Pecentage        = $pesentage
          * ARV                  = $arv
          * HoldingTax           = $holding_tax
@@ -632,8 +667,26 @@ trait PropertyCal
          *                                                        |Case 2.) If usage_type != RESIDENTIAL Then 2;
          * $zoneID               -> | 1-> Zone1
          *                          | 2-> Zone2
+         * $constructionTypeID   -> prop_param_occupancy_types->id 
+         * $PropertyTypeID       -> prop_param_property_types->id 
+         * $Residential100       -> |true or false (hole building on the dasis of that date)
+         * $buildupDate          -> construction date Of floar
+         * 
+         * ======================= Response ==========================
+         * Array = ["ARV"               =>$ARV,
+                    "buildupAreaSqft"   =>$buildupAreaSqft,
+                    "CarpetPresent"     =>$CarpetPresent,
+                    "CarpetArea"        =>$CarpetArea,
+                    "usegeTypeID"       => $usegeTypeID,
+                    "UsageFacter"       =>$UsageFacter,                
+                    "OccuType"          => $OccuType,
+                    "OccuPencyFacter"   =>$OccuPencyFacter,
+                    "GetRodeTypeID"     =>$GetRodeTypeID,
+                    "constructionTypeID" =>$constructionTypeID,
+                    "RentalValue"       => $RentalValue,
+            ]
         */
-        $rentalVal = $this->getRentalValue($ulb_id,$usegeTypeID,$zoneID,$constructionTypeID);
+        $rentalVal = $this->RentalValue($ulb_id,$usegeTypeID,$zoneID,$constructionTypeID);
         $arv = $buildupAreaSqft * $rentalVal;
         $pesentage = 0;
         $tax = 0;
@@ -666,11 +719,67 @@ trait PropertyCal
     }
     public function buildingRulSet2(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, $buildupDate )
     { 
+        /**
+         * Description -> This Rule Is Applicable For Building (Individual Floar)
+         * Validity     -> 2016-04-01 To 2022-03-31  (2016-2017 to 2021-2022) 
+         * =============== Formula==================================
+         * -------------------------------------------------------------------------------------------------------------
+         * ARV  = CARPET AREA X USAGE FACTOR X OCCUPANCY FACTOR X RENTAL RATE                                           |
+         *                                                                                                              |
+         * CARPET AREA          = BuildupArea X  Percentage   |Case 1.)Residential 70%                                  |
+         *                                                    |Case 2.)Commercial  80%                                  |
+         *                                                                                                              |
+         * USAGE FACTOR         = UsageFacter($usegeTypeID,'2016-04-01')                                                |
+         *                                                                                                              |
+         * OCCUPANCY FACTOR     = OccuPencyFacter($OccuType)                                                            |
+         *                                                                                                              |
+         * RENTAL RATE          = BuildingRentalValue($ulb_id,$GetRodeTypeID,$constructionTypeID,'2016-04-01')          |
+         *                                                                                                              |
+         * YearTax = ARV x 2%                                                                                           |
+         * -------------------------------------------------------------------------------------------------------------
+         * =======================Reference Variable====================
+         * BuildupArea          = $buildupAreaSqft
+         * USAGE FACTOR         = $UsageFacter    = UsageFacter($usegeTypeID,'2016-04-01') | $usegeTypeID = From Parameter
+         * OCCUPANCY FACTOR     = $OccuPencyFacter= OccuPencyFacter($OccuType)     |   $OccuType = Config::get("PropertyConstaint.OCCUPANCY-TYPE.$OccuTypeID")
+         * RENTAL RATE          = $RentalValue    = BuildingRentalValue($ulb_id,$GetRodeTypeID,$constructionTypeID,'2016-04-01') | $ulb_id             = From Parameter
+         *                                                                                                                          | $GetRodeTypeID      = getRodeType($road_width_in_sft,'2016-04-01',1)[0]->id | $road_width_in_sft = From Parameter
+         *                                                                                                                          | $constructionTypeID = From Parameter      
+         * CARPET AREA          = $CarpetArea
+         * ARV                  = $ARV
+         * YearTax              = $tax
+         * 
+         * ========================Request=============================
+         * $ulb_id               -> ulb_ward_masters->id (Table)
+         * $buildupAreaSqft      -> Built Up Area (in Sq. Ft)
+         * $usegeTypeID          -> prop_param_usage_types ->id   |Case 1.) If usage_type = RESIDENTIAL  Then 1;
+         *                                                        |Case 2.) If usage_type != RESIDENTIAL Then 2;
+         * 
+         * $OccuTypeID           -> prop_param_occupancy_types->id   |Case 1.) TENANTED  Then 1;
+         *                                                           |Case 2.) SELF OCCUPIED Then 2;
+         * 
+         * $road_width_in_sft    -> Road Width in sqf
+         * $constructionTypeID   -> prop_param_occupancy_types->id 
+         * $buildupDate          -> construction date Of floar
+         * ======================= Response ===========================
+         * ARRAY = ["ARV"                =>$ARV,
+                "TotalTax"          => $tax,
+                "buildupAreaSqft"   =>$buildupAreaSqft,
+                "CarpetPresent"     =>$CarpetPresent,
+                "CarpetArea"        =>$CarpetArea,
+                "usegeTypeID"       => $usegeTypeID,
+                "UsageFacter"       =>$UsageFacter,                
+                "OccuType"          => $OccuType,
+                "OccuPencyFacter"   =>$OccuPencyFacter,
+                "GetRodeTypeID"     =>$GetRodeTypeID,
+                "constructionTypeID" =>$constructionTypeID,
+                "RentalValue"       => $RentalValue,
+            ]
+        */
         $OccuType = Config::get("PropertyConstaint.OCCUPANCY-TYPE.$OccuTypeID");
-        $OccuPencyFacter = $this->getOccuPencyFacter($OccuType);
+        $OccuPencyFacter = $this->OccuPencyFacter($OccuType);
         $UsageFacter = $this->UsageFacter($usegeTypeID,'2016-04-01');
         $GetRodeTypeID = $this->getRodeType($road_width_in_sft,'2016-04-01',1)[0]->id??0;
-        $RentalValue = $this->getBuildingRentalValue($ulb_id,$GetRodeTypeID,$constructionTypeID,'2016-04-01');
+        $RentalValue = $this->BuildingRentalValue($ulb_id,$GetRodeTypeID,$constructionTypeID,'2016-04-01');
         
         $CarpetPresent = 80;
         if($usegeTypeID==1)
@@ -678,47 +787,106 @@ trait PropertyCal
 
         $CarpetArea = $buildupAreaSqft * $CarpetPresent/100;
         $ARV = $CarpetArea * $UsageFacter * $OccuPencyFacter * $RentalValue;
-
-        $data=["ARV" =>$ARV,
-                "buildupAreaSqft"=>$buildupAreaSqft,
-                "CarpetPresent" =>$CarpetPresent,
-                "CarpetArea" =>$CarpetArea,
-                "usegeTypeID" => $usegeTypeID,
-                "UsageFacter" =>$UsageFacter,                
-                "OccuType" => $OccuType,
-                "OccuPencyFacter" =>$OccuPencyFacter,
-                "GetRodeTypeID" =>$GetRodeTypeID,
+        $tax = $ARV * 2/100;
+        $data=["ARV"                =>$ARV,
+                "TotalTax"          => $tax,
+                "buildupAreaSqft"   =>$buildupAreaSqft,
+                "CarpetPresent"     =>$CarpetPresent,
+                "CarpetArea"        =>$CarpetArea,
+                "usegeTypeID"       => $usegeTypeID,
+                "UsageFacter"       =>$UsageFacter,                
+                "OccuType"          => $OccuType,
+                "OccuPencyFacter"   =>$OccuPencyFacter,
+                "GetRodeTypeID"     =>$GetRodeTypeID,
                 "constructionTypeID" =>$constructionTypeID,
-                "RentalValue" => $RentalValue,
+                "RentalValue"       => $RentalValue,
         ];
         return  $data;
     }
 
-    public function buildingRulSet3(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, bool $Residential100 ,$buildupDate )
+    public function buildingRulSet3(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, bool $Residential100 ,int $PropertyTypeID,string $ward_no,$buildupDate ):array
     {
         /**
-         *  CIRCLE RATE 
-         *  X BUILDUP AREA 
-         *  X OCCUPANCY FACTOR 
-         *  X TAX PERCENTAGE 
-         *  X CALCULATION FACTOR 
-         *  X MATRIX FACTOR RATE (only in case of 100% residential property)
-         * ----------------------------------------
-         * = PROPERTY TAX 
+         * Description -> This Rule Is Applicable For Building (Individual Floar)
+         * Validity     -> 2022-04-01 To Till Now  (2022-2023 to Till Now) 
+         * =============== Formula==================================
          * 
-         *  */ 
+         * ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+         *                                                                                                                                                                                  |
+         * TAX = CIRCLE RATE X BUILDUP AREA X OCCUPANCY FACTOR  X TAX PERCENTAGE X CALCULATION FACTOR  X MATRIX FACTOR RATE (only in case of 100% residential property)                     |
+         *                                                                                                                                                                                  |
+         * CIRCLE RATE      = CircleRate($ulb_id,$ward_no,$columnName)                                                                                                                                                              |
+         *                                                                                                                                                                                  |
+         * BUILDUP AREA     = $buildupAreaSqft                                                                                                                                              |
+         *                                                                                                                                                                                  |
+         * OCCUPANCY FACTOR = OccuPencyFacter($OccuType)                                                                                                                                    |
+         *                                                                                                                                                                                  |
+         * TAX PERCENTAGE   = $TaxPresent   | Case 1.) Residential 0.0.75%                                                                                                                  |
+         *                                  | Case 2.) Commercial  AND BUILDUP AREA < 25000 Then 0.15% Else 0.20%                                                                           |
+         *                                                                                                                                                                                  |
+         * CALCULATION FACTOR= UsageFacter($usegeTypeID,'2022-04-01')                                                                                                                       |
+         *                                                                                                                                                                                  |
+         * MATRIX FACTOR RATE=  Config::get("PropertyConstaint.MATRIX-FACTOR.$GetRodeTypeID.$constructionTypeID") (only in case of 100% residential property)                               |
+         * ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+         * 
+         * =======================Reference Variable====================
+         * BUILDUP AREA         = $buildupAreaSqft
+         * CALCULATION FACTOR   = $UsageFacter    = UsageFacter($usegeTypeID,'2016-04-01') | $usegeTypeID = From Parameter
+         * OCCUPANCY FACTOR     = $OccuPencyFacter= OccuPencyFacter($OccuType)     |   $OccuType = Config::get("PropertyConstaint.OCCUPANCY-TYPE.$OccuTypeID")     
+         * TAX PERCENTAGE       = $TaxPresent
+         * MATRIX FACTOR RATE   = $MatrixFactor(only in case of 100% residential property) = Config::get("PropertyConstaint.MATRIX-FACTOR.$GetRodeTypeID.$constructionTypeID")         
+         * YearTax              = $Tax
+         * 
+         * ========================Request=============================
+         * $ulb_id               -> ulb_ward_masters->id (Table)
+         * $buildupAreaSqft      -> Built Up Area (in Sq. Ft)
+         * $usegeTypeID          -> prop_param_usage_types ->id   |Case 1.) If usage_type = RESIDENTIAL  Then 1;
+         *                                                        |Case 2.) If usage_type != RESIDENTIAL Then 2;
+         * 
+         * $OccuTypeID           -> prop_param_occupancy_types->id   |Case 1.) TENANTED  Then 1;
+         *                                                           |Case 2.) SELF OCCUPIED Then 2;
+         * 
+         * $road_width_in_sft    -> Road Width in sqf
+         * $constructionTypeID   -> prop_param_occupancy_types->id 
+         * $Residential100       -> |true or false (hole building on the dasis of that date)
+         * $newWardId            -> ulb_ward_masters->id (Table)
+         * $buildupDate          -> construction date Of floar 
+         * 
+         * ======================= Response ===========================
+         * ARRAY = ["Tax"           =>$Tax,
+                "buildupAreaSqft"   =>$buildupAreaSqft,
+                "CircalRate"        =>$CircalRate,
+                "TaxPresent"        =>$TaxPresent,
+                "usegeTypeID"       => $usegeTypeID,
+                "CalculationFactor" =>$CalculationFactor,                
+                "OccuType"          => $OccuType,
+                "OccuPencyFacter"   =>$OccuPencyFacter,
+                "GetRodeTypeID"     =>$GetRodeTypeID,
+                "constructionTypeID" =>$constructionTypeID,
+                "MatrixFactor"      => $MatrixFactor
+            ]
+        */ 
         $OccuType = Config::get("PropertyConstaint.OCCUPANCY-TYPE.$OccuTypeID");
-        $OccuPencyFacter = $this->getOccuPencyFacter($OccuType);        
+        $OccuPencyFacter = $this->OccuPencyFacter($OccuType);        
         $CalculationFactor = $this->UsageFacter($usegeTypeID,'2022-04-01');        
         $GetRodeTypeID = $this->getRodeType($road_width_in_sft,'2016-04-01',1)[0]->id??0;
-        $CircalRate = 3366;
+
+        $resCom = $usegeTypeID==1?1:2;
+        $use = Config::get("PropertyConstaint.CIRCALE-RATE-USAGE.$resCom");
+        $road_id = $this->getRodeType($road_width_in_sft,'2022-04-01', 1)[0]->id;
+        $road = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$road_id");
+        $prop_id = $PropertyTypeID==3?0:$constructionTypeID;
+        $prop = Config::get("PropertyConstaint.CIRCALE-RATE-PROP.$prop_id");
+        $columnName = $use.$prop.$road;
+        $CircalRate = $this->CircleRate($ulb_id,$ward_no,$columnName);
+
         $MatrixFactor = Config::get("PropertyConstaint.MATRIX-FACTOR.$GetRodeTypeID.$constructionTypeID")??1.00;
         
         $TaxPresent = 0.20;
-        if($buildupAreaSqft>=25000)
+        if($buildupAreaSqft<25000)
             $TaxPresent = 0.15;
         elseif($usegeTypeID==1)
-            $TaxPresent = 0.75;
+            $TaxPresent = 0.075;
 
         $Tax = ($CircalRate * $buildupAreaSqft * $OccuPencyFacter * $TaxPresent * $CalculationFactor)/100;
         if($Residential100)
@@ -742,5 +910,6 @@ trait PropertyCal
     }
 
     #================================ End RuleSet ===================================================
+    
     
 }
