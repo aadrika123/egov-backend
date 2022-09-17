@@ -32,7 +32,6 @@ use App\Models\Workflows\UlbWorkflowRole;
 use App\Models\WorkflowTrack;
 
 use App\Traits\Auth;
-use App\Traits\Property\PropertyCal;
 use App\Traits\Property\WardPermission;
 
 use Exception;
@@ -41,6 +40,8 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use App\EloquentClass\Property\SafCalculation;
+use App\EloquentClass\Property\PropertyTax;
 
 /**
  * | Created On-10-08-2022
@@ -52,8 +53,6 @@ class EloquentSafRepository implements SafRepository
 {
     use Auth;               // Trait Used added by sandeep bara date 17-08-2022
     use WardPermission;
-    use PropertyCal;
-
     /**
      * | Citizens Applying For SAF
      * | Proper Validation will be applied after 
@@ -62,14 +61,18 @@ class EloquentSafRepository implements SafRepository
      * | @param response
      */
     protected $property;
+    protected $saf;
+    protected $user_id;
     public function __construct()
     { 
         $this->property = new EloquentProperty;
+        $this->saf = new SafCalculation();
+        $this->propertyTax = new PropertyTax();
     }
     public function applySaf(Request $request)
     { 
         $message=["status"=>false,"data"=>$request->all(),"message"=>""];
-        $user_id = auth()->user()->id; 
+        $user_id = auth()->user()->id;
         $isCitizen = auth()->user()->user_type=="Citizen"?true:false;
         try {
             
@@ -158,8 +161,13 @@ class EloquentSafRepository implements SafRepository
                 
                 // return $this->buildingRulSet1(auth()->user()->ulb_id,500,1,1,1,2,true,'1540-04-01');
                 // return $this->buildingRulSet2(auth()->user()->ulb_id,500,12,2,40,1,'2020-04-01');
-                return $this->buildingRulSet3(auth()->user()->ulb_id,500,12,2,19.9919,1,true,1,$ward_no,'2020-04-01');                
-
+                // return $this->saf->buildingRulSet3(auth()->user()->ulb_id,500,12,2,19.9919,1,true,1,$ward_no,'2020-04-01');  
+                $inputs = $request->all();   
+                $inputs['ulb_id'] =  $ulb_id; 
+                $inputs['ward_no'] =  $ward_no;
+                $this->saf->BuildingTax($inputs);
+                $this->propertyTax->InsertTax(1,$this->saf->TotalTax);
+                return($this->saf->TotalTax);
                 // $rules["ward"]="required|int";
                 // $message["ward.required"]="Ward No. Required";
                 // $message["ward.int"]="Ward ID Must Be Int Type";

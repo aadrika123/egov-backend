@@ -4,6 +4,7 @@
 
 // function for Static Message
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
 
 use function PHPSTORM_META\elementType;
@@ -91,3 +92,162 @@ if (!function_exists("floatRound"))
     }
 }
 
+// get due date by date
+if(!function_exists('getQuaterDueDate'))
+{
+    function getQuaterDueDate(String $date): String 
+    {
+        /* ------------------------------------------------------------
+            * Request
+            * ------------------------------------------------------------
+            * #reqFromdate
+            * ------------------------------------------------------------
+            * Calculation
+            * ------------------------------------------------------------
+            * #MM =         | Get month from reqFromdate
+            * #YYYY =       | Get year from reqFromdate
+            * #dueDate =    | IF MM >=4 AND MM <=6 THE 
+                            |       #YYYY-06-30
+                            | IF MM >=7 AND MM <=9 THE 
+                            |       #YYYY-09-30
+                            | IF MM >=10 AND MM <=12 THE 
+                            |       #YYYY-12-31
+                            | IF MM >=1 AND MM <=3 THE 
+                            |       (#YYYY+1)-03-31
+        
+        */
+        $carbonDate = Carbon::createFromFormat("Y-m-d", $date);
+        $MM = (int) $carbonDate->format("m");
+        $YYYY = (int) $carbonDate->format("Y");
+
+        if ($MM>=4 && $MM<=6) return $YYYY."-06-30";
+        if ($MM>=7 && $MM<=9) return $YYYY."-09-30";
+        if ($MM>=10 && $MM<=12) return $YYYY."-12-31";
+        if ($MM>=1 && $MM<=3) return ($YYYY)."-03-31";
+    }
+}
+// get Financual Year by date
+if(!function_exists('getQtr'))
+{
+    function getQtr(String $date): String 
+    {
+        /* ------------------------------------------------------------
+            * Request
+            * ------------------------------------------------------------
+            * #reqDate
+            * ------------------------------------------------------------
+            * Calculation
+            * ------------------------------------------------------------
+            * #MM =         | Get month from reqDate
+            * #YYYY =       | Get year from reqDate
+            * #qtr =        | IF MM >=4 AND MM <=6 THEN 
+                            |       #qtr = 1
+                            | IF MM >=7 AND MM <=9 THEN 
+                            |       #qtr = 2
+                            | IF MM >=10 AND MM <=12 THEN 
+                            |       #qtr = 3
+                            | IF MM >=1 AND MM <=3 THEN 
+                            |       #qtr = 4
+        */
+        $carbonDate = Carbon::createFromFormat("Y-m-d", $date);
+        $MM = (int) $carbonDate->format("m");
+    
+        if ($MM>=4 && $MM<=6) return 1;
+        if ($MM>=7 && $MM<=9) return 2;
+        if ($MM>=10 && $MM<=12) return 3;
+        if ($MM>=1 && $MM<=3) return 4;
+    }
+
+}
+// get Financual Year by date
+if(!function_exists('getFYear'))
+{
+    function getFYear(String $date=null): String 
+    {
+        /* ------------------------------------------------------------
+            * Request
+            * ------------------------------------------------------------
+            * #reqDate
+            * ------------------------------------------------------------
+            * Calculation
+            * ------------------------------------------------------------
+            * #MM =         | Get month from reqDate
+            * #YYYY =       | Get year from reqDate
+            * #FYear =      | IF #MM >= 1 AND #MM <=3 THEN 
+                            |   #FYear = (#YYYY-1)-#YYYY
+                            | IF #MM > 3 THEN 
+                            |   #FYear = #YYYY-(#YYYY+1)
+        */
+        if(!$date)
+        {
+            $date = Carbon::now()->format('Y-m-d');
+        }
+        $carbonDate = Carbon::createFromFormat("Y-m-d", $date);
+        $MM = (int) $carbonDate->format("m");
+        $YYYY = (int) $carbonDate->format("Y");
+    
+        return ($MM <=3 ) ? ($YYYY-1)."-".$YYYY : $YYYY."-".($YYYY+1);
+    }
+
+}
+
+if(!function_exists("fromRuleEmplimenteddate"))
+{
+    function fromRuleEmplimenteddate(): String 
+    {
+        /* ------------------------------------------------------------
+            * Calculation
+            * ------------------------------------------------------------
+            * subtract 12 year from current date
+        */
+        return Carbon::now()->subYear(12)->format("Y-m-d");
+    }
+}
+if(!function_exists("FyListasoc"))
+{
+    function FyListasoc($date=null)
+    {
+        $data=[];
+        $strtotime = $date?strtotime($date):strtotime(date('Y-m-d'));
+        $y = date('Y',$strtotime);
+        $m=date('m',$strtotime);
+        $year = $y;
+        if($m>3)
+            $year = $y+1;        
+        while (true)
+        {
+            $data[]=($year-1).'-'.$year;
+            if($year>=date('Y')+1)
+                break;
+            ++$year;
+        }
+        // print_var($data);die;
+        return ($data);
+        
+    }
+}
+
+if(!function_exists('FyListdesc'))
+{
+    function FyListdesc($date=null)
+    {
+        $data=[];
+        $strtotime = $date?strtotime($date):strtotime(date('Y-m-d'));
+        $y = date('Y',$strtotime);
+        $m=date('m',$strtotime);
+        $year = $y;
+        if($m>3)
+            $year = $y+1;
+        while (true)
+        {
+            $data[]=($year-1).'-'.$year;
+            if($year=='2015')
+                break;
+            --$year;
+        }
+        // print_var($data);die;
+        return ($data);
+        
+    }
+    
+}
