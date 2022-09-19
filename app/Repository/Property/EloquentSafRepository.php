@@ -166,7 +166,7 @@ class EloquentSafRepository implements SafRepository
                 $inputs['ulb_id'] =  $ulb_id; 
                 $inputs['ward_no'] =  $ward_no;
                 $this->saf->BuildingTax($inputs);
-                $this->propertyTax->InsertTax(1,$this->saf->TotalTax);
+                // $this->propertyTax->InsertTax(1,$this->saf->TotalTax);
                 return($this->saf->TotalTax);
                 // $rules["ward"]="required|int";
                 // $message["ward.required"]="Ward No. Required";
