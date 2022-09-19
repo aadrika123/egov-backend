@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Repository\Property\EloquentSafRepository;
 
 class ActiveSafController extends Controller
-{    
+{
     /**
      * | Created On-08-08-2022 
      * | Created By-Anshu Kumar
@@ -29,46 +29,46 @@ class ActiveSafController extends Controller
     }
     public function inbox(Request $request)
     {
-        $data =$this->Repository->inbox($request->key);
+        $data = $this->Repository->inbox($request->key);
         return $data;
     }
     public function outbox(Request $request)
     {
-        $data =$this->Repository->outbox($request->key);
+        $data = $this->Repository->outbox($request->key);
         return $data;
     }
     public function details(Request $request)
     {
-        $data =$this->Repository->details($request->id);
+        $data = $this->Repository->details($request->id);
         return $data;
     }
 
     public function special(Request $request)
     {
-        $data =$this->Repository->special($request);
+        $data = $this->Repository->special($request);
         return $data;
     }
 
     public function specialInbox(Request $request)
     {
-        $data =$this->Repository->specialInbox($request->key);
+        $data = $this->Repository->specialInbox($request->key);
         return $data;
     }
 
     public function postNextLevel(Request $request)
     {
-        $data =$this->Repository->postNextLevel($request);        
+        $data = $this->Repository->postNextLevel($request);
         return $data;
-    }    
+    }
     public function getPropIdByWardNoHodingNo(Request $request)
     {
-        $data =$this->Repository->getPropIdByWardNoHodingNo($request);        
+        $data = $this->Repository->getPropIdByWardNoHodingNo($request);
         return $data;
     }
 
     public function setWorkFlowForwordBackword(Request $request)
-    { 
-        $data =$this->Repository->setWorkFlowForwordBackword($request);        
+    {
+        $data = $this->Repository->setWorkFlowForwordBackword($request);
         return $data;
     }
 }
