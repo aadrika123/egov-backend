@@ -153,18 +153,12 @@ class EloquentSafRepository implements SafRepository
                 // return $this->buildingRulSet1(auth()->user()->ulb_id,500,1,1,1,2,true,'1540-04-01');
                 // return $this->buildingRulSet2(auth()->user()->ulb_id,500,12,2,40,1,'2020-04-01');
                 // return $this->saf->buildingRulSet3(auth()->user()->ulb_id,500,12,2,19.9919,1,true,1,$ward_no,'2020-04-01');  
-                $inputs = $request->all();
-                $inputs['ulb_id'] =  $ulb_id;
-                $inputs['ward_no'] =  $ward_no;
-<<<<<<< HEAD
-                return $this->saf->BuildingTax($inputs);
-                //$this->propertyTax->InsertTax(1,$this->saf->TotalTax);
-                return ($this->saf->TotalTax);
-=======
-                $this->saf->BuildingTax($inputs);
-                // $this->propertyTax->InsertTax(1,$this->saf->TotalTax);
-                return($this->saf->TotalTax);
->>>>>>> master
+                // $inputs = $request->all();
+                // $inputs['ulb_id'] =  $ulb_id;
+                // $inputs['ward_no'] =  $ward_no;
+                // return $this->saf->BuildingTax($inputs);
+                // //$this->propertyTax->InsertTax(1,$this->saf->TotalTax);
+                // return ($this->saf->TotalTax);
                 // $rules["ward"]="required|int";
                 // $message["ward.required"]="Ward No. Required";
                 // $message["ward.int"]="Ward ID Must Be Int Type";
