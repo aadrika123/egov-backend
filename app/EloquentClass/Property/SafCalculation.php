@@ -415,7 +415,7 @@ class SafCalculation
             return $AllBuildingUsageFacter[0]->mult_factor ?? 0.0;
         } catch (Exception $e) {
             echo $e->getMessage();
-            die("jhfghdgh");
+            die($UsageTypeID);
         }
     }
 
@@ -606,9 +606,15 @@ class SafCalculation
         $Tax = $this->DecimalToSqtMeter($area_in_dml) * $rate * $this->OccuPencyFacter($usege_type);
         return ['TotalTax' => $Tax];
     }
+<<<<<<< HEAD
 
     public function buildingRulSet1(int $ulb_id, float $buildupAreaSqft, int $usegeTypeID, int $zoneID, int $constructionTypeID, int $PropertyTypeID, bool $Residential100, $buildupDate): array
     {
+=======
+    
+    public function buildingRulSet1(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID, int $zoneID, int $constructionTypeID,int $PropertyTypeID, bool $Residential100, $buildupDate ):array 
+    {   
+>>>>>>> master
         /**
          * Description  -> This Rule Is Applicable For Building (Individual Floar)
          * Validity     -> Befor 2017-03-31 To Till Now (Befor 2016-2017) 
@@ -673,6 +679,7 @@ class SafCalculation
         $arv = $buildupAreaSqft * $rentalVal;
         $pesentage = 0;
         $tax = 0;
+<<<<<<< HEAD
 
         if ($Residential100 && $PropertyTypeID == 2 && $buildupDate < '1942-04-01')
             $pesentage += 10;
@@ -680,6 +687,14 @@ class SafCalculation
             $pesentage += 30;
         elseif ($usegeTypeID == 2)
             $pesentage += 15;
+=======
+        if($Residential100 && $PropertyTypeID==2 && $buildupDate<'1942-04-01')
+            $pesentage +=10;
+        if($usegeTypeID==1)
+            $pesentage +=30;
+        elseif($usegeTypeID==2)
+            $pesentage +=15; 
+>>>>>>> master
 
         $arv = $arv - ($arv * $pesentage) / 100;
 
@@ -941,10 +956,20 @@ class SafCalculation
             $L_MobileRuleSet = $this->getFYearQutery($L_towerInstallationDate, '', 1);
             $M_property['mobileTower']['RuleSet'] = $L_MobileRuleSet;
 
+<<<<<<< HEAD
             foreach ($L_MobileRuleSet as $key => $ruls) {
                 $this->Tax = [];
                 foreach ($ruls as $rul) {
                     switch ($rul['rule_set']) {
+=======
+            foreach($L_MobileRuleSet as $key=>$ruls)
+            {   
+                $this->Tax=[];                
+                foreach($ruls as $rul)
+                {                     
+                    switch($rul['rule_set'])
+                    {
+>>>>>>> master
                         case "buildingRulSet1": //buildingRulSet1(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID, int $zoneID, int $constructionTypeID,int $PropertyTypeID, bool $Residential100, $buildupDate ):array
                             if (isset($this->Tax[$key])) {
                                 $yearly = $this->Tax[$key];
@@ -956,6 +981,7 @@ class SafCalculation
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet2": //buildingRulSet2(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, $buildupDate )
+<<<<<<< HEAD
                             if (isset($this->Tax[$key]))                                                 // $L_zoneId,
                             {
                                 $yearly = $this->Tax[$key];
@@ -986,6 +1012,42 @@ class SafCalculation
 
         if ($request['isHoardingBoard']) {
             $this->FYearQuater = [];
+=======
+                                                if(isset($this->Tax[$key]))                                                 // $L_zoneId,
+                                                {
+                                                    $yearly = $this->Tax[$key];                                                                                                        
+                                                }
+                                                else
+                                                    $yearly = $this->buildingRulSet2($L_ulb_id, $L_towerArea, $L_usageTypeId,$L_occuType,$L_road_width, $L_constructionTypeId,$request['towerInstallationDate']);
+                                                $quaterly = $yearly['TotalTax']/4;
+                                                $this->Tax[$key] = $yearly ; 
+                                                $this->Tax[$key][$rul['qtr']] = $quaterly ;
+                                                $this->Tax[$key]['due_date'] = $rul['due_date'];
+                                                break;
+                        case "buildingRulSet3"://buildingRulSet3(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, bool $Residential100 ,int $PropertyTypeID,string $ward_no,$buildupDate ):array
+                                                if(isset($this->Tax[$key]))
+                                                {
+                                                    $yearly = $this->Tax[$key];                                                                                                        
+                                                }
+                                                else
+                                                    $yearly = $this->buildingRulSet3($L_ulb_id, $L_towerArea, $L_usageTypeId,$L_occuType,$L_road_width, $L_constructionTypeId, false,$L_PropertyTypeId,$L_ward_no,$request['towerInstallationDate']);
+                                                $quaterly = $yearly['TotalTax']/4;
+                                                $this->Tax[$key] = $yearly ; 
+                                                $this->Tax[$key][$rul['qtr']] = $quaterly ;
+                                                $this->Tax[$key]['due_date'] = $rul['due_date'];
+                                                break;
+                        default:  "Undefined RuleSet";
+
+                    }                    
+                }                
+                $M_property['mobileTower']['Tax'][$key] = $this->Tax[$key];
+            }
+            
+        }        
+        if($request['isHoardingBoard'])
+        {
+            $this->FYearQuater =[];
+>>>>>>> master
             $L_isHoardingBoard          = $request['isHoardingBoard'];
             $L_hoardingArea             = $request['hoardingArea'];
             $L_hoardingInstallationDate = $request['hoardingInstallationDate'] ?? '2016-04-01';
@@ -1110,8 +1172,9 @@ class SafCalculation
             }
         }
 
+        
 
-
+<<<<<<< HEAD
         if ($L_PropertyTypeId != 4) {
             $this->FYearQuater = [];
             $L_residential100 = array_filter($request['floor'], function ($val) {
@@ -1126,6 +1189,31 @@ class SafCalculation
                 $floor['RuleSet'] = $ruleSets;
                 foreach ($ruleSets as $key => $val) {
                     foreach ($val as $rul) {
+=======
+        if($L_PropertyTypeId!=4)
+        {            
+            $this->FYearQuater =[];
+            $L_residential100 = array_filter($request['floor'],function($val){
+                return $val['useType']!=1;
+            });
+            $L_residential100 = !empty($L_residential100)?false:true;             
+            foreach($request['floor'] as $keys=>$floor)
+            {
+                $this->Tax=[];
+                $reqFromDate = $floor["dateFrom"];
+                $reqUptoDate = $floor["dateUpto"];
+                $fromRuleEmplimenteddate = fromRuleEmplimenteddate();
+                if ($fromRuleEmplimenteddate > $reqFromDate) 
+                {
+                    $reqFromDate = $fromRuleEmplimenteddate;
+                }
+                $ruleSets = $this->getFYearQutery($reqFromDate,$reqUptoDate);            
+                $floor['RuleSet'] = $ruleSets; 
+                foreach($ruleSets as $key=>$val)
+                { 
+                    foreach($val as $rul)
+                    {                    
+>>>>>>> master
                         $L_usageTypeId          = $floor['useType'];
                         $L_buildupArea          = $floor['buildupArea'];
                         $L_constructionTypeId   = $floor['occupancyType'];
@@ -1170,9 +1258,18 @@ class SafCalculation
                 }
                 $floor['Tax'] = $this->Tax;
                 $M_property['floorsDtl'][$keys] = $floor;
+<<<<<<< HEAD
             }
         } elseif ($L_PropertyTypeId == 4) {
             $this->FYearQuater = [];
+=======
+    
+            }  
+        }   
+        elseif($L_PropertyTypeId==4) 
+        {   
+            $this->FYearQuater =[];
+>>>>>>> master
             $L_landOccupationDate = $request['landOccupationDate'];
             if ($L_landOccupationDate <= '2016-04-01') {
                 $L_landOccupationDate = '2016-04-01';
@@ -1181,10 +1278,21 @@ class SafCalculation
             // dd($L_vacandLandRuleSet);
             $M_property['vacandLand']['RuleSet'] = $L_vacandLandRuleSet;
             $OccuType = Config::get("PropertyConstaint.OCCUPANCY-TYPE.2");
+<<<<<<< HEAD
             foreach ($L_vacandLandRuleSet as $key => $ruls) {
                 $this->Tax = [];
                 foreach ($ruls as $rul) {
                     switch ($rul['rule_set']) {
+=======
+            foreach($L_vacandLandRuleSet as $key=>$ruls)
+            {   
+                $this->Tax=[];
+                foreach($ruls as $rul)
+                {                    
+                    switch($rul['rule_set'])
+                    {
+                        
+>>>>>>> master
                         case "vacantRulSet1": //vacantRulSet1(float $road_width_in_sft,float $area_in_dml, int $ulb_type_id, string $usege_type):float
                             if (isset($this->Tax[$key])) {
                                 $yearly = $this->Tax[$key];
@@ -1217,9 +1325,16 @@ class SafCalculation
         return  $M_property;
     }
 
+<<<<<<< HEAD
     public function getFYearQutery($fromdate, $uptodate = null, $PropertyTypeID = 1)
     {
         if (!$uptodate)
+=======
+    public function getFYearQutery($fromdate,$uptodate=null,$PropertyTypeID=1)
+    {  
+               
+        if(!$uptodate)
+>>>>>>> master
             $uptodate = Carbon::now()->format('Y-m-d');
 
         $carbonDate = Carbon::createFromFormat("Y-m-d", $fromdate);
@@ -1238,9 +1353,14 @@ class SafCalculation
             $this->FYearQuater[$FYear][] = $this->getRulsets($fromdate, $PropertyTypeID)[0];
             if ($fquater == 3 && getFYear($fromdate) != getFYear($uptodate)) {
                 $dd = (int) $carbonDate->format("d");
+<<<<<<< HEAD
                 $fromdate = Carbon::createFromFormat("Y-m-d", $L_fromdate)->subDay($dd)->format('Y-m-d');
 
                 $this->FYearQuater[$FYear][] = $this->getRulsets($fromdate, $PropertyTypeID)[0];
+=======
+                $fromdate = Carbon::createFromFormat("Y-m-d",$L_fromdate)->subDay($dd)->format('Y-m-d');                
+                $this->FYearQuater[$FYear][]= $this->getRulsets($fromdate,$PropertyTypeID)[0];
+>>>>>>> master
             }
             return ($this->getFYearQutery($L_fromdate, $uptodate, $PropertyTypeID));
         }
