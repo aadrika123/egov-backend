@@ -86,7 +86,7 @@ class PropertyTax
 
             $EducationTax = array_column($FyTax,'EducationTax');
             $EducationTax = array_sum($EducationTax);
-            dd($FyTax);
+            // dd($FyTax);
 
             if($PrivFyTax!=$Q1)
             {

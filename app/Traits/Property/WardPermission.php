@@ -2,6 +2,7 @@
 
 namespace App\Traits\Property;
 
+use App\Models\User;
 use App\Models\Ward\WardUser;
 use App\Models\WorkflowCandidate;
 use App\Models\Workflows\UlbWorkflowRole;
@@ -163,4 +164,25 @@ trait WardPermission
         
    }
    
+   
+   public function getUserRoll($user_id,$worlow_name='SAF',$module_name='Property')
+   {
+        $user = User::select( DB::raw("role_masters.id as role_id, 
+                                    workflows.id as workflow_id,role_users.id as dd"),
+                                    "users.id",
+                                    "role_masters.role_name"
+                                    )
+                 ->join('role_users','role_users.user_id','users.id')
+                 ->join('role_masters','role_masters.id','role_users.role_id')
+                 ->join('workflows','workflows.id','role_users.workflow_id')
+                 ->join('module_masters','module_masters.id','workflows.module_id')                                  
+                 ->where('users.id',$user_id)
+                 ->where('workflows.workflow_name',$worlow_name)
+                 ->where('module_masters.module_name','Property')
+                 ->orderBy('role_users.id','desc')
+                 ->first();
+                 
+        // dd($user);
+        return $user;
+   }
 }
