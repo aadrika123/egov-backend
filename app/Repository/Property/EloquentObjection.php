@@ -554,10 +554,10 @@ class EloquentObjection implements ObjectionRepository
             $redis=Redis::connection();  // Redis Connection
             $redis_data = json_decode(Redis::get('user:' . $user_id),true);
             $ulb_id = $redis_data['ulb_id']??auth()->user()->ulb_id;;
-            $roll_id =  $redis_data['role_id']??auth()->user()->roll_id;; 
+            $roll_id =  $redis_data['role_id']??($this->getUserRoll($user_id,'Property Objection')->role_id??-1);
             $workflow_id = Config::get('workflow-constants.PROPPERTY_OBJECTION_ID');
             $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
-            if(!$work_flow_candidate)
+            if(!$work_flow_candidate || $roll_id==-1)
             {
                 $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
                 return response()->json($message,200);
@@ -623,10 +623,10 @@ class EloquentObjection implements ObjectionRepository
             $redis=Redis::connection();  // Redis Connection
             $redis_data = json_decode(Redis::get('user:' . $user_id),true);
             $ulb_id = $redis_data['ulb_id']??auth()->user()->ulb_id;;
-            $roll_id =  $redis_data['role_id']??auth()->user()->roll_id;; 
+            $roll_id =  $redis_data['role_id']??($this->getUserRoll($user_id,'Property Objection')->role_id??-1);
             $workflow_id = Config::get('workflow-constants.PROPPERTY_OBJECTION_ID');
             $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
-            if(!$work_flow_candidate)
+            if(!$work_flow_candidate || $roll_id==-1)
             {
                 $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
                 return response()->json($message,200);
@@ -698,10 +698,10 @@ class EloquentObjection implements ObjectionRepository
             $redis=Redis::connection();  // Redis Connection
             $redis_data = json_decode(Redis::get('user:' . $user_id),true);
             $ulb_id = $redis_data['ulb_id']??auth()->user()->ulb_id;;
-            $roll_id =  $redis_data['role_id']??auth()->user()->roll_id; 
+            $roll_id =  $redis_data['role_id']??($this->getUserRoll($user_id,'Property Objection')->role_id??-1);
             $workflow_id = Config::get('workflow-constants.PROPPERTY_OBJECTION_ID');
             $work_flow_candidate = $this->work_flow_candidate($user_id,$ulb_id);
-            if(!$work_flow_candidate)
+            if(!$work_flow_candidate || $roll_id==-1 )
             {
                 $message=["status"=>false,"data"=>[],"message"=>"Your Are Not Authoried"];
                 return response()->json($message,200);
