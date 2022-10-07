@@ -290,17 +290,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::resource('ward/masters/ward-user', WardUserController::class);
 
-    /**
-     *  -----------------------------------------------------------------
-     * |                TRADE MODULE                                      |
-     *  ------------------------------------------------------------------  
-     * Created on- 06-10-2022
-     * Created By- Sandeep Bara
-     *  
-     */
-    Route::controller(ApplyApplication::class)->group(function () {        
-        Route::match(["get", "post"], 'trade/apply/{applicationType}', 'applyApplication');
-    });
 });
 
 // Routes used where authentication not required
