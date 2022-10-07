@@ -30,7 +30,7 @@ class ApplyApplication extends Controller
             return $next($request);
         });
     }
-    public function applyApplication1(Request $request)
+    public function applyApplication(Request $request)
     {        
         return $this->Repository->applyApplication($request);
     }

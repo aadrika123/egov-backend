@@ -6,7 +6,7 @@ use App\Http\Controllers\Trade\ApplyApplication;
 /**
  * | Created On-06-10-2022 
  * | Created For-The Routes defined for the Water Usage Charge Management System Module
- * | Created By-Anshu Kumar
+ * | Created By-SandeepBara
  */
 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
@@ -19,6 +19,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      *  
      */
     Route::controller(ApplyApplication::class)->group(function () {        
-        Route::match(["get", "post"], 'apply/{applicationType}', 'applyApplication1');
+        Route::match(["get", "post"], 'apply/{applicationType}', 'applyApplication');
     });
 });
