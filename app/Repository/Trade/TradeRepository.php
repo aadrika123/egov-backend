@@ -2,6 +2,8 @@
 
 namespace App\Repository\Trade;
 
+use App\Models\User;
+use Illuminate\Http\Request;
 
 /**
  * | Created On-01-10-2022 
@@ -9,7 +11,9 @@ namespace App\Repository\Trade;
  * ------------------------------------------------------------------------------------------
  * | Interface for Eloquent Property Repository
  */
+
 interface TradeRepository
 {
-
+    public function __construct(User $user);
+    public function applyApplication(Request $request);
 }

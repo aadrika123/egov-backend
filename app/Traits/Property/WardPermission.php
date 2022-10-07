@@ -165,7 +165,7 @@ trait WardPermission
    }
    
    
-   public function getUserRoll($user_id,$worlow_name='SAF',$module_name='Property')
+   public function getUserRoll($user_id,$worklow_name='SAF',$module_name='Property')
    {
         $user = User::select( DB::raw("role_masters.id as role_id, 
                                     workflows.id as workflow_id,role_users.id as dd"),
@@ -177,8 +177,8 @@ trait WardPermission
                  ->join('workflows','workflows.id','role_users.workflow_id')
                  ->join('module_masters','module_masters.id','workflows.module_id')                                  
                  ->where('users.id',$user_id)
-                 ->where('workflows.workflow_name',$worlow_name)
-                 ->where('module_masters.module_name','Property')
+                 ->where('workflows.workflow_name',$worklow_name)
+                 ->where('module_masters.module_name',$module_name)
                  ->orderBy('role_users.id','desc')
                  ->first();
                  
