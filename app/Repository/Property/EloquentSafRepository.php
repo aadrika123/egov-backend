@@ -495,7 +495,7 @@ class EloquentSafRepository implements SafRepository
             $ward_permission = $this->WardPermission($user_id);
             $ward_ids = array_map(function ($val) {
                 return $val['ulb_ward_id'];
-            }, $ward_permission);
+            }, $ward_permission); DB::enableQueryLog();
             $data = ActiveSafDetail::select(
                 DB::raw("owner_name,
                                                     guardian_name ,
@@ -564,7 +564,7 @@ class EloquentSafRepository implements SafRepository
                     $data->saf_no = '';
                 }
                 return $data;
-            });
+            }); dd(DB::getQueryLog());
             $data = remove_null([
                 'ulb_id' => $ulb_id,
                 'user_id' => $user_id,
@@ -750,7 +750,8 @@ class EloquentSafRepository implements SafRepository
                 DB::raw("workflow_tracks.track_date::date as track_date")
             )
                 ->leftjoin('users', "users.id", "workflow_tracks.citizen_id")
-                ->leftjoin('role_masters', 'role_masters.id', 'users.roll_id')
+                ->leftjoin('role_users','role_users.user_id','users.id')
+                ->leftjoin('role_masters', 'role_masters.id', 'role_users.role_id')
                 ->where('ref_table_dot_id', 'active_saf_details.id')
                 ->where('ref_table_id_value', $saf_id)
                 ->orderBy('track_date', 'desc')

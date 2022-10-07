@@ -2,6 +2,8 @@
 
 namespace App\Repository\Trade;
 
+use App\EloquentModels\Common\ModelWard;
+use App\EloquentModels\Trade\ModelApplicationType;
 use App\Models\UlbWardMaster;
 use Illuminate\Http\Request;
 
@@ -29,6 +31,9 @@ class EloquentTrade implements TradeRepository
         $this->redis = new Redis;
         $this->user_data = json_decode($this->redis::get('user:' . $this->user_id), true);
         $this->roll_id =  $this->user_data['role_id']??($this->getUserRoll($this->user_id,'Trade','Trade')->role_id??-1);
+        $this->ModelApplicationType = new ModelApplicationType();
+        $this->ModelWard = new ModelWard();
+        $this->tradefirmtypemstrmodel = new ModelFirmType();
 
     }
     public function applyApplication(Request $request)
@@ -37,14 +42,13 @@ class EloquentTrade implements TradeRepository
         $data = array() ;
         if($request->getMethod()=='GET')
         {
-            $data['ward_list'] = UlbWardMaster::select("id","ward_name")
-                            ->where('ulb_id',$this->ulb_id)
-                            ->get()->map(function($val){
+            $data['ward_list'] = $this->ModelWard->getAllWard($this->ulb_id)->map(function($val){
                                $val->ward_no = $val->ward_name;
                                return $val;
                             }); 
+            $data["firmtypelist"] = $this->tradefirmtypemstrmodel->getFirmTypeList();
         }
-        return $data;
+        return responseMsg(true,"",$data);
     }
     
 }
