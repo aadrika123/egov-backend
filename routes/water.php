@@ -16,11 +16,11 @@ Route::post('/apply-new-connection', function () {
     dd('Welcome to simple Water route file');
 });
 
-Route::group(['middleware'=>['json.response','request_logger']],function(){
+Route::group(['middleware' => ['json.response', 'request_logger']], function () {
     /**
      * | Created On-07-10-2022 
      * | Created by-Anshu Kumar
      * | ------------------- Apply New Water Connection ------------------------ |
      */
-    Route::resource('crud/new-connection',NewConnectionController::class);
+    Route::resource('crud/new-connection', NewConnectionController::class);
 });

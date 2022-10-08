@@ -50,6 +50,8 @@ class NewConnectionRepository implements iNewConnection
             $now = new DateTime();
             $applicationNo = 'APP' . $now->getTimeStamp();
             $newApplication->application_no = $applicationNo;
+            // $newApplication->ulb_id = auth()->user()->ulb_id;
+            // $newApplication->citizen_id = auth()->user()->id;
             $newApplication->save();
 
             // Water Applicants Owners
@@ -59,8 +61,8 @@ class NewConnectionRepository implements iNewConnection
                 $applicant->application_id = $newApplication->id;
                 $applicant->applicant_name = $owners['ownerName'];
                 $applicant->guardian_name = $owners['guardianName'];
-                $applicant->mobile_no = $owners['guardianName'];
-                $applicant->email = $owners['guardianName'];
+                $applicant->mobile_no = $owners['mobileNo'];
+                $applicant->email = $owners['email'];
                 $applicant->save();
             }
 
