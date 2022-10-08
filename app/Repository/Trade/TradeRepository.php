@@ -16,4 +16,5 @@ interface TradeRepository
 {
     public function __construct(User $user);
     public function applyApplication(Request $request);
+    public function searchLicence(string $licence_no);
 }
