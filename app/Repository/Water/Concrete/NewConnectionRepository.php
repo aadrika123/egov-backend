@@ -1,10 +1,14 @@
-<?php 
+<?php
 
 namespace App\Repository\Water\Concrete;
 
+use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
 use App\Repository\Water\Interfaces\iNewConnection;
+use DateTime;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
@@ -12,36 +16,59 @@ use Illuminate\Http\Request;
  * | Created By-Anshu Kumar
  */
 
- class NewConnectionRepository implements iNewConnection
- {
+class NewConnectionRepository implements iNewConnection
+{
+    /**
+     * | -------------  Apply for the new Application for Water Application ------------- |
+     */
     public function store(Request $req)
     {
-       // dd($req->all());
-    //    $str="connectionTypeId";
-    //    $pieces = preg_split('/(?=[A-Z])/',$str);
-    //    $p=implode('_',$pieces);
-    //    return strtolower($p);
-    $a= $req->all();
-    $newApplication=new WaterApplication();
-    $test=implode(PHP_EOL,eloquentItteration($a,'$newApplication'));
-    // return $test;
-    // $newApplication->connection_type_id=1;
-    $newApplication->save();
-    if($newApplication){
-        return 'Saved Successfully';
+        DB::beginTransaction();
+        try {
+            $newApplication = new WaterApplication();
+            $newApplication->connection_type_id = $req->connectionTypeId;
+            $newApplication->property_type_id = $req->propertyTypeId;
+            $newApplication->owner_type = $req->ownerType;
+            $newApplication->proof_document_id = $req->proofDocumentId;
+            $newApplication->category = $req->category;
+            $newApplication->pipeline_type_id = $req->pipelineTypeId;
+
+            $newApplication->holding_no = $req->holdingNo;
+            $newApplication->ward_id = $req->wardId;
+            $newApplication->area_sqft = $req->areaSqft;
+            $newApplication->address = $req->address;
+            $newApplication->landmark = $req->landmark;
+            $newApplication->pin = $req->pin;
+            $newApplication->flat_count = $req->flatCount;
+
+            $newApplication->elec_k_no = $req->elecKNo;
+            $newApplication->elec_bind_book_no = $req->elecBindBookNo;
+            $newApplication->elec_account_no = $req->elecAccountNo;
+            $newApplication->elec_category = $req->elecCategory;
+
+            // Generating Application No 
+            $now = new DateTime();
+            $applicationNo = 'APP' . $now->getTimeStamp();
+            $newApplication->application_no = $applicationNo;
+            $newApplication->save();
+
+            // Water Applicants Owners
+            $owner = $req['owners'];
+            foreach ($owner as $owners) {
+                $applicant = new WaterApplicant();
+                $applicant->application_id = $newApplication->id;
+                $applicant->applicant_name = $owners['ownerName'];
+                $applicant->guardian_name = $owners['guardianName'];
+                $applicant->mobile_no = $owners['guardianName'];
+                $applicant->email = $owners['guardianName'];
+                $applicant->save();
+            }
+
+            DB::commit();
+            return responseMsg(true, "Successfully Saved", $applicationNo);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return $e;
+        }
     }
-    else{
-        return 'Error';
-    }
-    //     $arr=[];
-    //    foreach($a as $key=>$as){
-    //         $pieces = preg_split('/(?=[A-Z])/',$key);           // for spliting the variable by its caps value
-    //         $p=implode('_',$pieces);                            // Separating it by _ 
-    //         $final=strtolower($p);                              // converting all in lower case
-    //         $c=$newApplication.$final.'='.$as;              // Creating the Eloquent
-    //         array_push($arr,$c);
-    //    }
-    //    $newApplication->save();
-    // }
-}
 }

@@ -260,7 +260,7 @@ if(!function_exists('eloquentItteration'))
             $pieces = preg_split('/(?=[A-Z])/',$key);           // for spliting the variable by its caps value
             $p=implode('_',$pieces);                            // Separating it by _ 
             $final=strtolower($p);                              // converting all in lower case
-            $c=$model.'->'.$final.'='.$as.';';              // Creating the Eloquent
+            $c=$model.'->'.$final.'='."$as".';';              // Creating the Eloquent
             array_push($arr,$c);
        }
        return $arr;
