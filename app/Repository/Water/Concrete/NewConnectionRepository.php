@@ -5,6 +5,7 @@ namespace App\Repository\Water\Concrete;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
 use App\Repository\Water\Interfaces\iNewConnection;
+use Carbon\Carbon;
 use DateTime;
 use Exception;
 use Illuminate\Http\Request;
@@ -20,6 +21,9 @@ class NewConnectionRepository implements iNewConnection
 {
     /**
      * | -------------  Apply for the new Application for Water Application ------------- |
+     * | @param Request $req
+     * | Post the value in Water Application table
+     * | post the value in Water Applicants table by loop
      */
     public function store(Request $req)
     {
@@ -47,11 +51,11 @@ class NewConnectionRepository implements iNewConnection
             $newApplication->elec_category = $req->elecCategory;
 
             // Generating Application No 
-            $now = new DateTime();
+            $now = Carbon::now();
             $applicationNo = 'APP' . $now->getTimeStamp();
             $newApplication->application_no = $applicationNo;
-            // $newApplication->ulb_id = auth()->user()->ulb_id;
-            // $newApplication->citizen_id = auth()->user()->id;
+            $newApplication->ulb_id = auth()->user()->ulb_id;
+            $newApplication->citizen_id = auth()->user()->id;
             $newApplication->save();
 
             // Water Applicants Owners
