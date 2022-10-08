@@ -23,4 +23,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | ------------------- Apply New Water Connection ------------------------ |
      */
     Route::resource('crud/new-connection', NewConnectionController::class);
+
+    Route::controller(NewConnectionController::class)->group(function () {
+        Route::post('user-water-connection-charges', 'getUserWaterConnectionCharges');                                          // Get Water Connection Charges of Logged In User
+    });
 });

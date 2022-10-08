@@ -4,6 +4,7 @@ namespace App\Repository\Water\Concrete;
 
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterConnectionCharge;
 use App\Repository\Water\Interfaces\iNewConnection;
 use Carbon\Carbon;
 use DateTime;
@@ -24,6 +25,8 @@ class NewConnectionRepository implements iNewConnection
      * | @param Request $req
      * | Post the value in Water Application table
      * | post the value in Water Applicants table by loop
+     * ------------------------------------------------------------------------------------
+     * | Generating the demand amount for the applicant in Water Connection Charges Table 
      */
     public function store(Request $req)
     {
@@ -70,10 +73,47 @@ class NewConnectionRepository implements iNewConnection
                 $applicant->save();
             }
 
+            // Generating Demand and reflecting on water connection charges table
+            $charges = new WaterConnectionCharge();
+            $charges->application_id = $newApplication->id;
+            $charges->charge_category = $req->connectionTypeId;
+            $charges->paid_status = 0;
+            $charges->status = 1;
+            $penalty = $charges->penalty = '4000';
+            $conn_fee = $charges->conn_fee = '7000';
+            $charges->amount = $penalty + $conn_fee;
+            $charges->save();
+
             DB::commit();
             return responseMsg(true, "Successfully Saved", $applicationNo);
         } catch (Exception $e) {
             DB::rollBack();
+            return $e;
+        }
+    }
+
+    /**
+     * |--------- Get the Water Connection charges Details for Logged In user ------------ |
+     * | @param Request $req
+     */
+    public function getUserWaterConnectionCharges(Request $req)
+    {
+        try {
+            $citizen_id = auth()->user()->id;
+            $connections = DB::table('water_applications')
+                ->join('water_connection_charges', 'water_applications.id', '=', 'water_connection_charges.application_id')
+                ->select(
+                    'water_applications.application_no',
+                    'water_connection_charges.amount',
+                    'water_connection_charges.paid_status',
+                    'water_connection_charges.status',
+                    'water_connection_charges.penalty',
+                    'water_connection_charges.conn_fee'
+                )
+                ->where('water_applications.citizen_id', '=', $citizen_id)
+                ->get();
+            return $connections;
+        } catch (Exception $e) {
             return $e;
         }
     }

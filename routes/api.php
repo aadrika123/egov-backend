@@ -289,7 +289,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | Ward Users Masters Operations
      */
     Route::resource('ward/masters/ward-user', WardUserController::class);
-
 });
 
 // Routes used where authentication not required

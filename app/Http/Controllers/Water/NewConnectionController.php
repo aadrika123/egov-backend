@@ -88,4 +88,12 @@ class NewConnectionController extends Controller
     {
         //
     }
+
+    /**
+     * | Get Applied Water Charges Status
+     */
+    public function getUserWaterConnectionCharges(Request $req)
+    {
+        return $this->newConnection->getUserWaterConnectionCharges($req);
+    }
 }
