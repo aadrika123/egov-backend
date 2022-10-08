@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Trade;
 
 use App\Http\Controllers\Controller;
-use App\Repository\Trade\EloquentTrade;
+use App\Repository\Trade\ITrade;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -19,16 +19,17 @@ class ApplyApplication extends Controller
      */
 
     // Initializing function for Repository
-    protected $TradeRepository;
-    public function __construct()
+    private $Repository;
+    public function __construct(ITrade $TradeRepository)
     {
-        $this->middleware(function ($request, $next) {
-            $virtualRole = User::first();
-            $user = auth()->user() ?? $virtualRole;
-            $obj = new EloquentTrade($user);
-            $this->Repository = $obj;
-            return $next($request);
-        });
+        // $this->middleware(function ($request, $next) use($TradeRepository) {          
+        //     $virtualRole = User::first();
+        //     $user = auth()->user() ?? $virtualRole;
+        //     $TradeRepository->__construct($user);
+        //     $this->Repository = $TradeRepository ;
+        //     return $next($request);
+        // });
+        $this->Repository = $TradeRepository ;
     }
     public function applyApplication(Request $request)
     {        
