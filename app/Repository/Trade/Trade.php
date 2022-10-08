@@ -71,10 +71,10 @@ class Trade implements ITrade
                                    $val->ward_no = $val->ward_name;
                                    return $val;
                                 }); 
-                $data["firmtypeList"] = $this->getFirmTypeList();
-                $data["ownershipList"] = $this->getownershipTypeList();
-                $data["cotegoryList"] = $this->getCotegoryList();
-                $data["natureOfBussinass"] = $this->gettradeitemsList();
+                $data["firmTypeList"] = $this->getFirmTypeList();
+                $data["ownershipTypeList"] = $this->getownershipTypeList();
+                $data["categoryTypeList"] = $this->getCotegoryList();
+                $data["natureOfBusiness"] = $this->gettradeitemsList();
                 if(isset($request->licenceId) && $request->licenceId  && $this->application_type_id !=1)
                 {
         
@@ -103,6 +103,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());;
         }
     }
+    #---------- core function for trade Application--------
 
     public function searchLicence(string $licence_no)
     {
@@ -196,5 +197,7 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
+
+    #-------------------- End core function of core function --------------
     
 }
