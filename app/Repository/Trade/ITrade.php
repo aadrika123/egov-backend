@@ -12,8 +12,14 @@ use Illuminate\Http\Request;
  * | Interface for Eloquent Property Repository
  */
 
-interface TradeRepository
+interface ITrade
 {
-    public function __construct(User $user);
+    public function __construct();
     public function applyApplication(Request $request);
+    public function searchLicence(string $licence_no);
+    public function getCotegoryList();
+    public function getFirmTypeList();
+    public function getownershipTypeList();
+    public function gettradeitemsList();
+    public function getAllApplicationType();
 }

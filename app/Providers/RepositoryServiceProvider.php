@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Repository\Trade\ITrade;
+use App\Repository\Trade\Trade;
 use App\Repository\Water\Concrete\NewConnectionRepository;
 use App\Repository\Water\Interfaces\iNewConnection;
 use Illuminate\Support\ServiceProvider;
@@ -21,6 +23,7 @@ class RepositoryServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind(iNewConnection::class,NewConnectionRepository::class);
+        $this->app->bind(ITrade::class,Trade::class);
     }
 
     /**

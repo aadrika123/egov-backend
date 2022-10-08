@@ -9,7 +9,7 @@
 return [
     "APPLICATION-TYPE"=>
     [
-        "NEW LICENSE"=>"1",
+        "NEWLICENSE"=>"1",
         "RENEWAL"=>"2",
         "AMENDMENT"=>"3",
         "SURRENDER"=>"4"
