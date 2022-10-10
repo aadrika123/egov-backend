@@ -104,4 +104,10 @@ class NewConnectionController extends Controller
     {
         return $this->newConnection->waterPayment($req);
     }
+
+    // Applicant Document Upload
+    public function applicantDocumentUpload(Request $req)
+    {
+        return $this->newConnection->applicantDocumentUpload($req);
+    }
 }

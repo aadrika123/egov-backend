@@ -26,6 +26,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     Route::controller(NewConnectionController::class)->group(function () {
         Route::post('user-water-connection-charges', 'getUserWaterConnectionCharges');                           // Get Water Connection Charges of Logged In User
+        Route::post('applicant-document-upload', 'applicantDocumentUpload');                                     // User Document Upload
         Route::post('water-payment', 'waterPayment');                                                            // Water Payment
     });
 });

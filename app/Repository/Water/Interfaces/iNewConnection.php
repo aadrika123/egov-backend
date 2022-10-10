@@ -15,4 +15,5 @@ interface iNewConnection
    public function store(Request $req);
    public function getUserWaterConnectionCharges(Request $req);
    public function waterPayment(Request $req);
+   public function applicantDocumentUpload(Request $req);
 }

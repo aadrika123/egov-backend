@@ -3,6 +3,7 @@
 namespace App\Repository\Water\Concrete;
 
 use App\Models\Water\WaterApplicant;
+use App\Models\Water\WaterApplicantDoc;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
 use App\Repository\Water\Interfaces\iNewConnection;
@@ -140,6 +141,33 @@ class NewConnectionRepository implements iNewConnection
                 return responseMsg(false, "ApplicationId Not found", "");
             }
         } catch (Exception $e) {
+            return $e;
+        }
+    }
+
+
+    /**
+     * | ----------------- Document Upload for the Applicant ------------------------------- |
+     * | @param Request
+     * | @param Request $req
+     * | #documents[] > contains all the documents upload to be
+     */
+    public function applicantDocumentUpload(Request $req)
+    {
+        DB::beginTransaction();
+        try {
+            $document = $req['documents'];
+            foreach ($document as $documents) {
+                $appDoc = new WaterApplicantDoc();
+                $appDoc->application_id = $documents['applicationId'];
+                $appDoc->document_id = $documents['documentId'];
+                $appDoc->doc_for = $documents['docFor'];
+                $appDoc->save();
+            }
+            DB::commit();
+            return responseMsg(true, "Document Successfully Uploaded", "");
+        } catch (Exception $e) {
+            DB::rollBack();
             return $e;
         }
     }
