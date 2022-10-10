@@ -96,4 +96,21 @@ class NewConnectionController extends Controller
     {
         return $this->newConnection->getUserWaterConnectionCharges($req);
     }
+<<<<<<< HEAD
+=======
+
+    /**
+     * | Water Payment 
+     */
+    public function waterPayment(Request $req)
+    {
+        return $this->newConnection->waterPayment($req);
+    }
+
+    // Applicant Document Upload
+    public function applicantDocumentUpload(Request $req)
+    {
+        return $this->newConnection->applicantDocumentUpload($req);
+    }
+>>>>>>> bb3ead69f792464135978e8532379b78f9186914
 }

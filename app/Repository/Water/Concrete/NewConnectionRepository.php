@@ -3,11 +3,18 @@
 namespace App\Repository\Water\Concrete;
 
 use App\Models\Water\WaterApplicant;
+<<<<<<< HEAD
+=======
+use App\Models\Water\WaterApplicantDoc;
+>>>>>>> bb3ead69f792464135978e8532379b78f9186914
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
 use App\Repository\Water\Interfaces\iNewConnection;
 use Carbon\Carbon;
+<<<<<<< HEAD
 use DateTime;
+=======
+>>>>>>> bb3ead69f792464135978e8532379b78f9186914
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -118,4 +125,60 @@ class NewConnectionRepository implements iNewConnection
             return $e;
         }
     }
+<<<<<<< HEAD
+=======
+
+    /**
+     * | -------- Water Payment ----------------------------------------------------------- |
+     * | @param Request
+     * | @Requests ------------------------------------------------------------------------ |
+     * | #application_id > Applicant Id for Payment
+     * | ---------------------------------------------------------------------------------- |
+     * | #waterConnectionCharge > Finds the ApplicationID
+     * | @return responseMsg
+     */
+    public function waterPayment(Request $req)
+    {
+        try {
+            $waterConnectionCharge = WaterConnectionCharge::where('application_id', $req->applicationId)
+                ->first();
+            if ($waterConnectionCharge) {
+                $waterConnectionCharge->paid_status = 1;
+                $waterConnectionCharge->save();
+                return responseMsg(true, "Payment Done Successfully", "");
+            } else {
+                return responseMsg(false, "ApplicationId Not found", "");
+            }
+        } catch (Exception $e) {
+            return $e;
+        }
+    }
+
+
+    /**
+     * | ----------------- Document Upload for the Applicant ------------------------------- |
+     * | @param Request
+     * | @param Request $req
+     * | #documents[] > contains all the documents upload to be
+     */
+    public function applicantDocumentUpload(Request $req)
+    {
+        DB::beginTransaction();
+        try {
+            $document = $req['documents'];
+            foreach ($document as $documents) {
+                $appDoc = new WaterApplicantDoc();
+                $appDoc->application_id = $documents['applicationId'];
+                $appDoc->document_id = $documents['documentId'];
+                $appDoc->doc_for = $documents['docFor'];
+                $appDoc->save();
+            }
+            DB::commit();
+            return responseMsg(true, "Document Successfully Uploaded", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return $e;
+        }
+    }
+>>>>>>> bb3ead69f792464135978e8532379b78f9186914
 }
