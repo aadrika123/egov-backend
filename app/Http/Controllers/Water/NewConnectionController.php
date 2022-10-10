@@ -96,8 +96,6 @@ class NewConnectionController extends Controller
     {
         return $this->newConnection->getUserWaterConnectionCharges($req);
     }
-<<<<<<< HEAD
-=======
 
     /**
      * | Water Payment 
@@ -112,5 +110,4 @@ class NewConnectionController extends Controller
     {
         return $this->newConnection->applicantDocumentUpload($req);
     }
->>>>>>> bb3ead69f792464135978e8532379b78f9186914
 }
