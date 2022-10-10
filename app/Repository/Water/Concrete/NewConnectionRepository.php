@@ -7,7 +7,6 @@ use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
 use App\Repository\Water\Interfaces\iNewConnection;
 use Carbon\Carbon;
-use DateTime;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -114,6 +113,32 @@ class NewConnectionRepository implements iNewConnection
                 ->where('water_applications.citizen_id', '=', $citizen_id)
                 ->get();
             return $connections;
+        } catch (Exception $e) {
+            return $e;
+        }
+    }
+
+    /**
+     * | -------- Water Payment ----------------------------------------------------------- |
+     * | @param Request
+     * | @Requests ------------------------------------------------------------------------ |
+     * | #application_id > Applicant Id for Payment
+     * | ---------------------------------------------------------------------------------- |
+     * | #waterConnectionCharge > Finds the ApplicationID
+     * | @return responseMsg
+     */
+    public function waterPayment(Request $req)
+    {
+        try {
+            $waterConnectionCharge = WaterConnectionCharge::where('application_id', $req->applicationId)
+                ->first();
+            if ($waterConnectionCharge) {
+                $waterConnectionCharge->paid_status = 1;
+                $waterConnectionCharge->save();
+                return responseMsg(true, "Payment Done Successfully", "");
+            } else {
+                return responseMsg(false, "ApplicationId Not found", "");
+            }
         } catch (Exception $e) {
             return $e;
         }
