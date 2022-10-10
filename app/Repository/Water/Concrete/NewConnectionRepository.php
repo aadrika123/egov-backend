@@ -103,6 +103,7 @@ class NewConnectionRepository implements iNewConnection
             $connections = DB::table('water_applications')
                 ->join('water_connection_charges', 'water_applications.id', '=', 'water_connection_charges.application_id')
                 ->select(
+                    'water_connection_charges.application_id',
                     'water_applications.application_no',
                     'water_connection_charges.amount',
                     'water_connection_charges.paid_status',
