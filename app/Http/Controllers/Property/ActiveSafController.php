@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Repository\Property\EloquentSafRepository;
+use App\Repository\Property\Interfaces\iSafRepository;
 
 class ActiveSafController extends Controller
 {
@@ -17,7 +17,7 @@ class ActiveSafController extends Controller
 
     // Initializing function for Repository
     protected $saf_repository;
-    public function __construct(EloquentSafRepository $saf_repository)
+    public function __construct(iSafRepository $saf_repository)
     {
         $this->Repository = $saf_repository;
     }

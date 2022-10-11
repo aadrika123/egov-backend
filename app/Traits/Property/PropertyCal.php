@@ -19,9 +19,5 @@ trait PropertyCal
      * created by sandeep bara 
      * date 01-09-2022
      * private folder not editable befor edit Please conforme Not Effecte Other Method 
-    */
-
-    
-    
-    
+     */
 }
