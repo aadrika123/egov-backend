@@ -3,12 +3,6 @@
 namespace App\Repository\Trade;
 
 use App\EloquentModels\Common\ModelWard;
-use App\EloquentModels\Trade\ModelApplication;
-use App\EloquentModels\Trade\ModelApplicationType;
-use App\EloquentModels\Trade\ModelCategoryType;
-use App\EloquentModels\Trade\ModelFirmType;
-use App\EloquentModels\Trade\ModelOwnershipType;
-use App\EloquentModels\Trade\ModelTradeItem;
 use App\Models\ActiveSafDetail;
 use App\Models\ActiveSafOwnerDetail;
 use App\Models\PropOwner;
@@ -24,9 +18,7 @@ use App\Models\Trade\TradeParamFirmType;
 use App\Models\Trade\TradeParamItemType;
 use App\Models\Trade\TradeParamLicenceRate;
 use App\Models\Trade\TradeParamOwnershipType;
-use App\Models\UlbWardMaster;
 use App\Models\UlbWorkflowMaster;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 use App\Traits\Auth;
@@ -114,15 +106,15 @@ class Trade implements ITrade
                 $rules["firmDetails.areaSqft"]="required|numeric";
                 $rules["firmDetails.businessAddress"]="required|regex:$regex";
                 $rules["firmDetails.businessDescription"]="required|regex:$regex"; 
-                $rules["firmDetails.firmEstDate"]="required|date"; 
+                $rules["firmDetails.firmEstdDate"]="required|date"; 
                 $rules["firmDetails.firmName"]="required|regex:$regex";
                 if (in_array($this->application_type_id, ["2"])) 
                 {                    
                     $rules["firmDetails.holdingNo"]="required|regex:$regex";
                 } 
                 $rules["firmDetails.premisesOwner"]="required|regex:$regex";
-                $rules["firmDetails.naturOfBusiness"]="required|array";
-                $rules["firmDetails.naturOfBusiness.*.id"]="required|int";
+                $rules["firmDetails.natureOfBusiness"]="required|array";
+                $rules["firmDetails.natureOfBusiness.*.id"]="required|int";
                 $rules["firmDetails.newWardNo"]="required|int";
                 $rules["firmDetails.wardNo"]="required|int";
                 $rules["firmDetails.tocStatus"] = "required|bool";
@@ -133,22 +125,22 @@ class Trade implements ITrade
                 $rules["firmDetails.account_no"] = "regex:$regex";
                 if($apply_from=="Online")
                 {
-                    $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{10}/";                    
+                    $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
                 }
 
-                $rules["initialBusinessDtails.applyWith"]="required|int";
-                $rules["initialBusinessDtails.firmType"]="required|int";
-                if(isset($request->initialBusinessDtails['firmType']) && $request->initialBusinessDtails['firmType']==5)
+                $rules["initialBusinessDetails.applyWith"]="required|int";
+                $rules["initialBusinessDetails.firmType"]="required|int";
+                if(isset($request->initialBusinessDetails['firmType']) && $request->initialBusinessDetails['firmType']==5)
                 {
-                    $rules["initialBusinessDtails.otherfirmtype"]="required|regex:$regex";
+                    $rules["initialBusinessDetails.otherfirmtype"]="required|regex:$regex";
                 }
-                $rules["initialBusinessDtails.ownershipType"]="required|int";
-                if( isset($request->initialBusinessDtails['applyWith']) && $request->initialBusinessDtails['applyWith']==2)
+                $rules["initialBusinessDetails.ownershipType"]="required|int";
+                if( isset($request->initialBusinessDetails['applyWith']) && $request->initialBusinessDetails['applyWith']==1)
                 {
-                    $rules["initialBusinessDtails.noticeNO"]="required|regex:$regex";
-                    $rules["initialBusinessDtails.noticeDate"]="required|date";  
+                    $rules["initialBusinessDetails.noticeNO"]="required|regex:$regex";
+                    $rules["initialBusinessDetails.noticeDate"]="required|date";  
                 }
-                $rules["licenseDetails.licenceFor"]="required|int";
+                $rules["licenseDetails.licenseFor"]="required|int";
 
                 $rules["ownerDetails"] = "required|array";
                 $rules["ownerDetails.*.businessOwnerName"]="required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
@@ -175,82 +167,156 @@ class Trade implements ITrade
                 $proprty_id = null;
                 if($request->firmDetails['holdingNo'])
                 {
-                    $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'],$this->uld_id);
+                    $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'],$this->ulb_id);
                     if($property['status'])
-                        $proprty_id = $property['propery']['id'];
+                        $proprty_id = $property['property']['id'];
                     else
                         throw new Exception("Property Details Not Found");
                 }
                 $natureOfBussiness = array_map(function($val){
                     return $val['id'];
-                },$request->firmDetails['naturOfBusiness']);
+                },$request->firmDetails['natureOfBusiness']);
                 $natureOfBussiness = implode(',', $natureOfBussiness);
                 
                 DB::beginTransaction();
                 $licence = new ActiveLicence();
-                $licence->firm_type_id        = $request->initialBusinessDtails['firmType'];
-                $licence->otherfirmtype       = $request->initialBusinessDtails['otherfirmtype']??null;
-                $licence->application_type_id = $this->application_type_id;
-                $licence->category_type_id    = $request->firmDetails['categoryTypeId']??null;
-                $licence->ownership_type_id   = $request->initialBusinessDtails['ownershipType'];
-                $licence->ward_mstr_id        = $request->firmDetails['wardNo'];
-                $licence->new_ward_mstr_id    = $request->firmDetails['newWardNo'];
-                $licence->ulb_id              = $this->ulb_id;
+                if (in_array($this->application_type_id, ["2", "3","4"])) 
+                {   
+                    $oldLicence = ActiveLicence::find($request->licenceId);
+                    $oldowners = ActiveLicenceOwner::where('licence_id',$request->licenceId)
+                                ->get();
+                    $licence->firm_type_id        = $oldLicence->firm_type_id;
+                    $licence->otherfirmtype       = $oldLicence->otherfirmtype;
+                    $licence->application_type_id = $this->application_type_id;
+                    $licence->category_type_id    = $oldLicence->category_type_id;
+                    $licence->ownership_type_id   = $oldLicence->ownership_type_id;
+                    $licence->ward_mstr_id        = $oldLicence->ward_mstr_id;
+                    $licence->new_ward_mstr_id    = $oldLicence->new_ward_mstr_id;
+                    $licence->ulb_id              = $this->ulb_id;
+    
+                    $licence->prop_dtl_id         = $proprty_id;
+                    $licence->holding_no          = $request->firmDetails['holdingNo'];
+                    $licence->nature_of_bussiness = $oldLicence->nature_of_bussiness;
+                    $licence->firm_name           = $oldLicence->firm_name;
+                    $licence->premises_owner_name = $oldLicence->premises_owner_name;
+                    $licence->brife_desp_firm     = $oldLicence->brife_desp_firm;
+                    $licence->area_in_sqft        = $oldLicence->area_in_sqft;
+    
+                    $licence->k_no                = $oldLicence->k_no;
+                    $licence->bind_book_no        = $oldLicence->bind_book_no;
+                    $licence->account_no          = $oldLicence->account_no;
+                    $licence->pan_no              = $oldLicence->pan_no;
+                    $licence->tin_no              = $oldLicence->tin_no;
+                    $licence->salestax_no         = $oldLicence->salestax_no;
+                    $licence->emp_details_id      = $this->user_id;
+                    $licence->establishment_date  = $oldLicence->establishment_date;
+                    $licence->apply_date          = Carbon::now()->format('Y-m-d');
+    
+                    $licence->licence_for_years   = $request->licenseDetails['licenseFor'];
+                    $licence->address             = $oldLicence->address;
+                    $licence->landmark            = $oldLicence->landmark;
+                    $licence->pin_code            = $oldLicence->pin_code;
+                    $licence->street_name         = $oldLicence->street_name;
+                    $licence->property_type       = $oldLicence->property_type;
+                    $licence->update_status       = $this->transfareExpire($request->licenceId);
+                    $licence->tobacco_status      = $oldLicence->tobacco_status;
+                    
+                    $licence->apply_from          = $apply_from;
+                    $licence->current_user_id     = $workflows->initiator;
+                    $licence->initiator_id        = $workflows->initiator;
+                    $licence->finisher_id         = $workflows->finisher;
+                    $licence->workflow_id         = $workflow_id;
+    
+                    $licence->save();
+                    $licenceId = $licence->id;                
+                    $appNo = "APP".str_pad($ward_no, 2, '0', STR_PAD_LEFT).str_pad($licenceId, 7, '0', STR_PAD_LEFT);
+                    $licence->application_no = $appNo;
+                    $licence->save();
 
-                $licence->prop_dtl_id         = $proprty_id;
-                $licence->holding_no          = $request->firmDetails['holdingNo'];
-                $licence->nature_of_bussiness = $natureOfBussiness;
-                $licence->firm_name           = $request->firmDetails['firmName'];
-                $licence->premises_owner_name = $request->firmDetails['premisesOwner']??null;
-                $licence->brife_desp_firm     = $request->firmDetails['businessDescription'];
-                $licence->area_in_sqft        = $request->firmDetails['areaSqft'];
-
-                $licence->k_no                = $request->firmDetails['kNo']??null;
-                $licence->bind_book_no        = $request->firmDetails['bindBookNo']??null;
-                $licence->account_no          = $request->firmDetails['accountNo']??null;
-                $licence->pan_no              = $request->firmDetails['panNo']??null;
-                $licence->tin_no              = $request->firmDetails['tinNo']??null;
-                $licence->salestax_no         = $request->firmDetails['salestaxNo']??null;
-                $licence->emp_details_id      = $this->user_id;
-                $licence->establishment_date  = $request->firmDetails['firmEstDate'];
-                $licence->apply_date          = Carbon::now()->format('Y-m-d');
-
-                $licence->licence_for_years   = $request->licenseDetails['licenceFor'];
-                $licence->address             = $request->firmDetails['businessAddress'];
-                $licence->landmark            = $request->firmDetails['landmark']??null;
-                $licence->pin_code            = $request->firmDetails['pinCode']??null;
-                $licence->street_name         = $request->firmDetails['streetName']??null;
-                $licence->property_type       ="Property";
-                $licence->update_status       = in_array($this->application_type_id,[2,3,4])?$this->transfareExpire($request->licenceId):0;
-                $licence->tobacco_status      = $request->firmDetails['tocStatus'];
-                
-                $licence->apply_from          = $apply_from;
-                $licence->current_user_id     = $workflows->initiator;
-                $licence->initiator_id        = $workflows->initiator;
-                $licence->finisher_id         = $workflows->finisher;
-                $licence->workflow_id         = $workflow_id;
-
-                $licence->save();
-                $licenceId = $licence->id;                
-                $appNo = "APP".str_pad($ward_no, 2, '0', STR_PAD_LEFT).str_pad($licenceId, 7, '0', STR_PAD_LEFT);
-                $licence->application_no = $appNo;
-                $licence->save();
-                foreach($request->ownerDetails as $owners)
-                {
-                    $owner = new ActiveLicenceOwner();
-                    $owner->licence_id = $licenceId;
-                    $owner->owner_name = $owners['businessOwnerName'];
-                    $owner->guardian_name = $owners['guardianName']??null;
-                    $owner->address = $owners['address']??null;
-                    $owner->mobile = $owners['mobileNo'];
-                    $owner->city = $owners['city']??null;
-                    $owner->district = $owners['district']??null;
-                    $owner->state = $owners['state']??null;
-                    $owner->emailid = $owners['email']??null;
-                    $owner->emp_details_id = $this->user_id;
-                    $owner->save();
-
+                    foreach($oldowners as $owners)
+                    {
+                        $owner = new ActiveLicenceOwner();
+                        $owner->licence_id = $licenceId;
+                        $owner->owner_name = $owners->owner_name;
+                        $owner->guardian_name = $owners->guardian_name;
+                        $owner->address = $owners->address;
+                        $owner->mobile = $owners->mobile;
+                        $owner->city = $owners->city;
+                        $owner->district = $owners->district;
+                        $owner->state = $owners->state;
+                        $owner->emailid = $owners->emailid;
+                        $owner->emp_details_id = $this->user_id;
+                        $owner->save();
+    
+                    }
                 }
+                elseif($this->application_type_id==1)
+                {                    
+                    $licence->firm_type_id        = $request->initialBusinessDetails['firmType'];
+                    $licence->otherfirmtype       = $request->initialBusinessDetails['otherfirmtype']??null;
+                    $licence->application_type_id = $this->application_type_id;
+                    $licence->category_type_id    = $request->firmDetails['categoryTypeId']??null;
+                    $licence->ownership_type_id   = $request->initialBusinessDetails['ownershipType'];
+                    $licence->ward_mstr_id        = $request->firmDetails['wardNo'];
+                    $licence->new_ward_mstr_id    = $request->firmDetails['newWardNo'];
+                    $licence->ulb_id              = $this->ulb_id;
+    
+                    $licence->prop_dtl_id         = $proprty_id;
+                    $licence->holding_no          = $request->firmDetails['holdingNo'];
+                    $licence->nature_of_bussiness = $natureOfBussiness;
+                    $licence->firm_name           = $request->firmDetails['firmName'];
+                    $licence->premises_owner_name = $request->firmDetails['premisesOwner']??null;
+                    $licence->brife_desp_firm     = $request->firmDetails['businessDescription'];
+                    $licence->area_in_sqft        = $request->firmDetails['areaSqft'];
+    
+                    $licence->k_no                = $request->firmDetails['kNo']??null;
+                    $licence->bind_book_no        = $request->firmDetails['bindBookNo']??null;
+                    $licence->account_no          = $request->firmDetails['accountNo']??null;
+                    $licence->pan_no              = $request->firmDetails['panNo']??null;
+                    $licence->tin_no              = $request->firmDetails['tinNo']??null;
+                    $licence->salestax_no         = $request->firmDetails['salestaxNo']??null;
+                    $licence->emp_details_id      = $this->user_id;
+                    $licence->establishment_date  = $request->firmDetails['firmEstdDate'];
+                    $licence->apply_date          = Carbon::now()->format('Y-m-d');
+    
+                    $licence->licence_for_years   = $request->licenseDetails['licenseFor'];
+                    $licence->address             = $request->firmDetails['businessAddress'];
+                    $licence->landmark            = $request->firmDetails['landmark']??null;
+                    $licence->pin_code            = $request->firmDetails['pincode']??null;
+                    $licence->street_name         = $request->firmDetails['streetName']??null;
+                    $licence->property_type       ="Property";
+                    $licence->update_status       = in_array($this->application_type_id,[2,3,4])?$this->transfareExpire($request->licenceId):0;
+                    $licence->tobacco_status      = $request->firmDetails['tocStatus'];
+                    
+                    $licence->apply_from          = $apply_from;
+                    $licence->current_user_id     = $workflows->initiator;
+                    $licence->initiator_id        = $workflows->initiator;
+                    $licence->finisher_id         = $workflows->finisher;
+                    $licence->workflow_id         = $workflow_id;
+    
+                    $licence->save();
+                    $licenceId = $licence->id;                
+                    $appNo = "APP".str_pad($ward_no, 2, '0', STR_PAD_LEFT).str_pad($licenceId, 7, '0', STR_PAD_LEFT);
+                    $licence->application_no = $appNo;
+                    $licence->save();
+                    foreach($request->ownerDetails as $owners)
+                    {
+                        $owner = new ActiveLicenceOwner();
+                        $owner->licence_id = $licenceId;
+                        $owner->owner_name = $owners['businessOwnerName'];
+                        $owner->guardian_name = $owners['guardianName']??null;
+                        $owner->address = $owners['address']??null;
+                        $owner->mobile = $owners['mobileNo'];
+                        $owner->city = $owners['city']??null;
+                        $owner->district = $owners['district']??null;
+                        $owner->state = $owners['state']??null;
+                        $owner->emailid = $owners['email']??null;
+                        $owner->emp_details_id = $this->user_id;
+                        $owner->save();
+    
+                    }
+                }
+                
                 DB::commit();
                 return responseMsg(true,$appNo,'');
             }
@@ -748,7 +814,7 @@ class Trade implements ITrade
                         ->where("new_holding_no",$holdingNo)
                         ->where("ulb_id",$ulb_id)
                         ->first();
-        if($property->id)
+        if($property)
         {
             $owneres = PropOwner::select("*")
                         ->where("property_id",$property->id)
