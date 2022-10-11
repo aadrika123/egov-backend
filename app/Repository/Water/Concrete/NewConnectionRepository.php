@@ -3,18 +3,12 @@
 namespace App\Repository\Water\Concrete;
 
 use App\Models\Water\WaterApplicant;
-<<<<<<< HEAD
-=======
 use App\Models\Water\WaterApplicantDoc;
->>>>>>> bb3ead69f792464135978e8532379b78f9186914
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
 use App\Repository\Water\Interfaces\iNewConnection;
 use Carbon\Carbon;
-<<<<<<< HEAD
 use DateTime;
-=======
->>>>>>> bb3ead69f792464135978e8532379b78f9186914
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -125,8 +119,6 @@ class NewConnectionRepository implements iNewConnection
             return $e;
         }
     }
-<<<<<<< HEAD
-=======
 
     /**
      * | -------- Water Payment ----------------------------------------------------------- |
@@ -180,5 +172,4 @@ class NewConnectionRepository implements iNewConnection
             return $e;
         }
     }
->>>>>>> bb3ead69f792464135978e8532379b78f9186914
 }
