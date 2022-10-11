@@ -35,4 +35,8 @@ class ApplyApplication extends Controller
     {        
         return $this->Repository->applyApplication($request);
     }
+    public function paybleAmount(Request $request)
+    {      
+        return $this->Repository->paybleAmount($request);
+    }
 }
