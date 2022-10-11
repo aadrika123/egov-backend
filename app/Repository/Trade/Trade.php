@@ -371,10 +371,24 @@ class Trade implements ITrade
         try{
             $rules["applicationType"] = "required|string";
             $message["applicationType.required"] = "Application Type Required";
-            $rules["firmDetails.area_in_sqft"] = "required|numeric";
-            $message["firmDetails.area_in_sqft.required"] = "Area is Required";
-            $rules["firmDetails.tocStatus"] = "required|bool";
-            $message["firmDetails.tocStatus.required"] = "TocStatus is Required";
+
+            $rules["areaSqft"] = "required|numeric";
+            $message["areaSqft.required"] = "Area is Required";
+
+            $rules["tocStatus"] = "required|bool";
+            $message["tocStatus.required"] = "TocStatus is Required";
+
+            $rules["firmEstdDate"] = "required|date";
+            $message["firmEstdDate.required"] = "firmEstdDate is Required";
+
+            $rules["licenseFor"] = "required|int";
+            $message["licenseFor.required"] = "license For year is Required";
+
+            $rules["natureOfBusiness"]="required|array";
+            $rules["natureOfBusiness.*.id"]="required|int";
+
+            $rules["noticeDate"] = "date";
+
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(),$request->all());
@@ -384,10 +398,23 @@ class Trade implements ITrade
             {
                 throw new Exception("Invalide Application Type");
             }
-            $data["area_in_sqft"] = $request->firmDetails['areaSqft'];
+            $natureOfBussiness = array_map(function($val){
+                return $val['id'];
+            },$request->natureOfBusiness);
+            $natureOfBussiness = implode(',', $natureOfBussiness);
+
+            $data["areaSqft"] = $request->areaSqft;
             $data['curdate'] =Carbon::now()->format('Y-m-d');
-            $data["tobacco_status"] =  $request->firmDetails['tocStatus'];
-            $data = $this->getrate($data);
+            $data["firmEstdDate"] = $request->firmEstdDate;
+            $data["tobacco_status"] =  $request->tocStatus;
+            $data['noticeDate'] =  $request->noticeDate??null;
+            $data["licenseFor"] = $request->licenseFor;
+            $data["nature_of_business"] = $natureOfBussiness; 
+            $data = $this->getcharge($data);
+            if($data['response'])
+                return responseMsg(true,"", $data);
+            else
+                throw new Exception("some Errors on Calculation");
         }
         catch(Exception $e)
         {
@@ -424,18 +451,23 @@ class Trade implements ITrade
         {
             $data = array();
             $inputs = $args;
-            $data['area_in_sqft'] = (float)$inputs['areasqft'];
-            $data['application_type_id'] = $inputs['applytypeid'];
-            $data['firm_date'] = $inputs['estdate'];
+            $data['area_in_sqft'] = (float)$inputs['areaSqft'];
+            $data['application_type_id'] = $inputs['application_type_id'];
+            $data['firm_date'] = $inputs['firmEstdDate'];
             $data['firm_date'] = date('Y-m-d', strtotime($data['firm_date']));
-
+           
             $data['tobacco_status'] = $inputs['tobacco_status'];
-            $data['timeforlicense'] = $inputs['licensefor'];
+            $data['timeforlicense'] = $inputs['licenseFor'];
             $data['curdate'] = $inputs['curdate']??date("Y-m-d");
+            
             $denial_amount_month = 0;
             $count = $this->getrate($data);
             $rate = $count->rate * $data['timeforlicense'];
-
+            $notice_amount = 0;
+            if(isset($inputs['noticeDate']) && $inputs['noticeDate'])
+            {
+                $notice_amount = $this->getDenialAmountTrade($inputs['noticeDate']);
+            }
             $pre_app_amount = 0;
             if (isset($data['application_type_id']) && in_array($data['application_type_id'], [1, 2])) 
             {
@@ -477,7 +509,7 @@ class Trade implements ITrade
                 if ($data['application_type_id'] == 3)
                     $denial_amount_month = 0;
             }
-            $total_denial_amount = $denial_amount_month + $rate + $pre_app_amount;
+            $total_denial_amount = $denial_amount_month + $rate + $pre_app_amount + $notice_amount ;
 
             # Check If Any cheque bounce charges
             if (isset($inputs['apply_licence_id'], $inputs['apply_licence_id'])) 
@@ -489,7 +521,7 @@ class Trade implements ITrade
 
             if ($count) 
             {
-                $response = ['response' => true, 'rate' => $rate, 'penalty' => $denial_amount_month, 'total_charge' => $total_denial_amount, 'rate_id' => $count['id'], 'arear_amount' => $pre_app_amount];
+                $response = ['response' => true, 'rate' => $rate, 'penalty' => $denial_amount_month, 'total_charge' => $total_denial_amount, 'rate_id' => $count['id'], 'arear_amount' => $pre_app_amount,"notice_amount" =>$notice_amount];
             } 
             else 
             {
@@ -499,6 +531,9 @@ class Trade implements ITrade
         }
         catch(Exception $e)
         {
+            echo $e->getLine();
+            echo $e->getMessage();
+            echo $e->getFile();
             return $response;
         }
     }
@@ -546,7 +581,7 @@ class Trade implements ITrade
             $propdet = $this->propertyDetailsfortradebyHoldingNo($inputs['holdingNo'],$ulb_id);
             if($propdet['status'])
             {
-                $response = ['status' => true,"data"=>["property"=>$propdet['property'],"owneres"=>$propdet['owneres']],"message"=>""];
+                $response = ['status' => true,"data"=>["property"=>$propdet['property']],"message"=>""];
 
             }
             else
@@ -558,8 +593,9 @@ class Trade implements ITrade
         {
             $response = ['status' => false,"data"=>'',"message"=>'Onlly Post Allowed'];
         }
-        return responseMsg($response['status'],$response["message"],$response["data"]);
+        return responseMsg($response['status'],$response["message"],remove_null($response["data"]));
     }
+    
     #---------- core function for trade Application--------
 
     function getDenialAmountTrade($notice_date=null,$current_date=null)
@@ -811,6 +847,16 @@ class Trade implements ITrade
     public function propertyDetailsfortradebyHoldingNo(string $holdingNo,int $ulb_id):array
     {
         $property = PropPropertie::select("*")
+                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name ,property_id
+                                        FROM Prop_OwnerS 
+                                        WHERE status = 1
+                                        GROUP BY property_id
+                                        ) owners
+                                        "),function($join)
+                                        {
+                                            $join->on("owners.property_id","=","prop_properties.id");
+                                        }
+                                        )
                         ->where("status",1)
                         ->where("new_holding_no","<>","")
                         ->where("new_holding_no",$holdingNo)
@@ -818,14 +864,10 @@ class Trade implements ITrade
                         ->first();
         if($property)
         {
-            $owneres = PropOwner::select("*")
-                        ->where("property_id",$property->id)
-                        ->where('status',1)
-                        ->get();
-            return ["status"=>true,'property'=>adjToArray($property),'owneres'=>adjToArray($owneres)];
+            return ["status"=>true,'property'=>adjToArray($property)];
 
         }
-        return ["status"=>false,'property'=>'','owneres'=>''];
+        return ["status"=>false,'property'=>''];
     }
     public function getSafDtlBySafno(string $safNo,int $ulb_id):array
     {
