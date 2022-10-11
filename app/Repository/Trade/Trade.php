@@ -318,7 +318,9 @@ class Trade implements ITrade
                 }
                 
                 DB::commit();
-                return responseMsg(true,$appNo,'');
+                $res['applicationNo']=$appNo;
+                $res['applyLicenseId'] = $licenceId;
+                return responseMsg(true,$appNo,$res);
             }
             
         }
@@ -544,19 +546,19 @@ class Trade implements ITrade
             $propdet = $this->propertyDetailsfortradebyHoldingNo($inputs['holdingNo'],$ulb_id);
             if($propdet['status'])
             {
-                $response = ['response' => true,$propdet];
+                $response = ['status' => true,"data"=>["property"=>$propdet['property'],"owneres"=>$propdet['owneres']],"message"=>""];
 
             }
             else
             {
-                $response = ['response' => false];
+                $response = ['status' => false,"data"=>'',"message"=>'No Property Found'];
             }
         } 
         else 
         {
-            $response = ['response' => false];
+            $response = ['status' => false,"data"=>'',"message"=>'Onlly Post Allowed'];
         }
-        return json_encode($response);
+        return responseMsg($response['status'],$response["message"],$response["data"]);
     }
     #---------- core function for trade Application--------
 
