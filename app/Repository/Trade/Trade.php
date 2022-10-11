@@ -128,17 +128,17 @@ class Trade implements ITrade
                     $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{10}/";                    
                 }
 
-                $rules["initialBusinessDtails.applyWith"]="required|int";
-                $rules["initialBusinessDtails.firmType"]="required|int";
-                if(isset($request->initialBusinessDtails['firmType']) && $request->initialBusinessDtails['firmType']==5)
+                $rules["initialBusinessDetails.applyWith"]="required|int";
+                $rules["initialBusinessDetails.firmType"]="required|int";
+                if(isset($request->initialBusinessDetails['firmType']) && $request->initialBusinessDetails['firmType']==5)
                 {
-                    $rules["initialBusinessDtails.otherfirmtype"]="required|regex:$regex";
+                    $rules["initialBusinessDetails.otherfirmtype"]="required|regex:$regex";
                 }
-                $rules["initialBusinessDtails.ownershipType"]="required|int";
-                if( isset($request->initialBusinessDtails['applyWith']) && $request->initialBusinessDtails['applyWith']==1)
+                $rules["initialBusinessDetails.ownershipType"]="required|int";
+                if( isset($request->initialBusinessDetails['applyWith']) && $request->initialBusinessDetails['applyWith']==1)
                 {
-                    $rules["initialBusinessDtails.noticeNO"]="required|regex:$regex";
-                    $rules["initialBusinessDtails.noticeDate"]="required|date";  
+                    $rules["initialBusinessDetails.noticeNO"]="required|regex:$regex";
+                    $rules["initialBusinessDetails.noticeDate"]="required|date";  
                 }
                 $rules["licenseDetails.licenceFor"]="required|int";
 
@@ -252,11 +252,11 @@ class Trade implements ITrade
                 }
                 elseif($this->application_type_id==1)
                 {                    
-                    $licence->firm_type_id        = $request->initialBusinessDtails['firmType'];
-                    $licence->otherfirmtype       = $request->initialBusinessDtails['otherfirmtype']??null;
+                    $licence->firm_type_id        = $request->initialBusinessDetails['firmType'];
+                    $licence->otherfirmtype       = $request->initialBusinessDetails['otherfirmtype']??null;
                     $licence->application_type_id = $this->application_type_id;
                     $licence->category_type_id    = $request->firmDetails['categoryTypeId']??null;
-                    $licence->ownership_type_id   = $request->initialBusinessDtails['ownershipType'];
+                    $licence->ownership_type_id   = $request->initialBusinessDetails['ownershipType'];
                     $licence->ward_mstr_id        = $request->firmDetails['wardNo'];
                     $licence->new_ward_mstr_id    = $request->firmDetails['newWardNo'];
                     $licence->ulb_id              = $this->ulb_id;
