@@ -167,7 +167,7 @@ class Trade implements ITrade
                 $proprty_id = null;
                 if($request->firmDetails['holdingNo'])
                 {
-                    $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'],$this->uld_id);
+                    $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'],$this->ulb_id);
                     if($property['status'])
                         $proprty_id = $property['propery']['id'];
                     else
