@@ -1110,7 +1110,7 @@ class SafCalculation
             }
         }
 
-        
+
 
         if ($L_PropertyTypeId != 4) {
             $this->FYearQuater = [];

@@ -7,8 +7,8 @@
  */
 
 return [
-    "SAF_WORKFLOW_ID" => "6",
-    "SELF_ADVERTISEMENT_WORKFLOW_ID" => "4", 
-    "PROPPERTY_OBJECTION_ID"=>"7",
-    "TRADE_WORKFLOW_ID"=>"8",
+    "SAF_WORKFLOW_ID" => "9",
+    "SELF_ADVERTISEMENT_WORKFLOW_ID" => "4",
+    "PROPPERTY_OBJECTION_ID" => "7",
+    "TRADE_WORKFLOW_ID" => "8",
 ];
