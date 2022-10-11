@@ -18,6 +18,13 @@ use App\Http\Controllers\Trade\ApplyApplication;
 use App\Http\Controllers\Ward\WardController;
 use App\Http\Controllers\Ward\WardUserController;
 use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
+use App\Http\Controllers\WorkflowMaster\WorkflowMasterController;
+use App\Http\Controllers\WorkflowMaster\WorkflowWorkflowController;
+use App\Http\Controllers\WorkflowMaster\WorkflowRoleController;
+use App\Http\Controllers\WorkflowMaster\MenuUserController;
+use App\Http\Controllers\WorkflowMaster\MenuWardController;
+use App\Http\Controllers\WorkflowMaster\WorkflowWardUserController;
+use App\Http\Controllers\WorkflowMaster\WorkflowTrackControllers;
 
 /*
 |--------------------------------------------------------------------------
@@ -289,9 +296,146 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | Ward Users Masters Operations
      */
     Route::resource('ward/masters/ward-user', WardUserController::class);
-
 });
 
 // Routes used where authentication not required
 Route::group(['middleware' => ['json.response', 'request_logger']], function () {
+});
+
+
+/**
+ * Creation Date:-06-10-2022
+ * Created By:- Mrinal Kumar
+ * 
+ * workflow Master CRUD operation
+ */
+
+Route::controller(WorkflowMasterController::class)->group(function () {
+
+    Route::post('master-create', 'create');                            // create data
+    Route::get('master-list', 'list');                                 // list all data 
+    Route::delete('master-delete/{id}', 'delete');                     // Delete data
+    Route::put('master-update/{id}', 'update');                        // update data 
+    Route::get('master-view/{id}', 'view');                            // Get data By Id
+
+});
+
+
+/**
+ * Creation Date:-07-10-2022
+ * Created By:- Mrinal Kumar
+ * workflow workflow CRUD operation
+ */
+
+Route::controller(WorkflowWorkflowController::class)->group(function () {
+
+    Route::post('workflow-create', 'create');                            // create data
+    Route::get('workflow-list', 'list');                                 // list all data 
+    Route::delete('workflow-delete/{id}', 'delete');                     // Delete data
+    Route::put('workflow-update/{id}', 'update');                        // update data 
+    Route::get('workflow-view/{id}', 'view');                            // Get data By Id
+
+});
+
+
+/**
+ * workflow roles CRUD operation
+ */
+
+Route::controller(WorkflowRoleController::class)->group(function () {
+
+    Route::post('role-create', 'create');                            // create data
+    Route::get('role-list', 'list');                                 // list all data 
+    Route::delete('role-delete/{id}', 'delete');                     // Delete data
+    Route::put('role-update/{id}', 'update');                        // update data 
+    Route::get('role-view/{id}', 'view');                            // Get data By Id
+
+});
+
+/**
+ * Menu User CRUD operation
+ */
+
+Route::controller(MenuUserController::class)->group(function () {
+
+    Route::post('menu-create', 'create');                            // create data
+    Route::get('menu-list', 'list');                                 // list all data 
+    Route::delete('menu-delete/{id}', 'delete');                     // Delete data
+    Route::put('menu-update/{id}', 'update');                        // update data 
+    Route::get('menu-view/{id}', 'view');                            // Get data By Id
+
+});
+
+/**
+ * Menu Ward CRUD operation
+ */
+
+Route::controller(MenuWardController::class)->group(function () {
+
+    Route::post('ward-create', 'create');                            // create data
+    Route::get('ward-list', 'list');                                 // list all data 
+    Route::delete('ward-delete/{id}', 'delete');                     // Delete data
+    Route::put('ward-update/{id}', 'update');                        // update data 
+    Route::get('ward-view/{id}', 'view');                            // Get data By Id
+
+});
+
+/**
+ * Ward User CRUD operation
+ */
+
+Route::controller(WorkflowWardUserController::class)->group(function () {
+
+    Route::post('warduser-create', 'create');                            // create data
+    Route::get('warduser-list', 'list');                                 // list all data 
+    Route::delete('warduser-delete/{id}', 'delete');                     // Delete data
+    Route::put('warduser-update/{id}', 'update');                        // update data 
+    Route::get('warduser-view/{id}', 'view');                            // Get data By Id
+    Route::get('getUserByID/{id}', 'getUserByID');
+    Route::get('getUlbByID/{id}', 'getUlbByID');
+});
+
+
+/**
+ * Role User Map CRUD operation
+ */
+
+Route::controller(WorkflowWardUserController::class)->group(function () {
+
+    Route::post('roleuser-create', 'create');                            // create data
+    Route::get('roleuser-list', 'list');                                 // list all data 
+    Route::delete('roleuser-delete/{id}', 'delete');                     // Delete data
+    Route::put('roleuser-update/{id}', 'update');                        // update data 
+    Route::get('roleuser-view/{id}', 'view');                            // Get data By Id
+
+});
+
+
+/**
+ * Workflow Role Map CRUD operation
+ */
+
+Route::controller(WorkflowRoleUserMapController::class)->group(function () {
+
+    Route::post('rolemap-create', 'create');                            // create data
+    Route::get('rolemap-list', 'list');                                 // list all data 
+    Route::delete('rolemap-delete/{id}', 'delete');                     // Delete data
+    Route::put('rolemap-update/{id}', 'update');                        // update data 
+    Route::get('rolemap-view/{id}', 'view');                            // Get data By Id
+
+});
+
+
+/**
+ * Workflow Track CRUD operation
+ */
+
+Route::controller(WorkflowTrackControllers::class)->group(function () {
+
+    Route::post('track-create', 'create');                            // create data
+    Route::get('track-list', 'list');                                 // list all data 
+    Route::delete('track-delete/{id}', 'delete');                     // Delete data
+    Route::put('track-update/{id}', 'update');                        // update data 
+    Route::get('track-view/{id}', 'view');                            // Get data By Id
+
 });

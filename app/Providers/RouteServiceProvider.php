@@ -44,14 +44,14 @@ class RouteServiceProvider extends ServiceProvider
                 ->group(base_path('routes/api.php'));
 
             Route::prefix('api/water')
-            ->middleware('api')
-            ->namespace($this->namespace)
-            ->group(base_path('routes/water.php'));
+                ->middleware('api')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/water.php'));
 
             Route::prefix('api/trade')
-            ->middleware('api')
-            ->namespace($this->namespace)
-            ->group(base_path('routes/trade.php'));
+                ->middleware('api')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/trade.php'));
 
             Route::middleware('web')
                 ->namespace($this->namespace)
@@ -60,7 +60,7 @@ class RouteServiceProvider extends ServiceProvider
     }
 
     /**
-     * Configure the rate limiters for the application.
+     * Configure the rate limiters for the application. dsfg
      *
      * @return void
      */

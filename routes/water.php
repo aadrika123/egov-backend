@@ -16,11 +16,18 @@ Route::post('/apply-new-connection', function () {
     dd('Welcome to simple Water route file');
 });
 
-Route::group(['middleware'=>['json.response','request_logger']],function(){
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     /**
      * | Created On-07-10-2022 
      * | Created by-Anshu Kumar
      * | ------------------- Apply New Water Connection ------------------------ |
      */
-    Route::resource('crud/new-connection',NewConnectionController::class);
+    Route::resource('crud/new-connection', NewConnectionController::class);
+
+    Route::controller(NewConnectionController::class)->group(function () {
+        Route::post('user-water-connection-charges', 'getUserWaterConnectionCharges');                                          // Get Water Connection Charges of Logged In User
+        Route::post('user-water-connection-charges', 'getUserWaterConnectionCharges');                           // Get Water Connection Charges of Logged In User
+        Route::post('applicant-document-upload', 'applicantDocumentUpload');                                     // User Document Upload
+        Route::post('water-payment', 'waterPayment');                                                            // Water Payment
+    });
 });
