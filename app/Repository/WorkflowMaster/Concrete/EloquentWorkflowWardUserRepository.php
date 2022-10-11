@@ -105,23 +105,24 @@ class EloquentWorkflowWardUserRepository implements iWorkflowMasterRepository
     }
 
     //Mapping
-    // getting data of user  by selecting  ward user id
+    //getting data of user  by selecting  id
+    //m_users && m_ulb_wards  && wf_ward_users
 
-    // public function getUserByID($id)
-    // {
-    //     $users = WfWardUser::where('user_id', $id)
-    //         ->select('ulb_id')
-    //         ->join('m_users', 'm_users.id', '=', 'wf_ward_users.user_id')
-    //         ->get('wf_ward_users.ward_id');
-    //     return response(["data" => $users/*true, "Data Fetched", $users*/]);
-    // }
+    public function getUserByID($id)
+    {
+        $users = WfWardUser::where('wf_ward_users.id', $id)
+            ->join('m_users', 'm_users.id', '=', 'wf_ward_users.user_id')
+            ->join('m_ulb_wards', 'm_ulb_wards.id', '=', 'wf_ward_users.ward_id')
+            ->get(['wf_ward_users', 'm_users', 'm_ulb_wards']);
+        return response(["data" => $users/*true, "Data Fetched", $users*/]);
+    }
 
-    // public function getUlbByID($id)
-    // {
-    //     $users = WfWardUser::where('ward_id', $id)
-    //         ->select('ulb_id as ward_id', 'ward_name')
-    //         ->join('m_ulb_wards', 'm_ulb_wards.id', '=', 'wf_ward_users.ward_id')
-    //         ->get();
-    //     return response([true, "Data Fetched", $users]);
-    // }
+    public function getUlbByID($id)
+    {
+        $users = WfWardUser::where('ward_id', $id)
+            ->select('ulb_id as ward_id', 'ward_name')
+            ->join('m_ulb_wards', 'm_ulb_wards.id', '=', 'wf_ward_users.ward_id')
+            ->get();
+        return response([true, "Data Fetched", $users]);
+    }
 }
