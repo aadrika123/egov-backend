@@ -169,7 +169,7 @@ class Trade implements ITrade
                 {
                     $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'],$this->ulb_id);
                     if($property['status'])
-                        $proprty_id = $property['propery']['id'];
+                        $proprty_id = $property['property']['id'];
                     else
                         throw new Exception("Property Details Not Found");
                 }
