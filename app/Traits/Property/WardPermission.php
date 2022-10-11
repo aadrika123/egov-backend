@@ -166,7 +166,7 @@ trait WardPermission
    
    
    public function getUserRoll($user_id,$worklow_name='SAF',$module_name='Property')
-   {
+   { 
         $user = User::select( DB::raw("role_masters.id as role_id, 
                                     workflows.id as workflow_id,role_users.id as dd"),
                                     "users.id",

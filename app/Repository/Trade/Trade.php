@@ -101,7 +101,7 @@ class Trade implements ITrade
             }
             elseif($request->getMethod()=="POST")
             { 
-                $apply_from = $this->applyFrom();
+                $apply_from = $this->applyFrom();dd($apply_from);
                 $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\\s]+$/';
                 $rules["firmDetails.areaSqft"]="required|numeric";
                 $rules["firmDetails.businessAddress"]="required|regex:$regex";
@@ -132,7 +132,7 @@ class Trade implements ITrade
                 $rules["initialBusinessDetails.firmType"]="required|int";
                 if(isset($request->initialBusinessDetails['firmType']) && $request->initialBusinessDetails['firmType']==5)
                 {
-                    $rules["initialBusinessDetails.otherfirmtype"]="required|regex:$regex";
+                    $rules["initialBusinessDetails.otherFirmType"]="required|regex:$regex";
                 }
                 $rules["initialBusinessDetails.ownershipType"]="required|int";
                 if( isset($request->initialBusinessDetails['applyWith']) && $request->initialBusinessDetails['applyWith']==1)
@@ -253,7 +253,7 @@ class Trade implements ITrade
                 elseif($this->application_type_id==1)
                 {                    
                     $licence->firm_type_id        = $request->initialBusinessDetails['firmType'];
-                    $licence->otherfirmtype       = $request->initialBusinessDetails['otherfirmtype']??null;
+                    $licence->otherfirmtype       = $request->initialBusinessDetails['otherFirmType']??null;
                     $licence->application_type_id = $this->application_type_id;
                     $licence->category_type_id    = $request->firmDetails['categoryTypeId']??null;
                     $licence->ownership_type_id   = $request->initialBusinessDetails['ownershipType'];
@@ -595,7 +595,7 @@ class Trade implements ITrade
         }
         return responseMsg($response['status'],$response["message"],remove_null($response["data"]));
     }
-    
+
     #---------- core function for trade Application--------
 
     function getDenialAmountTrade($notice_date=null,$current_date=null)
