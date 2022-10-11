@@ -42,6 +42,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\SafCalculation;
 use App\EloquentClass\Property\PropertyTax;
+use App\Traits\Workflow\Workflow as WorkflowWorkflow;
 
 /**
  * | Created On-10-08-2022
@@ -53,6 +54,7 @@ class EloquentSafRepository implements SafRepository
 {
     use Auth;               // Trait Used added by sandeep bara date 17-08-2022
     use WardPermission;
+    use WorkflowWorkflow;
     /**
      * | Citizens Applying For SAF
      * | Proper Validation will be applied after 
@@ -79,10 +81,18 @@ class EloquentSafRepository implements SafRepository
             // Determining the initiator and finisher id
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             $ulb_id = auth()->user()->ulb_id;
-            $workflows = UlbWorkflowMaster::select('initiator', 'finisher')
-                ->where('ulb_id', $ulb_id)
-                ->where('workflow_id', $workflow_id)
-                ->first();
+            // $workflows = UlbWorkflowMaster::select('initiator', 'finisher')
+            //     ->where('ulb_id', $ulb_id)
+            //     ->where('workflow_id', $workflow_id)
+            //     ->first();
+            $workflows = $this->getWorkflowCurrentUser($workflow_id);
+            $collectWorkflows = collect($workflows);
+            $filtered = $collectWorkflows->filter(function ($value, $key) {
+                return $value;
+            });
+
+            return $filtered->firstWhere('is_initiator', true);
+
             if (!$workflows) {
                 return responseMsg(false, "Workflow Not Available", $request->all());
             }
@@ -356,9 +366,7 @@ class EloquentSafRepository implements SafRepository
                 $saf->apartment_details_id = $request->apartmentDetail;
                 // workflows
                 $saf->citizen_id = $user_id;
-                $saf->current_user = $workflows->initiator;
-                $saf->initiator_id = $workflows->initiator;
-                $saf->finisher_id = $workflows->finisher;
+                // $saf->current_role = $workflows->initiator;
                 $saf->workflow_id = $workflow_id;
                 $saf->ulb_id = $ulb_id;
 

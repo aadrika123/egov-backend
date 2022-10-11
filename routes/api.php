@@ -11,9 +11,7 @@ use App\Http\Controllers\UlbController;
 use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\Workflows\WorkflowController;
 use App\Http\Controllers\Workflows\WorkflowTrackController;
-use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\PaymentMasterController;
-use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Trade\ApplyApplication;
 use App\Http\Controllers\Ward\WardController;
 use App\Http\Controllers\Ward\WardUserController;
@@ -222,32 +220,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-citizen-by-id/{id}', 'getCitizenByID');     // Get Citizen By ID
         Route::get('get-all-citizens', 'getAllCitizens');           // Get All Citizens
         Route::post('edit-citizen-by-id/{id}', 'editCitizenByID');         // Approve Or Reject Citizen by Id
-    });
-
-    /**
-     * ----------------------------------------------------------------------------------------
-     * | Property Module Routes
-     * ----------------------------------------------------------------------------------------
-     */
-
-    // SAF 
-    Route::controller(ActiveSafController::class)->group(function () {
-        Route::match(["get", "post"], 'saf/apply/{assessmentType}', 'applySaf');                            // Applying Saf Route
-        Route::get('saf/inbox/{key?}', 'inbox');                             // Saf workflow Inbox and Inbox By search key
-        Route::get('saf/outbox/{key?}', 'outbox');                           // Saf Workflow Outbox and Outbox By search key
-        Route::get('saf/details/{id}', 'details');                           // Saf Workflow safDetails and safDetails By ID
-        Route::post('saf/escalate/{id?}', 'special');                         // Saf Workflow special and safDetails By id
-        Route::get('saf/escalate/inbox/{key?}', 'specialInbox');              // Saf workflow Inbox and Inbox By search key
-        Route::post('saf/post/level', 'postNextLevel');
-        Route::post('property/getProperty', 'getPropIdByWardNoHodingNo');      // get Property (search) by ward no and holding no
-        Route::match(["get", "post"], 'ulb/workflow/member', 'setWorkFlowForwordBackword');      // get Property (search) by ward no and holding no
-    });
-    //Property Objection
-    Route::controller(ObjectionController::class)->group(function () {
-        Route::match(["get", "post"], 'property-objection/{id}', 'propertyObjection'); // Objection Workflow Apply By id
-        Route::get('property/objection/inbox/{key?}', 'propObjectionInbox');          // Objection Workflow Inbox  By key
-        Route::get('property/objection/outbox/{key?}', 'propObjectionOutbox');        // Objection Workflow Outbox  By key
-        Route::get('property/objection/escalate/inbox/{key?}', 'specialObjectionInbox');        // Objection Workflow special Inbox  By key
     });
 
     /**

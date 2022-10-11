@@ -3,7 +3,7 @@
 namespace App\Traits\Workflow;
 
 use App\Models\WorkflowCandidate;
-
+use Illuminate\Support\Facades\DB;
 
 /**
  * Trait for Workflows
@@ -86,5 +86,28 @@ trait Workflow
         }
         $message = ["status" => true, "message" => "Date Fetched", "data" => $arr];
         return response()->json($message, 200);
+    }
+
+    /**
+     * | Created On - 11/10/2022 
+     * | Created By - Anshu Kumar
+       | ----------- Function used to determine the current user while applying to any module -------- |
+     * | @param workflowId > workflow id applied module
+     */
+    public function getWorkflowCurrentUser($workflowId)
+    {
+        $query = "SELECT rm.id,
+                        rm.workflow_id,
+                        rm.wf_role_id,
+                        wr.role_name,
+                        wr.forward_role_id,
+                        wr.backward_role_id,
+                        wr.is_initiator,
+                        wr.is_finisher
+                        FROM wf_workflowrolemaps rm
+                        LEFT JOIN wf_roles wr ON wr.id=rm.wf_role_id
+                    WHERE rm.workflow_id=$workflowId AND rm.status=1";
+        $data = DB::select($query);
+        return $data;
     }
 }
