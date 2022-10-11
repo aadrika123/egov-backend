@@ -125,7 +125,7 @@ class Trade implements ITrade
                 $rules["firmDetails.account_no"] = "regex:$regex";
                 if($apply_from=="Online")
                 {
-                    $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{10}/";                    
+                    $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
                 }
 
                 $rules["initialBusinessDetails.applyWith"]="required|int";
@@ -140,7 +140,7 @@ class Trade implements ITrade
                     $rules["initialBusinessDetails.noticeNO"]="required|regex:$regex";
                     $rules["initialBusinessDetails.noticeDate"]="required|date";  
                 }
-                $rules["licenseDetails.licenceFor"]="required|int";
+                $rules["licenseDetails.licenseFor"]="required|int";
 
                 $rules["ownerDetails"] = "required|array";
                 $rules["ownerDetails.*.businessOwnerName"]="required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
@@ -212,7 +212,7 @@ class Trade implements ITrade
                     $licence->establishment_date  = $oldLicence->establishment_date;
                     $licence->apply_date          = Carbon::now()->format('Y-m-d');
     
-                    $licence->licence_for_years   = $request->licenseDetails['licenceFor'];
+                    $licence->licence_for_years   = $request->licenseDetails['licenseFor'];
                     $licence->address             = $oldLicence->address;
                     $licence->landmark            = $oldLicence->landmark;
                     $licence->pin_code            = $oldLicence->pin_code;
@@ -279,7 +279,7 @@ class Trade implements ITrade
                     $licence->establishment_date  = $request->firmDetails['firmEstdDate'];
                     $licence->apply_date          = Carbon::now()->format('Y-m-d');
     
-                    $licence->licence_for_years   = $request->licenseDetails['licenceFor'];
+                    $licence->licence_for_years   = $request->licenseDetails['licenseFor'];
                     $licence->address             = $request->firmDetails['businessAddress'];
                     $licence->landmark            = $request->firmDetails['landmark']??null;
                     $licence->pin_code            = $request->firmDetails['pincode']??null;
