@@ -814,7 +814,7 @@ class Trade implements ITrade
                         ->where("new_holding_no",$holdingNo)
                         ->where("ulb_id",$ulb_id)
                         ->first();
-        if($property->id)
+        if($property)
         {
             $owneres = PropOwner::select("*")
                         ->where("property_id",$property->id)
