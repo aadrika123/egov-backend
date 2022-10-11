@@ -41,9 +41,9 @@ class WorkflowWardUserController extends Controller
     }
 
     // Updating
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        return $this->EloquentWardUser->update($request, $id);
+        return $this->EloquentWardUser->update($request);
     }
 
     // View data by Id

@@ -41,9 +41,9 @@ class WorkflowTrackControllers extends Controller
     }
 
     // Updating
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        return $this->EloquentTrack->update($request, $id);
+        return $this->EloquentTrack->update($request);
     }
 
     // View data by Id

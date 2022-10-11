@@ -41,9 +41,9 @@ class WorkflowRoleController extends Controller
     }
 
     // Updating
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        return $this->EloquentRole->update($request, $id);
+        return $this->EloquentRole->update($request);
     }
 
     // View data by Id

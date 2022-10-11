@@ -6,6 +6,8 @@ use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
 use Illuminate\Http\Request;
 use App\Models\WfTrack;
 use Exception;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Repository for Save Edit and View 
@@ -37,15 +39,15 @@ class EloquentWorkflowTrackRepository implements iWorkflowMasterRepository
             $device = new WfTrack;
             $device->workflow_id = $request->WorkflowId;
             $device->user_id = $request->UserId;
-            $device->tran_time = $request->TranTime;
+            $device->tran_time = Carbon::now();
             $device->ref_key = $request->RefKey;
             $device->ref_id = $request->RefId;
             $device->forward_id = $request->ForwardId;
             $device->waiting_for_citizen = $request->WaitingForCitizen;
             $device->message = $request->Message;
-            $device->status = $request->Status;
+            $device->created_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Saved'], 200);
+            return responseMsg(true, "Successfully Saved", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -75,23 +77,21 @@ class EloquentWorkflowTrackRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
         try {
             $device = WfTrack::find($request->Id);
             $device->workflow_id = $request->WorkflowId;
             $device->user_id = $request->UserId;
-            $device->tran_time = $request->TranTime;
             $device->ref_key = $request->RefKey;
             $device->ref_id = $request->RefId;
             $device->forward_id = $request->ForwardId;
             $device->waiting_for_citizen = $request->WaitingForCitizen;
             $device->message = $request->Message;
-            $device->is_suspended = $request->IsSuspended;
-            $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->tran_time = Carbon::now();
+            $device->updated_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Updated'], 200);
+            return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }

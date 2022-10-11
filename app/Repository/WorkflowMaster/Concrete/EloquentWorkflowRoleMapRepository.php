@@ -6,6 +6,8 @@ use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
 use Illuminate\Http\Request;
 use App\Models\WfWorkflowrolemap;
 use Exception;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Repository for Save Edit and View 
@@ -38,12 +40,11 @@ class EloquentWorkflowRoleMapRepository implements iWorkflowMasterRepository
             $device = new WfWorkflowrolemap;
             $device->workflow_id = $request->WorkflowId;
             $device->wf_role_id = $request->WfRoleId;
-            $device->is_suspended = $request->IsSuspended;
             $device->user_id = $request->UserId;
-            $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->stamp_date_time = Carbon::now();
+            $device->created_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Saved'], 200);
+            return responseMsg(true, "Successfully Saved", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -73,7 +74,7 @@ class EloquentWorkflowRoleMapRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
         try {
             $device = WfWorkflowrolemap::find($request->Id);
@@ -82,10 +83,10 @@ class EloquentWorkflowRoleMapRepository implements iWorkflowMasterRepository
             $device->is_suspended = $request->IsSuspended;
             $device->user_id = $request->UserId;
             $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->stamp_date_time = Carbon::now();
+            $device->updated_at = Carbon::now();
             $device->save();
-            $device->save();
-            return response()->json(['Status' => 'Successfully Updated'], 200);
+            return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }

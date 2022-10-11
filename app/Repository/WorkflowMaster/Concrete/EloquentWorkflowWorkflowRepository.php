@@ -6,6 +6,8 @@ use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
 use Illuminate\Http\Request;
 use App\Models\WfWorkflow;
 use Exception;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Repository for Save Edit and View 
@@ -30,12 +32,11 @@ class EloquentWorkflowWorkflowRepository implements iWorkflowMasterRepository
             $device->ulb_id = $request->UlbId;
             $device->alt_name = $request->AltName;
             $device->is_doc_required = $request->IsDocRequired;
-            $device->is_suspended = $request->IsSuspended;
             $device->user_id = $request->UserId;
-            $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->stamp_date_time = Carbon::now();
+            $device->created_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Saved'], 200);
+            return responseMsg(true, "Successfully Saved", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -66,7 +67,7 @@ class EloquentWorkflowWorkflowRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
         try {
             $device = new WfWorkflow;
@@ -77,9 +78,10 @@ class EloquentWorkflowWorkflowRepository implements iWorkflowMasterRepository
             $device->is_suspended = $request->IsSuspended;
             $device->user_id = $request->UserId;
             $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->stamp_date_time = Carbon::now();
+            $device->updated_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Updated'], 200);
+            return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }

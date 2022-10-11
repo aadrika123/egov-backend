@@ -41,9 +41,9 @@ class MenuUserController extends Controller
     }
 
     // Updating
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        return $this->EloquentUser->update($request, $id);
+        return $this->EloquentUser->update($request);
     }
 
     // View data by Id

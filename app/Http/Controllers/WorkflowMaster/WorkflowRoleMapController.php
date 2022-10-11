@@ -15,7 +15,7 @@ use App\Repository\WorkflowMaster\Concrete\EloquentWorkflowRoleMapRepository;
 
 
 
-class WorkflowRoleUserMapController extends Controller
+class WorkflowRoleMapController extends Controller
 {
     protected $eloquentRoleMap;
     // Initializing Construct function
@@ -42,9 +42,9 @@ class WorkflowRoleUserMapController extends Controller
     }
 
     // Updating
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        return $this->EloquentRoleMap->update($request, $id);
+        return $this->EloquentRoleMap->update($request);
     }
 
     // View data by Id

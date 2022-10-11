@@ -6,6 +6,8 @@ use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
 use Illuminate\Http\Request;
 use App\Models\WfRole;
 use Exception;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Repository for Save Edit and View 
@@ -24,20 +26,34 @@ class EloquentWorkflowRoleRepository implements iWorkflowMasterRepository
 
     public function create(Request $request)
     {
+        //validating
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'RoleName' => 'required',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validateUser->errors()
+            ], 401);
+        }
         try {
             // create
             $device = new WfRole;
             $device->role_name = $request->RoleName;
-            $device->forward_user_id = $request->ForwardUserId;
-            $device->backward_user_id = $request->BackwardUserId;
+            $device->forward_role_id = $request->ForwardRoleId;
+            $device->backward_role_id = $request->BackwardRoleId;
             $device->is_initiator = $request->IsInitiator;
             $device->is_finisher = $request->IsFinisher;
-            $device->is_suspended = $request->IsSuspended;
             $device->user_id = $request->UserId;
-            $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->stamp_date_time = Carbon::now();
+            $device->created_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Saved'], 200);
+            return responseMsg(true, "Successfully Saved", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -67,21 +83,22 @@ class EloquentWorkflowRoleRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
         try {
             $device = WfRole::find($request->Id);
             $device->role_name = $request->RoleName;
-            $device->forward_user_id = $request->ForwardUserId;
-            $device->backward_user_id = $request->BackwardUserId;
+            $device->forward_role_id = $request->ForwardRoleId;
+            $device->backward_role_id = $request->BackwardRoleId;
             $device->is_initiator = $request->IsInitiator;
             $device->is_finisher = $request->IsFinisher;
             $device->is_suspended = $request->IsSuspended;
             $device->user_id = $request->UserId;
             $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->stamp_date_time = Carbon::now();
+            $device->updated_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Updated'], 200);
+            return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }

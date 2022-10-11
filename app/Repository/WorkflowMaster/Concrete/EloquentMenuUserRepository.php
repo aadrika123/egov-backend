@@ -5,7 +5,9 @@ namespace App\Repository\WorkflowMaster\Concrete;
 use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
 use Illuminate\Http\Request;
 use App\Models\MUser;
+use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Repository for Save Edit and View 
@@ -24,6 +26,24 @@ class EloquentMenuUserRepository implements iWorkflowMasterRepository
 
     public function create(Request $request)
     {
+        //validating
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'Email' => 'required',
+                'FullName' => 'required',
+                'UserName' => 'required',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validateUser->errors()
+            ], 401);
+        }
+
         try {
             // create
             $device = new MUser;
@@ -39,12 +59,11 @@ class EloquentMenuUserRepository implements iWorkflowMasterRepository
             $device->full_name = $request->FullName;
             $device->description = $request->Description;
             $device->is_deleted = $request->IsDeleted;
-            $device->is_suspended = $request->IsSuspended;
             $device->user_id = $request->UserId;
-            $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->stamp_date_time = Carbon::now();
+            $device->created_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Saved'], 200);
+            return responseMsg(true, "Successfully Saved", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -74,7 +93,7 @@ class EloquentMenuUserRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
         try {
             $device = MUser::find($request->Id);
@@ -93,9 +112,10 @@ class EloquentMenuUserRepository implements iWorkflowMasterRepository
             $device->is_suspended = $request->IsSuspended;
             $device->user_id = $request->UserId;
             $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->stamp_date_time = Carbon::now();
+            $device->updated_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Updated'], 200);
+            return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
