@@ -485,17 +485,18 @@ class EloquentSafRepository implements SafRepository
             $redis = Redis::connection();  // Redis Connection
             $redis_data = json_decode(Redis::get('user:' . $user_id), true);
             $ulb_id = $redis_data['ulb_id'] ?? auth()->user()->ulb_id;
-            $roll_id = $redis_data['role_id']??($this->getUserRoll($user_id)->role_id??-1);
+            $roll_id = $redis_data['role_id'] ?? ($this->getUserRoll($user_id)->role_id ?? -1);
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             $work_flow_candidate = $this->work_flow_candidate($user_id, $ulb_id);
-            if (!$work_flow_candidate || $roll_id==-1) {
+            if (!$work_flow_candidate || $roll_id == -1) {
                 throw new Exception("Your Are Not Authoried");
             }
             $work_flow_candidate = collect($work_flow_candidate);
             $ward_permission = $this->WardPermission($user_id);
             $ward_ids = array_map(function ($val) {
                 return $val['ulb_ward_id'];
-            }, $ward_permission); DB::enableQueryLog();
+            }, $ward_permission);
+            DB::enableQueryLog();
             $data = ActiveSafDetail::select(
                 DB::raw("owner_name,
                                                     guardian_name ,
@@ -564,7 +565,8 @@ class EloquentSafRepository implements SafRepository
                     $data->saf_no = '';
                 }
                 return $data;
-            }); dd(DB::getQueryLog());
+            });
+            dd(DB::getQueryLog());
             $data = remove_null([
                 'ulb_id' => $ulb_id,
                 'user_id' => $user_id,
@@ -601,10 +603,10 @@ class EloquentSafRepository implements SafRepository
             $redis = Redis::connection();  // Redis Connection
             $redis_data = json_decode(Redis::get('user:' . $user_id), true);
             $ulb_id = $redis_data['ulb_id'] ?? auth()->user()->ulb_id;;
-            $roll_id = $redis_data['role_id']??($this->getUserRoll($user_id)->role_id??-1);
+            $roll_id = $redis_data['role_id'] ?? ($this->getUserRoll($user_id)->role_id ?? -1);
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             $work_flow_candidate = $this->work_flow_candidate($user_id, $ulb_id);
-            if (!$work_flow_candidate || $roll_id==-1) {
+            if (!$work_flow_candidate || $roll_id == -1) {
                 throw new Exception("Your Are Not Authoried");
             }
             $work_flow_candidate = collect($work_flow_candidate);
@@ -708,7 +710,7 @@ class EloquentSafRepository implements SafRepository
                 $saf_id = Crypt::decrypt($saf_id);
             }
             $user_id = auth()->user()->id;
-            $role_id = ($this->getUserRoll($user_id)->role_id??-1);
+            $role_id = ($this->getUserRoll($user_id)->role_id ?? -1);
             $ulb_id = auth()->user()->ulb_id;
             $saf_data = ActiveSafDetail::select(
                 DB::raw("prop_param_property_types.property_type as property_type,
@@ -731,7 +733,7 @@ class EloquentSafRepository implements SafRepository
                 ->where('active_saf_details.id', "=", $saf_id)
                 ->first();
             $data = remove_null($saf_data, true);
-            if (!$saf_data->workflow_id || $role_id==-1) {
+            if (!$saf_data->workflow_id || $role_id == -1) {
                 throw new Exception("Workflow Not Found of This SAF !...");
             }
             $owner_dtl = ActiveSafOwnerDetail::select('*')
@@ -750,7 +752,7 @@ class EloquentSafRepository implements SafRepository
                 DB::raw("workflow_tracks.track_date::date as track_date")
             )
                 ->leftjoin('users', "users.id", "workflow_tracks.citizen_id")
-                ->leftjoin('role_users','role_users.user_id','users.id')
+                ->leftjoin('role_users', 'role_users.user_id', 'users.id')
                 ->leftjoin('role_masters', 'role_masters.id', 'role_users.role_id')
                 ->where('ref_table_dot_id', 'active_saf_details.id')
                 ->where('ref_table_id_value', $saf_id)
@@ -842,10 +844,10 @@ class EloquentSafRepository implements SafRepository
             $redis = Redis::connection();  // Redis Connection
             $redis_data = json_decode(Redis::get('user:' . $user_id), true);
             $ulb_id = $redis_data['ulb_id'] ?? auth()->user()->ulb_id;;
-            $roll_id =  $redis_data['role_id']??($this->getUserRoll($user_id)->role_id??-1);
+            $roll_id =  $redis_data['role_id'] ?? ($this->getUserRoll($user_id)->role_id ?? -1);
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             $work_flow_candidate = $this->work_flow_candidate($user_id, $ulb_id);
-            if (!$work_flow_candidate || $roll_id==-1) {
+            if (!$work_flow_candidate || $roll_id == -1) {
                 throw new Exception("Your Are Not Authoried");
             }
             $work_flow_candidate = collect($work_flow_candidate);
@@ -967,7 +969,7 @@ class EloquentSafRepository implements SafRepository
         DB::beginTransaction();
         try {
             $user_id = auth()->user()->id;
-            $roll_type_id = ($this->getUserRoll($user_id)->role_id??-1);
+            $roll_type_id = ($this->getUserRoll($user_id)->role_id ?? -1);
             $saf = new ActiveSafDetail;
             $saf_id = $request->safId;
             if (!is_numeric($saf_id)) {
@@ -1001,7 +1003,7 @@ class EloquentSafRepository implements SafRepository
                 ->where('workflow_candidates.user_id', $user_id)
                 ->where('ulb_workflow_masters.ulb_id', $request->ulbId)
                 ->first();
-            if (!$work_flow_candidate || $roll_type_id==-1) {
+            if (!$work_flow_candidate || $roll_type_id == -1) {
                 throw new Exception("work_flow_candidate not found");
             }
             $dd = [];
