@@ -62,4 +62,34 @@ class WorkflowWardUserController extends Controller
     {
         return $this->EloquentWardUser->getUlbByID($id);
     }
+
+    public function long_join(Request $request)
+    {
+        return $this->EloquentWardUser->long_join($request);
+    }
+
+    public function join(Request $request)
+    {
+        return $this->EloquentWardUser->join($request);
+    }
+
+    public function join1(Request $request)
+    {
+        return $this->EloquentWardUser->join1($request);
+    }
+
+    public function join2(Request $request)
+    {
+        return $this->EloquentWardUser->join2($request);
+    }
+
+    public function join3(Request $request)
+    {
+        return $this->EloquentWardUser->join3($request);
+    }
+
+    public function join4(Request $request)
+    {
+        return $this->EloquentWardUser->join4($request);
+    }
 }
