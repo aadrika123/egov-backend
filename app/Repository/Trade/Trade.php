@@ -101,7 +101,7 @@ class Trade implements ITrade
             }
             elseif($request->getMethod()=="POST")
             { 
-                $apply_from = $this->applyFrom();dd($apply_from);
+                $apply_from = $this->applyFrom();
                 $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\\s]+$/';
                 $rules["firmDetails.areaSqft"]="required|numeric";
                 $rules["firmDetails.businessAddress"]="required|regex:$regex";
@@ -325,8 +325,7 @@ class Trade implements ITrade
             
         }
         catch (Exception $e) {
-            DB::rollBack();
-            echo($e->getLine());            
+            DB::rollBack();            
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
