@@ -42,9 +42,9 @@ class MenuWardController extends Controller
     }
 
     // Updating
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        return $this->EloquentWard->update($request, $id);
+        return $this->EloquentWard->update($request);
     }
 
     // View data by Id

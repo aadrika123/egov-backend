@@ -110,4 +110,14 @@ trait Workflow
         $data = DB::select($query);
         return $data;
     }
+
+    /** | Code to be used to determine initiator
+    $workflows = $this->getWorkflowCurrentUser($workflow_id);
+    $collectWorkflows = collect($workflows);
+    $filtered = $collectWorkflows->filter(function ($value, $key) {
+        return $value;
+    });
+
+    return $filtered->firstWhere('is_initiator', true);
+     */
 }

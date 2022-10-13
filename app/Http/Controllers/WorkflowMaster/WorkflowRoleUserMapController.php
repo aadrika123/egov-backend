@@ -41,9 +41,9 @@ class WorkflowRoleUserMapController extends Controller
     }
 
     // Updating
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        return $this->EloquentRoleUserMap->update($request, $id);
+        return $this->EloquentRoleUserMap->update($request);
     }
 
     // View data by Id

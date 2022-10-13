@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ObjectionController;
+use App\Http\Controllers\Property\SafCalculatorController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -45,4 +46,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('objection/outbox/{key?}', 'propObjectionOutbox');        // Objection Workflow Outbox  By key
         Route::get('objection/escalate/inbox/{key?}', 'specialObjectionInbox');        // Objection Workflow special Inbox  By key
     });
+});
+
+Route::controller(SafCalculatorController::class)->group(function () {
+    Route::post('saf-calculation', 'safCalculation');
 });

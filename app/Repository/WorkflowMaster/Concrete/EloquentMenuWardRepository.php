@@ -6,6 +6,8 @@ use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
 use Illuminate\Http\Request;
 use App\Models\MUlbWard;
 use Exception;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Repository for Save Edit and View 
@@ -23,6 +25,24 @@ class EloquentMenuWardRepository implements iWorkflowMasterRepository
 
     public function create(Request $request)
     {
+        //validating
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'UlbId' => 'required',
+                'WardName' => 'required',
+                'OldWardName' => 'required',
+                'UserId' => 'required',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validateUser->errors()
+            ], 401);
+        }
         try {
             // create
             $device = new MUlbWard;
@@ -30,10 +50,10 @@ class EloquentMenuWardRepository implements iWorkflowMasterRepository
             $device->ward_name = $request->WardName;
             $device->old_ward_name = $request->OldWardName;
             $device->user_id = $request->UserId;
-            $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->stamp_date_time = Carbon::now();
+            $device->created_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Saved'], 200);
+            return responseMsg(true, "Successfully Saved", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -63,7 +83,7 @@ class EloquentMenuWardRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
         try {
             $device = MUlbWard::find($request->Id);
@@ -72,9 +92,10 @@ class EloquentMenuWardRepository implements iWorkflowMasterRepository
             $device->old_ward_name = $request->OldWardName;
             $device->user_id = $request->UserId;
             $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->stamp_date_time = Carbon::now();
+            $device->updated_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Updated'], 200);
+            return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }

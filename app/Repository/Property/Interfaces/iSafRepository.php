@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Repository\Property;
+namespace App\Repository\Property\Interfaces;
+
+use Illuminate\Http\Request;
 
 /**
  * | Created On-10-08-2022 
@@ -8,6 +10,7 @@ namespace App\Repository\Property;
  * ------------------------------------------------------------------------------------------
  * | Interface for Eloquent Saf Repository
  */
-interface SafRepository
+interface iSafRepository
 {
+    public function applySaf(Request $request);
 }

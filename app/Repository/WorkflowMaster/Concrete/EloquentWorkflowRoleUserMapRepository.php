@@ -6,6 +6,9 @@ use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
 use Illuminate\Http\Request;
 use App\Models\WfRoleusermap;
 use Exception;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
+
 
 /**
  * Repository for Save Edit and View 
@@ -39,11 +42,10 @@ class EloquentWorkflowRoleUserMapRepository implements iWorkflowMasterRepository
             $device = new WfRoleusermap;
             $device->wf_role_id = $request->WfRoleId;
             $device->user_id = $request->UserId;
-            $device->is_suspended = $request->IsSuspended;
-            $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->stamp_date_time = Carbon::now();
+            $device->created_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Saved'], 200);
+            return responseMsg(true, "Successfully Saved", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -73,7 +75,7 @@ class EloquentWorkflowRoleUserMapRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
         try {
             $device = WfRoleusermap::find($request->Id);
@@ -82,9 +84,10 @@ class EloquentWorkflowRoleUserMapRepository implements iWorkflowMasterRepository
             $device->ward_id = $request->WardId;
             $device->is_admin = $request->IsAdmin;
             $device->status = $request->Status;
-            $device->stamp_date_time = $request->StampDateTime;
+            $device->stamp_date_time = Carbon::now();
+            $device->updated_at = Carbon::now();
             $device->save();
-            return response()->json(['Status' => 'Successfully Updated'], 200);
+            return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }

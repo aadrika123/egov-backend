@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Repository\Property;
+namespace App\Repository\Property\Concrete;
 
-use App\Repository\Property\SafRepository;
+use App\Repository\Property\Interfaces\iSafRepository;
 use Illuminate\Http\Request;
 use App\Models\ActiveSafDetail;
 use App\Models\ActiveSafFloorDetail;
@@ -50,7 +50,7 @@ use App\Traits\Workflow\Workflow as WorkflowWorkflow;
  * -----------------------------------------------------------------------------------------
  * | SAF Module all operations 
  */
-class EloquentSafRepository implements SafRepository
+class EloquentSafRepository implements iSafRepository
 {
     use Auth;               // Trait Used added by sandeep bara date 17-08-2022
     use WardPermission;
@@ -67,7 +67,7 @@ class EloquentSafRepository implements SafRepository
     protected $user_id;
     public function __construct()
     {
-        $this->property = new EloquentProperty;
+        // $this->property = new EloquentProperty;
         $this->saf = new SafCalculation();
         $this->propertyTax = new PropertyTax();
     }
@@ -81,21 +81,7 @@ class EloquentSafRepository implements SafRepository
             // Determining the initiator and finisher id
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             $ulb_id = auth()->user()->ulb_id;
-            // $workflows = UlbWorkflowMaster::select('initiator', 'finisher')
-            //     ->where('ulb_id', $ulb_id)
-            //     ->where('workflow_id', $workflow_id)
-            //     ->first();
-            $workflows = $this->getWorkflowCurrentUser($workflow_id);
-            $collectWorkflows = collect($workflows);
-            $filtered = $collectWorkflows->filter(function ($value, $key) {
-                return $value;
-            });
 
-            return $filtered->firstWhere('is_initiator', true);
-
-            if (!$workflows) {
-                return responseMsg(false, "Workflow Not Available", $request->all());
-            }
             if (!in_array($request->assessmentType, ["NewAssessment", "Reassessment", "Mutation"])) {
                 return responseMsg(false, "Invalid Assessment Type", $request->all());
             }
@@ -154,19 +140,20 @@ class EloquentSafRepository implements SafRepository
                     $data['mutation_master'] = remove_null($mutationMaster);
                 }
                 return  responseMsg(true, '', $data);
-            } elseif ($request->getMethod() == "POST") {
+            }
+            if ($request->getMethod() == "POST") {
                 $ward_no = array_filter(adjToArray($wardMaster), function ($val) {
                     return $val['id'] == 111;
                 });
                 $ward_no = array_values($ward_no)[0]['ward_name'];
 
-                // return $this->buildingRulSet1(auth()->user()->ulb_id,500,1,1,1,2,true,'1540-04-01');
-                // return $this->buildingRulSet2(auth()->user()->ulb_id,500,12,2,40,1,'2020-04-01');
-                // return $this->saf->buildingRulSet3(auth()->user()->ulb_id,500,12,2,19.9919,1,true,1,$ward_no,'2020-04-01');  
-                // $inputs = $request->all();
-                // $inputs['ulb_id'] =  $ulb_id;
-                // $inputs['ward_no'] =  $ward_no;
-                // return $this->saf->BuildingTax($inputs);
+                // return $this->saf->buildingRulSet1(auth()->user()->ulb_id, 500, 1, 1, 1, 2, true, '1540-04-01');
+                // return $this->saf->buildingRulSet2(auth()->user()->ulb_id, 500, 12, 2, 40, 1, '2020-04-01');
+                // return $this->saf->buildingRulSet3(auth()->user()->ulb_id, 500, 12, 2, 19.9919, 1, true, 1, $ward_no, '2020-04-01');
+                $inputs = $request->all();
+                $inputs['ulb_id'] =  $ulb_id;
+                $inputs['ward_no'] =  $ward_no;
+                return $this->saf->BuildingTax($inputs);
                 // //$this->propertyTax->InsertTax(1,$this->saf->TotalTax);
                 // return ($this->saf->TotalTax);
                 // $rules["ward"]="required|int";
