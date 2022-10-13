@@ -26,11 +26,17 @@ class EloquentWorkflowRoleRepository implements iWorkflowMasterRepository
 
     public function create(Request $request)
     {
+        $userId = Auth()->user()->id;
         //validating
         $validateUser = Validator::make(
             $request->all(),
             [
-                'RoleName' => 'required',
+                'roleName' => 'required',
+                'forwardRoleId' => 'required',
+                'backwardRoleId' => 'required',
+                'isInitiator' => 'required',
+                'isFinisher' => 'required',
+
             ]
         );
 
@@ -44,12 +50,12 @@ class EloquentWorkflowRoleRepository implements iWorkflowMasterRepository
         try {
             // create
             $device = new WfRole;
-            $device->role_name = $request->RoleName;
-            $device->forward_role_id = $request->ForwardRoleId;
-            $device->backward_role_id = $request->BackwardRoleId;
-            $device->is_initiator = $request->IsInitiator;
-            $device->is_finisher = $request->IsFinisher;
-            $device->user_id = $request->UserId;
+            $device->role_name = $request->roleName;
+            $device->forward_role_id = $request->forwardRoleId;
+            $device->backward_role_id = $request->backwardRoleId;
+            $device->is_initiator = $request->isInitiator;
+            $device->is_finisher = $request->isFinisher;
+            $device->user_id = $userId;
             $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
             $device->save();
@@ -85,16 +91,37 @@ class EloquentWorkflowRoleRepository implements iWorkflowMasterRepository
      */
     public function update(Request $request)
     {
+        $userId = Auth()->user()->id;
+        //validating
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'roleName' => 'required',
+                'forwardRoleId' => 'required',
+                'backwardRoleId' => 'required',
+                'isInitiator' => 'required',
+                'isFinisher' => 'required',
+                'isSuspended' => 'required',
+                'status' => 'required',
+            ]
+        );
+        if ($validateUser->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validateUser->errors()
+            ], 401);
+        }
         try {
-            $device = WfRole::find($request->Id);
-            $device->role_name = $request->RoleName;
-            $device->forward_role_id = $request->ForwardRoleId;
-            $device->backward_role_id = $request->BackwardRoleId;
-            $device->is_initiator = $request->IsInitiator;
-            $device->is_finisher = $request->IsFinisher;
-            $device->is_suspended = $request->IsSuspended;
-            $device->user_id = $request->UserId;
-            $device->status = $request->Status;
+            $device = WfRole::find($request->id);
+            $device->role_name = $request->roleName;
+            $device->forward_role_id = $request->forwardRoleId;
+            $device->backward_role_id = $request->backwardRoleId;
+            $device->is_initiator = $request->isInitiator;
+            $device->is_finisher = $request->isFinisher;
+            $device->is_suspended = $request->isSuspended;
+            $device->user_id = $userId;
+            $device->status = $request->status;
             $device->stamp_date_time = Carbon::now();
             $device->updated_at = Carbon::now();
             $device->save();

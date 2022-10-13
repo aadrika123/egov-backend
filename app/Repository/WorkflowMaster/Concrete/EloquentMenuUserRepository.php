@@ -26,6 +26,7 @@ class EloquentMenuUserRepository implements iWorkflowMasterRepository
 
     public function create(Request $request)
     {
+        $userId = Auth()->user()->id;
         //validating
         $validateUser = Validator::make(
             $request->all(),
@@ -47,19 +48,19 @@ class EloquentMenuUserRepository implements iWorkflowMasterRepository
         try {
             // create
             $device = new MUser;
-            $device->ulb_id = $request->UlbId;
-            $device->citizen_id = $request->CitizenId;
-            $device->employee_id = $request->EmployeeId;
-            $device->vendor_id = $request->VendorId;
-            $device->agency_id = $request->AgencyId;
-            $device->is_admin = $request->IsAdmin;
-            $device->is_psudo = $request->IsPsudo;
-            $device->email = $request->Email;
-            $device->user_name = $request->UserName;
-            $device->full_name = $request->FullName;
-            $device->description = $request->Description;
-            $device->is_deleted = $request->IsDeleted;
-            $device->user_id = $request->UserId;
+            $device->ulb_id = $request->ulbId;
+            $device->citizen_id = $request->citizenId;
+            $device->employee_id = $request->employeeId;
+            $device->vendor_id = $request->vendorId;
+            $device->agency_id = $request->agencyId;
+            $device->is_admin = $request->isAdmin;
+            $device->is_psudo = $request->isPsudo;
+            $device->email = $request->email;
+            $device->user_name = $request->userName;
+            $device->full_name = $request->fullName;
+            $device->description = $request->description;
+            $device->is_deleted = $request->isDeleted;
+            $device->user_id = $userId;
             $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
             $device->save();
@@ -95,23 +96,24 @@ class EloquentMenuUserRepository implements iWorkflowMasterRepository
      */
     public function update(Request $request)
     {
+        $userId = Auth()->user()->id;
         try {
             $device = MUser::find($request->Id);
-            $device->ulb_id = $request->UlbId;
-            $device->citizen_id = $request->CitizenId;
-            $device->employee_id = $request->EmployeeId;
-            $device->vendor_id = $request->VendorId;
-            $device->agency_id = $request->AgencyId;
-            $device->is_admin = $request->IsAdmin;
-            $device->is_psudo = $request->IsPsudo;
-            $device->email = $request->Email;
-            $device->user_name = $request->UserName;
-            $device->full_name = $request->FullName;
-            $device->description = $request->Description;
-            $device->is_deleted = $request->IsDeleted;
-            $device->is_suspended = $request->IsSuspended;
-            $device->user_id = $request->UserId;
-            $device->status = $request->Status;
+            $device->ulb_id = $request->ulbId;
+            $device->citizen_id = $request->citizenId;
+            $device->employee_id = $request->employeeId;
+            $device->vendor_id = $request->vendorId;
+            $device->agency_id = $request->agencyId;
+            $device->is_admin = $request->isAdmin;
+            $device->is_psudo = $request->isPsudo;
+            $device->email = $request->email;
+            $device->user_name = $request->userName;
+            $device->full_name = $request->fullName;
+            $device->description = $request->description;
+            $device->is_deleted = $request->isDeleted;
+            $device->is_suspended = $request->isSuspended;
+            $device->user_id = $userId;
+            $device->status = $request->status;
             $device->stamp_date_time = Carbon::now();
             $device->updated_at = Carbon::now();
             $device->save();
