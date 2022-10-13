@@ -4,7 +4,7 @@ namespace App\Repository\Property\Concrete;
 
 use App\Repository\Property\Interfaces\iSafRepository;
 use Illuminate\Http\Request;
-use App\Models\ActiveSafDetail;
+use App\Models\Property\ActiveSafDetail;
 use App\Models\ActiveSafFloorDetail;
 use App\Models\ActiveSafOwnerDetail;
 use App\Models\ActiveSafTaxe;
@@ -40,8 +40,8 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
-use App\EloquentClass\Property\SafCalculation;
-use App\EloquentClass\Property\PropertyTax;
+use App\EloquentClass\Property\dSafCalculation;
+use App\EloquentClass\Property\dPropertyTax;
 use App\Traits\Workflow\Workflow as WorkflowWorkflow;
 
 /**
@@ -68,8 +68,8 @@ class EloquentSafRepository implements iSafRepository
     public function __construct()
     {
         // $this->property = new EloquentProperty;
-        $this->saf = new SafCalculation();
-        $this->propertyTax = new PropertyTax();
+        $this->saf = new dSafCalculation();
+        $this->propertyTax = new dPropertyTax();
     }
     public function applySaf(Request $request)
     {
@@ -153,7 +153,7 @@ class EloquentSafRepository implements iSafRepository
                 $inputs = $request->all();
                 $inputs['ulb_id'] =  $ulb_id;
                 $inputs['ward_no'] =  $ward_no;
-                return $this->saf->BuildingTax($inputs);
+                // return $this->saf->BuildingTax($inputs);
                 // //$this->propertyTax->InsertTax(1,$this->saf->TotalTax);
                 // return ($this->saf->TotalTax);
                 // $rules["ward"]="required|int";
@@ -473,107 +473,39 @@ class EloquentSafRepository implements iSafRepository
      * 
      */
     #Inbox
-    public function inbox($key)
+    public function inbox()
     {
+        $userId = auth()->user()->id;
         try {
-            $user_id = auth()->user()->id;
-            $redis = Redis::connection();  // Redis Connection
-            $redis_data = json_decode(Redis::get('user:' . $user_id), true);
-            $ulb_id = $redis_data['ulb_id'] ?? auth()->user()->ulb_id;
-            $roll_id = $redis_data['role_id'] ?? ($this->getUserRoll($user_id)->role_id ?? -1);
-            $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-            $work_flow_candidate = $this->work_flow_candidate($user_id, $ulb_id);
-            if (!$work_flow_candidate || $roll_id == -1) {
-                throw new Exception("Your Are Not Authoried");
+            $query = "SELECT 
+                            wf.id,
+                            wf.workflow_id,
+                            wf.wf_role_id,
+                            r.role_name,
+                            r.is_initiator,
+                            r.is_finisher,
+                            rum.user_id,
+                            wu.ward_id
+                    FROM wf_workflowrolemaps  wf
+                    LEFT JOIN (SELECT * FROM wf_roles WHERE is_initiator=TRUE AND user_id=$userId) r ON r.id=wf.wf_role_id
+                    LEFT JOIN (SELECT * FROM wf_roleusermaps WHERE user_id=$userId) rum ON rum.wf_role_id=wf.wf_role_id
+                    LEFT JOIN (SELECT * FROM wf_ward_users WHERE user_id=$userId) wu ON wu.user_id=wf.user_id
+                    WHERE wf.workflow_id=4 AND wf.user_id=$userId AND r.is_initiator=TRUE";
+            $workflow = collect(DB::select($query));
+            if (!$workflow) {
+                return responseMsg(false, "Data Not Available", "");
             }
-            $work_flow_candidate = collect($work_flow_candidate);
-            $ward_permission = $this->WardPermission($user_id);
-            $ward_ids = array_map(function ($val) {
-                return $val['ulb_ward_id'];
-            }, $ward_permission);
-            DB::enableQueryLog();
-            $data = ActiveSafDetail::select(
-                DB::raw("owner_name,
-                                                    guardian_name ,
-                                                    mobile_no,
-                                                   'SAF' as assessment_type,
-                                                    'VacentLand' as property_type,
-                                                    ulb_ward_masters.ward_name as ward_no,
-                                                    active_saf_details.created_at::date as apply_date"),
-                "active_saf_details.id",
-                "active_saf_details.saf_no",
-                "active_saf_details.id"
-            )
-                ->join('ulb_ward_masters', function ($join) {
-                    $join->on("ulb_ward_masters.id", "=", "active_saf_details.ward_mstr_id");
-                })
-                ->leftJoin(
-                    DB::raw("(SELECT active_saf_owner_details.saf_dtl_id,
-                                                               string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
-                                                               string_agg(active_saf_owner_details.guardian_name,', ') as guardian_name,
-                                                               string_agg(active_saf_owner_details.mobile_no::text,', ') as mobile_no
-                                                          FROM active_saf_owner_details 
-                                                          WHERE active_saf_owner_details.status = 1
-                                                          GROUP BY active_saf_owner_details.saf_dtl_id
-                                                          )active_saf_owner_details
-                                                           "),
-                    function ($join) {
-                        $join->on("active_saf_owner_details.saf_dtl_id", "=", "active_saf_details.id");
-                    }
-                )
-                ->where("active_saf_details.current_user", $roll_id)
-                ->where("active_saf_details.status", 1)
-                ->where("active_saf_details.ulb_id", $ulb_id)
-                ->whereIn('active_saf_details.ward_mstr_id', $ward_ids);
-            if ($key) {
-                $data = $data->where(function ($query) use ($key) {
-                    $query->orwhere('active_saf_details.holding_no', 'ILIKE', '%' . $key . '%')
-                        ->orwhere('active_saf_details.saf_no', 'ILIKE', '%' . $key . '%')
-                        ->orwhere('active_saf_owner_details.owner_name', 'ILIKE', '%' . $key . '%')
-                        ->orwhere('active_saf_owner_details.guardian_name', 'ILIKE', '%' . $key . '%')
-                        ->orwhere('active_saf_owner_details.mobile_no', 'ILIKE', '%' . $key . '%');
-                });
+            $checkDataExisting = $workflow->toArray();
+            if (!$checkDataExisting) {
+                return responseMsg(false, "Data Not Available", "");
             }
-            $saf = $data->get()->map(function ($data) {
-                if (!$data->owner_name) {
-                    $data->owner_name = '';
-                }
-                if (!$data->guardian_name) {
-                    $data->guardian_name = '';
-                }
-                if (!$data->mobile_no) {
-                    $data->mobile_no = '';
-                }
-                if (!$data->assessment_type) {
-                    $data->assessment_type = '';
-                }
-                if (!$data->ward_no) {
-                    $data->ward_no = '';
-                }
-                if (!$data->property_type) {
-                    $data->property_type = '';
-                }
-                if (!$data->id) {
-                    $data->id = '';
-                }
-                if (!$data->saf_no) {
-                    $data->saf_no = '';
-                }
-                return $data;
-            });
-            dd(DB::getQueryLog());
-            $data = remove_null([
-                'ulb_id' => $ulb_id,
-                'user_id' => $user_id,
-                'roll_id' => $roll_id,
-                'workflow_id' => $workflow_id,
-                'work_flow_candidate_id' => $work_flow_candidate['id'],
-                'module_id' => $work_flow_candidate['module_id'],
-                "data_list" => adjToArray($saf),
-            ], true, ['ulb_id', 'user_id', 'roll_id', 'workflow_id', 'module_id', 'id']);
-            return responseMsg(true, '', $data);
+            // return $workflow;
+            $safInbox = ActiveSafDetail::where('ward_mstr_id', $workflow[0]->ward_id)
+                ->orderByDesc('id')
+                ->get();
+            return remove_null($safInbox);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $key);
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 

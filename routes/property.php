@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ObjectionController;
+use App\Http\Controllers\Property\SafCalculatorController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -29,7 +30,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     // SAF 
     Route::controller(ActiveSafController::class)->group(function () {
         Route::match(["get", "post"], 'saf/apply/{assessmentType}', 'applySaf');                            // Applying Saf Route
-        Route::get('saf/inbox/{key?}', 'inbox');                             // Saf workflow Inbox and Inbox By search key
+        //Route::get('saf/inbox/{key?}', 'inbox');                             // Saf workflow Inbox and Inbox By search key
+        Route::get('saf/inbox', 'inbox');                                      // Saf Inbox
         Route::get('saf/outbox/{key?}', 'outbox');                           // Saf Workflow Outbox and Outbox By search key
         Route::get('saf/details/{id}', 'details');                           // Saf Workflow safDetails and safDetails By ID
         Route::post('saf/escalate/{id?}', 'special');                         // Saf Workflow special and safDetails By id
@@ -45,4 +47,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('objection/outbox/{key?}', 'propObjectionOutbox');        // Objection Workflow Outbox  By key
         Route::get('objection/escalate/inbox/{key?}', 'specialObjectionInbox');        // Objection Workflow special Inbox  By key
     });
+});
+
+Route::controller(SafCalculatorController::class)->group(function () {
+    Route::post('saf-calculation', 'safCalculation');
 });
