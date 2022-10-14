@@ -445,7 +445,7 @@ class Trade implements ITrade
         }
     }
     public function paymentRecipt($id, $transectionId)
-    {
+    { 
         try{
             $application = ActiveLicence::select("application_no","provisional_license_no","license_no",
                                             "owner.owner_name","owner.guardian_name","owner.mobile",
@@ -1152,11 +1152,15 @@ class Trade implements ITrade
     public function getLicenceById($id)
     {
         try{
-            $application = ActiveLicence::selecet("*")
-                ->join("ulb_masters","ulb_masters.id","active_licences.ulb_id")
+            $application = ActiveLicence::selecet("active_licences.*","trade_param_application_types.application_type",
+                            "trade_param_category_types.category_type",
+                    DB::raw("ulb_ward_masters.ward_name AS ward_no")
+                    )
                 ->join("ulb_ward_masters",function($join){
                     $join->on("ulb_ward_masters.id","=","active_licences.ward_mstr_id");                                
                 })
+                ->join("trade_param_application_types","trade_param_application_types.id","active_licences.application_type_id")
+                ->join("trade_param_category_types","trade_param_category_types.id","active_licences.category_type_id")
                 ->where('active_licences.id',$id)
                 ->first();
             return $application;
@@ -1169,16 +1173,16 @@ class Trade implements ITrade
     }
     public function getOwnereDtlByLId($id)
     {
-        try{
-            $ownerDtl   = ActiveLicenceOwner::select("*")
-                            ->where("licence_id",$id)
-                            ->get();
-            return $ownerDtl
-        }
-        catch(Exception $e)
-        {
+        // try{
+        //     $ownerDtl   = ActiveLicenceOwner::select("*")
+        //                     ->where("licence_id",$id)
+        //                     ->get();
+        //     return $ownerDtl
+        // }
+        // catch(Exception $e)
+        // {
 
-        }
+        // }
         
     }
     #-------------------- End core function of core function --------------
