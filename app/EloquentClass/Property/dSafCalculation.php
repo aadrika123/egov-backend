@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Config;
 use App\Traits\Auth;
 use Carbon\Carbon;
 
-class SafCalculation
+class dSafCalculation
 {
     use Auth;   //Trate use 
     /**

@@ -4,7 +4,7 @@ namespace App\EloquentClass\Property;
 
 use App\Models\ActiveSafTaxe;
 
-class PropertyTax
+class dPropertyTax
 {
     protected $saf_dtl_id;
     protected $fy_mstr_id;

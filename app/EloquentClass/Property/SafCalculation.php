@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Config;
  * | --------- Saf Calculation Class -----------------
  * | Created On - 12-10-2022 
  * | Created By - Anshu Kumar
+ * | Escaping for a while of Calculation part from 13-10-2022
  */
 class SafCalculation
 {
@@ -22,7 +23,7 @@ class SafCalculation
      * | #virtualDate > Back 12 years Date from present
      * | #mainDate > The final Date after reverting back to 12 years
      */
-    public function getRuleSet($floorDateFrom)
+    public function getRuleSet($floorDateFrom, $floorDateTo = null)
     {
         $todayDate = Carbon::now();
         $virtualDate = $todayDate->subYears(12)->format('Y-m-d');
@@ -34,16 +35,32 @@ class SafCalculation
             $mainDate = $virtualDate;
         }
 
-        if ($mainDate < '2016-04-01') {
-            return "RuleSet 1 + Current";
+        // RuleSet 1 , RuleSet2 and RuleSet3 Condition
+        if ($mainDate < '2016-04-01' && $floorDateTo == null) {
+            return ["RuleSet1", "RuleSet2", "RuleSet3"];
+        }
+        // RuleSet 2 and RuleSet3 Condition
+        if ($mainDate >= '2016-04-01' && $mainDate <= '2022-03-31' && $floorDateTo == null || $floorDateTo >= '2016-04-01') {
+            return ["RuleSet2", "RuleSet3"];
+        }
+        // RuleSet 3 Condition
+        if ($mainDate >= '01-04-2022' && $floorDateTo == null) {
+            return ["RuleSet3"];
         }
 
-        if ($mainDate >= '2016-04-01' && $mainDate <= '2022-03-31') {
-            return "RuleSet2 and Current";
+        // RuleSet1 Condition
+        if ($mainDate < '2016-04-01' && $floorDateTo < '2016-04-01') {
+            return ["RuleSet1"];
         }
 
-        if ($mainDate >= '01-04-2022') {
-            return 'Current RuleSet';
+        // RuleSet2 Condition
+        if ($mainDate >= '2016-04-01' && $floorDateTo < '2022-04-01') {
+            return ["RuleSet2"];
+        }
+
+        // RuleSet1 and RuleSet2 Condition
+        if ($mainDate <= '2022-04-01' && $floorDateTo < '2022-04-01') {
+            return ["RuleSet1", "RuleSet2"];
         }
     }
 
@@ -65,12 +82,38 @@ class SafCalculation
             $floorsInstallDate = array();
             foreach ($getFloors as $getFloor) {
                 $floorDateFrom = $getFloor['dateFrom'];
-                $refGetRuleSet = $this->getRuleSet($floorDateFrom);
+                $floorDateTo = $getFloor['dateUpto'];
+                $refGetRuleSet = $this->getRuleSet($floorDateFrom, $floorDateTo);
                 array_push($floorsInstallDate, $refGetRuleSet);
             }
-            return $floorsInstallDate;
+            $ruleSet = collect($floorsInstallDate);
+            $collection = $ruleSet->map(function ($item, $key) {
+                return $item;
+            });
+            return $collection;
         } catch (Exception $e) {
             return $e;
         }
+    }
+
+    /**
+     * | RuleSet1
+     */
+    public function ruleSet1()
+    {
+    }
+
+    /**
+     * | RuleSet2
+     */
+    public function ruleSet2()
+    {
+    }
+
+    /**
+     * | RuleSet3
+     */
+    public function ruleSet3()
+    {
     }
 }

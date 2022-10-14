@@ -27,15 +27,13 @@ class EloquentWorkflowMasterRepository implements iWorkflowMasterRepository
 
     public function create(Request $request)
     {
-        // $user = User::where('remember_token',)
-        // ->get('id');
+        $userId = Auth()->user()->id;
 
-        //validating
+        //validation 
         $validateUser = Validator::make(
             $request->all(),
             [
-                'WorkflowName' => 'required',
-                'UserId' => 'required',
+                'workflowName' => 'required'
             ]
         );
 
@@ -49,8 +47,8 @@ class EloquentWorkflowMasterRepository implements iWorkflowMasterRepository
         try {
             // create
             $device = new WfMaster;
-            $device->workflow_name = $request->WorkflowName;
-            $device->user_id = $request->UserId;
+            $device->workflow_name = $request->workflowName;
+            $device->user_id = $userId;
             $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
             $device->save();
@@ -87,12 +85,32 @@ class EloquentWorkflowMasterRepository implements iWorkflowMasterRepository
      */
     public function update(Request $request)
     {
+        $userId = Auth()->user()->id;
+        //validation
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'workflowName' => 'required',
+                'isSuspended' => 'required',
+                'workflowName' => 'required',
+                'status' => 'required',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validateUser->errors()
+            ], 401);
+        }
+
         try {
-            $device = WfMaster::find($request->Id);
-            $device->workflow_name = $request->WorkflowName;
-            $device->is_suspended = $request->IsSuspended;
-            $device->user_id = $request->UserId;
-            $device->status = $request->Status;
+            $device = WfMaster::find($request->id);
+            $device->workflow_name = $request->workflowName;
+            $device->is_suspended = $request->isSuspended;
+            $device->user_id = $userId;
+            $device->status = $request->status;
             $device->stamp_date_time = Carbon::now();
             $device->updated_at = Carbon::now();
             $device->save();

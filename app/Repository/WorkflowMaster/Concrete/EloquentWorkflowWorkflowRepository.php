@@ -25,14 +25,36 @@ class EloquentWorkflowWorkflowRepository implements iWorkflowMasterRepository
 
     public function create(Request $request)
     {
+        $userId = Auth()->user()->id;
+
+        //validation 
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'wfMasterId' => 'required',
+                'ulbId' => 'required',
+                'altName' => 'required',
+                'isDocRequired' => 'required',
+
+
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validateUser->errors()
+            ], 401);
+        }
         try {
             // create
             $device = new WfWorkflow;
-            $device->wf_master_id = $request->WfMasterId;
-            $device->ulb_id = $request->UlbId;
-            $device->alt_name = $request->AltName;
-            $device->is_doc_required = $request->IsDocRequired;
-            $device->user_id = $request->UserId;
+            $device->wf_master_id = $request->wfMasterId;
+            $device->ulb_id = $request->ulbId;
+            $device->alt_name = $request->altName;
+            $device->is_doc_required = $request->isDocRequired;
+            $device->user_id = $userId;
             $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
             $device->save();
@@ -69,15 +91,36 @@ class EloquentWorkflowWorkflowRepository implements iWorkflowMasterRepository
      */
     public function update(Request $request)
     {
+        $userId = Auth()->user()->id;
+        //validation 
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'wfMasterId' => 'required',
+                'ulbId' => 'required',
+                'altName' => 'required',
+                'isDocRequired' => 'required',
+                'isSuspended' => 'required',
+                'status' => 'required',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validateUser->errors()
+            ], 401);
+        }
         try {
-            $device = new WfWorkflow;
-            $device->wf_master_id = $request->WfMasterId;
-            $device->ulb_id = $request->UlbId;
-            $device->alt_name = $request->AltName;
-            $device->is_doc_required = $request->IsDocRequired;
-            $device->is_suspended = $request->IsSuspended;
-            $device->user_id = $request->UserId;
-            $device->status = $request->Status;
+            $device = WfWorkflow::find($request->id);
+            $device->wf_master_id = $request->wfMasterId;
+            $device->ulb_id = $request->ulbId;
+            $device->alt_name = $request->altName;
+            $device->is_doc_required = $request->isDocRequired;
+            $device->is_suspended = $request->isSuspended;
+            $device->user_id = $userId;
+            $device->status = $request->status;
             $device->stamp_date_time = Carbon::now();
             $device->updated_at = Carbon::now();
             $device->save();

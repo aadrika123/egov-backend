@@ -68,19 +68,19 @@ class WorkflowWardUserController extends Controller
         return $this->EloquentWardUser->long_join($request);
     }
 
-    public function join(Request $request)
+    public function getWorkflowByUlb(Request $request)
     {
-        return $this->EloquentWardUser->join($request);
+        return $this->EloquentWardUser->getWorkflowByUlb($request);
     }
 
-    public function join1(Request $request)
+    public function getRoleByUlb(Request $request)
     {
-        return $this->EloquentWardUser->join1($request);
+        return $this->EloquentWardUser->getRoleByUlb($request);
     }
 
-    public function join2(Request $request)
+    public function getWardByUlb(Request $request)
     {
-        return $this->EloquentWardUser->join2($request);
+        return $this->EloquentWardUser->getWardByUlb($request);
     }
 
     public function join3(Request $request)
@@ -88,8 +88,8 @@ class WorkflowWardUserController extends Controller
         return $this->EloquentWardUser->join3($request);
     }
 
-    public function join4(Request $request)
+    public function getUserByRole(Request $request)
     {
-        return $this->EloquentWardUser->join4($request);
+        return $this->EloquentWardUser->getUserByRole($request);
     }
 }
