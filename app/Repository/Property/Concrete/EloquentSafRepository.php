@@ -42,7 +42,9 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\dSafCalculation;
 use App\EloquentClass\Property\dPropertyTax;
-use App\Traits\Workflow\Workflow as WorkflowWorkflow;
+use App\Models\WfRoleusermap;
+use App\Models\WfWardUser;
+use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
 
 /**
@@ -55,7 +57,7 @@ class EloquentSafRepository implements iSafRepository
 {
     use Auth;               // Trait Used added by sandeep bara date 17-08-2022
     use WardPermission;
-    use WorkflowWorkflow;
+    use WorkflowTrait;
     /**
      * | Citizens Applying For SAF
      * | Proper Validation will be applied after 
@@ -462,47 +464,60 @@ class EloquentSafRepository implements iSafRepository
     }
 
     /**
-     * desc This function list the application according to permmited ward_no for the user_roll
-     * request : key (optional) for seraching
-     * #---------------Tables------------------
-     * activ_saf_details                |
-     * active_saf_owner_details         |  for listing data
-     * workflow_candidates              |  
-     * ulb_workflow_masters             |  for check loging user is authorized or Not for WorkFlow
-     * users                           ->  for get ulb_id
-     * ===================================================
-     * 
+     * ---------------------- Saf Workflow Inbox --------------------
+     * | Initialization
+     * ----------------
+     * | @var userId > logged in user id
+     * | @var workflowId > SAF Workflow ID 
+     * | @var query > Contains the Pg Sql query
+     * | @var workflow > get the Data in laravel Collection
+     * | @var checkDataExisting > check the fetched data collection in array
+     * | @var wardId > filtered Ward Id from the data collection
+     * | @var safInbox > Final returned Data
+     * | @return response #safInbox
+     * ---------------------------------------------------------------
      */
     #Inbox
     public function inbox()
     {
         $userId = auth()->user()->id;
+        $workflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
         try {
-            $query = "SELECT 
-                            wf.id,
-                            wf.workflow_id,
-                            wf.wf_role_id,
-                            r.role_name,
-                            r.is_initiator,
-                            r.is_finisher,
-                            rum.user_id,
-                            wu.ward_id
-                    FROM wf_workflowrolemaps  wf
-                    LEFT JOIN (SELECT * FROM wf_roles WHERE is_initiator=TRUE AND user_id=$userId) r ON r.id=wf.wf_role_id
-                    LEFT JOIN (SELECT * FROM wf_roleusermaps WHERE user_id=$userId) rum ON rum.wf_role_id=wf.wf_role_id
-                    LEFT JOIN (SELECT * FROM wf_ward_users WHERE user_id=$userId) wu ON wu.user_id=wf.user_id
-                    WHERE wf.workflow_id=4 AND wf.user_id=$userId AND r.is_initiator=TRUE";
+            $query = $this->getWorkflowInitiatorData($userId, $workflowId);                 // Trait get Workflow Initiator
             $workflow = collect(DB::select($query));
+
             $checkDataExisting = $workflow->toArray();
+            // If the Current Role Is not a Initiator
             if (!$checkDataExisting) {
-                return responseMsg(false, "You Are not an Initiator", "");
+                $roles = WfRoleusermap::select('id', 'wf_role_id', 'user_id')
+                    ->where('user_id', $userId)
+                    ->get();
+
+                $role_id = $roles->map(function ($item, $key) {
+                    return $item->wf_role_id;
+                });
+
+                $data = ActiveSafDetail::whereIn('current_role', $role_id)->get();
+                // return $data;
+                $occupiedWard = WfWardUser::select('id', 'ward_id')
+                    ->where('user_id', $userId)
+                    ->get();
+
+                $wardId = $occupiedWard->map(function ($item, $key) {
+                    return $item->ward_id;
+                });
+                // return $wardId;
+                $safInbox = $data->whereIn('ward_mstr_id', $wardId);
+                return $safInbox;
             }
+
             // Filteration only Ward id from workflow collection
             $wardId = $workflow->map(function ($item, $key) {
                 return $item->ward_id;
             });
 
             $safInbox = ActiveSafDetail::whereIn('ward_mstr_id', $wardId)
+                ->where('current_role', null)
                 ->orderByDesc('id')
                 ->get();
             return remove_null($safInbox);

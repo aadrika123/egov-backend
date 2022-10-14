@@ -382,8 +382,7 @@ class EloquentAuthRepository implements AuthRepository
                 'name' => $data->name,
                 'mobile' => $data->mobile,
                 'email' => $data->email,
-                'ulb_id' => $data->ulb_id,
-                'ulb_name' => $data->ulb_name
+                'ulb_id' => $data->ulb_id
             ];
             $filtered = collect($collection);
             $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($filtered)];
