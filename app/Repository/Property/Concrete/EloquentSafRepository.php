@@ -43,6 +43,7 @@ use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\dSafCalculation;
 use App\EloquentClass\Property\dPropertyTax;
 use App\Traits\Workflow\Workflow as WorkflowWorkflow;
+use App\Repository\Property\EloquentProperty;
 
 /**
  * | Created On-10-08-2022
@@ -67,7 +68,7 @@ class EloquentSafRepository implements iSafRepository
     protected $user_id;
     public function __construct()
     {
-        // $this->property = new EloquentProperty;
+        $this->property = new EloquentProperty;
         $this->saf = new dSafCalculation();
         $this->propertyTax = new dPropertyTax();
     }
@@ -492,15 +493,16 @@ class EloquentSafRepository implements iSafRepository
                     LEFT JOIN (SELECT * FROM wf_ward_users WHERE user_id=$userId) wu ON wu.user_id=wf.user_id
                     WHERE wf.workflow_id=4 AND wf.user_id=$userId AND r.is_initiator=TRUE";
             $workflow = collect(DB::select($query));
-            if (!$workflow) {
-                return responseMsg(false, "Data Not Available", "");
-            }
             $checkDataExisting = $workflow->toArray();
             if (!$checkDataExisting) {
-                return responseMsg(false, "Data Not Available", "");
+                return responseMsg(false, "You Are not an Initiator", "");
             }
-            // return $workflow;
-            $safInbox = ActiveSafDetail::where('ward_mstr_id', $workflow[0]->ward_id)
+            // Filteration only Ward id from workflow collection
+            $wardId = $workflow->map(function ($item, $key) {
+                return $item->ward_id;
+            });
+
+            $safInbox = ActiveSafDetail::whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
                 ->get();
             return remove_null($safInbox);
