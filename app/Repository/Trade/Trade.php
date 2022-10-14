@@ -51,7 +51,7 @@ class Trade implements ITrade
         $this->ModelWard = new ModelWard();
     }
     public function applyApplication(Request $request)
-    {    
+    {   
         // $d = $this->getrate(['application_type_id'=>1,"area_in_sqft"=>500,"curdate"=>"2022-10-08","tobacco_status"=>0]); 
         // $a = $this->getChequeBouncePenalty(1);        
         //dd($a);  
@@ -398,7 +398,6 @@ class Trade implements ITrade
                     $TradeFineRebet->value_add_minus = 'Add';
                     $TradeFineRebet->created_on = $timstamp;
                     $TradeFineRebet->save();
-                    
                     $denialAmount = $denialAmount + $rate_data['arear_amount'];
                     if ($denialAmount > 0) 
                     {
@@ -428,6 +427,7 @@ class Trade implements ITrade
                     } 
                     $licence->payment_status = $payment_status;
                     $licence->save();
+                    $res['paymentRecipt']= config('app.url')."/api/trade/paymentRecipt/".$licenceId."/".$transaction_id;
                 }
                 
                 DB::commit();
@@ -444,7 +444,149 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
+    public function paymentRecipt($id, $transectionId)
+    { 
+        try{
+            $application = ActiveLicence::select("application_no","provisional_license_no","license_no",
+                                            "owner.owner_name","owner.guardian_name","owner.mobile",
+                                            DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+                                            ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
+                                            ")
+                            )
+                            ->join("ulb_masters","ulb_masters.id","active_licences.ulb_id")
+                            ->join("ulb_ward_masters",function($join){
+                                $join->on("ulb_ward_masters.id","=","active_licences.ward_mstr_id");                                
+                            })
+                            ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                                                STRING_AGG(guardian_name,',') as guardian_name,
+                                                STRING_AGG(mobile::text,',') as mobile,
+                                                licence_id
+                                            FROM active_licence_owners 
+                                            WHERE licence_id = $id
+                                                AND status =1
+                                            GROUP BY licence_id
+                                            ) owner"),function($join){
+                                                $join->on("owner.licence_id","=","active_licences.id");
+                                            })
+                            ->where('active_licences.id',$id)
+                            ->first();
+            if(!$application)
+            {
+                $application = ExpireLicence::select("application_no","provisional_license_no","license_no",
+                                        "owner.owner_name","owner.guardian_name","owner.mobile",
+                                        DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+                                        ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
+                                        ")
+                                    )
+                            ->join("ulb_masters","ulb_masters.id","active_licences.ulb_id")
+                            ->join("ulb_ward_masters",function($join){
+                                $join->on("ulb_ward_masters.id","=","active_licences.ward_mstr_id");                                
+                            })
+                            ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                                                STRING_AGG(guardian_name,',') as guardian_name,
+                                                STRING_AGG(mobile,',') as mobile,
+                                                licence_id
+                                            FROM expire_licence_owners 
+                                            WHERE licence_id = $id
+                                                AND status =1
+                                            GROUP BY licence_id
+                                            ) owner"),function($join){
+                                                $join->on("owner.licence_id","=","expire_licences.id");
+                                            })
+                            ->where('expire_licences.id',$id)
+                            ->first();
+                if(!$application)
+                {
+                    throw new Exception("Application Not Found");
+                }
+            }
+            $transection = TradeTransaction::select("transaction_no","transaction_type","transaction_date",
+                                        "payment_mode","paid_amount","penalty",
+                                        "trade_cheque_dtls.cheque_no","trade_cheque_dtls.cheque_date",
+                                        "trade_cheque_dtls.bank_name","trade_cheque_dtls.branch_name"
+                                    )
+                            ->leftjoin("trade_cheque_dtls","trade_cheque_dtls.transaction_id","trade_transactions.id")
+                            ->where("trade_transactions.id",$transectionId)
+                            ->whereIn("trade_transactions.status",[1,2])
+                            ->first();
+            if(!$transection)
+            {
+                throw New Exception("Transaction Not Faound");
+            }
+            $penalty = TradeFineRebetDetail::select("head_name","amount")
+                        ->where('transaction_id',$transectionId)
+                        ->where("status",1)
+                        ->orderBy("id")
+                        ->get();
+            $data = ["application"=>$application,
+                     "transection"=>$transection,
+                     "penalty"    =>$penalty
+            ];
+            $data = remove_null($data);
+            return responseMsg(true,"", $data);
 
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),'');
+        }
+    }
+    public function updateBasicDtl(Request $request)
+    {
+        $user = Auth()->user();
+        $this->user_id = $user->id;
+        $this->ulb_id = $user->ulb_id;
+        $this->redis = new Redis;
+        $this->user_data = json_decode($this->redis::get('user:' . $this->user_id), true);
+        $this->roll_id =  $this->user_data['role_id']??($this->getUserRoll($this->user_id,'Trade','Trade')->role_id??-1);
+        $rules = [];
+        $message = [];
+        try{
+            if($this->roll_id==-1)
+            {
+                throw new Exception("You Are Not Authorized");
+            }
+            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
+            $rules["licenceId"] = "required";
+            $message["licenceId.required"] = "Licence Id Requird";
+            $rules["wordNo"] = "int";
+            $rules["newWordNo"] = "int";
+            $rules["businessAddress"] = "regex:$regex";
+            $rules["businessDescription"] = "regex:$regex";
+            $rules["premisesOwner"] = "regex:$regex";
+            $rules["pincode"] = "digits:6|regex:/[0-9]{6}/";
+            $rules["landmark"] = "regex:$regex";
+            $rules["ownershipType"] = "int";
+            $rules['ownerDetails.*.id']="required|digits";
+            $rules['ownerDetails.*.businessOwnerName'] = "regex:$regex"; 
+            $rules['ownerDetails.*.guardianName'] = "regex:$regex"; 
+            $rules['ownerDetails.*.mobileNo'] = "digits:10|regex:/[0-9]{10}/"; 
+            $rules['ownerDetails.*.email'] = "email"; 
+            $validator = Validator::make($request->all(), $rules, $message);
+            if ($validator->fails()) 
+            {
+                return responseMsg(false, $validator->errors(),$request->all());
+            }
+
+            return responseMsg(true,'',$request->all());
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+    public function getLicenceDtl($id)
+    {
+        try{
+            
+            
+            
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),'');
+        }
+    }
     public function getDenialDetails(Request $request)
     {
         $data = (array)null;
@@ -816,7 +958,6 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-
     public function getrate(array $input):object //stdcl object array
     {
         try{
@@ -853,7 +994,6 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-
     public function transfareExpire(int $licenceId):int
     {
         try{
@@ -943,7 +1083,6 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-
     public function applyFrom():string
     {
         $user = Auth()->user();
@@ -958,8 +1097,7 @@ class Trade implements ITrade
         }
         else
             return "Online";
-    }
-    
+    }    
     public function propertyDetailsfortradebyHoldingNo(string $holdingNo,int $ulb_id):array
     {
         $property = PropPropertie::select("*")
@@ -1010,6 +1148,42 @@ class Trade implements ITrade
         $tradeNotice->fine_amount =  $denialAmount;
         $tradeNotice->status =  2;
         $tradeNotice->update();
+    }
+    public function getLicenceById($id)
+    {
+        try{
+            $application = ActiveLicence::selecet("active_licences.*","trade_param_application_types.application_type",
+                            "trade_param_category_types.category_type",
+                    DB::raw("ulb_ward_masters.ward_name AS ward_no")
+                    )
+                ->join("ulb_ward_masters",function($join){
+                    $join->on("ulb_ward_masters.id","=","active_licences.ward_mstr_id");                                
+                })
+                ->join("trade_param_application_types","trade_param_application_types.id","active_licences.application_type_id")
+                ->join("trade_param_category_types","trade_param_category_types.id","active_licences.category_type_id")
+                ->where('active_licences.id',$id)
+                ->first();
+            return $application;
+        }
+        catch(Exception $e)
+        {
+
+        }
+        
+    }
+    public function getOwnereDtlByLId($id)
+    {
+        // try{
+        //     $ownerDtl   = ActiveLicenceOwner::select("*")
+        //                     ->where("licence_id",$id)
+        //                     ->get();
+        //     return $ownerDtl
+        // }
+        // catch(Exception $e)
+        // {
+
+        // }
+        
     }
     #-------------------- End core function of core function --------------
     

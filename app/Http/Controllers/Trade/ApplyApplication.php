@@ -43,4 +43,18 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->validate_holding_no($request);
     }
+    public function paymentRecipt(Request $request)
+    {
+        $id = $request->id;
+        $transectionId =  $request->transectionId;
+        return $this->Repository->paymentRecipt($id,$transectionId);
+    }
+    public function updateBasicDtl(Request $request)
+    {
+        return $this->Repository->updateBasicDtl($request);
+    }
+    public function getLicenceDtl(Request $request)
+    {
+        return $this->Repository->getLicenceDtl($request->id);
+    }
 }
