@@ -3,13 +3,14 @@
 namespace App\Repository\Trade;
 
 use App\EloquentModels\Common\ModelWard;
-use App\Models\ActiveSafDetail;
 use App\Models\ActiveSafOwnerDetail;
+use App\Models\Property\ActiveSafDetail ;
 use App\Models\PropOwner;
 use App\Models\PropPropertie;
 use App\Models\Trade\ActiveLicence;
 use App\Models\Trade\ActiveLicenceOwner;
 use App\Models\Trade\ExpireLicence;
+use App\Models\Trade\TradeApplicationDoc;
 use App\Models\Trade\TradeBankRecancilation;
 use App\Models\Trade\TradeChequeDtl;
 use App\Models\Trade\TradeDenialConsumerDtl;
@@ -23,6 +24,7 @@ use App\Models\Trade\TradeParamLicenceRate;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Models\Trade\TradeTransaction;
 use App\Models\UlbWorkflowMaster;
+use App\Models\WorkflowTrack;
 use Illuminate\Http\Request;
 
 use App\Traits\Auth;
@@ -579,7 +581,32 @@ class Trade implements ITrade
     {
         try{
             
-            
+            $application = $this->getLicenceById($id);
+            $item_name="";
+            $cods = "";
+            if($application->nature_of_bussiness)
+            {
+                $items = $this->getLicenceItemsById($application->nature_of_bussiness);                
+                foreach($items as $val)
+                {
+                    $item_name .= $val->trade_item.",";
+                    $cods .= $val->trade_code.",";                    
+                }
+                $item_name= trim($item_name,',');
+                $cods= trim($cods,',');
+            }
+            $application->items = $item_name;
+            $application->items_code = $cods;
+            $owner_dtl = $this->getOwnereDtlByLId($id);
+            // $time_line = $this->getTimelin($id);
+            $documents = $this->getLicenceDocuments($id);
+            $data['licenceDtl'] = $application;
+            $data['owner_dtl'] = $owner_dtl;
+            // $data['time_line'] = $time_line;
+            $data['documents'] = $documents;
+            $data = remove_null($data);
+            return responseMsg(true,"",$data);
+            dd($application);
             
         }
         catch(Exception $e)
@@ -685,7 +712,7 @@ class Trade implements ITrade
                                 trade_denial_notices.created_on::date AS noticedate,
                                 trade_denial_notices.id as dnialid")
                     )
-                    ->join("trade_denial_notices.denial_id","=","trade_denial_consumer_dtls.id")
+                    ->join("trade_denial_notices","trade_denial_notices.denial_id","=","trade_denial_consumer_dtls.id")
                     ->where("trade_denial_notices.notice_no",$notice_no)
                     ->where("trade_denial_notices.created_on","<",$firm_date)
                     ->where("trade_denial_consumer_dtls.status","=", 5)
@@ -1152,38 +1179,97 @@ class Trade implements ITrade
     public function getLicenceById($id)
     {
         try{
-            $application = ActiveLicence::selecet("active_licences.*","trade_param_application_types.application_type",
-                            "trade_param_category_types.category_type",
+            $application = ActiveLicence::select("active_licences.*","trade_param_application_types.application_type",
+                            "trade_param_category_types.category_type","trade_param_firm_types.firm_type",
                     DB::raw("ulb_ward_masters.ward_name AS ward_no")
                     )
                 ->join("ulb_ward_masters",function($join){
                     $join->on("ulb_ward_masters.id","=","active_licences.ward_mstr_id");                                
                 })
                 ->join("trade_param_application_types","trade_param_application_types.id","active_licences.application_type_id")
-                ->join("trade_param_category_types","trade_param_category_types.id","active_licences.category_type_id")
-                ->where('active_licences.id',$id)
+                ->leftjoin("trade_param_category_types","trade_param_category_types.id","active_licences.category_type_id")
+                ->leftjoin("trade_param_firm_types","trade_param_firm_types.id","active_licences.firm_type_id")                
+                ->where('active_licences.id',$id)   
                 ->first();
             return $application;
         }
         catch(Exception $e)
         {
-
+            echo $e->getMessage();
         }
         
     }
+    public function getLicenceItemsById($id)
+    {
+        try{
+            $id = explode(",",$id);
+            $items = TradeParamItemType::select("*")
+                ->whereIn("id",$id)
+                ->get();
+            return $items;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }        
+    }
     public function getOwnereDtlByLId($id)
     {
-        // try{
-        //     $ownerDtl   = ActiveLicenceOwner::select("*")
-        //                     ->where("licence_id",$id)
-        //                     ->get();
-        //     return $ownerDtl
-        // }
-        // catch(Exception $e)
-        // {
-
-        // }
+        try{
+            $ownerDtl   = ActiveLicenceOwner::select("*")
+                            ->where("licence_id",$id)
+                            ->get();
+            return $ownerDtl;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
         
+    }
+    public function getTimelin($id)
+    {
+        try{
+           
+            $time_line =  WorkflowTrack::select(
+                        "workflow_tracks.message",
+                        "role_masters.role_name",
+                        DB::raw("workflow_tracks.track_date::date as track_date")
+                    )
+                    ->leftjoin('users', "users.id", "workflow_tracks.citizen_id")
+                    ->leftjoin('role_users', 'role_users.user_id', 'users.id')
+                    ->leftjoin('role_masters', 'role_masters.id', 'role_users.role_id')
+                    ->where('ref_table_dot_id', 'TradeLicence')
+                    ->where('ref_table_id_value', $id)                    
+                    ->orderBy('track_date', 'desc')
+                    ->get();
+            return $time_line;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+    public function getLicenceDocuments($id)
+    {
+        try{
+           
+            $time_line =  TradeApplicationDoc::select(
+                        "trade_application_docs.doc_for",
+                        "trade_application_docs.document_path",
+                        "trade_application_docs.remarks",
+                        "trade_application_docs.verify_status"
+                    )
+                    ->where('trade_application_docs.licence_id', $id)
+                    ->where('trade_application_docs.status', 1)                    
+                    ->orderBy('id', 'desc')
+                    ->get();
+            return $time_line;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
     }
     #-------------------- End core function of core function --------------
     
