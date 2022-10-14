@@ -878,24 +878,17 @@ class Trade implements ITrade
         }
         return responseMsg($response['status'],$response["message"],remove_null($response["data"]));
     }
-
-    #---------- core function for trade Application--------
-
-    
-    function getDenialAmountTrade($notice_date=null,$current_date=null)
-    {
-        $notice_date=$notice_date?Carbon::createFromFormat("Y-m-d",$notice_date)->format("Y-m-d"):Carbon::now()->format('Y-m-d');
-        $current_date=$current_date?Carbon::createFromFormat("Y-m-d",$current_date)->format("Y-m-d"):Carbon::now()->format('Y-m-d');
-        
-        $datediff = strtotime($current_date)-strtotime($notice_date); //days difference in second
-        $totalDays =   abs(ceil($datediff / (60 * 60 * 24))); // total no. of days
-        $denialAmount=100+(($totalDays)*10);
-    
-        return $denialAmount;
-    }
-    public function searchLicence(string $licence_no)
+    public function searchLicenceByNo(Request $request)
     {
         try{
+            $rules["licenceNo"] = "required";
+            $message["licenceNo.required"] = "Licence No Requird";
+            
+            $validator = Validator::make($request->all(), $rules, $message);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(),$request->all());
+            }
+            $licence_no = $request->licenceNo;
             $data = ActiveLicence::select("*")
                     ->join(
                         DB::raw("(SELECT licence_id,
@@ -914,14 +907,29 @@ class Trade implements ITrade
                     ->where('status',1)
                     ->where('license_no',$licence_no)
                     ->first();
-            return responseMsg(true,"",$data);
+            return responseMsg(true,"",remove_null($data));
         }
         catch(Exception $e)
         {
-            return responseMsg(false,$e->getMessage(),$licence_no);
+            return responseMsg(false,$e->getMessage(),$request->all());
         }
         
     }
+
+    #---------- core function for trade Application--------
+
+    
+    function getDenialAmountTrade($notice_date=null,$current_date=null)
+    {
+        $notice_date=$notice_date?Carbon::createFromFormat("Y-m-d",$notice_date)->format("Y-m-d"):Carbon::now()->format('Y-m-d');
+        $current_date=$current_date?Carbon::createFromFormat("Y-m-d",$current_date)->format("Y-m-d"):Carbon::now()->format('Y-m-d');
+        
+        $datediff = strtotime($current_date)-strtotime($notice_date); //days difference in second
+        $totalDays =   abs(ceil($datediff / (60 * 60 * 24))); // total no. of days
+        $denialAmount=100+(($totalDays)*10);
+    
+        return $denialAmount;
+    }    
     public function getCotegoryList()
     {
         try{
@@ -1270,6 +1278,35 @@ class Trade implements ITrade
         {
             echo $e->getMessage();
         }
+    }
+    public function searchLicence(string $licence_no)
+    {
+        try{
+            $data = ActiveLicence::select("*")
+                    ->join(
+                        DB::raw("(SELECT licence_id,
+                                    string_agg(owner_name,',') as owner_name,
+                                    string_agg(guardian_name,',') as guardian_name,
+                                    string_agg(mobile,',') as mobile
+                                    FROM active_licence_owners
+                                    WHERE status =1
+                                    GROUP BY licence_id
+                                    ) owner
+                                    "),
+                                    function ($join) {
+                                        $join->on("owner.licence_id","=",  "active_licences.id");
+                                    }
+                                    )
+                    ->where('status',1)
+                    ->where('license_no',$licence_no)
+                    ->first();
+            return responseMsg(true,"",remove_null($data));
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$licence_no);
+        }
+        
     }
     #-------------------- End core function of core function --------------
     

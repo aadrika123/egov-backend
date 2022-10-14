@@ -24,6 +24,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('getPropertyByHolding', 'validate_holding_no');
         Route::post('updateBasicDtl', 'updateBasicDtl');
         Route::get('getLicenceDtl/{id}', 'getLicenceDtl');
+        Route::post('searchLicence', 'searchLicence');
     });
 });
 Route::controller(ApplyApplication::class)->group(function () {    
