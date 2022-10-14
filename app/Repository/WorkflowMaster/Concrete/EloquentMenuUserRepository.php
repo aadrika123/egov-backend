@@ -31,9 +31,9 @@ class EloquentMenuUserRepository implements iWorkflowMasterRepository
         $validateUser = Validator::make(
             $request->all(),
             [
-                'Email' => 'required',
-                'FullName' => 'required',
-                'UserName' => 'required',
+                'email' => 'required',
+                'fullName' => 'required',
+                'userName' => 'required',
             ]
         );
 

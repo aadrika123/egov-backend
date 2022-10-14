@@ -58,19 +58,15 @@ class WorkflowWardUserController extends Controller
         return $this->EloquentWardUser->getUserByID($id);
     }
 
-    public function getUlbByID($id)
+
+    public function getAltNameByUlbId(Request $request)
     {
-        return $this->EloquentWardUser->getUlbByID($id);
+        return $this->EloquentWardUser->getAltNameByUlbId($request);
     }
 
-    public function long_join(Request $request)
+    public function getWorkflowNameByUlb(Request $request)
     {
-        return $this->EloquentWardUser->long_join($request);
-    }
-
-    public function getWorkflowByUlb(Request $request)
-    {
-        return $this->EloquentWardUser->getWorkflowByUlb($request);
+        return $this->EloquentWardUser->getWorkflowNameByUlb($request);
     }
 
     public function getRoleByUlb(Request $request)
@@ -83,13 +79,65 @@ class WorkflowWardUserController extends Controller
         return $this->EloquentWardUser->getWardByUlb($request);
     }
 
-    public function join3(Request $request)
+    public function getRoleByWorkflowId(Request $request)
     {
-        return $this->EloquentWardUser->join3($request);
+        return $this->EloquentWardUser->getRoleByWorkflowId($request);
     }
 
     public function getUserByRole(Request $request)
     {
         return $this->EloquentWardUser->getUserByRole($request);
+    }
+
+    //============================================================
+    //============================================================
+    public function getRoleByWorkflow(Request $request)
+    {
+        return $this->EloquentWardUser->getRoleByWorkflow($request);
+    }
+
+    public function getUserByWorkflow(Request $request)
+    {
+        return $this->EloquentWardUser->getUserByWorkflow($request);
+    }
+
+    public function getWardsInWorkflow(Request $request)
+    {
+        return $this->EloquentWardUser->getWardsInWorkflow($request);
+    }
+
+    public function getUlbInWorkflow(Request $request)
+    {
+        return $this->EloquentWardUser->getUlbInWorkflow($request);
+    }
+
+    public function getWorkflowByRole(Request $request)
+    {
+        return $this->EloquentWardUser->getWorkflowByRole($request);
+    }
+
+    public function getUserByRoleId(Request $request)
+    {
+        return $this->EloquentWardUser->getUserByRoleId($request);
+    }
+
+    public function getWardByRole(Request $request)
+    {
+        return $this->EloquentWardUser->getWardByRole($request);
+    }
+
+    public function getUlbByRole(Request $request)
+    {
+        return $this->EloquentWardUser->getUlbByRole($request);
+    }
+
+    public function getUserInUlb(Request $request)
+    {
+        return $this->EloquentWardUser->getUserInUlb($request);
+    }
+
+    public function getRoleInUlb(Request $request)
+    {
+        return $this->EloquentWardUser->getRoleInUlb($request);
     }
 }
