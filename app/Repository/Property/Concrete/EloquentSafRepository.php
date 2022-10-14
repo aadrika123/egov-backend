@@ -472,6 +472,9 @@ class EloquentSafRepository implements iSafRepository
      * | @var query > Contains the Pg Sql query
      * | @var workflow > get the Data in laravel Collection
      * | @var checkDataExisting > check the fetched data collection in array
+     * | @var roleId > Fetch all the Roles for the Logged In user
+     * | @var data > all the Saf data of current logged roleid 
+     * | @var occupiedWard > get all Permitted Ward Of current logged in user id
      * | @var wardId > filtered Ward Id from the data collection
      * | @var safInbox > Final returned Data
      * | @return response #safInbox
@@ -489,28 +492,24 @@ class EloquentSafRepository implements iSafRepository
             $checkDataExisting = $workflow->toArray();
             // If the Current Role Is not a Initiator
             if (!$checkDataExisting) {
-                $roles = WfRoleusermap::select('id', 'wf_role_id', 'user_id')
-                    ->where('user_id', $userId)
-                    ->get();
+                $roles = $this->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
 
-                $role_id = $roles->map(function ($item, $key) {
+                $roleId = $roles->map(function ($item, $key) {
                     return $item->wf_role_id;
                 });
 
-                $data = ActiveSafDetail::whereIn('current_role', $role_id)->get();
-                // return $data;
-                $occupiedWard = WfWardUser::select('id', 'ward_id')
-                    ->where('user_id', $userId)
-                    ->get();
+                $data = ActiveSafDetail::whereIn('current_role', $roleId)->get();
+
+                $occupiedWard = $this->getWardByUserId($userId);
 
                 $wardId = $occupiedWard->map(function ($item, $key) {
                     return $item->ward_id;
                 });
                 // return $wardId;
                 $safInbox = $data->whereIn('ward_mstr_id', $wardId);
-                return $safInbox;
+                return remove_null($safInbox);
             }
-
+            // If current role Is a Initiator
             // Filteration only Ward id from workflow collection
             $wardId = $workflow->map(function ($item, $key) {
                 return $item->ward_id;

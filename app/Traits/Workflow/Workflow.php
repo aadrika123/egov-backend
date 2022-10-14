@@ -2,6 +2,8 @@
 
 namespace App\Traits\Workflow;
 
+use App\Models\WfRoleusermap;
+use App\Models\WfWardUser;
 use App\Models\WorkflowCandidate;
 use Illuminate\Support\Facades\DB;
 
@@ -143,5 +145,31 @@ trait Workflow
                 INNER JOIN (SELECT * FROM wf_ward_users WHERE user_id=$userId) wu ON wu.user_id=wf.user_id
                 WHERE wf.workflow_id=$workflowId AND wf.user_id=$userId";
         return $query;
+    }
+
+    /**
+     * | get workflow role Id by logged in User Id
+     * -------------------------------------------
+     * @param userId > current Logged in User
+     */
+    public function getRoleIdByUserId($userId)
+    {
+        $roles = WfRoleusermap::select('id', 'wf_role_id', 'user_id')
+            ->where('user_id', $userId)
+            ->get();
+        return $roles;
+    }
+
+    /**
+     * | get Ward By Logged in User Id
+     * -------------------------------------------
+     * | @param userId > Current Logged In User Id
+     */
+    public function getWardByUserId($userId)
+    {
+        $occupiedWard = WfWardUser::select('id', 'ward_id')
+            ->where('user_id', $userId)
+            ->get();
+        return $occupiedWard;
     }
 }
