@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\WorkflowMaster;
 
 use App\Http\Controllers\Controller;
-use App\Repository\WorkflowMaster\Interface\iWorkflowMasterRepository;
+use App\Repository\WorkflowMaster\Interface\iWfWorkflowRepository;
 use Illuminate\Http\Request;
 
 /**
@@ -11,17 +11,17 @@ use Illuminate\Http\Request;
  * Created By-Mrinal Kumar
  */
 
-class WorkflowMasterController extends Controller
+class WfWorkflowController extends Controller
 {
     protected $eloquentWf;
 
     // Initializing Construct function
-    public function __construct(iWorkflowMasterRepository $eloquentWf)
+    public function __construct(iWfWorkflowRepository $eloquentWf)
     {
         $this->EloquentWf = $eloquentWf;
     }
 
-    // list all users in master table
+    //list all wf workflow
     public function index()
     {
         return $this->EloquentWf->list();
@@ -30,15 +30,16 @@ class WorkflowMasterController extends Controller
 
     public function create()
     {
+        //
     }
 
-    // creating a new workflow
+    // create wf workflow
     public function store(Request $request)
     {
         return $this->EloquentWf->create($request);
     }
 
-    // list workflow by id
+    // list by wf workflow by id
     public function show($id)
     {
         return $this->EloquentWf->view($id);
@@ -50,13 +51,13 @@ class WorkflowMasterController extends Controller
         //
     }
 
-    //update workflow by id
+    // update wf workflow
     public function update(Request $request, $id)
     {
         return $this->EloquentWf->update($request);
     }
 
-    //delete workflow
+    // delete wf workflow
     public function destroy($id)
     {
         return $this->EloquentWf->delete($id);

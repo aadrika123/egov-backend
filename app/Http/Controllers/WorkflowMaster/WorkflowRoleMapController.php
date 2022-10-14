@@ -4,52 +4,61 @@ namespace App\Http\Controllers\WorkflowMaster;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Repository\WorkflowMaster\Concrete\EloquentWorkflowRoleMapRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowRoleMapRepository;
 
 /**
- * Created On-08-10-2022 
+ * Created On-14-10-2022 
  * Created By-Mrinal Kumar
- * --------------------------------------------------------------------------------
- * 
  */
-
-
 
 class WorkflowRoleMapController extends Controller
 {
     protected $eloquentRoleMap;
     // Initializing Construct function
-    public function __construct(EloquentWorkflowRoleMapRepository $eloquentRoleMap)
+
+    public function __construct(iWorkflowRoleMapRepository $eloquentRoleMap)
     {
         $this->EloquentRoleMap = $eloquentRoleMap;
     }
-    // Create 
-    public function create(Request $request)
-    {
-        return $this->EloquentRoleMap->create($request);
-    }
 
-    // Get All data
-    public function list()
+    //list all rolemap
+    public function index()
     {
         return $this->EloquentRoleMap->list();
     }
 
-    // Delete data
-    public function delete($id)
+
+    public function create()
     {
-        return $this->EloquentRoleMap->delete($id);
+        //
     }
 
-    // Updating
-    public function update(Request $request)
+    // create 
+    public function store(Request $request)
+    {
+        return $this->EloquentRoleMap->create($request);
+    }
+
+    //
+    public function show($id)
+    {
+        return $this->EloquentRoleMap->view($id);
+    }
+
+    public function edit($id)
+    {
+        //
+    }
+
+    // update
+    public function update(Request $request, $id)
     {
         return $this->EloquentRoleMap->update($request);
     }
 
-    // View data by Id
-    public function view($id)
+    //delete
+    public function destroy($id)
     {
-        return $this->EloquentRoleMap->view($id);
+        return $this->EloquentRoleMap->delete($id);
     }
 }

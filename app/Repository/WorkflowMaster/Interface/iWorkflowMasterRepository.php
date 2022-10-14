@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repository\WorkflowMaster;
+namespace App\Repository\WorkflowMaster\Interface;
 
 use Illuminate\Http\Request;
 

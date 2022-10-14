@@ -2,7 +2,7 @@
 
 namespace App\Repository\WorkflowMaster\Concrete;
 
-use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowWardUserRepository;
 use Illuminate\Http\Request;
 use App\Models\WfWardUser;
 use App\Models\UlbWardMaster;
@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Validator;
 
 
 
-class EloquentWorkflowWardUserRepository implements iWorkflowMasterRepository
+class EloquentWorkflowWardUserRepository implements iWorkflowWardUserRepository
 {
 
     public function create(Request $request)
@@ -100,7 +100,7 @@ class EloquentWorkflowWardUserRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
         //validation 
         $validateUser = Validator::make(

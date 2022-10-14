@@ -2,7 +2,7 @@
 
 namespace App\Repository\WorkflowMaster\Concrete;
 
-use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
+use App\Repository\WorkflowMaster\Interface\iWfWorkflowRepository;
 use Illuminate\Http\Request;
 use App\Models\WfWorkflow;
 use Exception;
@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Validator;
  */
 
 
-class EloquentWorkflowWorkflowRepository implements iWorkflowMasterRepository
+class EloquentWfWorkflowRepository implements iWfWorkflowRepository
 {
 
     public function create(Request $request)
@@ -89,7 +89,7 @@ class EloquentWorkflowWorkflowRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
         $userId = Auth()->user()->id;
         //validation 
