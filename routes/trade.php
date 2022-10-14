@@ -26,6 +26,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('getLicenceDtl/{id}', 'getLicenceDtl');
     });
 });
-Route::controller(ApplyApplication::class)->group(function () {
+Route::controller(ApplyApplication::class)->group(function () {    
     Route::get('paymentRecipt/{id}/{transectionId}', 'paymentRecipt');
 });
