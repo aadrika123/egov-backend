@@ -535,6 +535,13 @@ class Trade implements ITrade
                         ->where("status",1)
                         ->orderBy("id")
                         ->get();
+            $pen=0;
+            foreach($penalty as $val )
+            {
+                $pen+=$val->amount;
+                
+            }
+            $transaction->rate = $transaction->paid_amount - $pen;
             $data = ["application"=>$application,
                      "transaction"=>$transaction,
                      "penalty"    =>$penalty
@@ -937,7 +944,9 @@ class Trade implements ITrade
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $data = $this->parent->getUserRoll($user_id,$ulb_id,4);
-            dd($data);
+            $aa = $this->parent->getAllRoles($user_id,$ulb_id,4,$data->role_id,true);
+            $getForwordBackwordRoll = $this->getForwordBackwordRoll($user_id,$ulb_id,4,5,false);
+            dd($aa);
             
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $key);
