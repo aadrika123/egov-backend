@@ -61,4 +61,8 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->searchLicenceByNo($request);
     }
+    public function inbox(Request $request)
+    {
+        return $this->Repository->inbox($request->key);
+    }
 }

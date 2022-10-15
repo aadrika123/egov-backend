@@ -28,4 +28,5 @@ interface ITrade
     public function getownershipTypeList();
     public function gettradeitemsList();
     public function getAllApplicationType();
+    public function inbox($key);
 }
