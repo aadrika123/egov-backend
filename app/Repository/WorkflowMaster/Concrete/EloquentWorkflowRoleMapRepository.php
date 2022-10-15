@@ -2,7 +2,7 @@
 
 namespace App\Repository\WorkflowMaster\Concrete;
 
-use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowRoleMapRepository;
 use Illuminate\Http\Request;
 use App\Models\WfWorkflowrolemap;
 use Exception;
@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Validator;
  */
 
 
-class EloquentWorkflowRoleMapRepository implements iWorkflowMasterRepository
+class EloquentWorkflowRoleMapRepository implements iWorkflowRoleMapRepository
 {
 
     public function create(Request $request)
@@ -74,7 +74,7 @@ class EloquentWorkflowRoleMapRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
         try {
             $device = WfWorkflowrolemap::find($request->Id);

@@ -3,93 +3,67 @@
 namespace App\Http\Controllers\WorkflowMaster;
 
 use App\Http\Controllers\Controller;
+use App\Repository\WorkflowMaster\Interface\iWorkflowMasterRepository;
 use Illuminate\Http\Request;
-use App\Repository\WorkflowMaster\Concrete\EloquentWorkflowWardUserRepository;
 
 /**
- * Created On-08-10-2022 
+ * Created On-14-10-2022 
  * Created By-Mrinal Kumar
- * --------------------------------------------------------------------------------
- * 
  */
 
 
 class WorkflowWardUserController extends Controller
 {
-    protected $eloquentWardUser;
+    protected $eloquentWf;
+
     // Initializing Construct function
-    public function __construct(EloquentWorkflowWardUserRepository $eloquentWardUser)
+    public function __construct(iWorkflowMasterRepository $eloquentWardUser)
     {
         $this->EloquentWardUser = $eloquentWardUser;
     }
-    // Create 
-    public function create(Request $request)
-    {
-        return $this->EloquentWardUser->create($request);
-    }
 
-    // Get All data
-    public function list()
+    // list all user
+    public function index()
     {
         return $this->EloquentWardUser->list();
     }
 
-    // Delete data
-    public function delete($id)
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
     {
-        return $this->EloquentWardUser->delete($id);
+        //
     }
 
-    // Updating
-    public function update(Request $request)
+    //create
+    public function store(Request $request)
     {
-        return $this->EloquentWardUser->update($request);
+        return $this->EloquentWardUser->create($request);
     }
 
-    // View data by Id
-    public function view($id)
+    // list by id
+    public function show($id)
     {
         return $this->EloquentWardUser->view($id);
     }
 
-    // Mapping
-    public function getUserByID($id)
+    public function edit($id)
     {
-        return $this->EloquentWardUser->getUserByID($id);
+        //
     }
 
-    public function getUlbByID($id)
+    //update
+    public function update(Request $request, $id)
     {
-        return $this->EloquentWardUser->getUlbByID($id);
+        return $this->EloquentWardUser->update($request);
     }
 
-    public function long_join(Request $request)
+    //delete
+    public function destroy($id)
     {
-        return $this->EloquentWardUser->long_join($request);
-    }
-
-    public function getWorkflowByUlb(Request $request)
-    {
-        return $this->EloquentWardUser->getWorkflowByUlb($request);
-    }
-
-    public function getRoleByUlb(Request $request)
-    {
-        return $this->EloquentWardUser->getRoleByUlb($request);
-    }
-
-    public function getWardByUlb(Request $request)
-    {
-        return $this->EloquentWardUser->getWardByUlb($request);
-    }
-
-    public function join3(Request $request)
-    {
-        return $this->EloquentWardUser->join3($request);
-    }
-
-    public function getUserByRole(Request $request)
-    {
-        return $this->EloquentWardUser->getUserByRole($request);
+        return $this->EloquentWardUser->delete($id);
     }
 }

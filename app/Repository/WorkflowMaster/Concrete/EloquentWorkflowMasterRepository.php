@@ -2,7 +2,7 @@
 
 namespace App\Repository\WorkflowMaster\Concrete;
 
-use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowMasterRepository;
 use Illuminate\Http\Request;
 use App\Models\WfMaster;
 use App\Models\User;
@@ -48,7 +48,7 @@ class EloquentWorkflowMasterRepository implements iWorkflowMasterRepository
             // create
             $device = new WfMaster;
             $device->workflow_name = $request->workflowName;
-            $device->user_id = $userId;
+            $device->created_by = $userId;
             $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
             $device->save();
@@ -83,7 +83,7 @@ class EloquentWorkflowMasterRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
         $userId = Auth()->user()->id;
         //validation
@@ -109,7 +109,7 @@ class EloquentWorkflowMasterRepository implements iWorkflowMasterRepository
             $device = WfMaster::find($request->id);
             $device->workflow_name = $request->workflowName;
             $device->is_suspended = $request->isSuspended;
-            $device->user_id = $userId;
+            $device->created_by = $userId;
             $device->status = $request->status;
             $device->stamp_date_time = Carbon::now();
             $device->updated_at = Carbon::now();

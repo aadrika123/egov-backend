@@ -2,7 +2,7 @@
 
 namespace App\Repository\WorkflowMaster\Concrete;
 
-use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowRoleRepository;
 use Illuminate\Http\Request;
 use App\Models\WfRole;
 use Exception;
@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Validator;
 
 
 
-class EloquentWorkflowRoleRepository implements iWorkflowMasterRepository
+class EloquentWorkflowRoleRepository implements iWorkflowRoleRepository
 {
 
     public function create(Request $request)
@@ -89,7 +89,7 @@ class EloquentWorkflowRoleRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
         $userId = Auth()->user()->id;
         //validating
@@ -113,7 +113,7 @@ class EloquentWorkflowRoleRepository implements iWorkflowMasterRepository
             ], 401);
         }
         try {
-            $device = WfRole::find($request->id);
+            $device = WfRole::find($id);
             $device->role_name = $request->roleName;
             $device->forward_role_id = $request->forwardRoleId;
             $device->backward_role_id = $request->backwardRoleId;
