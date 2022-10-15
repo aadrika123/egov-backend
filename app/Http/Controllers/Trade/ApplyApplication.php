@@ -57,4 +57,8 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->getLicenceDtl($request->id);
     }
+    public function searchLicence(Request $request)
+    {
+        return $this->Repository->searchLicenceByNo($request);
+    }
 }

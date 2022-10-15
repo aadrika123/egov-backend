@@ -17,6 +17,7 @@ interface ITrade
     public function __construct();
     public function applyApplication(Request $request);
     public function validate_holding_no(Request $request);
+    public function searchLicenceByNo(Request $request);
     public function searchLicence(string $licence_no);
     public function updateBasicDtl(Request $request);
     public function getLicenceDtl($id);
