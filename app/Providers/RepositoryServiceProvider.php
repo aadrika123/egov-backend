@@ -50,14 +50,12 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(iNewConnection::class, NewConnectionRepository::class);
         $this->app->bind(ITrade::class, Trade::class);
         $this->app->bind(iSafRepository::class, EloquentSafRepository::class);
-<<<<<<< HEAD
         //menu permission
         $this->app->bind(IMenuGroupsRepository::class,EloquentMenuGroups::class);
         $this->app->bind(IMenuItemsRepository::class,EloquentMenuItems::class);
         $this->app->bind(IMenuMapRepository::class,EloquentMenuMap::class);
         $this->app->bind(IMenuRolesRepository::class,EloquentMenuRoles::class);
         $this->app->bind(IMenuUlbrolesRepository::class,EloquentMenuUlbroles::class);
-=======
 
         // Workflow Master
         $this->app->bind(iWorkflowMasterRepository::class, EloquentWorkflowMasterRepository::class);
@@ -66,7 +64,6 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(iWorkflowRoleMapRepository::class, EloquentWorkflowRoleMapRepository::class);
         $this->app->bind(iWorkflowRoleUserMapRepository::class, EloquentWorkflowRoleUserMapRepository::class);
         $this->app->bind(iWorkflowWardUserRepository::class, EloquentWorkflowWardUserRepository::class);
->>>>>>> ca773c4bbe1bcfa49d6c05e861d5d3468d58c7ef
     }
 
     /**
