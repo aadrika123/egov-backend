@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Menupermission;
 
 use App\Http\Controllers\Controller;
 use App\Repository\MenuPermission\Concrete\EloquentMenuItems;
+use App\Repository\MenuPermission\Interface\iMenuItemsRepository;
 use Illuminate\Http\Request;
 
 class MenuItemsController extends Controller
 {
-    //
+    //defining a constructer as ($a) 
     protected $a;
-    public function __construct(EloquentMenuItems $a)
+    public function __construct(iMenuItemsRepository $a)
     {
         $this->EUlb = $a;
     }
@@ -54,4 +55,14 @@ class MenuItemsController extends Controller
     {
         return $this->EUlb->ulbWiseMenuRole($request);
     }
+    //data of join
+    //  function allmenuitems()
+    //  {
+    //     return $this->EUlb->allmenuitems();
+    //  }
+    //   //data of join
+    //   function listmenugroups()
+    //   {
+    //      return $this->EUlb->listmenugroups();
+    //   }
 }
