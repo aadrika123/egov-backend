@@ -99,12 +99,12 @@ class Trade implements ITrade
                 $data["firmTypeList"] = $this->getFirmTypeList();
                 $data["ownershipTypeList"] = $this->getownershipTypeList();
                 $data["categoryTypeList"] = $this->getCotegoryList();
-                $data["natureOfBusiness"] = $this->gettradeitemsList();
+                $data["natureOfBusiness"] = $this->gettradeitemsList(true);
                 if(isset($request->licenceId) && $request->licenceId  && $this->application_type_id !=1)
                 {
         
                 }
-                return responseMsg(true,"",$data);
+                return responseMsg(true,"",remove_null($data));
             }
             elseif($request->getMethod()=="POST")
             { 
@@ -141,8 +141,8 @@ class Trade implements ITrade
                 if($apply_from=="Online")
                 {
                     $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
-                }                
-
+                }               
+                
                 $rules["initialBusinessDetails.applyWith"]="required|int";
                 $rules["initialBusinessDetails.firmType"]="required|int";
                 if(isset($request->initialBusinessDetails['firmType']) && $request->initialBusinessDetails['firmType']==5)
@@ -156,6 +156,10 @@ class Trade implements ITrade
                     $rules["initialBusinessDetails.noticeDate"]="required|date";  
                 }
                 $rules["licenseDetails.licenseFor"]="required|int";
+                if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
+                {
+                    $rules["licenseDetails.licenseFor"]="required|int|max:1";
+                }
                 if($apply_from =="Online")
                 {
                     $rules["licenseDetails.paymentMode"]="required|alpha"; 
@@ -511,7 +515,7 @@ class Trade implements ITrade
                     throw new Exception("Application Not Found");
                 }
             }
-            $transection = TradeTransaction::select("transaction_no","transaction_type","transaction_date",
+            $transaction = TradeTransaction::select("transaction_no","transaction_type","transaction_date",
                                         "payment_mode","paid_amount","penalty",
                                         "trade_cheque_dtls.cheque_no","trade_cheque_dtls.cheque_date",
                                         "trade_cheque_dtls.bank_name","trade_cheque_dtls.branch_name"
@@ -520,7 +524,7 @@ class Trade implements ITrade
                             ->where("trade_transactions.id",$transectionId)
                             ->whereIn("trade_transactions.status",[1,2])
                             ->first();
-            if(!$transection)
+            if(!$transaction)
             {
                 throw New Exception("Transaction Not Faound");
             }
@@ -530,7 +534,7 @@ class Trade implements ITrade
                         ->orderBy("id")
                         ->get();
             $data = ["application"=>$application,
-                     "transection"=>$transection,
+                     "transaction"=>$transaction,
                      "penalty"    =>$penalty
             ];
             $data = remove_null($data);
@@ -988,12 +992,23 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-    public function gettradeitemsList()
+    public function gettradeitemsList($all=false)
     {
         try{
-            return TradeParamItemType::select("id","trade_item","trade_code")
-                ->where("status",1)
-                ->get();
+            if($all)
+            {
+                return TradeParamItemType::select("id","trade_item","trade_code")
+                    ->where("status",1)
+                    ->where("id","<>",187)
+                    ->get();
+            }
+            else
+            {
+                return TradeParamItemType::select("id","trade_item","trade_code")
+                    ->where("status",1)
+                    ->get();
+
+            }
         }
         catch (Exception $e)
         {

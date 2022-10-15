@@ -30,7 +30,7 @@ class CommonFunction implements ICommonFunction
                         ->join("wf_workflows","wf_workflows.id","=","wf_workflowrolemaps.workflow_id")
                         ->join("wf_masters","wf_masters.id","=","wf_workflows.wf_master_id")
                         ->join("ulb_masters","ulb_masters.id","=","wf_workflows.ulb_id")
-                        ->where(["wf_roles.status"=>1 ,"wf_roles.is_suspended"=>false])
+                        ->where("wf_roles.is_suspended",false)
                         ->where("wf_roleusermaps.user_id",$user_id)
                         ->where("wf_workflows.ulb_id",$ulb_id)
                         ->where("wf_masters.id",strtoupper($workflow_id))
@@ -63,39 +63,39 @@ class CommonFunction implements ICommonFunction
             }
             return $ward_permission;
     }
-    // public function getWorkFlowRoles( $user_id,int $ulb_id, int $work_flow_id)
-    // {
-    //         $redis =Redis::connection();
-    //         $workflow_rolse = json_decode(Redis::get('WorkFlowRoles:' . $user_id.":".$work_flow_id),true)??null;
-    //         if(!$workflow_rolse)
-    //         {
-    //             $workflow_rolse = UlbWorkflowRole::select(
-    //                             DB::raw("workflows.id as workflow_id"),
-    //                             "role_masters.id",
-    //                             "role_masters.role_name",
-    //                             "ulb_workflow_roles.forward_id",
-    //                             "ulb_workflow_roles.backward_id",
-    //                             "ulb_workflow_roles.show_full_list",
-    //                             "ulb_workflow_masters.ulb_id",
-    //                             "module_masters.module_name",
-    //                             "workflows.workflow_name"
-    //                         )
-    //                         ->join("role_masters","role_masters.id","ulb_workflow_roles.role_id")
-    //                         ->join("ulb_workflow_masters",function($join) use($ulb_id){
-    //                             $join->on("ulb_workflow_masters.id","ulb_workflow_roles.ulb_workflow_id")
-    //                             ->where("ulb_workflow_masters.ulb_id",$ulb_id);
-    //                         })
-    //                         ->join("module_masters","module_masters.id","ulb_workflow_masters.module_id")
-    //                         ->join("workflows",function($join) use($work_flow_id){
-    //                             $join->on("workflows.module_id","module_masters.id")
-    //                             ->where("workflows.id",$work_flow_id);
-    //                         })
-    //                         ->get();
-    //             $workflow_rolse = adjToArray($workflow_rolse);
-    //             $this->WorkFlowRolesSet($redis,$user_id, $workflow_rolse,$work_flow_id);
-    //         }
-    //         return $workflow_rolse;
-    // }
+    public function getWorkFlowRoles( $user_id,int $ulb_id, int $work_flow_id)
+    {
+            $redis =Redis::connection();
+            $workflow_rolse = json_decode(Redis::get('WorkFlowRoles:' . $user_id.":".$work_flow_id),true)??null;
+            if(!$workflow_rolse)
+            {
+                $workflow_rolse = UlbWorkflowRole::select(
+                                DB::raw("workflows.id as workflow_id"),
+                                "role_masters.id",
+                                "role_masters.role_name",
+                                "ulb_workflow_roles.forward_id",
+                                "ulb_workflow_roles.backward_id",
+                                "ulb_workflow_roles.show_full_list",
+                                "ulb_workflow_masters.ulb_id",
+                                "module_masters.module_name",
+                                "workflows.workflow_name"
+                            )
+                            ->join("role_masters","role_masters.id","ulb_workflow_roles.role_id")
+                            ->join("ulb_workflow_masters",function($join) use($ulb_id){
+                                $join->on("ulb_workflow_masters.id","ulb_workflow_roles.ulb_workflow_id")
+                                ->where("ulb_workflow_masters.ulb_id",$ulb_id);
+                            })
+                            ->join("module_masters","module_masters.id","ulb_workflow_masters.module_id")
+                            ->join("workflows",function($join) use($work_flow_id){
+                                $join->on("workflows.module_id","module_masters.id")
+                                ->where("workflows.id",$work_flow_id);
+                            })
+                            ->get();
+                $workflow_rolse = adjToArray($workflow_rolse);
+                $this->WorkFlowRolesSet($redis,$user_id, $workflow_rolse,$work_flow_id);
+            }
+            return $workflow_rolse;
+    }
 
     // public function getForwordBackwordRoll($user_id,int $ulb_id, int $work_flow_id,int $role_id,$finisher=null)
     // {
