@@ -3,7 +3,7 @@
 namespace App\Repository\MenuPermission\Concrete;
 
 
-use App\Repository\MenuPermission\interface\IMenuMapRepository;
+use App\Repository\MenuPermission\Interface\IMenuMapRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
