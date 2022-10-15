@@ -463,6 +463,7 @@ class Trade implements ITrade
     { 
         try{
             $application = ActiveLicence::select("application_no","provisional_license_no","license_no",
+                                                "firm_name","holding_no","address",
                                             "owner.owner_name","owner.guardian_name","owner.mobile",
                                             DB::raw("ulb_ward_masters.ward_name AS ward_no, 
                                             ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
@@ -488,6 +489,7 @@ class Trade implements ITrade
             if(!$application)
             {
                 $application = ExpireLicence::select("application_no","provisional_license_no","license_no",
+                                        "firm_name","holding_no","address",
                                         "owner.owner_name","owner.guardian_name","owner.mobile",
                                         DB::raw("ulb_ward_masters.ward_name AS ward_no, 
                                         ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
@@ -934,7 +936,7 @@ class Trade implements ITrade
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $data = $this->parent->curentUserRole($user_id,$ulb_id,4);
+            $data = $this->parent->getUserRoll($user_id,$ulb_id,4);
             dd($data);
             
         } catch (Exception $e) {
