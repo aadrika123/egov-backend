@@ -2,14 +2,18 @@
 
 namespace App\Repository\MenuPermission\Concrete;
 
-use App\Models\MenuPermission\MenuGroups;
-use App\Repository\MenuPermission\interface\iMenuItemsRepository;
+
+use App\Repository\MenuPermission\Interface\iMenuItemsRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Models\MenuPermission\MenuItems;
 use App\Models\MenuPermission\MenuUlbroles;
+use App\Models\MenuPermission\MenuGroups;
+use App\Models\MenuPermission\MenuMaps;
+use App\Models\MenuPermission\MenuRoles;
+
 use Exception;
 
 
@@ -108,19 +112,19 @@ class EloquentMenuItems implements iMenuItemsRepository
     ///////////////////////////////////////
     //show allmenuItems
     ///////////////////////////////////////
-    public function allmenuitems()
-    {
-        $menuItem = MenuItems::get();
-        return response()->json(["data" => $menuItem]);
-    }
+    // public function allmenuitems()
+    // {
+    //     $menuItem = MenuItems::get();
+    //     return response()->json(["data" => $menuItem]);
+    // }
     ////////////////////////////////////////
     //listin of all menu groups
     ////////////////////////////////////////
-    public function listmenugroups()
-    {
-        $menuGroups = MenuGroups::count('all');
-        return response()->json(["list" => $menuGroups]);
-    }
+    // public function listmenugroups()
+    // {
+    //     $menuGroups = MenuGroups::count('all');
+    //     return response()->json(["list" => $menuGroups]);
+    // }
 
     ///////////////////////////////
     //show menuGroups wis Items request(ulb_id)
@@ -139,7 +143,7 @@ class EloquentMenuItems implements iMenuItemsRepository
             return response()->json([
                 'status' => false,
                 'message' => 'validation error',
-                'errors' => $validateUser->errors()
+                'message' => $validateUser->errors()
             ], 401);
         }
         //data of the menu_items
@@ -147,8 +151,8 @@ class EloquentMenuItems implements iMenuItemsRepository
             $data =  MenuUlbroles::where('ulb_id', $request->ulbid)
                 ->get('id');
             //condition check
-            if (!$data) {
-                return response()->json(["message" => "Data Do Not Exist"]);
+            if ($data->isEmpty()) {
+                return response()->json(["message" => "Data Do lll Not Exist"]);
             }
             //data of menu_groups
             $groups = MenuUlbroles::where('ulb_id', $request->ulbid)
@@ -158,7 +162,7 @@ class EloquentMenuItems implements iMenuItemsRepository
                 ->get('menu_groups.*');
 
             // dd($groups);
-            return response()->json(["menugroups" => $groups]);
+            return response()->json(["status" => true, "message" => "data of groups", "data" => $groups,]);
         }
         //catch error
         catch (Exception $e) {
@@ -172,6 +176,22 @@ class EloquentMenuItems implements iMenuItemsRepository
     ////////////////////////////////////////////////
     public function menuGroupAndRoleWiseItems(Request $request)
     {
+        //validation
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'ulbid' => 'required',
+                'menuroles' => 'required',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'message' => $validateUser->errors(),
+            ], 401);
+        }
         try {
             // data of menu_roles
             // $roles = MenuUlbroles::where('ulb_id', $request->ulbid)
@@ -180,33 +200,30 @@ class EloquentMenuItems implements iMenuItemsRepository
             //     ->get('menu_roles.*');
             //data of menu_groups
             $groups = MenuUlbroles::join('menu_maps', 'menu_maps.ulb_menuroleid', '=', 'menu_ulbroles.id')
-                                ->join('menu_items', 'menu_items.id', '=', 'menu_maps.menu_itemid')
-                                ->join('menu_groups', 'menu_groups.id', '=', 'menu_items.menu_groupid')
-                                ->where('ulb_id', $request->ulbid)
-                                ->where('menu_roleid', $request->menuroles);
-            if(isset($request->roleId))
+                ->join('menu_items', 'menu_items.id', '=', 'menu_maps.menu_itemid')
+                ->join('menu_groups', 'menu_groups.id', '=', 'menu_items.menu_groupid')
+                ->where('ulb_id', $request->ulbid)
+                ->where('menu_roleid', $request->menuroles);
+            if (isset($request->roleId))
                 $groups = $groups->where('menu_roleid', $request->roleId);
             $groups = $groups->get('menu_groups.*', 'menu_items.*');
-            
-            //echo "<pre/>"; print_r($groups);
-            // $a = $groups[0]->id;
 
-            // //data of the menu_items
-            
+            //data of the menu_items           
             //foreach loop for the roles wise items    
             $items = array();
             foreach ($groups as $group) {
                 $items['groupName'] = $group->group_name;
-                $item =  MenuItems::where('menu_groupid', $group->id)
-                        ->get();
+                $item =  MenuItems::select('menu_items.id','menu_items.menu_name', 'menu_items.display_string', 'menu_items.icon_name', 'menu_maps.general_permission', 'menu_maps.admin_permission')
+                    ->join('menu_maps', 'menu_maps.menu_itemid', '=', 'menu_items.id')
+                    ->where('menu_groupid', $group->id)
+                    ->get();
                 $items['items'] = $item;                                 // $collectItems=$items->first();
             }
-            // //assigning keys to the to $items and $groups
-            // $groups['groupWiseItems'] = $items;
-            $roles['menuGroup'] = $items;
-           
+            //assigning keys to the to $items and $groups                                                         
+            $roles['menuGroup'] = $items;                               // $groups['groupWiseItems'] = $items;
+
             //data return
-            return response()->json(["menuRoles" => $roles]);
+            return response()->json(["status" => true, "message" => "data of roles and items", "data" => $roles]);
         }
         //collecting the errors in the code in $e 
         catch (Exception $e) {
@@ -231,20 +248,24 @@ class EloquentMenuItems implements iMenuItemsRepository
             return response()->json([
                 'status' => false,
                 'message' => 'validation error',
-                'errors' => $validateUser->errors()
+                'message' => $validateUser->errors(),
             ], 401);
         }
         try {
-            // data of menu_roles
-            $roles = MenuUlbroles::where('ulb_id', $request->ulbid)
+            //data of group
+            $roles = MenuRoles::join('menu_ulbroles', 'menu_ulbroles.menu_roleid', '=', 'menu_roles.id')
                 ->join('menu_maps', 'menu_maps.ulb_menuroleid', '=', 'menu_ulbroles.id')
                 ->join('menu_items', 'menu_items.id', '=', 'menu_maps.menu_itemid')
                 ->join('menu_groups', 'menu_groups.id', '=', 'menu_items.menu_groupid')
-                ->join('menu_roles', 'menu_roles.id', '=', 'menu_ulbroles.menu_roleid')
+                ->where('menu_ulbroles.ulb_id', $request->ulbid)
+                ->where('menu_groups.id', $request->menugroups)
                 ->get('menu_roles.*');
-
+            //condition check
+            if ($roles->isEmpty()) {
+                return response()->json(["status" => false, "message" => "no data"]);
+            }
             //data return
-            return response()->json(["menuRoles" => $roles]);
+            return response()->json(["status" => true, "message" => "data of roles", "data" => $roles]);
         }
         //collecting the errors in the code in $e 
         catch (Exception $e) {

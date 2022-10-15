@@ -2,6 +2,16 @@
 
 namespace App\Providers;
 
+use App\Repository\MenuPermission\Concrete\EloquentMenuGroups;
+use App\Repository\MenuPermission\Concrete\EloquentMenuItems;
+use App\Repository\MenuPermission\Concrete\EloquentMenuMap;
+use App\Repository\MenuPermission\Concrete\EloquentMenuRoles;
+use App\Repository\MenuPermission\Concrete\EloquentMenuUlbroles;
+use App\Repository\MenuPermission\Interface\iMenuGroupsRepository;
+use App\Repository\MenuPermission\Interface\iMenuItemsRepository;
+use App\Repository\MenuPermission\Interface\iMenuMapRepository;
+use App\Repository\MenuPermission\Interface\iMenuRolesRepository;
+use App\Repository\MenuPermission\Interface\iMenuUlbrolesRepository;
 use App\Repository\Property\Concrete\EloquentSafRepository;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Repository\Trade\ITrade;
@@ -40,6 +50,12 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(iNewConnection::class, NewConnectionRepository::class);
         $this->app->bind(ITrade::class, Trade::class);
         $this->app->bind(iSafRepository::class, EloquentSafRepository::class);
+        //menu permission
+        $this->app->bind(IMenuGroupsRepository::class,EloquentMenuGroups::class);
+        $this->app->bind(IMenuItemsRepository::class,EloquentMenuItems::class);
+        $this->app->bind(IMenuMapRepository::class,EloquentMenuMap::class);
+        $this->app->bind(IMenuRolesRepository::class,EloquentMenuRoles::class);
+        $this->app->bind(IMenuUlbrolesRepository::class,EloquentMenuUlbroles::class);
 
         // Workflow Master
         $this->app->bind(iWorkflowMasterRepository::class, WorkflowMasterRepository::class);

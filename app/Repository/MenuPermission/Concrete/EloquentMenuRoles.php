@@ -3,7 +3,7 @@
 namespace App\Repository\MenuPermission\Concrete;
 
 
-use App\Repository\MenuPermission\interface\iMenuRolesRepository;
+use App\Repository\MenuPermission\Interface\iMenuRolesRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
