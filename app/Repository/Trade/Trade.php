@@ -432,6 +432,7 @@ class Trade implements ITrade
                     } 
                     $licence->payment_status = $payment_status;
                     $licence->save();
+                    $res['transactionId'] = $transaction_id;
                     $res['paymentRecipt']= config('app.url')."/api/trade/paymentRecipt/".$licenceId."/".$transaction_id;
                 }
                 
