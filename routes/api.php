@@ -509,9 +509,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     // secure routes for the Admin
     Route::controller(MenuItemsController::class)->group(function () {              
         // Route::group(['middleware' => 'can:isAdmin'], function () {
-            Route::post('menu-Permission/get-Menu-Groups', 'menuGroupWiseItems');                       // get all MenuGroups        
-            Route::post('menu-Permission/get-Menu-Roles-Items', 'menuGroupAndRoleWiseItems'); 
-            Route::post('menu-Permission/get-Roles', 'ulbWiseMenuRole');                         // get all MenuRoles
+            Route::post('menu-Permission/get-Menu-Groups', 'menuGroupWiseItems');                       // get all MenuGroups                  
+            Route::post('menu-Permission/get-Roles', 'ulbWiseMenuRole');                                // get all MenuRoles
+            Route::post('menu-Permission/get-Menu-Roles-Items', 'menuGroupAndRoleWiseItems');           // get role wise items
         // });
     });
 // });

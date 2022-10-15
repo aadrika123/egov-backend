@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Menupermission;
 
 use App\Http\Controllers\Controller;
 use App\Repository\MenuPermission\Concrete\EloquentMenuGroups;
+use App\Repository\MenuPermission\Interface\IMenuGroupsRepository;
 use Illuminate\Http\Request;
 
 class MenuGroupsController extends Controller
 {
     //
     protected $a;
-    public function __construct(EloquentMenuGroups $a)
+    public function __construct(IMenuGroupsRepository $a)
     {
         $this->EUlb = $a;
     }

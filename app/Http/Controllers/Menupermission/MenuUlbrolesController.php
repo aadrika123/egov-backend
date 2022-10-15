@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Menupermission;
 
 use App\Http\Controllers\Controller;
 use App\Repository\MenuPermission\Concrete\EloquentMenuUlbroles;
+use App\Repository\MenuPermission\Interface\IMenuUlbrolesRepository;
 use Illuminate\Http\Request;
 
 class MenuUlbrolesController extends Controller
@@ -16,7 +17,7 @@ class MenuUlbrolesController extends Controller
     methods:
 */
     protected $a;
-    public function __construct(EloquentMenuUlbroles $a)
+    public function __construct(IMenuUlbrolesRepository $a)
     {
         $this->EUlb = $a;
     }

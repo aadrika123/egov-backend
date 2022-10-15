@@ -3,7 +3,7 @@
 namespace App\Repository\MenuPermission\Concrete;
 
 
-use App\Repository\MenuPermission\interface\iMenuUlbrolesRepository;
+use App\Repository\MenuPermission\interface\IMenuUlbrolesRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -12,7 +12,7 @@ use App\Models\MenuPermission\MenuUlbroles;
 use Exception;
 
 
-class EloquentMenuUlbroles implements iMenuUlbrolesRepository
+class EloquentMenuUlbroles implements IMenuUlbrolesRepository
 {
     public function view()
     {

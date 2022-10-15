@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Menupermission;
 
 use App\Http\Controllers\Controller;
 use App\Repository\MenuPermission\Concrete\EloquentMenuRoles;
+use App\Repository\MenuPermission\Interface\IMenuRolesRepository;
 use Illuminate\Http\Request;
 
 class MenuRolesController extends Controller
 {
     // protected $a;
-    public function __construct(EloquentMenuRoles $a)
+    public function __construct(IMenuRolesRepository $a)
     {
         $this->EUlb = $a;
     }

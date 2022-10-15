@@ -2,18 +2,19 @@
 
 namespace App\Repository\MenuPermission\Concrete;
 
-use App\Models\MenuPermission\MenuGroups;
-use App\Repository\MenuPermission\interface\iMenuItemsRepository;
+
+use App\Repository\MenuPermission\interface\IMenuItemsRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Models\MenuPermission\MenuItems;
 use App\Models\MenuPermission\MenuUlbroles;
+use App\Models\MenuPermission\MenuGroups;
 use Exception;
 
 
-class EloquentMenuItems implements iMenuItemsRepository
+class EloquentMenuItems implements IMenuItemsRepository
 {
     public function view()
     {
@@ -108,19 +109,19 @@ class EloquentMenuItems implements iMenuItemsRepository
     ///////////////////////////////////////
     //show allmenuItems
     ///////////////////////////////////////
-    public function allmenuitems()
-    {
-        $menuItem = MenuItems::get();
-        return response()->json(["data" => $menuItem]);
-    }
+    // public function allmenuitems()
+    // {
+    //     $menuItem = MenuItems::get();
+    //     return response()->json(["data" => $menuItem]);
+    // }
     ////////////////////////////////////////
     //listin of all menu groups
     ////////////////////////////////////////
-    public function listmenugroups()
-    {
-        $menuGroups = MenuGroups::count('all');
-        return response()->json(["list" => $menuGroups]);
-    }
+    // public function listmenugroups()
+    // {
+    //     $menuGroups = MenuGroups::count('all');
+    //     return response()->json(["list" => $menuGroups]);
+    // }
 
     ///////////////////////////////
     //show menuGroups wis Items request(ulb_id)
@@ -172,6 +173,22 @@ class EloquentMenuItems implements iMenuItemsRepository
     ////////////////////////////////////////////////
     public function menuGroupAndRoleWiseItems(Request $request)
     {
+        //validation
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'ulbid' => 'required',
+                'menuroles' => 'required',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validateUser->errors()
+            ], 401);
+        }
         try {
             // data of menu_roles
             // $roles = MenuUlbroles::where('ulb_id', $request->ulbid)
@@ -180,31 +197,28 @@ class EloquentMenuItems implements iMenuItemsRepository
             //     ->get('menu_roles.*');
             //data of menu_groups
             $groups = MenuUlbroles::join('menu_maps', 'menu_maps.ulb_menuroleid', '=', 'menu_ulbroles.id')
-                                ->join('menu_items', 'menu_items.id', '=', 'menu_maps.menu_itemid')
-                                ->join('menu_groups', 'menu_groups.id', '=', 'menu_items.menu_groupid')
-                                ->where('ulb_id', $request->ulbid)
-                                ->where('menu_roleid', $request->menuroles);
-            if(isset($request->roleId))
+                ->join('menu_items', 'menu_items.id', '=', 'menu_maps.menu_itemid')
+                ->join('menu_groups', 'menu_groups.id', '=', 'menu_items.menu_groupid')
+                ->where('ulb_id', $request->ulbid)
+                ->where('menu_roleid', $request->menuroles);
+            if (isset($request->roleId))
                 $groups = $groups->where('menu_roleid', $request->roleId);
             $groups = $groups->get('menu_groups.*', 'menu_items.*');
-            
-            //echo "<pre/>"; print_r($groups);
-            // $a = $groups[0]->id;
 
-            // //data of the menu_items
-            
+            //data of the menu_items           
             //foreach loop for the roles wise items    
             $items = array();
             foreach ($groups as $group) {
                 $items['groupName'] = $group->group_name;
-                $item =  MenuItems::where('menu_groupid', $group->id)
-                        ->get();
+                $item =  MenuItems::select('menu_items.*', 'menu_maps.general_permission','menu_maps.admin_permission')
+                    ->join('menu_maps', 'menu_maps.menu_itemid', '=', 'menu_items.id')
+                    ->where('menu_groupid', $group->id)
+                    ->get();
                 $items['items'] = $item;                                 // $collectItems=$items->first();
             }
-            // //assigning keys to the to $items and $groups
-            // $groups['groupWiseItems'] = $items;
-            $roles['menuGroup'] = $items;
-           
+            //assigning keys to the to $items and $groups                                                         
+            $roles['menuGroup'] = $items;                               // $groups['groupWiseItems'] = $items;
+
             //data return
             return response()->json(["menuRoles" => $roles]);
         }
