@@ -2,7 +2,7 @@
 
 namespace App\Repository\WorkflowMaster\Concrete;
 
-use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowRoleUserMapRepository;
 use Illuminate\Http\Request;
 use App\Models\WfRoleusermap;
 use Exception;
@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Validator;
 
 
 
-class EloquentWorkflowRoleUserMapRepository implements iWorkflowMasterRepository
+class EloquentWorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
 {
 
     public function create(Request $request)
@@ -75,11 +75,10 @@ class EloquentWorkflowRoleUserMapRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
         try {
             $device = WfRoleusermap::find($request->Id);
-            $device = new WfRoleusermap;
             $device->user_id = $request->UserId;
             $device->ward_id = $request->WardId;
             $device->is_admin = $request->IsAdmin;

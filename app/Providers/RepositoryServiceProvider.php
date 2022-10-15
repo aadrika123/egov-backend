@@ -18,6 +18,19 @@ use App\Repository\Trade\ITrade;
 use App\Repository\Trade\Trade;
 use App\Repository\Water\Concrete\NewConnectionRepository;
 use App\Repository\Water\Interfaces\iNewConnection;
+use App\Repository\WorkflowMaster\Concrete\EloquentWorkflowMasterRepository;
+use App\Repository\WorkflowMaster\Concrete\EloquentWorkflowRoleRepository;
+use App\Repository\WorkflowMaster\Concrete\EloquentWfWorkflowRepository;
+use App\Repository\WorkflowMaster\Concrete\EloquentWorkflowRoleMapRepository;
+use App\Repository\WorkflowMaster\Concrete\EloquentWorkflowRoleUserMapRepository;
+use App\Repository\WorkflowMaster\Concrete\EloquentWorkflowWardUserRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowMasterRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowRoleRepository;
+use App\Repository\WorkflowMaster\Interface\iWfWorkflowRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowRoleMapRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowRoleUserMapRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowWardUserRepository;
+
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -37,12 +50,23 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(iNewConnection::class, NewConnectionRepository::class);
         $this->app->bind(ITrade::class, Trade::class);
         $this->app->bind(iSafRepository::class, EloquentSafRepository::class);
+<<<<<<< HEAD
         //menu permission
         $this->app->bind(IMenuGroupsRepository::class,EloquentMenuGroups::class);
         $this->app->bind(IMenuItemsRepository::class,EloquentMenuItems::class);
         $this->app->bind(IMenuMapRepository::class,EloquentMenuMap::class);
         $this->app->bind(IMenuRolesRepository::class,EloquentMenuRoles::class);
         $this->app->bind(IMenuUlbrolesRepository::class,EloquentMenuUlbroles::class);
+=======
+
+        // Workflow Master
+        $this->app->bind(iWorkflowMasterRepository::class, EloquentWorkflowMasterRepository::class);
+        $this->app->bind(iWorkflowRoleRepository::class, EloquentWorkflowRoleRepository::class);
+        $this->app->bind(iWfWorkflowRepository::class, EloquentWfWorkflowRepository::class);
+        $this->app->bind(iWorkflowRoleMapRepository::class, EloquentWorkflowRoleMapRepository::class);
+        $this->app->bind(iWorkflowRoleUserMapRepository::class, EloquentWorkflowRoleUserMapRepository::class);
+        $this->app->bind(iWorkflowWardUserRepository::class, EloquentWorkflowWardUserRepository::class);
+>>>>>>> ca773c4bbe1bcfa49d6c05e861d5d3468d58c7ef
     }
 
     /**
