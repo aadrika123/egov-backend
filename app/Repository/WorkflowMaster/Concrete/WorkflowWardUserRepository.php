@@ -29,11 +29,13 @@ use Illuminate\Support\Facades\Validator;
 
 
 
-class EloquentWorkflowWardUserRepository implements iWorkflowWardUserRepository
+class WorkflowWardUserRepository implements iWorkflowWardUserRepository
 {
 
     public function create(Request $request)
     {
+        $createdBy = Auth()->user()->id;
+
         //validation 
         $validateUser = Validator::make(
             $request->all(),
@@ -47,7 +49,6 @@ class EloquentWorkflowWardUserRepository implements iWorkflowWardUserRepository
         if ($validateUser->fails()) {
             return response()->json([
                 'status' => false,
-                'message' => 'validation error',
                 'errors' => $validateUser->errors()
             ], 401);
         }
@@ -67,6 +68,7 @@ class EloquentWorkflowWardUserRepository implements iWorkflowWardUserRepository
             $device->user_id = $request->userId;
             $device->ward_id = $request->wardId;
             $device->is_admin = $request->isAdmin;
+            $device->createdBy = $createdBy;
             $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
             $device->save();
@@ -81,7 +83,8 @@ class EloquentWorkflowWardUserRepository implements iWorkflowWardUserRepository
      */
     public function list()
     {
-        $data = WfWardUser::orderByDesc('id')->get();
+        $data = WfWardUser::where('is_suspended', false)
+            ->orderByDesc('id')->get();
         return $data;
     }
 
@@ -102,6 +105,8 @@ class EloquentWorkflowWardUserRepository implements iWorkflowWardUserRepository
      */
     public function update(Request $request, $id)
     {
+        $createdBy = Auth()->user()->id;
+
         //validation 
         $validateUser = Validator::make(
             $request->all(),
@@ -109,24 +114,21 @@ class EloquentWorkflowWardUserRepository implements iWorkflowWardUserRepository
                 'userId' => 'required',
                 'wardId' => 'required',
                 'isAdmin' => 'required',
-                'status' => 'required',
             ]
         );
 
         if ($validateUser->fails()) {
             return response()->json([
                 'status' => false,
-                'message' => 'validation error',
                 'errors' => $validateUser->errors()
             ], 401);
         }
         try {
-            $device = WfWardUser::find($request->id);
+            $device = WfWardUser::find($id);
             $device->user_id = $request->userId;
             $device->ward_id = $request->wardId;
             $device->is_admin = $request->isAdmin;
-            $device->status = $request->status;
-            $device->stamp_date_time = Carbon::now();
+            $device->createdBy = $createdBy;
             $device->updated_at = Carbon::now();
             $device->save();
             return responseMsg(true, "Successfully Updated", "");
@@ -141,7 +143,9 @@ class EloquentWorkflowWardUserRepository implements iWorkflowWardUserRepository
 
     public function view($id)
     {
-        $data = WfWardUser::find($id);
+        $data = WfWardUser::where('id', $id)
+            ->where('is_suspended', true)
+            ->get();
         if ($data) {
             return response()->json($data, 200);
         } else {

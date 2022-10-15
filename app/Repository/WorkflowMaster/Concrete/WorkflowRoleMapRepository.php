@@ -20,27 +20,29 @@ use Illuminate\Support\Facades\Validator;
  */
 
 
-class EloquentWorkflowRoleMapRepository implements iWorkflowRoleMapRepository
+class WorkflowRoleMapRepository implements iWorkflowRoleMapRepository
 {
 
     public function create(Request $request)
     {
+        $createdBy = Auth()->user()->id;
 
         try {
-            $checkExisting = WfWorkflowrolemap::where('workflow_id', $request->WorkflowId)
-                ->where('wf_role_id', $request->WfRoleId)
+            $checkExisting = WfWorkflowrolemap::where('workflow_id', $request->workflowId)
+                ->where('wf_role_id', $request->wfRoleId)
                 ->first();
             if ($checkExisting) {
-                $checkExisting->workflow_id = $request->WorkflowId;
-                $checkExisting->wf_role_id = $request->WfRoleId;
+                $checkExisting->workflow_id = $request->workflowId;
+                $checkExisting->wf_role_id = $request->wfRoleId;
                 $checkExisting->save();
                 return responseMsg(true, "User Exist", "");
             }
             // create
             $device = new WfWorkflowrolemap;
-            $device->workflow_id = $request->WorkflowId;
-            $device->wf_role_id = $request->WfRoleId;
-            $device->user_id = $request->UserId;
+            $device->workflow_id = $request->workflowId;
+            $device->wf_role_id = $request->wfRoleId;
+            $device->user_id = $request->userId;
+            $device->created_by = $createdBy;
             $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
             $device->save();
@@ -55,7 +57,8 @@ class EloquentWorkflowRoleMapRepository implements iWorkflowRoleMapRepository
      */
     public function list()
     {
-        $data = WfWorkflowrolemap::orderByDesc('id')->get();
+        $data = WfWorkflowrolemap::where('is_suspended', false)
+            ->orderByDesc('id')->get();
         return $data;
     }
 
@@ -76,14 +79,15 @@ class EloquentWorkflowRoleMapRepository implements iWorkflowRoleMapRepository
      */
     public function update(Request $request, $id)
     {
+        $createdBy = Auth()->user()->id;
+
         try {
-            $device = WfWorkflowrolemap::find($request->Id);
-            $device->workflow_id = $request->WorkflowId;
-            $device->wf_role_id = $request->WfRoleId;
-            $device->is_suspended = $request->IsSuspended;
-            $device->user_id = $request->UserId;
-            $device->status = $request->Status;
-            $device->stamp_date_time = Carbon::now();
+            $device = WfWorkflowrolemap::find($id);
+            $device->workflow_id = $request->workflowId;
+            $device->wf_role_id = $request->wfRoleId;
+            $device->is_suspended = $request->isSuspended;
+            $device->user_id = $request->userId;
+            $device->created_by = $createdBy;
             $device->updated_at = Carbon::now();
             $device->save();
             return responseMsg(true, "Successfully Updated", "");
@@ -98,7 +102,9 @@ class EloquentWorkflowRoleMapRepository implements iWorkflowRoleMapRepository
 
     public function view($id)
     {
-        $data = WfWorkflowrolemap::find($id);
+        $data = WfWorkflowrolemap::where('id', $id)
+            ->where('is_suspended', true)
+            ->get();
         if ($data) {
             return response()->json($data, 200);
         } else {

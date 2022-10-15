@@ -2,16 +2,18 @@
 
 namespace App\Repository\WorkflowMaster\Concrete;
 
-use App\Repository\WorkflowMaster\Interface\iWfWorkflowRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowMasterRepository;
 use Illuminate\Http\Request;
-use App\Models\WfWorkflow;
+use App\Models\WfMaster;
+use App\Models\User;
 use Exception;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 /**
  * Repository for Save Edit and View 
- * Parent Controller -App\Controllers\WorkflowWorkflowController
+ * Parent Controller -App\Controllers\WorkflowMasterController
  * -------------------------------------------------------------------------------------------------
  * Created On-07-10-2022 
  * Created By-Mrinal Kumar
@@ -20,41 +22,32 @@ use Illuminate\Support\Facades\Validator;
  */
 
 
-class EloquentWfWorkflowRepository implements iWfWorkflowRepository
+class WorkflowMasterRepository implements iWorkflowMasterRepository
 {
 
     public function create(Request $request)
     {
-        $userId = Auth()->user()->id;
+        $createdBy = Auth()->user()->id;
 
         //validation 
         $validateUser = Validator::make(
             $request->all(),
             [
-                'wfMasterId' => 'required',
-                'ulbId' => 'required',
-                'altName' => 'required',
-                'isDocRequired' => 'required',
-
-
+                'workflowName' => 'required'
             ]
         );
 
         if ($validateUser->fails()) {
             return response()->json([
                 'status' => false,
-                'message' => 'validation error',
                 'errors' => $validateUser->errors()
             ], 401);
         }
         try {
             // create
-            $device = new WfWorkflow;
-            $device->wf_master_id = $request->wfMasterId;
-            $device->ulb_id = $request->ulbId;
-            $device->alt_name = $request->altName;
-            $device->is_doc_required = $request->isDocRequired;
-            $device->user_id = $userId;
+            $device = new WfMaster;
+            $device->workflow_name = $request->workflowName;
+            $device->created_by = $createdBy;
             $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
             $device->save();
@@ -70,7 +63,8 @@ class EloquentWfWorkflowRepository implements iWfWorkflowRepository
      */
     public function list()
     {
-        $data = WfWorkflow::orderByDesc('id')->get();
+        $data = WfMaster::where('is_suspended', false)
+            ->orderByDesc('id')->get();
         return $data;
     }
 
@@ -80,9 +74,13 @@ class EloquentWfWorkflowRepository implements iWfWorkflowRepository
      */
     public function delete($id)
     {
-        $data = WfWorkflow::find($id);
-        $data->delete();
-        return response()->json('Successfully Deleted', 200);
+        $data = WfMaster::find($id);
+        $data->is_suspended = "true";
+        $data->save();
+        if ($data) {
+            return response()->json('Successfully Deleted', 200);
+        }
+        return response()->json('Data Not found', 400);
     }
 
 
@@ -91,37 +89,30 @@ class EloquentWfWorkflowRepository implements iWfWorkflowRepository
      */
     public function update(Request $request, $id)
     {
-        $userId = Auth()->user()->id;
-        //validation 
+        $createdBy = Auth()->user()->id;
+        //validation
         $validateUser = Validator::make(
             $request->all(),
             [
-                'wfMasterId' => 'required',
-                'ulbId' => 'required',
-                'altName' => 'required',
-                'isDocRequired' => 'required',
+                'workflowName' => 'required',
                 'isSuspended' => 'required',
-                'status' => 'required',
+                'workflowName' => 'required',
+
             ]
         );
 
         if ($validateUser->fails()) {
             return response()->json([
                 'status' => false,
-                'message' => 'validation error',
                 'errors' => $validateUser->errors()
             ], 401);
         }
+
         try {
-            $device = WfWorkflow::find($request->id);
-            $device->wf_master_id = $request->wfMasterId;
-            $device->ulb_id = $request->ulbId;
-            $device->alt_name = $request->altName;
-            $device->is_doc_required = $request->isDocRequired;
+            $device = WfMaster::find($id);
+            $device->workflow_name = $request->workflowName;
             $device->is_suspended = $request->isSuspended;
-            $device->user_id = $userId;
-            $device->status = $request->status;
-            $device->stamp_date_time = Carbon::now();
+            $device->created_by = $createdBy;
             $device->updated_at = Carbon::now();
             $device->save();
             return responseMsg(true, "Successfully Updated", "");
@@ -136,11 +127,12 @@ class EloquentWfWorkflowRepository implements iWfWorkflowRepository
 
     public function view($id)
     {
-        $data = WfWorkflow::find($id);
+        $data = WfMaster::where('id', $id)
+            ->where('is_suspended', false)
+            ->get();
         if ($data) {
             return response()->json($data, 200);
-        } else {
-            return response()->json(['Message' => 'Data not found'], 404);
         }
+        return response()->json(['Message' => 'Data not found'], 404);
     }
 }
