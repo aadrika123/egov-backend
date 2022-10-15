@@ -3,7 +3,7 @@
 namespace App\Repository\MenuPermission\Concrete;
 
 
-use App\Repository\MenuPermission\Interface\IMenuItemsRepository;
+use App\Repository\MenuPermission\Interface\iMenuItemsRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -14,7 +14,7 @@ use App\Models\MenuPermission\MenuGroups;
 use Exception;
 
 
-class EloquentMenuItems implements IMenuItemsRepository
+class EloquentMenuItems implements iMenuItemsRepository
 {
     public function view()
     {

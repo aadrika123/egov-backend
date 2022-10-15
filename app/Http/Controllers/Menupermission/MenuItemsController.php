@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Menupermission;
 
 use App\Http\Controllers\Controller;
 use App\Repository\MenuPermission\Concrete\EloquentMenuItems;
-use App\Repository\MenuPermission\Interface\IMenuItemsRepository;
+use App\Repository\MenuPermission\Interface\iMenuItemsRepository;
 use Illuminate\Http\Request;
 
 class MenuItemsController extends Controller
 {
     //defining a constructer as ($a) 
     protected $a;
-    public function __construct(IMenuItemsRepository $a)
+    public function __construct(iMenuItemsRepository $a)
     {
         $this->EUlb = $a;
     }

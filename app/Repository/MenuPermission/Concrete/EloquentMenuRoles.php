@@ -3,7 +3,7 @@
 namespace App\Repository\MenuPermission\Concrete;
 
 
-use App\Repository\MenuPermission\Interface\IMenuRolesRepository;
+use App\Repository\MenuPermission\Interface\iMenuRolesRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -12,7 +12,7 @@ use App\Models\MenuPermission\MenuRoles;
 use Exception;
 
 
-class EloquentMenuRoles implements IMenuRolesRepository
+class EloquentMenuRoles implements iMenuRolesRepository
 {
     public function view()
     {

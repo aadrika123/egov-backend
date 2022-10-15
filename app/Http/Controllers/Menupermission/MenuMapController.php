@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Menupermission;
 
 use App\Http\Controllers\Controller;
 use App\Repository\MenuPermission\Concrete\EloquentMenuMap;
-use App\Repository\MenuPermission\Interface\IMenuMapRepository;
+use App\Repository\MenuPermission\Interface\iMenuMapRepository;
 use Illuminate\Http\Request;
 
 class MenuMapController extends Controller
 {
     //
     protected $a;
-    public function __construct(IMenuMapRepository $a)
+    public function __construct(iMenuMapRepository $a)
     {
         $this->EUlb = $a;
     }

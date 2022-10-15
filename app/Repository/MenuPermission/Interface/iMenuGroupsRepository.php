@@ -3,7 +3,7 @@
 namespace App\Repository\MenuPermission\Interface;
 use Illuminate\Http\Request;
 
-interface IMenuGroupsRepository
+interface iMenuGroupsRepository
 {
     public function view();
     public function add(Request $request);

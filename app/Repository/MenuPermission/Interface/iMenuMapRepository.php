@@ -3,7 +3,7 @@
 namespace App\Repository\MenuPermission\Interface;
 use Illuminate\Http\Request;
 
-interface IMenuMapRepository
+interface iMenuMapRepository
 { 
     //error
     public function view($id);

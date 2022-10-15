@@ -3,14 +3,14 @@
 namespace App\Repository\MenuPermission\Concrete;
 
 
-use App\Repository\MenuPermission\Interface\IMenuMapRepository;
+use App\Repository\MenuPermission\Interface\iMenuMapRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Models\MenuPermission\MenuMaps;
 
-class EloquentMenuMap implements IMenuMapRepository
+class EloquentMenuMap implements iMenuMapRepository
 {
     /**
      * | Getting all Menu Data 

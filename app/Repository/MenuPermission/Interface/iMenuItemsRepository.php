@@ -4,7 +4,7 @@ namespace App\Repository\MenuPermission\Interface;
 
 use Illuminate\Http\Request;
 
-interface IMenuItemsRepository
+interface iMenuItemsRepository
 {
     public function view();
     public function add(Request $request);
