@@ -467,7 +467,7 @@ class EloquentSafRepository implements iSafRepository
     /**
      * ---------------------- Saf Workflow Inbox --------------------
      * | Initialization
-     * ----------------
+     * -----------------
      * | @var userId > logged in user id
      * | @var ulbId > Logged In user ulb Id
      * | @var refWorkflowId > Workflow ID 
@@ -497,6 +497,8 @@ class EloquentSafRepository implements iSafRepository
             $workflow = collect(DB::select($query));
 
             $checkDataExisting = $workflow->toArray();
+
+
             // If the Current Role Is not a Initiator
             if (!$checkDataExisting) {
                 $roles = $this->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
@@ -519,14 +521,16 @@ class EloquentSafRepository implements iSafRepository
                 return remove_null($safInbox);
             }
             // If current role Is a Initiator
+
+
             // Filteration only Ward id from workflow collection
             $wardId = $workflow->map(function ($item, $key) {
                 return $item->ward_id;
             });
 
-            $safInbox = ActiveSafDetail::whereIn('ward_mstr_id', $wardId)
-                ->where('ulb_id', $ulbId)
+            $safInbox = ActiveSafDetail::where('ulb_id', $ulbId)
                 ->where('current_role', null)
+                ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
                 ->get();
             return remove_null($safInbox);

@@ -15,7 +15,7 @@ class CommonFunction implements ICommonFunction
     public function WardPermission($user_id)
     { 
             $redis=Redis::connection();
-            $ward_permission = json_decode(Redis::get('WardPermission:' . $user_id),true)??null; 
+            $ward_permission = "";//json_decode(Redis::get('WardPermission:' . $user_id),true)??null; 
             if(!$ward_permission)
             { 
                 Redis::del('WardPermission:' . $user_id);
@@ -34,12 +34,12 @@ class CommonFunction implements ICommonFunction
     public function getWorkFlowRoles( $user_id,int $ulb_id, int $work_flow_id)
     {
             $redis =Redis::connection();
-            $workflow_rolse = json_decode(Redis::get('WorkFlowRoles:' . $user_id.":".$work_flow_id),true)??null;
+            $workflow_rolse = "";//json_decode(Redis::get('WorkFlowRoles:' . $user_id.":".$work_flow_id),true)??null;
             if(!$workflow_rolse)
             {
                 $workflow_rolse = WfMaster::select(
-                                DB::raw("wf_roles.id as role_id,wf_roles.role_name,forward_role_id,
-                                        backward_role_id,is_initiator,is_finisher,
+                                DB::raw("wf_roles.id ,wf_roles.role_name,forward_role_id as forward_id,
+                                        backward_role_id as backward_id,is_initiator,is_finisher,
                                         wf_masters.workflow_name,wf_masters.id as workflow_id,
                                         wf_workflows.ulb_id"
                                 )
@@ -115,22 +115,28 @@ class CommonFunction implements ICommonFunction
             return $retuns;
     }
 
-    public function getAllRoles($user_id,int $ulb_id, int $work_flow_id,int $role_id)
+    public function getAllRoles($user_id,int $ulb_id, int $work_flow_id,int $role_id,$all = false)
     {
             try{
                 $data = $this->getWorkFlowRoles($user_id,$ulb_id, $work_flow_id,$role_id);
+                // dd($data);
                 $curentUser = array_filter($data,function($val)use($role_id){
                     return $val['id']==$role_id;
                 });
-                $curentUser=array_values($curentUser)[0];
-                $data = array_filter($data,function($val)use($curentUser){
-                    return (!in_array($val['id'],[$curentUser['forward_id'],$curentUser['backward_id']]));
+                $curentUser=array_values($curentUser)[0];//dd($curentUser);
+                $data = array_filter($data,function($val)use($curentUser,$all)
+                { //dd();
+                    if($all)
+                    {
+                        return (!in_array($val['id'],[$curentUser['forward_id'],$curentUser['backward_id']]) && $val['id']!=$curentUser['id'] && ($val['forward_id'] || $val['backward_id']));
+                    }
+                    return (!in_array($val['id'],[$curentUser['forward_id'],$curentUser['backward_id']]) && $val['id']!=$curentUser['id']);
                 });
                 return($data);
             }
             catch(Exception $e)
             {
-                return response()->json($e, 400);
+                echo $e->getMessage();
             }
             
     }
