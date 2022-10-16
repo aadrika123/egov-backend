@@ -254,10 +254,10 @@ class EloquentMenuItems implements iMenuItemsRepository
         try {
             //data of group
             $roles = MenuRoles::join('menu_ulbroles', 'menu_ulbroles.menu_roleid', '=', 'menu_roles.id')
-                ->join('menu_maps', 'menu_maps.menu_itemid', '=', 'menu_ulbroles.id')
-                ->join('menu_items', 'menu_items.menu_groupid', '=', 'menu_maps.ulb_menuroleid')
+                ->join('menu_maps', 'menu_maps.ulb_menuroleid', '=', 'menu_ulbroles.id')
+                ->join('menu_items', 'menu_items.id', '=', 'menu_maps.menu_itemid')
                 ->join('menu_groups', 'menu_groups.id', '=', 'menu_items.menu_groupid')
-                ->where('menu_ulbroles.menu_roleid', $request->ulbid)
+                ->where('menu_ulbroles.ulb_id', $request->ulbid)
                 ->where('menu_groups.id', $request->menugroups)
                 ->get('menu_roles.*');
             //condition check
