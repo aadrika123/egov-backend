@@ -25,6 +25,7 @@ use App\Models\Trade\TradeParamOwnershipType;
 use App\Models\Trade\TradeTransaction;
 use App\Models\UlbWorkflowMaster;
 use App\Models\WorkflowTrack;
+use App\Repository\Common\CommonFunction;
 use Illuminate\Http\Request;
 
 use App\Traits\Auth;
@@ -47,10 +48,12 @@ class Trade implements ITrade
     protected $redis;
     protected $user_data;
     protected $application_type_id;
+    protected $parent;
 
     public function __construct()
     { 
         $this->ModelWard = new ModelWard();
+        $this->parent = new CommonFunction();
     }
     public function applyApplication(Request $request)
     {           
@@ -96,12 +99,12 @@ class Trade implements ITrade
                 $data["firmTypeList"] = $this->getFirmTypeList();
                 $data["ownershipTypeList"] = $this->getownershipTypeList();
                 $data["categoryTypeList"] = $this->getCotegoryList();
-                $data["natureOfBusiness"] = $this->gettradeitemsList();
+                $data["natureOfBusiness"] = $this->gettradeitemsList(true);
                 if(isset($request->licenceId) && $request->licenceId  && $this->application_type_id !=1)
                 {
         
                 }
-                return responseMsg(true,"",$data);
+                return responseMsg(true,"",remove_null($data));
             }
             elseif($request->getMethod()=="POST")
             { 
@@ -138,8 +141,8 @@ class Trade implements ITrade
                 if($apply_from=="Online")
                 {
                     $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
-                }                
-
+                }               
+                
                 $rules["initialBusinessDetails.applyWith"]="required|int";
                 $rules["initialBusinessDetails.firmType"]="required|int";
                 if(isset($request->initialBusinessDetails['firmType']) && $request->initialBusinessDetails['firmType']==5)
@@ -153,6 +156,10 @@ class Trade implements ITrade
                     $rules["initialBusinessDetails.noticeDate"]="required|date";  
                 }
                 $rules["licenseDetails.licenseFor"]="required|int";
+                if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
+                {
+                    $rules["licenseDetails.licenseFor"]="required|int|max:1";
+                }
                 if($apply_from =="Online")
                 {
                     $rules["licenseDetails.paymentMode"]="required|alpha"; 
@@ -433,7 +440,9 @@ class Trade implements ITrade
                     $licence->payment_status = $payment_status;
                     $licence->save();
                     $res['transactionId'] = $transaction_id;
-                    $res['paymentRecipt']= config('app.url')."/api/trade/paymentRecipt/".$licenceId."/".$transaction_id;
+                    // $res['paymentRecipt']= config('app.url')."/api/trade/paymentRecipt/".$licenceId."/".$transaction_id;
+                    $res['paymentRecipt']= "http://192.168.0.166"."/api/trade/paymentRecipt/".$licenceId."/".$transaction_id;
+                    
                 }
                 
                 DB::commit();
@@ -454,6 +463,7 @@ class Trade implements ITrade
     { 
         try{
             $application = ActiveLicence::select("application_no","provisional_license_no","license_no",
+                                                "firm_name","holding_no","address",
                                             "owner.owner_name","owner.guardian_name","owner.mobile",
                                             DB::raw("ulb_ward_masters.ward_name AS ward_no, 
                                             ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
@@ -479,6 +489,7 @@ class Trade implements ITrade
             if(!$application)
             {
                 $application = ExpireLicence::select("application_no","provisional_license_no","license_no",
+                                        "firm_name","holding_no","address",
                                         "owner.owner_name","owner.guardian_name","owner.mobile",
                                         DB::raw("ulb_ward_masters.ward_name AS ward_no, 
                                         ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
@@ -506,7 +517,7 @@ class Trade implements ITrade
                     throw new Exception("Application Not Found");
                 }
             }
-            $transection = TradeTransaction::select("transaction_no","transaction_type","transaction_date",
+            $transaction = TradeTransaction::select("transaction_no","transaction_type","transaction_date",
                                         "payment_mode","paid_amount","penalty",
                                         "trade_cheque_dtls.cheque_no","trade_cheque_dtls.cheque_date",
                                         "trade_cheque_dtls.bank_name","trade_cheque_dtls.branch_name"
@@ -515,7 +526,7 @@ class Trade implements ITrade
                             ->where("trade_transactions.id",$transectionId)
                             ->whereIn("trade_transactions.status",[1,2])
                             ->first();
-            if(!$transection)
+            if(!$transaction)
             {
                 throw New Exception("Transaction Not Faound");
             }
@@ -525,7 +536,7 @@ class Trade implements ITrade
                         ->orderBy("id")
                         ->get();
             $data = ["application"=>$application,
-                     "transection"=>$transection,
+                     "transaction"=>$transaction,
                      "penalty"    =>$penalty
             ];
             $data = remove_null($data);
@@ -919,98 +930,19 @@ class Trade implements ITrade
         }
         
     }
-    // public function inbox($key)
-    // {
-    //     try {
-
-    //         $user_id = auth()->user()->id;
-    //         $redis = Redis::connection();  // Redis Connection
-    //         $redis_data = json_decode(Redis::get('user:' . $user_id), true);
-    //         $ulb_id = $redis_data['ulb_id'] ?? auth()->user()->ulb_id;;
-    //         $roll_id = $redis_data['role_id'] ?? ($this->getUserRoll($user_id)->role_id ?? -1);
-    //         $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-    //         $work_flow_candidate = $this->work_flow_candidate($user_id, $ulb_id);
-    //         if (!$work_flow_candidate || $roll_id == -1) 
-    //         {
-    //             throw new Exception("Your Are Not Authoried");
-    //         }
-    //         $work_flow_candidate = collect($work_flow_candidate);
-    //         $ward_permission = $this->WardPermission($user_id);
-    //         $ward_ids = array_map(function ($val) {
-    //             return $val['ulb_ward_id'];
-    //         }, $ward_permission);
-    //         $data = ActiveSafDetail::select(
-    //             DB::raw("owner_name,
-    //                                guardian_name ,
-    //                                mobile_no,
-    //                                assessment_type as assessment_type,
-    //                                property_type as property_type,
-    //                                 ulb_ward_masters.ward_name as ward_no,
-    //                                 active_saf_details.created_at::date as apply_date,
-    //                                 active_saf_details.id"),
-
-    //             "active_saf_details.saf_no"
-    //         )
-    //             ->join('ulb_ward_masters', function ($join) {
-    //                 $join->on("ulb_ward_masters.id", "=", "active_saf_details.ward_mstr_id");
-    //             })
-    //             ->join('prop_param_property_types', function ($join) {
-    //                 $join->on("prop_param_property_types.id", "=", "active_saf_details.prop_type_mstr_id")
-    //                     ->where("prop_param_property_types.status", 1);
-    //             })
-    //             ->join('prop_param_ownership_types', function ($join) {
-    //                 $join->on("prop_param_ownership_types.id", "=", "active_saf_details.ownership_type_mstr_id")
-    //                     ->where("prop_param_ownership_types.status", 1);
-    //             })
-    //             ->leftJoin(
-    //                 DB::raw("(SELECT active_saf_owner_details.saf_dtl_id,
-    //                                                string_agg(active_saf_owner_details.owner_name,', ') as owner_name,
-    //                                                string_agg(active_saf_owner_details.guardian_name,', ') as guardian_name,
-    //                                                string_agg(active_saf_owner_details.mobile_no::text,', ') as mobile_no
-    //                                           FROM active_saf_owner_details 
-    //                                           WHERE active_saf_owner_details.status = 1
-    //                                           GROUP BY active_saf_owner_details.saf_dtl_id
-    //                                           )active_saf_owner_details
-    //                                            "),
-    //                 function ($join) {
-    //                     $join->on("active_saf_owner_details.saf_dtl_id", "=", "active_saf_details.id");
-    //                 }
-    //             )
-    //             ->where(
-    //                 function ($query) use ($roll_id) {
-    //                     return $query
-    //                         ->where('active_saf_details.current_user', '<>', $roll_id)
-    //                         ->orwhereNull('active_saf_details.current_user');
-    //                 }
-    //             )
-    //             ->where("active_saf_details.status", 1)
-    //             ->where("active_saf_details.ulb_id", $ulb_id)
-    //             ->whereIn('active_saf_details.ward_mstr_id', $ward_ids);
-    //         if ($key) {
-    //             $data = $data->where(function ($query) use ($key) {
-    //                 $query->orwhere('active_saf_details.holding_no', 'ILIKE', '%' . $key . '%')
-    //                     ->orwhere('active_saf_details.saf_no', 'ILIKE', '%' . $key . '%')
-    //                     ->orwhere('active_saf_owner_details.owner_name', 'ILIKE', '%' . $key . '%')
-    //                     ->orwhere('active_saf_owner_details.guardian_name', 'ILIKE', '%' . $key . '%')
-    //                     ->orwhere('active_saf_owner_details.mobile_no', 'ILIKE', '%' . $key . '%');
-    //             });
-    //         }
-    //         $saf = $data->get();
-    //         $data = remove_null([
-    //             'ulb_id' => $ulb_id,
-    //             'user_id' => $user_id,
-    //             'roll_id' => $roll_id,
-    //             'workflow_id' => $workflow_id,
-    //             'work_flow_candidate_id' => $work_flow_candidate['id'],
-    //             'module_id' => $work_flow_candidate['module_id'],
-    //             "data_list" => $saf,
-    //         ], true, ['ulb_id', 'user_id', 'roll_id', 'workflow_id', 'module_id', 'id']);
-
-    //         return responseMsg(true, '', $data);
-    //     } catch (Exception $e) {
-    //         return responseMsg(false, $e->getMessage(), $key);
-    //     }
-    // }
+    public function inbox($key)
+    {
+        try {
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $data = $this->parent->getUserRoll($user_id,$ulb_id,4);
+            dd($data);
+            
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $key);
+        }
+    }
 
     #---------- core function for trade Application--------
 
@@ -1062,12 +994,23 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-    public function gettradeitemsList()
+    public function gettradeitemsList($all=false)
     {
         try{
-            return TradeParamItemType::select("id","trade_item","trade_code")
-                ->where("status",1)
-                ->get();
+            if($all)
+            {
+                return TradeParamItemType::select("id","trade_item","trade_code")
+                    ->where("status",1)
+                    ->where("id","<>",187)
+                    ->get();
+            }
+            else
+            {
+                return TradeParamItemType::select("id","trade_item","trade_code")
+                    ->where("status",1)
+                    ->get();
+
+            }
         }
         catch (Exception $e)
         {

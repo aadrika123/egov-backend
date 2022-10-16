@@ -44,6 +44,7 @@ use App\EloquentClass\Property\dSafCalculation;
 use App\EloquentClass\Property\dPropertyTax;
 use App\Models\WfRoleusermap;
 use App\Models\WfWardUser;
+use App\Models\WfWorkflow;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
 
@@ -468,7 +469,9 @@ class EloquentSafRepository implements iSafRepository
      * | Initialization
      * ----------------
      * | @var userId > logged in user id
-     * | @var workflowId > SAF Workflow ID 
+     * | @var ulbId > Logged In user ulb Id
+     * | @var refWorkflowId > Workflow ID 
+     * | @var workflowId > SAF Wf Workflow ID 
      * | @var query > Contains the Pg Sql query
      * | @var workflow > get the Data in laravel Collection
      * | @var checkDataExisting > check the fetched data collection in array
@@ -484,7 +487,11 @@ class EloquentSafRepository implements iSafRepository
     public function inbox()
     {
         $userId = auth()->user()->id;
-        $workflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+        $ulbId = auth()->user()->ulb_id;
+        $refWorkflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+        $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+            ->where('ulb_id', $ulbId)
+            ->first();
         try {
             $query = $this->getWorkflowInitiatorData($userId, $workflowId);                 // Trait get Workflow Initiator
             $workflow = collect(DB::select($query));
@@ -498,7 +505,9 @@ class EloquentSafRepository implements iSafRepository
                     return $item->wf_role_id;
                 });
 
-                $data = ActiveSafDetail::whereIn('current_role', $roleId)->get();
+                $data = ActiveSafDetail::where('ulb_id', $userId)
+                    ->whereIn('current_role', $roleId)
+                    ->get();
 
                 $occupiedWard = $this->getWardByUserId($userId);
 
@@ -516,6 +525,7 @@ class EloquentSafRepository implements iSafRepository
             });
 
             $safInbox = ActiveSafDetail::whereIn('ward_mstr_id', $wardId)
+                ->where('ulb_id', $ulbId)
                 ->where('current_role', null)
                 ->orderByDesc('id')
                 ->get();
