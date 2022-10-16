@@ -213,7 +213,7 @@ class EloquentMenuItems implements iMenuItemsRepository
             $items = array();
             foreach ($groups as $group) {
                 $items['groupName'] = $group->group_name;
-                $item =  MenuItems::select('menu_items.menu_name', 'menu_items.display_string', 'menu_items.icon_name', 'menu_maps.general_permission', 'menu_maps.admin_permission')
+                $item =  MenuItems::select('menu_items.id','menu_items.menu_name', 'menu_items.display_string', 'menu_items.icon_name', 'menu_maps.general_permission', 'menu_maps.admin_permission')
                     ->join('menu_maps', 'menu_maps.menu_itemid', '=', 'menu_items.id')
                     ->where('menu_groupid', $group->id)
                     ->get();
