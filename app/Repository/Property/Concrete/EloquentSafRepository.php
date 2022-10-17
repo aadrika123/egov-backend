@@ -512,9 +512,10 @@ class EloquentSafRepository implements iSafRepository
                     ->join('prop_param_property_types as p', 'p.id', '=', 'active_saf_details.prop_type_mstr_id')
                     ->join('ulb_ward_masters as ward', 'ward.id', '=', 'active_saf_details.ward_mstr_id')
                     ->select(
+                        'active_saf_details.saf_no',
                         'active_saf_details.id',
                         'active_saf_details.ward_mstr_id',
-                        'ward.ward_name',
+                        'ward.ward_name as ward_no',
                         'active_saf_details.prop_type_mstr_id',
                         'active_saf_details.appartment_name',
                         DB::raw("string_agg(o.id::VARCHAR,',') as owner_id"),
@@ -549,9 +550,10 @@ class EloquentSafRepository implements iSafRepository
                 ->join('prop_param_property_types as p', 'p.id', '=', 'active_saf_details.prop_type_mstr_id')
                 ->join('ulb_ward_masters as ward', 'ward.id', '=', 'active_saf_details.ward_mstr_id')
                 ->select(
+                    'active_saf_details.saf_no',
                     'active_saf_details.id',
                     'active_saf_details.ward_mstr_id',
-                    'ward.ward_name',
+                    'ward.ward_name as ward_no',
                     'active_saf_details.prop_type_mstr_id',
                     'active_saf_details.appartment_name',
                     DB::raw("string_agg(o.id::VARCHAR,',') as owner_id"),
