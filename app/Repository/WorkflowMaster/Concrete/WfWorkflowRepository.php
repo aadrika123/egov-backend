@@ -2,16 +2,16 @@
 
 namespace App\Repository\WorkflowMaster\Concrete;
 
-use App\Repository\WorkflowMaster\Interface\iWorkflowRoleRepository;
+use App\Repository\WorkflowMaster\Interface\iWfWorkflowRepository;
 use Illuminate\Http\Request;
-use App\Models\WfRole;
+use App\Models\WfWorkflow;
 use Exception;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 
 /**
  * Repository for Save Edit and View 
- * Parent Controller -App\Controllers\WorkflowRoleController
+ * Parent Controller -App\Controllers\WfWorkflowController
  * -------------------------------------------------------------------------------------------------
  * Created On-07-10-2022 
  * Created By-Mrinal Kumar
@@ -20,22 +20,22 @@ use Illuminate\Support\Facades\Validator;
  */
 
 
-
-class EloquentWorkflowRoleRepository implements iWorkflowRoleRepository
+class WfWorkflowRepository implements iWfWorkflowRepository
 {
 
     public function create(Request $request)
     {
-        $userId = Auth()->user()->id;
-        //validating
+        $createdBy = Auth()->user()->id;
+
+        //validation 
         $validateUser = Validator::make(
             $request->all(),
             [
-                'roleName' => 'required',
-                'forwardRoleId' => 'required',
-                'backwardRoleId' => 'required',
-                'isInitiator' => 'required',
-                'isFinisher' => 'required',
+                'wfMasterId' => 'required',
+                'ulbId' => 'required',
+                'altName' => 'required',
+                'isDocRequired' => 'required',
+
 
             ]
         );
@@ -43,19 +43,17 @@ class EloquentWorkflowRoleRepository implements iWorkflowRoleRepository
         if ($validateUser->fails()) {
             return response()->json([
                 'status' => false,
-                'message' => 'validation error',
                 'errors' => $validateUser->errors()
             ], 401);
         }
         try {
             // create
-            $device = new WfRole;
-            $device->role_name = $request->roleName;
-            $device->forward_role_id = $request->forwardRoleId;
-            $device->backward_role_id = $request->backwardRoleId;
-            $device->is_initiator = $request->isInitiator;
-            $device->is_finisher = $request->isFinisher;
-            $device->user_id = $userId;
+            $device = new WfWorkflow;
+            $device->wf_master_id = $request->wfMasterId;
+            $device->ulb_id = $request->ulbId;
+            $device->alt_name = $request->altName;
+            $device->is_doc_required = $request->isDocRequired;
+            $device->created_by = $createdBy;
             $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
             $device->save();
@@ -65,12 +63,14 @@ class EloquentWorkflowRoleRepository implements iWorkflowRoleRepository
         }
     }
 
+
     /**
      * GetAll data
      */
     public function list()
     {
-        $data = WfRole::orderByDesc('id')->get();
+        $data = WfWorkflow::where('is_suspended', false)
+            ->orderByDesc('id')->get();
         return $data;
     }
 
@@ -80,7 +80,7 @@ class EloquentWorkflowRoleRepository implements iWorkflowRoleRepository
      */
     public function delete($id)
     {
-        $data = WfRole::find($id);
+        $data = WfWorkflow::find($id);
         $data->delete();
         return response()->json('Successfully Deleted', 200);
     }
@@ -91,38 +91,34 @@ class EloquentWorkflowRoleRepository implements iWorkflowRoleRepository
      */
     public function update(Request $request, $id)
     {
-        $userId = Auth()->user()->id;
-        //validating
+        $createdBy = Auth()->user()->id;
+
+        //validation 
         $validateUser = Validator::make(
             $request->all(),
             [
-                'roleName' => 'required',
-                'forwardRoleId' => 'required',
-                'backwardRoleId' => 'required',
-                'isInitiator' => 'required',
-                'isFinisher' => 'required',
+                'wfMasterId' => 'required',
+                'ulbId' => 'required',
+                'altName' => 'required',
+                'isDocRequired' => 'required',
                 'isSuspended' => 'required',
-                'status' => 'required',
             ]
         );
+
         if ($validateUser->fails()) {
             return response()->json([
                 'status' => false,
-                'message' => 'validation error',
                 'errors' => $validateUser->errors()
             ], 401);
         }
         try {
-            $device = WfRole::find($id);
-            $device->role_name = $request->roleName;
-            $device->forward_role_id = $request->forwardRoleId;
-            $device->backward_role_id = $request->backwardRoleId;
-            $device->is_initiator = $request->isInitiator;
-            $device->is_finisher = $request->isFinisher;
+            $device = WfWorkflow::find($id);
+            $device->wf_master_id = $request->wfMasterId;
+            $device->ulb_id = $request->ulbId;
+            $device->alt_name = $request->altName;
+            $device->is_doc_required = $request->isDocRequired;
             $device->is_suspended = $request->isSuspended;
-            $device->user_id = $userId;
-            $device->status = $request->status;
-            $device->stamp_date_time = Carbon::now();
+            $device->created_by = $createdBy;
             $device->updated_at = Carbon::now();
             $device->save();
             return responseMsg(true, "Successfully Updated", "");
@@ -137,7 +133,9 @@ class EloquentWorkflowRoleRepository implements iWorkflowRoleRepository
 
     public function view($id)
     {
-        $data = WfRole::find($id);
+        $data = WfWorkflow::where('id', $id)
+            ->where('is_suspended', true)
+            ->get();
         if ($data) {
             return response()->json($data, 200);
         } else {

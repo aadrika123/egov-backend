@@ -315,6 +315,20 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::apiResource("warduser", WorkflowRoleController::class);
 
+    /**
+     * Role User Map CRUD operation
+     */
+
+    Route::apiResource("roleusermap", WorkflowRoleUserMapController::class);
+
+
+
+    /**
+     * Workflow Role Map CRUD operation
+     */
+
+    Route::apiResource("rolemap", WorkflowRoleMapController::class);
+
 
 
     /**
@@ -347,20 +361,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 
 
-    /**
-     * Role User Map CRUD operation
-     */
-
-    Route::apiResource("roleusermap", WorkflowRoleUserMapController::class);
-
-
-
-    /**
-     * Workflow Role Map CRUD operation
-     */
-
-    Route::apiResource("rolemap", WorkflowRoleMapController::class);
-
 
 
     /**
@@ -377,6 +377,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     // });
 });
+
+
+
 /**
  * ----------------------------------------------------------------------------------------
  * |                    Menu Permission Module Routes
@@ -452,12 +455,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
  * using Autherization for Employ as 
  */
 // Route::group(['middleware' => ['auth:sanctum',]], function () {
-    // secure routes for the Admin
-    Route::controller(MenuItemsController::class)->group(function () {              
-        // Route::group(['middleware' => 'can:isAdmin'], function () {
-            Route::post('menu-Permission/get-Menu-Groups', 'menuGroupWiseItems');                       // get all MenuGroups                  
-            Route::post('menu-Permission/get-Roles', 'ulbWiseMenuRole');                                // get all MenuRoles
-            Route::post('menu-Permission/get-Menu-Roles-Items', 'menuGroupAndRoleWiseItems');           // get role wise items
-        // });
-    });
+// secure routes for the Admin
+Route::controller(MenuItemsController::class)->group(function () {
+    // Route::group(['middleware' => 'can:isAdmin'], function () {
+    Route::post('menu-Permission/get-Menu-Groups', 'menuGroupWiseItems');                       // get all MenuGroups                  
+    Route::post('menu-Permission/get-Roles', 'ulbWiseMenuRole');                                // get all MenuRoles
+    Route::post('menu-Permission/get-Menu-Roles-Items', 'menuGroupAndRoleWiseItems');           // get role wise items
+    // });
+});
 // });

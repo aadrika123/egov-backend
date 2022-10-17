@@ -21,7 +21,7 @@ class WorkflowMasterController extends Controller
         $this->EloquentWf = $eloquentWf;
     }
 
-    // list all users in master table
+    // get list of user
     public function index()
     {
         return $this->EloquentWf->list();
@@ -53,7 +53,7 @@ class WorkflowMasterController extends Controller
     //update workflow by id
     public function update(Request $request, $id)
     {
-        return $this->EloquentWf->update($request);
+        return $this->EloquentWf->update($request, $id);
     }
 
     //delete workflow

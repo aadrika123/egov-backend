@@ -2,18 +2,19 @@
 
 namespace App\Repository\WorkflowMaster\Concrete;
 
-use App\Repository\WorkflowMaster\iWorkflowMasterRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowRoleUserMapRepository;
 use Illuminate\Http\Request;
-use App\Models\WfTrack;
+use App\Models\WfRoleusermap;
 use Exception;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 
+
 /**
  * Repository for Save Edit and View 
- * Parent Controller -App\Controllers\WorkflowTrackControllers
+ * Parent Controller -App\Controllers\WorkflowRoleUserMapController
  * -------------------------------------------------------------------------------------------------
- * Created On-08-10-2022 
+ * Created On-07-10-2022 
  * Created By-Mrinal Kumar
  * -------------------------------------------------------------------------------------------------
  * 
@@ -21,30 +22,29 @@ use Illuminate\Support\Facades\Validator;
 
 
 
-class EloquentWorkflowTrackRepository implements iWorkflowMasterRepository
+class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
 {
 
     public function create(Request $request)
     {
+        $createdBy = Auth()->user()->id;
 
         try {
-            $checkExisting = WfTrack::where('workflow_id', $request->WorkflowId)
+            $checkExisting = WfRoleusermap::where('wf_role_id', $request->wfRoleId)
+                ->where('user_id', $request->userId)
                 ->first();
             if ($checkExisting) {
-                $checkExisting->workflow_id = $request->WorkflowId;
+                $checkExisting->wf_role_id = $request->wfRoleId;
+                $checkExisting->user_id = $request->userId;
                 $checkExisting->save();
                 return responseMsg(true, "User Exist", "");
             }
             // create
-            $device = new WfTrack;
-            $device->workflow_id = $request->WorkflowId;
-            $device->user_id = $request->UserId;
-            $device->tran_time = Carbon::now();
-            $device->ref_key = $request->RefKey;
-            $device->ref_id = $request->RefId;
-            $device->forward_id = $request->ForwardId;
-            $device->waiting_for_citizen = $request->WaitingForCitizen;
-            $device->message = $request->Message;
+            $device = new WfRoleusermap;
+            $device->wf_role_id = $request->wfRoleId;
+            $device->user_id = $request->userId;
+            $device->createdBy = $createdBy;
+            $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
             $device->save();
             return responseMsg(true, "Successfully Saved", "");
@@ -58,7 +58,8 @@ class EloquentWorkflowTrackRepository implements iWorkflowMasterRepository
      */
     public function list()
     {
-        $data = WfTrack::orderByDesc('id')->get();
+        $data = WfRoleusermap::where('is_suspended', false)
+            ->orderByDesc('id')->get();
         return $data;
     }
 
@@ -68,7 +69,7 @@ class EloquentWorkflowTrackRepository implements iWorkflowMasterRepository
      */
     public function delete($id)
     {
-        $data = WfTrack::find($id);
+        $data = WfRoleusermap::find($id);
         $data->delete();
         return response()->json('Successfully Deleted', 200);
     }
@@ -77,18 +78,16 @@ class EloquentWorkflowTrackRepository implements iWorkflowMasterRepository
     /**
      * Update data
      */
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
+        $createdBy = Auth()->user()->id;
+
         try {
-            $device = WfTrack::find($request->Id);
-            $device->workflow_id = $request->WorkflowId;
-            $device->user_id = $request->UserId;
-            $device->ref_key = $request->RefKey;
-            $device->ref_id = $request->RefId;
-            $device->forward_id = $request->ForwardId;
-            $device->waiting_for_citizen = $request->WaitingForCitizen;
-            $device->message = $request->Message;
-            $device->tran_time = Carbon::now();
+            $device = WfRoleusermap::find($id);
+            $device->ward_id = $request->wardId;
+            $device->user_id = $request->userId;
+            $device->createdBy = $createdBy;
+            $device->is_admin = $request->isAdmin;
             $device->updated_at = Carbon::now();
             $device->save();
             return responseMsg(true, "Successfully Updated", "");
@@ -103,7 +102,9 @@ class EloquentWorkflowTrackRepository implements iWorkflowMasterRepository
 
     public function view($id)
     {
-        $data = WfTrack::find($id);
+        $data = WfRoleusermap::where('id', $id)
+            ->where('is_suspended', true)
+            ->get();
         if ($data) {
             return response()->json($data, 200);
         } else {
