@@ -159,7 +159,8 @@ class EloquentMenuItems implements iMenuItemsRepository
                 ->join('menu_maps', 'menu_maps.ulb_menuroleid', '=', 'menu_ulbroles.id')
                 ->join('menu_items', 'menu_items.id', '=', 'menu_maps.menu_itemid')
                 ->join('menu_groups', 'menu_groups.id', '=', 'menu_items.menu_groupid')
-                ->get('menu_groups.*');
+                ->get('menu_groups.*')
+                ->first();
 
             // dd($groups);
             return response()->json(["status" => true, "message" => "data of groups", "data" => $groups,]);
@@ -268,10 +269,11 @@ class EloquentMenuItems implements iMenuItemsRepository
                 ->join('menu_items', 'menu_items.id', '=', 'menu_maps.menu_itemid')
                 ->join('menu_groups', 'menu_groups.id', '=', 'menu_items.menu_groupid')
                 ->where('menu_ulbroles.ulb_id', $request->ulbid)
-                ->where('menu_groups.id', $request->menugroups)
-                ->get('menu_roles.*');
+                ->where('menu_groups.id', $request->menugroups) 
+                ->get('menu_roles.*')
+                ->first();
             //condition check
-            if ($roles->isEmpty()) {
+            if ($roles == null) {
                 return response()->json(["status" => false, "message" => "no data"]);
             }
             //data return
