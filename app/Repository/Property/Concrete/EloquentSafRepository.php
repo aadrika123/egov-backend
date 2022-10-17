@@ -507,8 +507,22 @@ class EloquentSafRepository implements iSafRepository
                     return $item->wf_role_id;
                 });
 
-                $data = ActiveSafDetail::where('ulb_id', $userId)
+                $data = DB::table('active_saf_details')
+                    ->join('active_saf_owner_details as o', 'o.saf_dtl_id', '=', 'active_saf_details.id')
+                    ->join('prop_param_property_types as p', 'p.id', '=', 'active_saf_details.prop_type_mstr_id')
+                    ->select(
+                        'active_saf_details.id',
+                        'active_saf_details.ward_mstr_id',
+                        'active_saf_details.prop_type_mstr_id',
+                        'active_saf_details.appartment_name',
+                        DB::raw("string_agg(o.id::VARCHAR,',') as owner_id"),
+                        DB::raw("string_agg(o.owner_name,',') as owner_name"),
+                        'p.property_type'
+                    )
+                    ->where('ulb_id', $ulbId)
                     ->whereIn('current_role', $roleId)
+                    ->orderByDesc('id')
+                    ->groupBy('active_saf_details.id', 'p.property_type')
                     ->get();
 
                 $occupiedWard = $this->getWardByUserId($userId);
@@ -522,17 +536,30 @@ class EloquentSafRepository implements iSafRepository
             }
             // If current role Is a Initiator
 
-
             // Filteration only Ward id from workflow collection
             $wardId = $workflow->map(function ($item, $key) {
                 return $item->ward_id;
             });
 
-            $safInbox = ActiveSafDetail::where('ulb_id', $ulbId)
+            $safInbox = DB::table('active_saf_details')
+                ->join('active_saf_owner_details as o', 'o.saf_dtl_id', '=', 'active_saf_details.id')
+                ->join('prop_param_property_types as p', 'p.id', '=', 'active_saf_details.prop_type_mstr_id')
+                ->select(
+                    'active_saf_details.id',
+                    'active_saf_details.ward_mstr_id',
+                    'active_saf_details.prop_type_mstr_id',
+                    'active_saf_details.appartment_name',
+                    DB::raw("string_agg(o.id::VARCHAR,',') as owner_id"),
+                    DB::raw("string_agg(o.owner_name,',') as owner_name"),
+                    'p.property_type'
+                )
+                ->where('ulb_id', $ulbId)
                 ->where('current_role', null)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
+                ->groupBy('active_saf_details.id', 'p.property_type')
                 ->get();
+
             return remove_null($safInbox);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
