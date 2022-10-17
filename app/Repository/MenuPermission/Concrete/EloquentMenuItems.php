@@ -227,9 +227,9 @@ class EloquentMenuItems implements iMenuItemsRepository
                 ->join('menu_ulbroles', 'menu_ulbroles.id', '=', 'menu_maps.ulb_menuroleid')
                 ->join('menu_groups', 'menu_groups.id', '=', 'menu_items.menu_groupid')
                 ->join('menu_roles', 'menu_roles.id', '=', 'menu_ulbroles.menu_roleid')
-                ->where('menu_groups.id', $request->menuGroup)
-                ->where('ulb_id', $request->ulbid)
-                ->where('menu_roleid', $request->menuroles)
+                ->where('menu_items.menu_groupid', $request->menuGroup)
+                ->where('menu_ulbroles.ulb_id', $request->ulbid)
+                ->where('menu_ulbroles.menu_roleid', $request->menuroles)
                 ->get();
 
             //data return
