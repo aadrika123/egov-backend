@@ -163,7 +163,7 @@ class EloquentMenuItems implements iMenuItemsRepository
                 ->first();
 
             // dd($groups);
-            return response()->json(["status" => true, "message" => "data of groups", "data" => $groups,]);
+            return response()->json(["status" => true, "message" => "data of groups", "data" => [$groups]]);
         }
         //catch error
         catch (Exception $e) {
@@ -277,7 +277,7 @@ class EloquentMenuItems implements iMenuItemsRepository
                 return response()->json(["status" => false, "message" => "no data"]);
             }
             //data return
-            return response()->json(["status" => true, "message" => "data of roles", "data" => $roles]);
+            return response()->json(["status" => true, "message" => "data of roles", "data" =>[$roles]]);
         }
         //collecting the errors in the code in $e 
         catch (Exception $e) {
