@@ -130,20 +130,6 @@ trait Workflow
      */
     public function getWorkflowInitiatorData($userId, $workflowId)
     {
-        // $query = "SELECT 
-        //                 wf.id,
-        //                 wf.workflow_id,
-        //                 wf.wf_role_id,
-        //                 r.role_name,
-        //                 r.is_initiator,
-        //                 r.is_finisher,
-        //                 rum.user_id,
-        //                 wu.ward_id
-        //         FROM wf_workflowrolemaps  wf
-        //         INNER JOIN (SELECT * FROM wf_roleusermaps WHERE user_id=$userId) rum ON rum.wf_role_id=wf.wf_role_id
-        //         INNER JOIN (SELECT * FROM wf_roles WHERE is_initiator=TRUE) r ON r.id=rum.wf_role_id
-        //         INNER JOIN (SELECT * FROM wf_ward_users WHERE user_id=$userId) wu ON wu.user_id=wf.user_id
-        //         WHERE wf.workflow_id=$workflowId->id AND wf.user_id=$userId";
         $query = "SELECT 
                     wf.id,
                     wf.workflow_id,

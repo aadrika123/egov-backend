@@ -39,7 +39,7 @@ class ActiveSafController extends Controller
     }
     public function details(Request $request)
     {
-        $data = $this->Repository->details($request->id);
+        $data = $this->Repository->details($request);
         return $data;
     }
 
