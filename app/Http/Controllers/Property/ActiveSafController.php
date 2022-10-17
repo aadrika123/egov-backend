@@ -27,9 +27,9 @@ class ActiveSafController extends Controller
     {
         return $this->Repository->applySaf($request);
     }
-    public function inbox(Request $request)
+    public function inbox()
     {
-        $data = $this->Repository->inbox($request->key);
+        $data = $this->Repository->inbox();
         return $data;
     }
     public function outbox(Request $request)
