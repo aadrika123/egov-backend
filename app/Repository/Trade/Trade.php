@@ -1112,6 +1112,10 @@ class Trade implements ITrade
                 $joins = "join";
             }
             $role_id = $role->id;
+            $ward_permission = $this->parent->WardPermission($user_id);
+            $ward_ids = array_map(function ($val) {
+                return $val['ulb_ward_id'];
+            }, $ward_permission);
             $inputs = $request->all();
             $licence = ActiveLicence::select("active_licences.id",
                                             "active_licences.application_no",
@@ -1143,6 +1147,7 @@ class Trade implements ITrade
                                         })
                         ->where("active_licences.status",1)
                         ->where("active_licences.ulb_id",$ulb_id);
+            
             if(isset($inputs['key']) && trim($inputs['key']))
             {
                 $key = trim($inputs['key']);
@@ -1156,6 +1161,7 @@ class Trade implements ITrade
                         ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
                 });
             }
+            
             if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
             {
                 $ward_ids =$inputs['wardNo']; 
@@ -1179,7 +1185,7 @@ class Trade implements ITrade
             return responseMsg(true, "", $licence);
             
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $key);
+            return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
     public function postNextLevel(Request $request)
