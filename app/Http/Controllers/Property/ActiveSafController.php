@@ -43,15 +43,16 @@ class ActiveSafController extends Controller
         return $data;
     }
 
-    public function special(Request $request)
+    // postEscalate
+    public function postEscalate(Request $request)
     {
-        $data = $this->Repository->special($request);
+        $data = $this->Repository->postEscalate($request);
         return $data;
     }
-
-    public function specialInbox(Request $request)
+    // SAF special Inbox
+    public function specialInbox()
     {
-        $data = $this->Repository->specialInbox($request->key);
+        $data = $this->Repository->specialInbox();
         return $data;
     }
 
