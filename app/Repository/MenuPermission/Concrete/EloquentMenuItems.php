@@ -195,7 +195,9 @@ class EloquentMenuItems implements iMenuItemsRepository
             ], 401);
         }
         try {
+
             /*
+            *--------------------------------------------------------------------------------------------
             //join operation
             $groups = MenuUlbroles::join('menu_maps', 'menu_maps.ulb_menuroleid', '=', 'menu_ulbroles.id')
                 ->join('menu_items', 'menu_items.id', '=', 'menu_maps.menu_itemid')
@@ -220,6 +222,7 @@ class EloquentMenuItems implements iMenuItemsRepository
             }
             //assigning keys to the to $items and $groups                                                         
             // $roles['menuGroup'] = $items;                               // $groups['groupWiseItems'] = $items;
+            *-------------------------------------------------------------------------------------------------
             */
 
             //data of item
@@ -269,7 +272,7 @@ class EloquentMenuItems implements iMenuItemsRepository
                 ->join('menu_items', 'menu_items.id', '=', 'menu_maps.menu_itemid')
                 ->join('menu_groups', 'menu_groups.id', '=', 'menu_items.menu_groupid')
                 ->where('menu_ulbroles.ulb_id', $request->ulbid)
-                ->where('menu_groups.id', $request->menugroups) 
+                ->where('menu_groups.id', $request->menugroups)
                 ->get('menu_roles.*')
                 ->first();
             //condition check
@@ -277,9 +280,42 @@ class EloquentMenuItems implements iMenuItemsRepository
                 return response()->json(["status" => false, "message" => "no data"]);
             }
             //data return
-            return response()->json(["status" => true, "message" => "data of roles", "data" =>[$roles]]);
+            return response()->json(["status" => true, "message" => "data of roles", "data" => [$roles]]);
         }
         //collecting the errors in the code in $e 
+        catch (Exception $e) {
+            echo $e->getLine();
+            return response()->json(["error" => $e->getMessage()]);
+        }
+    }
+    ///////////////////////////////////////////////////////////////////////
+    //uplodation of data in menuMaps table 
+    //////////////////////////////////////////////////////////////////////
+    public function uplodeDataInMenuMaps(Request $request)
+    {
+        try { //data from req array
+            $items = $request->items;
+
+            foreach ($items as $items) {
+
+                $menuItemId = $items['id'];
+                $generalPermission =$items['generalPermission'];
+                $adminPermission =$items['adminPermission'];
+                
+                $ulbMenuRoleId = MenuMaps::join('menu_ulbroles', 'menu_ulbroles.id', '=', 'menu_maps.ulb_menuroleid')
+                    ->where('menu_ulbroles.menu_roleid', $request->roleId)
+                    ->where('menu_ulbroles.ulb_id', $request->ulbId)
+                    ->where('menu_maps.menu_itemid', $menuItemId)
+                    ->update(['general_permission'=> $generalPermission, 'admin_permission'=>$adminPermission]);                 
+                //test
+            }
+            if($ulbMenuRoleId){
+                return response()->json(["status"=>true,"message"=>"saved"]);
+            }
+            return response()->json(["status"=>true,"message"=>"not saved"]);
+            // return $roles;
+        }
+        //error catch
         catch (Exception $e) {
             echo $e->getLine();
             return response()->json(["error" => $e->getMessage()]);

@@ -18,4 +18,5 @@ interface iMenuItemsRepository
     public function menuGroupWiseItems(Request $request);
     public function menuGroupAndRoleWiseItems(Request $request);
     public function ulbWiseMenuRole(Request $request);
+    public function uplodeDataInMenuMaps(Request $request);
 }

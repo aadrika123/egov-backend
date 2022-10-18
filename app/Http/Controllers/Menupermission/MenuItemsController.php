@@ -65,4 +65,10 @@ class MenuItemsController extends Controller
     //   {
     //      return $this->EUlb->listmenugroups();
     //   }
+
+     //data of join 4
+     function uplodeDataInMenuMaps(Request $request)
+     {
+         return $this->EUlb->uplodeDataInMenuMaps($request);
+     }
 }
