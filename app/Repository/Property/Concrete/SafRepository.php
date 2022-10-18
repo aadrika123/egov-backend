@@ -47,6 +47,8 @@ use App\Models\WfWardUser;
 use App\Models\WfWorkflow;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
+use App\Traits\Property\SAF as GlobalSAF;
+use Illuminate\Support\Facades\Http;
 
 /**
  * | Created On-10-08-2022
@@ -54,11 +56,12 @@ use App\Repository\Property\EloquentProperty;
  * -----------------------------------------------------------------------------------------
  * | SAF Module all operations 
  */
-class EloquentSafRepository implements iSafRepository
+class SafRepository implements iSafRepository
 {
     use Auth;               // Trait Used added by sandeep bara date 17-08-2022
     use WardPermission;
     use WorkflowTrait;
+    use GlobalSAF;
     /**
      * | Citizens Applying For SAF
      * | Proper Validation will be applied after 
@@ -507,8 +510,11 @@ class EloquentSafRepository implements iSafRepository
                     return $item->wf_role_id;
                 });
 
-                $data = ActiveSafDetail::where('ulb_id', $userId)
+                $data = $this->getSafInbox()                                               // Global SAF 
+                    ->where('active_saf_details.ulb_id', $ulbId)
                     ->whereIn('current_role', $roleId)
+                    ->orderByDesc('id')
+                    ->groupBy('active_saf_details.id', 'p.property_type', 'ward.ward_name')
                     ->get();
 
                 $occupiedWard = $this->getWardByUserId($userId);
@@ -522,17 +528,19 @@ class EloquentSafRepository implements iSafRepository
             }
             // If current role Is a Initiator
 
-
             // Filteration only Ward id from workflow collection
             $wardId = $workflow->map(function ($item, $key) {
                 return $item->ward_id;
             });
 
-            $safInbox = ActiveSafDetail::where('ulb_id', $ulbId)
+            $safInbox = $this->getSafInbox()                                            // Global SAF 
+                ->where('active_saf_details.ulb_id', $ulbId)
                 ->where('current_role', null)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
+                ->groupBy('active_saf_details.id', 'p.property_type', 'ward.ward_name')
                 ->get();
+
             return remove_null($safInbox);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -645,6 +653,8 @@ class EloquentSafRepository implements iSafRepository
     }
 
     /**
+     * @param \Illuminate\Http\Request $req
+     * @return \Illuminate\Http\JsonResponse
      * desc This function get the application brief details 
      * request : saf_id (requirde)
      * ---------------Tables-----------------
@@ -660,12 +670,13 @@ class EloquentSafRepository implements iSafRepository
      * helpers : Helpers/utility_helper.php   ->remove_null() -> for remove  null values
      */
     #Saf Details
-    public function details($saf_id)
+    public function details(Request $req)
     {
+        $req->validate([
+            'id' => 'required|integer'
+        ]);
         try {
-            if (!is_numeric($saf_id)) {
-                $saf_id = Crypt::decrypt($saf_id);
-            }
+            $saf_id = $req->id;
             $user_id = auth()->user()->id;
             $role_id = ($this->getUserRoll($user_id)->role_id ?? -1);
             $ulb_id = auth()->user()->ulb_id;
@@ -689,13 +700,13 @@ class EloquentSafRepository implements iSafRepository
                 })
                 ->where('active_saf_details.id', "=", $saf_id)
                 ->first();
-            $data = remove_null($saf_data, true);
-            if (!$saf_data->workflow_id || $role_id == -1) {
-                throw new Exception("Workflow Not Found of This SAF !...");
-            }
+            $data = remove_null($saf_data);
+            // if (!$saf_data->workflow_id || $role_id == -1) {
+            //     throw new Exception("Workflow Not Found of This SAF !...");
+            // }
             $owner_dtl = ActiveSafOwnerDetail::select('*')
                 ->where('status', 1)
-                ->where('saf_dtl_id', $saf_id)
+                ->where('saf_dtl_id', 1)
                 ->get();
             $data['owner_dtl'] =  remove_null($owner_dtl);
             $floor = ActiveSafFloorDetail::select("*")
@@ -703,27 +714,27 @@ class EloquentSafRepository implements iSafRepository
                 ->where('saf_dtl_id', $saf_id)
                 ->get();
             $data['floor'] =  remove_null($floor);
-            $time_line =  DB::table('workflow_tracks')->select(
-                "workflow_tracks.message",
-                "role_masters.role_name",
-                DB::raw("workflow_tracks.track_date::date as track_date")
-            )
-                ->leftjoin('users', "users.id", "workflow_tracks.citizen_id")
-                ->leftjoin('role_users', 'role_users.user_id', 'users.id')
-                ->leftjoin('role_masters', 'role_masters.id', 'role_users.role_id')
-                ->where('ref_table_dot_id', 'active_saf_details.id')
-                ->where('ref_table_id_value', $saf_id)
-                ->orderBy('track_date', 'desc')
-                ->get();
-            $data['time_line'] =  remove_null($time_line);
-            $data['work_flow_candidate'] = [];
-            if ($saf_data->is_escalate) {
-                $rol_type =  $this->getAllRoles($user_id, $ulb_id, $saf_data->workflow_id, $role_id);
-                $data['work_flow_candidate'] =  remove_null(ConstToArray($rol_type));
-            }
-            $forward_backword =  $this->getForwordBackwordRoll($user_id, $ulb_id, $saf_data->workflow_id, $role_id);
-            $data['forward_backward'] =  remove_null($forward_backword);
-            return responseMsg(true, '', $data);
+            // $time_line =  DB::table('workflow_tracks')->select(
+            //     "workflow_tracks.message",
+            //     "role_masters.role_name",
+            //     DB::raw("workflow_tracks.track_date::date as track_date")
+            // )
+            //     ->leftjoin('users', "users.id", "workflow_tracks.citizen_id")
+            //     ->leftjoin('role_users', 'role_users.user_id', 'users.id')
+            //     ->leftjoin('role_masters', 'role_masters.id', 'role_users.role_id')
+            //     ->where('ref_table_dot_id', 'active_saf_details.id')
+            //     ->where('ref_table_id_value', $saf_id)
+            //     ->orderBy('track_date', 'desc')
+            //     ->get();
+            // $data['time_line'] =  remove_null($time_line);
+            // $data['work_flow_candidate'] = [];
+            // if ($saf_data->is_escalate) {
+            //     $rol_type =  $this->getAllRoles($user_id, $ulb_id, $saf_data->workflow_id, $role_id);
+            //     $data['work_flow_candidate'] =  remove_null(ConstToArray($rol_type));
+            // }
+            // $forward_backword =  $this->getForwordBackwordRoll($user_id, $ulb_id, $saf_data->workflow_id, $role_id);
+            // $data['forward_backward'] =  remove_null($forward_backword);
+            return responseMsg(true, 'Data Fetched', $data);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $saf_id);
         }

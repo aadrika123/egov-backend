@@ -4,7 +4,7 @@ namespace App\Http\Controllers\WorkflowMaster;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Repository\WorkflowMaster\Concrete\EloquentWorkflowWardUserRepository;
+use App\Repository\WorkflowMaster\Concrete\WorkflowWardUserRepository;
 
 /**
  * Created On-08-10-2022 
@@ -15,7 +15,7 @@ class WorkflowMappingController extends Controller
     protected $eloquentWardUser;
 
     // Initializing Construct function
-    public function __construct(EloquentWorkflowWardUserRepository $eloquentWardUser)
+    public function __construct(WorkflowWardUserRepository $eloquentWardUser)
     {
         $this->EloquentWardUser = $eloquentWardUser;
     }
