@@ -1040,35 +1040,35 @@ class Trade implements ITrade
                                         })
                         ->where("active_licences.status",1)                        
                         ->where("active_licences.ulb_id",$ulb_id);
-                        if(isset($inputs['key']) && trim($inputs['key']))
-                        {
-                            $key = trim($inputs['key']);
-                            $licence = $licence->where(function ($query) use ($key) {
-                                $query->orwhere('active_licences.holding_no', 'ILIKE', '%' . $key . '%')
-                                    ->orwhere('active_licences.application_no', 'ILIKE', '%' . $key . '%')
-                                    ->orwhere("active_licences.license_no", 'ILIKE', '%' . $key . '%')
-                                    ->orwhere("active_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')                                            
-                                    ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
-                                    ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
-                                    ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
-                            });
-                        }
-                        if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
-                        {
-                            $ward_ids =$inputs['wardNo']; 
-                        }
-                        if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
-                        {
-                            $licence = $licence
-                                        ->whereBetween('licence_level_pendings.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
-                        }
+            if(isset($inputs['key']) && trim($inputs['key']))
+            {
+                $key = trim($inputs['key']);
+                $licence = $licence->where(function ($query) use ($key) {
+                    $query->orwhere('active_licences.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('active_licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')                                            
+                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
+            {
+                $ward_ids =$inputs['wardNo']; 
+            }
+            if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
+            {
+                $licence = $licence
+                            ->whereBetween('licence_level_pendings.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
+            }
             if($role->is_initiator)
             {
-                $licence = $licence->whereIn('active_licences.pending_status',0,3);
+                $licence = $licence->whereIn('active_licences.pending_status',[0,3]);
             }
             else
             {
-                $licence = $licence->whereIn('active_licences.pending_status',2);
+                $licence = $licence->whereIn('active_licences.pending_status',[2]);
             }            
             $licence = $licence
                     ->whereIn('active_licences.ward_mstr_id', $ward_ids)
@@ -1143,31 +1143,39 @@ class Trade implements ITrade
                                         })
                         ->where("active_licences.status",1)
                         ->where("active_licences.ulb_id",$ulb_id);
-                        if(isset($inputs['key']) && trim($inputs['key']))
-                        {
-                            $key = trim($inputs['key']);
-                            $licence = $licence->where(function ($query) use ($key) {
-                                $query->orwhere('active_licences.holding_no', 'ILIKE', '%' . $key . '%')
-                                    ->orwhere('active_licences.application_no', 'ILIKE', '%' . $key . '%')
-                                    ->orwhere("active_licences.license_no", 'ILIKE', '%' . $key . '%')
-                                    ->orwhere("active_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')
-                                    ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
-                                    ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
-                                    ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
-                            });
-                        }
-                        if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
-                        {
-                            $ward_ids =$inputs['wardNo']; 
-                        }
-                        if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
-                        {
-                            $licence = $licence
-                                        ->whereBetween('licence_level_pendings.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
-                        }
-                        $licence = $licence
-                                    ->whereIn('active_licences.ward_mstr_id', $ward_ids)
-                                    ->get();
+            if(isset($inputs['key']) && trim($inputs['key']))
+            {
+                $key = trim($inputs['key']);
+                $licence = $licence->where(function ($query) use ($key) {
+                    $query->orwhere('active_licences.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('active_licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
+            {
+                $ward_ids =$inputs['wardNo']; 
+            }
+            if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
+            {
+                $licence = $licence
+                            ->whereBetween('licence_level_pendings.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
+            }
+            if($role->is_initiator)
+            {
+                $licence = $licence->whereIn('active_licences.pending_status',[2]);
+            }
+            else
+            {
+                $licence = $licence->whereIn('active_licences.pending_status',[0,3]);
+            }
+            $licence = $licence
+                        ->whereIn('active_licences.ward_mstr_id', $ward_ids)
+                        ->get();
             return responseMsg(true, "", $licence);
             
         } catch (Exception $e) {
