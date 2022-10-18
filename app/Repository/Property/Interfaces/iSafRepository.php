@@ -12,7 +12,9 @@ use Illuminate\Http\Request;
  */
 interface iSafRepository
 {
-    public function applySaf(Request $request); // Apply For SAF
-    public function inbox();                    // Saf Inbox
-    public function details(Request $request);  // Get SAF By ID
+    public function applySaf(Request $request);             // Apply For SAF
+    public function inbox();                                // Saf Inbox
+    public function details(Request $request);              // Get SAF By ID
+    public function postEscalate(Request $request);         // Adding SAF application to special Category 
+    public function specialInbox();                         // Special Inbox applications
 }
