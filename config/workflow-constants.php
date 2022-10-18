@@ -10,5 +10,5 @@ return [
     "SAF_WORKFLOW_ID" => "4",
     "SELF_ADVERTISEMENT_WORKFLOW_ID" => "9",
     "PROPPERTY_OBJECTION_ID" => "7",
-    "TRADE_WORKFLOW_ID" => "8",
+    "TRADE_WORKFLOW_ID" => "19",
 ];

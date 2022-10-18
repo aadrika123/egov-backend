@@ -25,7 +25,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('updateBasicDtl', 'updateBasicDtl');
         Route::get('getLicenceDtl/{id}', 'getLicenceDtl');
         Route::post('searchLicence', 'searchLicence');
-        Route::get('inbox/{key?}', 'inbox');
+        Route::post('inbox', 'inbox');
+        Route::post('outbox', 'outbox');
     });
 });
 Route::controller(ApplyApplication::class)->group(function () {    

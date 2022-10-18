@@ -63,6 +63,10 @@ class ApplyApplication extends Controller
     }
     public function inbox(Request $request)
     {
-        return $this->Repository->inbox($request->key);
+        return $this->Repository->inbox($request);
+    }
+    public function outbox(Request $request)
+    {
+        return $this->Repository->outbox($request);
     }
 }
