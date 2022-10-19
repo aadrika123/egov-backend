@@ -73,4 +73,16 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->postNextLevel($request);
     }
+    public function procidToPaymentCounter(Request $request)
+    {
+        return $this->Repository->procidToPaymentCounter($request);
+    }
+    public function provisionalCertificate(Request $request)
+    {
+        return $this->Repository->provisionalCertificate($request->id);
+    }
+    public function licenceCertificate(Request $request)
+    {
+        return $this->Repository->licenceCertificate($request->id);
+    }
 }
