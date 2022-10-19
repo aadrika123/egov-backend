@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\WorkflowMaster;
 
 use App\Http\Controllers\Controller;
+use App\Repository\WorkflowMaster\Interface\iWorkflowMappingRepository;
 use Illuminate\Http\Request;
-use App\Repository\WorkflowMaster\Concrete\WorkflowWardUserRepository;
 
 /**
  * Created On-08-10-2022 
@@ -15,25 +15,20 @@ class WorkflowMappingController extends Controller
     protected $eloquentWardUser;
 
     // Initializing Construct function
-    public function __construct(WorkflowWardUserRepository $eloquentWardUser)
+    public function __construct(iWorkflowMappingRepository $eloquentWardUser)
     {
         $this->EloquentWardUser = $eloquentWardUser;
     }
 
     // Mapping
-    public function getUserByID($id)
+    public function getUserById(Request $request)
     {
-        return $this->EloquentWardUser->getUserByID($id);
-    }
-
-
-    public function getAltNameByUlbId(Request $request)
-    {
-        return $this->EloquentWardUser->getAltNameByUlbId($request);
+        return $this->EloquentWardUser->getUserById($request);
     }
 
     public function getWorkflowNameByUlb(Request $request)
     {
+        // return 'Hii';
         return $this->EloquentWardUser->getWorkflowNameByUlb($request);
     }
 

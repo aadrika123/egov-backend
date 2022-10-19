@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\WorkflowMaster;
 
 use App\Http\Controllers\Controller;
-use App\Repository\WorkflowMaster\Interface\iWorkflowMasterRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowWardUserRepository;
 use Illuminate\Http\Request;
 
 /**
@@ -17,7 +17,7 @@ class WorkflowWardUserController extends Controller
     protected $eloquentWf;
 
     // Initializing Construct function
-    public function __construct(iWorkflowMasterRepository $eloquentWardUser)
+    public function __construct(iWorkflowWardUserRepository $eloquentWardUser)
     {
         $this->EloquentWardUser = $eloquentWardUser;
     }
@@ -65,5 +65,11 @@ class WorkflowWardUserController extends Controller
     public function destroy($id)
     {
         return $this->EloquentWardUser->delete($id);
+    }
+
+    //Mapping 
+    public function getRoleDetails(Request $req)
+    {
+        return $this->EloquentWardUser->getRoleDetails($req);
     }
 }
