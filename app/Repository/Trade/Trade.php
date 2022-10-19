@@ -16,6 +16,7 @@ use App\Models\Trade\TradeChequeDtl;
 use App\Models\Trade\TradeDenialConsumerDtl;
 use App\Models\Trade\TradeDenialNotice;
 use App\Models\Trade\TradeFineRebetDetail;
+use App\Models\Trade\TradeLevelPending;
 use App\Models\Trade\TradeParamApplicationType;
 use App\Models\Trade\TradeParamCategoryType;
 use App\Models\Trade\TradeParamFirmType;
@@ -23,7 +24,9 @@ use App\Models\Trade\TradeParamItemType;
 use App\Models\Trade\TradeParamLicenceRate;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Models\Trade\TradeTransaction;
+use App\Models\UlbMaster;
 use App\Models\UlbWorkflowMaster;
+use App\Models\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use Illuminate\Http\Request;
@@ -61,6 +64,7 @@ class Trade implements ITrade
         $user = Auth()->user();
         $this->user_id = $user->id;
         $this->ulb_id = $user->ulb_id;
+        
         $this->redis = new Redis;
         $this->user_data = json_decode($this->redis::get('user:' . $this->user_id), true);
         $this->roll_id =  $this->user_data['role_id']??($this->getUserRoll($this->user_id,'Trade','Trade')->role_id??-1);
@@ -72,17 +76,25 @@ class Trade implements ITrade
                 throw new Exception("Invalide Application Type");
             }
             $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $workflows = UlbWorkflowMaster::select('initiator', 'finisher')
-                ->where('ulb_id', $this->ulb_id)
-                ->where('workflow_id', $workflow_id)
-                ->first();
-            if (!$workflows) {
+            $workflows = $this->parent->iniatorFinisher($this->user_id,$this->user_id,$workflow_id);           
+            if (!$workflows) 
+            {
                 return responseMsg(false, "Workflow Not Available", $request->all());
             }
+            elseif(!$workflows['initiator'])
+            {
+                return responseMsg(false, "Initiator Not Available", $request->all()); 
+            }
+            elseif(!$workflows['finisher'])
+            {
+                return responseMsg(false, "Finisher Not Available", $request->all()); 
+            }
+           
             $data = array() ;
             $rules = [];
             $message = [];
-            if (in_array($this->application_type_id, ["2", "3","4"])) {
+            if (in_array($this->application_type_id, ["2", "3","4"])) 
+            {
                 $rules["licenceId"] = "required";
                 $message["licenceId.required"] = "Old Licence Id Requird";
             }
@@ -102,7 +114,14 @@ class Trade implements ITrade
                 $data["natureOfBusiness"] = $this->gettradeitemsList(true);
                 if(isset($request->licenceId) && $request->licenceId  && $this->application_type_id !=1)
                 {
-        
+                    $oldLicece = $this->getLicenceById($request->licenceId);
+                    if(!$oldLicece)
+                    {
+                        throw new Exception("No Priviuse Licence Found");
+                    }
+                    $oldOwneres =$this->getOwnereDtlByLId($request->licenceId);
+                    $data["licenceDtl"] =  $oldLicece;
+                    $data["ownerDtl"] = $oldOwneres;
                 }
                 return responseMsg(true,"",remove_null($data));
             }
@@ -213,6 +232,10 @@ class Trade implements ITrade
                 if (in_array($this->application_type_id, ["2", "3","4"])) 
                 {   
                     $oldLicence = ActiveLicence::find($request->licenceId);
+                    if(!$oldLicence)
+                    {
+                        throw new Exception("Old Licence Not Found");
+                    }
                     $oldowners = ActiveLicenceOwner::where('licence_id',$request->licenceId)
                                 ->get();
                     $licence->id                  = $oldLicence->id;
@@ -253,9 +276,9 @@ class Trade implements ITrade
                     $licence->tobacco_status      = $oldLicence->tobacco_status;
                     
                     $licence->apply_from          = $apply_from;
-                    $licence->current_user_id     = $workflows->initiator;
-                    $licence->initiator_id        = $workflows->initiator;
-                    $licence->finisher_id         = $workflows->finisher;
+                    // $licence->current_user_id     = null;
+                    $licence->initiator_id        = $workflows['initiator']['id'];
+                    $licence->finisher_id         = $workflows['finisher']['id'];
                     $licence->workflow_id         = $workflow_id;
     
                     $licence->save();
@@ -283,7 +306,7 @@ class Trade implements ITrade
                     }
                 }
                 elseif($this->application_type_id==1)
-                {                    
+                {                     
                     $licence->firm_type_id        = $request->initialBusinessDetails['firmType'];
                     $licence->otherfirmtype       = $request->initialBusinessDetails['otherFirmType']??null;
                     $licence->application_type_id = $this->application_type_id;
@@ -321,9 +344,9 @@ class Trade implements ITrade
                     $licence->tobacco_status      = $request->firmDetails['tocStatus'];
                     
                     $licence->apply_from          = $apply_from;
-                    $licence->current_user_id     = $workflows->initiator;
-                    $licence->initiator_id        = $workflows->initiator;
-                    $licence->finisher_id         = $workflows->finisher;
+                    // $licence->current_user_id     = null;
+                    $licence->initiator_id        = $workflows['initiator']['id'];
+                    $licence->finisher_id         = $workflows['finisher']['id'];
                     $licence->workflow_id         = $workflow_id;
     
                     $licence->save();
@@ -437,6 +460,20 @@ class Trade implements ITrade
                         $payment_status = 2;
                         $tradeChq->save();
                     } 
+                    if($payment_status==1)
+                    {
+                        $licence->current_user_id = $workflows['initiator']['id'];
+                    }
+                    $ulbDtl = UlbMaster::find($this->ulb_id);
+                    $ulb_name = explode(' ',$ulbDtl->ulb_name);
+                    $short_ulb_name = "";
+                    foreach($ulb_name as $val)
+                    {
+                        $short_ulb_name.=$val[0];
+                    }
+                    
+                    $prov_no = $short_ulb_name . $ward_no . date('mdy') . $licenceId;
+                    $licence->provisional_license_no = $prov_no;
                     $licence->payment_status = $payment_status;
                     $licence->save();
                     $res['transactionId'] = $transaction_id;
@@ -628,7 +665,6 @@ class Trade implements ITrade
             $data['documents'] = $documents;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
-            dd($application);
             
         }
         catch(Exception $e)
@@ -900,9 +936,13 @@ class Trade implements ITrade
         }
         return responseMsg($response['status'],$response["message"],remove_null($response["data"]));
     }
-    public function searchLicenceByNo(Request $request)
+    public function searchLicenceByNo(Request $request)// reniwal/surrend/amendment
     {
         try{
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');            
             $rules["licenceNo"] = "required";
             $message["licenceNo.required"] = "Licence No Requird";
             
@@ -928,8 +968,18 @@ class Trade implements ITrade
                                     )
                     ->where('status',1)
                     ->where('license_no',$licence_no)
+                    ->where("ulb_id",$ulb_id)
+                    ->where('pending_status',5)
                     ->first();
-            return responseMsg(true,"",remove_null($data));
+           if(!$data)
+           {
+            throw new Exception("Data Not Faund");
+           }
+           elseif($data->valid_upto > $nextMonth)
+           {
+            throw new Exception("Licence Valice Upto ".$data->valid_upto);
+           }            
+           return responseMsg(true,"",remove_null($data));
         }
         catch(Exception $e)
         {
@@ -937,21 +987,454 @@ class Trade implements ITrade
         }
         
     }
-    public function inbox($key)
+    public function inbox(Request $request)
     {
         try {
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $data = $this->parent->getUserRoll($user_id,$ulb_id,4);
-            $aa = $this->parent->getAllRoles($user_id,$ulb_id,4,$data->role_id,true);
-            $getForwordBackwordRoll = $this->getForwordBackwordRoll($user_id,$ulb_id,4,5,false);
-            dd($aa);
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+            if (!$workflowId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id); 
+            if (!$role) 
+            {
+                throw new Exception("You Are Not Authorized");
+            } 
+            if($role->is_initiator)
+            {
+                $joins = "leftjoin";
+            }
+            else
+            {
+                $joins = "join";
+            }  
+            $role_id = $role->id;         
+            $ward_permission = $this->parent->WardPermission($user_id);
+            $ward_ids = array_map(function ($val) {
+                return $val['ulb_ward_id'];
+            }, $ward_permission);
+            $inputs = $request->all();  
+            // DB::enableQueryLog();          
+            $licence = ActiveLicence::select("active_licences.id",
+                                            "active_licences.application_no",
+                                            "active_licences.provisional_license_no",
+                                            "active_licences.license_no",
+                                            "active_licences.apply_date",
+                                            "active_licences.apply_from",
+                                            "owner.owner_name",
+                                            "owner.guardian_name",
+                                            "owner.mobile_no",
+                                            "owner.email_id",
+                                            DB::raw("trade_level_pendings.id AS level_id")
+                                            )
+                        ->$joins("trade_level_pendings",function($join) use($role_id){
+                            $join->on("trade_level_pendings.licence_id","active_licences.id")
+                            ->where("trade_level_pendings.receiver_user_type_id",$role_id)
+                            ->where("trade_level_pendings.status",1)
+                            ->where("trade_level_pendings.status",0);
+                        })
+                        ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                            STRING_AGG(guardian_name,',') AS guardian_name,
+                                            STRING_AGG(mobile::TEXT,',') AS mobile_no,
+                                            STRING_AGG(emailid,',') AS email_id,
+                                            licence_id
+                                        FROM active_licence_owners 
+                                        WHERE status =1
+                                        GROUP BY licence_id
+                                        )owner"),function($join){
+                                            $join->on("owner.licence_id","active_licences.id");
+                                        })
+                        ->where("active_licences.status",1)                        
+                        ->where("active_licences.ulb_id",$ulb_id);
+            if(isset($inputs['key']) && trim($inputs['key']))
+            {
+                $key = trim($inputs['key']);
+                $licence = $licence->where(function ($query) use ($key) {
+                    $query->orwhere('active_licences.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('active_licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')                                            
+                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
+            {
+                $ward_ids =$inputs['wardNo']; 
+            }
+            if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
+            {
+                $licence = $licence
+                            ->whereBetween('licence_level_pendings.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
+            }
+            if($role->is_initiator)
+            {
+                $licence = $licence->whereIn('active_licences.pending_status',[0,3]);
+            }
+            else
+            {
+                $licence = $licence->whereIn('active_licences.pending_status',[2]);
+            }            
+            $licence = $licence
+                    ->whereIn('active_licences.ward_mstr_id', $ward_ids)
+                    ->get();
+            // dd(DB::getQueryLog());
+            // $worckflowCondidate = $this->parent->getAllRoles($user_id,$ulb_id,$refWorkflowId ,$role->role_id,true);
+            // $getForwordBackwordRoll = $this->parent->getForwordBackwordRoll($user_id,$ulb_id,$refWorkflowId ,$role->role_id,false);           
+            return responseMsg(true, "", $licence);
             
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $key);
+        } 
+        catch (Exception $e) 
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+    public function outbox(Request $request)
+    {
+        try {
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+            if (!$workflowId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);           
+            if (!$role) 
+            {
+                throw new Exception("You Are Not Authorized");
+            }
+            if($role->is_initiator)
+            {
+                $joins = "leftjoin";
+            }
+            else
+            {
+                $joins = "join";
+            }
+            $role_id = $role->id;
+            $ward_permission = $this->parent->WardPermission($user_id);
+            $ward_ids = array_map(function ($val) {
+                return $val['ulb_ward_id'];
+            }, $ward_permission);
+            $inputs = $request->all();
+            $licence = ActiveLicence::select("active_licences.id",
+                                            "active_licences.application_no",
+                                            "active_licences.provisional_license_no",
+                                            "active_licences.license_no",
+                                            "active_licences.apply_date",
+                                            "active_licences.apply_from",
+                                            "owner.owner_name",
+                                            "owner.guardian_name",
+                                            "owner.mobile_no",
+                                            "owner.email_id"
+                                            )
+                        ->$joins("trade_level_pendings",function($join) use($role_id){
+                            $join->on("trade_level_pendings.licence_id","active_licences.id")
+                            ->where("trade_level_pendings.receiver_user_type_id","<>",$role_id)
+                            ->where("trade_level_pendings.status",1)
+                            ->where("trade_level_pendings.status",0);
+                        })
+                        ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                            STRING_AGG(guardian_name,',') AS guardian_name,
+                                            STRING_AGG(mobile::TEXT,',') AS mobile_no,
+                                            STRING_AGG(emailid,',') AS email_id,
+                                            licence_id
+                                        FROM active_licence_owners 
+                                        WHERE status =1
+                                        GROUP BY licence_id
+                                        )owner"),function($join){
+                                            $join->on("owner.licence_id","active_licences.id");
+                                        })
+                        ->where("active_licences.status",1)
+                        ->where("active_licences.ulb_id",$ulb_id);
+            
+            if(isset($inputs['key']) && trim($inputs['key']))
+            {
+                $key = trim($inputs['key']);
+                $licence = $licence->where(function ($query) use ($key) {
+                    $query->orwhere('active_licences.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('active_licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            
+            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
+            {
+                $ward_ids =$inputs['wardNo']; 
+            }
+            if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
+            {
+                $licence = $licence
+                            ->whereBetween('licence_level_pendings.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
+            }
+            if($role->is_initiator)
+            {
+                $licence = $licence->whereIn('active_licences.pending_status',[2]);
+            }
+            else
+            {
+                $licence = $licence->whereIn('active_licences.pending_status',[0,3]);
+            }
+            $licence = $licence
+                        ->whereIn('active_licences.ward_mstr_id', $ward_ids)
+                        ->get();
+            return responseMsg(true, "", $licence);
+            
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    public function postNextLevel(Request $request)
+    {
+        try{
+            $receiver_user_type_id="";
+            $sms = "";
+            $licence_pending=2;
+            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\\s]+$/';
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+            if (!$workflowId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);
+            if (!$role) 
+            {
+                throw new Exception("You Are Not Authorized");
+            }
+            $role_id = $role->role_id;
+            $rules = [
+                // "receiverId" => "required|int",
+                "btn" => "required|in:btc,forward,backword",
+                "licenceId" => "required|int",
+                "comment" => "required|min:10|regex:$regex",
+            ];
+            $message = [
+                // "receiverId.int" => "Receiver User Id Must Be Integer",
+                "btn.in"=>"button Value May be In btc,forward,backword",
+                "comment.required" => "Comment Is Required",
+                "comment.min" => "Comment Length At Least 10 Charecters",
+            ];
+            $validator = Validator::make($request->all(), $rules, $message);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), $request->all());
+            }
+            if($role->is_initiator && in_array($request->btn,['btc','backword']))
+            {
+               throw new Exception("Initator Can Not Back The Application");
+            }
+            $licenc_data = ActiveLicence::find($request->licenceId);            
+            $level_data = $this->getLevelData($request->licenceId);
+            if(!$licenc_data)
+            {
+                throw new Exception("Data Not Found");
+            }
+            elseif($licenc_data->pending_status==5)
+            {
+                throw new Exception("Licence Is Already Approved");
+            }
+            elseif(!$role->is_initiator && isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
+            {
+                throw new Exception("You Have Not Pending Application");
+            }
+            elseif(!$role->is_initiator && ! $level_data)
+            {
+                throw new Exception("Please Contact To Admin!!!...");
+            }  
+            elseif(isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
+            {
+                throw new Exception("You Are Already Taken The Action On This Application");
+            }
+            $init_finish = $this->parent->iniatorFinisher($user_id,$ulb_id,$refWorkflowId); 
+            if(!$init_finish)
+            {
+                throw new Exception("Full Work Flow Not Desigen Proper Please Contact To Admin !!!...");
+            }
+            elseif(!$init_finish["initiator"])
+            {
+                throw new Exception("Initiar Not Avelable Please Contact To Admin !!!...");
+            }
+            elseif(!$init_finish["finisher"])
+            {
+                throw new Exception("Finisher Not Avelable Please Contact To Admin !!!...");
+            }
+            
+            // dd($role);
+            if($request->btn=="forward" && !$role->is_finisher && !$role->is_initiator)
+            {
+                $sms ="Application Forword To ".$role->forword_name;
+                $receiver_user_type_id = $role->forward_role_id;
+            }
+            elseif($request->btn=="backword" && !$role->is_initiator)
+            {
+                $sms ="Application Forword To ".$role->backword_name;
+                $receiver_user_type_id = $role->backward_role_id;
+            }
+            elseif($request->btn=="btc" && !$role->is_initiator)
+            {
+                $licence_pending = 3;
+                $sms ="Application Forword To ".$init_finish["initiator"]['role_name'];
+                $receiver_user_type_id = $init_finish["initiator"]['id'];
+            } 
+            elseif($request->btn=="forward" && !$role->is_initiator && $level_data)
+            {
+                $sms ="Application Forword ";
+                $receiver_user_type_id = $level_data->sender_user_type_id;
+            }
+            elseif($request->btn=="forward" && $role->is_initiator && !$level_data)
+            {
+                $licence_pending = 2;
+                $sms ="Application Forword To ".$role->forword_name;
+                $receiver_user_type_id = $role->forward_role_id;
+            }
+
+            if(!$role->is_finisher && !$receiver_user_type_id)  
+            {
+                throw new Exception("Next Roll Not Found !!!....");
+            }
+            
+            // dd($role_id);
+
+            DB::beginTransaction();
+            if($level_data)
+            {
+                
+                $level_data->verification_status = 1;
+                $level_data->receiver_user_id =$user_id;
+                $level_data->remarks =$request->comment;
+                $level_data->forward_date =Carbon::now("Y-m-d");
+                $level_data->forward_time =Carbon::now("H:s:i");
+                $level_data->save();
+            }
+            if(!$role->is_finisher)
+            {                
+                $level_insert = new TradeLevelPending;
+                $level_insert->licence_id = $licenc_data->id;
+                $level_insert->sender_user_type_id = $role_id;
+                $level_insert->receiver_user_type_id = $receiver_user_type_id;
+                $level_insert->sender_user_id = $user_id;
+                $level_insert->save();
+            }
+            if($role->is_finisher && $request->btn=="forward")
+            {
+                
+                    $licence_pending = 5;
+                    $sms ="Application Approved By ".$role->forword_name;
+                    $ulbDtl = UlbMaster::find($ulb_id);
+                    $ulb_name = explode(' ',$ulbDtl->ulb_name);
+                    $short_ulb_name = "";
+                    foreach($ulb_name as $val)
+                    {
+                        $short_ulb_name.=$val[0];
+                    }
+                    $ward_no = UlbWorkflowMaster::select("ward_name")
+                            ->where("id",$licenc_data->ward_mstr_id)
+                            ->first();
+                    $ward_no = $ward_no['ward_name'];
+                    $license_no = $short_ulb_name.$ward_no.date("mdY").$licenc_data->id;
+                    $licence_for_years = $licenc_data->licence_for_years;
+                    # 1	NEW LICENSE
+                    if($licenc_data->application_type_id == 1)
+                    {
+                        // update license validity
+                        $valid_upto =date("Y-m-d", strtotime("+$licence_for_years years", strtotime($licenc_data->apply_date)));
+                        
+
+                    }
+
+                    # 2 RENEWAL
+                    if($licenc_data->application_type_id == 2)
+                    {
+                        $prive_licence = ExpireLicence::find($licenc_data->update_status);
+                        if(!empty($prive_licence))
+                        {                                    
+                            $prive_licence_id = $prive_licence->id;
+                            $license_no = $prive_licence->license_no;
+                            $valid_from = $prive_licence->valid_upto;                        
+                            {
+                                $datef = date('Y-m-d', strtotime($valid_from));
+                                $datefrom = date_create($datef);
+                                $datea = date('Y-m-d', strtotime($licenc_data->apply_date));
+                                $dateapply = date_create($datea);
+                                $year_diff = date_diff($datefrom, $dateapply);
+                                $year_diff =  $year_diff->format('%y');
+
+                                $priv_m_d = date('m-d', strtotime($valid_from));
+                                $date = date('Y',strtotime($valid_from)) . '-' . $priv_m_d;
+                                $licence_for_years2 = $licence_for_years + $year_diff; 
+                                $valid_upto = date('Y-m-d', strtotime($date . "+" . $licence_for_years2 . " years"));
+                                $data['valid_upto'] = $valid_upto; 
+                                
+                            }
+                            
+                            
+                        }
+                        else
+                        {
+                            throw new Exception('licence','Some Error Occurred Please Contact to Admin!!!');
+                        
+                        }
+                    }
+
+                    # 3	AMENDMENT
+                    if($licenc_data->application_type_id == 3)
+                    {
+                        $prive_licence = ExpireLicence::find($licenc_data->update_status);
+                        $license_no = $prive_licence->license_no;
+                        $oneYear_validity = date("Y-m-d", strtotime("+1 years", strtotime('now')));
+                        $previous_validity = $prive_licence->valid_upto;
+                        if($previous_validity > $oneYear_validity)
+                            $valid_upto = $previous_validity;
+                        else
+                            $valid_upto = $oneYear_validity;                   
+                        $licenc_data->valid_from = date('Y-m-d');
+                    }
+                    
+                    # 4 SURRENDER
+                    if($licenc_data->application_type_id==4)
+                    {
+                        // Incase of surrender valid upto is previous license validity
+                        $prive_licence = ExpireLicence::find($licenc_data->update_status);
+                        $license_no = $prive_licence->license_no;
+                        $valid_upto = $prive_licence->valid_upto;
+                    }
+                    $licenc_data->license_no = $license_no;
+                    $sms.=" Licence No ".$license_no;
+            }
+            $licenc_data->pending_status = $licence_pending;            
+            $licenc_data->save();            
+            DB::commit();
+            return responseMsg(false, $sms, "");
+
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    
 
     #---------- core function for trade Application--------
 
@@ -1156,8 +1639,8 @@ class Trade implements ITrade
                             created_at,deleted_at 
                         from active_licence_owners where licence_id = $licenceId order by id ";
                 DB::insert($sql);
-                $licence->delet();
-                ActiveLicenceOwner::where('licence_id',$licenceId)->delet();
+                $licence->forceDelete();
+                ActiveLicenceOwner::where('licence_id',$licenceId)->forceDelete();
                return $expireLicenceId; 
             }
         }
@@ -1274,6 +1757,7 @@ class Trade implements ITrade
         try{
             $ownerDtl   = ActiveLicenceOwner::select("*")
                             ->where("licence_id",$id)
+                            ->where("status",1)
                             ->get();
             return $ownerDtl;
         }
@@ -1327,7 +1811,7 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-    public function searchLicence(string $licence_no)
+    public function searchLicence(string $licence_no,$ulb_id)
     {
         try{
             $data = ActiveLicence::select("*")
@@ -1346,6 +1830,7 @@ class Trade implements ITrade
                                     }
                                     )
                     ->where('status',1)
+                    ->where("ulb_id",$ulb_id)
                     ->where('license_no',$licence_no)
                     ->first();
             return responseMsg(true,"",remove_null($data));
@@ -1356,6 +1841,24 @@ class Trade implements ITrade
         }
         
     }
+
+    public function getLevelData(int $licenceId)
+    {
+        try{
+            $data = TradeLevelPending::select("*")
+                    ->where("licence_id",$licenceId)
+                    ->where("status",1)
+                    ->where("verification_status",0)
+                    ->orderBy("id","DESC")
+                    ->first();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+   
     #-------------------- End core function of core function --------------
     
 }

@@ -12,7 +12,7 @@ use App\Repository\MenuPermission\Interface\iMenuItemsRepository;
 use App\Repository\MenuPermission\Interface\iMenuMapRepository;
 use App\Repository\MenuPermission\Interface\iMenuRolesRepository;
 use App\Repository\MenuPermission\Interface\iMenuUlbrolesRepository;
-use App\Repository\Property\Concrete\EloquentSafRepository;
+use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Repository\Trade\ITrade;
 use App\Repository\Trade\Trade;
@@ -52,7 +52,8 @@ class RepositoryServiceProvider extends ServiceProvider
     {
         $this->app->bind(iNewConnection::class, NewConnectionRepository::class);
         $this->app->bind(ITrade::class, Trade::class);
-        $this->app->bind(iSafRepository::class, EloquentSafRepository::class);
+        // SAF
+        $this->app->bind(iSafRepository::class, SafRepository::class);
         //menu permission
         $this->app->bind(IMenuGroupsRepository::class, EloquentMenuGroups::class);
         $this->app->bind(IMenuItemsRepository::class, EloquentMenuItems::class);
