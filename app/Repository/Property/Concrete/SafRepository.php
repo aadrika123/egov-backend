@@ -768,7 +768,7 @@ class SafRepository implements iSafRepository
      * #message -> return response 
      */
     #Add Inbox  special category
-    public function postEscalate(Request $request)
+    public function postEscalate($request)
     {
         DB::beginTransaction();
         try {
@@ -833,115 +833,78 @@ class SafRepository implements iSafRepository
     }
 
     /**
-     * CURRENT USER SENDS APPLICATION TO NEXT LEVEL
-     * # HANDLE TO CASES- 1. SEND TO ANY MEMBER, 2. SEND NEXT LEVEL UP/DOWN
-     * # Update current_user of table active_saf_details for next user
-     * # Save comments to workflowtracks table using function workflowTracks()
-     *----------------Tables--------------------
-     * active_saf_details
-     * workflow_candidates
-     * ulb_workflow_masters
-     * users
-     * #====================================
-     * varialbles
-     * $messages -> for reapons 1. status 2. data 3. Message
-     * $user_id <- users.id
-     * $saf_id <- request->id??request->safId;
-     * $saf <- ActiveSafDetail ->obj (instanse create)
-     * $data <- ActiveSafDetail -> find and store active_saf_details data ** [if data is not found return error Message] **
-     * $work_flow_candidate  <- 'workflow_candidates.id',"ulb_workflow_masters.module_id" -> check loging user is authorize for this workFlow or not
-     * active_saf_details.current_user <- request->receiverId
-     * coll workflowTracks() for comment store
-     * 
+     * | Post Independent Comment
+     * | @param mixed $request
+     * | @var userId Logged In user Id
+     * | @var levelPending The Level Pending Data of the Saf Id
+     * | @return responseMsg
+     */
+    public function postIndependentComment($request)
+    {
+        try {
+            DB::beginTransaction();
+            $request->validate([
+                'comment' => 'required',
+                'safId' => 'required'
+            ]);
+            $userId = auth()->user()->id;
+            $levelPending = PropLevelPending::where('saf_id', $request->safId)
+                ->where('receiver_user_id', $userId)
+                ->first();
+
+            if (is_null($levelPending)) {
+                $levelPending = PropLevelPending::where('saf_id', $request->safId)
+                    ->orderByDesc('id')
+                    ->limit(1)
+                    ->first();
+                if (is_null($levelPending)) {
+                    return responseMsg(false, "SAF Not Found", "");
+                }
+            }
+            $levelPending->remarks = $request->comment;
+            $levelPending->receiver_user_id = $userId;
+            $levelPending->save();
+            DB::commit();
+            return responseMsg(true, "You Have Commented Successfully!!", ['Comment' => $request->comment]);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | @param mixed $request
+     * | @var preLevelPending Get the Previous level pending data for the saf id
+     * | @var levelPending new Level Pending to be add
      */
     # postNextLevel
-    public function postNextLevel(Request $request)
+    public function postNextLevel($request)
     {
         DB::beginTransaction();
         try {
-            $user_id = auth()->user()->id;
-            $roll_type_id = ($this->getUserRoll($user_id)->role_id ?? -1);
-            $saf = new ActiveSafDetail;
-            $saf_id = $request->safId;
-            if (!is_numeric($saf_id)) {
-                $saf_id = Crypt::decrypt($saf_id);
-            }
-            $data = $saf->where('current_user', $roll_type_id)->find($saf_id);
-            if (!$data) {
-                $message = ["status" => false, "data" => $request->all(), "message" => "Saf Not Found"];
-                return response()->json($message, 200);
-            }
-            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\\s]+$/';
-            $rules = [
-                "ulbId" => "required",
-                "receiverId" => "required|int",
-                "btn" => "required|in:btc,forward,backword",
-                "comment" => "required|min:10|regex:$regex",
-            ];
-            $message = [
-                "ulbId.required" => "Ulb Id Is Required",
-                "receiverDesignationId.required" => "Receiver User Id Is Required",
-                "receiverId.int" => "Receiver User Id Must Be Integer",
-                "comment.required" => "Comment Is Required",
-                "comment.min" => "Comment Length At Least 10 Charecters",
-            ];
-            $validator = Validator::make($request->all(), $rules, $message);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
-            }
-            $work_flow_candidate = WorkflowCandidate::select('workflow_candidates.id', "ulb_workflow_masters.module_id")
-                ->join('ulb_workflow_masters', 'ulb_workflow_masters.id', 'workflow_candidates.ulb_workflow_id')
-                ->where('workflow_candidates.user_id', $user_id)
-                ->where('ulb_workflow_masters.ulb_id', $request->ulbId)
+            // previous level pending verification enabling
+            $preLevelPending = PropLevelPending::where('saf_id', $request->safId)
+                ->orderByDesc('id')
+                ->limit(1)
                 ->first();
-            if (!$work_flow_candidate || $roll_type_id == -1) {
-                throw new Exception("work_flow_candidate not found");
-            }
-            $dd = [];
-            if ($data->finisher_id = $roll_type_id && strtoupper($request->btn) == "FORWARD") {
-                $dd = $this->property->transFerSafToProperty($data, $user_id);
-                if (!$dd) {
-                    throw new Exception("Some Error Occurse Pleste Contacte To Admin123");
-                }
-            } else {
-                $data->current_user = $request->receiverId;
-                $data->save();
-            }
-            $inputs = [
-                'workflowCandidateID' => $work_flow_candidate->id,
-                "citizenID" => $user_id,
-                "moduleID" => $work_flow_candidate->module_id,
-                "refTableDotID" => 'active_saf_details.id',
-                "refTableIDValue" => $saf_id,
-                "message" => $request->comment,
-                "forwardedTo" => $request->receiverId
-            ];
-            $workfloes = $this->workflowTracks($inputs);
-            if ($workfloes['status'] == false) {
-                throw new Exception($workfloes['message']);
-            }
-            if ($dd) {
-                $where = ["ref_table_dot_id" => "active_saf_details.id", "ref_table_id_value" => $saf_id];
-                $values = ["ref_table_dot_id" => "safs.id", "ref_table_id_value" => $dd["saf_id"]];
-                if (!$this->updateWorkflowTracks($where, $values)) {
-                    throw new Exception("Some Error Occurse Pleste Contacte To Admin");
-                }
-            }
-            DB::commit();
-            if ($dd) {
-                ActiveSafDetail::where('id', $saf_id)->delete();
-                ActiveSafOwnerDetail::where('saf_dtl_id', $saf_id)->delete();
-                ActiveSafFloorDetail::where('saf_dtl_id', $saf_id)->delete();
-                ActiveSafTaxe::where('saf_dtl_id', $saf_id)->delete();
-                return responseMsg(true, 'Saf Forworded', ["holding_no" => $dd["holding_no"]]);
-            }
+            $preLevelPending->verification_status = '1';
+            $preLevelPending->save();
 
-            return responseMsg(true, 'Saf Forworded', '');
+            $levelPending = new PropLevelPending();
+            $levelPending->saf_id = $request->safId;
+            $levelPending->sender_role_id = $request->senderRoleId;
+            $levelPending->receiver_role_id = $request->receiverRoleId;
+            $levelPending->sender_user_id = auth()->user()->id;
+            $levelPending->save();
+            DB::commit();
+            return responseMsg(true, "Successfully Forwarded The Application!!", "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+
 
     # add workflow_tracks
     public function workflowTracks(array $inputs)

@@ -56,11 +56,18 @@ class ActiveSafController extends Controller
         return $data;
     }
 
+    // Post Independent Comment
+    public function postIndependentComment(Request $request)
+    {
+        return $this->Repository->postIndependentComment($request);
+    }
+
     public function postNextLevel(Request $request)
     {
         $data = $this->Repository->postNextLevel($request);
         return $data;
     }
+
     public function getPropIdByWardNoHodingNo(Request $request)
     {
         $data = $this->Repository->getPropIdByWardNoHodingNo($request);
