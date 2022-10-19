@@ -1853,6 +1853,15 @@ class Trade implements ITrade
         $user = Auth()->user();
         $user_id = $user->id;
         $ulb_id = $user->ulb_id;
+        $nowdate = Carbon::now()->format('Y-m-d'); 
+        $timstamp = Carbon::now()->format('Y-m-d H:i:s');                
+        $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
+        $alphaNumCommaSlash='/^[a-zA-Z0-9- ]+$/i';
+        $alphaSpace ='/^[a-zA-Z ]+$/i';
+        $alphaNumhyphen ='/^[a-zA-Z0-9- ]+$/i';
+        $numDot = '/^\d+(?:\.\d+)+$/i';
+        $dateFormatYYYMMDD ='/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))+$/i';
+        $dateFormatYYYMM='/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';
         try{
             $data = array();
             if($request->getMethod()=='GET')
@@ -1863,7 +1872,17 @@ class Trade implements ITrade
             {
                 $rules = [];
                 $message = [];
-                $rules[""]="";
+                $rules["firmName"]="required|regex:$regex";
+                $rules["ownerName"]="required|regex:$regex";
+                $rules["wardNo"]="required|int";
+                $rules["holdingNo"]="required";
+                $rules["address"]="required|regex:$regex";
+                $rules["landmark"]="required|regex:$regex";
+                $rules["city"]="required|regex:$regex";
+                $rules["pincode"]="required|digits:6";
+                $rules["mobileNo"]="required|digits:10";
+                $rules["comment"]="required|regex:$regex|min:10";
+                $rules["document"]="required";
                 $validator = Validator::make($request->all(), $rules, $message);
                 if ($validator->fails()) {
                     return responseMsg(false, $validator->errors(),$request->all());
