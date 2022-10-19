@@ -34,7 +34,7 @@ class ActiveSafController extends Controller
     }
     public function outbox(Request $request)
     {
-        $data = $this->Repository->outbox($request->key);
+        $data = $this->Repository->outbox($request);
         return $data;
     }
     public function details(Request $request)

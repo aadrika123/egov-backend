@@ -174,7 +174,7 @@ trait Workflow
     }
 
     /**
-     * | Get Initiator Id
+     * | Get Initiator Id While Sending to level Pending For the First Time
      * | @param mixed $wfWorkflowId > Workflow Id of Modules
      * | @var string $query
      */
