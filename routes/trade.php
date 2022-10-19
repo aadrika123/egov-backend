@@ -27,6 +27,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('searchLicence', 'searchLicence');
         Route::post('inbox', 'inbox');
         Route::post('outbox', 'outbox');
+        Route::post('postNext', 'postNextLevel');
     });
 });
 Route::controller(ApplyApplication::class)->group(function () {    

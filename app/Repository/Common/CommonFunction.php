@@ -36,7 +36,8 @@ class CommonFunction implements ICommonFunction
             $redis =Redis::connection();
             $workflow_rolse = "";//json_decode(Redis::get('WorkFlowRoles:' . $user_id.":".$work_flow_id),true)??null;
             if(!$workflow_rolse)
-            {
+            { 
+                // DB::enableQueryLog();
                 $workflow_rolse = WfMaster::select(
                                 DB::raw("wf_roles.id ,wf_roles.role_name,forward_role_id as forward_id,
                                         backward_role_id as backward_id,is_initiator,is_finisher,
@@ -44,7 +45,10 @@ class CommonFunction implements ICommonFunction
                                         wf_workflows.ulb_id"
                                 )
                             )
-                            ->join("wf_workflows","wf_workflows.wf_master_id","wf_masters.id")
+                            ->join("wf_workflows",function($join){
+                                $join->on("wf_workflows.wf_master_id","wf_masters.id")
+                                ->where("wf_workflows.is_suspended",FALSE);
+                            })
                             ->join(DB::raw("(SELECT distinct(wf_role_id) as wf_role_id ,workflow_id
                                             FROM wf_workflowrolemaps 
                                             WHERE  wf_workflowrolemaps.is_suspended = false 
@@ -58,8 +62,10 @@ class CommonFunction implements ICommonFunction
                             ->join("wf_roles","wf_roles.id","wf_workflowrolemaps.wf_role_id")
                             ->where("wf_roles.is_suspended",false)
                             ->where("wf_masters.id",$work_flow_id)
+                            ->where("wf_masters.is_suspended",false)
                             ->orderBy("wf_roles.id")
                             ->get();
+                            // dd(DB::getQueryLog());
                 $workflow_rolse = adjToArray($workflow_rolse);
                 $this->WorkFlowRolesSet($redis,$user_id, $workflow_rolse,$work_flow_id);
             }
@@ -187,7 +193,7 @@ class CommonFunction implements ICommonFunction
             echo $e->getMessage();
         }
     }
-    public function iniatorFinisher($user_id,$ulb_id,$refWorkflowId)
+    public function iniatorFinisher($user_id,$ulb_id,$refWorkflowId) //array
     {
         try{
             $getWorkFlowRoles = $this->getWorkFlowRoles($user_id,$ulb_id,$refWorkflowId);
