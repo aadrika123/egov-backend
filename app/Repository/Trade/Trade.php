@@ -16,6 +16,7 @@ use App\Models\Trade\TradeChequeDtl;
 use App\Models\Trade\TradeDenialConsumerDtl;
 use App\Models\Trade\TradeDenialNotice;
 use App\Models\Trade\TradeFineRebetDetail;
+use App\Models\Trade\TradeLevelPending;
 use App\Models\Trade\TradeParamApplicationType;
 use App\Models\Trade\TradeParamCategoryType;
 use App\Models\Trade\TradeParamFirmType;
@@ -92,7 +93,8 @@ class Trade implements ITrade
             $data = array() ;
             $rules = [];
             $message = [];
-            if (in_array($this->application_type_id, ["2", "3","4"])) {
+            if (in_array($this->application_type_id, ["2", "3","4"])) 
+            {
                 $rules["licenceId"] = "required";
                 $message["licenceId.required"] = "Old Licence Id Requird";
             }
@@ -112,7 +114,14 @@ class Trade implements ITrade
                 $data["natureOfBusiness"] = $this->gettradeitemsList(true);
                 if(isset($request->licenceId) && $request->licenceId  && $this->application_type_id !=1)
                 {
-        
+                    $oldLicece = $this->getLicenceById($request->licenceId);
+                    if(!$oldLicece)
+                    {
+                        throw new Exception("No Priviuse Licence Found");
+                    }
+                    $oldOwneres =$this->getOwnereDtlByLId($request->licenceId);
+                    $data["licenceDtl"] =  $oldLicece;
+                    $data["ownerDtl"] = $oldOwneres;
                 }
                 return responseMsg(true,"",remove_null($data));
             }
@@ -223,6 +232,10 @@ class Trade implements ITrade
                 if (in_array($this->application_type_id, ["2", "3","4"])) 
                 {   
                     $oldLicence = ActiveLicence::find($request->licenceId);
+                    if(!$oldLicence)
+                    {
+                        throw new Exception("Old Licence Not Found");
+                    }
                     $oldowners = ActiveLicenceOwner::where('licence_id',$request->licenceId)
                                 ->get();
                     $licence->id                  = $oldLicence->id;
@@ -652,7 +665,6 @@ class Trade implements ITrade
             $data['documents'] = $documents;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
-            dd($application);
             
         }
         catch(Exception $e)
@@ -1191,6 +1203,10 @@ class Trade implements ITrade
     public function postNextLevel(Request $request)
     {
         try{
+            $receiver_user_type_id="";
+            $sms = "";
+            $licence_pending=2;
+            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\\s]+$/';
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
@@ -1202,17 +1218,223 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
-            $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);           
+            $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);
             if (!$role) 
             {
                 throw new Exception("You Are Not Authorized");
             }
+            $role_id = $role->role_id;
+            $rules = [
+                // "receiverId" => "required|int",
+                "btn" => "required|in:btc,forward,backword",
+                "licenceId" => "required|int",
+                "comment" => "required|min:10|regex:$regex",
+            ];
+            $message = [
+                // "receiverId.int" => "Receiver User Id Must Be Integer",
+                "btn.in"=>"button Value May be In btc,forward,backword",
+                "comment.required" => "Comment Is Required",
+                "comment.min" => "Comment Length At Least 10 Charecters",
+            ];
+            $validator = Validator::make($request->all(), $rules, $message);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), $request->all());
+            }
+            if($role->is_initiator && in_array($request->btn,['btc','backword']))
+            {
+               throw new Exception("Initator Can Not Back The Application");
+            }
+            $licenc_data = ActiveLicence::find($request->licenceId);            
+            $level_data = $this->getLevelData($request->licenceId);
+            if(!$licenc_data)
+            {
+                throw new Exception("Data Not Found");
+            }
+            elseif($licenc_data->pending_status==5)
+            {
+                throw new Exception("Licence Is Already Approved");
+            }
+            elseif(!$role->is_initiator && isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
+            {
+                throw new Exception("You Have Not Pending Application");
+            }
+            elseif(!$role->is_initiator && ! $level_data)
+            {
+                throw new Exception("Please Contact To Admin!!!...");
+            }  
+            elseif(isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
+            {
+                throw new Exception("You Are Already Taken The Action On This Application");
+            }
+            $init_finish = $this->parent->iniatorFinisher($user_id,$ulb_id,$refWorkflowId); 
+            if(!$init_finish)
+            {
+                throw new Exception("Full Work Flow Not Desigen Proper Please Contact To Admin !!!...");
+            }
+            elseif(!$init_finish["initiator"])
+            {
+                throw new Exception("Initiar Not Avelable Please Contact To Admin !!!...");
+            }
+            elseif(!$init_finish["finisher"])
+            {
+                throw new Exception("Finisher Not Avelable Please Contact To Admin !!!...");
+            }
+            
+            // dd($role);
+            if($request->btn=="forward" && !$role->is_finisher && !$role->is_initiator)
+            {
+                $sms ="Application Forword To ".$role->forword_name;
+                $receiver_user_type_id = $role->forward_role_id;
+            }
+            elseif($request->btn=="backword" && !$role->is_initiator)
+            {
+                $sms ="Application Forword To ".$role->backword_name;
+                $receiver_user_type_id = $role->backward_role_id;
+            }
+            elseif($request->btn=="btc" && !$role->is_initiator)
+            {
+                $licence_pending = 3;
+                $sms ="Application Forword To ".$init_finish["initiator"]['role_name'];
+                $receiver_user_type_id = $init_finish["initiator"]['id'];
+            } 
+            elseif($request->btn=="forward" && !$role->is_initiator && $level_data)
+            {
+                $sms ="Application Forword ";
+                $receiver_user_type_id = $level_data->sender_user_type_id;
+            }
+            elseif($request->btn=="forward" && $role->is_initiator && !$level_data)
+            {
+                $licence_pending = 2;
+                $sms ="Application Forword To ".$role->forword_name;
+                $receiver_user_type_id = $role->forward_role_id;
+            }
+
+            if(!$role->is_finisher && !$receiver_user_type_id)  
+            {
+                throw new Exception("Next Roll Not Found !!!....");
+            }
+            
+            // dd($role_id);
+
+            DB::beginTransaction();
+            if($level_data)
+            {
+                
+                $level_data->verification_status = 1;
+                $level_data->receiver_user_id =$user_id;
+                $level_data->remarks =$request->comment;
+                $level_data->forward_date =Carbon::now("Y-m-d");
+                $level_data->forward_time =Carbon::now("H:s:i");
+                $level_data->save();
+            }
+            if(!$role->is_finisher)
+            {                
+                $level_insert = new TradeLevelPending;
+                $level_insert->licence_id = $licenc_data->id;
+                $level_insert->sender_user_type_id = $role_id;
+                $level_insert->receiver_user_type_id = $receiver_user_type_id;
+                $level_insert->sender_user_id = $user_id;
+                $level_insert->save();
+            }
+            if($role->is_finisher && $request->btn=="forward")
+            {
+                
+                    $licence_pending = 5;
+                    $sms ="Application Approved By ".$role->forword_name;
+                    $ulbDtl = UlbMaster::find($ulb_id);
+                    $ulb_name = explode(' ',$ulbDtl->ulb_name);
+                    $short_ulb_name = "";
+                    foreach($ulb_name as $val)
+                    {
+                        $short_ulb_name.=$val[0];
+                    }
+                    $ward_no = UlbWorkflowMaster::select("ward_name")
+                            ->where("id",$licenc_data->ward_mstr_id)
+                            ->first();
+                    $ward_no = $ward_no['ward_name'];
+                    $license_no = $short_ulb_name.$ward_no.date("mdY").$licenc_data->id;
+                    $licence_for_years = $licenc_data->licence_for_years;
+                    # 1	NEW LICENSE
+                    if($licenc_data->application_type_id == 1)
+                    {
+                        // update license validity
+                        $valid_upto =date("Y-m-d", strtotime("+$licence_for_years years", strtotime($licenc_data->apply_date)));
+                        
+
+                    }
+
+                    # 2 RENEWAL
+                    if($licenc_data->application_type_id == 2)
+                    {
+                        $prive_licence = ExpireLicence::find($licenc_data->update_status);
+                        if(!empty($prive_licence))
+                        {                                    
+                            $prive_licence_id = $prive_licence->id;
+                            $license_no = $prive_licence->license_no;
+                            $valid_from = $prive_licence->valid_upto;                        
+                            {
+                                $datef = date('Y-m-d', strtotime($valid_from));
+                                $datefrom = date_create($datef);
+                                $datea = date('Y-m-d', strtotime($licenc_data->apply_date));
+                                $dateapply = date_create($datea);
+                                $year_diff = date_diff($datefrom, $dateapply);
+                                $year_diff =  $year_diff->format('%y');
+
+                                $priv_m_d = date('m-d', strtotime($valid_from));
+                                $date = date('Y',strtotime($valid_from)) . '-' . $priv_m_d;
+                                $licence_for_years2 = $licence_for_years + $year_diff; 
+                                $valid_upto = date('Y-m-d', strtotime($date . "+" . $licence_for_years2 . " years"));
+                                $data['valid_upto'] = $valid_upto; 
+                                
+                            }
+                            
+                            
+                        }
+                        else
+                        {
+                            throw new Exception('licence','Some Error Occurred Please Contact to Admin!!!');
+                        
+                        }
+                    }
+
+                    # 3	AMENDMENT
+                    if($licenc_data->application_type_id == 3)
+                    {
+                        $prive_licence = ExpireLicence::find($licenc_data->update_status);
+                        $license_no = $prive_licence->license_no;
+                        $oneYear_validity = date("Y-m-d", strtotime("+1 years", strtotime('now')));
+                        $previous_validity = $prive_licence->valid_upto;
+                        if($previous_validity > $oneYear_validity)
+                            $valid_upto = $previous_validity;
+                        else
+                            $valid_upto = $oneYear_validity;                   
+                        $licenc_data->valid_from = date('Y-m-d');
+                    }
+                    
+                    # 4 SURRENDER
+                    if($licenc_data->application_type_id==4)
+                    {
+                        // Incase of surrender valid upto is previous license validity
+                        $prive_licence = ExpireLicence::find($licenc_data->update_status);
+                        $license_no = $prive_licence->license_no;
+                        $valid_upto = $prive_licence->valid_upto;
+                    }
+                    $licenc_data->license_no = $license_no;
+                    $sms.=" Licence No ".$license_no;
+            }
+            $licenc_data->pending_status = $licence_pending;            
+            $licenc_data->save();            
+            DB::commit();
+            return responseMsg(false, $sms, "");
+
         }
         catch(Exception $e)
         {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    
 
     #---------- core function for trade Application--------
 
@@ -1535,6 +1757,7 @@ class Trade implements ITrade
         try{
             $ownerDtl   = ActiveLicenceOwner::select("*")
                             ->where("licence_id",$id)
+                            ->where("status",1)
                             ->get();
             return $ownerDtl;
         }
@@ -1617,6 +1840,23 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$licence_no);
         }
         
+    }
+
+    public function getLevelData(int $licenceId)
+    {
+        try{
+            $data = TradeLevelPending::select("*")
+                    ->where("licence_id",$licenceId)
+                    ->where("status",1)
+                    ->where("verification_status",0)
+                    ->orderBy("id","DESC")
+                    ->first();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
     }
    
     #-------------------- End core function of core function --------------

@@ -24,12 +24,15 @@ use App\Repository\WorkflowMaster\Concrete\WfWorkflowRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowRoleMapRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowRoleUserMapRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowWardUserRepository;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMappingRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowMasterRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowRoleRepository;
 use App\Repository\WorkflowMaster\Interface\iWfWorkflowRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowRoleMapRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowRoleUserMapRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowWardUserRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowMappingRepository;
+
 
 use Illuminate\Support\ServiceProvider;
 
@@ -59,6 +62,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(IMenuUlbrolesRepository::class, EloquentMenuUlbroles::class);
 
         // Workflow Master
+        $this->app->bind(iWorkflowMappingRepository::class, WorkflowMappingRepository::class);
         $this->app->bind(iWorkflowMasterRepository::class, WorkflowMasterRepository::class);
         $this->app->bind(iWorkflowRoleRepository::class, WorkflowRoleRepository::class);
         $this->app->bind(iWfWorkflowRepository::class, WfWorkflowRepository::class);

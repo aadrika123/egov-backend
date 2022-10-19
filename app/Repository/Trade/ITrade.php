@@ -30,4 +30,5 @@ interface ITrade
     public function getAllApplicationType();
     public function inbox(Request $request);
     public function outbox(Request $request);
+    public function postNextLevel(Request $request);
 }
