@@ -68,7 +68,7 @@ class Trade implements ITrade
         
         $this->redis = new Redis;
         $this->user_data = json_decode($this->redis::get('user:' . $this->user_id), true);
-        $apply_from = $this->applyFrom();        
+        $apply_from = $this->applyFrom();  dd( $apply_from);      
         try
         {
             $this->application_type_id = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);            
@@ -118,6 +118,7 @@ class Trade implements ITrade
             }
             if($request->getMethod()=='GET')
             {
+                $data['apply_from'] =$apply_from;
                 $data["firmTypeList"] = $this->getFirmTypeList();
                 $data["ownershipTypeList"] = $this->getownershipTypeList();
                 $data["categoryTypeList"] = $this->getCotegoryList();
@@ -1897,11 +1898,10 @@ class Trade implements ITrade
                 $data["File Name"]=$file->getClientOriginalName();
                 $data["exten"] = $file->getClientOriginalExtension();
                 $fileName = time().'_'.$file->getClientOriginalName();
-                $filePath = $file->storeAs('uploads/Trade/', $fileName, 'public');
+                $filePath = $this->uplodeFile($file,$fileName);//$file->storeAs('uploads/Trade/', $fileName, 'public');
                 $data["filePath"] =  $filePath;
                 $data["file_url"]=config('file.url');
-                // $destinationPath=$data["file_url"]."/storage/app/public/uploads/";
-                // $file->move($destinationPath, $fileName);
+                $data["upload_url"] = storage_path('app/public/' . $filePath);
                 return  responseMsg(true,"",$data);
             }
             
@@ -2132,7 +2132,7 @@ class Trade implements ITrade
         $user_id = $user->id;
         $ulb_id = $user->ulb_id;
         $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-        $user_data = $this->parent->getUserRoll($user_id, $ulb_id,$refWorkflowId);
+        $user_data = $this->parent->getUserRoll($user_id, $ulb_id,$refWorkflowId); 
         $roll_id =  $user_data->role_id??-1;       
         if($roll_id != -1)
         {
