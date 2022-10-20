@@ -39,6 +39,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('saf/escalate/inbox/{key?}', 'specialInbox');               // Saf workflow Inbox and Inbox By search key
         Route::post('saf/independent-comment', 'postIndependentComment');      // Independent Comment for SAF Application
         Route::post('saf/post/level', 'postNextLevel');                        // Forward or Backward Application
+        Route::post('saf/approvalrejection', 'safApprovalRejection');           // Approval Rejection SAF Application
         Route::post('getProperty', 'getPropIdByWardNoHodingNo');               // get Property (search) by ward no and holding no
         Route::match(["get", "post"], 'ulb/workflow/member', 'setWorkFlowForwordBackword');      // get Property (search) by ward no and holding no
     });

@@ -178,7 +178,7 @@ trait Workflow
      * | @param mixed $wfWorkflowId > Workflow Id of Modules
      * | @var string $query
      */
-    public function getInitiatorId(string $wfWorkflowId)
+    public function getInitiatorId(int $wfWorkflowId)
     {
         $query = "SELECT 
                     r.id AS role_id,
