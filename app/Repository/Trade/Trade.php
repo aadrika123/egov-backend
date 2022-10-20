@@ -68,7 +68,7 @@ class Trade implements ITrade
         
         $this->redis = new Redis;
         $this->user_data = json_decode($this->redis::get('user:' . $this->user_id), true);
-        $apply_from = $this->applyFrom();  dd( $apply_from);      
+        $apply_from = $this->applyFrom();      
         try
         {
             $this->application_type_id = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);            
@@ -118,6 +118,7 @@ class Trade implements ITrade
             }
             if($request->getMethod()=='GET')
             {
+                
                 $data['apply_from'] =$apply_from;
                 $data["firmTypeList"] = $this->getFirmTypeList();
                 $data["ownershipTypeList"] = $this->getownershipTypeList();
