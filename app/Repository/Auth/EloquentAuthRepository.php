@@ -47,7 +47,7 @@ class EloquentAuthRepository implements AuthRepository
             // Validation---@source-App\Http\Requests\AuthUserRequest
             $user = new User;
             $this->saving($user, $request);                     // Storing data using Auth trait
-            $user->password = $request->password;
+            $user->password = Hash::make($request->password);
             $user->save();
             return responseMsg(true, "User Registered Successfully !! Please Continue to Login", "");
         } catch (Exception $e) {

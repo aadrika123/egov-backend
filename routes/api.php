@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
 use App\Http\Controllers\CitizenController;
+use App\Http\Controllers\MapController;
 use App\Http\Controllers\Menupermission\MenuGroupsController;
 use App\Http\Controllers\Menupermission\MenuItemsController;
 use App\Http\Controllers\Menupermission\MenuMapController;
@@ -313,7 +314,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     /**
      * Ward User CRUD operation
      */
-    Route::apiResource("warduser", WorkflowRoleController::class);
+    Route::apiResource("warduser", WorkflowWardUserController::class);
+    Route::controller(WorkflowWardUserController::class)->group(function () {
+        Route::post('workflows/getroledetails', 'getRoleDetails');
+    });
 
     /**
      * Role User Map CRUD operation
@@ -335,11 +339,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * Workflow Mapping CRUD operation
      */
 
-    Route::controller(WorkflowMappingController::class)->group(function () {
+    Route::controller(WorkflowWardUserController::class)->group(function () {
 
         //Mapping
-        Route::get('workflow/getUserByID/{id}', 'getUserByID');
-        Route::post('workflow/getAltNameByUlbId', 'getAltNameByUlbId');
+        Route::post('workflow/getUserById', 'getUserById');
         Route::post('workflow/getWorkflowNameByUlb', 'getWorkflowNameByUlb');
         Route::post('workflow/getRoleByUlb', 'getRoleByUlb');
         Route::post('workflow/getWardByUlb', 'getWardByUlb');
@@ -460,7 +463,7 @@ Route::controller(MenuItemsController::class)->group(function () {
     // Route::group(['middleware' => 'can:isAdmin'], function () {
     Route::post('menu-Permission/get-Menu-Groups', 'menuGroupWiseItems');                       // get all MenuGroups                  
     Route::post('menu-Permission/get-Roles', 'ulbWiseMenuRole');                                // get all MenuRoles
-    Route::post('menu-Permission/get-Menu-Roles-Items', 'menuGroupAndRoleWiseItems'); 
+    Route::post('menu-Permission/get-Menu-Roles-Items', 'menuGroupAndRoleWiseItems');
     Route::put('menu-Permission/put-Menu-Maps-Items', 'uplodeDataInMenuMaps');           // get role wise items
     // });
 });

@@ -63,6 +63,26 @@ class ApplyApplication extends Controller
     }
     public function inbox(Request $request)
     {
-        return $this->Repository->inbox($request->key);
+        return $this->Repository->inbox($request);
+    }
+    public function outbox(Request $request)
+    {
+        return $this->Repository->outbox($request);
+    }
+    public function postNextLevel(Request $request)
+    {
+        return $this->Repository->postNextLevel($request);
+    }
+    public function procidToPaymentCounter(Request $request)
+    {
+        return $this->Repository->procidToPaymentCounter($request);
+    }
+    public function provisionalCertificate(Request $request)
+    {
+        return $this->Repository->provisionalCertificate($request->id);
+    }
+    public function licenceCertificate(Request $request)
+    {
+        return $this->Repository->licenceCertificate($request->id);
     }
 }

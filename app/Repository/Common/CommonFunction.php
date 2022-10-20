@@ -19,7 +19,7 @@ class CommonFunction implements ICommonFunction
             if(!$ward_permission)
             { 
                 Redis::del('WardPermission:' . $user_id);
-                $ward_permission =WardUser::select("ulb_ward_id",
+                $ward_permission =WardUser::select("ulb_ward_id","ulb_ward_masters.id",
                                     DB::raw("ulb_ward_masters.ward_name as ward_no")
                                     )
                                     ->join("ulb_ward_masters","ulb_ward_masters.id","=","ward_users.ulb_ward_id")
@@ -36,7 +36,8 @@ class CommonFunction implements ICommonFunction
             $redis =Redis::connection();
             $workflow_rolse = "";//json_decode(Redis::get('WorkFlowRoles:' . $user_id.":".$work_flow_id),true)??null;
             if(!$workflow_rolse)
-            {
+            { 
+                // DB::enableQueryLog();
                 $workflow_rolse = WfMaster::select(
                                 DB::raw("wf_roles.id ,wf_roles.role_name,forward_role_id as forward_id,
                                         backward_role_id as backward_id,is_initiator,is_finisher,
@@ -44,7 +45,10 @@ class CommonFunction implements ICommonFunction
                                         wf_workflows.ulb_id"
                                 )
                             )
-                            ->join("wf_workflows","wf_workflows.wf_master_id","wf_masters.id")
+                            ->join("wf_workflows",function($join){
+                                $join->on("wf_workflows.wf_master_id","wf_masters.id")
+                                ->where("wf_workflows.is_suspended",FALSE);
+                            })
                             ->join(DB::raw("(SELECT distinct(wf_role_id) as wf_role_id ,workflow_id
                                             FROM wf_workflowrolemaps 
                                             WHERE  wf_workflowrolemaps.is_suspended = false 
@@ -57,8 +61,11 @@ class CommonFunction implements ICommonFunction
                             )
                             ->join("wf_roles","wf_roles.id","wf_workflowrolemaps.wf_role_id")
                             ->where("wf_roles.is_suspended",false)
+                            ->where("wf_masters.id",$work_flow_id)
+                            ->where("wf_masters.is_suspended",false)
                             ->orderBy("wf_roles.id")
                             ->get();
+                            // dd(DB::getQueryLog());
                 $workflow_rolse = adjToArray($workflow_rolse);
                 $this->WorkFlowRolesSet($redis,$user_id, $workflow_rolse,$work_flow_id);
             }
@@ -143,6 +150,7 @@ class CommonFunction implements ICommonFunction
     public function getUserRoll($user_id,$ulb_id,$workflow_id)
     { 
         try{//
+            // DB::enableQueryLog();
             $data = WfRole::select(DB::raw("wf_roles.id as role_id,wf_roles.role_name,
                                             wf_roles.is_initiator, wf_roles.is_finisher,
                                             wf_roles.forward_role_id,forword.role_name as forword_name,
@@ -153,11 +161,23 @@ class CommonFunction implements ICommonFunction
                                     )
                         ->leftjoin("wf_roles AS forword","forword.id","=","wf_roles.forward_role_id")
                         ->leftjoin("wf_roles AS backword","backword.id","=","wf_roles.backward_role_id")
-                        ->join("wf_roleusermaps","wf_roleusermaps.wf_role_id","=","wf_roles.id")
+                        ->join("wf_roleusermaps",function($join){
+                            $join->on("wf_roleusermaps.wf_role_id","=","wf_roles.id")
+                            ->where("wf_roleusermaps.is_suspended","=",FALSE);
+                        })
                         ->join("users","users.id","=","wf_roleusermaps.user_id")
-                        ->join("wf_workflowrolemaps","wf_workflowrolemaps.wf_role_id","=","wf_roleusermaps.wf_role_id")
-                        ->join("wf_workflows","wf_workflows.id","=","wf_workflowrolemaps.workflow_id")
-                        ->join("wf_masters","wf_masters.id","=","wf_workflows.wf_master_id")
+                        ->join("wf_workflowrolemaps",function($join){
+                            $join->on("wf_workflowrolemaps.wf_role_id","=","wf_roleusermaps.wf_role_id")
+                            ->where("wf_workflowrolemaps.is_suspended","=",FALSE);
+                        })
+                        ->join("wf_workflows",function($join){
+                            $join->on("wf_workflows.id","=","wf_workflowrolemaps.workflow_id")
+                            ->where("wf_workflows.is_suspended","=",FALSE);
+                        })
+                        ->join("wf_masters",function($join){
+                            $join->on("wf_masters.id","=","wf_workflows.wf_master_id")
+                            ->where("wf_masters.is_suspended","=",FALSE);
+                        })
                         ->join("ulb_masters","ulb_masters.id","=","wf_workflows.ulb_id")
                         ->where("wf_roles.is_suspended",false)
                         ->where("wf_roleusermaps.user_id",$user_id)
@@ -165,7 +185,28 @@ class CommonFunction implements ICommonFunction
                         ->where("wf_masters.id",strtoupper($workflow_id))
                         ->orderBy("wf_roleusermaps.id","desc")
                         ->first();
+                        // dd(DB::getQueryLog());
             return $data;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+    public function iniatorFinisher($user_id,$ulb_id,$refWorkflowId) //array
+    {
+        try{
+            $getWorkFlowRoles = $this->getWorkFlowRoles($user_id,$ulb_id,$refWorkflowId);
+            $initater = array_filter($getWorkFlowRoles,function($val){
+                return $val['is_initiator']==true;
+            });
+            $initater=array_values($initater)[0];
+            $finisher = array_filter($getWorkFlowRoles,function($val){
+                return $val['is_finisher']==true;
+            });
+            $finisher=array_values($finisher)[0];
+            return ["initiator"=>$initater,"finisher"=>$finisher];       
+
         }
         catch(Exception $e)
         {

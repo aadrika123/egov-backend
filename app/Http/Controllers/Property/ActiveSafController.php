@@ -34,7 +34,7 @@ class ActiveSafController extends Controller
     }
     public function outbox(Request $request)
     {
-        $data = $this->Repository->outbox($request->key);
+        $data = $this->Repository->outbox($request);
         return $data;
     }
     public function details(Request $request)
@@ -43,23 +43,38 @@ class ActiveSafController extends Controller
         return $data;
     }
 
-    public function special(Request $request)
+    // postEscalate
+    public function postEscalate(Request $request)
     {
-        $data = $this->Repository->special($request);
+        $data = $this->Repository->postEscalate($request);
+        return $data;
+    }
+    // SAF special Inbox
+    public function specialInbox()
+    {
+        $data = $this->Repository->specialInbox();
         return $data;
     }
 
-    public function specialInbox(Request $request)
+    // Post Independent Comment
+    public function postIndependentComment(Request $request)
     {
-        $data = $this->Repository->specialInbox($request->key);
-        return $data;
+        return $this->Repository->postIndependentComment($request);
     }
 
+    // Forward to Next Level
     public function postNextLevel(Request $request)
     {
         $data = $this->Repository->postNextLevel($request);
         return $data;
     }
+
+    // Saf Application Approval Or Reject
+    public function safApprovalRejection(Request $req)
+    {
+        return $this->Repository->safApprovalRejection($req);
+    }
+
     public function getPropIdByWardNoHodingNo(Request $request)
     {
         $data = $this->Repository->getPropIdByWardNoHodingNo($request);

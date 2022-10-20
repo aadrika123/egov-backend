@@ -172,4 +172,21 @@ trait Workflow
             ->get();
         return $occupiedWard;
     }
+
+    /**
+     * | Get Initiator Id While Sending to level Pending For the First Time
+     * | @param mixed $wfWorkflowId > Workflow Id of Modules
+     * | @var string $query
+     */
+    public function getInitiatorId(int $wfWorkflowId)
+    {
+        $query = "SELECT 
+                    r.id AS role_id,
+                    r.role_name AS role_name 
+                    FROM wf_roles r
+                    INNER JOIN (SELECT * FROM wf_workflowrolemaps WHERE workflow_id=$wfWorkflowId) w ON w.wf_role_id=r.id
+                    WHERE r.is_initiator=TRUE 
+                    ";
+        return $query;
+    }
 }

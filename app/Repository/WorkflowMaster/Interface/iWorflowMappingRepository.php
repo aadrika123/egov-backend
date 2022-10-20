@@ -8,23 +8,13 @@ use Illuminate\Http\Request;
  * Created On-07-10-2022 
  * Created By-Mrinal Kumar
  * -----------------------------------------------------------------------------------------------------
- * Interface for the functions to used in EloquentWorkflowWardUserRepository
- * @return ChildRepository App\Repository\WorkflowMaster\EloquentWorkflowWardUserRepository
+ * Interface for the functions to used in WorkflowMappingepository
+ * @return ChildRepository App\Repository\WorkflowMaster\WorkflowMappingRepository
  */
 
 
-interface iWorkflowWardUserRepository
+interface iWorkflowMappingRepository
 {
-    //for crud
-    public function create(Request $request);
-    public function list();
-    public function delete($id);
-    public function update(Request $request, $id);
-    public function view($id);
-
-    //for mapping
-    public function getRoleDetails(Request $req);
-
     public function getUserById(Request $request);
     public function getWorkflowNameByUlb(Request $request);
     public function getRoleByUlb(Request $request);
