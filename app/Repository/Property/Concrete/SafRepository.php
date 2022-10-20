@@ -654,7 +654,7 @@ class SafRepository implements iSafRepository
             // }
             $owner_dtl = ActiveSafOwnerDetail::select('*')
                 ->where('status', 1)
-                ->where('saf_dtl_id', 1)
+                ->where('saf_dtl_id', $saf_id)
                 ->get();
             $data['owner_dtl'] =  remove_null($owner_dtl);
             $floor = ActiveSafFloorDetail::select("*")
