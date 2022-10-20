@@ -16,6 +16,7 @@ interface ITrade
 {
     public function __construct();
     public function applyApplication(Request $request);
+    public function procidToPaymentCounter(Request $request);
     public function validate_holding_no(Request $request);
     public function searchLicenceByNo(Request $request);
     public function searchLicence(string $licence_no,$ulb_id);
@@ -31,4 +32,6 @@ interface ITrade
     public function inbox(Request $request);
     public function outbox(Request $request);
     public function postNextLevel(Request $request);
+    public function provisionalCertificate($id);
+    public function licenceCertificate($id);
 }

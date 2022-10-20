@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 trait SAF
 {
     // SAF Inbox 
-    public function getSafInbox()
+    public function getSaf()
     {
         $data = DB::table('active_saf_details')
             ->join('active_saf_owner_details as o', 'o.saf_dtl_id', '=', 'active_saf_details.id')

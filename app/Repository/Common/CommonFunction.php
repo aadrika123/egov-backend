@@ -19,7 +19,7 @@ class CommonFunction implements ICommonFunction
             if(!$ward_permission)
             { 
                 Redis::del('WardPermission:' . $user_id);
-                $ward_permission =WardUser::select("ulb_ward_id",
+                $ward_permission =WardUser::select("ulb_ward_id","ulb_ward_masters.id",
                                     DB::raw("ulb_ward_masters.ward_name as ward_no")
                                     )
                                     ->join("ulb_ward_masters","ulb_ward_masters.id","=","ward_users.ulb_ward_id")
