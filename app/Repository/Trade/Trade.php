@@ -110,6 +110,7 @@ class Trade implements ITrade
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
+                $data['wardList'] = adjToArray($data['wardList']);
             }
             else
             {
@@ -217,10 +218,11 @@ class Trade implements ITrade
                 }
                 
                 $wardId = $request->firmDetails['wardNo'];
-                $ward_no = array_filter(adjToArray($data['wardList']), function ($val) use($wardId ){
+                
+                $ward_no = array_filter($data['wardList'], function ($val) use($wardId ){
                     return $val['id'] == $wardId ;
                 });
-                $ward_no = array_values($ward_no)[0]['ward_name'];
+                $ward_no = array_values($ward_no)[0]['ward_no'];
                 $proprty_id = null;
                 if($request->firmDetails['holdingNo'])
                 {
@@ -1895,10 +1897,10 @@ class Trade implements ITrade
                 $data["File Name"]=$file->getClientOriginalName();
                 $data["exten"] = $file->getClientOriginalExtension();
                 $fileName = time().'_'.$file->getClientOriginalName();
-                // $filePath = $file->storeAs('uploads', $fileName, 'public');
-                // $data["filePath"] =  $filePath;
-                $data["file_url"]=app();
-                $destinationPath="E:/sandeep2/jj/demo/";
+                $filePath = $file->storeAs('uploads/Trade/', $fileName, 'public');
+                $data["filePath"] =  $filePath;
+                $data["file_url"]=config('file.url');
+                // $destinationPath=$data["file_url"]."/storage/app/public/uploads/";
                 // $file->move($destinationPath, $fileName);
                 return  responseMsg(true,"",$data);
             }
@@ -2350,6 +2352,11 @@ class Trade implements ITrade
         } catch (Exception $e) {
             echo $e->getMessage();
         }
+    }
+    public function uplodeFile($file,$custumFileName)
+    {
+        $filePath = $file->storeAs('uploads/Trade/', $custumFileName, 'public');
+        return  $filePath;
     }
    
     #-------------------- End core function of core function --------------
