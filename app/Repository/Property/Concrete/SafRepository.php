@@ -42,6 +42,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\dSafCalculation;
 use App\EloquentClass\Property\dPropertyTax;
+use App\Models\Property\PropApprovedSafDetail;
 use App\Models\Property\PropLevelPending;
 use App\Models\WfRoleusermap;
 use App\Models\WfWardUser;
@@ -841,6 +842,35 @@ class SafRepository implements iSafRepository
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
+    }
+
+    /**
+     * | Approve or Reject The SAF Application
+     */
+    public function safApprovalRejection($req)
+    {
+        $req->validate([
+            'safId' => 'required|int',
+            'status' => 'required|int'
+        ]);
+        if ($req->status == 1) {
+            $query = ActiveSafDetail::query()
+                ->where('id', $req->safId)
+                ->first();
+            $newRecord = $query;
+            $newRecord->setTable('prop_approved_saf_details');
+            $newRecord->save();
+            $msg = "Application Successfully Rejected";
+        }
+
+        if ($req->status == 0) {
+            $query = "INSERT INTO prop_rejected_saf_details(SELECT * FROM active_saf_details WHERE id=$req->safId)";
+            $status = DB::insert($query);
+            $msg = "Application Successfully Rejected";
+        }
+
+        // $status->save();
+        return responseMsg(true, $msg, "");
     }
 
 

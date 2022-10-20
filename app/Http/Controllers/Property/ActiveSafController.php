@@ -62,10 +62,17 @@ class ActiveSafController extends Controller
         return $this->Repository->postIndependentComment($request);
     }
 
+    // Forward to Next Level
     public function postNextLevel(Request $request)
     {
         $data = $this->Repository->postNextLevel($request);
         return $data;
+    }
+
+    // Saf Application Approval Or Reject
+    public function safApprovalRejection(Request $req)
+    {
+        return $this->Repository->safApprovalRejection($req);
     }
 
     public function getPropIdByWardNoHodingNo(Request $request)
