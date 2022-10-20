@@ -202,6 +202,7 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
     public function getRoleByUlb(Request $request)
     {
         $workkFlow = WfWorkflow::where('ulb_id', $request->ulbId)
+            ->where('id',$request->id)
             ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.workflow_id', '=', 'wf_workflows.id')
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
             ->get('wf_roles.role_name');

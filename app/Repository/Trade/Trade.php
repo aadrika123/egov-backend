@@ -110,6 +110,7 @@ class Trade implements ITrade
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
+                $data['wardList'] = adjToArray($data['wardList']);
             }
             else
             {
@@ -217,10 +218,11 @@ class Trade implements ITrade
                 }
                 
                 $wardId = $request->firmDetails['wardNo'];
-                $ward_no = array_filter(adjToArray($data['wardList']), function ($val) use($wardId ){
+                
+                $ward_no = array_filter($data['wardList'], function ($val) use($wardId ){
                     return $val['id'] == $wardId ;
                 });
-                $ward_no = array_values($ward_no)[0]['ward_name'];
+                $ward_no = array_values($ward_no)[0]['ward_no'];
                 $proprty_id = null;
                 if($request->firmDetails['holdingNo'])
                 {
@@ -488,8 +490,8 @@ class Trade implements ITrade
                     $licence->payment_status = $payment_status;
                     $licence->save();
                     $res['transactionId'] = $transaction_id;
-                    // $res['paymentRecipt']= config('app.url')."/api/trade/paymentRecipt/".$licenceId."/".$transaction_id;
-                    $res['paymentRecipt']= "http://192.168.0.16:8000"."/api/trade/paymentRecipt/".$licenceId."/".$transaction_id;
+                    $res['paymentRecipt']= config('app.url')."/api/trade/paymentRecipt/".$licenceId."/".$transaction_id;
+                    
                     
                 }
                 elseif($noticeDetails)
@@ -785,7 +787,7 @@ class Trade implements ITrade
                      "transaction"=>$transaction,
                      "penalty"    =>$penalty
             ];
-            $data['paymentRecipt']= "http://192.168.0.16:8000"."/api/trade/paymentRecipt/".$id."/".$transectionId;
+            $data['paymentRecipt']= config('app.url')."/api/trade/paymentRecipt/".$id."/".$transectionId;
             $data = remove_null($data);
             return responseMsg(true,"", $data);
 
@@ -1169,8 +1171,11 @@ class Trade implements ITrade
                 return responseMsg(false, $validator->errors(),$request->all());
             }
             $licence_no = $request->licenceNo;
-            $data = ActiveLicence::select("*")
-                    ->join(
+            $data = ActiveLicence::select("active_licences.*","owner.*",
+                                    DB::raw("ulb_ward_masters.ward_name as ward_no")
+                                    )
+                    ->join("ulb_ward_masters","ulb_ward_masters.id","=","active_licences.ward_mstr_id")
+                    ->leftjoin(
                         DB::raw("(SELECT licence_id,
                                     string_agg(owner_name,',') as owner_name,
                                     string_agg(guardian_name,',') as guardian_name,
@@ -1184,10 +1189,10 @@ class Trade implements ITrade
                                         $join->on("owner.licence_id","=",  "active_licences.id");
                                     }
                                     )
-                    ->where('status',1)
-                    ->where('license_no',$licence_no)
-                    ->where("ulb_id",$ulb_id)
-                    ->where('pending_status',5)
+                    ->where('active_licences.status',1)
+                    ->where('active_licences.license_no',$licence_no)
+                    ->where("active_licences.ulb_id",$ulb_id)
+                    ->where('active_licences.pending_status',5)
                     ->first();
            if(!$data)
            {
@@ -1656,7 +1661,7 @@ class Trade implements ITrade
         try{
 
             $data = (array)null;
-            $data['provisionalCertificate']= "http://192.168.0.16:8000"."/api/trade/provisionalCertificate/".$id;           
+            $data['provisionalCertificate']= config('app.url')."/api/trade/provisionalCertificate/".$id;           
             $application = ActiveLicence::select("application_no","provisional_license_no","license_no",
                                             "firm_name","holding_no","address","payment_status",
                                         "owner.owner_name","owner.guardian_name","owner.mobile",
@@ -1761,7 +1766,7 @@ class Trade implements ITrade
         try{
 
             $data = (array)null;
-            $data['licenceCertificate']= "http://192.168.0.16:8000"."/api/trade/licenceCertificate/".$id;           
+            $data['licenceCertificate']= config('app.url')."/api/trade/licenceCertificate/".$id;           
             $application = ActiveLicence::select("application_no","provisional_license_no","license_no",
                                             "firm_name","holding_no","address","apply_date","license_date",
                                             "valid_from","valid_upto","licence_for_years","establishment_date",
@@ -1867,6 +1872,7 @@ class Trade implements ITrade
             if($request->getMethod()=='GET')
             {
                 $data['wardList'] = $this->parent->WardPermission($user_id);
+                return  responseMsg(true,"",$data);
             }
             if($request->getMethod()=='POST')
             {
@@ -1880,15 +1886,25 @@ class Trade implements ITrade
                 $rules["landmark"]="required|regex:$regex";
                 $rules["city"]="required|regex:$regex";
                 $rules["pincode"]="required|digits:6";
-                $rules["mobileNo"]="required|digits:10";
+                $rules["mobileNo"]="digits:10";
                 $rules["comment"]="required|regex:$regex|min:10";
-                $rules["document"]="required";
+                $rules["document"]="required|mimes:pdf,jpg,jpeg,png|max:2048";
                 $validator = Validator::make($request->all(), $rules, $message);
                 if ($validator->fails()) {
                     return responseMsg(false, $validator->errors(),$request->all());
                 }
+                $file=$request->file("document");
+                $data["File Name"]=$file->getClientOriginalName();
+                $data["exten"] = $file->getClientOriginalExtension();
+                $fileName = time().'_'.$file->getClientOriginalName();
+                $filePath = $file->storeAs('uploads/Trade/', $fileName, 'public');
+                $data["filePath"] =  $filePath;
+                $data["file_url"]=config('file.url');
+                // $destinationPath=$data["file_url"]."/storage/app/public/uploads/";
+                // $file->move($destinationPath, $fileName);
+                return  responseMsg(true,"",$data);
             }
-            return  responseMsg(true,"",$data);
+            
         }
         catch(Exception $e)
         {
@@ -2336,6 +2352,11 @@ class Trade implements ITrade
         } catch (Exception $e) {
             echo $e->getMessage();
         }
+    }
+    public function uplodeFile($file,$custumFileName)
+    {
+        $filePath = $file->storeAs('uploads/Trade/', $custumFileName, 'public');
+        return  $filePath;
     }
    
     #-------------------- End core function of core function --------------
