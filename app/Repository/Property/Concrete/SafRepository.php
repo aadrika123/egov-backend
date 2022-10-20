@@ -551,9 +551,16 @@ class SafRepository implements iSafRepository
                 return $item->ward_id;
             });
 
+            $roles = $this->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
+
+            $roleId = $roles->map(function ($item, $key) {
+                return $item->wf_role_id;
+            });
+
             $safInbox = $this->getSaf()                                            // Global SAF 
                 ->where('active_saf_details.ulb_id', $ulbId)
                 ->where('active_saf_details.status', 1)
+                ->whereIn('current_role', $roleId)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
                 ->groupBy('active_saf_details.id', 'p.property_type', 'ward.ward_name')
