@@ -19,7 +19,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      *  
      */
     Route::controller(ApplyApplication::class)->group(function () {        
-        Route::match(["get", "post"], 'apply/{applicationType}', 'applyApplication');
+        Route::match(["get", "post"], 'apply/{applicationType}/{id?}', 'applyApplication');
         Route::post('getCharge', 'paybleAmount');
         Route::post('getPropertyByHolding', 'validate_holding_no');
         Route::post('updateBasicDtl', 'updateBasicDtl');

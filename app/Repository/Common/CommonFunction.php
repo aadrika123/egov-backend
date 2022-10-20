@@ -182,7 +182,7 @@ class CommonFunction implements ICommonFunction
                         ->where("wf_roles.is_suspended",false)
                         ->where("wf_roleusermaps.user_id",$user_id)
                         ->where("wf_workflows.ulb_id",$ulb_id)
-                        ->where("wf_masters.id",strtoupper($workflow_id))
+                        ->where("wf_masters.id",$workflow_id)
                         ->orderBy("wf_roleusermaps.id","desc")
                         ->first();
                         // dd(DB::getQueryLog());

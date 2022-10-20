@@ -60,7 +60,8 @@ class Trade implements ITrade
         $this->parent = new CommonFunction();
     }
     public function applyApplication(Request $request)
-    {           
+    {     
+             
         $denialAmount = 0; 
         $user = Auth()->user();
         $this->user_id = $user->id;
@@ -91,14 +92,14 @@ class Trade implements ITrade
             {
                 return responseMsg(false, "Finisher Not Available", $request->all()); 
             }
-           
             $data = array() ;
             $rules = [];
             $message = [];
-            if (in_array($this->application_type_id, ["2", "3","4"])) 
+            if (in_array($this->application_type_id, ["2", "3","4"]) && !$request->id) 
             {
-                $rules["licenceId"] = "required";
-                $message["licenceId.required"] = "Old Licence Id Requird";
+                // $rules["licenceId"] = "required";
+                // $message["licenceId.required"] = "Old Licence Id Requird";
+                throw new Exception ("Old licence Id Requird");
             }
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
@@ -118,20 +119,20 @@ class Trade implements ITrade
             }
             if($request->getMethod()=='GET')
             {
-                
+
                 $data['apply_from'] =$apply_from;
                 $data["firmTypeList"] = $this->getFirmTypeList();
                 $data["ownershipTypeList"] = $this->getownershipTypeList();
                 $data["categoryTypeList"] = $this->getCotegoryList();
                 $data["natureOfBusiness"] = $this->gettradeitemsList(true);
-                if(isset($request->licenceId) && $request->licenceId  && $this->application_type_id !=1)
+                if(isset($request->id) && $request->id  && $this->application_type_id !=1)
                 {
-                    $oldLicece = $this->getLicenceById($request->licenceId);
+                    $oldLicece = $this->getLicenceById($request->id);
                     if(!$oldLicece)
                     {
                         throw new Exception("No Priviuse Licence Found");
                     }
-                    $oldOwneres =$this->getOwnereDtlByLId($request->licenceId);
+                    $oldOwneres =$this->getOwnereDtlByLId($request->id);
                     $data["licenceDtl"] =  $oldLicece;
                     $data["ownerDtl"] = $oldOwneres;
                 }
@@ -1871,6 +1872,21 @@ class Trade implements ITrade
         $dateFormatYYYMM='/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';
         try{
             $data = array();
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+            if (!$workflowId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id); 
+            if (!$role) 
+            {
+                throw new Exception("You Are Not Authorized");
+            } 
+            dd($role->id);
+            $role_id = $role->id;  
             if($request->getMethod()=='GET')
             {
                 $data['wardList'] = $this->parent->WardPermission($user_id);
@@ -1887,7 +1903,7 @@ class Trade implements ITrade
                 $rules["address"]="required|regex:$regex";
                 $rules["landmark"]="required|regex:$regex";
                 $rules["city"]="required|regex:$regex";
-                $rules["pincode"]="required|digits:6";
+                $rules["pinCode"]="required|digits:6";
                 $rules["mobileNo"]="digits:10";
                 $rules["comment"]="required|regex:$regex|min:10";
                 $rules["document"]="required|mimes:pdf,jpg,jpeg,png|max:2048";
@@ -1895,14 +1911,53 @@ class Trade implements ITrade
                 if ($validator->fails()) {
                     return responseMsg(false, $validator->errors(),$request->all());
                 }
-                $file=$request->file("document");
-                $data["File Name"]=$file->getClientOriginalName();
-                $data["exten"] = $file->getClientOriginalExtension();
-                $fileName = time().'_'.$file->getClientOriginalName();
-                $filePath = $this->uplodeFile($file,$fileName);//$file->storeAs('uploads/Trade/', $fileName, 'public');
-                $data["filePath"] =  $filePath;
-                $data["file_url"]=config('file.url');
-                $data["upload_url"] = storage_path('app/public/' . $filePath);
+                $denialConsumer = new TradeDenialConsumerDtl;
+                $denialConsumer->firm_Name  =$request->firmName;
+                $denialConsumer->owner_name =$request->ownerName;
+                $denialConsumer->new_ward_id=$request->wardNo;                        
+                $denialConsumer->holding_no =$request->holdingNo;
+                $denialConsumer->address    =$request->address;
+                $denialConsumer->landmark   =$request->landmark;
+                $denialConsumer->city       =$request->city;
+                $denialConsumer->pin_code   =$request->pinCode;
+                $denialConsumer->licence_no =$request->licenceNo??null;
+                $denialConsumer->ipaddress  =$request->ip();
+                $getloc = json_decode(file_get_contents("http://ipinfo.io/"));
+                $coordinates = explode(",", $getloc->loc);
+                $denialConsumer->latitude   = $coordinates[0]; // latitude
+                $denialConsumer->longitude  = $coordinates[1]; // longitude
+                if($request->mobileNo)
+                {
+                    $denialConsumer->mobileno = $request->mobileNo;
+                }
+                $denialConsumer->remarks = $request->comment;
+                $denialConsumer->emp_details_id = $user_id;
+                $denialConsumer->save();
+                $denial_id = $denialConsumer->id;
+
+                $doc_path = "";
+                if($denial_id)
+                {   
+                    $file = $request->file("document");
+                    $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                    $fileName = "denial_image/$denial_id.$file_ext";
+                    $filePath = $this->uplodeFile($file,$fileName);
+                    $data["filePath"] =  $filePath;
+                    $data["file_url"]=config('file.url');
+                    $data["upload_url"] = storage_path('app/public/' . $filePath);
+                    
+                    $denialConsumer->file_name = $filePath ;
+                    $denialConsumer->save();
+                    
+                    $tradeMail = new TradeDenialMailDtl;
+                    $tradeMail->denial_id = $denial_id;
+                    $tradeMail->sender_id = $user_id;
+                    $tradeMail->sender_user_type_id = $role_id;
+                    $tradeMail->receiver_user_type_id = 10; 
+                    $tradeMail->remarks     = $request->comment;
+                    $tradeMail->save();
+                
+                }
                 return  responseMsg(true,"",$data);
             }
             
