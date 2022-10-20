@@ -553,7 +553,6 @@ class SafRepository implements iSafRepository
 
             $safInbox = $this->getSaf()                                            // Global SAF 
                 ->where('active_saf_details.ulb_id', $ulbId)
-                ->where('current_role', null)
                 ->where('active_saf_details.status', 1)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
