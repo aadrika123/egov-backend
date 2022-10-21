@@ -23,6 +23,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('getCharge', 'paybleAmount');
         Route::post('getPropertyByHolding', 'validate_holding_no');
         Route::post('updateBasicDtl', 'updateBasicDtl');
+        Route::match(["get", "post"],'documenUpload/{id}', 'documenUpload');
         Route::get('getLicenceDtl/{id}', 'getLicenceDtl');
         Route::post('searchLicense', 'searchLicence');
         Route::post('inbox', 'inbox');

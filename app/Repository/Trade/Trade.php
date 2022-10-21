@@ -20,6 +20,7 @@ use App\Models\Trade\TradeFineRebetDetail;
 use App\Models\Trade\TradeLevelPending;
 use App\Models\Trade\TradeParamApplicationType;
 use App\Models\Trade\TradeParamCategoryType;
+use App\Models\Trade\TradeParamDocumentType;
 use App\Models\Trade\TradeParamFirmType;
 use App\Models\Trade\TradeParamItemType;
 use App\Models\Trade\TradeParamLicenceRate;
@@ -848,6 +849,60 @@ class Trade implements ITrade
             }
 
             return responseMsg(true,'',$request->all());
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+    public function documenUpload(Request $request)
+    {
+        try{
+            $licenceId = $request->id;
+            if(!$licenceId)
+            {
+                throw new Exception("Licence Id Required");
+            }
+            $licence = $this->getLicenceById($licenceId);
+            if(!$licence)
+            {
+                throw new Exception("Data Not Found");
+            }
+            $item_name="";
+            $cods = "";
+            if($licence->nature_of_bussiness)
+            {
+                $items = $this->getLicenceItemsById($licence->nature_of_bussiness);                
+                foreach($items as $val)
+                {
+                    $item_name .= $val->trade_item.",";
+                    $cods .= $val->trade_code.",";                    
+                }
+                $item_name= trim($item_name,',');
+                $cods= trim($cods,',');
+            }
+            $licence->items = $item_name;
+            $licence->items_code = $cods;
+            $owneres = $this->getOwnereDtlByLId($licenceId);
+            // $time_line = $this->getTimelin($id);
+            $documents = $this->getLicenceDocuments($licenceId);
+            
+            $documentsList = $this->getDocumentTypeList($licence);
+            // print_var(adjToArray($documentsList));
+            $docs = [];            
+            foreach($documentsList as $val)
+            {  
+                $docs[$val->doc_for] = $this->getDocumentList($val->doc_for,$licence->application_type_id,$val->show);
+                $docs[$val->doc_for]["is_mandatory"] = $val->is_mandatory;
+            }
+            // $idProofList = $this->getDocumentList();
+            $data["licence"] = $licence;
+            $data["owneres"] = $owneres;
+            $data["documentsList"] = $docs;
+            $data["uploadDocument"] = $documents;
+            // $data["idProofList"]    =$idProofList;
+            // dd($data);
+            return responseMsg(true,"",$data);
         }
         catch(Exception $e)
         {
@@ -2672,25 +2727,65 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-    // public function getNoticeDetails($id,$ulb_id)
-    // {
-    //     try{
-    //         $data = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
-    //                     DB::raw("ulb_ward_masters.ward_name as ward_no")
-    //                 )
-    //                 ->join("ulb_ward_masters",function($join){
-    //                     $join->on("ulb_ward_masters.id","trade_denial_consumer_dtls.ward_id");
-    //                 })
-    //                 ->where("trade_denial_consumer_dtls.id",$id)
-    //                 ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
-    //                 ->first();
-    //         return $data;
-    //     }
-    //     catch(Exception $e)
-    //     {
-    //         echo $e->getMessage();
-    //     }
-    // }
+    public function getDocumentTypeList(ActiveLicence $application)
+    {
+        try
+        {
+            $show='1';
+            if($application->application_type_id==1)
+            {
+                if($application->ownership_type_id==1)
+                {
+                    $show .=','.'2';  
+                }
+                else
+                {
+                    $show .=','.'3';  
+                }
+
+                if($application->firm_type_id==2)
+                {
+                    $show .=','.'4';  
+                }
+                elseif($application->firm_type_id ==3 || $application->firm_type_id==4)
+                {
+                    $show .=','.'5';  
+                }
+                if($application->category_type_id==2)
+                {
+                    $show .=','.'6';  
+                }
+            }
+            $show = explode(",",$show);
+            $data = TradeParamDocumentType::select("doc_for","is_mandatory","show")
+                    ->where("application_type_id",$application->application_type_id)
+                    ->where("status",1)
+                    ->whereIn("show",$show)
+                    ->groupBy("doc_for","is_mandatory","show")
+                    ->get();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            return $e->getMessage();   
+        }
+    }
+    public function getDocumentList($doc_for,$application_type_id ,$show)
+    {
+        try{
+            $data = TradeParamDocumentType::select("id","doc_name")
+                                ->where("status",1)
+                                ->where("doc_for",$doc_for)
+                                ->where("application_type_id",$application_type_id )
+                                ->where("show",$show)
+                                ->get();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            return $e->getMessage();   
+        }
+    }
    
     #-------------------- End core function of core function --------------
     

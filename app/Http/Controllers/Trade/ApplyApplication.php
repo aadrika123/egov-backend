@@ -53,6 +53,10 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->updateBasicDtl($request);
     }
+    public function documenUpload(Request $request)
+    {
+        return $this->Repository->documenUpload($request);
+    }
     public function getLicenceDtl(Request $request)
     {
         return $this->Repository->getLicenceDtl($request->id);
