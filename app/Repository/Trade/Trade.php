@@ -1182,14 +1182,14 @@ class Trade implements ITrade
             $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');            
             $rules["licenceNo"] = "required";
             $message["licenceNo.required"] = "Licence No Requird";
-            $rules["applicationType"] = "required";
-            $message["applicationType.required"] = "Application Type Requird";
+            $rules["applicationType"] = "required:int";
+            $message["applicationType.required"] = "Application Type Id Requird";
             
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(),$request->all());
             }
-            $application_type_id = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);
+            $application_type_id = $request->applicationType ;
             if(!$application_type_id)
             {
                 throw new Exception("Invalide Applycation Type Supply");
