@@ -29,6 +29,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('outbox', 'outbox');
         Route::post('postNext', 'postNextLevel');
         Route::post('pay', 'procidToPaymentCounter');
+        Route::match(["get", "post"],'applyDenail', 'applyDenail');
     });
 });
 Route::controller(ApplyApplication::class)->group(function () {    

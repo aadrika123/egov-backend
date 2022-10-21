@@ -34,4 +34,5 @@ interface ITrade
     public function postNextLevel(Request $request);
     public function provisionalCertificate($id);
     public function licenceCertificate($id);
+    public function applyDenail(Request $request);
 }

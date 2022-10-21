@@ -846,6 +846,16 @@ class SafRepository implements iSafRepository
 
     /**
      * | Approve or Reject The SAF Application
+     * --------------------------------------------------
+     * | ----------------- Initialization ---------------
+     * | @param mixed $req
+     * | @var activeSaf The Saf Record by Saf Id
+     * | @var approvedSaf replication of the saf record to be approved
+     * | @var rejectedSaf replication of the saf record to be rejected
+     * ------------------- Alogrithm ---------------------
+     * | $req->status (if 1 Application to be approved && if 0 application to be rejected)
+     * ------------------- Dump --------------------------
+     * | @return msg
      */
     public function safApprovalRejection($req)
     {
@@ -853,24 +863,39 @@ class SafRepository implements iSafRepository
             'safId' => 'required|int',
             'status' => 'required|int'
         ]);
-        if ($req->status == 1) {
-            $query = ActiveSafDetail::query()
-                ->where('id', $req->safId)
-                ->first();
-            $newRecord = $query;
-            $newRecord->setTable('prop_approved_saf_details');
-            $newRecord->save();
-            $msg = "Application Successfully Rejected";
-        }
+        try {
+            DB::beginTransaction();
+            // Approval
+            if ($req->status == 1) {
+                $activeSaf = ActiveSafDetail::query()
+                    ->where('id', $req->safId)
+                    ->first();
+                $approvedSaf = $activeSaf->replicate();
+                $approvedSaf->setTable('prop_approved_saf_details');
+                $approvedSaf->id = $activeSaf->id;
+                $approvedSaf->push();
+                $activeSaf->delete();
+                $msg = "Application Successfully Approved";
+            }
+            // Rejection
+            if ($req->status == 0) {
+                $activeSaf = ActiveSafDetail::query()
+                    ->where('id', $req->safId)
+                    ->first();
+                $rejectedSaf = $activeSaf->replicate();
+                $rejectedSaf->setTable('prop_rejected_saf_details');
+                $rejectedSaf->id = $activeSaf->id;
+                $rejectedSaf->push();
+                $activeSaf->delete();
+                $msg = "Application Rejected Successfully";
+            }
 
-        if ($req->status == 0) {
-            $query = "INSERT INTO prop_rejected_saf_details(SELECT * FROM active_saf_details WHERE id=$req->safId)";
-            $status = DB::insert($query);
-            $msg = "Application Successfully Rejected";
+            DB::commit();
+            return responseMsg(true, $msg, "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
         }
-
-        // $status->save();
-        return responseMsg(true, $msg, "");
     }
 
 
