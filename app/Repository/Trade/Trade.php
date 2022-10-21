@@ -1080,7 +1080,7 @@ class Trade implements ITrade
             { 
                $vMonths = round($vDiff / (30 * 60 * 60 * 24));
             }
-            if ($vMonths > 0 && strtotime($data['firm_date']) >= strtotime($data['curdate'])) 
+            if ($vMonths > 0 && strtotime($data['firm_date']) < strtotime($data['curdate'])) 
             {
                 $denial_amount_month = 100 + (($vMonths) * 20);
                 # In case of ammendment no denial amount
