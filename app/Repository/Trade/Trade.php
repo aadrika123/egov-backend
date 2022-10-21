@@ -400,7 +400,7 @@ class Trade implements ITrade
                 { 
                     $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
                     $firm_date = $request->firmDetails['firmEstdDate'];
-                    $noticeDetails = $this->getDenialFirmDetails(strtoupper(trim($noticeNo)), $firm_date);
+                    $noticeDetails = $this->getDenialFirmDetails($this->ulb_id,strtoupper(trim($noticeNo)), $firm_date);
                     if ($noticeDetails) 
                     {   
                         $denialId = $noticeDetails->id;
@@ -893,6 +893,9 @@ class Trade implements ITrade
     public function getDenialDetails(Request $request)
     {
         $data = (array)null;
+        $user = Auth()->user();
+        $user_id = $user->id;
+        $ulb_id = $user->ubl_id;
         if ($request->getMethod()== 'POST') 
         {
             try 
@@ -900,7 +903,7 @@ class Trade implements ITrade
                 $noticeNo = $request->noticeNo;
                 $firm_date = $request->firm_date; //firm establishment date
 
-                $denialDetails = $this->getDenialFirmDetails(strtoupper(trim($noticeNo)), $firm_date);
+                $denialDetails = $this->getDenialFirmDetails($ulb_id,strtoupper(trim($noticeNo)), $firm_date);
                 if ($denialDetails) 
                 {
 
@@ -980,7 +983,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }        
     }
-    public function getDenialFirmDetails($notice_no,$firm_date)
+    public function getDenialFirmDetails($ulb_id,$notice_no,$firm_date)
     {
         try{
             $data = TradeDenialConsumerDtl::select("trade_denial_notices.*",
@@ -992,6 +995,7 @@ class Trade implements ITrade
                     ->where("trade_denial_notices.notice_no",$notice_no)
                     ->where("trade_denial_notices.created_on","<",$firm_date)
                     ->where("trade_denial_consumer_dtls.status","=", 5)
+                    ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
                     ->where("trade_denial_notices.status","=", 1)
                     ->first();
             return $data;
@@ -1178,10 +1182,21 @@ class Trade implements ITrade
             $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');            
             $rules["licenceNo"] = "required";
             $message["licenceNo.required"] = "Licence No Requird";
+            $rules["applicationType"] = "required";
+            $message["applicationType.required"] = "Application Type Requird";
             
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(),$request->all());
+            }
+            $application_type_id = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);
+            if(!$application_type_id)
+            {
+                throw new Exception("Invalide Applycation Type Supply");
+            }
+            elseif($application_type_id==1)
+            {
+                throw new Exception("You Can Not Apply New Licence"); 
             }
             $licence_no = $request->licenceNo;
             $data = ActiveLicence::select("active_licences.*","owner.*",
@@ -1209,11 +1224,15 @@ class Trade implements ITrade
                     ->first();
            if(!$data)
            {
-            throw new Exception("Data Not Faund");
+                throw new Exception("Data Not Faund");
+           }
+           elseif($application_type_id==3 && $data->application_type_id != 4)
+           {
+                throw new Exception("Please Apply Surender Befor Ammendment");
            }
            elseif($data->valid_upto > $nextMonth)
            {
-            throw new Exception("Licence Valice Upto ".$data->valid_upto);
+                throw new Exception("Licence Valice Upto ".$data->valid_upto);
            }            
            return responseMsg(true,"",remove_null($data));
         }
@@ -1930,14 +1949,15 @@ class Trade implements ITrade
                 $denialConsumer = new TradeDenialConsumerDtl;
                 $denialConsumer->firm_name  =$request->firmName;
                 $denialConsumer->applicant_name =$request->ownerName;
-                $denialConsumer->ward_id    =$request->wardNo;                        
+                $denialConsumer->ward_id    =$request->wardNo;      
+                $denialConsumer->ulb_id     =$ulb_id;                  
                 $denialConsumer->holding_no =$request->holdingNo;
                 $denialConsumer->address    =$request->address;
                 $denialConsumer->landmark   =$request->landmark;
                 $denialConsumer->city       =$request->city;
-                $denialConsumer->pincode   =$request->pinCode;
+                $denialConsumer->pincode    =$request->pinCode;
                 $denialConsumer->license_no =$request->licenceNo??null;
-                $denialConsumer->ip_address  =$request->ip();
+                $denialConsumer->ip_address =$request->ip();
                 $getloc = json_decode(file_get_contents("http://ipinfo.io/"));
                 $coordinates = explode(",", $getloc->loc);
                 $denialConsumer->latitude   = $coordinates[0]; // latitude
@@ -1984,6 +2004,76 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+    public function denialInbox(Request $request)
+	{
+        try
+        {
+            $data =(array)null;
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $role_id = $this->parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??-1;
+            $apply_from = $this->applyFrom();
+            // dd($role_id);
+            if(!in_array($role_id,[11,10]))
+            {
+                throw new Exception("You Are Not Authorized");
+            }
+            $nowdate = Carbon::now()->format('Y-m-d'); 
+            $timstamp = Carbon::now()->format('Y-m-d H:i:s'); 
+
+            $wardList = $this->parent->WardPermission($user_id);
+            $data['wardList'] = $wardList;
+            $mailStatus = 1; 
+            $ward_ids = array_map(function ($val) {
+                return $val['id'];
+            },$wardList);
+            $inputs = $request->all(); 
+            $denila_consumer = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
+                                    // DB::raw("ulb_ward_masters.ward_name as ward_no")
+                                )
+                                ->join("trade_denial_mail_dtls",function($join){
+                                    $join->on("trade_denial_mail_dtls.denial_consumer_id","trade_denial_consumer_dtls.id")
+                                    ->where("trade_denial_mail_dtls.status",1);
+                                })
+                                ->join("ulb_ward_masters","ulb_ward_masters.id","trade_denial_consumer_dtls.ward_id");
+             
+            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
+            {
+                $ward_ids = $inputs["wardNo"];
+            }
+            if(isset($inputs['key']) && trim($inputs['key']))
+            {
+                $key = trim($inputs['key']);
+                $denila_consumer = $denila_consumer->where(function ($query) use ($key) {
+                    $query->orwhere('trade_denial_consumer_dtls.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('trade_denial_consumer_dtls.firm_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("trade_denial_consumer_dtls.license_no", 'ILIKE', '%' . $key . '%')                                           
+                        ->orwhere('trade_denial_consumer_dtls.applicant_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('trade_denial_consumer_dtls.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
+            {
+                $denila_consumer = $denila_consumer
+                            ->whereBetween('trade_denial_consumer_dtls.created_on::date',[$inputs['formDate'],$inputs['formDate']]); 
+            }
+            $denila_consumer = $denila_consumer
+                        ->whereIn("trade_denial_consumer_dtls.ward_id",$ward_ids)
+                        ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
+                        ->where("trade_denial_consumer_dtls.status",1)
+                        ->orderBy("trade_denial_consumer_dtls.created_on","DESC")
+                        ->get();
+            $data['denila_consumer'] =$denila_consumer;
+            return responseMsg(false,"", remove_null($data));
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+        
+	}
     
 
     #---------- core function for trade Application--------

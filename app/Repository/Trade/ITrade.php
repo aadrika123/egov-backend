@@ -35,4 +35,5 @@ interface ITrade
     public function provisionalCertificate($id);
     public function licenceCertificate($id);
     public function applyDenail(Request $request);
+    public function denialInbox(Request $request);
 }

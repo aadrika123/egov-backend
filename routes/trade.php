@@ -30,6 +30,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('postNext', 'postNextLevel');
         Route::post('pay', 'procidToPaymentCounter');
         Route::match(["get", "post"],'applyDenail', 'applyDenail');
+        Route::match(["get", "post"],'denialInbox', 'denialInbox');
     });
 });
 Route::controller(ApplyApplication::class)->group(function () {    
