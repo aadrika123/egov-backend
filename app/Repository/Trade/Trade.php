@@ -14,6 +14,7 @@ use App\Models\Trade\TradeApplicationDoc;
 use App\Models\Trade\TradeBankRecancilation;
 use App\Models\Trade\TradeChequeDtl;
 use App\Models\Trade\TradeDenialConsumerDtl;
+use App\Models\Trade\TradeDenialMailDtl;
 use App\Models\Trade\TradeDenialNotice;
 use App\Models\Trade\TradeFineRebetDetail;
 use App\Models\Trade\TradeLevelPending;
@@ -133,6 +134,15 @@ class Trade implements ITrade
                         throw new Exception("No Priviuse Licence Found");
                     }
                     $oldOwneres =$this->getOwnereDtlByLId($request->id);
+                    $natur_of_business = $this->getLicenceItemsById($oldLicece->nature_of_bussiness);
+                    $natur = array();
+                    foreach($natur_of_business as $val)
+                    {
+                        $natur[]=["id"=>$val->id,
+                            "trade_item" =>"(". $val->trade_code.") ". $val->trade_item
+                        ];
+                    }
+                    $oldLicece->nature_of_bussiness = $natur;
                     $data["licenceDtl"] =  $oldLicece;
                     $data["ownerDtl"] = $oldOwneres;
                 }
@@ -1066,7 +1076,7 @@ class Trade implements ITrade
             { 
                $vMonths = round($vDiff / (30 * 60 * 60 * 24));
             }
-            if ($vMonths > 0) 
+            if ($vMonths > 0 && strtotime($data['firm_date']) >= strtotime($data['curdate'])) 
             {
                 $denial_amount_month = 100 + (($vMonths) * 20);
                 # In case of ammendment no denial amount
@@ -1240,7 +1250,7 @@ class Trade implements ITrade
             {
                 $joins = "join";
             }  
-            $role_id = $role->id;         
+            $role_id = $role->role_id;       
             $ward_permission = $this->parent->WardPermission($user_id);
             $ward_ids = array_map(function ($val) {
                 return $val['ulb_ward_id'];
@@ -1349,7 +1359,7 @@ class Trade implements ITrade
             {
                 $joins = "join";
             }
-            $role_id = $role->id;
+            $role_id = $role->role_id;
             $ward_permission = $this->parent->WardPermission($user_id);
             $ward_ids = array_map(function ($val) {
                 return $val['ulb_ward_id'];
@@ -1869,7 +1879,7 @@ class Trade implements ITrade
         $alphaNumhyphen ='/^[a-zA-Z0-9- ]+$/i';
         $numDot = '/^\d+(?:\.\d+)+$/i';
         $dateFormatYYYMMDD ='/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))+$/i';
-        $dateFormatYYYMM='/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';
+        $dateFormatYYYMM='/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';        
         try{
             $data = array();
             $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
@@ -1885,8 +1895,12 @@ class Trade implements ITrade
             {
                 throw new Exception("You Are Not Authorized");
             } 
-            dd($role->id);
-            $role_id = $role->id;  
+            $role_id = $role->role_id;  
+            $apply_from = $this->applyFrom();
+            if(!in_array(strtoupper($apply_from),["TC","UTC","JSK"]))
+            {
+                throw new Exception("You Are Not Authorize For Apply Denial");
+            }
             if($request->getMethod()=='GET')
             {
                 $data['wardList'] = $this->parent->WardPermission($user_id);
@@ -1894,6 +1908,7 @@ class Trade implements ITrade
             }
             if($request->getMethod()=='POST')
             {
+                
                 $rules = [];
                 $message = [];
                 $rules["firmName"]="required|regex:$regex";
@@ -1911,17 +1926,18 @@ class Trade implements ITrade
                 if ($validator->fails()) {
                     return responseMsg(false, $validator->errors(),$request->all());
                 }
+                DB::beginTransaction();
                 $denialConsumer = new TradeDenialConsumerDtl;
-                $denialConsumer->firm_Name  =$request->firmName;
-                $denialConsumer->owner_name =$request->ownerName;
-                $denialConsumer->new_ward_id=$request->wardNo;                        
+                $denialConsumer->firm_name  =$request->firmName;
+                $denialConsumer->applicant_name =$request->ownerName;
+                $denialConsumer->ward_id    =$request->wardNo;                        
                 $denialConsumer->holding_no =$request->holdingNo;
                 $denialConsumer->address    =$request->address;
                 $denialConsumer->landmark   =$request->landmark;
                 $denialConsumer->city       =$request->city;
-                $denialConsumer->pin_code   =$request->pinCode;
-                $denialConsumer->licence_no =$request->licenceNo??null;
-                $denialConsumer->ipaddress  =$request->ip();
+                $denialConsumer->pincode   =$request->pinCode;
+                $denialConsumer->license_no =$request->licenceNo??null;
+                $denialConsumer->ip_address  =$request->ip();
                 $getloc = json_decode(file_get_contents("http://ipinfo.io/"));
                 $coordinates = explode(",", $getloc->loc);
                 $denialConsumer->latitude   = $coordinates[0]; // latitude
@@ -1934,8 +1950,7 @@ class Trade implements ITrade
                 $denialConsumer->emp_details_id = $user_id;
                 $denialConsumer->save();
                 $denial_id = $denialConsumer->id;
-
-                $doc_path = "";
+                
                 if($denial_id)
                 {   
                     $file = $request->file("document");
@@ -1950,7 +1965,7 @@ class Trade implements ITrade
                     $denialConsumer->save();
                     
                     $tradeMail = new TradeDenialMailDtl;
-                    $tradeMail->denial_id = $denial_id;
+                    $tradeMail->denial_consumer_id = $denial_id;
                     $tradeMail->sender_id = $user_id;
                     $tradeMail->sender_user_type_id = $role_id;
                     $tradeMail->receiver_user_type_id = 10; 
@@ -1958,7 +1973,9 @@ class Trade implements ITrade
                     $tradeMail->save();
                 
                 }
-                return  responseMsg(true,"",$data);
+                DB::commit();
+
+                return  responseMsg(true,"Denail Form Submitted Succesfully!",$data);
             }
             
         }
@@ -2258,14 +2275,19 @@ class Trade implements ITrade
         try{
             $application = ActiveLicence::select("active_licences.*","trade_param_application_types.application_type",
                             "trade_param_category_types.category_type","trade_param_firm_types.firm_type",
-                    DB::raw("ulb_ward_masters.ward_name AS ward_no")
+                            "trade_param_ownership_types.ownership_type",
+                    DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no")
                     )
                 ->join("ulb_ward_masters",function($join){
                     $join->on("ulb_ward_masters.id","=","active_licences.ward_mstr_id");                                
                 })
+                ->join("ulb_ward_masters AS new_ward",function($join){
+                    $join->on("new_ward.id","=","active_licences.new_ward_mstr_id");                                
+                })
                 ->join("trade_param_application_types","trade_param_application_types.id","active_licences.application_type_id")
                 ->leftjoin("trade_param_category_types","trade_param_category_types.id","active_licences.category_type_id")
-                ->leftjoin("trade_param_firm_types","trade_param_firm_types.id","active_licences.firm_type_id")                
+                ->leftjoin("trade_param_firm_types","trade_param_firm_types.id","active_licences.firm_type_id")    
+                ->leftjoin("trade_param_ownership_types","trade_param_ownership_types.id","active_licences.ownership_type_id")            
                 ->where('active_licences.id',$id)   
                 ->first();
             return $application;
@@ -2411,7 +2433,7 @@ class Trade implements ITrade
     }
     public function uplodeFile($file,$custumFileName)
     {
-        $filePath = $file->storeAs('uploads/Trade/', $custumFileName, 'public');
+        $filePath = $file->storeAs('uploads/Trade', $custumFileName, 'public');
         return  $filePath;
     }
    
