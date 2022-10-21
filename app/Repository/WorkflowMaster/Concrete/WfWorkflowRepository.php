@@ -134,7 +134,7 @@ class WfWorkflowRepository implements iWfWorkflowRepository
     public function view($id)
     {
         $data = WfWorkflow::where('id', $id)
-            ->where('is_suspended', true)
+            ->where('is_suspended', false)
             ->get();
         if ($data) {
             return response()->json($data, 200);
