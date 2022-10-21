@@ -93,4 +93,10 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->denialInbox($request);
     }
+    public function denialview(Request $request)
+    {
+        $id = $request->id;
+        $mailID = $request->mailID;
+        return $this->Repository->denialview($id,$mailID,$request);
+    }
 }

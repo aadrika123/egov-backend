@@ -983,7 +983,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }        
     }
-    public function getDenialFirmDetails($ulb_id,$notice_no,$firm_date)
+    public function getDenialFirmDetails($ulb_id,$notice_no,$firm_date)//for apply application
     {
         try{
             $data = TradeDenialConsumerDtl::select("trade_denial_notices.*",
@@ -1224,7 +1224,7 @@ class Trade implements ITrade
                     ->first();
            if(!$data)
            {
-                throw new Exception("Data Not Faund");
+                throw new Exception("Data Not Found");
            }
            elseif($application_type_id==3 && $data->application_type_id != 4)
            {
@@ -2031,7 +2031,9 @@ class Trade implements ITrade
             },$wardList);
             $inputs = $request->all(); 
             $denila_consumer = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
-                                    // DB::raw("ulb_ward_masters.ward_name as ward_no")
+                                    DB::raw("ulb_ward_masters.ward_name as ward_no ,
+                                    trade_denial_mail_dtls.id as denil_mail_id
+                                    ")
                                 )
                                 ->join("trade_denial_mail_dtls",function($join){
                                     $join->on("trade_denial_mail_dtls.denial_consumer_id","trade_denial_consumer_dtls.id")
@@ -2074,6 +2076,114 @@ class Trade implements ITrade
         }
         
 	}
+    public function denialview($id,$mailID,Request $request)
+    {
+        try{
+            $data =(array)null;
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $role_id = $this->parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??-1;
+            $apply_from = $this->applyFrom();
+
+            $denial_details  = $this->getDenialDetailsByID($id,$ulb_id);
+            $denialID =  $denial_details->id;
+            if($denial_details->status ==5)
+            {
+                throw new Exception("Notice No Already Generated ".$denial_details->notice_no);
+            }
+            elseif($denial_details->status==4)
+            {
+                throw new Exception("Denial Request Rejected");
+            }
+            $denial_details->file_name = !empty(trim($denial_details->file_name))?storage_path('app/public/' . $denial_details->file_name):null;
+            if($request->getMethod()=='GET')
+            {
+                $data["denial_details"] = $denial_details;
+                return responseMsg(true, "",remove_null($data));
+            }
+            elseif($request->getMethod()=='POST')
+            {
+                $notic = new TradeDenialNotice;
+                $denial_consumer = TradeDenialConsumerDtl::find($denialID);
+                $denail_mail = TradeDenialMailDtl::where("denial_consumer_id",$denialID)->first();
+
+                $nowdate = Carbon::now()->format('Y-m-d'); 
+                $timstamp = Carbon::now()->format('Y-m-d H:i:s');                
+                $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
+                $rules = [];
+                $message = [];
+                $rules["btn"]="required|in:approve,reject";
+                $message["btn.in"] = "btn Value In approve,reject";
+                $rules["comment"]="required|min:10|regex:$regex";
+                $validator = Validator::make($request->all(), $rules, $message);
+                if ($validator->fails()) {
+                    return responseMsg(false, $validator->errors(),$request->all());
+                }
+                DB::beginTransaction();
+                # Approve Application
+                $res = [];
+                if($request->btn=="approve")
+                {  
+                    $denial_consumer->status = 5;
+                    $denial_consumer->save();
+
+                    $denail_mail->status = 5;
+                    $denail_mail->emp_details_id = $user_id;
+                    $denail_mail->forward_date = $nowdate;
+                    $denail_mail->forward_time = Carbon::now()->format("H:i:s");
+                    $denail_mail->save();
+
+                    $notic->denial_id = $denialID;
+                    $notic->emp_details_id = $user_id;
+                    $notic->remarks = $request->comment;
+                    $notic->save();
+
+                    $insertID = $notic->id;
+                    $noticeNO = "NOT/".date('dmy').$denialID.$insertID ;
+                    $notic->notice_no = $noticeNO;
+                    $notic->save();
+                    $res["noticeNo"] = $noticeNO;
+                    $res["sms"] = "Notice No Successfuly Generated";
+                       
+                }
+                if($request->btn=='btn_upload') 
+                {
+                      
+                }
+                if($request->btn=="reject")
+                {
+                   
+                    $denial_consumer->status = 4;
+                    $denial_consumer->save();
+
+                    $denail_mail->status = 4;
+                    $denail_mail->emp_details_id = $user_id;
+                    $denail_mail->forward_date = $nowdate;
+                    $denail_mail->forward_time = Carbon::now()->format("H:i:s");
+                    $denail_mail->save();
+
+                    $notic->denial_id = $denialID;
+                    $notic->emp_details_id = $user_id;
+                    $notic->remarks = $request->comment;
+                    $notic->status = 4;
+                    $notic->save();
+                    $res["noticeNo"] = "";
+                    $res["sms"] = "Denail Apply Rejected";
+
+                }
+                DB::commit();                
+                return responseMsg(true, $res["sms"],remove_null($res["noticeNo"]));
+            }
+            
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+
+    }
     
 
     #---------- core function for trade Application--------
@@ -2526,6 +2636,61 @@ class Trade implements ITrade
         $filePath = $file->storeAs('uploads/Trade', $custumFileName, 'public');
         return  $filePath;
     }
+    public function getDenialDetailsByID($id,$ulb_id)
+    {
+        try{
+            $data = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
+                        DB::raw("ulb_ward_masters.ward_name as ward_no,
+                        trade_denial_notices.id as notice_id,trade_denial_notices.notice_no,
+                        trade_denial_notices.remarks as notice_remarks,trade_denial_notices.fine_amount,
+                        trade_denial_notices.status as notice_status,trade_denial_notices.apply_id as notice_apply_id,
+                        trade_denial_notices.created_on as notice_created_on,
+                        trade_denial_mail_dtls.id as denial_mail_id,trade_denial_mail_dtls.sender_id as denial_mail_sender_id,
+                        trade_denial_mail_dtls.sender_user_type_id as denial_mail_sender_user_type_id,
+                        trade_denial_mail_dtls.receiver_user_type_id as denil_mail_receiver_user_type_id,
+                        trade_denial_mail_dtls.remarks as denial_mail_remarks,trade_denial_mail_dtls.created_on as denial_mail_created_on,
+                        trade_denial_mail_dtls.forward_date as denial_mail_forward_date,trade_denial_mail_dtls.forward_time as denial_mail_forward_time,
+                        trade_denial_mail_dtls.emp_details_id as demail_mail_emp_details_id,trade_denial_mail_dtls.status as denial_mail_status
+                        ")
+                    )
+                    ->join("ulb_ward_masters",function($join){
+                        $join->on("ulb_ward_masters.id","trade_denial_consumer_dtls.ward_id");
+                    })                    
+                    ->leftjoin("trade_denial_notices",function($join){
+                        $join->on("trade_denial_notices.denial_id","trade_denial_consumer_dtls.id");
+                    })
+                    ->join("trade_denial_mail_dtls",function($join){
+                        $join->on("trade_denial_mail_dtls.denial_consumer_id","trade_denial_consumer_dtls.id");
+                    })
+                    ->where("trade_denial_consumer_dtls.id",$id)
+                    ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
+                    ->first();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+    // public function getNoticeDetails($id,$ulb_id)
+    // {
+    //     try{
+    //         $data = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
+    //                     DB::raw("ulb_ward_masters.ward_name as ward_no")
+    //                 )
+    //                 ->join("ulb_ward_masters",function($join){
+    //                     $join->on("ulb_ward_masters.id","trade_denial_consumer_dtls.ward_id");
+    //                 })
+    //                 ->where("trade_denial_consumer_dtls.id",$id)
+    //                 ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
+    //                 ->first();
+    //         return $data;
+    //     }
+    //     catch(Exception $e)
+    //     {
+    //         echo $e->getMessage();
+    //     }
+    // }
    
     #-------------------- End core function of core function --------------
     
