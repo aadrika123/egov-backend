@@ -199,7 +199,7 @@ class WorkflowMappingRepository implements iWorkflowMappingRepository
             ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.workflow_id', '=', 'wf_workflows.id')
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
             ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_roles.id')
-            ->join('users', 'users.id', '=', 'wf_roleusermaps.wf_user_id')
+            ->join('users', 'users.id', '=', 'wf_roleusermaps.user_id')
             ->get();
         return responseMsg(true, "Data Retrived", $users);
     }

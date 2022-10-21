@@ -41,7 +41,6 @@ class WorkflowRoleMapRepository implements iWorkflowRoleMapRepository
             $device = new WfWorkflowrolemap;
             $device->workflow_id = $request->workflowId;
             $device->wf_role_id = $request->wfRoleId;
-            $device->user_id = $request->userId;
             $device->created_by = $createdBy;
             $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
@@ -86,7 +85,6 @@ class WorkflowRoleMapRepository implements iWorkflowRoleMapRepository
             $device->workflow_id = $request->workflowId;
             $device->wf_role_id = $request->wfRoleId;
             $device->is_suspended = $request->isSuspended;
-            $device->user_id = $request->userId;
             $device->created_by = $createdBy;
             $device->updated_at = Carbon::now();
             $device->save();
@@ -103,7 +101,7 @@ class WorkflowRoleMapRepository implements iWorkflowRoleMapRepository
     public function view($id)
     {
         $data = WfWorkflowrolemap::where('id', $id)
-            ->where('is_suspended', true)
+            ->where('is_suspended', false)
             ->get();
         if ($data) {
             return response()->json($data, 200);

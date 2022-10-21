@@ -53,7 +53,7 @@ class WorkflowRoleController extends Controller
     //update role
     public function update(Request $request, $id)
     {
-        return $this->EloquentRole->update($request);
+        return $this->EloquentRole->update($request, $id);
     }
 
     //delete role

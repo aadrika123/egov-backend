@@ -68,7 +68,7 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
             $device->user_id = $request->userId;
             $device->ward_id = $request->wardId;
             $device->is_admin = $request->isAdmin;
-            $device->createdBy = $createdBy;
+            $device->created_by = $createdBy;
             $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
             $device->save();
@@ -83,8 +83,7 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
      */
     public function list()
     {
-        $data = WfWardUser::where('is_suspended', false)
-            ->orderByDesc('id')->get();
+        $data = WfWardUser::orderByDesc('id')->get();
         return $data;
     }
 
@@ -128,7 +127,7 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
             $device->user_id = $request->userId;
             $device->ward_id = $request->wardId;
             $device->is_admin = $request->isAdmin;
-            $device->createdBy = $createdBy;
+            $device->created_by = $createdBy;
             $device->updated_at = Carbon::now();
             $device->save();
             return responseMsg(true, "Successfully Updated", "");
@@ -144,7 +143,6 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
     public function view($id)
     {
         $data = WfWardUser::where('id', $id)
-            ->where('is_suspended', true)
             ->get();
         if ($data) {
             return response()->json($data, 200);
@@ -176,7 +174,10 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
 
     public function getUserById(Request $request)
     {
-        $users = WfWardUser::where('wf_ward_users.id', $request->id)
+        $request->validate([
+            'wardUserId' => 'required|int'
+        ]);
+        $users = WfWardUser::where('wf_ward_users.id', $request->wardUserId)
             ->join('users', 'users.id', '=', 'wf_ward_users.user_id')
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'wf_ward_users.ward_id')
             ->get(['users.*', 'ulb_ward_masters.*']);
@@ -189,6 +190,11 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
     // workflows in a ulb
     public function getWorkflowNameByUlb(Request $request)
     {
+        //validating
+        $request->validate([
+            'ulbId' => 'required|int'
+        ]);
+
         $workkFlow = WfWorkflow::where('ulb_id', $request->ulbId)
             ->join('wf_masters', 'wf_masters.id', '=', 'wf_workflows.wf_master_id')
             // ->join('wf_workflows', 'wf_workflows.wf_master_id', '=', 'wf_masters.id')
@@ -201,6 +207,11 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
     // roles in a ulb 
     public function getRoleByUlb(Request $request)
     {
+        //validating
+        $request->validate([
+            'ulbId' => 'required|int'
+        ]);
+
         $workkFlow = WfWorkflow::where('ulb_id', $request->ulbId)
             ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.workflow_id', '=', 'wf_workflows.id')
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
@@ -213,21 +224,33 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
     //wards in ulb
     public function getWardByUlb(Request $request)
     {
+        //validating
+        $request->validate([
+            'ulbId' => 'required|int'
+        ]);
+
         $workkFlow = UlbWardMaster::where('ulb_id', $request->ulbId)
             ->get('ward_name');
         return responseMsg(true, "Data Retrived", $workkFlow);
     }
 
     // get role by workflow id
+    // provide ulb id
     public function getRoleByWorkflowId(Request $request)
     {
-        $workkFlow = WfWorkflow::where('ulb_id', $request->ulbId)
+        //validating
+        $request->validate([
+            'ulbId' => 'required|int'
+        ]);
+
+        $roles = WfWorkflow::where('ulb_id', $request->ulbId)
             ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.workflow_id', '=', 'wf_workflows.id')
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
             ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_roles.id')
+            ->select('wf_roles.*')
             // ->join('users', 'users.id', '=', 'wf_roleusermaps.user_id')
             ->get();
-        return responseMsg(true, "Data Retrived", $workkFlow);
+        return responseMsg(true, "Data Retrived", remove_null($roles));
     }
 
     // table = 6 & 7
@@ -264,6 +287,9 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
     //get user by workflowId
     public function getUserByWorkflow(Request $request)
     {
+        $request->validate([
+            'workflowId' => 'required|int'
+        ]);
         $users = WfWorkflowrolemap::where('workflow_id', $request->workflowId)
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
             ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_roles.id')
@@ -348,7 +374,7 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
             ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.workflow_id', '=', 'wf_workflows.id')
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
             ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_roles.id')
-            ->join('users', 'users.id', '=', 'wf_roleusermaps.wf_user_id')
+            ->join('users', 'wf_roleusermaps.id', '=', 'wf_roleusermaps.wf_user_id')
             ->get();
         return responseMsg(true, "Data Retrived", $users);
     }

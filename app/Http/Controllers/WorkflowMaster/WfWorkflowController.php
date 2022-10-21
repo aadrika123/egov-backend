@@ -54,7 +54,7 @@ class WfWorkflowController extends Controller
     // update wf workflow
     public function update(Request $request, $id)
     {
-        return $this->EloquentWf->update($request);
+        return $this->EloquentWf->update($request, $id);
     }
 
     // delete wf workflow
