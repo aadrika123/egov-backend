@@ -1190,7 +1190,7 @@ class Trade implements ITrade
                 return responseMsg(false, $validator->errors(),$request->all());
             }
             $application_type_id = $request->applicationType ;
-            if(!$application_type_id)
+            if(!in_array($application_type_id,[1,2,3,4]))
             {
                 throw new Exception("Invalide Applycation Type Supply");
             }
