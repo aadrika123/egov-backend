@@ -42,6 +42,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\dSafCalculation;
 use App\EloquentClass\Property\dPropertyTax;
+use App\Models\Property\PropApprovedSafDetail;
 use App\Models\Property\PropLevelPending;
 use App\Models\WfRoleusermap;
 use App\Models\WfWardUser;
@@ -550,10 +551,16 @@ class SafRepository implements iSafRepository
                 return $item->ward_id;
             });
 
+            $roles = $this->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
+
+            $roleId = $roles->map(function ($item, $key) {
+                return $item->wf_role_id;
+            });
+
             $safInbox = $this->getSaf()                                            // Global SAF 
                 ->where('active_saf_details.ulb_id', $ulbId)
-                ->where('current_role', null)
                 ->where('active_saf_details.status', 1)
+                ->whereIn('current_role', $roleId)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
                 ->groupBy('active_saf_details.id', 'p.property_type', 'ward.ward_name')
@@ -654,7 +661,7 @@ class SafRepository implements iSafRepository
             // }
             $owner_dtl = ActiveSafOwnerDetail::select('*')
                 ->where('status', 1)
-                ->where('saf_dtl_id', 1)
+                ->where('saf_dtl_id', $saf_id)
                 ->get();
             $data['owner_dtl'] =  remove_null($owner_dtl);
             $floor = ActiveSafFloorDetail::select("*")
@@ -840,6 +847,60 @@ class SafRepository implements iSafRepository
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    /**
+     * | Approve or Reject The SAF Application
+     * --------------------------------------------------
+     * | ----------------- Initialization ---------------
+     * | @param mixed $req
+     * | @var activeSaf The Saf Record by Saf Id
+     * | @var approvedSaf replication of the saf record to be approved
+     * | @var rejectedSaf replication of the saf record to be rejected
+     * ------------------- Alogrithm ---------------------
+     * | $req->status (if 1 Application to be approved && if 0 application to be rejected)
+     * ------------------- Dump --------------------------
+     * | @return msg
+     */
+    public function safApprovalRejection($req)
+    {
+        $req->validate([
+            'safId' => 'required|int',
+            'status' => 'required|int'
+        ]);
+        try {
+            DB::beginTransaction();
+            // Approval
+            if ($req->status == 1) {
+                $activeSaf = ActiveSafDetail::query()
+                    ->where('id', $req->safId)
+                    ->first();
+                $approvedSaf = $activeSaf->replicate();
+                $approvedSaf->setTable('prop_approved_saf_details');
+                $approvedSaf->id = $activeSaf->id;
+                $approvedSaf->push();
+                $activeSaf->delete();
+                $msg = "Application Successfully Approved";
+            }
+            // Rejection
+            if ($req->status == 0) {
+                $activeSaf = ActiveSafDetail::query()
+                    ->where('id', $req->safId)
+                    ->first();
+                $rejectedSaf = $activeSaf->replicate();
+                $rejectedSaf->setTable('prop_rejected_saf_details');
+                $rejectedSaf->id = $activeSaf->id;
+                $rejectedSaf->push();
+                $activeSaf->delete();
+                $msg = "Application Rejected Successfully";
+            }
+
+            DB::commit();
+            return responseMsg(true, $msg, "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 

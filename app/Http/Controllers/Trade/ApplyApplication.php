@@ -85,4 +85,12 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->licenceCertificate($request->id);
     }
+    public function applyDenail(Request $request)
+    {
+        return $this->Repository->applyDenail($request);
+    }
+    public function denialInbox(Request $request)
+    {
+        return $this->Repository->denialInbox($request);
+    }
 }

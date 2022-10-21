@@ -19,7 +19,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      *  
      */
     Route::controller(ApplyApplication::class)->group(function () {        
-        Route::match(["get", "post"], 'apply/{applicationType}', 'applyApplication');
+        Route::match(["get", "post"], 'apply/{applicationType}/{id?}', 'applyApplication');
         Route::post('getCharge', 'paybleAmount');
         Route::post('getPropertyByHolding', 'validate_holding_no');
         Route::post('updateBasicDtl', 'updateBasicDtl');
@@ -29,6 +29,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('outbox', 'outbox');
         Route::post('postNext', 'postNextLevel');
         Route::post('pay', 'procidToPaymentCounter');
+        Route::match(["get", "post"],'applyDenail', 'applyDenail');
+        Route::match(["get", "post"],'denialInbox', 'denialInbox');
     });
 });
 Route::controller(ApplyApplication::class)->group(function () {    
