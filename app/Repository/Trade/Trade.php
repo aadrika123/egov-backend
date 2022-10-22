@@ -18,6 +18,7 @@ use App\Models\Trade\TradeDenialMailDtl;
 use App\Models\Trade\TradeDenialNotice;
 use App\Models\Trade\TradeFineRebetDetail;
 use App\Models\Trade\TradeLevelPending;
+use App\Models\Trade\TradeLicenceDocument;
 use App\Models\Trade\TradeParamApplicationType;
 use App\Models\Trade\TradeParamCategoryType;
 use App\Models\Trade\TradeParamDocumentType;
@@ -811,6 +812,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),'');
         }
     }
+    /** Incomplite code */
     public function updateBasicDtl(Request $request)
     {
         $user = Auth()->user();
@@ -855,7 +857,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
-    public function documenUpload(Request $request)
+    public function documentUpload(Request $request)
     {
         try{
             $licenceId = $request->id;
@@ -884,24 +886,24 @@ class Trade implements ITrade
             $licence->items = $item_name;
             $licence->items_code = $cods;
             $owneres = $this->getOwnereDtlByLId($licenceId);
-            // $time_line = $this->getTimelin($id);
+            // $time_line = $this->getTimelin($licenceId);
             $documents = $this->getLicenceDocuments($licenceId);
             
-            $documentsList = $this->getDocumentTypeList($licence);
-            // print_var(adjToArray($documentsList));
-            $docs = [];            
+            $documentsList = $this->getDocumentTypeList($licence);                 
             foreach($documentsList as $val)
-            {  
-                $docs[$val->doc_for] = $this->getDocumentList($val->doc_for,$licence->application_type_id,$val->show);
-                $docs[$val->doc_for]["is_mandatory"] = $val->is_mandatory;
+            {   
+                $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$licence->application_type_id,$val->show);
+                $data["documentsList"][$val->doc_for]["is_mandatory"] = $val->is_mandatory;
             }
-            // $idProofList = $this->getDocumentList();
+            if($licence->application_type_id==1)
+            {                
+                $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$licence->application_type_id,0);
+                $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
+            }
+            
             $data["licence"] = $licence;
             $data["owneres"] = $owneres;
-            $data["documentsList"] = $docs;
             $data["uploadDocument"] = $documents;
-            // $data["idProofList"]    =$idProofList;
-            // dd($data);
             return responseMsg(true,"",$data);
         }
         catch(Exception $e)
@@ -909,6 +911,81 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
+    public function documentVirify(Request $request)
+    {
+        $user = Auth()->user();
+        $user_id = $user->id;
+        $ulb_id = $user->ulb_id;
+        $redis = new Redis;
+        $user_data = json_decode($redis::get('user:' . $user_id), true);
+        $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        $workflows = $this->parent->iniatorFinisher($user_id,$ulb_id,$workflow_id);   
+        $roll_id =  $this->parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??null;
+        $apply_from = $this->applyFrom();  
+        $licenceId = $request->id;
+        $rules = [];
+        $message = [];
+        try{
+            if(!$roll_id || strtoupper($apply_from)!="DA")
+            {
+                throw new Exception("You are Not Authorized For Document Verify");
+            }
+            if(!$licenceId)
+            {
+                throw new Exception("Data Not Found");
+            }
+            $licence = $this->getLicenceById($licenceId);
+            if(!$licence)
+            {
+                throw new Exception("Data Not Found");
+            }
+            $item_name="";
+            $cods = "";
+            if($licence->nature_of_bussiness)
+            {
+                $items = $this->getLicenceItemsById($licence->nature_of_bussiness);                
+                foreach($items as $val)
+                {
+                    $item_name .= $val->trade_item.",";
+                    $cods .= $val->trade_code.",";                    
+                }
+                $item_name= trim($item_name,',');
+                $cods= trim($cods,',');
+            }
+            $licence->items = $item_name;
+            $licence->items_code = $cods;
+            $owneres = $this->getOwnereDtlByLId($licenceId);
+            // $time_line = $this->getTimelin($licenceId);
+            $documents = $this->getLicenceDocuments($licenceId);
+            $documentsList = $this->getDocumentTypeList($licence);                 
+            foreach($documentsList as $val)
+            {   
+                $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$licence->application_type_id,$val->show);
+                $data["documentsList"][$val->doc_for]["is_mandatory"] = $val->is_mandatory;
+            }
+            if($licence->application_type_id==1)
+            {                
+                $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$licence->application_type_id,0);
+                $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
+            }
+            $doc = (array) null;
+            foreach($documentsList as $val)
+            {
+                if($val->doc_for == "Identity Proof")
+                {
+                    continue;
+                }     
+                $doc[$val->doc_for] = $this->check_doc_exist($licenceId,$val->doc_for);
+            }
+           
+           
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+    /** Incomplite End code */
     public function getLicenceDtl($id)
     {
         try{
@@ -2785,6 +2862,32 @@ class Trade implements ITrade
         {
             return $e->getMessage();   
         }
+    }
+    public function check_doc_exist($licenceId,$doc_for,$doc_mstr_id=null,$woner_id=null)
+    {
+        try{
+            
+            $doc = TradeLicenceDocument::select("id","verify_status","document_path","document_id")
+                       ->where('licence_id',$licenceId)
+                       ->where('doc_for',$doc_for);
+                       if($doc_mstr_id)
+                       {
+                            $doc =$doc->where('document_id',$doc_mstr_id);
+                       }                       
+                       if($woner_id)
+                       {
+                            $doc =$doc->where('licence_owner_dtl_id', $woner_id);
+                       }                       
+                $doc =$doc->where('status',1)
+                       ->orderBy('id','DESC')
+                       ->first();                     
+            return $doc;
+          
+       }
+       catch(Exception $e)
+       {
+          echo $e->getMessage();   
+       }
     }
    
     #-------------------- End core function of core function --------------

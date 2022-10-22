@@ -185,7 +185,7 @@ class CommonFunction implements ICommonFunction
                         ->where("wf_masters.id",$workflow_id)
                         ->orderBy("wf_roleusermaps.id","desc")
                         ->first();
-                        // dd(DB::getQueryLog());
+                        //dd(DB::getQueryLog());
             return $data;
         }
         catch(Exception $e)
