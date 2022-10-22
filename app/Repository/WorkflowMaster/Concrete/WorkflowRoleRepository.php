@@ -134,7 +134,7 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
     public function view($id)
     {
         $data = WfRole::where('id', $id)
-            ->where('is_suspended', true)
+            ->where('is_suspended', false)
             ->get();
         if ($data) {
             return response()->json($data, 200);

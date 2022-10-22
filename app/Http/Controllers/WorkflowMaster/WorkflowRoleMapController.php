@@ -53,7 +53,7 @@ class WorkflowRoleMapController extends Controller
     // update
     public function update(Request $request, $id)
     {
-        return $this->EloquentRoleMap->update($request);
+        return $this->EloquentRoleMap->update($request, $id);
     }
 
     //delete

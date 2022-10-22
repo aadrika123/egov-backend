@@ -53,6 +53,10 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->updateBasicDtl($request);
     }
+    public function documenUpload(Request $request)
+    {
+        return $this->Repository->documenUpload($request);
+    }
     public function getLicenceDtl(Request $request)
     {
         return $this->Repository->getLicenceDtl($request->id);
@@ -88,5 +92,15 @@ class ApplyApplication extends Controller
     public function applyDenail(Request $request)
     {
         return $this->Repository->applyDenail($request);
+    }
+    public function denialInbox(Request $request)
+    {
+        return $this->Repository->denialInbox($request);
+    }
+    public function denialview(Request $request)
+    {
+        $id = $request->id;
+        $mailID = $request->mailID;
+        return $this->Repository->denialview($id,$mailID,$request);
     }
 }

@@ -21,6 +21,7 @@ interface ITrade
     public function searchLicenceByNo(Request $request);
     public function searchLicence(string $licence_no,$ulb_id);
     public function updateBasicDtl(Request $request);
+    public function documenUpload(Request $request);
     public function getLicenceDtl($id);
     public function paybleAmount(Request $request);
     public function paymentRecipt($id, $transectionId);
@@ -35,4 +36,6 @@ interface ITrade
     public function provisionalCertificate($id);
     public function licenceCertificate($id);
     public function applyDenail(Request $request);
+    public function denialInbox(Request $request);
+    public function denialview($id,$mailID,Request $request);
 }

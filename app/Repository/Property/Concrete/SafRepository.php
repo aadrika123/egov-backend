@@ -551,10 +551,16 @@ class SafRepository implements iSafRepository
                 return $item->ward_id;
             });
 
+            $roles = $this->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
+
+            $roleId = $roles->map(function ($item, $key) {
+                return $item->wf_role_id;
+            });
+
             $safInbox = $this->getSaf()                                            // Global SAF 
                 ->where('active_saf_details.ulb_id', $ulbId)
-                ->where('current_role', null)
                 ->where('active_saf_details.status', 1)
+                ->whereIn('current_role', $roleId)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
                 ->groupBy('active_saf_details.id', 'p.property_type', 'ward.ward_name')
@@ -655,7 +661,7 @@ class SafRepository implements iSafRepository
             // }
             $owner_dtl = ActiveSafOwnerDetail::select('*')
                 ->where('status', 1)
-                ->where('saf_dtl_id', 1)
+                ->where('saf_dtl_id', $saf_id)
                 ->get();
             $data['owner_dtl'] =  remove_null($owner_dtl);
             $floor = ActiveSafFloorDetail::select("*")
