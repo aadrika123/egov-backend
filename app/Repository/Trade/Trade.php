@@ -223,11 +223,7 @@ class Trade implements ITrade
                     $rules["ownerDetails.*.mobileNo"]="required|digits:10|regex:/[0-9]{10}/";
                     $rules["ownerDetails.*.email"]="email";
                     
-                    // if (in_array($this->application_type_id, ["2", "3","4"])) 
-                    // {                    
-                    //     $rules["licenceId"] = "required";
-                    //     $message["licenceId.required"] = "Old Licence Id Requird";
-                    // }
+                    
                 }
                 elseif(in_array($this->application_type_id, [2,4]))
                 {
@@ -298,14 +294,8 @@ class Trade implements ITrade
                 if ($validator->fails()) 
                 {
                     return responseMsg(false, $validator->errors(),$request->all());
-                }
-                
-                $wardId = $request->firmDetails['wardNo'];
-                
-                $ward_no = array_filter($data['wardList'], function ($val) use($wardId ){
-                    return $val['id'] == $wardId ;
-                });
-                $ward_no = array_values($ward_no)[0]['ward_no'];
+                }                
+               
                 $proprty_id = null;
                 if($request->firmDetails['holdingNo'])
                 {
@@ -328,6 +318,7 @@ class Trade implements ITrade
                 $licence = new ActiveLicence();
                 if (in_array($this->application_type_id, ["2", "3","4"])) 
                 {   
+                    
                     $oldLicenceId = $request->id; 
                     // $oldLicence = ActiveLicence::find($request->licenceId);
                     $oldLicence = ActiveLicence::find($oldLicenceId);
@@ -336,7 +327,11 @@ class Trade implements ITrade
                         throw new Exception("Old Licence Not Found");
                     }
                     $natureOfBussiness = $oldLicence->nature_of_bussiness;
-
+                    $wardId = $oldLicence->ward_mstr_id;                
+                    $ward_no = array_filter($data['wardList'], function ($val) use($wardId ){
+                        return $val['id'] == $wardId ;
+                    });
+                    $ward_no = array_values($ward_no)[0]['ward_no']??"";
                     $oldowners = ActiveLicenceOwner::where('licence_id',$oldLicenceId)
                                 ->get();
                     $licence->id                  = $oldLicence->id;
@@ -407,7 +402,13 @@ class Trade implements ITrade
                     }
                 }
                 elseif($this->application_type_id==1)
-                {                     
+                {   
+                    $wardId = $request->firmDetails['wardNo'];                
+                    $ward_no = array_filter($data['wardList'], function ($val) use($wardId ){
+                        return $val['id'] == $wardId ;
+                    });
+                    $ward_no = array_values($ward_no)[0]['ward_no']??"";
+
                     $licence->firm_type_id        = $request->initialBusinessDetails['firmType'];
                     $licence->otherfirmtype       = $request->initialBusinessDetails['otherFirmType']??null;
                     $licence->application_type_id = $this->application_type_id;
@@ -474,7 +475,7 @@ class Trade implements ITrade
                 }  
                 $notice_date = null;
                 $noticeDetails = null;
-                if($request->initialBusinessDetails['applyWith']==1)
+                if($this->application_type_id==1 && $request->initialBusinessDetails['applyWith']==1 )
                 { 
                     $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
                     $firm_date = $request->firmDetails['firmEstdDate'];
@@ -1304,7 +1305,6 @@ class Trade implements ITrade
                 $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$licence->application_type_id,0);
                 $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
             }
-            $doc = (array) null;
             foreach($data["documentsList"] as $key =>$val)
             {
                 if($key == "Identity Proof")
@@ -1321,19 +1321,17 @@ class Trade implements ITrade
             if($licence->application_type_id==1)
             {
                 foreach($owneres as $key=>$val)
-                {
-                    // $data["documentsList"][$key]
-                   
-                    $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
-                    if(isset($owneres[$key]["Identity Proof"]["document_path"]))
+                {                   
+                    $data["documentsList"]["Identity Proof"]["doc"] =  $this->check_doc_exist_owner($licenceId,$val->id);
+                    if(isset($data["documentsList"]["Identity Proof"]["doc"]["document_path"]))
                     {
-                        $owneres[$key]["Identity Proof"]["document_path"] = !empty(trim($owneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["Identity Proof"]["document_path"]):null;
+                        $data["documentsList"]["Identity Proof"]["doc"]["document_path"] = !empty(trim($data["documentsList"]["Identity Proof"]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"]["Identity Proof"]["doc"]["document_path"]):null;
     
                     }
-                    $owneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
-                    if(isset( $owneres[$key]["image"]["document_path"]))
+                    $data["documentsList"]["image"]["doc"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
+                    if(isset($data["documentsList"]["image"]["doc"]["document_path"]))
                     {
-                        $owneres[$key]["image"]["document_path"] = !empty(trim($owneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["image"]["document_path"]):null;
+                        $data["documentsList"]["image"]["doc"]["document_path"] = !empty(trim($data["documentsList"]["image"]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"]["image"]["doc"]["document_path"]):null;
     
                     }
                 }         
@@ -1341,8 +1339,44 @@ class Trade implements ITrade
             }
             $data["licence"] = $licence;
             $data["owneres"] = $owneres;
-            return responseMsg(true,"",$request->all());
-           
+            if($request->getMethod()=="GET")
+            {
+                return responseMsg(true,"",remove_null($data));
+            }
+            elseif($request->getMethod()=="POST")
+            {
+                $rules = [];
+                $message = [];
+                $nowdate = Carbon::now()->format('Y-m-d'); 
+                $timstamp = Carbon::now()->format('Y-m-d H:i:s');                
+                $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';                
+                $rules = [
+                    'btn'=>'required|in:virify,reject',
+                    'id'=>'required',
+                ];
+                $status = 1;
+                if($request->btn=="reject")
+                {
+                    $status =2;
+                    $rules["comment"]="required|regex:$regex|min:10";
+                }
+                $validator = Validator::make($request->all(), $rules, $message);                    
+                if ($validator->fails()) {
+                    return responseMsg(false, $validator->errors(),$request->all());
+                }
+                $level_data = $this->getLevelData($licenceId);
+                if(!$level_data || $level_data->receiver_user_type_id != $roll_id)
+                {
+                    throw new Exception("You Have Not Pending Application");
+                }
+                DB::beginTransaction();                
+                $tradeDoc = TradeLicenceDocument::find($request->id);
+                $tradeDoc->verify_status = $status;
+                $tradeDoc->remarks = ($status==2?$request->comment:null);
+                $tradeDoc->verified_by_emp_id = $user_id;
+                $tradeDoc->lvl_pending_id = $level_data->id;
+
+            }           
            
         }
         catch(Exception $e)
