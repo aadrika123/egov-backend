@@ -902,13 +902,292 @@ class Trade implements ITrade
             $doc = (array) null;
             foreach($data["documentsList"] as $key => $val)
             {
+                if($key == "Identity Proof")
+                {
+                    continue;
+                }
                 $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenceId,$key);
+                if(isset($data["documentsList"][$key]["doc"]["document_path"]))
+                {
+                    $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"][$key]["doc"]["document_path"]):null;
+
+                }
             } 
-            // dd($data["documentsList"]);           
+            foreach($owneres as $key=>$val)
+            {
+               
+                $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
+                if(isset($owneres[$key]["Identity Proof"]["document_path"]))
+                {
+                    $owneres[$key]["Identity Proof"]["document_path"] = !empty(trim($owneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["Identity Proof"]["document_path"]):null;
+
+                }
+                $owneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
+                if(isset( $owneres[$key]["image"]["document_path"]))
+                {
+                    $owneres[$key]["image"]["document_path"] = !empty(trim($owneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["image"]["document_path"]):null;
+
+                }
+            }         
             $data["licence"] = $licence;
             $data["owneres"] = $owneres;
             $data["uploadDocument"] = $uploadDocument;
-            return responseMsg(true,"",$data);
+            if($request->getMethod()=="GET")
+            {
+                return responseMsg(true,"",$data);
+
+            }
+            // if($request->getMethod()=="POST")
+            // {
+            //     $rules = [];
+            //     $message = [];
+            //      # Upload Document 
+            //     if(isset($_POST['btn_doc_path']))
+            //     {
+            //         $cnt=$_POST['btn_doc_path'];
+            //         $rules = [
+            //                 'doc_path'=>'uploaded[doc_path'.$cnt.']|max_size[doc_path'.$cnt.',30720]|ext_in[doc_path'.$cnt.',pdf, jpg, jpeg]',
+            //                 'doc_mstr_id'.$cnt.''=>'required',
+            //             ];
+                    
+            //         $validator = Validator::make($request->all(), $rules, $message);
+            //         if ($validator->fails()) {
+            //             return responseMsg(false, $validator->errors(),$request->all());
+            //         }
+            //         if ($this->validate($rules))
+            //         { 
+            //             $doc_path = $this->request->getFile('doc_path'.$cnt);
+            //             if ($doc_path->IsValid() && !$doc_path->hasMoved())
+            //             {
+            //                 try
+            //                 {
+            //                     $this->db->transBegin();
+            //                     $input = [
+            //                         'apply_licence_id' => $apply_licence_id,
+            //                         'doc_for' => $this->request->getVar('doc_for'.$cnt),
+            //                         'document_id' => $this->request->getVar('doc_mstr_id'.$cnt),
+            //                         'emp_details_id' => $login_emp_details_id,
+            //                         'created_on' => date('Y-m-d H:i:s'),
+            //                         'firm_owner_dtl_id'=> $this->request->getVar('ownrid'),
+            //                     ];
+                                
+            //                     if ($app_doc_dtl_id = $this->model_application_doc->check_upload_doc_exist($input))
+            //                     {
+            //                         $delete_path = WRITEPATH.'uploads/'.$app_doc_dtl_id['document_path'];
+            //                         unlink($delete_path);
+            //                         $newFileName = md5($app_doc_dtl_id['id']);
+            //                         $file_ext = $doc_path->getExtension();
+            //                         $path = $ulb_city_nm."/"."trade_doc_dtl";
+            //                         $doc_path->move(WRITEPATH.'uploads/'.$path.'/',$newFileName.'.'.$file_ext);
+            //                         $doc_path_save = $path."/".$newFileName.'.'.$file_ext;
+            //                         $this->model_application_doc->updatedocpathById($app_doc_dtl_id['id'], $doc_path_save, $input['document_id']);
+
+            //                     }
+            //                     else if ($app_doc_dtl_id = $this->model_application_doc->insertData($input))
+            //                     {
+            //                         $newFileName = md5($app_doc_dtl_id);
+            //                         $file_ext = $doc_path->getExtension();
+            //                         $path = $ulb_city_nm."/"."trade_doc_dtl";
+            //                         $doc_path->move(WRITEPATH.'uploads/'.$path.'/',$newFileName.'.'.$file_ext);
+            //                         $doc_path_save = $path."/".$newFileName.'.'.$file_ext;
+            //                         $this->model_application_doc->updatedocpathById($app_doc_dtl_id, $doc_path_save, $input['document_id']);
+            //                     }
+            //                     if ($this->db->transStatus() === FALSE)
+            //                     {
+            //                         $this->db->transRollback();
+            //                     }
+            //                     else
+            //                     {
+            //                         $this->db->transCommit();
+            //                         return $this->response->redirect(base_url('tradedocument/doc_upload/'.$id));
+            //                     }
+            //                 }
+            //                 catch (Exception $e) { }
+
+            //             }
+            //             else
+            //             {
+            //                 $errMsg = "<ul><li>something errors in SAF form details.</li></ul>";
+            //                 $data['errors'] =   $errMsg;
+            //                 return view('trade/Connection/trade_document_upload', $data);
+            //             }
+            //         }
+            //         else
+            //         { 
+            //             $errMsg = $this->validator->listErrors();
+            //             $data['errors'] =   $errMsg;
+            //             return view('trade/Connection/trade_document_upload', $data);
+            //         }
+            //     }
+                
+            //     # Upload Owner Document Id Proof
+            //     elseif(isset($_POST['btn_doc_path_owner']))
+            //     { 
+            //         $cnt_owner=$_POST['btn_doc_path_owner'];
+                    
+            //         $rules = [
+            //                 'doc_path_owner'=>'uploaded[doc_path_owner'.$cnt_owner.']|max_size[doc_path_owner'.$cnt_owner.',30720]|ext_in[doc_path_owner'.$cnt_owner.',pdf]',
+            //                 'idproof'.$cnt_owner.''=>'required',
+            //             ];
+                        
+            //         if ($this->validate($rules))
+            //         {
+            //             $doc_path = $this->request->getFile('doc_path_owner'.$cnt_owner);
+            //             if ($doc_path->IsValid() && !$doc_path->hasMoved())
+            //             {
+            //                 try
+            //                 {
+            //                     $this->db->transBegin();
+            //                     $input = [
+            //                         'firm_owner_dtl_id' => $this->request->getVar('ownrid'),
+            //                         'apply_licence_id' => $apply_licence_id,
+            //                         'doc_for' => $this->request->getVar('doc_for'.$cnt_owner),
+            //                         'document_id' => $this->request->getVar('idproof'.$cnt_owner),
+            //                         'emp_details_id' => $login_emp_details_id,
+            //                         'created_on' =>date('Y-m-d H:i:s'),
+            //                     ];
+                                
+            //                     if ($app_doc_dtl_id = $this->model_application_doc->check_upload_doc_exist_owner($input))
+            //                     {
+            //                         $delete_path = WRITEPATH.'uploads/'.$app_doc_dtl_id['document_path'];
+            //                         unlink($delete_path);
+            //                         $newFileName = md5($app_doc_dtl_id['id']);
+            //                         $file_ext = $doc_path->getExtension();
+            //                         $path = $ulb_city_nm."/"."trade_doc_dtl";
+            //                         $doc_path->move(WRITEPATH.'uploads/'.$path.'/',$newFileName.'.'.$file_ext);
+            //                         $doc_path_save = $path."/".$newFileName.'.'.$file_ext;
+            //                         $this->model_application_doc->updatedocpathById($app_doc_dtl_id['id'], $doc_path_save, $input['document_id']);
+            //                     }
+                                
+            //                     else if ($app_doc_dtl_id = $this->model_application_doc->insertData($input))
+            //                     {
+            //                         $newFileName = md5($app_doc_dtl_id);
+            //                         $file_ext = $doc_path->getExtension();
+            //                         $path = $ulb_city_nm."/"."trade_doc_dtl";
+            //                         $doc_path->move(WRITEPATH.'uploads/'.$path.'/',$newFileName.'.'.$file_ext);
+            //                         $doc_path_save = $path."/".$newFileName.'.'.$file_ext;
+            //                         $this->model_application_doc->updatedocpathById($app_doc_dtl_id, $doc_path_save, $input['document_id']);
+            //                     }
+            //                     if ($this->db->transStatus() === FALSE) 
+            //                     {
+
+            //                         $this->db->transRollback();
+            //                     } 
+            //                     else 
+            //                     {
+
+            //                         $this->db->transCommit();
+            //                         return $this->response->redirect(base_url('tradedocument/doc_upload/'.$id));
+            //                     }
+            //                 } 
+            //                 catch (Exception $e) 
+            //                 { 
+
+            //                 }
+
+            //             } 
+            //             else 
+            //             {
+            //                 $errMsg = "<ul><li>something errors in SAF form details.</li></ul>";
+            //                 $data['errors'] =   $errMsg;
+            //                 return view('trade/Connection/trade_document_upload', $data);
+            //             }
+            //         } 
+            //         else 
+            //         {
+
+            //             $errMsg = $this->validator->listErrors();
+            //             $data['errors'] =   $errMsg;
+            //             return view('trade/Connection/trade_document_upload', $data);
+
+            //         }
+            //     } 
+            //     // owner image upload hear 
+            //     elseif(isset($_POST['btn_doc_path_owner_img']))
+            //     {
+                    
+            //         $cnt_owner=$_POST['btn_doc_path_owner_img'];
+                    
+            //         $rules = [
+            //                 'doc_path_owner_img'=>'uploaded[doc_path_owner_img'.$cnt_owner.']|max_size[doc_path_owner_img'.$cnt_owner.',30720]|ext_in[doc_path_owner_img'.$cnt_owner.',pdf, png, jpg]',
+            //                 'consumer_photo'.$cnt_owner.''=>'required',
+            //                 'doc_for'.$cnt_owner.''=>'required',
+            //             ];
+                    
+            //         if ($this->validate($rules))
+            //         { 
+            //             $doc_path = $this->request->getFile('doc_path_owner_img'.$cnt_owner);
+            //             if ($doc_path->IsValid() && !$doc_path->hasMoved())
+            //             { 
+            //                 try
+            //                 {
+            //                     $this->db->transBegin();
+            //                     $input = [
+            //                         'firm_owner_dtl_id' => $this->request->getVar('ownrid'),
+            //                         'apply_licence_id' => $apply_licence_id,
+            //                         'doc_for' => $this->request->getVar('doc_for'.$cnt_owner),
+            //                         'document_id' => $this->request->getVar('consumer_photo'.$cnt_owner),
+            //                         'emp_details_id' => $login_emp_details_id,
+            //                         'created_on' =>date('Y-m-d H:i:s'),
+            //                     ];
+                                
+            //                     if ($app_doc_dtl_id = $this->model_application_doc->check_upload_doc_exist_owner($input,$input['doc_for']))
+            //                     {
+            //                         $delete_path = WRITEPATH.'uploads/'.$app_doc_dtl_id['document_path'];
+            //                         unlink($delete_path);
+            //                         $newFileName = md5($app_doc_dtl_id['id']);
+            //                         $file_ext = $doc_path->getExtension();
+            //                         $path = $ulb_city_nm."/"."trade_doc_dtl";
+            //                         $doc_path->move(WRITEPATH.'uploads/'.$path.'/',$newFileName.'.'.$file_ext);
+            //                         $doc_path_save = $path."/".$newFileName.'.'.$file_ext;
+            //                         $this->model_application_doc->updatedocpathById($app_doc_dtl_id['id'], $doc_path_save, $input['document_id']);
+            //                     }
+                                
+            //                     elseif ($app_doc_dtl_id = $this->model_application_doc->insertData($input))
+            //                     {
+            //                         $newFileName = md5($app_doc_dtl_id);
+            //                         $file_ext = $doc_path->getExtension();
+            //                         $path = $ulb_city_nm."/"."trade_doc_dtl";
+            //                         $doc_path->move(WRITEPATH.'uploads/'.$path.'/',$newFileName.'.'.$file_ext);
+            //                         $doc_path_save = $path."/".$newFileName.'.'.$file_ext;
+            //                         $this->model_application_doc->updatedocpathById($app_doc_dtl_id, $doc_path_save, $input['document_id']);
+            //                     }
+            //                     if ($this->db->transStatus() === FALSE) {
+
+            //                         $this->db->transRollback();
+            //                     } 
+            //                     else 
+            //                     {
+
+            //                         $this->db->transCommit();
+            //                         return $this->response->redirect(base_url('tradedocument/doc_upload/'.$id));
+            //                     }
+            //                 } 
+            //                 catch (Exception $e) 
+            //                 { 
+
+            //                 }
+
+            //             } 
+            //             else 
+            //             {
+            //                 $errMsg = "<ul><li>something errors in SAF form details.</li></ul>";
+            //                 $data['errors'] =   $errMsg;
+            //                 return view('trade/Connection/trade_document_upload', $data);
+            //             }
+            //         } 
+            //         else 
+            //         {
+            //             echo"not valied";
+            //             // print_var($this->validator->listErrors());
+            //             // die;
+            //             $errMsg = $this->validator->listErrors();
+            //             $data['errors'] =   $errMsg;
+            //             return view('trade/Connection/trade_document_upload', $data);
+
+            //         }
+            //     } 
+            // }
         }
         catch(Exception $e)
         {
@@ -1318,18 +1597,22 @@ class Trade implements ITrade
             $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');            
             $rules["licenceNo"] = "required";
             $message["licenceNo.required"] = "Licence No Requird";
-            $rules["applicationType"] = "required:int";
-            $message["applicationType.required"] = "Application Type Id Requird";
+            $rules["applicationType"] = "required:string";
+            $message["applicationType.required"] = "Application Type Requird";
             
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(),$request->all());
             }
-            $application_type_id = $request->applicationType ;
-            if(!in_array($application_type_id,[1,2,3,4]))
+            $application_type_id = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);            
+            if(!$application_type_id)
             {
-                throw new Exception("Invalide Applycation Type Supply");
+                throw new Exception("Invalide Application Type");
             }
+            // if(!in_array($application_type_id,[1,2,3,4]))
+            // {
+            //     throw new Exception("Invalide Applycation Type Supply");
+            // }
             elseif($application_type_id==1)
             {
                 throw new Exception("You Can Not Apply New Licence"); 
@@ -2892,6 +3175,32 @@ class Trade implements ITrade
        {
           echo $e->getMessage();   
        }
+    }
+
+    public function check_doc_exist_owner($licenceId,$owner_id,$document_id=null)
+    {
+        try{
+            // DB::enableQueryLog();
+            $doc = TradeLicenceDocument::select("id","verify_status","document_path","document_id")
+                           ->where('licence_id',$licenceId)
+                           ->where('licence_owner_dtl_id',$owner_id);
+                           if($document_id!==null)
+                            {
+                                $document_id = (int)$document_id;
+                                $doc = $doc->where('document_id',$document_id);
+                            }
+                            else
+                                $doc = $doc->where("document_id","<>",0);                       
+                $doc =$doc->where('status',1)
+                        ->orderBy('id','DESC')
+                        ->first(); 
+            // dd(DB::getQueryLog());                    
+            return $doc;
+        }
+        catch(Exception $e)
+        {
+            return $e->getMessage();   
+        }
     }
    
     #-------------------- End core function of core function --------------
