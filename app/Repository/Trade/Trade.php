@@ -74,6 +74,10 @@ class Trade implements ITrade
         $apply_from = $this->applyFrom();      
         try
         {
+            if(!in_array(strtoupper($apply_from),["ONLINE","JSK","UTC","TC","SUPER ADMIN","TL"]))
+            {
+                throw new Exception("You Are Not Authorized For Apply Appliocation");
+            }
             $this->application_type_id = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);            
             if(!$this->application_type_id)
             {
@@ -320,11 +324,20 @@ class Trade implements ITrade
                 {   
                     
                     $oldLicenceId = $request->id; 
+                    $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
                     // $oldLicence = ActiveLicence::find($request->licenceId);
                     $oldLicence = ActiveLicence::find($oldLicenceId);
                     if(!$oldLicence)
                     {
                         throw new Exception("Old Licence Not Found");
+                    }
+                    elseif($oldLicence->valid_upto > $nextMonth)
+                    {
+                            throw new Exception("Licence Valice Upto ".$oldLicence->valid_upto);
+                    } 
+                    elseif($oldLicence->pending_status!=5)
+                    {
+                            throw new Exception("Application Aready Apply Please Track  ".$oldLicence->application_no);
                     }
                     $natureOfBussiness = $oldLicence->nature_of_bussiness;
                     $wardId = $oldLicence->ward_mstr_id;                
@@ -369,6 +382,7 @@ class Trade implements ITrade
                     $licence->property_type       = $oldLicence->property_type;
                     $licence->update_status       = $this->transfareExpire($oldLicenceId);
                     $licence->valid_from          = $oldLicence->valid_upto;
+                    $licence->license_no          = $oldLicence->license_no;
                     $licence->tobacco_status      = $oldLicence->tobacco_status;
                     
                     $licence->apply_from          = $apply_from;
@@ -378,7 +392,7 @@ class Trade implements ITrade
                     $licence->workflow_id         = $workflow_id;
     
                     $licence->save();
-                    $licenceId = $licence->id;                
+                    $licenceId = $licence->id;      
                     $appNo = "APP".str_pad($ward_no, 2, '0', STR_PAD_LEFT).str_pad($licenceId, 7, '0', STR_PAD_LEFT);
                     $licence->application_no = $appNo;
                     $licence->save();
@@ -606,8 +620,8 @@ class Trade implements ITrade
         }
         catch (Exception $e) {
             DB::rollBack(); 
-            echo $e->getFile(); 
-            echo $e->getLine();          
+            // echo $e->getFile(); 
+            // echo $e->getLine();          
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
@@ -949,6 +963,10 @@ class Trade implements ITrade
             if(!$licence)
             {
                 throw new Exception("Data Not Found");
+            }
+            elseif($licence->doc_verify_date)
+            {
+                throw new Exception("Document Verified You Can Not Upload Documents");
             }
             $item_name="";
             $cods = "";
@@ -1766,7 +1784,11 @@ class Trade implements ITrade
            elseif($data->valid_upto > $nextMonth)
            {
                 throw new Exception("Licence Valice Upto ".$data->valid_upto);
-           }            
+           } 
+           elseif($data->pending_status!=5)
+           {
+                throw new Exception("Application Aready Apply Please Track  ".$data->application_no);
+           }           
            return responseMsg(true,"",remove_null($data));
         }
         catch(Exception $e)
@@ -2048,7 +2070,7 @@ class Trade implements ITrade
             }
             elseif(!$role->is_initiator && ! $level_data)
             {
-                throw new Exception("Please Contact To Admin!!!...");
+                throw new Exception("Please Contact To Admin!!!1...");
             }  
             elseif(isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
             {
@@ -2057,7 +2079,7 @@ class Trade implements ITrade
             $init_finish = $this->parent->iniatorFinisher($user_id,$ulb_id,$refWorkflowId); 
             if(!$init_finish)
             {
-                throw new Exception("Full Work Flow Not Desigen Proper Please Contact To Admin !!!...");
+                throw new Exception("Full Work Flow Not Desigen Proper Please Contact To Admin !!!2...");
             }
             elseif(!$init_finish["initiator"])
             {
@@ -2095,18 +2117,85 @@ class Trade implements ITrade
                 $licence_pending = 2;
                 $sms ="Application Forword To ".$role->forword_name;
                 $receiver_user_type_id = $role->forward_role_id;
-            }
-            elseif($request->btn=="forward" && $role_id==6)
+
+            } 
+            if($request->btn=="forward" && $role->is_initiator)
             {
-                $this->getLicenceDocuments($request->licenceId);
+                $owneres = $this->getOwnereDtlByLId($licenc_data->id);
+                $documentsList = $this->getDocumentTypeList($licenc_data);                 
+                foreach($documentsList as $val)
+                {   
+                    $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$licenc_data->application_type_id,$val->show);
+                    $data["documentsList"][$val->doc_for]["is_mandatory"] = $val->is_mandatory;
+                }
+                if($licenc_data->application_type_id==1)
+                {                
+                    $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$licenc_data->application_type_id,0);
+                    $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
+                }
+                $doc = (array) null;
+                foreach($data["documentsList"] as $key => $val)
+                {
+                    if($key == "Identity Proof")
+                    {
+                        continue;
+                    }
+                    $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenc_data->id,$key);
+                    if(!isset($data["documentsList"][$key]["doc"]["document_path"]) && $data["documentsList"][$key]["is_mandatory"])
+                    {
+                        $doc[]=$key." Not Uploaded";
+
+                    }
+                } 
+                if($licenc_data->application_type_id==1)
+                {
+                    foreach($owneres as $key=>$val)
+                    {
+                    
+                        $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenc_data->id,$val->id);
+                        if(!isset($owneres[$key]["Identity Proof"]["document_path"]) && $data["documentsList"]["Identity Proof"]["is_mandatory"])
+                        {
+                            $doc[]="Identity Proof Of ".$val->owner_name." Not Uploaded";
+        
+                        }
+                    }         
+
+                }
+                if($doc)
+                {   $err = "";
+                    foreach($doc as $val)
+                    {
+                        $err.="<li>$val</li>";
+                    }                
+                    throw new Exception($err);
+                }
+            }           
+            if($request->btn=="forward" && $role_id==6)
+            {
+                $docs = $this->getLicenceDocuments($request->licenceId);
+                if(!$docs)
+                {
+                    throw new Exception("No Anny Document Found");
+                }
+                $docs = adjToArray($docs);
+                $test = array_filter($docs,function($val){
+                     if($val["verify_status"]!=1)
+                     {
+                        return True;
+                     }
+                });
+                if($test)
+                {
+                    throw new Exception("All Document Are Not Verified");
+                }
+
+                
             }
 
             if(!$role->is_finisher && !$receiver_user_type_id)  
             {
                 throw new Exception("Next Roll Not Found !!!....");
             }
-            
-            dd($role_id);
 
             DB::beginTransaction();
             if($level_data)
@@ -2213,6 +2302,15 @@ class Trade implements ITrade
                     }
                     $licenc_data->license_no = $license_no;
                     $sms.=" Licence No ".$license_no;
+            }
+            if($request->btn=="forward" && $role->is_initiator)
+            {
+                $licenc_data->document_upload_status = 1;
+            }
+            if($request->btn=="forward" && $role_id==6)
+            {
+                $licenc_data->doc_verify_date = Carbon::now()->formate("Y-m-d");
+                $licenc_data->doc_verify_emp_details_id = $user_id;
             }
             $licenc_data->pending_status = $licence_pending;            
             $licenc_data->save();            
