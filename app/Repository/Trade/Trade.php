@@ -160,71 +160,140 @@ class Trade implements ITrade
                 $numDot = '/^\d+(?:\.\d+)+$/i';
                 $dateFormatYYYMMDD ='/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))+$/i';
                 $dateFormatYYYMM='/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';
-                $rules["firmDetails.areaSqft"]="required|numeric";
-                $rules["firmDetails.businessAddress"]="required|regex:$regex";
-                $rules["firmDetails.businessDescription"]="required|regex:$regex"; 
-                $rules["firmDetails.firmEstdDate"]="required|date"; 
-                $rules["firmDetails.firmName"]="required|regex:$regex";
-                if (in_array($this->application_type_id, ["2"])) 
-                {                    
-                    $rules["firmDetails.holdingNo"]="required|regex:$regex";
-                } 
-                $rules["firmDetails.premisesOwner"]="required|regex:$regex";
-                $rules["firmDetails.natureOfBusiness"]="required|array";
-                $rules["firmDetails.natureOfBusiness.*.id"]="required|int";
-                $rules["firmDetails.newWardNo"]="required|int";
-                $rules["firmDetails.wardNo"]="required|int";
-                $rules["firmDetails.tocStatus"] = "required|bool";
-                $rules["firmDetails.landmark"]="regex:$regex";
-                $rules["firmDetails.categoryTypeId"]="int";
-                $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
-                $rules["firmDetails.bind_book_no"] = "regex:$regex";
-                $rules["firmDetails.account_no"] = "regex:$regex";
-                if(strtoupper($apply_from)=="ONLINE")
+                if(in_array($this->application_type_id, [1]))
                 {
-                    $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
-                }               
-                
-                $rules["initialBusinessDetails.applyWith"]="required|int";
-                $rules["initialBusinessDetails.firmType"]="required|int";
-                if(isset($request->initialBusinessDetails['firmType']) && $request->initialBusinessDetails['firmType']==5)
-                {
-                    $rules["initialBusinessDetails.otherFirmType"]="required|regex:$regex";
-                }
-                $rules["initialBusinessDetails.ownershipType"]="required|int";
-                if( isset($request->initialBusinessDetails['applyWith']) && $request->initialBusinessDetails['applyWith']==1)
-                {
-                    $rules["initialBusinessDetails.noticeNo"]="required";
-                    $rules["initialBusinessDetails.noticeDate"]="required|date";  
-                }
-                $rules["licenseDetails.licenseFor"]="required|int";
-                if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
-                {
-                    $rules["licenseDetails.licenseFor"]="required|int|max:1";
-                }
-                if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]))
-                {
-                    $rules["licenseDetails.paymentMode"]="required|alpha"; 
-                    if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
-                    {
-                        $rules["licenseDetails.chaqueNo"] ="required";
-                        $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
-                        $rules["licenseDetails.bankName"] ="required|regex:$regex";
-                        $rules["licenseDetails.branchName"] ="required|regex:$regex";
-                    } 
-                }
 
-                $rules["ownerDetails"] = "required|array";
-                $rules["ownerDetails.*.businessOwnerName"]="required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-                $rules["ownerDetails.*.guardianName"]="regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-                $rules["ownerDetails.*.mobileNo"]="required|digits:10|regex:/[0-9]{10}/";
-                $rules["ownerDetails.*.email"]="email";
-                
-                // if (in_array($this->application_type_id, ["2", "3","4"])) 
-                // {                    
-                //     $rules["licenceId"] = "required";
-                //     $message["licenceId.required"] = "Old Licence Id Requird";
-                // }
+                    $rules["firmDetails.areaSqft"]="required|numeric";
+                    $rules["firmDetails.businessAddress"]="required|regex:$regex";
+                    $rules["firmDetails.businessDescription"]="required|regex:$regex"; 
+                    $rules["firmDetails.firmEstdDate"]="required|date"; 
+                    $rules["firmDetails.firmName"]="required|regex:$regex";
+                    if (in_array($this->application_type_id, ["2"])) 
+                    {                    
+                        $rules["firmDetails.holdingNo"]="required|regex:$regex";
+                    } 
+                    $rules["firmDetails.premisesOwner"]="required|regex:$regex";
+                    $rules["firmDetails.natureOfBusiness"]="required|array";
+                    $rules["firmDetails.natureOfBusiness.*.id"]="required|int";
+                    $rules["firmDetails.newWardNo"]="required|int";
+                    $rules["firmDetails.wardNo"]="required|int";
+                    $rules["firmDetails.tocStatus"] = "required|bool";
+                    $rules["firmDetails.landmark"]="regex:$regex";
+                    $rules["firmDetails.categoryTypeId"]="int";
+                    $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
+                    $rules["firmDetails.bind_book_no"] = "regex:$regex";
+                    $rules["firmDetails.account_no"] = "regex:$regex";
+                    if(strtoupper($apply_from)=="ONLINE")
+                    {
+                        $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
+                    }               
+                    
+                    $rules["initialBusinessDetails.applyWith"]="required|int";
+                    $rules["initialBusinessDetails.firmType"]="required|int";
+                    if(isset($request->initialBusinessDetails['firmType']) && $request->initialBusinessDetails['firmType']==5)
+                    {
+                        $rules["initialBusinessDetails.otherFirmType"]="required|regex:$regex";
+                    }
+                    $rules["initialBusinessDetails.ownershipType"]="required|int";
+                    if( isset($request->initialBusinessDetails['applyWith']) && $request->initialBusinessDetails['applyWith']==1)
+                    {
+                        $rules["initialBusinessDetails.noticeNo"]="required";
+                        $rules["initialBusinessDetails.noticeDate"]="required|date";  
+                    }
+                    $rules["licenseDetails.licenseFor"]="required|int";
+                    if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
+                    {
+                        $rules["licenseDetails.licenseFor"]="required|int|max:1";
+                    }
+                    if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]))
+                    {
+                        $rules["licenseDetails.paymentMode"]="required|alpha"; 
+                        if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
+                        {
+                            $rules["licenseDetails.chaqueNo"] ="required";
+                            $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
+                            $rules["licenseDetails.bankName"] ="required|regex:$regex";
+                            $rules["licenseDetails.branchName"] ="required|regex:$regex";
+                        } 
+                    }
+    
+                    $rules["ownerDetails"] = "required|array";
+                    $rules["ownerDetails.*.businessOwnerName"]="required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
+                    $rules["ownerDetails.*.guardianName"]="regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
+                    $rules["ownerDetails.*.mobileNo"]="required|digits:10|regex:/[0-9]{10}/";
+                    $rules["ownerDetails.*.email"]="email";
+                    
+                    // if (in_array($this->application_type_id, ["2", "3","4"])) 
+                    // {                    
+                    //     $rules["licenceId"] = "required";
+                    //     $message["licenceId.required"] = "Old Licence Id Requird";
+                    // }
+                }
+                elseif(in_array($this->application_type_id, [2,4]))
+                {
+                    if (in_array($this->application_type_id, ["2"])) 
+                    {                    
+                        $rules["firmDetails.holdingNo"]="required|regex:$regex";
+                    } 
+                    if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]) && $this->application_type_id==2)
+                    {
+                        $rules["licenseDetails.paymentMode"]="required|alpha"; 
+                        if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
+                        {
+                            $rules["licenseDetails.chaqueNo"] ="required";
+                            $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
+                            $rules["licenseDetails.bankName"] ="required|regex:$regex";
+                            $rules["licenseDetails.branchName"] ="required|regex:$regex";
+                        } 
+                    }
+                    
+                }
+                elseif(in_array($this->application_type_id, [3]))
+                {
+                    $rules["firmDetails.areaSqft"]="required|numeric";
+                    $rules["firmDetails.businessAddress"]="required|regex:$regex";
+                    $rules["firmDetails.businessDescription"]="required|regex:$regex"; 
+                    $rules["firmDetails.firmEstdDate"]="required|date"; 
+                    $rules["firmDetails.firmName"]="required|regex:$regex";
+
+                    $rules["firmDetails.premisesOwner"]="required|regex:$regex";
+                    $rules["firmDetails.natureOfBusiness"]="required|array";
+                    $rules["firmDetails.natureOfBusiness.*.id"]="required|int";
+                    $rules["firmDetails.newWardNo"]="required|int";
+                    $rules["firmDetails.wardNo"]="required|int";
+                    $rules["firmDetails.tocStatus"] = "required|bool";
+                    $rules["firmDetails.landmark"]="regex:$regex";
+                    $rules["firmDetails.categoryTypeId"]="int";
+                    $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
+                    $rules["firmDetails.bind_book_no"] = "regex:$regex";
+                    $rules["firmDetails.account_no"] = "regex:$regex";
+                    if(strtoupper($apply_from)=="ONLINE")
+                    {
+                        $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
+                    } 
+                    $rules["initialBusinessDetails.ownershipType"]="required|int";
+                    if( isset($request->initialBusinessDetails['applyWith']) && $request->initialBusinessDetails['applyWith']==1)
+                    {
+                        $rules["initialBusinessDetails.noticeNo"]="required";
+                        $rules["initialBusinessDetails.noticeDate"]="required|date";  
+                    }
+                    $rules["licenseDetails.licenseFor"]="required|int";
+                    if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
+                    {
+                        $rules["licenseDetails.licenseFor"]="required|int|max:1";
+                    }
+                    if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]))
+                    {
+                        $rules["licenseDetails.paymentMode"]="required|alpha"; 
+                        if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
+                        {
+                            $rules["licenseDetails.chaqueNo"] ="required";
+                            $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
+                            $rules["licenseDetails.bankName"] ="required|regex:$regex";
+                            $rules["licenseDetails.branchName"] ="required|regex:$regex";
+                        } 
+                    }    
+                }
                 $validator = Validator::make($request->all(), $rules, $message);
                 if ($validator->fails()) 
                 {
@@ -246,10 +315,14 @@ class Trade implements ITrade
                     else
                         throw new Exception("Property Details Not Found");
                 }
-                $natureOfBussiness = array_map(function($val){
-                    return $val['id'];
-                },$request->firmDetails['natureOfBusiness']);
-                $natureOfBussiness = implode(',', $natureOfBussiness);
+                if($this->application_type_id==1)
+                {
+                    $natureOfBussiness = array_map(function($val){
+                        return $val['id'];
+                    },$request->firmDetails['natureOfBusiness']);
+                    $natureOfBussiness = implode(',', $natureOfBussiness);
+
+                }
                 
                 DB::beginTransaction();                
                 $licence = new ActiveLicence();
@@ -262,6 +335,8 @@ class Trade implements ITrade
                     {
                         throw new Exception("Old Licence Not Found");
                     }
+                    $natureOfBussiness = $oldLicence->nature_of_bussiness;
+                    
                     $oldowners = ActiveLicenceOwner::where('licence_id',$oldLicenceId)
                                 ->get();
                     $licence->id                  = $oldLicence->id;
@@ -972,7 +1047,9 @@ class Trade implements ITrade
                             if ($app_doc_dtl_id = $this->check_doc_exist($licenceId,$request->$doc_for))
                             {                                                           
                                 $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                                if (File::exists(public_path('img/dummy.jpg'))) {   
+                                dd(file_exists(public_path('img/dummy.jpg')));
+                                if (file_exists(public_path('img/dummy.jpg'))) 
+                                {   
                                     unlink($delete_path);
                                 }
                                 $newFileName = $app_doc_dtl_id['id'];
