@@ -10,7 +10,6 @@ use App\Models\PropPropertie;
 use App\Models\Trade\ActiveLicence;
 use App\Models\Trade\ActiveLicenceOwner;
 use App\Models\Trade\ExpireLicence;
-use App\Models\Trade\TradeApplicationDoc;
 use App\Models\Trade\TradeBankRecancilation;
 use App\Models\Trade\TradeChequeDtl;
 use App\Models\Trade\TradeDenialConsumerDtl;
@@ -887,7 +886,7 @@ class Trade implements ITrade
             $licence->items_code = $cods;
             $owneres = $this->getOwnereDtlByLId($licenceId);
             // $time_line = $this->getTimelin($licenceId);
-            $documents = $this->getLicenceDocuments($licenceId);
+            $uploadDocument = $this->getLicenceDocuments($licenceId);
             
             $documentsList = $this->getDocumentTypeList($licence);                 
             foreach($documentsList as $val)
@@ -900,10 +899,15 @@ class Trade implements ITrade
                 $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$licence->application_type_id,0);
                 $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
             }
-            
+            $doc = (array) null;
+            foreach($data["documentsList"] as $key => $val)
+            {
+                $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenceId,$key);
+            } 
+            // dd($data["documentsList"]);           
             $data["licence"] = $licence;
             $data["owneres"] = $owneres;
-            $data["uploadDocument"] = $documents;
+            $data["uploadDocument"] = $uploadDocument;
             return responseMsg(true,"",$data);
         }
         catch(Exception $e)
@@ -2686,15 +2690,15 @@ class Trade implements ITrade
     {
         try{
            
-            $time_line =  TradeApplicationDoc::select(
-                        "trade_application_docs.doc_for",
-                        "trade_application_docs.document_path",
-                        "trade_application_docs.remarks",
-                        "trade_application_docs.verify_status"
+            $time_line =  TradeLicenceDocument::select(
+                        "trade_licence_documents.doc_for",
+                        "trade_licence_documents.document_path",
+                        "trade_licence_documents.remarks",
+                        "trade_licence_documents.verify_status"
                     )
-                    ->where('trade_application_docs.licence_id', $id)
-                    ->where('trade_application_docs.status', 1)                    
-                    ->orderBy('id', 'desc')
+                    ->where('trade_licence_documents.licence_id', $id)
+                    ->where('trade_licence_documents.status', 1)                    
+                    ->orderBy('trade_licence_documents.id', 'desc')
                     ->get();
             return $time_line;
         }
