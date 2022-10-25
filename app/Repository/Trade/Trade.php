@@ -233,7 +233,7 @@ class Trade implements ITrade
                 {
                     if (in_array($this->application_type_id, ["2"])) 
                     {                    
-                        $rules["firmDetails.holdingNo"]="required|regex:$regex";
+                        $rules["firmDetails.holdingNo"]="required";
                     } 
                     if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]) && $this->application_type_id==2)
                     {
@@ -255,7 +255,7 @@ class Trade implements ITrade
                     $rules["firmDetails.businessDescription"]="required|regex:$regex"; 
                     $rules["firmDetails.firmEstdDate"]="required|date"; 
                     $rules["firmDetails.firmName"]="required|regex:$regex";
-
+                    $rules["firmDetails.holdingNo"]="required";
                     $rules["firmDetails.premisesOwner"]="required|regex:$regex";
                     $rules["firmDetails.natureOfBusiness"]="required|array";
                     $rules["firmDetails.natureOfBusiness.*.id"]="required|int";
@@ -336,7 +336,7 @@ class Trade implements ITrade
                         throw new Exception("Old Licence Not Found");
                     }
                     $natureOfBussiness = $oldLicence->nature_of_bussiness;
-                    
+
                     $oldowners = ActiveLicenceOwner::where('licence_id',$oldLicenceId)
                                 ->get();
                     $licence->id                  = $oldLicence->id;
