@@ -231,7 +231,7 @@ class Trade implements ITrade
                 }
                 elseif(in_array($this->application_type_id, [2,4]))
                 {
-                    if (in_array($this->application_type_id, ["2"])) 
+                    // if (in_array($this->application_type_id, ["2"])) 
                     {                    
                         $rules["firmDetails.holdingNo"]="required";
                     } 
@@ -993,22 +993,26 @@ class Trade implements ITrade
 
                 }
             } 
-            foreach($owneres as $key=>$val)
+            if($licence->application_type_id==1)
             {
-               
-                $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
-                if(isset($owneres[$key]["Identity Proof"]["document_path"]))
+                foreach($owneres as $key=>$val)
                 {
-                    $owneres[$key]["Identity Proof"]["document_path"] = !empty(trim($owneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["Identity Proof"]["document_path"]):null;
+                   
+                    $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
+                    if(isset($owneres[$key]["Identity Proof"]["document_path"]))
+                    {
+                        $owneres[$key]["Identity Proof"]["document_path"] = !empty(trim($owneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["Identity Proof"]["document_path"]):null;
+    
+                    }
+                    $owneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
+                    if(isset( $owneres[$key]["image"]["document_path"]))
+                    {
+                        $owneres[$key]["image"]["document_path"] = !empty(trim($owneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["image"]["document_path"]):null;
+    
+                    }
+                }         
 
-                }
-                $owneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
-                if(isset( $owneres[$key]["image"]["document_path"]))
-                {
-                    $owneres[$key]["image"]["document_path"] = !empty(trim($owneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["image"]["document_path"]):null;
-
-                }
-            }         
+            }
             $data["licence"] = $licence;
             $data["owneres"] = $owneres;
             $data["uploadDocument"] = $uploadDocument;
@@ -1047,8 +1051,8 @@ class Trade implements ITrade
                             if ($app_doc_dtl_id = $this->check_doc_exist($licenceId,$request->$doc_for))
                             {                                                           
                                 $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                                dd(file_exists(public_path('img/dummy.jpg')));
-                                if (file_exists(public_path('img/dummy.jpg'))) 
+                                // dd(file_exists($delete_path));
+                                if (file_exists($delete_path)) 
                                 {   
                                     unlink($delete_path);
                                 }
@@ -1122,7 +1126,10 @@ class Trade implements ITrade
                             if ($app_doc_dtl_id = $this->model_application_doc->check_doc_exist_owner($licenceId,$request->owner_id))
                             {                                
                                 $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                                unlink($delete_path);
+                                if (file_exists($$delete_path)) 
+                                { 
+                                    unlink($delete_path);
+                                }
 
                                 $newFileName = $app_doc_dtl_id['id'];
 
@@ -1187,7 +1194,10 @@ class Trade implements ITrade
                             if ($app_doc_dtl_id = $this->model_application_doc->check_doc_exist_owner($licenceId,$request->owner_id))
                             {
                                 $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                                unlink($delete_path);
+                                if (file_exists($$delete_path)) 
+                                { 
+                                    unlink($delete_path);
+                                }
 
                                 $newFileName = $app_doc_dtl_id['id'];
 
@@ -1227,8 +1237,7 @@ class Trade implements ITrade
                             return responseMsg(false, "something errors in Document Uploades",$request->all());
                         }
                     }                     
-                } 
-                dd($sms);
+                }                 
                 DB::commit();
                 return responseMsg(true, $sms,"");
             }
@@ -1296,14 +1305,43 @@ class Trade implements ITrade
                 $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
             }
             $doc = (array) null;
-            foreach($documentsList as $val)
+            foreach($data["documentsList"] as $key =>$val)
             {
-                if($val->doc_for == "Identity Proof")
+                if($key == "Identity Proof")
                 {
                     continue;
                 }     
-                $doc[$val->doc_for] = $this->check_doc_exist($licenceId,$val->doc_for);
+                $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenceId,$key);
+                if(isset($data["documentsList"][$key]["doc"]["document_path"]))
+                {
+                    $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"][$key]["doc"]["document_path"]):null;
+
+                }
             }
+            if($licence->application_type_id==1)
+            {
+                foreach($owneres as $key=>$val)
+                {
+                    // $data["documentsList"][$key]
+                   
+                    $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
+                    if(isset($owneres[$key]["Identity Proof"]["document_path"]))
+                    {
+                        $owneres[$key]["Identity Proof"]["document_path"] = !empty(trim($owneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["Identity Proof"]["document_path"]):null;
+    
+                    }
+                    $owneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
+                    if(isset( $owneres[$key]["image"]["document_path"]))
+                    {
+                        $owneres[$key]["image"]["document_path"] = !empty(trim($owneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["image"]["document_path"]):null;
+    
+                    }
+                }         
+
+            }
+            $data["licence"] = $licence;
+            $data["owneres"] = $owneres;
+            return responseMsg(true,"",$request->all());
            
            
         }
@@ -1616,6 +1654,7 @@ class Trade implements ITrade
             $inputs = $request->all();
 
             $propdet = $this->propertyDetailsfortradebyHoldingNo($inputs['holdingNo'],$ulb_id);
+            dd($propdet);
             if($propdet['status'])
             {
                 $response = ['status' => true,"data"=>["property"=>$propdet['property']],"message"=>""];
@@ -2880,6 +2919,7 @@ class Trade implements ITrade
     }    
     public function propertyDetailsfortradebyHoldingNo(string $holdingNo,int $ulb_id):array
     {
+        // DB::enableQueryLog();
         $property = PropPropertie::select("*")
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name ,property_id
                                         FROM Prop_OwnerS 
@@ -2896,6 +2936,7 @@ class Trade implements ITrade
                         ->where("new_holding_no",$holdingNo)
                         ->where("ulb_id",$ulb_id)
                         ->first();
+                        // dd(DB::getQueryLog());
         if($property)
         {
             return ["status"=>true,'property'=>adjToArray($property)];
