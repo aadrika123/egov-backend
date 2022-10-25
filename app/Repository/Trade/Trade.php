@@ -334,7 +334,6 @@ class Trade implements ITrade
                     $ward_no = array_values($ward_no)[0]['ward_no']??"";
                     $oldowners = ActiveLicenceOwner::where('licence_id',$oldLicenceId)
                                 ->get();
-                    $licence->id                  = $oldLicence->id;
                     $licence->firm_type_id        = $oldLicence->firm_type_id;
                     $licence->otherfirmtype       = $oldLicence->otherfirmtype;
                     $licence->application_type_id = $this->application_type_id;
@@ -369,6 +368,7 @@ class Trade implements ITrade
                     $licence->street_name         = $oldLicence->street_name;
                     $licence->property_type       = $oldLicence->property_type;
                     $licence->update_status       = $this->transfareExpire($oldLicenceId);
+                    $licence->valid_from          = $oldLicence->valid_upto;
                     $licence->tobacco_status      = $oldLicence->tobacco_status;
                     
                     $licence->apply_from          = $apply_from;
@@ -1375,7 +1375,9 @@ class Trade implements ITrade
                 $tradeDoc->remarks = ($status==2?$request->comment:null);
                 $tradeDoc->verified_by_emp_id = $user_id;
                 $tradeDoc->lvl_pending_id = $level_data->id;
-
+                DB::commit();
+                $sms = $tradeDoc->doc_for." ".strtoupper($request->btn);
+                return responseMsg(true,$sms,"");
             }           
            
         }
@@ -1687,8 +1689,7 @@ class Trade implements ITrade
             $data = array();
             $inputs = $request->all();
 
-            $propdet = $this->propertyDetailsfortradebyHoldingNo($inputs['holdingNo'],$ulb_id);
-            dd($propdet);
+            $propdet = $this->propertyDetailsfortradebyHoldingNo($inputs['holdingNo'],$ulb_id);           
             if($propdet['status'])
             {
                 $response = ['status' => true,"data"=>["property"=>$propdet['property']],"message"=>""];
@@ -2005,7 +2006,7 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
-            $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);
+            $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);           
             if (!$role) 
             {
                 throw new Exception("You Are Not Authorized");
@@ -2095,13 +2096,17 @@ class Trade implements ITrade
                 $sms ="Application Forword To ".$role->forword_name;
                 $receiver_user_type_id = $role->forward_role_id;
             }
+            elseif($request->btn=="forward" && $role_id==6)
+            {
+                $this->getLicenceDocuments($request->licenceId);
+            }
 
             if(!$role->is_finisher && !$receiver_user_type_id)  
             {
                 throw new Exception("Next Roll Not Found !!!....");
             }
             
-            // dd($role_id);
+            dd($role_id);
 
             DB::beginTransaction();
             if($level_data)
