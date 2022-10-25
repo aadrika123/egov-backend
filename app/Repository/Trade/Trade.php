@@ -220,11 +220,11 @@ class Trade implements ITrade
                 $rules["ownerDetails.*.mobileNo"]="required|digits:10|regex:/[0-9]{10}/";
                 $rules["ownerDetails.*.email"]="email";
                 
-                if (in_array($this->application_type_id, ["2", "3","4"])) 
-                {                    
-                    $rules["licenceId"] = "required";
-                    $message["licenceId.required"] = "Old Licence Id Requird";
-                }
+                // if (in_array($this->application_type_id, ["2", "3","4"])) 
+                // {                    
+                //     $rules["licenceId"] = "required";
+                //     $message["licenceId.required"] = "Old Licence Id Requird";
+                // }
                 $validator = Validator::make($request->all(), $rules, $message);
                 if ($validator->fails()) 
                 {
@@ -255,12 +255,14 @@ class Trade implements ITrade
                 $licence = new ActiveLicence();
                 if (in_array($this->application_type_id, ["2", "3","4"])) 
                 {   
-                    $oldLicence = ActiveLicence::find($request->licenceId);
+                    $oldLicenceId = $request->id; 
+                    // $oldLicence = ActiveLicence::find($request->licenceId);
+                    $oldLicence = ActiveLicence::find($oldLicenceId);
                     if(!$oldLicence)
                     {
                         throw new Exception("Old Licence Not Found");
                     }
-                    $oldowners = ActiveLicenceOwner::where('licence_id',$request->licenceId)
+                    $oldowners = ActiveLicenceOwner::where('licence_id',$oldLicenceId)
                                 ->get();
                     $licence->id                  = $oldLicence->id;
                     $licence->firm_type_id        = $oldLicence->firm_type_id;
@@ -296,7 +298,7 @@ class Trade implements ITrade
                     $licence->pin_code            = $oldLicence->pin_code;
                     $licence->street_name         = $oldLicence->street_name;
                     $licence->property_type       = $oldLicence->property_type;
-                    $licence->update_status       = $this->transfareExpire($request->licenceId);
+                    $licence->update_status       = $this->transfareExpire($oldLicenceId);
                     $licence->tobacco_status      = $oldLicence->tobacco_status;
                     
                     $licence->apply_from          = $apply_from;
@@ -858,6 +860,9 @@ class Trade implements ITrade
     }
     public function documentUpload(Request $request)
     {
+        $user = Auth()->user();
+        $user_id = $user->id;
+        $ulb_id = $user->ulb_id;
         try{
             $licenceId = $request->id;
             if(!$licenceId)
@@ -937,257 +942,219 @@ class Trade implements ITrade
                 return responseMsg(true,"",$data);
 
             }
-            // if($request->getMethod()=="POST")
-            // {
-            //     $rules = [];
-            //     $message = [];
-            //      # Upload Document 
-            //     if(isset($_POST['btn_doc_path']))
-            //     {
-            //         $cnt=$_POST['btn_doc_path'];
-            //         $rules = [
-            //                 'doc_path'=>'uploaded[doc_path'.$cnt.']|max_size[doc_path'.$cnt.',30720]|ext_in[doc_path'.$cnt.',pdf, jpg, jpeg]',
-            //                 'doc_mstr_id'.$cnt.''=>'required',
-            //             ];
+            if($request->getMethod()=="POST")
+            {
+                DB::beginTransaction();
+                $rules = [];
+                $message = [];
+                $sms = "";
+                 # Upload Document 
+                if(isset($request->btn_doc_path))
+                {
+                    $cnt=$request->btn_doc_path;
+                    $rules = [
+                            'doc_path'=>'uploaded[doc_path'.$cnt.']|max_size[doc_path'.$cnt.',30720]|ext_in[doc_path'.$cnt.',pdf, jpg, jpeg]',
+                            'doc_mstr_id'.$cnt.''=>'required|int',
+                            'doc_for'.$cnt =>"required|string",
+                        ];
                     
-            //         $validator = Validator::make($request->all(), $rules, $message);
-            //         if ($validator->fails()) {
-            //             return responseMsg(false, $validator->errors(),$request->all());
-            //         }
-            //         if ($this->validate($rules))
-            //         { 
-            //             $doc_path = $this->request->getFile('doc_path'.$cnt);
-            //             if ($doc_path->IsValid() && !$doc_path->hasMoved())
-            //             {
-            //                 try
-            //                 {
-            //                     $this->db->transBegin();
-            //                     $input = [
-            //                         'apply_licence_id' => $apply_licence_id,
-            //                         'doc_for' => $this->request->getVar('doc_for'.$cnt),
-            //                         'document_id' => $this->request->getVar('doc_mstr_id'.$cnt),
-            //                         'emp_details_id' => $login_emp_details_id,
-            //                         'created_on' => date('Y-m-d H:i:s'),
-            //                         'firm_owner_dtl_id'=> $this->request->getVar('ownrid'),
-            //                     ];
+                    $validator = Validator::make($request->all(), $rules, $message);                    
+                    if ($validator->fails()) {
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    }
+                    elseif ($validator->validate($rules))
+                    {                
+                        $doc_path = $request->file('doc_path'.$cnt);
+                        $doc_for = "doc_for$cnt";
+                        $doc_mstr_id = "doc_mstr_id$cnt";
+                        if ($doc_path->IsValid())
+                        { 
+                            if ($app_doc_dtl_id = $this->check_doc_exist($licenceId,$request->$doc_for))
+                            {                                                           
+                                $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                                if (File::exists(public_path('img/dummy.jpg'))) {   
+                                    unlink($delete_path);
+                                }
+                                $newFileName = $app_doc_dtl_id['id'];
+
+                                $file = $request->file("doc_path".$cnt);
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "licence_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $app_doc_dtl_id->document_path =  $filePath;
+                                $app_doc_dtl_id->document_id =  $request->doc_mstr_id.$cnt;
+                                $app_doc_dtl_id->save();
+                                $sms = $app_doc_dtl_id->doc_for." Update Successfully";
+
+                            }
+                            else
+                            {
+                                $licencedocs = new TradeLicenceDocument;
+                                $licencedocs->licence_id = $licenceId;
+                                $licencedocs->doc_for    = $request->$doc_for;
+                                $licencedocs->document_id = $request->$doc_mstr_id;
+                                $licencedocs->emp_details_id = $user_id;
                                 
-            //                     if ($app_doc_dtl_id = $this->model_application_doc->check_upload_doc_exist($input))
-            //                     {
-            //                         $delete_path = WRITEPATH.'uploads/'.$app_doc_dtl_id['document_path'];
-            //                         unlink($delete_path);
-            //                         $newFileName = md5($app_doc_dtl_id['id']);
-            //                         $file_ext = $doc_path->getExtension();
-            //                         $path = $ulb_city_nm."/"."trade_doc_dtl";
-            //                         $doc_path->move(WRITEPATH.'uploads/'.$path.'/',$newFileName.'.'.$file_ext);
-            //                         $doc_path_save = $path."/".$newFileName.'.'.$file_ext;
-            //                         $this->model_application_doc->updatedocpathById($app_doc_dtl_id['id'], $doc_path_save, $input['document_id']);
+                                $licencedocs->save();
+                                $newFileName = $licencedocs->id;
 
-            //                     }
-            //                     else if ($app_doc_dtl_id = $this->model_application_doc->insertData($input))
-            //                     {
-            //                         $newFileName = md5($app_doc_dtl_id);
-            //                         $file_ext = $doc_path->getExtension();
-            //                         $path = $ulb_city_nm."/"."trade_doc_dtl";
-            //                         $doc_path->move(WRITEPATH.'uploads/'.$path.'/',$newFileName.'.'.$file_ext);
-            //                         $doc_path_save = $path."/".$newFileName.'.'.$file_ext;
-            //                         $this->model_application_doc->updatedocpathById($app_doc_dtl_id, $doc_path_save, $input['document_id']);
-            //                     }
-            //                     if ($this->db->transStatus() === FALSE)
-            //                     {
-            //                         $this->db->transRollback();
-            //                     }
-            //                     else
-            //                     {
-            //                         $this->db->transCommit();
-            //                         return $this->response->redirect(base_url('tradedocument/doc_upload/'.$id));
-            //                     }
-            //                 }
-            //                 catch (Exception $e) { }
+                                $file = $request->file("doc_path".$cnt);
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "licence_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $licencedocs->document_path =  $filePath;
+                                $licencedocs->save();
+                                $sms = $licencedocs->$doc_for." Upload Successfully";
 
-            //             }
-            //             else
-            //             {
-            //                 $errMsg = "<ul><li>something errors in SAF form details.</li></ul>";
-            //                 $data['errors'] =   $errMsg;
-            //                 return view('trade/Connection/trade_document_upload', $data);
-            //             }
-            //         }
-            //         else
-            //         { 
-            //             $errMsg = $this->validator->listErrors();
-            //             $data['errors'] =   $errMsg;
-            //             return view('trade/Connection/trade_document_upload', $data);
-            //         }
-            //     }
+                            }                         
+
+                        }
+                        else
+                        {
+                            return responseMsg(false, "something errors in Document Uploades",$request->all());
+                        }
+                    }
+                }
                 
-            //     # Upload Owner Document Id Proof
-            //     elseif(isset($_POST['btn_doc_path_owner']))
-            //     { 
-            //         $cnt_owner=$_POST['btn_doc_path_owner'];
+                # Upload Owner Document Id Proof
+                elseif(isset($request->btn_doc_path_owner))
+                { 
+                    $cnt_owner=$request->btn_doc_path_owner;
                     
-            //         $rules = [
-            //                 'doc_path_owner'=>'uploaded[doc_path_owner'.$cnt_owner.']|max_size[doc_path_owner'.$cnt_owner.',30720]|ext_in[doc_path_owner'.$cnt_owner.',pdf]',
-            //                 'idproof'.$cnt_owner.''=>'required',
-            //             ];
+                    $rules = [
+                            'doc_path_owner'=>'uploaded[doc_path_owner'.$cnt_owner.']|max_size[doc_path_owner'.$cnt_owner.',30720]|ext_in[doc_path_owner'.$cnt_owner.',pdf]',
+                            'idproof'.$cnt_owner.''=>'required',
+                            'doc_mstr_id'.$cnt_owner =>"required|int",
+                            "owner_id"=>"required|int",
+                            "doc_for".$cnt_owner =>"required|string",
+                        ];
                         
-            //         if ($this->validate($rules))
-            //         {
-            //             $doc_path = $this->request->getFile('doc_path_owner'.$cnt_owner);
-            //             if ($doc_path->IsValid() && !$doc_path->hasMoved())
-            //             {
-            //                 try
-            //                 {
-            //                     $this->db->transBegin();
-            //                     $input = [
-            //                         'firm_owner_dtl_id' => $this->request->getVar('ownrid'),
-            //                         'apply_licence_id' => $apply_licence_id,
-            //                         'doc_for' => $this->request->getVar('doc_for'.$cnt_owner),
-            //                         'document_id' => $this->request->getVar('idproof'.$cnt_owner),
-            //                         'emp_details_id' => $login_emp_details_id,
-            //                         'created_on' =>date('Y-m-d H:i:s'),
-            //                     ];
+                    $validator = Validator::make($request->all(), $rules, $message);                    
+                    if ($validator->fails()) {
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    }
+                    elseif ($validator->validate($rules))
+                    {
+                        $doc_path = $request->file('doc_path_owner'.$cnt_owner);
+                        $idproof = "idproof$cnt_owner";
+                        $doc_mstr_id = "doc_mstr_id$cnt_owner";
+                        $doc_for = "doc_for$cnt_owner";
+                        if ($doc_path->IsValid() )
+                        {
+                           
+                            if ($app_doc_dtl_id = $this->model_application_doc->check_doc_exist_owner($licenceId,$request->owner_id))
+                            {                                
+                                $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                                unlink($delete_path);
+
+                                $newFileName = $app_doc_dtl_id['id'];
+
+                                $file = $request->file("doc_path_owner".$cnt_owner);
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "licence_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $app_doc_dtl_id->document_path =  $filePath;
+                                $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
+                                $app_doc_dtl_id->save();
+                                $sms = $app_doc_dtl_id->$doc_for." Update Successfully";
+                            }                            
+                            else 
+                            {
+                                $licencedocs = new TradeLicenceDocument;
+                                $licencedocs->licence_id = $licenceId;
+                                $licencedocs->doc_for    = $request->$doc_for;
+                                $licencedocs->document_id = $request->$doc_mstr_id;
+                                $licencedocs->emp_details_id = $user_id;
                                 
-            //                     if ($app_doc_dtl_id = $this->model_application_doc->check_upload_doc_exist_owner($input))
-            //                     {
-            //                         $delete_path = WRITEPATH.'uploads/'.$app_doc_dtl_id['document_path'];
-            //                         unlink($delete_path);
-            //                         $newFileName = md5($app_doc_dtl_id['id']);
-            //                         $file_ext = $doc_path->getExtension();
-            //                         $path = $ulb_city_nm."/"."trade_doc_dtl";
-            //                         $doc_path->move(WRITEPATH.'uploads/'.$path.'/',$newFileName.'.'.$file_ext);
-            //                         $doc_path_save = $path."/".$newFileName.'.'.$file_ext;
-            //                         $this->model_application_doc->updatedocpathById($app_doc_dtl_id['id'], $doc_path_save, $input['document_id']);
-            //                     }
-                                
-            //                     else if ($app_doc_dtl_id = $this->model_application_doc->insertData($input))
-            //                     {
-            //                         $newFileName = md5($app_doc_dtl_id);
-            //                         $file_ext = $doc_path->getExtension();
-            //                         $path = $ulb_city_nm."/"."trade_doc_dtl";
-            //                         $doc_path->move(WRITEPATH.'uploads/'.$path.'/',$newFileName.'.'.$file_ext);
-            //                         $doc_path_save = $path."/".$newFileName.'.'.$file_ext;
-            //                         $this->model_application_doc->updatedocpathById($app_doc_dtl_id, $doc_path_save, $input['document_id']);
-            //                     }
-            //                     if ($this->db->transStatus() === FALSE) 
-            //                     {
+                                $licencedocs->save();
+                                $newFileName = $licencedocs->id;
 
-            //                         $this->db->transRollback();
-            //                     } 
-            //                     else 
-            //                     {
-
-            //                         $this->db->transCommit();
-            //                         return $this->response->redirect(base_url('tradedocument/doc_upload/'.$id));
-            //                     }
-            //                 } 
-            //                 catch (Exception $e) 
-            //                 { 
-
-            //                 }
-
-            //             } 
-            //             else 
-            //             {
-            //                 $errMsg = "<ul><li>something errors in SAF form details.</li></ul>";
-            //                 $data['errors'] =   $errMsg;
-            //                 return view('trade/Connection/trade_document_upload', $data);
-            //             }
-            //         } 
-            //         else 
-            //         {
-
-            //             $errMsg = $this->validator->listErrors();
-            //             $data['errors'] =   $errMsg;
-            //             return view('trade/Connection/trade_document_upload', $data);
-
-            //         }
-            //     } 
-            //     // owner image upload hear 
-            //     elseif(isset($_POST['btn_doc_path_owner_img']))
-            //     {
+                                $file = $request->file("doc_path_owner".$cnt_owner);
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "licence_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $licencedocs->document_path =  $filePath;
+                                $licencedocs->save();
+                                $sms = $licencedocs->$doc_for." Upload Successfully";
+                               
+                            }
+                        } 
+                        else 
+                        {
+                            return responseMsg(false, "something errors in Document Uploades",$request->all());
+                        }
+                    } 
                     
-            //         $cnt_owner=$_POST['btn_doc_path_owner_img'];
+                } 
+                // owner image upload hear 
+                elseif(isset($request->btn_doc_path_owner_img))
+                {
                     
-            //         $rules = [
-            //                 'doc_path_owner_img'=>'uploaded[doc_path_owner_img'.$cnt_owner.']|max_size[doc_path_owner_img'.$cnt_owner.',30720]|ext_in[doc_path_owner_img'.$cnt_owner.',pdf, png, jpg]',
-            //                 'consumer_photo'.$cnt_owner.''=>'required',
-            //                 'doc_for'.$cnt_owner.''=>'required',
-            //             ];
+                    $cnt_owner=$_POST['btn_doc_path_owner_img'];
                     
-            //         if ($this->validate($rules))
-            //         { 
-            //             $doc_path = $this->request->getFile('doc_path_owner_img'.$cnt_owner);
-            //             if ($doc_path->IsValid() && !$doc_path->hasMoved())
-            //             { 
-            //                 try
-            //                 {
-            //                     $this->db->transBegin();
-            //                     $input = [
-            //                         'firm_owner_dtl_id' => $this->request->getVar('ownrid'),
-            //                         'apply_licence_id' => $apply_licence_id,
-            //                         'doc_for' => $this->request->getVar('doc_for'.$cnt_owner),
-            //                         'document_id' => $this->request->getVar('consumer_photo'.$cnt_owner),
-            //                         'emp_details_id' => $login_emp_details_id,
-            //                         'created_on' =>date('Y-m-d H:i:s'),
-            //                     ];
+                    $rules = [
+                            'doc_path_owner_img'=>'uploaded[doc_path_owner_img'.$cnt_owner.']|max_size[doc_path_owner_img'.$cnt_owner.',30720]|ext_in[doc_path_owner_img'.$cnt_owner.',pdf, png, jpg,jpeg]',                            
+                            'doc_for'.$cnt_owner.''=>'required',
+                            "owner_id"=>"required|int",
+                        ];
+                    $validator = Validator::make($request->all(), $rules, $message);                    
+                    if ($validator->fails()) {
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    }
+                    elseif ($validator->validate($rules))
+                    { 
+                        $doc_path = $request->file('doc_path_owner_img'.$cnt_owner);
+                        $doc_for = "doc_for$cnt_owner";
+                        if ($doc_path->IsValid())
+                        {  
+                            if ($app_doc_dtl_id = $this->model_application_doc->check_doc_exist_owner($licenceId,$request->owner_id))
+                            {
+                                $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                                unlink($delete_path);
+
+                                $newFileName = $app_doc_dtl_id['id'];
+
+                                $file = $request->file("doc_path_owner".$cnt_owner);
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "licence_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $app_doc_dtl_id->document_path =  $filePath;
+                                $app_doc_dtl_id->document_id =  0;
+                                $app_doc_dtl_id->save();
+                                $sms = $app_doc_dtl_id->$doc_for." Update Successfully";
+                            }
+                            
+                            else
+                            {
+                                $licencedocs = new TradeLicenceDocument;
+                                $licencedocs->licence_id = $licenceId;
+                                $licencedocs->doc_for    = $request->$doc_for;
+                                $licencedocs->document_id =0;
+                                $licencedocs->emp_details_id = $user_id;
                                 
-            //                     if ($app_doc_dtl_id = $this->model_application_doc->check_upload_doc_exist_owner($input,$input['doc_for']))
-            //                     {
-            //                         $delete_path = WRITEPATH.'uploads/'.$app_doc_dtl_id['document_path'];
-            //                         unlink($delete_path);
-            //                         $newFileName = md5($app_doc_dtl_id['id']);
-            //                         $file_ext = $doc_path->getExtension();
-            //                         $path = $ulb_city_nm."/"."trade_doc_dtl";
-            //                         $doc_path->move(WRITEPATH.'uploads/'.$path.'/',$newFileName.'.'.$file_ext);
-            //                         $doc_path_save = $path."/".$newFileName.'.'.$file_ext;
-            //                         $this->model_application_doc->updatedocpathById($app_doc_dtl_id['id'], $doc_path_save, $input['document_id']);
-            //                     }
-                                
-            //                     elseif ($app_doc_dtl_id = $this->model_application_doc->insertData($input))
-            //                     {
-            //                         $newFileName = md5($app_doc_dtl_id);
-            //                         $file_ext = $doc_path->getExtension();
-            //                         $path = $ulb_city_nm."/"."trade_doc_dtl";
-            //                         $doc_path->move(WRITEPATH.'uploads/'.$path.'/',$newFileName.'.'.$file_ext);
-            //                         $doc_path_save = $path."/".$newFileName.'.'.$file_ext;
-            //                         $this->model_application_doc->updatedocpathById($app_doc_dtl_id, $doc_path_save, $input['document_id']);
-            //                     }
-            //                     if ($this->db->transStatus() === FALSE) {
+                                $licencedocs->save();
+                                $newFileName = $licencedocs->id;
 
-            //                         $this->db->transRollback();
-            //                     } 
-            //                     else 
-            //                     {
+                                $file = $request->file("doc_path_owner".$cnt_owner);
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "licence_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $licencedocs->document_path =  $filePath;
+                                $licencedocs->save();
+                                $sms = $licencedocs->$doc_for." Upload Successfully";
+                            }                                
 
-            //                         $this->db->transCommit();
-            //                         return $this->response->redirect(base_url('tradedocument/doc_upload/'.$id));
-            //                     }
-            //                 } 
-            //                 catch (Exception $e) 
-            //                 { 
-
-            //                 }
-
-            //             } 
-            //             else 
-            //             {
-            //                 $errMsg = "<ul><li>something errors in SAF form details.</li></ul>";
-            //                 $data['errors'] =   $errMsg;
-            //                 return view('trade/Connection/trade_document_upload', $data);
-            //             }
-            //         } 
-            //         else 
-            //         {
-            //             echo"not valied";
-            //             // print_var($this->validator->listErrors());
-            //             // die;
-            //             $errMsg = $this->validator->listErrors();
-            //             $data['errors'] =   $errMsg;
-            //             return view('trade/Connection/trade_document_upload', $data);
-
-            //         }
-            //     } 
-            // }
+                        } 
+                        else 
+                        {
+                            return responseMsg(false, "something errors in Document Uploades",$request->all());
+                        }
+                    }                     
+                } 
+                dd($sms);
+                DB::commit();
+                return responseMsg(true, $sms,"");
+            }
         }
         catch(Exception $e)
         {
@@ -3150,7 +3117,7 @@ class Trade implements ITrade
     {
         try{
             
-            $doc = TradeLicenceDocument::select("id","verify_status","document_path","document_id")
+            $doc = TradeLicenceDocument::select("id","doc_for","verify_status","document_path","document_id")
                        ->where('licence_id',$licenceId)
                        ->where('doc_for',$doc_for);
                        if($doc_mstr_id)
@@ -3177,7 +3144,7 @@ class Trade implements ITrade
     {
         try{
             // DB::enableQueryLog();
-            $doc = TradeLicenceDocument::select("id","verify_status","document_path","document_id")
+            $doc = TradeLicenceDocument::select("id","doc_for","verify_status","document_path","document_id")
                            ->where('licence_id',$licenceId)
                            ->where('licence_owner_dtl_id',$owner_id);
                            if($document_id!==null)
