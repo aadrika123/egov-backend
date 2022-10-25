@@ -1597,22 +1597,18 @@ class Trade implements ITrade
             $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');            
             $rules["licenceNo"] = "required";
             $message["licenceNo.required"] = "Licence No Requird";
-            $rules["applicationType"] = "required:string";
-            $message["applicationType.required"] = "Application Type Requird";
+            $rules["applicationType"] = "required:int";
+            $message["applicationType.required"] = "Application Type Id Requird";
             
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(),$request->all());
             }
-            $application_type_id = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);            
-            if(!$application_type_id)
+            $application_type_id = $request->applicationType ;
+            if(!in_array($application_type_id,[1,2,3,4]))
             {
-                throw new Exception("Invalide Application Type");
+                throw new Exception("Invalide Applycation Type Supply");
             }
-            // if(!in_array($application_type_id,[1,2,3,4]))
-            // {
-            //     throw new Exception("Invalide Applycation Type Supply");
-            // }
             elseif($application_type_id==1)
             {
                 throw new Exception("You Can Not Apply New Licence"); 
