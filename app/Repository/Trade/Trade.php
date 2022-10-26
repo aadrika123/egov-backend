@@ -1887,10 +1887,7 @@ class Trade implements ITrade
             $licence = $licence
                     ->whereIn('active_licences.ward_mstr_id', $ward_ids)
                     ->get();
-            // dd(DB::getQueryLog());
-            // dd($ward_ids);
-            // $worckflowCondidate = $this->parent->getAllRoles($user_id,$ulb_id,$refWorkflowId ,$role->role_id,true);
-            // $getForwordBackwordRoll = $this->parent->getForwordBackwordRoll($user_id,$ulb_id,$refWorkflowId ,$role->role_id,false);           
+            // dd(DB::getQueryLog());            
             return responseMsg(true, "", $licence);
             
         } 
