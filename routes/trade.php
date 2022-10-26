@@ -23,6 +23,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('getCharge', 'paybleAmount');
         Route::post('getPropertyByHolding', 'validate_holding_no');
         Route::post('updateBasicDtl', 'updateBasicDtl');
+        Route::match(["get", "post"],'documentUpload/{id}', 'documentUpload');
+        Route::match(["get", "post"],'documentVirify/{id}', 'documentVirify');
         Route::get('getLicenceDtl/{id}', 'getLicenceDtl');
         Route::post('searchLicense', 'searchLicence');
         Route::post('inbox', 'inbox');
@@ -31,6 +33,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('pay', 'procidToPaymentCounter');
         Route::match(["get", "post"],'applyDenail', 'applyDenail');
         Route::match(["get", "post"],'denialInbox', 'denialInbox');
+        Route::match(["get", "post"],'denialview/{id}/{mailId}', 'denialview');
     });
 });
 Route::controller(ApplyApplication::class)->group(function () {    

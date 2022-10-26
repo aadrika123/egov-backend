@@ -10,7 +10,6 @@ use App\Models\PropPropertie;
 use App\Models\Trade\ActiveLicence;
 use App\Models\Trade\ActiveLicenceOwner;
 use App\Models\Trade\ExpireLicence;
-use App\Models\Trade\TradeApplicationDoc;
 use App\Models\Trade\TradeBankRecancilation;
 use App\Models\Trade\TradeChequeDtl;
 use App\Models\Trade\TradeDenialConsumerDtl;
@@ -18,8 +17,10 @@ use App\Models\Trade\TradeDenialMailDtl;
 use App\Models\Trade\TradeDenialNotice;
 use App\Models\Trade\TradeFineRebetDetail;
 use App\Models\Trade\TradeLevelPending;
+use App\Models\Trade\TradeLicenceDocument;
 use App\Models\Trade\TradeParamApplicationType;
 use App\Models\Trade\TradeParamCategoryType;
+use App\Models\Trade\TradeParamDocumentType;
 use App\Models\Trade\TradeParamFirmType;
 use App\Models\Trade\TradeParamItemType;
 use App\Models\Trade\TradeParamLicenceRate;
@@ -73,6 +74,10 @@ class Trade implements ITrade
         $apply_from = $this->applyFrom();      
         try
         {
+            if(!in_array(strtoupper($apply_from),["ONLINE","JSK","UTC","TC","SUPER ADMIN","TL"]))
+            {
+                throw new Exception("You Are Not Authorized For Apply Appliocation");
+            }
             $this->application_type_id = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);            
             if(!$this->application_type_id)
             {
@@ -159,83 +164,142 @@ class Trade implements ITrade
                 $numDot = '/^\d+(?:\.\d+)+$/i';
                 $dateFormatYYYMMDD ='/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))+$/i';
                 $dateFormatYYYMM='/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';
-                $rules["firmDetails.areaSqft"]="required|numeric";
-                $rules["firmDetails.businessAddress"]="required|regex:$regex";
-                $rules["firmDetails.businessDescription"]="required|regex:$regex"; 
-                $rules["firmDetails.firmEstdDate"]="required|date"; 
-                $rules["firmDetails.firmName"]="required|regex:$regex";
-                if (in_array($this->application_type_id, ["2"])) 
-                {                    
-                    $rules["firmDetails.holdingNo"]="required|regex:$regex";
-                } 
-                $rules["firmDetails.premisesOwner"]="required|regex:$regex";
-                $rules["firmDetails.natureOfBusiness"]="required|array";
-                $rules["firmDetails.natureOfBusiness.*.id"]="required|int";
-                $rules["firmDetails.newWardNo"]="required|int";
-                $rules["firmDetails.wardNo"]="required|int";
-                $rules["firmDetails.tocStatus"] = "required|bool";
-                $rules["firmDetails.landmark"]="regex:$regex";
-                $rules["firmDetails.categoryTypeId"]="int";
-                $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
-                $rules["firmDetails.bind_book_no"] = "regex:$regex";
-                $rules["firmDetails.account_no"] = "regex:$regex";
-                if(strtoupper($apply_from)=="ONLINE")
+                if(in_array($this->application_type_id, [1]))
                 {
-                    $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
-                }               
-                
-                $rules["initialBusinessDetails.applyWith"]="required|int";
-                $rules["initialBusinessDetails.firmType"]="required|int";
-                if(isset($request->initialBusinessDetails['firmType']) && $request->initialBusinessDetails['firmType']==5)
-                {
-                    $rules["initialBusinessDetails.otherFirmType"]="required|regex:$regex";
-                }
-                $rules["initialBusinessDetails.ownershipType"]="required|int";
-                if( isset($request->initialBusinessDetails['applyWith']) && $request->initialBusinessDetails['applyWith']==1)
-                {
-                    $rules["initialBusinessDetails.noticeNo"]="required";
-                    $rules["initialBusinessDetails.noticeDate"]="required|date";  
-                }
-                $rules["licenseDetails.licenseFor"]="required|int";
-                if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
-                {
-                    $rules["licenseDetails.licenseFor"]="required|int|max:1";
-                }
-                if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]))
-                {
-                    $rules["licenseDetails.paymentMode"]="required|alpha"; 
-                    if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
-                    {
-                        $rules["licenseDetails.chaqueNo"] ="required";
-                        $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
-                        $rules["licenseDetails.bankName"] ="required|regex:$regex";
-                        $rules["licenseDetails.branchName"] ="required|regex:$regex";
-                    } 
-                }
 
-                $rules["ownerDetails"] = "required|array";
-                $rules["ownerDetails.*.businessOwnerName"]="required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-                $rules["ownerDetails.*.guardianName"]="regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-                $rules["ownerDetails.*.mobileNo"]="required|digits:10|regex:/[0-9]{10}/";
-                $rules["ownerDetails.*.email"]="email";
-                
-                if (in_array($this->application_type_id, ["2", "3","4"])) 
-                {                    
-                    $rules["licenceId"] = "required";
-                    $message["licenceId.required"] = "Old Licence Id Requird";
+                    $rules["firmDetails.areaSqft"]="required|numeric";
+                    $rules["firmDetails.businessAddress"]="required|regex:$regex";
+                    $rules["firmDetails.businessDescription"]="required|regex:$regex"; 
+                    $rules["firmDetails.firmEstdDate"]="required|date"; 
+                    $rules["firmDetails.firmName"]="required|regex:$regex";
+                    if (in_array($this->application_type_id, ["2"])) 
+                    {                    
+                        $rules["firmDetails.holdingNo"]="required|regex:$regex";
+                    } 
+                    $rules["firmDetails.premisesOwner"]="required|regex:$regex";
+                    $rules["firmDetails.natureOfBusiness"]="required|array";
+                    $rules["firmDetails.natureOfBusiness.*.id"]="required|int";
+                    $rules["firmDetails.newWardNo"]="required|int";
+                    $rules["firmDetails.wardNo"]="required|int";
+                    $rules["firmDetails.tocStatus"] = "required|bool";
+                    $rules["firmDetails.landmark"]="regex:$regex";
+                    $rules["firmDetails.categoryTypeId"]="int";
+                    $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
+                    $rules["firmDetails.bind_book_no"] = "regex:$regex";
+                    $rules["firmDetails.account_no"] = "regex:$regex";
+                    if(strtoupper($apply_from)=="ONLINE")
+                    {
+                        $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
+                    }               
+                    
+                    $rules["initialBusinessDetails.applyWith"]="required|int";
+                    $rules["initialBusinessDetails.firmType"]="required|int";
+                    if(isset($request->initialBusinessDetails['firmType']) && $request->initialBusinessDetails['firmType']==5)
+                    {
+                        $rules["initialBusinessDetails.otherFirmType"]="required|regex:$regex";
+                    }
+                    $rules["initialBusinessDetails.ownershipType"]="required|int";
+                    if( isset($request->initialBusinessDetails['applyWith']) && $request->initialBusinessDetails['applyWith']==1)
+                    {
+                        $rules["initialBusinessDetails.noticeNo"]="required";
+                        $rules["initialBusinessDetails.noticeDate"]="required|date";  
+                    }
+                    $rules["licenseDetails.licenseFor"]="required|int";
+                    if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
+                    {
+                        $rules["licenseDetails.licenseFor"]="required|int|max:1";
+                    }
+                    if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]))
+                    {
+                        $rules["licenseDetails.paymentMode"]="required|alpha"; 
+                        if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
+                        {
+                            $rules["licenseDetails.chaqueNo"] ="required";
+                            $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
+                            $rules["licenseDetails.bankName"] ="required|regex:$regex";
+                            $rules["licenseDetails.branchName"] ="required|regex:$regex";
+                        } 
+                    }
+    
+                    $rules["ownerDetails"] = "required|array";
+                    $rules["ownerDetails.*.businessOwnerName"]="required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
+                    $rules["ownerDetails.*.guardianName"]="regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
+                    $rules["ownerDetails.*.mobileNo"]="required|digits:10|regex:/[0-9]{10}/";
+                    $rules["ownerDetails.*.email"]="email";
+                    
+                    
+                }
+                elseif(in_array($this->application_type_id, [2,4]))
+                {
+                    // if (in_array($this->application_type_id, ["2"])) 
+                    {                    
+                        $rules["firmDetails.holdingNo"]="required";
+                    } 
+                    if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]) && $this->application_type_id==2)
+                    {
+                        $rules["licenseDetails.paymentMode"]="required|alpha"; 
+                        if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
+                        {
+                            $rules["licenseDetails.chaqueNo"] ="required";
+                            $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
+                            $rules["licenseDetails.bankName"] ="required|regex:$regex";
+                            $rules["licenseDetails.branchName"] ="required|regex:$regex";
+                        } 
+                    }
+                    
+                }
+                elseif(in_array($this->application_type_id, [3]))
+                {
+                    $rules["firmDetails.areaSqft"]="required|numeric";
+                    $rules["firmDetails.businessAddress"]="required|regex:$regex";
+                    $rules["firmDetails.businessDescription"]="required|regex:$regex"; 
+                    $rules["firmDetails.firmEstdDate"]="required|date"; 
+                    $rules["firmDetails.firmName"]="required|regex:$regex";
+                    $rules["firmDetails.holdingNo"]="required";
+                    $rules["firmDetails.premisesOwner"]="required|regex:$regex";
+                    $rules["firmDetails.natureOfBusiness"]="required|array";
+                    $rules["firmDetails.natureOfBusiness.*.id"]="required|int";
+                    $rules["firmDetails.newWardNo"]="required|int";
+                    $rules["firmDetails.wardNo"]="required|int";
+                    $rules["firmDetails.tocStatus"] = "required|bool";
+                    $rules["firmDetails.landmark"]="regex:$regex";
+                    $rules["firmDetails.categoryTypeId"]="int";
+                    $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
+                    $rules["firmDetails.bind_book_no"] = "regex:$regex";
+                    $rules["firmDetails.account_no"] = "regex:$regex";
+                    if(strtoupper($apply_from)=="ONLINE")
+                    {
+                        $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
+                    } 
+                    $rules["initialBusinessDetails.ownershipType"]="required|int";
+                    if( isset($request->initialBusinessDetails['applyWith']) && $request->initialBusinessDetails['applyWith']==1)
+                    {
+                        $rules["initialBusinessDetails.noticeNo"]="required";
+                        $rules["initialBusinessDetails.noticeDate"]="required|date";  
+                    }
+                    $rules["licenseDetails.licenseFor"]="required|int";
+                    if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
+                    {
+                        $rules["licenseDetails.licenseFor"]="required|int|max:1";
+                    }
+                    if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]))
+                    {
+                        $rules["licenseDetails.paymentMode"]="required|alpha"; 
+                        if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
+                        {
+                            $rules["licenseDetails.chaqueNo"] ="required";
+                            $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
+                            $rules["licenseDetails.bankName"] ="required|regex:$regex";
+                            $rules["licenseDetails.branchName"] ="required|regex:$regex";
+                        } 
+                    }    
                 }
                 $validator = Validator::make($request->all(), $rules, $message);
                 if ($validator->fails()) 
                 {
                     return responseMsg(false, $validator->errors(),$request->all());
-                }
-                
-                $wardId = $request->firmDetails['wardNo'];
-                
-                $ward_no = array_filter($data['wardList'], function ($val) use($wardId ){
-                    return $val['id'] == $wardId ;
-                });
-                $ward_no = array_values($ward_no)[0]['ward_no'];
+                }                
+               
                 $proprty_id = null;
                 if($request->firmDetails['holdingNo'])
                 {
@@ -245,23 +309,44 @@ class Trade implements ITrade
                     else
                         throw new Exception("Property Details Not Found");
                 }
-                $natureOfBussiness = array_map(function($val){
-                    return $val['id'];
-                },$request->firmDetails['natureOfBusiness']);
-                $natureOfBussiness = implode(',', $natureOfBussiness);
+                if($this->application_type_id==1)
+                {
+                    $natureOfBussiness = array_map(function($val){
+                        return $val['id'];
+                    },$request->firmDetails['natureOfBusiness']);
+                    $natureOfBussiness = implode(',', $natureOfBussiness);
+
+                }
                 
                 DB::beginTransaction();                
                 $licence = new ActiveLicence();
                 if (in_array($this->application_type_id, ["2", "3","4"])) 
                 {   
-                    $oldLicence = ActiveLicence::find($request->licenceId);
+                    
+                    $oldLicenceId = $request->id; 
+                    $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+                    // $oldLicence = ActiveLicence::find($request->licenceId);
+                    $oldLicence = ActiveLicence::find($oldLicenceId);
                     if(!$oldLicence)
                     {
                         throw new Exception("Old Licence Not Found");
                     }
-                    $oldowners = ActiveLicenceOwner::where('licence_id',$request->licenceId)
+                    elseif($oldLicence->valid_upto > $nextMonth)
+                    {
+                            throw new Exception("Licence Valice Upto ".$oldLicence->valid_upto);
+                    } 
+                    elseif($oldLicence->pending_status!=5)
+                    {
+                            throw new Exception("Application Aready Apply Please Track  ".$oldLicence->application_no);
+                    }
+                    $natureOfBussiness = $oldLicence->nature_of_bussiness;
+                    $wardId = $oldLicence->ward_mstr_id;                
+                    $ward_no = array_filter($data['wardList'], function ($val) use($wardId ){
+                        return $val['id'] == $wardId ;
+                    });
+                    $ward_no = array_values($ward_no)[0]['ward_no']??"";
+                    $oldowners = ActiveLicenceOwner::where('licence_id',$oldLicenceId)
                                 ->get();
-                    $licence->id                  = $oldLicence->id;
                     $licence->firm_type_id        = $oldLicence->firm_type_id;
                     $licence->otherfirmtype       = $oldLicence->otherfirmtype;
                     $licence->application_type_id = $this->application_type_id;
@@ -295,7 +380,9 @@ class Trade implements ITrade
                     $licence->pin_code            = $oldLicence->pin_code;
                     $licence->street_name         = $oldLicence->street_name;
                     $licence->property_type       = $oldLicence->property_type;
-                    $licence->update_status       = $this->transfareExpire($request->licenceId);
+                    $licence->update_status       = $this->transfareExpire($oldLicenceId);
+                    $licence->valid_from          = $oldLicence->valid_upto;
+                    $licence->license_no          = $oldLicence->license_no;
                     $licence->tobacco_status      = $oldLicence->tobacco_status;
                     
                     $licence->apply_from          = $apply_from;
@@ -305,7 +392,7 @@ class Trade implements ITrade
                     $licence->workflow_id         = $workflow_id;
     
                     $licence->save();
-                    $licenceId = $licence->id;                
+                    $licenceId = $licence->id;      
                     $appNo = "APP".str_pad($ward_no, 2, '0', STR_PAD_LEFT).str_pad($licenceId, 7, '0', STR_PAD_LEFT);
                     $licence->application_no = $appNo;
                     $licence->save();
@@ -329,7 +416,13 @@ class Trade implements ITrade
                     }
                 }
                 elseif($this->application_type_id==1)
-                {                     
+                {   
+                    $wardId = $request->firmDetails['wardNo'];                
+                    $ward_no = array_filter($data['wardList'], function ($val) use($wardId ){
+                        return $val['id'] == $wardId ;
+                    });
+                    $ward_no = array_values($ward_no)[0]['ward_no']??"";
+
                     $licence->firm_type_id        = $request->initialBusinessDetails['firmType'];
                     $licence->otherfirmtype       = $request->initialBusinessDetails['otherFirmType']??null;
                     $licence->application_type_id = $this->application_type_id;
@@ -396,7 +489,7 @@ class Trade implements ITrade
                 }  
                 $notice_date = null;
                 $noticeDetails = null;
-                if($request->initialBusinessDetails['applyWith']==1)
+                if($this->application_type_id==1 && $request->initialBusinessDetails['applyWith']==1 )
                 { 
                     $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
                     $firm_date = $request->firmDetails['firmEstdDate'];
@@ -527,8 +620,8 @@ class Trade implements ITrade
         }
         catch (Exception $e) {
             DB::rollBack(); 
-            echo $e->getFile(); 
-            echo $e->getLine();          
+            // echo $e->getFile(); 
+            // echo $e->getLine();          
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
@@ -810,6 +903,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),'');
         }
     }
+    /** Incomplite code */
     public function updateBasicDtl(Request $request)
     {
         $user = Auth()->user();
@@ -854,6 +948,446 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
+    public function documentUpload(Request $request)
+    {
+        $user = Auth()->user();
+        $user_id = $user->id;
+        $ulb_id = $user->ulb_id;
+        try{
+            $licenceId = $request->id;
+            if(!$licenceId)
+            {
+                throw new Exception("Licence Id Required");
+            }
+            $licence = $this->getLicenceById($licenceId);
+            if(!$licence)
+            {
+                throw new Exception("Data Not Found");
+            }
+            elseif($licence->doc_verify_date)
+            {
+                throw new Exception("Document Verified You Can Not Upload Documents");
+            }
+            $item_name="";
+            $cods = "";
+            if($licence->nature_of_bussiness)
+            {
+                $items = $this->getLicenceItemsById($licence->nature_of_bussiness);                
+                foreach($items as $val)
+                {
+                    $item_name .= $val->trade_item.",";
+                    $cods .= $val->trade_code.",";                    
+                }
+                $item_name= trim($item_name,',');
+                $cods= trim($cods,',');
+            }
+            $licence->items = $item_name;
+            $licence->items_code = $cods;
+            $owneres = $this->getOwnereDtlByLId($licenceId);
+            // $time_line = $this->getTimelin($licenceId);
+            $uploadDocument = $this->getLicenceDocuments($licenceId);
+            
+            $documentsList = $this->getDocumentTypeList($licence);                 
+            foreach($documentsList as $val)
+            {   
+                $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$licence->application_type_id,$val->show);
+                $data["documentsList"][$val->doc_for]["is_mandatory"] = $val->is_mandatory;
+            }
+            if($licence->application_type_id==1)
+            {                
+                $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$licence->application_type_id,0);
+                $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
+            }
+            $doc = (array) null;
+            foreach($data["documentsList"] as $key => $val)
+            {
+                if($key == "Identity Proof")
+                {
+                    continue;
+                }
+                $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenceId,$key);
+                if(isset($data["documentsList"][$key]["doc"]["document_path"]))
+                {
+                    $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"][$key]["doc"]["document_path"]):null;
+
+                }
+            } 
+            if($licence->application_type_id==1)
+            {
+                foreach($owneres as $key=>$val)
+                {
+                   
+                    $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
+                    if(isset($owneres[$key]["Identity Proof"]["document_path"]))
+                    {
+                        $owneres[$key]["Identity Proof"]["document_path"] = !empty(trim($owneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["Identity Proof"]["document_path"]):null;
+    
+                    }
+                    $owneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
+                    if(isset( $owneres[$key]["image"]["document_path"]))
+                    {
+                        $owneres[$key]["image"]["document_path"] = !empty(trim($owneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["image"]["document_path"]):null;
+    
+                    }
+                }         
+
+            }
+            $data["licence"] = $licence;
+            $data["owneres"] = $owneres;
+            $data["uploadDocument"] = $uploadDocument;
+            if($request->getMethod()=="GET")
+            {
+                return responseMsg(true,"",$data);
+
+            }
+            if($request->getMethod()=="POST")
+            {
+                DB::beginTransaction();
+                $rules = [];
+                $message = [];
+                $sms = "";
+                # Upload Document 
+                if(isset($request->btn_doc_path))
+                {              
+                    $cnt=$request->btn_doc_path;
+                    $rules = [
+                            'doc_path'.$cnt=>'required|max:30720]|mimes:pdf,jpg,jpeg',
+                            'doc_path_mstr_id'.$cnt.''=>'required|int',
+                            'doc_path_for'.$cnt =>"required|string",
+                        ];                         
+                    $validator = Validator::make($request->all(), $rules, $message);                    
+                    if ($validator->fails()) {                        
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    }                
+                    $file = $request->file('doc_path'.$cnt);
+                    $doc_for = "doc_path_for$cnt";
+                    $doc_mstr_id = "doc_path_mstr_id$cnt";
+                    if ($file->IsValid())
+                    { 
+                        if ($app_doc_dtl_id = $this->check_doc_exist($licenceId,$request->$doc_for))
+                        {                                                          
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                            // dd(file_exists($delete_path));
+                            if (file_exists($delete_path)) 
+                            {   
+                                unlink($delete_path);
+                            }
+                            $newFileName = $app_doc_dtl_id['id'];
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "licence_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->document_path =  $filePath;
+                            $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->save();
+                            $sms .= "\n".$app_doc_dtl_id->doc_for." Update Successfully";
+
+                        }
+                        else
+                        {
+                            $licencedocs = new TradeLicenceDocument;
+                            $licencedocs->licence_id = $licenceId;
+                            $licencedocs->doc_for    = $request->$doc_for;
+                            $licencedocs->document_id = $request->$doc_mstr_id;
+                            $licencedocs->emp_details_id = $user_id;
+                            
+                            $licencedocs->save();
+                            $newFileName = $licencedocs->id;
+                            
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "licence_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $licencedocs->document_path =  $filePath;
+                            $licencedocs->save();
+                            $sms .= "\n". $licencedocs->doc_for." Upload Successfully";
+
+                        }                         
+
+                    }
+                    else
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }
+                    
+                }
+                
+                # Upload Owner Document Id Proof
+                if(isset($request->btn_doc_path_owner))
+                { 
+                    $cnt_owner=$request->btn_doc_path_owner;                    
+                    $rules = [
+                            'id_doc_path_owner'.$cnt_owner =>'required|max:30720|mimes:pdf',
+                            // 'idproof'.$cnt_owner.''=>'required',
+                            'id_doc_mstr_id'.$cnt_owner =>"required|int",
+                            "id_owner_id"=>"required|int",
+                            "id_doc_for".$cnt_owner =>"required|string",
+                        ];
+                        
+                    $validator = Validator::make($request->all(), $rules, $message);                    
+                    if ($validator->fails()) {
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    }
+                    $file = $request->file('id_doc_path_owner'.$cnt_owner);
+                    // $idproof = "idproof$cnt_owner";
+                    $doc_mstr_id = "id_doc_mstr_id$cnt_owner";
+                    $doc_for = "id_doc_for$cnt_owner";
+                    if ($file->IsValid() )
+                    {
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->id_owner_id))
+                        {                                
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                            if (file_exists($delete_path)) 
+                            { 
+                                unlink($delete_path);
+                            }
+
+                            $newFileName = $app_doc_dtl_id['id'];
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "licence_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->document_path =  $filePath;
+                            $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->save();
+                            $sms .= "\n". $app_doc_dtl_id->doc_for." Update Successfully";
+                        }                            
+                        else 
+                        {
+                            $licencedocs = new TradeLicenceDocument;
+                            $licencedocs->licence_id = $licenceId;
+                            $licencedocs->doc_for    = $request->$doc_for;
+                            $licencedocs->licence_owner_dtl_id =$request->id_owner_id;
+                            $licencedocs->document_id = $request->$doc_mstr_id;
+                            $licencedocs->emp_details_id = $user_id;
+                            
+                            $licencedocs->save();
+                            $newFileName = $licencedocs->id;
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "licence_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $licencedocs->document_path =  $filePath;
+                            $licencedocs->save();
+                            $sms .= "\n". $licencedocs->doc_for." Upload Successfully";
+                            
+                        }
+                    } 
+                    else 
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }
+                     
+                    
+                } 
+                # owner image upload hear 
+                if(isset($request->btn_doc_path_owner_img))
+                {                    
+                    $cnt_owner = $request->btn_doc_path_owner_img;                    
+                    $rules = [
+                            "photo_doc_path_owner$cnt_owner"=>'required|max:30720|mimes:pdf,png,jpg,jpeg',                            
+                            'photo_doc_for'.$cnt_owner.''=>'required',
+                            "photo_owner_id"=>"required|int",
+                        ];
+                    $validator = Validator::make($request->all(), $rules, $message);                    
+                    if ($validator->fails()) {
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    } 
+                    $file = $request->file('photo_doc_path_owner'.$cnt_owner);
+                    $doc_for = "photo_doc_for$cnt_owner";
+                    if ($file->IsValid())
+                    {  
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->photo_owner_id,0))
+                        {
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                            if (file_exists($delete_path)) 
+                            { 
+                                unlink($delete_path);
+                            }
+
+                            $newFileName = $app_doc_dtl_id['id'];
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "licence_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->document_path =  $filePath;
+                            $app_doc_dtl_id->document_id =  0;
+                            $app_doc_dtl_id->save();
+                            $sms .= "\n". $app_doc_dtl_id->doc_for." Update Successfully";
+                        }
+                        
+                        else
+                        {
+                            $licencedocs = new TradeLicenceDocument;
+                            $licencedocs->licence_id = $licenceId;
+                            $licencedocs->doc_for    = $request->$doc_for;
+                            $licencedocs->licence_owner_dtl_id =$request->photo_owner_id;
+                            $licencedocs->document_id =0;
+                            $licencedocs->emp_details_id = $user_id;
+                            
+                            $licencedocs->save();
+                            $newFileName = $licencedocs->id;
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "licence_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $licencedocs->document_path =  $filePath;
+                            $licencedocs->save();
+                            $sms .= "\n". $licencedocs->doc_for." Upload Successfully";
+                        }                                
+
+                    } 
+                    else 
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }              
+                }                 
+                DB::commit();
+                return responseMsg(true, $sms,"");
+            }
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+    public function documentVirify(Request $request)
+    {
+        $user = Auth()->user();
+        $user_id = $user->id;
+        $ulb_id = $user->ulb_id;
+        $redis = new Redis;
+        $user_data = json_decode($redis::get('user:' . $user_id), true);
+        $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        $workflows = $this->parent->iniatorFinisher($user_id,$ulb_id,$workflow_id);   
+        $roll_id =  $this->parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??null;
+        $apply_from = $this->applyFrom();  
+        $licenceId = $request->id;
+        $rules = [];
+        $message = [];
+        try{
+            if(!$roll_id || strtoupper($apply_from)!="DA")
+            {
+                throw new Exception("You are Not Authorized For Document Verify");
+            }
+            if(!$licenceId)
+            {
+                throw new Exception("Data Not Found");
+            }
+            $licence = $this->getLicenceById($licenceId);
+            if(!$licence)
+            {
+                throw new Exception("Data Not Found");
+            }
+            $item_name="";
+            $cods = "";
+            if($licence->nature_of_bussiness)
+            {
+                $items = $this->getLicenceItemsById($licence->nature_of_bussiness);                
+                foreach($items as $val)
+                {
+                    $item_name .= $val->trade_item.",";
+                    $cods .= $val->trade_code.",";                    
+                }
+                $item_name= trim($item_name,',');
+                $cods= trim($cods,',');
+            }
+            $licence->items = $item_name;
+            $licence->items_code = $cods;
+            $owneres = $this->getOwnereDtlByLId($licenceId);
+            // $time_line = $this->getTimelin($licenceId);
+            $documents = $this->getLicenceDocuments($licenceId);
+            $documentsList = $this->getDocumentTypeList($licence);                 
+            foreach($documentsList as $val)
+            {   
+                $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$licence->application_type_id,$val->show);
+                $data["documentsList"][$val->doc_for]["is_mandatory"] = $val->is_mandatory;
+            }
+            if($licence->application_type_id==1)
+            {                
+                $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$licence->application_type_id,0);
+                $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
+            }
+            foreach($data["documentsList"] as $key =>$val)
+            {
+                if($key == "Identity Proof")
+                {
+                    continue;
+                }     
+                $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenceId,$key);
+                if(isset($data["documentsList"][$key]["doc"]["document_path"]))
+                {
+                    $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"][$key]["doc"]["document_path"]):null;
+
+                }
+            }
+            if($licence->application_type_id==1)
+            {
+                foreach($owneres as $key=>$val)
+                {                   
+                    $data["documentsList"]["Identity Proof"]["doc"] =  $this->check_doc_exist_owner($licenceId,$val->id);
+                    if(isset($data["documentsList"]["Identity Proof"]["doc"]["document_path"]))
+                    {
+                        $data["documentsList"]["Identity Proof"]["doc"]["document_path"] = !empty(trim($data["documentsList"]["Identity Proof"]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"]["Identity Proof"]["doc"]["document_path"]):null;
+    
+                    }
+                    $data["documentsList"]["image"]["doc"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
+                    if(isset($data["documentsList"]["image"]["doc"]["document_path"]))
+                    {
+                        $data["documentsList"]["image"]["doc"]["document_path"] = !empty(trim($data["documentsList"]["image"]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"]["image"]["doc"]["document_path"]):null;
+    
+                    }
+                }         
+
+            }
+            $data["licence"] = $licence;
+            $data["owneres"] = $owneres;
+            if($request->getMethod()=="GET")
+            {
+                return responseMsg(true,"",remove_null($data));
+            }
+            elseif($request->getMethod()=="POST")
+            {
+                $rules = [];
+                $message = [];
+                $nowdate = Carbon::now()->format('Y-m-d'); 
+                $timstamp = Carbon::now()->format('Y-m-d H:i:s');                
+                $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';                
+                $rules = [
+                    'btn'=>'required|in:virify,reject',
+                    'id'=>'required',
+                ];
+                $status = 1;
+                if($request->btn=="reject")
+                {
+                    $status =2;
+                    $rules["comment"]="required|regex:$regex|min:10";
+                }
+                $validator = Validator::make($request->all(), $rules, $message);                    
+                if ($validator->fails()) {
+                    return responseMsg(false, $validator->errors(),$request->all());
+                }
+                $level_data = $this->getLevelData($licenceId);
+                if(!$level_data || $level_data->receiver_user_type_id != $roll_id)
+                {
+                    throw new Exception("You Have Not Pending Application");
+                }
+                DB::beginTransaction();                
+                $tradeDoc = TradeLicenceDocument::find($request->id);
+                $tradeDoc->verify_status = $status;
+                $tradeDoc->remarks = ($status==2?$request->comment:null);
+                $tradeDoc->verified_by_emp_id = $user_id;
+                $tradeDoc->lvl_pending_id = $level_data->id;
+                DB::commit();
+                $sms = $tradeDoc->doc_for." ".strtoupper($request->btn);
+                return responseMsg(true,$sms,"");
+            }           
+           
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+    /** Incomplite End code */
     public function getLicenceDtl($id)
     {
         try{
@@ -983,7 +1517,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }        
     }
-    public function getDenialFirmDetails($ulb_id,$notice_no,$firm_date)
+    public function getDenialFirmDetails($ulb_id,$notice_no,$firm_date)//for apply application
     {
         try{
             $data = TradeDenialConsumerDtl::select("trade_denial_notices.*",
@@ -1080,7 +1614,7 @@ class Trade implements ITrade
             { 
                $vMonths = round($vDiff / (30 * 60 * 60 * 24));
             }
-            if ($vMonths > 0 && strtotime($data['firm_date']) >= strtotime($data['curdate'])) 
+            if ($vMonths > 0 && strtotime($data['firm_date']) < strtotime($data['curdate'])) 
             {
                 $denial_amount_month = 100 + (($vMonths) * 20);
                 # In case of ammendment no denial amount
@@ -1156,7 +1690,7 @@ class Trade implements ITrade
             $data = array();
             $inputs = $request->all();
 
-            $propdet = $this->propertyDetailsfortradebyHoldingNo($inputs['holdingNo'],$ulb_id);
+            $propdet = $this->propertyDetailsfortradebyHoldingNo($inputs['holdingNo'],$ulb_id);           
             if($propdet['status'])
             {
                 $response = ['status' => true,"data"=>["property"=>$propdet['property']],"message"=>""];
@@ -1224,7 +1758,7 @@ class Trade implements ITrade
                     ->first();
            if(!$data)
            {
-                throw new Exception("Data Not Faund");
+                throw new Exception("Data Not Found");
            }
            elseif($application_type_id==3 && $data->application_type_id != 4)
            {
@@ -1233,7 +1767,11 @@ class Trade implements ITrade
            elseif($data->valid_upto > $nextMonth)
            {
                 throw new Exception("Licence Valice Upto ".$data->valid_upto);
-           }            
+           } 
+           elseif($data->pending_status!=5)
+           {
+                throw new Exception("Application Aready Apply Please Track  ".$data->application_no);
+           }           
            return responseMsg(true,"",remove_null($data));
         }
         catch(Exception $e)
@@ -1256,24 +1794,33 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
+            $apply_from = $this->applyFrom();
+            $ward_permission = $this->parent->WardPermission($user_id);           
             $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id); 
             if (!$role) 
             {
                 throw new Exception("You Are Not Authorized");
             } 
-            if($role->is_initiator)
+            if($role->is_initiator || in_array(strtoupper($apply_from),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
             {
+                $ward_permission = $this->ModelWard->getAllWard($this->ulb_id)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $ward_permission = adjToArray($ward_permission);
+
                 $joins = "leftjoin";
             }
             else
             {
                 $joins = "join";
-            }  
-            $role_id = $role->role_id;       
-            $ward_permission = $this->parent->WardPermission($user_id);
+            }
+
             $ward_ids = array_map(function ($val) {
-                return $val['ulb_ward_id'];
+                return $val['id'];
             }, $ward_permission);
+
+            $role_id = $role->role_id;   
             $inputs = $request->all();  
             // DB::enableQueryLog();          
             $licence = ActiveLicence::select("active_licences.id",
@@ -1292,7 +1839,7 @@ class Trade implements ITrade
                             $join->on("trade_level_pendings.licence_id","active_licences.id")
                             ->where("trade_level_pendings.receiver_user_type_id",$role_id)
                             ->where("trade_level_pendings.status",1)
-                            ->where("trade_level_pendings.status",0);
+                            ->where("trade_level_pendings.verification_status",0);
                         })
                         ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
@@ -1341,6 +1888,7 @@ class Trade implements ITrade
                     ->whereIn('active_licences.ward_mstr_id', $ward_ids)
                     ->get();
             // dd(DB::getQueryLog());
+            // dd($ward_ids);
             // $worckflowCondidate = $this->parent->getAllRoles($user_id,$ulb_id,$refWorkflowId ,$role->role_id,true);
             // $getForwordBackwordRoll = $this->parent->getForwordBackwordRoll($user_id,$ulb_id,$refWorkflowId ,$role->role_id,false);           
             return responseMsg(true, "", $licence);
@@ -1365,23 +1913,30 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
+            $apply_from = $this->applyFrom();
+            $ward_permission = $this->parent->WardPermission($user_id);
             $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);           
             if (!$role) 
             {
                 throw new Exception("You Are Not Authorized");
             }
-            if($role->is_initiator)
+            if($role->is_initiator || in_array(strtoupper($apply_from),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
             {
                 $joins = "leftjoin";
+                $ward_permission = $this->ModelWard->getAllWard($this->ulb_id)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $ward_permission = adjToArray($ward_permission);
             }
             else
             {
                 $joins = "join";
             }
             $role_id = $role->role_id;
-            $ward_permission = $this->parent->WardPermission($user_id);
+
             $ward_ids = array_map(function ($val) {
-                return $val['ulb_ward_id'];
+                return $val['id'];
             }, $ward_permission);
             $inputs = $request->all();
             $licence = ActiveLicence::select("active_licences.id",
@@ -1399,7 +1954,7 @@ class Trade implements ITrade
                             $join->on("trade_level_pendings.licence_id","active_licences.id")
                             ->where("trade_level_pendings.receiver_user_type_id","<>",$role_id)
                             ->where("trade_level_pendings.status",1)
-                            ->where("trade_level_pendings.status",0);
+                            ->where("trade_level_pendings.verification_status",0);
                         })
                         ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
@@ -1473,12 +2028,14 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
-            $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);
+            $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);  
+            $init_finish = $this->parent->iniatorFinisher($user_id,$ulb_id,$refWorkflowId);         
             if (!$role) 
             {
                 throw new Exception("You Are Not Authorized");
             }
             $role_id = $role->role_id;
+            $apply_from = $this->applyFrom();            
             $rules = [
                 // "receiverId" => "required|int",
                 "btn" => "required|in:btc,forward,backword",
@@ -1515,16 +2072,15 @@ class Trade implements ITrade
             }
             elseif(!$role->is_initiator && ! $level_data)
             {
-                throw new Exception("Please Contact To Admin!!!...");
+                throw new Exception("Please Contact To Admin!!!1...");
             }  
             elseif(isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
             {
                 throw new Exception("You Are Already Taken The Action On This Application");
-            }
-            $init_finish = $this->parent->iniatorFinisher($user_id,$ulb_id,$refWorkflowId); 
+            }           
             if(!$init_finish)
             {
-                throw new Exception("Full Work Flow Not Desigen Proper Please Contact To Admin !!!...");
+                throw new Exception("Full Work Flow Not Desigen Proper Please Contact To Admin !!!2...");
             }
             elseif(!$init_finish["initiator"])
             {
@@ -1562,14 +2118,89 @@ class Trade implements ITrade
                 $licence_pending = 2;
                 $sms ="Application Forword To ".$role->forword_name;
                 $receiver_user_type_id = $role->forward_role_id;
+
+            } 
+            if($request->btn=="forward" && $role->is_initiator)
+            {
+                $doc = (array) null;
+                $owneres = $this->getOwnereDtlByLId($licenc_data->id);
+                $documentsList = $this->getDocumentTypeList($licenc_data);  
+                if($licenc_data->payment_status!=1)
+                {
+                    $doc[]="Pyment is Not Clear";
+                }               
+                foreach($documentsList as $val)
+                {   
+                    $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$licenc_data->application_type_id,$val->show);
+                    $data["documentsList"][$val->doc_for]["is_mandatory"] = $val->is_mandatory;
+                }
+                if($licenc_data->application_type_id==1)
+                {                
+                    $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$licenc_data->application_type_id,0);
+                    $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
+                }               
+                foreach($data["documentsList"] as $key => $val)
+                {
+                    if($key == "Identity Proof")
+                    {
+                        continue;
+                    }
+                    $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenc_data->id,$key);
+                    if(!isset($data["documentsList"][$key]["doc"]["document_path"]) && $data["documentsList"][$key]["is_mandatory"])
+                    {
+                        $doc[]=$key." Not Uploaded";
+
+                    }
+                } 
+                if($licenc_data->application_type_id==1)
+                {
+                    foreach($owneres as $key=>$val)
+                    {
+                    
+                        $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenc_data->id,$val->id);
+                        if(!isset($owneres[$key]["Identity Proof"]["document_path"]) && $data["documentsList"]["Identity Proof"]["is_mandatory"])
+                        {
+                            $doc[]="Identity Proof Of ".$val->owner_name." Not Uploaded";
+        
+                        }
+                    }         
+
+                }
+                if($doc)
+                {   $err = "";
+                    foreach($doc as $val)
+                    {
+                        $err.="<li>$val</li>";
+                    }                
+                    throw new Exception($err);
+                }
+            }           
+            if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
+            {
+                $docs = $this->getLicenceDocuments($request->licenceId);
+                if(!$docs)
+                {
+                    throw new Exception("No Anny Document Found");
+                }
+                $docs = adjToArray($docs);
+                $test = array_filter($docs,function($val){
+                     if($val["verify_status"]!=1)
+                     {
+                        return True;
+                     }
+                });
+                if($test)
+                {
+                    throw new Exception("All Document Are Not Verified");
+                }
+
+                
             }
 
             if(!$role->is_finisher && !$receiver_user_type_id)  
             {
                 throw new Exception("Next Roll Not Found !!!....");
             }
-            
-            // dd($role_id);
 
             DB::beginTransaction();
             if($level_data)
@@ -1578,8 +2209,8 @@ class Trade implements ITrade
                 $level_data->verification_status = 1;
                 $level_data->receiver_user_id =$user_id;
                 $level_data->remarks =$request->comment;
-                $level_data->forward_date =Carbon::now("Y-m-d");
-                $level_data->forward_time =Carbon::now("H:s:i");
+                $level_data->forward_date =Carbon::now()->format('Y-m-d');
+                $level_data->forward_time =Carbon::now()->format('H:s:i');
                 $level_data->save();
             }
             if(!$role->is_finisher)
@@ -1677,6 +2308,16 @@ class Trade implements ITrade
                     $licenc_data->license_no = $license_no;
                     $sms.=" Licence No ".$license_no;
             }
+            if($request->btn=="forward" && $role->is_initiator)
+            {
+                $licenc_data->document_upload_status = 1;
+            }
+            if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
+            {   
+                $nowdate = Carbon::now()->format('Y-m-d');            
+                $licenc_data->doc_verify_date = $nowdate;
+                $licenc_data->doc_verify_emp_details_id = $user_id;
+            }
             $licenc_data->pending_status = $licence_pending;            
             $licenc_data->save();            
             DB::commit();
@@ -1685,6 +2326,7 @@ class Trade implements ITrade
         }
         catch(Exception $e)
         {
+            echo $e->getLine();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
@@ -2031,7 +2673,9 @@ class Trade implements ITrade
             },$wardList);
             $inputs = $request->all(); 
             $denila_consumer = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
-                                    // DB::raw("ulb_ward_masters.ward_name as ward_no")
+                                    DB::raw("ulb_ward_masters.ward_name as ward_no ,
+                                    trade_denial_mail_dtls.id as denil_mail_id
+                                    ")
                                 )
                                 ->join("trade_denial_mail_dtls",function($join){
                                     $join->on("trade_denial_mail_dtls.denial_consumer_id","trade_denial_consumer_dtls.id")
@@ -2074,6 +2718,114 @@ class Trade implements ITrade
         }
         
 	}
+    public function denialview($id,$mailID,Request $request)
+    {
+        try{
+            $data =(array)null;
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $role_id = $this->parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??-1;
+            $apply_from = $this->applyFrom();
+
+            $denial_details  = $this->getDenialDetailsByID($id,$ulb_id);
+            $denialID =  $denial_details->id;
+            if($denial_details->status ==5)
+            {
+                throw new Exception("Notice No Already Generated ".$denial_details->notice_no);
+            }
+            elseif($denial_details->status==4)
+            {
+                throw new Exception("Denial Request Rejected");
+            }
+            $denial_details->file_name = !empty(trim($denial_details->file_name))?storage_path('app/public/' . $denial_details->file_name):null;
+            if($request->getMethod()=='GET')
+            {
+                $data["denial_details"] = $denial_details;
+                return responseMsg(true, "",remove_null($data));
+            }
+            elseif($request->getMethod()=='POST')
+            {
+                $notic = new TradeDenialNotice;
+                $denial_consumer = TradeDenialConsumerDtl::find($denialID);
+                $denail_mail = TradeDenialMailDtl::where("denial_consumer_id",$denialID)->first();
+
+                $nowdate = Carbon::now()->format('Y-m-d'); 
+                $timstamp = Carbon::now()->format('Y-m-d H:i:s');                
+                $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
+                $rules = [];
+                $message = [];
+                $rules["btn"]="required|in:approve,reject";
+                $message["btn.in"] = "btn Value In approve,reject";
+                $rules["comment"]="required|min:10|regex:$regex";
+                $validator = Validator::make($request->all(), $rules, $message);
+                if ($validator->fails()) {
+                    return responseMsg(false, $validator->errors(),$request->all());
+                }
+                DB::beginTransaction();
+                # Approve Application
+                $res = [];
+                if($request->btn=="approve")
+                {  
+                    $denial_consumer->status = 5;
+                    $denial_consumer->save();
+
+                    $denail_mail->status = 5;
+                    $denail_mail->emp_details_id = $user_id;
+                    $denail_mail->forward_date = $nowdate;
+                    $denail_mail->forward_time = Carbon::now()->format("H:i:s");
+                    $denail_mail->save();
+
+                    $notic->denial_id = $denialID;
+                    $notic->emp_details_id = $user_id;
+                    $notic->remarks = $request->comment;
+                    $notic->save();
+
+                    $insertID = $notic->id;
+                    $noticeNO = "NOT/".date('dmy').$denialID.$insertID ;
+                    $notic->notice_no = $noticeNO;
+                    $notic->save();
+                    $res["noticeNo"] = $noticeNO;
+                    $res["sms"] = "Notice No Successfuly Generated";
+                       
+                }
+                if($request->btn=='btn_upload') 
+                {
+                      
+                }
+                if($request->btn=="reject")
+                {
+                   
+                    $denial_consumer->status = 4;
+                    $denial_consumer->save();
+
+                    $denail_mail->status = 4;
+                    $denail_mail->emp_details_id = $user_id;
+                    $denail_mail->forward_date = $nowdate;
+                    $denail_mail->forward_time = Carbon::now()->format("H:i:s");
+                    $denail_mail->save();
+
+                    $notic->denial_id = $denialID;
+                    $notic->emp_details_id = $user_id;
+                    $notic->remarks = $request->comment;
+                    $notic->status = 4;
+                    $notic->save();
+                    $res["noticeNo"] = "";
+                    $res["sms"] = "Denail Apply Rejected";
+
+                }
+                DB::commit();                
+                return responseMsg(true, $res["sms"],remove_null($res["noticeNo"]));
+            }
+            
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+
+    }
     
 
     #---------- core function for trade Application--------
@@ -2311,6 +3063,7 @@ class Trade implements ITrade
     }    
     public function propertyDetailsfortradebyHoldingNo(string $holdingNo,int $ulb_id):array
     {
+        // DB::enableQueryLog();
         $property = PropPropertie::select("*")
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name ,property_id
                                         FROM Prop_OwnerS 
@@ -2327,6 +3080,7 @@ class Trade implements ITrade
                         ->where("new_holding_no",$holdingNo)
                         ->where("ulb_id",$ulb_id)
                         ->first();
+                        // dd(DB::getQueryLog());
         if($property)
         {
             return ["status"=>true,'property'=>adjToArray($property)];
@@ -2444,15 +3198,15 @@ class Trade implements ITrade
     {
         try{
            
-            $time_line =  TradeApplicationDoc::select(
-                        "trade_application_docs.doc_for",
-                        "trade_application_docs.document_path",
-                        "trade_application_docs.remarks",
-                        "trade_application_docs.verify_status"
+            $time_line =  TradeLicenceDocument::select(
+                        "trade_licence_documents.doc_for",
+                        "trade_licence_documents.document_path",
+                        "trade_licence_documents.remarks",
+                        "trade_licence_documents.verify_status"
                     )
-                    ->where('trade_application_docs.licence_id', $id)
-                    ->where('trade_application_docs.status', 1)                    
-                    ->orderBy('id', 'desc')
+                    ->where('trade_licence_documents.licence_id', $id)
+                    ->where('trade_licence_documents.status', 1)                    
+                    ->orderBy('trade_licence_documents.id', 'desc')
                     ->get();
             return $time_line;
         }
@@ -2525,6 +3279,156 @@ class Trade implements ITrade
     {
         $filePath = $file->storeAs('uploads/Trade', $custumFileName, 'public');
         return  $filePath;
+    }
+    public function getDenialDetailsByID($id,$ulb_id)
+    {
+        try{
+            $data = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
+                        DB::raw("ulb_ward_masters.ward_name as ward_no,
+                        trade_denial_notices.id as notice_id,trade_denial_notices.notice_no,
+                        trade_denial_notices.remarks as notice_remarks,trade_denial_notices.fine_amount,
+                        trade_denial_notices.status as notice_status,trade_denial_notices.apply_id as notice_apply_id,
+                        trade_denial_notices.created_on as notice_created_on,
+                        trade_denial_mail_dtls.id as denial_mail_id,trade_denial_mail_dtls.sender_id as denial_mail_sender_id,
+                        trade_denial_mail_dtls.sender_user_type_id as denial_mail_sender_user_type_id,
+                        trade_denial_mail_dtls.receiver_user_type_id as denil_mail_receiver_user_type_id,
+                        trade_denial_mail_dtls.remarks as denial_mail_remarks,trade_denial_mail_dtls.created_on as denial_mail_created_on,
+                        trade_denial_mail_dtls.forward_date as denial_mail_forward_date,trade_denial_mail_dtls.forward_time as denial_mail_forward_time,
+                        trade_denial_mail_dtls.emp_details_id as demail_mail_emp_details_id,trade_denial_mail_dtls.status as denial_mail_status
+                        ")
+                    )
+                    ->join("ulb_ward_masters",function($join){
+                        $join->on("ulb_ward_masters.id","trade_denial_consumer_dtls.ward_id");
+                    })                    
+                    ->leftjoin("trade_denial_notices",function($join){
+                        $join->on("trade_denial_notices.denial_id","trade_denial_consumer_dtls.id");
+                    })
+                    ->join("trade_denial_mail_dtls",function($join){
+                        $join->on("trade_denial_mail_dtls.denial_consumer_id","trade_denial_consumer_dtls.id");
+                    })
+                    ->where("trade_denial_consumer_dtls.id",$id)
+                    ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
+                    ->first();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+    public function getDocumentTypeList(ActiveLicence $application)
+    {
+        try
+        {
+            $show='1';
+            if($application->application_type_id==1)
+            {
+                if($application->ownership_type_id==1)
+                {
+                    $show .=','.'2';  
+                }
+                else
+                {
+                    $show .=','.'3';  
+                }
+
+                if($application->firm_type_id==2)
+                {
+                    $show .=','.'4';  
+                }
+                elseif($application->firm_type_id ==3 || $application->firm_type_id==4)
+                {
+                    $show .=','.'5';  
+                }
+                if($application->category_type_id==2)
+                {
+                    $show .=','.'6';  
+                }
+            }
+            $show = explode(",",$show);
+            $data = TradeParamDocumentType::select("doc_for","is_mandatory","show")
+                    ->where("application_type_id",$application->application_type_id)
+                    ->where("status",1)
+                    ->whereIn("show",$show)
+                    ->groupBy("doc_for","is_mandatory","show")
+                    ->get();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            return $e->getMessage();   
+        }
+    }
+    public function getDocumentList($doc_for,$application_type_id ,$show)
+    {
+        try{
+            $data = TradeParamDocumentType::select("id","doc_name")
+                                ->where("status",1)
+                                ->where("doc_for",$doc_for)
+                                ->where("application_type_id",$application_type_id )
+                                ->where("show",$show)
+                                ->get();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            return $e->getMessage();   
+        }
+    }
+    public function check_doc_exist($licenceId,$doc_for,$doc_mstr_id=null,$woner_id=null)
+    {
+        try{
+            
+            $doc = TradeLicenceDocument::select("id","doc_for","verify_status","document_path","document_id")
+                       ->where('licence_id',$licenceId)
+                       ->where('doc_for',$doc_for);
+                       if($doc_mstr_id)
+                       {
+                            $doc =$doc->where('document_id',$doc_mstr_id);
+                       }                       
+                       if($woner_id)
+                       {
+                            $doc =$doc->where('licence_owner_dtl_id', $woner_id);
+                       }                       
+                $doc =$doc->where('status',1)
+                       ->orderBy('id','DESC')
+                       ->first();                     
+            return $doc;
+          
+       }
+       catch(Exception $e)
+       {
+          echo $e->getMessage();   
+       }
+    }
+
+    public function check_doc_exist_owner($licenceId,$owner_id,$document_id=null)
+    {
+        try{
+            // DB::enableQueryLog();
+            $doc = TradeLicenceDocument::select("id","doc_for","verify_status","document_path","document_id")
+                           ->where('licence_id',$licenceId)
+                           ->where('licence_owner_dtl_id',$owner_id);
+                           if($document_id!==null)
+                            { 
+                                $document_id = (int)$document_id;
+                                $doc = $doc->where('document_id',$document_id);
+                            }
+                            else
+                            {
+                                $doc = $doc->where("document_id","<>",0);                     
+
+                            }
+                $doc =$doc->where('status',1)
+                        ->orderBy('id','DESC')
+                        ->first();                        
+        //    print_var(DB::getQueryLog());                    
+            return $doc;
+        }
+        catch(Exception $e)
+        {
+            return $e->getMessage();   
+        }
     }
    
     #-------------------- End core function of core function --------------

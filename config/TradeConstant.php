@@ -34,6 +34,8 @@ return [
         "JSK"=>"JSK",
         "BACK OFFICE"=>"BO",
         "BO"=>"BO",
+        "DEALING ASSISTANT" => "DA",
+        "DA"=>"DA",
         "Team Leader"=>"TL",
         "TL"=>"TL",
     ],

@@ -4,6 +4,7 @@ namespace App\Repository\Common;
 use App\Models\Ward\WardUser;
 use App\Models\WfMaster;
 use App\Models\WfRole;
+use App\Models\WfWardUser;
 use App\Traits\Auth;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -19,12 +20,12 @@ class CommonFunction implements ICommonFunction
             if(!$ward_permission)
             { 
                 Redis::del('WardPermission:' . $user_id);
-                $ward_permission =WardUser::select("ulb_ward_id","ulb_ward_masters.id",
+                $ward_permission =WfWardUser::select("ward_id","ulb_ward_masters.id",
                                     DB::raw("ulb_ward_masters.ward_name as ward_no")
                                     )
-                                    ->join("ulb_ward_masters","ulb_ward_masters.id","=","ward_users.ulb_ward_id")
+                                    ->join("ulb_ward_masters","ulb_ward_masters.id","=","wf_ward_users.ward_id")
                                     ->where('user_id',$user_id)
-                                    ->orderBy('ulb_ward_id')
+                                    ->orderBy('ward_id')
                                     ->get();
                 $ward_permission = adjToArray($ward_permission);
                 $this->WardPermissionSet($redis,$user_id, $ward_permission);
@@ -39,9 +40,12 @@ class CommonFunction implements ICommonFunction
             { 
                 // DB::enableQueryLog();
                 $workflow_rolse = WfMaster::select(
-                                DB::raw("wf_roles.id ,wf_roles.role_name,forward_role_id as forward_id,
-                                        backward_role_id as backward_id,is_initiator,is_finisher,
-                                        wf_masters.workflow_name,wf_masters.id as workflow_id,
+                                DB::raw("wf_roles.id ,wf_roles.role_name,
+                                        forward_role_id as forward_id,
+                                        backward_role_id as backward_id,
+                                        is_initiator,is_finisher,
+                                        wf_masters.workflow_name,
+                                        wf_masters.id as workflow_id,
                                         wf_workflows.ulb_id"
                                 )
                             )
@@ -49,10 +53,11 @@ class CommonFunction implements ICommonFunction
                                 $join->on("wf_workflows.wf_master_id","wf_masters.id")
                                 ->where("wf_workflows.is_suspended",FALSE);
                             })
-                            ->join(DB::raw("(SELECT distinct(wf_role_id) as wf_role_id ,workflow_id
+                            ->join(DB::raw("(SELECT distinct(wf_role_id) as wf_role_id ,
+                                                workflow_id , forward_role_id , backward_role_id
                                             FROM wf_workflowrolemaps 
                                             WHERE  wf_workflowrolemaps.is_suspended = false 
-                                            GROUP BY workflow_id,wf_role_id
+                                            GROUP BY workflow_id,wf_role_id , forward_role_id , backward_role_id
                                             ) wf_workflowrolemaps "),
                                             function($join) use($ulb_id)
                                             {
@@ -153,14 +158,12 @@ class CommonFunction implements ICommonFunction
             // DB::enableQueryLog();
             $data = WfRole::select(DB::raw("wf_roles.id as role_id,wf_roles.role_name,
                                             wf_roles.is_initiator, wf_roles.is_finisher,
-                                            wf_roles.forward_role_id,forword.role_name as forword_name,
-                                            wf_roles.backward_role_id,backword.role_name as backword_name,
+                                            wf_workflowrolemaps.forward_role_id,forword.role_name as forword_name,
+                                            wf_workflowrolemaps.backward_role_id,backword.role_name as backword_name,
                                             wf_masters.id as workflow_id,wf_masters.workflow_name,
                                             ulb_masters.id as ulb_id, ulb_masters.ulb_name,
                                             ulb_masters.ulb_type")
-                                    )
-                        ->leftjoin("wf_roles AS forword","forword.id","=","wf_roles.forward_role_id")
-                        ->leftjoin("wf_roles AS backword","backword.id","=","wf_roles.backward_role_id")
+                                    )                        
                         ->join("wf_roleusermaps",function($join){
                             $join->on("wf_roleusermaps.wf_role_id","=","wf_roles.id")
                             ->where("wf_roleusermaps.is_suspended","=",FALSE);
@@ -170,6 +173,8 @@ class CommonFunction implements ICommonFunction
                             $join->on("wf_workflowrolemaps.wf_role_id","=","wf_roleusermaps.wf_role_id")
                             ->where("wf_workflowrolemaps.is_suspended","=",FALSE);
                         })
+                        ->leftjoin("wf_roles AS forword","forword.id","=","wf_workflowrolemaps.forward_role_id")
+                        ->leftjoin("wf_roles AS backword","backword.id","=","wf_workflowrolemaps.backward_role_id")
                         ->join("wf_workflows",function($join){
                             $join->on("wf_workflows.id","=","wf_workflowrolemaps.workflow_id")
                             ->where("wf_workflows.is_suspended","=",FALSE);
