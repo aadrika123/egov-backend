@@ -16,8 +16,6 @@ class CreateWfRolesTable extends Migration
         Schema::create('wf_roles', function (Blueprint $table) {
             $table->id();
             $table->string('role_name');
-            $table->integer('forward_user_id');
-            $table->integer('backward_user_id');
             $table->boolean('is_initiator');
             $table->boolean('is_finisher');
             $table->boolean('is_suspended');

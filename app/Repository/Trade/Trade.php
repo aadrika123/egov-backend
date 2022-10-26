@@ -71,7 +71,7 @@ class Trade implements ITrade
         
         $this->redis = new Redis;
         $this->user_data = json_decode($this->redis::get('user:' . $this->user_id), true);
-        $apply_from = $this->applyFrom();      
+        $apply_from = $this->applyFrom();             
         try
         {
             if(!in_array(strtoupper($apply_from),["ONLINE","JSK","UTC","TC","SUPER ADMIN","TL"]))
@@ -111,7 +111,7 @@ class Trade implements ITrade
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(),$request->all());
             }
-            if(strtoupper($apply_from)=="ONLINE")
+            if(in_array(strtoupper($apply_from),["ONLINE","JSK","SUPER ADMIN","TL"]))
             {
                 $data['wardList'] = $this->ModelWard->getAllWard($this->ulb_id)->map(function($val){
                     $val->ward_no = $val->ward_name;
@@ -120,7 +120,7 @@ class Trade implements ITrade
                 $data['wardList'] = adjToArray($data['wardList']);
             }
             else
-            {
+            {                
                 $data['wardList'] = $this->parent->WardPermission($this->user_id);
             }
             if($request->getMethod()=='GET')
@@ -493,12 +493,16 @@ class Trade implements ITrade
                 { 
                     $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
                     $firm_date = $request->firmDetails['firmEstdDate'];
-                    $noticeDetails = $this->getDenialFirmDetails($this->ulb_id,strtoupper(trim($noticeNo)), $firm_date);
+                    $noticeDetails = $this->getDenialFirmDetails($this->ulb_id,strtoupper(trim($noticeNo)));
                     if ($noticeDetails) 
                     {   
                         $denialId = $noticeDetails->id;
                         $now = strtotime(date('Y-m-d H:i:s')); // todays date
-                        $notice_date = strtotime($noticeDetails['created_on']); //notice date                                                        
+                        $notice_date = strtotime($noticeDetails['created_on']); //notice date  
+                        if($firm_date>$notice_date) 
+                        {
+                            throw new Exception("Can Not Firm Stablishment Date Greater Than Notice Date");
+                        }                                                    
     
                     }
                 }              
@@ -948,6 +952,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
+    /** Incomplite End code */
     public function documentUpload(Request $request)
     {
         $user = Auth()->user();
@@ -1046,216 +1051,199 @@ class Trade implements ITrade
                 $rules = [];
                 $message = [];
                 $sms = "";
-                 # Upload Document 
+                # Upload Document 
                 if(isset($request->btn_doc_path))
-                {
+                {              
                     $cnt=$request->btn_doc_path;
                     $rules = [
-                            'doc_path'=>'uploaded[doc_path'.$cnt.']|max_size[doc_path'.$cnt.',30720]|ext_in[doc_path'.$cnt.',pdf, jpg, jpeg]',
-                            'doc_mstr_id'.$cnt.''=>'required|int',
-                            'doc_for'.$cnt =>"required|string",
-                        ];
-                    
+                            'doc_path'.$cnt=>'required|max:30720]|mimes:pdf,jpg,jpeg',
+                            'doc_path_mstr_id'.$cnt.''=>'required|int',
+                            'doc_path_for'.$cnt =>"required|string",
+                        ];                         
                     $validator = Validator::make($request->all(), $rules, $message);                    
-                    if ($validator->fails()) {
+                    if ($validator->fails()) {                        
                         return responseMsg(false, $validator->errors(),$request->all());
-                    }
-                    elseif ($validator->validate($rules))
-                    {                
-                        $doc_path = $request->file('doc_path'.$cnt);
-                        $doc_for = "doc_for$cnt";
-                        $doc_mstr_id = "doc_mstr_id$cnt";
-                        if ($doc_path->IsValid())
-                        { 
-                            if ($app_doc_dtl_id = $this->check_doc_exist($licenceId,$request->$doc_for))
-                            {                                                           
-                                $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                                // dd(file_exists($delete_path));
-                                if (file_exists($delete_path)) 
-                                {   
-                                    unlink($delete_path);
-                                }
-                                $newFileName = $app_doc_dtl_id['id'];
-
-                                $file = $request->file("doc_path".$cnt);
-                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                                $fileName = "licence_doc/$newFileName.$file_ext";
-                                $filePath = $this->uplodeFile($file,$fileName);
-                                $app_doc_dtl_id->document_path =  $filePath;
-                                $app_doc_dtl_id->document_id =  $request->doc_mstr_id.$cnt;
-                                $app_doc_dtl_id->save();
-                                $sms = $app_doc_dtl_id->doc_for." Update Successfully";
-
+                    }                
+                    $file = $request->file('doc_path'.$cnt);
+                    $doc_for = "doc_path_for$cnt";
+                    $doc_mstr_id = "doc_path_mstr_id$cnt";
+                    if ($file->IsValid())
+                    { 
+                        if ($app_doc_dtl_id = $this->check_doc_exist($licenceId,$request->$doc_for))
+                        {                                                          
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                            // dd(file_exists($delete_path));
+                            if (file_exists($delete_path)) 
+                            {   
+                                unlink($delete_path);
                             }
-                            else
-                            {
-                                $licencedocs = new TradeLicenceDocument;
-                                $licencedocs->licence_id = $licenceId;
-                                $licencedocs->doc_for    = $request->$doc_for;
-                                $licencedocs->document_id = $request->$doc_mstr_id;
-                                $licencedocs->emp_details_id = $user_id;
-                                
-                                $licencedocs->save();
-                                $newFileName = $licencedocs->id;
+                            $newFileName = $app_doc_dtl_id['id'];
 
-                                $file = $request->file("doc_path".$cnt);
-                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                                $fileName = "licence_doc/$newFileName.$file_ext";
-                                $filePath = $this->uplodeFile($file,$fileName);
-                                $licencedocs->document_path =  $filePath;
-                                $licencedocs->save();
-                                $sms = $licencedocs->$doc_for." Upload Successfully";
-
-                            }                         
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "licence_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->document_path =  $filePath;
+                            $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->save();
+                            $sms .= "\n".$app_doc_dtl_id->doc_for." Update Successfully";
 
                         }
                         else
                         {
-                            return responseMsg(false, "something errors in Document Uploades",$request->all());
-                        }
+                            $licencedocs = new TradeLicenceDocument;
+                            $licencedocs->licence_id = $licenceId;
+                            $licencedocs->doc_for    = $request->$doc_for;
+                            $licencedocs->document_id = $request->$doc_mstr_id;
+                            $licencedocs->emp_details_id = $user_id;
+                            
+                            $licencedocs->save();
+                            $newFileName = $licencedocs->id;
+                            
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "licence_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $licencedocs->document_path =  $filePath;
+                            $licencedocs->save();
+                            $sms .= "\n". $licencedocs->doc_for." Upload Successfully";
+
+                        }                         
+
                     }
+                    else
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }
+                    
                 }
                 
                 # Upload Owner Document Id Proof
-                elseif(isset($request->btn_doc_path_owner))
+                if(isset($request->btn_doc_path_owner))
                 { 
-                    $cnt_owner=$request->btn_doc_path_owner;
-                    
+                    $cnt_owner=$request->btn_doc_path_owner;                    
                     $rules = [
-                            'doc_path_owner'=>'uploaded[doc_path_owner'.$cnt_owner.']|max_size[doc_path_owner'.$cnt_owner.',30720]|ext_in[doc_path_owner'.$cnt_owner.',pdf]',
-                            'idproof'.$cnt_owner.''=>'required',
-                            'doc_mstr_id'.$cnt_owner =>"required|int",
-                            "owner_id"=>"required|int",
-                            "doc_for".$cnt_owner =>"required|string",
+                            'id_doc_path_owner'.$cnt_owner =>'required|max:30720|mimes:pdf',
+                            // 'idproof'.$cnt_owner.''=>'required',
+                            'id_doc_mstr_id'.$cnt_owner =>"required|int",
+                            "id_owner_id"=>"required|int",
+                            "id_doc_for".$cnt_owner =>"required|string",
                         ];
                         
                     $validator = Validator::make($request->all(), $rules, $message);                    
                     if ($validator->fails()) {
                         return responseMsg(false, $validator->errors(),$request->all());
                     }
-                    elseif ($validator->validate($rules))
+                    $file = $request->file('id_doc_path_owner'.$cnt_owner);
+                    // $idproof = "idproof$cnt_owner";
+                    $doc_mstr_id = "id_doc_mstr_id$cnt_owner";
+                    $doc_for = "id_doc_for$cnt_owner";
+                    if ($file->IsValid() )
                     {
-                        $doc_path = $request->file('doc_path_owner'.$cnt_owner);
-                        $idproof = "idproof$cnt_owner";
-                        $doc_mstr_id = "doc_mstr_id$cnt_owner";
-                        $doc_for = "doc_for$cnt_owner";
-                        if ($doc_path->IsValid() )
-                        {
-                           
-                            if ($app_doc_dtl_id = $this->model_application_doc->check_doc_exist_owner($licenceId,$request->owner_id))
-                            {                                
-                                $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                                if (file_exists($$delete_path)) 
-                                { 
-                                    unlink($delete_path);
-                                }
-
-                                $newFileName = $app_doc_dtl_id['id'];
-
-                                $file = $request->file("doc_path_owner".$cnt_owner);
-                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                                $fileName = "licence_doc/$newFileName.$file_ext";
-                                $filePath = $this->uplodeFile($file,$fileName);
-                                $app_doc_dtl_id->document_path =  $filePath;
-                                $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
-                                $app_doc_dtl_id->save();
-                                $sms = $app_doc_dtl_id->$doc_for." Update Successfully";
-                            }                            
-                            else 
-                            {
-                                $licencedocs = new TradeLicenceDocument;
-                                $licencedocs->licence_id = $licenceId;
-                                $licencedocs->doc_for    = $request->$doc_for;
-                                $licencedocs->document_id = $request->$doc_mstr_id;
-                                $licencedocs->emp_details_id = $user_id;
-                                
-                                $licencedocs->save();
-                                $newFileName = $licencedocs->id;
-
-                                $file = $request->file("doc_path_owner".$cnt_owner);
-                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                                $fileName = "licence_doc/$newFileName.$file_ext";
-                                $filePath = $this->uplodeFile($file,$fileName);
-                                $licencedocs->document_path =  $filePath;
-                                $licencedocs->save();
-                                $sms = $licencedocs->$doc_for." Upload Successfully";
-                               
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->id_owner_id))
+                        {                                
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                            if (file_exists($delete_path)) 
+                            { 
+                                unlink($delete_path);
                             }
-                        } 
+
+                            $newFileName = $app_doc_dtl_id['id'];
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "licence_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->document_path =  $filePath;
+                            $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->save();
+                            $sms .= "\n". $app_doc_dtl_id->doc_for." Update Successfully";
+                        }                            
                         else 
                         {
-                            return responseMsg(false, "something errors in Document Uploades",$request->all());
+                            $licencedocs = new TradeLicenceDocument;
+                            $licencedocs->licence_id = $licenceId;
+                            $licencedocs->doc_for    = $request->$doc_for;
+                            $licencedocs->licence_owner_dtl_id =$request->id_owner_id;
+                            $licencedocs->document_id = $request->$doc_mstr_id;
+                            $licencedocs->emp_details_id = $user_id;
+                            
+                            $licencedocs->save();
+                            $newFileName = $licencedocs->id;
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "licence_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $licencedocs->document_path =  $filePath;
+                            $licencedocs->save();
+                            $sms .= "\n". $licencedocs->doc_for." Upload Successfully";
+                            
                         }
                     } 
+                    else 
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }
+                     
                     
                 } 
-                // owner image upload hear 
-                elseif(isset($request->btn_doc_path_owner_img))
-                {
-                    
-                    $cnt_owner=$_POST['btn_doc_path_owner_img'];
-                    
+                # owner image upload hear 
+                if(isset($request->btn_doc_path_owner_img))
+                {                    
+                    $cnt_owner = $request->btn_doc_path_owner_img;                    
                     $rules = [
-                            'doc_path_owner_img'=>'uploaded[doc_path_owner_img'.$cnt_owner.']|max_size[doc_path_owner_img'.$cnt_owner.',30720]|ext_in[doc_path_owner_img'.$cnt_owner.',pdf, png, jpg,jpeg]',                            
-                            'doc_for'.$cnt_owner.''=>'required',
-                            "owner_id"=>"required|int",
+                            "photo_doc_path_owner$cnt_owner"=>'required|max:30720|mimes:pdf,png,jpg,jpeg',                            
+                            'photo_doc_for'.$cnt_owner.''=>'required',
+                            "photo_owner_id"=>"required|int",
                         ];
                     $validator = Validator::make($request->all(), $rules, $message);                    
                     if ($validator->fails()) {
                         return responseMsg(false, $validator->errors(),$request->all());
-                    }
-                    elseif ($validator->validate($rules))
-                    { 
-                        $doc_path = $request->file('doc_path_owner_img'.$cnt_owner);
-                        $doc_for = "doc_for$cnt_owner";
-                        if ($doc_path->IsValid())
-                        {  
-                            if ($app_doc_dtl_id = $this->model_application_doc->check_doc_exist_owner($licenceId,$request->owner_id))
-                            {
-                                $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                                if (file_exists($$delete_path)) 
-                                { 
-                                    unlink($delete_path);
-                                }
-
-                                $newFileName = $app_doc_dtl_id['id'];
-
-                                $file = $request->file("doc_path_owner".$cnt_owner);
-                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                                $fileName = "licence_doc/$newFileName.$file_ext";
-                                $filePath = $this->uplodeFile($file,$fileName);
-                                $app_doc_dtl_id->document_path =  $filePath;
-                                $app_doc_dtl_id->document_id =  0;
-                                $app_doc_dtl_id->save();
-                                $sms = $app_doc_dtl_id->$doc_for." Update Successfully";
-                            }
-                            
-                            else
-                            {
-                                $licencedocs = new TradeLicenceDocument;
-                                $licencedocs->licence_id = $licenceId;
-                                $licencedocs->doc_for    = $request->$doc_for;
-                                $licencedocs->document_id =0;
-                                $licencedocs->emp_details_id = $user_id;
-                                
-                                $licencedocs->save();
-                                $newFileName = $licencedocs->id;
-
-                                $file = $request->file("doc_path_owner".$cnt_owner);
-                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                                $fileName = "licence_doc/$newFileName.$file_ext";
-                                $filePath = $this->uplodeFile($file,$fileName);
-                                $licencedocs->document_path =  $filePath;
-                                $licencedocs->save();
-                                $sms = $licencedocs->$doc_for." Upload Successfully";
-                            }                                
-
-                        } 
-                        else 
+                    } 
+                    $file = $request->file('photo_doc_path_owner'.$cnt_owner);
+                    $doc_for = "photo_doc_for$cnt_owner";
+                    if ($file->IsValid())
+                    {  
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->photo_owner_id,0))
                         {
-                            return responseMsg(false, "something errors in Document Uploades",$request->all());
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                            if (file_exists($delete_path)) 
+                            { 
+                                unlink($delete_path);
+                            }
+
+                            $newFileName = $app_doc_dtl_id['id'];
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "licence_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->document_path =  $filePath;
+                            $app_doc_dtl_id->document_id =  0;
+                            $app_doc_dtl_id->save();
+                            $sms .= "\n". $app_doc_dtl_id->doc_for." Update Successfully";
                         }
-                    }                     
+                        
+                        else
+                        {
+                            $licencedocs = new TradeLicenceDocument;
+                            $licencedocs->licence_id = $licenceId;
+                            $licencedocs->doc_for    = $request->$doc_for;
+                            $licencedocs->licence_owner_dtl_id =$request->photo_owner_id;
+                            $licencedocs->document_id =0;
+                            $licencedocs->emp_details_id = $user_id;
+                            
+                            $licencedocs->save();
+                            $newFileName = $licencedocs->id;
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "licence_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $licencedocs->document_path =  $filePath;
+                            $licencedocs->save();
+                            $sms .= "\n". $licencedocs->doc_for." Upload Successfully";
+                        }                                
+
+                    } 
+                    else 
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }              
                 }                 
                 DB::commit();
                 return responseMsg(true, $sms,"");
@@ -1403,8 +1391,7 @@ class Trade implements ITrade
         {
             return responseMsg(false,$e->getMessage(),$request->all());
         }
-    }
-    /** Incomplite End code */
+    }    
     public function getLicenceDtl($id)
     {
         try{
@@ -1446,15 +1433,15 @@ class Trade implements ITrade
         $data = (array)null;
         $user = Auth()->user();
         $user_id = $user->id;
-        $ulb_id = $user->ubl_id;
+        $ulb_id = $user->ulb_id;
         if ($request->getMethod()== 'POST') 
         {
             try 
             {
                 $noticeNo = $request->noticeNo;
-                $firm_date = $request->firm_date; //firm establishment date
+                // $firm_date = $request->firm_date; //firm establishment date
 
-                $denialDetails = $this->getDenialFirmDetails($ulb_id,strtoupper(trim($noticeNo)), $firm_date);
+                $denialDetails = $this->getDenialFirmDetails($ulb_id,strtoupper(trim($noticeNo)));
                 if ($denialDetails) 
                 {
 
@@ -1463,12 +1450,11 @@ class Trade implements ITrade
                     $denialAmount = $this->getDenialAmountTrade($notice_date, $now);
                     $data['denialDetails'] = $denialDetails;
                     $data['denialAmount'] = $denialAmount;
-
-                    return json_encode($data);
+                    return responseMsg(true,"",$data);
                 } 
                 else 
                 {
-                    $response = "noData";
+                    $response = "no Data";
                     return responseMsg(false,$response,$request->all());
                 }
             } 
@@ -1534,21 +1520,21 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }        
     }
-    public function getDenialFirmDetails($ulb_id,$notice_no,$firm_date)//for apply application
+    public function getDenialFirmDetails($ulb_id,$notice_no)//for apply application
     {
         try{
-            $data = TradeDenialConsumerDtl::select("trade_denial_notices.*",
+            $data = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
                         DB::raw("trade_denial_notices.notice_no,
                                 trade_denial_notices.created_on::date AS noticedate,
                                 trade_denial_notices.id as dnialid")
                     )
                     ->join("trade_denial_notices","trade_denial_notices.denial_id","=","trade_denial_consumer_dtls.id")
                     ->where("trade_denial_notices.notice_no",$notice_no)
-                    ->where("trade_denial_notices.created_on","<",$firm_date)
+                    // ->where("trade_denial_notices.created_on","<",$firm_date)
                     ->where("trade_denial_consumer_dtls.status","=", 5)
                     ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
                     ->where("trade_denial_notices.status","=", 1)
-                    ->first();
+                    ->first();                   
             return $data;
         }
         catch (Exception $e)
@@ -1811,24 +1797,33 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
+            $apply_from = $this->applyFrom();
+            $ward_permission = $this->parent->WardPermission($user_id);           
             $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id); 
             if (!$role) 
             {
                 throw new Exception("You Are Not Authorized");
             } 
-            if($role->is_initiator)
+            if($role->is_initiator || in_array(strtoupper($apply_from),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
             {
+                $ward_permission = $this->ModelWard->getAllWard($this->ulb_id)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $ward_permission = adjToArray($ward_permission);
+
                 $joins = "leftjoin";
             }
             else
             {
                 $joins = "join";
-            }  
-            $role_id = $role->role_id;       
-            $ward_permission = $this->parent->WardPermission($user_id);
+            }
+
             $ward_ids = array_map(function ($val) {
-                return $val['ulb_ward_id'];
+                return $val['id'];
             }, $ward_permission);
+
+            $role_id = $role->role_id;   
             $inputs = $request->all();  
             // DB::enableQueryLog();          
             $licence = ActiveLicence::select("active_licences.id",
@@ -1847,7 +1842,7 @@ class Trade implements ITrade
                             $join->on("trade_level_pendings.licence_id","active_licences.id")
                             ->where("trade_level_pendings.receiver_user_type_id",$role_id)
                             ->where("trade_level_pendings.status",1)
-                            ->where("trade_level_pendings.status",0);
+                            ->where("trade_level_pendings.verification_status",0);
                         })
                         ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
@@ -1895,9 +1890,7 @@ class Trade implements ITrade
             $licence = $licence
                     ->whereIn('active_licences.ward_mstr_id', $ward_ids)
                     ->get();
-            // dd(DB::getQueryLog());
-            // $worckflowCondidate = $this->parent->getAllRoles($user_id,$ulb_id,$refWorkflowId ,$role->role_id,true);
-            // $getForwordBackwordRoll = $this->parent->getForwordBackwordRoll($user_id,$ulb_id,$refWorkflowId ,$role->role_id,false);           
+            // dd(DB::getQueryLog());            
             return responseMsg(true, "", $licence);
             
         } 
@@ -1920,23 +1913,30 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
+            $apply_from = $this->applyFrom();
+            $ward_permission = $this->parent->WardPermission($user_id);
             $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);           
             if (!$role) 
             {
                 throw new Exception("You Are Not Authorized");
             }
-            if($role->is_initiator)
+            if($role->is_initiator || in_array(strtoupper($apply_from),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
             {
                 $joins = "leftjoin";
+                $ward_permission = $this->ModelWard->getAllWard($this->ulb_id)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $ward_permission = adjToArray($ward_permission);
             }
             else
             {
                 $joins = "join";
             }
             $role_id = $role->role_id;
-            $ward_permission = $this->parent->WardPermission($user_id);
+
             $ward_ids = array_map(function ($val) {
-                return $val['ulb_ward_id'];
+                return $val['id'];
             }, $ward_permission);
             $inputs = $request->all();
             $licence = ActiveLicence::select("active_licences.id",
@@ -1954,7 +1954,7 @@ class Trade implements ITrade
                             $join->on("trade_level_pendings.licence_id","active_licences.id")
                             ->where("trade_level_pendings.receiver_user_type_id","<>",$role_id)
                             ->where("trade_level_pendings.status",1)
-                            ->where("trade_level_pendings.status",0);
+                            ->where("trade_level_pendings.verification_status",0);
                         })
                         ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
@@ -2028,12 +2028,14 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
-            $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);           
+            $role = $this->parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);  
+            $init_finish = $this->parent->iniatorFinisher($user_id,$ulb_id,$refWorkflowId);         
             if (!$role) 
             {
                 throw new Exception("You Are Not Authorized");
             }
             $role_id = $role->role_id;
+            $apply_from = $this->applyFrom();            
             $rules = [
                 // "receiverId" => "required|int",
                 "btn" => "required|in:btc,forward,backword",
@@ -2075,8 +2077,7 @@ class Trade implements ITrade
             elseif(isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
             {
                 throw new Exception("You Are Already Taken The Action On This Application");
-            }
-            $init_finish = $this->parent->iniatorFinisher($user_id,$ulb_id,$refWorkflowId); 
+            }           
             if(!$init_finish)
             {
                 throw new Exception("Full Work Flow Not Desigen Proper Please Contact To Admin !!!2...");
@@ -2121,8 +2122,13 @@ class Trade implements ITrade
             } 
             if($request->btn=="forward" && $role->is_initiator)
             {
+                $doc = (array) null;
                 $owneres = $this->getOwnereDtlByLId($licenc_data->id);
-                $documentsList = $this->getDocumentTypeList($licenc_data);                 
+                $documentsList = $this->getDocumentTypeList($licenc_data);  
+                if($licenc_data->payment_status!=1)
+                {
+                    $doc[]="Pyment is Not Clear";
+                }               
                 foreach($documentsList as $val)
                 {   
                     $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$licenc_data->application_type_id,$val->show);
@@ -2132,8 +2138,7 @@ class Trade implements ITrade
                 {                
                     $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$licenc_data->application_type_id,0);
                     $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
-                }
-                $doc = (array) null;
+                }               
                 foreach($data["documentsList"] as $key => $val)
                 {
                     if($key == "Identity Proof")
@@ -2170,7 +2175,7 @@ class Trade implements ITrade
                     throw new Exception($err);
                 }
             }           
-            if($request->btn=="forward" && $role_id==6)
+            if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
             {
                 $docs = $this->getLicenceDocuments($request->licenceId);
                 if(!$docs)
@@ -2204,8 +2209,8 @@ class Trade implements ITrade
                 $level_data->verification_status = 1;
                 $level_data->receiver_user_id =$user_id;
                 $level_data->remarks =$request->comment;
-                $level_data->forward_date =Carbon::now("Y-m-d");
-                $level_data->forward_time =Carbon::now("H:s:i");
+                $level_data->forward_date =Carbon::now()->format('Y-m-d');
+                $level_data->forward_time =Carbon::now()->format('H:s:i');
                 $level_data->save();
             }
             if(!$role->is_finisher)
@@ -2216,10 +2221,10 @@ class Trade implements ITrade
                 $level_insert->receiver_user_type_id = $receiver_user_type_id;
                 $level_insert->sender_user_id = $user_id;
                 $level_insert->save();
+                $licenc_data->current_user_id = $receiver_user_type_id;
             }
             if($role->is_finisher && $request->btn=="forward")
             {
-                
                     $licence_pending = 5;
                     $sms ="Application Approved By ".$role->forword_name;
                     $ulbDtl = UlbMaster::find($ulb_id);
@@ -2301,15 +2306,17 @@ class Trade implements ITrade
                         $valid_upto = $prive_licence->valid_upto;
                     }
                     $licenc_data->license_no = $license_no;
+                    $licenc_data->current_user_id = $receiver_user_type_id;
                     $sms.=" Licence No ".$license_no;
             }
             if($request->btn=="forward" && $role->is_initiator)
             {
                 $licenc_data->document_upload_status = 1;
             }
-            if($request->btn=="forward" && $role_id==6)
-            {
-                $licenc_data->doc_verify_date = Carbon::now()->formate("Y-m-d");
+            if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
+            {   
+                $nowdate = Carbon::now()->format('Y-m-d');            
+                $licenc_data->doc_verify_date = $nowdate;
                 $licenc_data->doc_verify_emp_details_id = $user_id;
             }
             $licenc_data->pending_status = $licence_pending;            
@@ -2320,6 +2327,7 @@ class Trade implements ITrade
         }
         catch(Exception $e)
         {
+            echo $e->getLine();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
@@ -2819,6 +2827,14 @@ class Trade implements ITrade
         }
 
     }
+
+    #------------------- Reports function ------------------
+
+    public function repots(Request $request)
+    {
+
+    }
+    #------------------- End Reports Function --------------
     
 
     #---------- core function for trade Application--------
@@ -3403,16 +3419,19 @@ class Trade implements ITrade
                            ->where('licence_id',$licenceId)
                            ->where('licence_owner_dtl_id',$owner_id);
                            if($document_id!==null)
-                            {
+                            { 
                                 $document_id = (int)$document_id;
                                 $doc = $doc->where('document_id',$document_id);
                             }
                             else
-                                $doc = $doc->where("document_id","<>",0);                       
+                            {
+                                $doc = $doc->where("document_id","<>",0);                     
+
+                            }
                 $doc =$doc->where('status',1)
                         ->orderBy('id','DESC')
-                        ->first(); 
-            // dd(DB::getQueryLog());                    
+                        ->first();                        
+        //    print_var(DB::getQueryLog());                    
             return $doc;
         }
         catch(Exception $e)
