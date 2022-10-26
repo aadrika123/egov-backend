@@ -652,7 +652,8 @@ class dSafCalculation
          * $buildupDate          -> construction date Of floar
          * 
          * ======================= Response ==========================
-         * Array = ["ARV"           => $arv,
+         * Array = [
+                    "ARV"           => $arv,
                     "TotalTax"      => $tax,
                     "buildupAreaSqft" =>$buildupAreaSqft,
                     "usegeTypeID"       => $usegeTypeID,
@@ -924,6 +925,7 @@ class dSafCalculation
         $L_ploat_area           = $request['areaOfPlot'];
         $L_ulb_type_id          = $request['ulb_type_id'] ?? 1;
         if ($request['isMobileTower']) {
+            $this->Tax = [];
             $this->FYearQuater = [];
             $L_towerArea               = $request['towerArea'];
             $L_towerInstallationDate   = $request['towerInstallationDate'] ?? '2016-04-01';
@@ -985,6 +987,7 @@ class dSafCalculation
         }
 
         if ($request['isHoardingBoard']) {
+            $this->Tax = [];
             $this->FYearQuater = [];
             $L_isHoardingBoard          = $request['isHoardingBoard'];
             $L_hoardingArea             = $request['hoardingArea'];
@@ -1049,6 +1052,7 @@ class dSafCalculation
         }
 
         if ($request['isPetrolPump']) {
+            $this->Tax = [];
             $this->FYearQuater = [];
             $L_isPetrolPump          = $request['isPetrolPump'];
             $L_undergroundArea         = $request['undergroundArea'];
@@ -1120,8 +1124,14 @@ class dSafCalculation
             $L_residential100 = !empty($L_residential100) ? false : true;
             foreach ($request['floor'] as $keys => $floor) {
                 $this->Tax = [];
+                $this->FYearQuater = [];
                 $reqFromDate = $floor["dateFrom"];
                 $reqUptoDate = $floor["dateUpto"];
+                $fromRuleEmplimenteddate = fromRuleEmplimenteddate();
+
+                if ($fromRuleEmplimenteddate > $reqFromDate) {
+                    $reqFromDate = $fromRuleEmplimenteddate;
+                }
                 $ruleSets = $this->getFYearQutery($reqFromDate, $reqUptoDate);
                 $floor['RuleSet'] = $ruleSets;
                 foreach ($ruleSets as $key => $val) {
@@ -1171,7 +1181,9 @@ class dSafCalculation
                 $floor['Tax'] = $this->Tax;
                 $M_property['floorsDtl'][$keys] = $floor;
             }
-        } elseif ($L_PropertyTypeId == 4) {
+        }
+        if ($L_PropertyTypeId == 4) {
+            $this->Tax = [];
             $this->FYearQuater = [];
             $L_landOccupationDate = $request['landOccupationDate'];
             if ($L_landOccupationDate <= '2016-04-01') {
@@ -1221,12 +1233,11 @@ class dSafCalculation
     {
         if (!$uptodate)
             $uptodate = Carbon::now()->format('Y-m-d');
-
         $carbonDate = Carbon::createFromFormat("Y-m-d", $fromdate);
         $MM = (int) $carbonDate->format("m");
         $YYYY = (int) $carbonDate->format("Y");
         $carbonUpto =  Carbon::createFromFormat("Y-m-d", $uptodate);
-        // print_var($fromdate ."  " . $uptodate."    " .$PropertyTypeID);
+        // print_var($fromdate . "  " . $uptodate . "    " . $PropertyTypeID);
         if ($carbonDate->format("Y-m") < $carbonUpto->format("Y-m")) {
             $m = 4;
             if ($MM % 4 != 0) {
@@ -1260,7 +1271,7 @@ class dSafCalculation
         $fromRuleEmplimenteddate = fromRuleEmplimenteddate();
         $reqFromDate = $dateFrom;
         $ruleSets = [];
-        // dd($reqFromDate);
+        // dd($fromRuleEmplimenteddate);
         if ($fromRuleEmplimenteddate > $reqFromDate) {
             $reqFromDate = $fromRuleEmplimenteddate;
         }

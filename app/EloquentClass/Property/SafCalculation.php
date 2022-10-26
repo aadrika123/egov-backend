@@ -22,6 +22,7 @@ class SafCalculation
      * | #todayDate > Current Date
      * | #virtualDate > Back 12 years Date from present
      * | #mainDate > The final Date after reverting back to 12 years
+     * | #checkFloorToNullable > Checks the condition of Floor Upto nullable
      */
     public function getRuleSet($floorDateFrom, $floorDateTo = null)
     {
@@ -34,33 +35,52 @@ class SafCalculation
         if ($floorDateFrom < $virtualDate) {
             $mainDate = $virtualDate;
         }
-
-        // RuleSet 1 , RuleSet2 and RuleSet3 Condition
-        if ($mainDate < '2016-04-01' && $floorDateTo == null) {
-            return ["RuleSet1", "RuleSet2", "RuleSet3"];
-        }
-        // RuleSet 2 and RuleSet3 Condition
-        if ($mainDate >= '2016-04-01' && $mainDate <= '2022-03-31' && $floorDateTo == null || $floorDateTo >= '2016-04-01') {
-            return ["RuleSet2", "RuleSet3"];
-        }
-        // RuleSet 3 Condition
-        if ($mainDate >= '01-04-2022' && $floorDateTo == null) {
-            return ["RuleSet3"];
-        }
+        $checkFloorToNullable = is_null($floorDateTo) == true;
 
         // RuleSet1 Condition
-        if ($mainDate < '2016-04-01' && $floorDateTo < '2016-04-01') {
+        if ($mainDate < '2016-04-01' && $floorDateTo < '2016-04-01' && !$checkFloorToNullable) {
             return ["RuleSet1"];
         }
 
+        // RuleSet1 and RuleSet2 Condition
+        if ($mainDate < '2016-04-01' && $floorDateTo < '2022-04-01' && !$checkFloorToNullable) {
+            return ["RuleSet1", "RuleSet2"];
+        }
+
+        // RuleSet 1 , RuleSet2 and RuleSet3 Condition
+        if ($mainDate < '2016-04-01' && $checkFloorToNullable) {
+            return ["RuleSet1", "RuleSet2", "RuleSet3"];
+        }
+
+        // RuleSet 1, Ruleset2 and Ruleset3 Condition 2
+        if ($mainDate < '2016-04-01' && $floorDateTo >= '2022-04-01') {
+            return ["RuleSet1", "RuleSet2", "RuleSet3"];
+        }
+
+
         // RuleSet2 Condition
-        if ($mainDate >= '2016-04-01' && $floorDateTo < '2022-04-01') {
+        if ($mainDate >= '2016-04-01' && $mainDate <= '2022-03-31' && $floorDateTo < '2022-04-01' && $floorDateTo >= '2016-04-01') {
             return ["RuleSet2"];
         }
 
-        // RuleSet1 and RuleSet2 Condition
-        if ($mainDate <= '2022-04-01' && $floorDateTo < '2022-04-01') {
-            return ["RuleSet1", "RuleSet2"];
+        // RuleSet 2 and RuleSet3 Condition
+        if ($mainDate >= '2016-04-01' && $mainDate < '2022-04-01' && $checkFloorToNullable) {
+            return ["RuleSet2", "RuleSet3"];
+        }
+
+        // RuleSet 2 and RuleSet3 Condition 2
+        if ($mainDate >= '2016-04-01' && $mainDate <= '2022-03-31' && $floorDateTo >= '2022-04-01') {
+            return ["RuleSet2", "RuleSet3"];
+        }
+
+        // RuleSet 3 Condition
+        if ($mainDate >= '2022-04-01' && $checkFloorToNullable) {
+            return ["RuleSet3"];
+        }
+
+        // RuleSet 3 Condition 2
+        if ($mainDate >= '2022-04-01' && $floorDateTo >= '2022-04-01') {
+            return ["RuleSet3"];
         }
     }
 

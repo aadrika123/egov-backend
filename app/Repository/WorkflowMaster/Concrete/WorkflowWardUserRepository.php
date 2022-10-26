@@ -155,19 +155,40 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
     //===========================================================================================
     //===========================     WORKFLOW MAPPING       ====================================
     //===========================================================================================
+
+    //get role details by 
+    // public function getRoleDetails(Request $request)
+    // {
+    //     $query = "SELECT 
+    //                 w.*,
+    //                 forwardd.role_name AS forward_role_name,
+    //                 backwardd.role_name AS backwardd_role_name
+    //                 FROM wf_roles w
+    //                 LEFT JOIN wf_roles forwardd ON forwardd.id=w.forward_role_id
+    //                 LEFT JOIN wf_roles backwardd ON backwardd.id=w.backward_role_id
+    //             WHERE w.id=$request->roleId";
+    //     $roles = DB::select($query);
+    //     return responseMsg(true, "Data Fetched", remove_null($roles[0]));
+    // }
+
+    //duplicate of getroledetails
     public function getRoleDetails(Request $request)
     {
-        $query = "SELECT 
-                    w.*,
-                    forwardd.role_name AS forward_role_name,
-                    backwardd.role_name AS backwardd_role_name
-                    FROM wf_roles w
-                    LEFT JOIN wf_roles forwardd ON forwardd.id=w.forward_role_id
-                    LEFT JOIN wf_roles backwardd ON backwardd.id=w.backward_role_id
-                WHERE w.id=$request->roleId";
-        $roles = DB::select($query);
-        return responseMsg(true, "Data Fetched", remove_null($roles[0]));
+        $request->validate([
+            'workflowId' => 'required|int',
+            'wfRoleId' => 'required|int'
+
+        ]);
+        $roleDetails = DB::table('wf_workflowrolemaps')
+            ->leftJoin('wf_roles as r', 'wf_workflowrolemaps.forward_role_id', '=', 'r.id')
+            ->leftJoin('wf_roles as rr', 'wf_workflowrolemaps.backward_role_id', '=', 'rr.id')
+            ->select('wf_workflowrolemaps.*', 'r.role_name as forward_role_name', 'rr.role_name as backward_role_name')
+            ->where('workflow_id', $request->workflowId)
+            ->where('wf_role_id', $request->wfRoleId)
+            ->first();
+        return responseMsg(true, "Data Retrived", remove_null($roleDetails));
     }
+
 
     //getting data of user & ulb  by selecting  id
     //m_users && m_ulb_wards  && wf_ward_users
