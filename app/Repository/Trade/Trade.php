@@ -2221,10 +2221,10 @@ class Trade implements ITrade
                 $level_insert->receiver_user_type_id = $receiver_user_type_id;
                 $level_insert->sender_user_id = $user_id;
                 $level_insert->save();
+                $licenc_data->current_user_id = $receiver_user_type_id;
             }
             if($role->is_finisher && $request->btn=="forward")
             {
-                
                     $licence_pending = 5;
                     $sms ="Application Approved By ".$role->forword_name;
                     $ulbDtl = UlbMaster::find($ulb_id);
@@ -2306,6 +2306,7 @@ class Trade implements ITrade
                         $valid_upto = $prive_licence->valid_upto;
                     }
                     $licenc_data->license_no = $license_no;
+                    $licenc_data->current_user_id = $receiver_user_type_id;
                     $sms.=" Licence No ".$license_no;
             }
             if($request->btn=="forward" && $role->is_initiator)
