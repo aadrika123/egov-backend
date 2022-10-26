@@ -1433,7 +1433,7 @@ class Trade implements ITrade
         $data = (array)null;
         $user = Auth()->user();
         $user_id = $user->id;
-        $ulb_id = $user->ubl_id;
+        $ulb_id = $user->ulb_id;
         if ($request->getMethod()== 'POST') 
         {
             try 
@@ -1455,7 +1455,7 @@ class Trade implements ITrade
                 } 
                 else 
                 {
-                    $response = "noData";
+                    $response = "no Data";
                     return responseMsg(false,$response,$request->all());
                 }
             } 
@@ -1524,6 +1524,7 @@ class Trade implements ITrade
     public function getDenialFirmDetails($ulb_id,$notice_no)//for apply application
     {
         try{
+            // DB::enableQueryLog();
             $data = TradeDenialConsumerDtl::select("trade_denial_notices.*",
                         DB::raw("trade_denial_notices.notice_no,
                                 trade_denial_notices.created_on::date AS noticedate,
@@ -1536,6 +1537,7 @@ class Trade implements ITrade
                     ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
                     ->where("trade_denial_notices.status","=", 1)
                     ->first();
+                    // dd(DB::getQueryLog());
             return $data;
         }
         catch (Exception $e)
