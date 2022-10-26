@@ -71,7 +71,7 @@ class Trade implements ITrade
         
         $this->redis = new Redis;
         $this->user_data = json_decode($this->redis::get('user:' . $this->user_id), true);
-        $apply_from = $this->applyFrom();      
+        $apply_from = $this->applyFrom();             
         try
         {
             if(!in_array(strtoupper($apply_from),["ONLINE","JSK","UTC","TC","SUPER ADMIN","TL"]))
@@ -111,7 +111,7 @@ class Trade implements ITrade
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(),$request->all());
             }
-            if(strtoupper($apply_from)=="ONLINE")
+            if(in_array(strtoupper($apply_from),["ONLINE","JSK","SUPER ADMIN","TL"]))
             {
                 $data['wardList'] = $this->ModelWard->getAllWard($this->ulb_id)->map(function($val){
                     $val->ward_no = $val->ward_name;
@@ -120,7 +120,7 @@ class Trade implements ITrade
                 $data['wardList'] = adjToArray($data['wardList']);
             }
             else
-            {
+            {                
                 $data['wardList'] = $this->parent->WardPermission($this->user_id);
             }
             if($request->getMethod()=='GET')
