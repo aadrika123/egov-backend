@@ -24,6 +24,7 @@ interface ITrade
     public function documentUpload(Request $request);
     public function documentVirify(Request $request);
     public function getLicenceDtl($id);
+    public function getDenialDetails(Request $request);
     public function paybleAmount(Request $request);
     public function paymentRecipt($id, $transectionId);
     public function getCotegoryList();

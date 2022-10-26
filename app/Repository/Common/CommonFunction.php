@@ -38,7 +38,7 @@ class CommonFunction implements ICommonFunction
             $workflow_rolse = "";//json_decode(Redis::get('WorkFlowRoles:' . $user_id.":".$work_flow_id),true)??null;
             if(!$workflow_rolse)
             { 
-                // DB::enableQueryLog();
+                //DB::enableQueryLog();
                 $workflow_rolse = WfMaster::select(
                                 DB::raw("wf_roles.id ,wf_roles.role_name,
                                         forward_role_id as forward_id,
@@ -70,7 +70,7 @@ class CommonFunction implements ICommonFunction
                             ->where("wf_masters.is_suspended",false)
                             ->orderBy("wf_roles.id")
                             ->get();
-                            // dd(DB::getQueryLog());
+                            //dd(DB::getQueryLog());
                 $workflow_rolse = adjToArray($workflow_rolse);
                 $this->WorkFlowRolesSet($redis,$user_id, $workflow_rolse,$work_flow_id);
             }
