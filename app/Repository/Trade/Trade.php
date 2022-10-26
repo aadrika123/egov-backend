@@ -1450,8 +1450,7 @@ class Trade implements ITrade
                     $denialAmount = $this->getDenialAmountTrade($notice_date, $now);
                     $data['denialDetails'] = $denialDetails;
                     $data['denialAmount'] = $denialAmount;
-
-                    return json_encode($data);
+                    return responseMsg(true,"",$data);
                 } 
                 else 
                 {
@@ -1524,7 +1523,6 @@ class Trade implements ITrade
     public function getDenialFirmDetails($ulb_id,$notice_no)//for apply application
     {
         try{
-            // DB::enableQueryLog();
             $data = TradeDenialConsumerDtl::select("trade_denial_notices.*",
                         DB::raw("trade_denial_notices.notice_no,
                                 trade_denial_notices.created_on::date AS noticedate,
@@ -1536,8 +1534,7 @@ class Trade implements ITrade
                     ->where("trade_denial_consumer_dtls.status","=", 5)
                     ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
                     ->where("trade_denial_notices.status","=", 1)
-                    ->first();
-                    // dd(DB::getQueryLog());
+                    ->first();                   
             return $data;
         }
         catch (Exception $e)
