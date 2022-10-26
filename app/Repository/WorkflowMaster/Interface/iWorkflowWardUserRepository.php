@@ -45,4 +45,7 @@ interface iWorkflowWardUserRepository
     public function getUserInUlb(Request $request);
     public function getRoleInUlb(Request $request);
     public function getWorkflowInUlb(Request $request);
+
+    public function getRoleByUserUlbId(Request $request);
+    public function getRoleByWardUlbId(Request $request);
 }
