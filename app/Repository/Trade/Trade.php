@@ -952,6 +952,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
+    /** Incomplite End code */
     public function documentUpload(Request $request)
     {
         $user = Auth()->user();
@@ -1390,8 +1391,7 @@ class Trade implements ITrade
         {
             return responseMsg(false,$e->getMessage(),$request->all());
         }
-    }
-    /** Incomplite End code */
+    }    
     public function getLicenceDtl($id)
     {
         try{
@@ -1523,7 +1523,7 @@ class Trade implements ITrade
     public function getDenialFirmDetails($ulb_id,$notice_no)//for apply application
     {
         try{
-            $data = TradeDenialConsumerDtl::select("trade_denial_notices.*",
+            $data = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
                         DB::raw("trade_denial_notices.notice_no,
                                 trade_denial_notices.created_on::date AS noticedate,
                                 trade_denial_notices.id as dnialid")
@@ -2827,6 +2827,14 @@ class Trade implements ITrade
         }
 
     }
+
+    #------------------- Reports function ------------------
+
+    public function repots(Request $request)
+    {
+
+    }
+    #------------------- End Reports Function --------------
     
 
     #---------- core function for trade Application--------
