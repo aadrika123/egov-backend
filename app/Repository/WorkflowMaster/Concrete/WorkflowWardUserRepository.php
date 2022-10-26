@@ -179,11 +179,14 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
             'wfRoleId' => 'required|int'
 
         ]);
-        $users = WfWorkflowrolemap::where('workflow_id', $request->workflowId)
+        $roleDetails = DB::table('wf_workflowrolemaps')
+            ->leftJoin('wf_roles as r', 'wf_workflowrolemaps.forward_role_id', '=', 'r.id')
+            ->leftJoin('wf_roles as rr', 'wf_workflowrolemaps.backward_role_id', '=', 'rr.id')
+            ->select('wf_workflowrolemaps.*', 'r.role_name as forward_role_name', 'rr.role_name as backward_role_name')
+            ->where('workflow_id', $request->workflowId)
             ->where('wf_role_id', $request->wfRoleId)
-            ->join('wf_roles', 'wf_roles.id', 'wf_workflowrolemaps.wf_role_id')
-            ->get(['wf_roles.role_name', 'wf_workflowrolemaps.*']);
-        return responseMsg(true, "Data Retrived", remove_null($users));
+            ->first();
+        return responseMsg(true, "Data Retrived", remove_null($roleDetails));
     }
 
 
