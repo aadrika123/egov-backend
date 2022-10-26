@@ -40,4 +40,5 @@ interface ITrade
     public function applyDenail(Request $request);
     public function denialInbox(Request $request);
     public function denialview($id,$mailID,Request $request);
+    public function reports(Request $request);
 }

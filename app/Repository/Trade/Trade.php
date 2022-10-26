@@ -496,12 +496,12 @@ class Trade implements ITrade
                     $noticeDetails = $this->getDenialFirmDetails($this->ulb_id,strtoupper(trim($noticeNo)));
                     if ($noticeDetails) 
                     {   
-                        $denialId = $noticeDetails->id;
+                        $denialId = $noticeDetails->dnialid;
                         $now = strtotime(date('Y-m-d H:i:s')); // todays date
                         $notice_date = strtotime($noticeDetails['created_on']); //notice date  
                         if($firm_date>$notice_date) 
                         {
-                            throw new Exception("Can Not Firm Stablishment Date Greater Than Notice Date");
+                            throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date");
                         }                                                    
     
                     }
@@ -686,7 +686,7 @@ class Trade implements ITrade
                     $noticeDetails = $this->getNotisDtl($lecence_data->id);
                     if ($noticeDetails) 
                     {   
-                        $denialId = $noticeDetails->id;
+                        $denialId = $noticeDetails->dnialid;
                         $now = strtotime(date('Y-m-d H:i:s')); // todays date
                         $notice_date = strtotime($noticeDetails['created_on']); //notice date 
                     }
@@ -2830,8 +2830,21 @@ class Trade implements ITrade
 
     #------------------- Reports function ------------------
 
-    public function repots(Request $request)
+    public function reports(Request $request)
     {
+        try{
+            $rules["alias"]="required|min:3|max:3";
+            $validator = Validator::make($request->all(), $rules);
+            if ($validator->fails()) 
+            {
+                return responseMsg(false, $validator->errors(),$request->all());
+            }
+
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
 
     }
     #------------------- End Reports Function --------------

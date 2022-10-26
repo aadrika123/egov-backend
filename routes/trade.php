@@ -35,6 +35,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::match(["get", "post"],'applyDenail', 'applyDenail');
         Route::match(["get", "post"],'denialInbox', 'denialInbox');
         Route::match(["get", "post"],'denialview/{id}/{mailId}', 'denialview');
+        Route::post('reports', 'reports');
     });
 });
 Route::controller(ApplyApplication::class)->group(function () {    
