@@ -71,8 +71,9 @@ class dPropertyTax
             $arv = array_sum($arv);
 
             $HoldingTax = array_column($FyTax, 'HoldingTax');
-            $HoldingTax = array_sum($HoldingTax);
 
+            $HoldingTax = array_sum($HoldingTax);
+            print_var($HoldingTax);
             $LatineTax = array_column($FyTax, 'LatineTax');
             $LatineTax = array_sum($LatineTax);
 
@@ -164,6 +165,7 @@ class dPropertyTax
                 $PrivFyTax = $Q4;
             }
         }
+        die;
     }
 
     public function insert(array $inputs)
