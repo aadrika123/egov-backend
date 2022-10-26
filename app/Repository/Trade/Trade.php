@@ -493,12 +493,16 @@ class Trade implements ITrade
                 { 
                     $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
                     $firm_date = $request->firmDetails['firmEstdDate'];
-                    $noticeDetails = $this->getDenialFirmDetails($this->ulb_id,strtoupper(trim($noticeNo)), $firm_date);
+                    $noticeDetails = $this->getDenialFirmDetails($this->ulb_id,strtoupper(trim($noticeNo)));
                     if ($noticeDetails) 
                     {   
                         $denialId = $noticeDetails->id;
                         $now = strtotime(date('Y-m-d H:i:s')); // todays date
-                        $notice_date = strtotime($noticeDetails['created_on']); //notice date                                                        
+                        $notice_date = strtotime($noticeDetails['created_on']); //notice date  
+                        if($firm_date>$notice_date) 
+                        {
+                            throw new Exception("Can Not Firm Stablishment Date Greater Than Notice Date");
+                        }                                                    
     
                     }
                 }              
@@ -1435,9 +1439,9 @@ class Trade implements ITrade
             try 
             {
                 $noticeNo = $request->noticeNo;
-                $firm_date = $request->firm_date; //firm establishment date
+                // $firm_date = $request->firm_date; //firm establishment date
 
-                $denialDetails = $this->getDenialFirmDetails($ulb_id,strtoupper(trim($noticeNo)), $firm_date);
+                $denialDetails = $this->getDenialFirmDetails($ulb_id,strtoupper(trim($noticeNo)));
                 if ($denialDetails) 
                 {
 
@@ -1517,7 +1521,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }        
     }
-    public function getDenialFirmDetails($ulb_id,$notice_no,$firm_date)//for apply application
+    public function getDenialFirmDetails($ulb_id,$notice_no)//for apply application
     {
         try{
             $data = TradeDenialConsumerDtl::select("trade_denial_notices.*",
@@ -1527,7 +1531,7 @@ class Trade implements ITrade
                     )
                     ->join("trade_denial_notices","trade_denial_notices.denial_id","=","trade_denial_consumer_dtls.id")
                     ->where("trade_denial_notices.notice_no",$notice_no)
-                    ->where("trade_denial_notices.created_on","<",$firm_date)
+                    // ->where("trade_denial_notices.created_on","<",$firm_date)
                     ->where("trade_denial_consumer_dtls.status","=", 5)
                     ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
                     ->where("trade_denial_notices.status","=", 1)
