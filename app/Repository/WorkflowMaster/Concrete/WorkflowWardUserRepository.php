@@ -213,7 +213,7 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
         ]);
 
         $workkFlow = WfWorkflow::where('ulb_id', $request->ulbId)
-            ->where('id',$request->id)
+            ->where('id', $request->id)
             ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.workflow_id', '=', 'wf_workflows.id')
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
             ->get('wf_roles.role_name');
@@ -397,6 +397,34 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
         $users = WfWorkflow::where('ulb_id', $request->ulbId)
             ->join('wf_workflows', 'wf_workflows.wf_matser_id', '=', 'wf_masters.id')
             ->get('wf_masters.workflow_name');
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+    //get role by ulb & user id
+    public function getRoleByUserUlbId(Request $request)
+    {
+        $users = WfRole::select('wf_roles.*')
+            ->where('ulb_ward_masters.ulb_id', $request->ulbId)
+            ->where('users.id', $request->userId)
+            ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', 'wf_roles.id')
+            ->join('users', 'users.id', 'wf_roleusermaps.user_id')
+            ->join('wf_ward_users', 'wf_ward_users.user_id', 'users.id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.ulb_id', 'wf_ward_users.ward_id')
+            ->first();
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+    //get role by ward & ulb id
+    public function getRoleByWardUlbId(Request $request)
+    {
+        $users = WfRole::select('wf_roles.*')
+            ->where('ulb_ward_masters.ulb_id', $request->ulbId)
+            ->where('ulb_ward_masters.id', $request->wardId)
+            ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', 'wf_roles.id')
+            ->join('users', 'users.id', 'wf_roleusermaps.user_id')
+            ->join('wf_ward_users', 'wf_ward_users.user_id', 'users.id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.ulb_id', 'wf_ward_users.ward_id')
+            ->first();
         return responseMsg(true, "Data Retrived", $users);
     }
 }

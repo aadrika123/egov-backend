@@ -17,6 +17,8 @@ class CreateWfWorkflowrolemapsTable extends Migration
             $table->id();
             $table->integer('workflow_id');
             $table->integer('wf_role_id');
+            $table->integer('forward_user_id');
+            $table->integer('backward_user_id');
             $table->boolean('is_suspended');
             $table->integer('user_id');
             $table->smallInteger('status')->nullable()->default(1);
