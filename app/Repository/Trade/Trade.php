@@ -207,7 +207,7 @@ class Trade implements ITrade
                     $rules["licenseDetails.licenseFor"]="required|int";
                     if($this->application_type_id!=4 && strtoupper($apply_from)!="ONLINE")
                     {
-                        $rules["totalCharge"] = "required|numeric";
+                        $rules["licenseDetails.totalCharge"] = "required|numeric";
                     }
                     if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
                     {
@@ -246,7 +246,7 @@ class Trade implements ITrade
                     }
                     if($this->application_type_id!=4 && strtoupper($apply_from)!="ONLINE")
                     {
-                        $rules["totalCharge"] = "required|numeric";
+                        $rules["licenseDetails.totalCharge"] = "required|numeric";
                     }
                     if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]) && $this->application_type_id==2)
                     {
@@ -297,7 +297,7 @@ class Trade implements ITrade
                     }
                     if($this->application_type_id!=4 && strtoupper($apply_from)!="ONLINE")
                     {
-                        $rules["totalCharge"] = "required|numeric";
+                        $rules["licenseDetails.totalCharge"] = "required|numeric";
                     }
                     if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
                     {
@@ -541,7 +541,7 @@ class Trade implements ITrade
                         $args['noticeDate']            = $notice_date;
                         $rate_data = $this->getcharge($args);
                     }
-                    if($rate_data['total_charge']!=$request->totalCharge)
+                    if($rate_data['total_charge']!=$request->licenseDetails["totalCharge"])
                     {
                         throw new Exception("Payble Amount Missmatch!!!");
                     }
@@ -735,7 +735,7 @@ class Trade implements ITrade
                     $args['nature_of_business']  = $lecence_data->nature_of_bussiness;
                     $args['noticeDate']          = $notice_date;
                     $rate_data = $this->getcharge($args);
-                    if($rate_data['total_charge']!=$request->totalCharge)
+                    if($rate_data['total_charge']!=$request->licenseDetails["totalCharge"])
                     {
                         throw new Exception("Payble Amount Missmatch!!!");
                     }
