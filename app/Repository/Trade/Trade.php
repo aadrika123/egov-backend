@@ -1824,7 +1824,7 @@ class Trade implements ITrade
            }
            if($application_type_id==4 && $data->valid_upto < Carbon::now()->format('Y-m-d')) 
            {
-                throw new Exception("You Can Not Apply Surrender. Application No: ".$data->application_no." Expired On ".$data->valid_upto.".");
+                throw new Exception("You Can Not Apply Surrender. Application No: ".$data->application_no." Of Licence No: ".$data->license_no." Expired On ".$data->valid_upto.".");
            }          
            return responseMsg(true,"",remove_null($data));
         }
