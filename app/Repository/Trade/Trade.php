@@ -71,7 +71,14 @@ class Trade implements ITrade
         
         $this->redis = new Redis;
         $this->user_data = json_decode($this->redis::get('user:' . $this->user_id), true);
-        $apply_from = $this->applyFrom();             
+        $apply_from = $this->applyFrom();   
+        $ulbDtl = UlbMaster::find($this->ulb_id);
+        $ulb_name = explode(' ',$ulbDtl->ulb_name);
+        $short_ulb_name = "";
+        foreach($ulb_name as $val)
+        {
+            $short_ulb_name.=$val[0];
+        }          
         try
         {
             if(!in_array(strtoupper($apply_from),["ONLINE","JSK","UTC","TC","SUPER ADMIN","TL"]))
@@ -611,14 +618,7 @@ class Trade implements ITrade
                     if($payment_status==1)
                     {
                         $licence->current_user_id = $workflows['initiator']['id'];
-                    }
-                    $ulbDtl = UlbMaster::find($this->ulb_id);
-                    $ulb_name = explode(' ',$ulbDtl->ulb_name);
-                    $short_ulb_name = "";
-                    foreach($ulb_name as $val)
-                    {
-                        $short_ulb_name.=$val[0];
-                    }
+                    }                    
                     
                     $prov_no = $short_ulb_name . $ward_no . date('mdy') . $licenceId;
                     $licence->provisional_license_no = $prov_no;
@@ -919,12 +919,25 @@ class Trade implements ITrade
                         ->orderBy("id")
                         ->get();
             $pen=0;
+            $delay_fee=0;
+            $denial_fee = 0; 
             foreach($penalty as $val )
             {
+                if(strtoupper($val->head_name)==strtoupper("Delay Apply License"))
+                {
+                    $delay_fee = $val->amount;
+                }
+                elseif(strtoupper($val->head_name)==strtoupper("Denial Apply"))
+                {
+                    $denial_fee = $val->amount;
+                }
                 $pen+=$val->amount;
                 
             }
-            $transaction->rate = $transaction->paid_amount - $pen;
+            $transaction->rate = number_format(($transaction->paid_amount - $pen),2);
+            $transaction->delay_fee = $delay_fee;
+            $transaction->denial_fee = $denial_fee;
+            $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount);
             $data = ["application"=>$application,
                      "transaction"=>$transaction,
                      "penalty"    =>$penalty
@@ -1644,17 +1657,19 @@ class Trade implements ITrade
             }
 
             $vDiff = abs(strtotime($data['curdate']) - strtotime($data['firm_date'])); // here abs in case theres a mix in the dates
-            $vMonths = ceil($vDiff / (30 * 60 * 60 * 24)); // number of seconds in a month of 30 days
-            if(strtotime($data['firm_date']) >= strtotime($data['curdate']))
-            { 
-               $vMonths = round($vDiff / (30 * 60 * 60 * 24));
-            }
+            $vMonths = 0;//ceil($vDiff / (30 * 60 * 60 * 24)); // number of seconds in a month of 30 days
+            // if(strtotime($data['firm_date']) >= strtotime($data['curdate']))
+            // { 
+            //    $vMonths = round($vDiff / (30 * 60 * 60 * 24));
+            // }
             if ($vMonths > 0 && strtotime($data['firm_date']) < strtotime($data['curdate'])) 
             {
-                $denial_amount_month = 100 + (($vMonths) * 20);
-                # In case of ammendment no denial amount
-                if ($data['application_type_id'] == 3)
-                    $denial_amount_month = 0;
+                $denial_amount_month = 100 + (($vMonths) * 20);                
+            }
+            # In case of ammendment no denial amount
+            if ($data['application_type_id'] == 3)
+            {
+                $denial_amount_month = 0;
             }
             $total_denial_amount = $denial_amount_month + $rate + $pre_app_amount + $notice_amount ;
 
@@ -1750,9 +1765,9 @@ class Trade implements ITrade
             $ulb_id = $user->ulb_id;
             $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');            
             $rules["licenceNo"] = "required";
-            $message["licenceNo.required"] = "Licence No Requird";
+            $message["licenceNo.required"] = "Licence No Required";
             $rules["applicationType"] = "required:int";
-            $message["applicationType.required"] = "Application Type Id Requird";
+            $message["applicationType.required"] = "Application Type Id Is Required";
             
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
@@ -1761,7 +1776,7 @@ class Trade implements ITrade
             $application_type_id = $request->applicationType ;
             if(!in_array($application_type_id,[1,2,3,4]))
             {
-                throw new Exception("Invalide Applycation Type Supply");
+                throw new Exception("Invalid Application Type Supplied");
             }
             elseif($application_type_id==1)
             {
@@ -1793,20 +1808,24 @@ class Trade implements ITrade
                     ->first();
            if(!$data)
            {
-                throw new Exception("Data Not Found");
+                throw new Exception("No Data Found");
            }
            elseif($application_type_id==3 && $data->application_type_id != 4)
            {
-                throw new Exception("Please Apply Surender Befor Ammendment");
+                throw new Exception("Please Apply Surrender Before Amendment");
            }
            elseif($data->valid_upto > $nextMonth)
            {
-                throw new Exception("Licence Valice Upto ".$data->valid_upto);
+                throw new Exception("Licence Valid Upto ".$data->valid_upto);
            } 
            elseif($data->pending_status!=5)
            {
-                throw new Exception("Application Aready Apply Please Track  ".$data->application_no);
-           }           
+                throw new Exception("Application Already Applied. Please Track  ".$data->application_no);
+           }
+           if($application_type_id==4 && $data->valid_upto < Carbon::now()->format('Y-m-d')) 
+           {
+                throw new Exception("You Can Not Apply Surrender. Application No: ".$data->application_no." Of Licence No: ".$data->license_no." Expired On ".$data->valid_upto.".");
+           }          
            return responseMsg(true,"",remove_null($data));
         }
         catch(Exception $e)
