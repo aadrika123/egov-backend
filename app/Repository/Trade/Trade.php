@@ -813,6 +813,7 @@ class Trade implements ITrade
     public function paymentRecipt($id, $transectionId)
     { 
         try{
+            // DB::enableQueryLog();
             $application = ActiveLicence::select("application_no","provisional_license_no","license_no",
                                                 "firm_name","holding_no","address",
                                             "owner.owner_name","owner.guardian_name","owner.mobile",
@@ -824,19 +825,20 @@ class Trade implements ITrade
                             ->join("ulb_ward_masters",function($join){
                                 $join->on("ulb_ward_masters.id","=","active_licences.ward_mstr_id");                                
                             })
-                            ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                            ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                                 STRING_AGG(guardian_name,',') as guardian_name,
                                                 STRING_AGG(mobile::text,',') as mobile,
                                                 licence_id
                                             FROM active_licence_owners 
                                             WHERE licence_id = $id
-                                                AND status =1
+                                                AND status = 1
                                             GROUP BY licence_id
                                             ) owner"),function($join){
                                                 $join->on("owner.licence_id","=","active_licences.id");
                                             })
                             ->where('active_licences.id',$id)
                             ->first();
+                            // dd(DB::getQueryLog());
             if(!$application)
             {
                 $application = ExpireLicence::select("application_no","provisional_license_no","license_no",
@@ -850,7 +852,7 @@ class Trade implements ITrade
                             ->join("ulb_ward_masters",function($join){
                                 $join->on("ulb_ward_masters.id","=","active_licences.ward_mstr_id");                                
                             })
-                            ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                            ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                                 STRING_AGG(guardian_name,',') as guardian_name,
                                                 STRING_AGG(mobile,',') as mobile,
                                                 licence_id
