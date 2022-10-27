@@ -937,6 +937,7 @@ class Trade implements ITrade
             $transaction->rate = number_format(($transaction->paid_amount - $pen),2);
             $transaction->delay_fee = $delay_fee;
             $transaction->denial_fee = $denial_fee;
+            $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount);
             $data = ["application"=>$application,
                      "transaction"=>$transaction,
                      "penalty"    =>$penalty
