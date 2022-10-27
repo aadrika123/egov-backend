@@ -205,6 +205,10 @@ class Trade implements ITrade
                         $rules["initialBusinessDetails.noticeDate"]="required|date";  
                     }
                     $rules["licenseDetails.licenseFor"]="required|int";
+                    if($this->application_type_id!=4 && strtoupper($apply_from)!="ONLINE")
+                    {
+                        $rules["totalCharge"] = "required|numeric";
+                    }
                     if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
                     {
                         $rules["licenseDetails.licenseFor"]="required|int|max:1";
@@ -235,6 +239,15 @@ class Trade implements ITrade
                     {                    
                         $rules["firmDetails.holdingNo"]="required";
                     } 
+                    $rules["licenseDetails.licenseFor"]="required|int";
+                    if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
+                    {
+                        $rules["licenseDetails.licenseFor"]="required|int|max:1";
+                    }
+                    if($this->application_type_id!=4 && strtoupper($apply_from)!="ONLINE")
+                    {
+                        $rules["totalCharge"] = "required|numeric";
+                    }
                     if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]) && $this->application_type_id==2)
                     {
                         $rules["licenseDetails.paymentMode"]="required|alpha"; 
@@ -278,6 +291,14 @@ class Trade implements ITrade
                         $rules["initialBusinessDetails.noticeDate"]="required|date";  
                     }
                     $rules["licenseDetails.licenseFor"]="required|int";
+                    if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
+                    {
+                        $rules["licenseDetails.licenseFor"]="required|int|max:1";
+                    }
+                    if($this->application_type_id!=4 && strtoupper($apply_from)!="ONLINE")
+                    {
+                        $rules["totalCharge"] = "required|numeric";
+                    }
                     if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
                     {
                         $rules["licenseDetails.licenseFor"]="required|int|max:1";
@@ -501,7 +522,7 @@ class Trade implements ITrade
                         $notice_date = date("Y-m-d",strtotime($noticeDetails['created_on'])); //notice date  
                         if($firm_date > $notice_date) 
                         {
-                            throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date $firm_date > $notice_date");
+                            throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date ");
                         }                                                    
     
                     }
@@ -519,6 +540,10 @@ class Trade implements ITrade
                         $args['nature_of_business']   = $licence->nature_of_bussiness;
                         $args['noticeDate']            = $notice_date;
                         $rate_data = $this->getcharge($args);
+                    }
+                    if($rate_data['total_charge']!=$request->totalCharge)
+                    {
+                        throw new Exception("Payble Amount Missmatch!!!");
                     }
     
                     //end
@@ -648,7 +673,8 @@ class Trade implements ITrade
             {
                 $rules["paymentMode"]="required|alpha"; 
                 $rules["licenceId"]="required|int"; 
-                $rules["licenseFor"]="required|int";                
+                $rules["licenseFor"]="required|int";
+                $rules["totalCharge"] = "required|numeric";               
                 if(isset($request->paymentMode) && $request->paymentMode!="CASH")
                 {
                     $rules["chequeNo"] ="required";
@@ -709,6 +735,10 @@ class Trade implements ITrade
                     $args['nature_of_business']  = $lecence_data->nature_of_bussiness;
                     $args['noticeDate']          = $notice_date;
                     $rate_data = $this->getcharge($args);
+                    if($rate_data['total_charge']!=$request->totalCharge)
+                    {
+                        throw new Exception("Payble Amount Missmatch!!!");
+                    }
                 }
                 $transaction_type = Config::get('TradeConstant.APPLICATION-TYPE-BY-ID.'.$lecence_data->application_type_id);  
                 
