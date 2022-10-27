@@ -205,6 +205,10 @@ class Trade implements ITrade
                         $rules["initialBusinessDetails.noticeDate"]="required|date";  
                     }
                     $rules["licenseDetails.licenseFor"]="required|int";
+                    if($this->application_type_id!=4 && strtoupper($apply_from)!="ONLINE")
+                    {
+                        $rules["licenseDetails.totalCharge"] = "required|numeric";
+                    }
                     if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
                     {
                         $rules["licenseDetails.licenseFor"]="required|int|max:1";
@@ -214,7 +218,7 @@ class Trade implements ITrade
                         $rules["licenseDetails.paymentMode"]="required|alpha"; 
                         if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
                         {
-                            $rules["licenseDetails.chaqueNo"] ="required";
+                            $rules["licenseDetails.chequeNo"] ="required";
                             $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
                             $rules["licenseDetails.bankName"] ="required|regex:$regex";
                             $rules["licenseDetails.branchName"] ="required|regex:$regex";
@@ -235,12 +239,21 @@ class Trade implements ITrade
                     {                    
                         $rules["firmDetails.holdingNo"]="required";
                     } 
+                    $rules["licenseDetails.licenseFor"]="required|int";
+                    if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
+                    {
+                        $rules["licenseDetails.licenseFor"]="required|int|max:1";
+                    }
+                    if($this->application_type_id!=4 && strtoupper($apply_from)!="ONLINE")
+                    {
+                        $rules["licenseDetails.totalCharge"] = "required|numeric";
+                    }
                     if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]) && $this->application_type_id==2)
                     {
                         $rules["licenseDetails.paymentMode"]="required|alpha"; 
                         if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
                         {
-                            $rules["licenseDetails.chaqueNo"] ="required";
+                            $rules["licenseDetails.chequeNo"] ="required";
                             $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
                             $rules["licenseDetails.bankName"] ="required|regex:$regex";
                             $rules["licenseDetails.branchName"] ="required|regex:$regex";
@@ -282,12 +295,20 @@ class Trade implements ITrade
                     {
                         $rules["licenseDetails.licenseFor"]="required|int|max:1";
                     }
+                    if($this->application_type_id!=4 && strtoupper($apply_from)!="ONLINE")
+                    {
+                        $rules["licenseDetails.totalCharge"] = "required|numeric";
+                    }
+                    if(isset($request->firmDetails["tocStatus"]) && $request->firmDetails["tocStatus"])
+                    {
+                        $rules["licenseDetails.licenseFor"]="required|int|max:1";
+                    }
                     if(in_array(strtoupper($apply_from),["JSK","UTC","TC","SUPER ADMIN","TL"]))
                     {
                         $rules["licenseDetails.paymentMode"]="required|alpha"; 
                         if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
                         {
-                            $rules["licenseDetails.chaqueNo"] ="required";
+                            $rules["licenseDetails.chequeNo"] ="required";
                             $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
                             $rules["licenseDetails.bankName"] ="required|regex:$regex";
                             $rules["licenseDetails.branchName"] ="required|regex:$regex";
@@ -498,10 +519,10 @@ class Trade implements ITrade
                     {   
                         $denialId = $noticeDetails->dnialid;
                         $now = strtotime(date('Y-m-d H:i:s')); // todays date
-                        $notice_date = strtotime($noticeDetails['created_on']); //notice date  
-                        if($firm_date>$notice_date) 
+                        $notice_date = date("Y-m-d",strtotime($noticeDetails['created_on'])); //notice date  
+                        if($firm_date > $notice_date) 
                         {
-                            throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date");
+                            throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date ");
                         }                                                    
     
                     }
@@ -519,6 +540,10 @@ class Trade implements ITrade
                         $args['nature_of_business']   = $licence->nature_of_bussiness;
                         $args['noticeDate']            = $notice_date;
                         $rate_data = $this->getcharge($args);
+                    }
+                    if($rate_data['total_charge']!=$request->licenseDetails["totalCharge"])
+                    {
+                        throw new Exception("Payble Amount Missmatch!!!");
                     }
     
                     //end
@@ -574,7 +599,7 @@ class Trade implements ITrade
                     {
                         $tradeChq = new TradeChequeDtl;
                         $tradeChq->transaction_id = $transaction_id;
-                        $tradeChq->cheque_no = $request->licenseDetails['chaqueNo'];
+                        $tradeChq->cheque_no = $request->licenseDetails['chequeNo'];
                         $tradeChq->cheque_date = $request->licenseDetails['chequeDate'];
                         $tradeChq->bank_name = $request->licenseDetails['bankName'];
                         $tradeChq->branch_name = $request->licenseDetails['branchName'];
@@ -648,10 +673,11 @@ class Trade implements ITrade
             {
                 $rules["paymentMode"]="required|alpha"; 
                 $rules["licenceId"]="required|int"; 
-                $rules["licenseFor"]="required|int";                
+                $rules["licenseFor"]="required|int";
+                $rules["totalCharge"] = "required|numeric";               
                 if(isset($request->paymentMode) && $request->paymentMode!="CASH")
                 {
-                    $rules["chaqueNo"] ="required";
+                    $rules["chequeNo"] ="required";
                     $rules["chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
                     $rules["bankName"] ="required|regex:$regex";
                     $rules["branchName"] ="required|regex:$regex";
@@ -709,6 +735,10 @@ class Trade implements ITrade
                     $args['nature_of_business']  = $lecence_data->nature_of_bussiness;
                     $args['noticeDate']          = $notice_date;
                     $rate_data = $this->getcharge($args);
+                    if($rate_data['total_charge']!=$request->licenseDetails["totalCharge"])
+                    {
+                        throw new Exception("Payble Amount Missmatch!!!");
+                    }
                 }
                 $transaction_type = Config::get('TradeConstant.APPLICATION-TYPE-BY-ID.'.$lecence_data->application_type_id);  
                 
@@ -760,7 +790,7 @@ class Trade implements ITrade
                 {
                     $tradeChq = new TradeChequeDtl;
                     $tradeChq->transaction_id = $transaction_id;
-                    $tradeChq->cheque_no = $request->chaqueNo;
+                    $tradeChq->cheque_no = $request->chequeNo;
                     $tradeChq->cheque_date = $request->chequeDate;
                     $tradeChq->bank_name = $request->bankName;
                     $tradeChq->branch_name = $request->branchName;
@@ -813,6 +843,7 @@ class Trade implements ITrade
     public function paymentRecipt($id, $transectionId)
     { 
         try{
+            // DB::enableQueryLog();
             $application = ActiveLicence::select("application_no","provisional_license_no","license_no",
                                                 "firm_name","holding_no","address",
                                             "owner.owner_name","owner.guardian_name","owner.mobile",
@@ -824,19 +855,20 @@ class Trade implements ITrade
                             ->join("ulb_ward_masters",function($join){
                                 $join->on("ulb_ward_masters.id","=","active_licences.ward_mstr_id");                                
                             })
-                            ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                            ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                                 STRING_AGG(guardian_name,',') as guardian_name,
                                                 STRING_AGG(mobile::text,',') as mobile,
                                                 licence_id
                                             FROM active_licence_owners 
                                             WHERE licence_id = $id
-                                                AND status =1
+                                                AND status = 1
                                             GROUP BY licence_id
                                             ) owner"),function($join){
                                                 $join->on("owner.licence_id","=","active_licences.id");
                                             })
                             ->where('active_licences.id',$id)
                             ->first();
+                            // dd(DB::getQueryLog());
             if(!$application)
             {
                 $application = ExpireLicence::select("application_no","provisional_license_no","license_no",
@@ -850,7 +882,7 @@ class Trade implements ITrade
                             ->join("ulb_ward_masters",function($join){
                                 $join->on("ulb_ward_masters.id","=","active_licences.ward_mstr_id");                                
                             })
-                            ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                            ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                                 STRING_AGG(guardian_name,',') as guardian_name,
                                                 STRING_AGG(mobile,',') as mobile,
                                                 licence_id
@@ -3099,7 +3131,7 @@ class Trade implements ITrade
                                         )
                         ->where("status",1)
                         ->where("new_holding_no","<>","")
-                        ->where("new_holding_no",$holdingNo)
+                        ->where("new_holding_no","ILIKE",$holdingNo)
                         ->where("ulb_id",$ulb_id)
                         ->first();
                         // dd(DB::getQueryLog());
@@ -3130,7 +3162,9 @@ class Trade implements ITrade
     }
     public function updateStatusFine($denial_id,$denialAmount,$applyid,$status = 2)
     {
-        $tradeNotice = TradeDenialNotice::where("id",$denial_id)->find();
+        $tradeNotice = TradeDenialNotice::where("id",$denial_id)
+                        ->orderBy("id","DESC")
+                        ->first();
         $tradeNotice->apply_id =  $applyid;
         $tradeNotice->fine_amount =  $denialAmount;
         $tradeNotice->status =  $status;
