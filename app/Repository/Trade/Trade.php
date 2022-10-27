@@ -214,7 +214,7 @@ class Trade implements ITrade
                         $rules["licenseDetails.paymentMode"]="required|alpha"; 
                         if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
                         {
-                            $rules["licenseDetails.chaqueNo"] ="required";
+                            $rules["licenseDetails.chequeNo"] ="required";
                             $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
                             $rules["licenseDetails.bankName"] ="required|regex:$regex";
                             $rules["licenseDetails.branchName"] ="required|regex:$regex";
@@ -240,7 +240,7 @@ class Trade implements ITrade
                         $rules["licenseDetails.paymentMode"]="required|alpha"; 
                         if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
                         {
-                            $rules["licenseDetails.chaqueNo"] ="required";
+                            $rules["licenseDetails.chequeNo"] ="required";
                             $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
                             $rules["licenseDetails.bankName"] ="required|regex:$regex";
                             $rules["licenseDetails.branchName"] ="required|regex:$regex";
@@ -287,7 +287,7 @@ class Trade implements ITrade
                         $rules["licenseDetails.paymentMode"]="required|alpha"; 
                         if(isset($request->licenseDetails['paymentMode']) && $request->licenseDetails['paymentMode']!="CASH")
                         {
-                            $rules["licenseDetails.chaqueNo"] ="required";
+                            $rules["licenseDetails.chequeNo"] ="required";
                             $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
                             $rules["licenseDetails.bankName"] ="required|regex:$regex";
                             $rules["licenseDetails.branchName"] ="required|regex:$regex";
@@ -574,7 +574,7 @@ class Trade implements ITrade
                     {
                         $tradeChq = new TradeChequeDtl;
                         $tradeChq->transaction_id = $transaction_id;
-                        $tradeChq->cheque_no = $request->licenseDetails['chaqueNo'];
+                        $tradeChq->cheque_no = $request->licenseDetails['chequeNo'];
                         $tradeChq->cheque_date = $request->licenseDetails['chequeDate'];
                         $tradeChq->bank_name = $request->licenseDetails['bankName'];
                         $tradeChq->branch_name = $request->licenseDetails['branchName'];
@@ -651,7 +651,7 @@ class Trade implements ITrade
                 $rules["licenseFor"]="required|int";                
                 if(isset($request->paymentMode) && $request->paymentMode!="CASH")
                 {
-                    $rules["chaqueNo"] ="required";
+                    $rules["chequeNo"] ="required";
                     $rules["chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$nowdate";
                     $rules["bankName"] ="required|regex:$regex";
                     $rules["branchName"] ="required|regex:$regex";
@@ -760,7 +760,7 @@ class Trade implements ITrade
                 {
                     $tradeChq = new TradeChequeDtl;
                     $tradeChq->transaction_id = $transaction_id;
-                    $tradeChq->cheque_no = $request->chaqueNo;
+                    $tradeChq->cheque_no = $request->chequeNo;
                     $tradeChq->cheque_date = $request->chequeDate;
                     $tradeChq->bank_name = $request->bankName;
                     $tradeChq->branch_name = $request->branchName;
