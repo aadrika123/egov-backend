@@ -3099,7 +3099,7 @@ class Trade implements ITrade
                                         )
                         ->where("status",1)
                         ->where("new_holding_no","<>","")
-                        ->where("new_holding_no",$holdingNo)
+                        ->where("new_holding_no","ILIKE",$holdingNo)
                         ->where("ulb_id",$ulb_id)
                         ->first();
                         // dd(DB::getQueryLog());
