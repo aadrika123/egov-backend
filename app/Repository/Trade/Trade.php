@@ -919,12 +919,24 @@ class Trade implements ITrade
                         ->orderBy("id")
                         ->get();
             $pen=0;
+            $delay_fee=0;
+            $denial_fee = 0; 
             foreach($penalty as $val )
             {
+                if(strtoupper($val->head_name)==strtoupper("Delay Apply License"))
+                {
+                    $delay_fee = $val->amount;
+                }
+                elseif(strtoupper($val->head_name)==strtoupper("Denial Apply"))
+                {
+                    $denial_fee = $val->amount;
+                }
                 $pen+=$val->amount;
                 
             }
-            $transaction->rate = $transaction->paid_amount - $pen;
+            $transaction->rate = number_format(($transaction->paid_amount - $pen),2);
+            $transaction->delay_fee = $delay_fee;
+            $transaction->denial_fee = $denial_fee;
             $data = ["application"=>$application,
                      "transaction"=>$transaction,
                      "penalty"    =>$penalty
