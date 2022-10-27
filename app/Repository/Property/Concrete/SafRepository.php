@@ -167,8 +167,20 @@ class SafRepository implements iSafRepository
                 $inputs = $request->all();
                 $inputs['ulb_id'] =  $ulb_id;
                 $inputs['ward_no'] =  $ward_no;
-                return $this->saf->BuildingTax($inputs);
-                $this->propertyTax->InsertTax(1, $this->saf->TotalTax);
+                $calculation = $this->saf->BuildingTax($inputs);
+                // return $calculation;
+
+                $filter1 = collect($calculation)->map(function ($val) {
+                    return collect($val)->map(function ($val2) {
+                        $filter2 = $val2['Tax'];
+                        $total = collect($filter2)->sum('TotalTax');
+                        return $total;
+                    });
+                });
+                $grandTotal = collect($filter1['floorsDtl'])->sum();
+                $calculation['grandTotal'] = roundFigure($grandTotal);
+                return $calculation;
+                // $this->propertyTax->InsertTax(1, $this->saf->TotalTax);
                 // return ($this->saf->TotalTax);
                 // $rules["ward"]="required|int";
                 // $message["ward.required"]="Ward No. Required";
