@@ -3162,7 +3162,9 @@ class Trade implements ITrade
     }
     public function updateStatusFine($denial_id,$denialAmount,$applyid,$status = 2)
     {
-        $tradeNotice = TradeDenialNotice::where("id",$denial_id)->find();
+        $tradeNotice = TradeDenialNotice::where("id",$denial_id)
+                        ->orderBy("id","DESC")
+                        ->first();
         $tradeNotice->apply_id =  $applyid;
         $tradeNotice->fine_amount =  $denialAmount;
         $tradeNotice->status =  $status;
