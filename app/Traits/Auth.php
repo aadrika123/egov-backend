@@ -136,7 +136,7 @@ trait Auth
         );
         $redis->expire('AllVacantLandRentalRate', 18000);
     }
-    public function AllRentalValueSet($redis,int $ulb_id, array $rentalVal)
+    public function AllRentalValueSet($redis, int $ulb_id, array $rentalVal)
     {
         $redis->set(
             "AllRentalValue:$ulb_id",
@@ -152,7 +152,7 @@ trait Auth
         );
         $redis->expire("AllBuildingUsageFacter", 18000);
     }
-    public function AllBuildingRentalValueSet($redis,int $ulb_id, array $rentalVal)
+    public function AllBuildingRentalValueSet($redis, int $ulb_id, array $rentalVal)
     {
         $redis->set(
             "AllBuildingRentalValue:$ulb_id",
@@ -168,7 +168,7 @@ trait Auth
         );
         $redis->expire("OccuPencyFacter", 18000);
     }
-    public function AllCircleRateSet($redis,int $ulb_id, array $OccuPencyFacter)
+    public function AllCircleRateSet($redis, int $ulb_id, array $OccuPencyFacter)
     {
         $redis->set(
             "AllCircleRate:$ulb_id",

@@ -299,7 +299,7 @@ class dSafCalculation
         $AllRentalValue = json_decode(Redis::get("AllRentalValue:$ulb_id")) ?? null;
         if (!$AllRentalValue) {
             $AllRentalValue = DB::select("select * from prop_param_rental_values where status=1");
-            $this->AllRentalValueSet($redis, $ulb_id, $AllRentalValue);
+            // $this->AllRentalValueSet($redis, $ulb_id, $AllRentalValue);                 // Set Redis value
         }
         return $AllRentalValue;
     }
@@ -691,21 +691,22 @@ class dSafCalculation
         $education_tax = ($arv * 5.0) / 100;
         $tax = ($holding_tax + $latine_tax + $water_tax + $health_tax + $education_tax);
         return [
-            "ARV"           => $arv,
-            "TotalTax"      => $tax,
-            "buildupAreaSqft" => $buildupAreaSqft,
+            "ARV"           => roundFigure($arv),
+            "RentalValue"   => roundFigure($rentalVal),
+            "TotalTax"      => roundFigure($tax),
+            "buildupAreaSqft" => roundFigure($buildupAreaSqft),
             "usegeTypeID"       => $usegeTypeID,
             "zoneID"            => $zoneID,
             "PropertyTypeID"    => $PropertyTypeID,
             "Residential100"   => $Residential100,
             "buildupDate"     => $buildupDate,
             "constructionTypeID" => $constructionTypeID,
-            "pesentage"     => $pesentage,
-            "HoldingTax"    => $holding_tax,
-            "LatineTax"     => $latine_tax,
-            "WaterTax"      => $water_tax,
-            "HealthTax"     => $health_tax,
-            "EducationTax"  => $education_tax
+            "pesentage"     => roundFigure($pesentage),
+            "HoldingTax"    => roundFigure($holding_tax),
+            "LatineTax"     => roundFigure($latine_tax),
+            "WaterTax"      => roundFigure($water_tax),
+            "HealthTax"     => roundFigure($health_tax),
+            "EducationTax"  => roundFigure($education_tax)
         ];
     }
     public function buildingRulSet2(int $ulb_id, float $buildupAreaSqft, int $usegeTypeID, int $OccuTypeID, float $road_width_in_sft, int $constructionTypeID, $buildupDate)
@@ -780,18 +781,18 @@ class dSafCalculation
         $ARV = $CarpetArea * $UsageFacter * $OccuPencyFacter * $RentalValue;
         $tax = $ARV * 2 / 100;
         $data = [
-            "ARV"                => $ARV,
-            "TotalTax"          => $tax,
-            "buildupAreaSqft"   => $buildupAreaSqft,
+            "ARV"                => roundFigure($ARV),
+            "TotalTax"          => roundFigure($tax),
+            "buildupAreaSqft"   => roundFigure($buildupAreaSqft),
             "CarpetPresent"     => $CarpetPresent,
-            "CarpetArea"        => $CarpetArea,
+            "CarpetArea"        => roundFigure($CarpetArea),
             "usegeTypeID"       => $usegeTypeID,
-            "UsageFacter"       => $UsageFacter,
+            "UsageFacter"       => roundFigure($UsageFacter),
             "OccuType"          => $OccuType,
-            "OccuPencyFacter"   => $OccuPencyFacter,
+            "OccuPencyFacter"   => roundFigure($OccuPencyFacter),
             "GetRodeTypeID"     => $GetRodeTypeID,
             "constructionTypeID" => $constructionTypeID,
-            "RentalValue"       => $RentalValue,
+            "RentalValue"       => roundFigure($RentalValue),
         ];
         return  $data;
     }
@@ -886,9 +887,9 @@ class dSafCalculation
         }
 
         $data = [
-            "TotalTax" => $Tax,
-            "buildupAreaSqft" => $buildupAreaSqft,
-            "CircalRate" => $CircalRate,
+            "TotalTax" => roundFigure($Tax),
+            "buildupAreaSqft" => roundFigure($buildupAreaSqft),
+            "CircalRate" => roundFigure($CircalRate),
             "TaxPresent" => $TaxPresent,
             "usegeTypeID" => $usegeTypeID,
             "CalculationFactor" => $CalculationFactor,
@@ -954,7 +955,7 @@ class dSafCalculation
                                 $yearly = $this->buildingRulSet1($L_ulb_id, $L_towerArea, $L_usageTypeId, $L_zoneId, $L_constructionTypeId, $L_PropertyTypeId, false, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet2": //buildingRulSet2(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, $buildupDate )
@@ -965,7 +966,7 @@ class dSafCalculation
                                 $yearly = $this->buildingRulSet2($L_ulb_id, $L_towerArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet3": //buildingRulSet3(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, bool $Residential100 ,int $PropertyTypeID,string $ward_no,$buildupDate ):array
@@ -975,7 +976,7 @@ class dSafCalculation
                                 $yearly = $this->buildingRulSet3($L_ulb_id, $L_towerArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, false, $L_PropertyTypeId, $L_ward_no, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         default:
@@ -1019,7 +1020,7 @@ class dSafCalculation
                                 $yearly = $this->buildingRulSet1($L_ulb_id, $L_hoardingArea, $L_usageTypeId, $L_zoneId, $L_constructionTypeId, $L_PropertyTypeId, false, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet2": //buildingRulSet2(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, $buildupDate )
@@ -1030,7 +1031,7 @@ class dSafCalculation
                                 $yearly = $this->buildingRulSet2($L_ulb_id, $L_hoardingArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet3": //buildingRulSet3(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, bool $Residential100 ,int $PropertyTypeID,string $ward_no,$buildupDate ):array
@@ -1040,7 +1041,7 @@ class dSafCalculation
                                 $yearly = $this->buildingRulSet3($L_ulb_id, $L_hoardingArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, false, $L_PropertyTypeId, $L_ward_no, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         default:
@@ -1082,7 +1083,7 @@ class dSafCalculation
                                 $yearly = $this->buildingRulSet1($L_ulb_id, $L_undergroundArea, $L_usageTypeId, $L_zoneId, $L_constructionTypeId, $L_PropertyTypeId, false, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet2": //buildingRulSet2(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, $buildupDate )
@@ -1093,7 +1094,7 @@ class dSafCalculation
                                 $yearly = $this->buildingRulSet2($L_ulb_id, $L_undergroundArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet3": //buildingRulSet3(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, bool $Residential100 ,int $PropertyTypeID,string $ward_no,$buildupDate ):array
@@ -1103,7 +1104,7 @@ class dSafCalculation
                                 $yearly = $this->buildingRulSet3($L_ulb_id, $L_undergroundArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, false, $L_PropertyTypeId, $L_ward_no, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         default:
@@ -1118,6 +1119,7 @@ class dSafCalculation
 
         if ($L_PropertyTypeId != 4) {
             $this->FYearQuater = [];
+            // Checking the floor usertype is totally residential or not
             $L_residential100 = array_filter($request['floor'], function ($val) {
                 return $val['useType'] != 1;
             });
@@ -1127,7 +1129,7 @@ class dSafCalculation
                 $this->FYearQuater = [];
                 $reqFromDate = $floor["dateFrom"];
                 $reqUptoDate = $floor["dateUpto"];
-                $fromRuleEmplimenteddate = fromRuleEmplimenteddate();
+                $fromRuleEmplimenteddate = fromRuleEmplimenteddate();               // helper function to get 12 years back
 
                 if ($fromRuleEmplimenteddate > $reqFromDate) {
                     $reqFromDate = $fromRuleEmplimenteddate;
@@ -1138,7 +1140,7 @@ class dSafCalculation
                     foreach ($val as $rul) {
                         $L_usageTypeId          = $floor['useType'];
                         $L_buildupArea          = $floor['buildupArea'];
-                        $L_constructionTypeId   = $floor['occupancyType'];
+                        $L_constructionTypeId   = $floor['constructionType'];
                         $L_buildutDate          = $floor['dateFrom'];
                         $L_occuType             = $floor['occupancyType'];
                         switch ($rul['rule_set']) {
@@ -1149,7 +1151,7 @@ class dSafCalculation
                                     $yearly = $this->buildingRulSet1($L_ulb_id, $L_buildupArea, $L_usageTypeId, $L_zoneId, $L_constructionTypeId, $L_PropertyTypeId, $L_residential100, $L_buildutDate);
                                 $quaterly = $yearly['TotalTax'] / 4;
                                 $this->Tax[$key] = $yearly;
-                                $this->Tax[$key][$rul['qtr']] = $quaterly;
+                                $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                                 $this->Tax[$key]['due_date'] = $rul['due_date'];
                                 break;
                             case "buildingRulSet2": //buildingRulSet2(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, $buildupDate )
@@ -1160,7 +1162,7 @@ class dSafCalculation
                                     $yearly = $this->buildingRulSet2($L_ulb_id, $L_buildupArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, $L_buildutDate);
                                 $quaterly = $yearly['TotalTax'] / 4;
                                 $this->Tax[$key] = $yearly;
-                                $this->Tax[$key][$rul['qtr']] = $quaterly;
+                                $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                                 $this->Tax[$key]['due_date'] = $rul['due_date'];
                                 break;
                             case "buildingRulSet3": //buildingRulSet3(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, bool $Residential100 ,int $PropertyTypeID,string $ward_no,$buildupDate ):array
@@ -1170,7 +1172,7 @@ class dSafCalculation
                                     $yearly = $this->buildingRulSet3($L_ulb_id, $L_buildupArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, $L_residential100, $L_PropertyTypeId, $L_ward_no, $L_buildutDate);
                                 $quaterly = $yearly['TotalTax'] / 4;
                                 $this->Tax[$key] = $yearly;
-                                $this->Tax[$key][$rul['qtr']] = $quaterly;
+                                $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                                 $this->Tax[$key]['due_date'] = $rul['due_date'];
                                 break;
                             default:
@@ -1204,7 +1206,7 @@ class dSafCalculation
                                 $yearly = $this->vacantRulSet1($L_road_width, $L_ploat_area, $L_ulb_type_id, $OccuType);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "vacantRulSet2": //vacantRulSet2(float $road_width_in_sft,float $area_in_dml,int $ulb_type_id, string $usege_type):float
@@ -1215,7 +1217,7 @@ class dSafCalculation
                                 $yearly = $this->vacantRulSet2($L_road_width, $L_ploat_area, $L_ulb_type_id, $OccuType);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         default:
@@ -1229,6 +1231,9 @@ class dSafCalculation
         return  $M_property;
     }
 
+    /**
+     * | get Total Quaterly Years and Quaterly Ruleset
+     */
     public function getFYearQutery($fromdate, $uptodate = null, $PropertyTypeID = 1)
     {
         if (!$uptodate)
@@ -1244,8 +1249,8 @@ class dSafCalculation
                 $m = 4 - $MM;
             }
             $L_fromdate = $carbonDate->addMonth($m)->format('Y-m-d');
-            $fquater = getQtr($fromdate);
-            $FYear = getFYear($fromdate);
+            $fquater = getQtr($fromdate);                               // Get Quarter Value
+            $FYear = getFYear($fromdate);                               // Get Financial Year
             $this->FYearQuater[$FYear][] = $this->getRulsets($fromdate, $PropertyTypeID)[0];
             if ($fquater == 3 && getFYear($fromdate) != getFYear($uptodate)) {
                 $dd = (int) $carbonDate->format("d");
@@ -1266,6 +1271,10 @@ class dSafCalculation
         return $this->FYearQuater;
     }
 
+    /**
+     * | Get Total applied Rulesets
+     * | Parent Function getFYearQuaterly
+     */
     public function getRulsets($dateFrom, $PropertyTypeID = 1)
     {
         $fromRuleEmplimenteddate = fromRuleEmplimenteddate();

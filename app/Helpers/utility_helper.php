@@ -244,3 +244,18 @@ if (!function_exists('eloquentItteration')) {
         return $arr;
     }
 }
+
+/**
+ * | format the Decimal in Round Figure
+ * | Created On-24-07-2022 
+ * | Created By-Anshu Kumar
+ * | @var number the number to be round
+ * | @return @var round
+ */
+if (!function_exists('roundFigure')) {
+    function roundFigure($number)
+    {
+        $round = number_format(round($number, 2), 2);
+        return $round;
+    }
+}
