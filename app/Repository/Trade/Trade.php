@@ -71,7 +71,14 @@ class Trade implements ITrade
         
         $this->redis = new Redis;
         $this->user_data = json_decode($this->redis::get('user:' . $this->user_id), true);
-        $apply_from = $this->applyFrom();             
+        $apply_from = $this->applyFrom();   
+        $ulbDtl = UlbMaster::find($this->ulb_id);
+        $ulb_name = explode(' ',$ulbDtl->ulb_name);
+        $short_ulb_name = "";
+        foreach($ulb_name as $val)
+        {
+            $short_ulb_name.=$val[0];
+        }          
         try
         {
             if(!in_array(strtoupper($apply_from),["ONLINE","JSK","UTC","TC","SUPER ADMIN","TL"]))
@@ -611,14 +618,7 @@ class Trade implements ITrade
                     if($payment_status==1)
                     {
                         $licence->current_user_id = $workflows['initiator']['id'];
-                    }
-                    $ulbDtl = UlbMaster::find($this->ulb_id);
-                    $ulb_name = explode(' ',$ulbDtl->ulb_name);
-                    $short_ulb_name = "";
-                    foreach($ulb_name as $val)
-                    {
-                        $short_ulb_name.=$val[0];
-                    }
+                    }                    
                     
                     $prov_no = $short_ulb_name . $ward_no . date('mdy') . $licenceId;
                     $licence->provisional_license_no = $prov_no;
