@@ -58,10 +58,10 @@ class dPropertyTax
         $PrivFyTax = 0;
         foreach ($t as $val) {
             $FyTax = array_column($taxs, $val);
-            $Q1 = array_column($FyTax, '1');
-            $Q2 = array_column($FyTax, '2');
-            $Q3 = array_column($FyTax, '3');
-            $Q4 = array_column($FyTax, '4');
+            $Q1 = array_column($FyTax, 'qtr-1');
+            $Q2 = array_column($FyTax, 'qtr-2');
+            $Q3 = array_column($FyTax, 'qtr-3');
+            $Q4 = array_column($FyTax, 'qtr-4');
             $Q1 = array_sum($Q1);
             $Q2 = array_sum($Q2);
             $Q3 = array_sum($Q3);
