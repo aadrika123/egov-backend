@@ -499,9 +499,9 @@ class Trade implements ITrade
                         $denialId = $noticeDetails->dnialid;
                         $now = strtotime(date('Y-m-d H:i:s')); // todays date
                         $notice_date = strtotime($noticeDetails['created_on']); //notice date  
-                        if($firm_date>$notice_date) 
+                        if($firm_date > $notice_date) 
                         {
-                            throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date");
+                            throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date $firm_date > $notice_date");
                         }                                                    
     
                     }
