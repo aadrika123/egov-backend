@@ -1821,7 +1821,11 @@ class Trade implements ITrade
            elseif($data->pending_status!=5)
            {
                 throw new Exception("Application Already Applied. Please Track  ".$data->application_no);
-           }           
+           }
+           if($application_type_id==4 && $data->valid_upto < Carbon::now()->format('Y-m-d')) 
+           {
+                throw new Exception("Application Expired You Can Not Apply Surrender ".$data->application_no);
+           }          
            return responseMsg(true,"",remove_null($data));
         }
         catch(Exception $e)
