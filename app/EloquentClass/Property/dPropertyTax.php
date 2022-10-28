@@ -70,10 +70,12 @@ class dPropertyTax
             $arv = array_column($FyTax, 'ARV');
             $arv = array_sum($arv);
 
+            $totalTax = array_column($FyTax, 'TotalTax');
+
             $HoldingTax = array_column($FyTax, 'HoldingTax');
 
             $HoldingTax = array_sum($HoldingTax);
-            print_var($HoldingTax);
+            // print_var($HoldingTax);
             $LatineTax = array_column($FyTax, 'LatineTax');
             $LatineTax = array_sum($LatineTax);
 
@@ -91,6 +93,7 @@ class dPropertyTax
                 echo "demand insert 1 $val priv = $PrivFyTax  current = $Q1 <br>";
                 $inputs = [];
                 $inputs = [
+                    'total_tax'         => $totalTax,
                     'saf_dtl_id'         => $this->saf_dtl_id,
                     'fy_mstr_id'        => null,
                     "arv"               => $arv,
@@ -110,6 +113,7 @@ class dPropertyTax
                 echo "demand insert 2 $val priv = $PrivFyTax  current = $Q2 <br>";
                 $inputs = [];
                 $inputs = [
+                    'total_tax'         => $totalTax,
                     'saf_dtl_id'         => $this->saf_dtl_id,
                     'fy_mstr_id'        => null,
                     "arv"               => $arv,
@@ -129,6 +133,7 @@ class dPropertyTax
                 echo "demand insert 3 $val priv = $PrivFyTax  current = $Q3 <br>";
                 $inputs = [];
                 $inputs = [
+                    'total_tax'         => $totalTax,
                     'saf_dtl_id'         => $this->saf_dtl_id,
                     'fy_mstr_id'        => null,
                     "arv"               => $arv,
@@ -149,6 +154,7 @@ class dPropertyTax
                 echo "demand insert 4 $val priv = $PrivFyTax  current = $Q4 <br>";
                 $inputs = [];
                 $inputs = [
+                    'total_tax'         => $totalTax,
                     'saf_dtl_id'         => $this->saf_dtl_id,
                     'fy_mstr_id'        => null,
                     "arv"               => $arv,

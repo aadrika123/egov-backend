@@ -1124,6 +1124,7 @@ class dSafCalculation
                 return $val['useType'] != 1;
             });
             $L_residential100 = !empty($L_residential100) ? false : true;
+
             foreach ($request['floor'] as $keys => $floor) {
                 $this->Tax = [];
                 $this->FYearQuater = [];
@@ -1227,6 +1228,7 @@ class dSafCalculation
                 $M_property['vacandLand']['Tax'][$key] = $this->Tax[$key];
             }
         }
+
         $this->TotalTax = $M_property;
         return  $M_property;
     }
@@ -1332,6 +1334,65 @@ class dSafCalculation
         }
     }
 
+
+    /**
+     * | get Late Assessment Penalty
+     * | Created By- Anshu Kumar
+     * | Created On- 28-10-2022
+     * | -------------------------------------------------------------------------------------------
+     * | @param request all the requested payload
+     * | @param floorDetails floor Details
+     * | @var filter1 returns all floors with total tax floorwise
+     * | @var grandTotal returns both floor total tax
+     * | @var checkLateAssement checks if the floor assessment has crossed the 3 months or not
+     * | @var checkLateAssement return the status in boolean
+     * | @var isResidential contains the data with which floor are not residential
+     * | @var isResidentialStatus return the value in boolean if the floor is fully residential or not
+     * | 
+     */
+    public function getLateAssessmentPenalty(array $request, array $floorDetails)
+    {
+        $filter1 = collect($floorDetails)->map(function ($val) {
+            return collect($val)->map(function ($val2) {
+                $filter2 = $val2['Tax'];
+                $total = collect($filter2)->sum('TotalTax');
+                return $total;
+            });
+        });
+        $grandTotal = collect($filter1['floorsDtl'])->sum();
+        $floorDetails['grandTotal'] = roundFigure($grandTotal);
+
+        // Checking if the Floor has Late Assesment Fine or Not
+        $checkLateAssesment = array_filter($request['floor'], function ($val1) {
+            $currentDate = Carbon::now();
+            $toDate = Carbon::createFromFormat('Y-m-d', $val1['dateFrom']);
+            $months = $currentDate->diffInMonths($toDate);
+            return $months > 3;
+        });
+        $lateAssessmentStatus = empty($checkLateAssesment) ? false : true;
+        $floorDetails['lateAssessmentPenaltyStatus'] = $lateAssessmentStatus;
+        $a = (float)$floorDetails['grandTotal'];
+
+        // Checking the floor usertype is totally residential or not
+        $isResidential = array_filter($request['floor'], function ($val) {
+            return $val['useType'] != 1;
+        });
+        $isResidentialStatus = !empty($isResidential) ? false : true;
+
+        $totalFine = 0;
+        $fine = 5000;
+        // If the property is residential the fine will 2000
+        if ($isResidentialStatus == true) {
+            $fine = 2000;
+        }
+        if ($floorDetails['lateAssessmentPenaltyStatus'] == true) {
+            $totalFine = $grandTotal + (float)$fine;
+        }
+        $isResidentialStatus == true ? $floorDetails['isResidential'] = true : $floorDetails['isResidential'] = false;
+        $floorDetails['lateAssessmentFee'] = roundFigure($fine);
+        $floorDetails['grandTotalWithFine'] = $totalFine;
+        return $floorDetails;
+    }
 
     #================================ End Tax Calculation============================================
 

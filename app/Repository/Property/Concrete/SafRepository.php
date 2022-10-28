@@ -167,20 +167,21 @@ class SafRepository implements iSafRepository
                 $inputs = $request->all();
                 $inputs['ulb_id'] =  $ulb_id;
                 $inputs['ward_no'] =  $ward_no;
-                $calculation = $this->saf->BuildingTax($inputs);
-                // return $calculation;
+                $floorDetails = $this->saf->BuildingTax($inputs);                     // Get all The floor Details
+                return $this->propertyTax->InsertTax(1, $this->saf->TotalTax);
+                // Late Assessment Penalty 
+                $lateAssementPenalty = $this->saf->getLateAssessmentPenalty($inputs, $floorDetails);
+                $floorDetail = $lateAssementPenalty['floorsDtl'];
 
-                $filter1 = collect($calculation)->map(function ($val) {
-                    return collect($val)->map(function ($val2) {
-                        $filter2 = $val2['Tax'];
-                        $total = collect($filter2)->sum('TotalTax');
-                        return $total;
-                    });
-                });
-                $grandTotal = collect($filter1['floorsDtl'])->sum();
-                $calculation['grandTotal'] = roundFigure($grandTotal);
-                return $calculation;
-                // $this->propertyTax->InsertTax(1, $this->saf->TotalTax);
+                // One Percent Penalty
+                $arr = [];
+                foreach ($floorDetail as $floorDetails) {
+                    $rules = $floorDetails['Tax'];
+                    array_push($arr, $rules);
+                }
+                return array_chunk($arr, 1);
+
+
                 // return ($this->saf->TotalTax);
                 // $rules["ward"]="required|int";
                 // $message["ward.required"]="Ward No. Required";
