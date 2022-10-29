@@ -168,19 +168,16 @@ class SafRepository implements iSafRepository
                 $inputs['ulb_id'] =  $ulb_id;
                 $inputs['ward_no'] =  $ward_no;
                 $floorDetails = $this->saf->BuildingTax($inputs);                     // Get all The floor Details
-                return $this->propertyTax->InsertTax(1, $this->saf->TotalTax);
+                //return $this->propertyTax->InsertTax(1, $this->saf->TotalTax);
+
                 // Late Assessment Penalty 
-                $lateAssementPenalty = $this->saf->getLateAssessmentPenalty($inputs, $floorDetails);
-                $floorDetail = $lateAssementPenalty['floorsDtl'];
+                $demand = $this->saf->getLateAssessmentPenalty($inputs, $floorDetails);
 
-                // One Percent Penalty
-                $arr = [];
-                foreach ($floorDetail as $floorDetails) {
-                    $rules = $floorDetails['Tax'];
-                    array_push($arr, $rules);
-                }
-                return array_chunk($arr, 1);
-
+                // Total Rebates
+                $finalWithRebates = $this->saf->demandRebate($inputs, $demand);
+                // Final Payable Amount
+                $finalPayableAmount = $this->saf->payableAmount($inputs, $finalWithRebates);
+                return $finalPayableAmount;
 
                 // return ($this->saf->TotalTax);
                 // $rules["ward"]="required|int";
