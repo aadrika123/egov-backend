@@ -176,7 +176,7 @@ class SafRepository implements iSafRepository
                 // Total Rebates
                 $finalWithRebates = $this->saf->demandRebate($inputs, $demand);
                 // Final Payable Amount
-                $finalPayableAmount = $this->saf->payableAmount($inputs, $finalWithRebates);
+                $finalPayableAmount = $this->saf->payableAmount($finalWithRebates);
                 return $finalPayableAmount;
 
                 // return ($this->saf->TotalTax);
