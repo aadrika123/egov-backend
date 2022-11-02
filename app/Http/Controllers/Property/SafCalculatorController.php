@@ -11,6 +11,6 @@ class SafCalculatorController extends Controller
     public function safCalculation(Request $req)
     {
         $safCalculation = new SafCalculation();
-        return $safCalculation->getBuildingTax($req);
+        return $safCalculation->calculateTax($req);
     }
 }

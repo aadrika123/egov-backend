@@ -22,6 +22,12 @@ class ActiveSafController extends Controller
         $this->Repository = $saf_repository;
     }
 
+    // Get All master data in saf
+    public function masterSaf()
+    {
+        return $this->Repository->masterSaf();
+    }
+
     //  Function for applying SAF
     public function applySaf(Request $request)
     {
