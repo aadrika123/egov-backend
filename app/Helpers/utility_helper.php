@@ -84,8 +84,8 @@ if (!function_exists("floatRound")) {
 }
 
 // get due date by date
-if (!function_exists('getQuaterDueDate')) {
-    function getQuaterDueDate(String $date): String
+if (!function_exists('calculateQuaterDueDate')) {
+    function calculateQuaterDueDate(String $date): String
     {
         /* ------------------------------------------------------------
             * Request
@@ -117,8 +117,8 @@ if (!function_exists('getQuaterDueDate')) {
     }
 }
 // get Financual Year by date
-if (!function_exists('getQtr')) {
-    function getQtr(String $date): String
+if (!function_exists('calculateQtr')) {
+    function calculateQtr(String $date): String
     {
         /* ------------------------------------------------------------
             * Request
@@ -148,8 +148,8 @@ if (!function_exists('getQtr')) {
     }
 }
 // get Financual Year by date
-if (!function_exists('getFYear')) {
-    function getFYear(String $date = null): String
+if (!function_exists('calculateFYear')) {
+    function calculateFYear(String $date = null): String
     {
         /* ------------------------------------------------------------
             * Request

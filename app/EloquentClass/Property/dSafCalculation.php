@@ -1368,10 +1368,10 @@ class dSafCalculation
                 $m = (-1 * $m) + 1;
             }
             $L_fromdate = $carbonDate->addMonth($m)->format('Y-m-d');
-            $fquater = getQtr($fromdate);                               // Get Quarter Value
-            $FYear = getFYear($fromdate);                               // Get Financial Year
+            $fquater = calculateQtr($fromdate);                               // Get Quarter Value
+            $FYear = calculateFYear($fromdate);                               // Get Financial Year
             $this->FYearQuater[$FYear][] = $this->getRulsets($fromdate, $PropertyTypeID)[0];
-            if ($fquater == 3 && getFYear($fromdate) != getFYear($uptodate)) {
+            if ($fquater == 3 && calculateFYear($fromdate) != calculateFYear($uptodate)) {
                 $dd = (int) $carbonDate->format("d");
                 $fromdate = Carbon::createFromFormat("Y-m-d", $L_fromdate)->subDay($dd)->format('Y-m-d');
 
@@ -1379,14 +1379,14 @@ class dSafCalculation
             }
             return ($this->getFYearQutery($L_fromdate, $uptodate, $PropertyTypeID));
         } elseif ($fromdate >= $uptodate && $this->FYearQuater) {
-            $FYear = getFYear($uptodate);
+            $FYear = calculateFYear($uptodate);
             $fromdate = Carbon::createFromFormat("Y-m-d", $uptodate)->format('Y-m-d');
             $rul = $this->getRulsets($uptodate, $PropertyTypeID)[0];
             if ($this->FYearQuater[$FYear][sizeof($this->FYearQuater[$FYear]) - 1] != $rul)
                 $this->FYearQuater[$FYear][] = $rul;
         } else {
 
-            $FYear = getFYear($fromdate);
+            $FYear = calculateFYear($fromdate);
             $uptodate = Carbon::createFromFormat("Y-m-d", $uptodate)->format('Y-m-d');
             $rul = $this->getRulsets($fromdate, $PropertyTypeID)[0];
             $this->FYearQuater[$FYear][] = $this->getRulsets($fromdate, $PropertyTypeID)[0];
@@ -1415,8 +1415,8 @@ class dSafCalculation
         if ("2016-04-01" > $reqFromDate && $PropertyTypeID == 1) {
             $ruleSets[] = [
                 "rule_set" => "buildingRulSet1",
-                "qtr" => getQtr($reqFromDate),
-                "due_date" => getQuaterDueDate($reqFromDate)
+                "qtr" => calculateQtr($reqFromDate),
+                "due_date" => calculateQuaterDueDate($reqFromDate)
             ];
             return $ruleSets;
         }
@@ -1424,8 +1424,8 @@ class dSafCalculation
         elseif ("2022-04-01" > $reqFromDate && $PropertyTypeID == 1) {
             $ruleSets[] = [
                 "rule_set" => "buildingRulSet2",
-                "qtr" => getQtr($reqFromDate),
-                "due_date" => getQuaterDueDate($reqFromDate)
+                "qtr" => calculateQtr($reqFromDate),
+                "due_date" => calculateQuaterDueDate($reqFromDate)
             ];
             return $ruleSets;
         }
@@ -1433,8 +1433,8 @@ class dSafCalculation
         elseif ("2022-04-01" <= $reqFromDate && $PropertyTypeID == 1) {
             $ruleSets[] = [
                 "rule_set" => "buildingRulSet3",
-                "qtr" => getQtr($reqFromDate),
-                "due_date" => getQuaterDueDate($reqFromDate)
+                "qtr" => calculateQtr($reqFromDate),
+                "due_date" => calculateQuaterDueDate($reqFromDate)
             ];
             return $ruleSets;
         }
@@ -1442,8 +1442,8 @@ class dSafCalculation
         elseif ("2022-04-01" > $reqFromDate && $PropertyTypeID == 4) {
             $ruleSets[] = [
                 "rule_set" => "vacantRulSet1",
-                "qtr" => getQtr($reqFromDate),
-                "due_date" => getQuaterDueDate($reqFromDate)
+                "qtr" => calculateQtr($reqFromDate),
+                "due_date" => calculateQuaterDueDate($reqFromDate)
             ];
             return $ruleSets;
         }
@@ -1451,8 +1451,8 @@ class dSafCalculation
         elseif ("2022-04-01" <= $reqFromDate && $PropertyTypeID == 4) {
             $ruleSets[] = [
                 "rule_set" => "vacantRulSet2",
-                "qtr" => getQtr($reqFromDate),
-                "due_date" => getQuaterDueDate($reqFromDate)
+                "qtr" => calculateQtr($reqFromDate),
+                "due_date" => calculateQuaterDueDate($reqFromDate)
             ];
             return $ruleSets;
         }

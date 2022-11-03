@@ -50,8 +50,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('objection/outbox/{key?}', 'propObjectionOutbox');        // Objection Workflow Outbox  By key
         Route::get('objection/escalate/inbox/{key?}', 'specialObjectionInbox');        // Objection Workflow special Inbox  By key
     });
-});
 
-Route::controller(SafCalculatorController::class)->group(function () {
-    Route::post('saf-calculation', 'safCalculation');
+    // Property Calculator
+    Route::controller(SafCalculatorController::class)->group(function () {
+        Route::post('saf-calculation', 'safCalculation');
+    });
 });
