@@ -7,6 +7,8 @@
  */
 
 return [
+    "PARAM_RENTAL_RATE" => 144,
+
     "OBJECTION" => [
         "2"     => "RainHarvesting",
         "3"     => "RoadWidth",
