@@ -8,6 +8,8 @@
 
 return [
     "PARAM_RENTAL_RATE" => 144,
+    "EFFECTIVE_DATE_RULE2" => "2016-04-01",
+    "EFFECTIVE_DATE_RULE3" => "2022-04-01",
 
     "OBJECTION" => [
         "2"     => "RainHarvesting",
@@ -287,7 +289,7 @@ return [
         ],
     ],
     "CIRCALE-RATE-ROAD" => [
-        "1" => "_principle",
+        "1" => "_main",
         "2" => "_main",
         "3" => "_other",
     ],
