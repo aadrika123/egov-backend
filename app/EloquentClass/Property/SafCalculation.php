@@ -2,6 +2,7 @@
 
 namespace App\EloquentClass\Property;
 
+use App\Models\Property\PropMBuildingRentalConst;
 use App\Models\Property\PropMBuildingRentalRate;
 use App\Models\Property\PropMCapitalValueRateRaw;
 use App\Models\Property\PropMRentalValue;
@@ -28,17 +29,17 @@ class SafCalculation
     private $_ruleSets;
     private $_ulbId;
     private $_rentalValue;
-    private $_multiFactorRule2;
-    private $_multiFactorRule3;
+    private $_multiFactors;
     private $_paramRentalRate;              // 144
-    private $_rentalRatesRule2;
-    private $_rentalRatesRule3;
-    private $_todayDate;
+    private $_rentalRates;
     private $_virtualDate;
     private $_effectiveDateRule2;
     private $_effectiveDateRule3;
     private array $_readRoadType;
     private $_capitalValueRate;
+    private bool $_rwhPenaltyStatus = false;
+    private $_mobileTowerArea;
+    private $__mobileTowerInstallDate;
 
     /** 
      * | For Building
@@ -57,10 +58,17 @@ class SafCalculation
     {
         try {
             $this->_propertyDetails = $req->all();
-            $this->readPropertyMasterData();                                // Make all master data as global
+            $this->readPropertyMasterData();                                                    // Make all master data as global
             $readPropertyType = $req->propertyType;
+            $mobileQuaterlyRuleSets = [];
             // Means the Property Type is not a vacant Land
             if ($readPropertyType != 4) {
+                if ($this->_propertyDetails['isMobileTower'] == 1) {                            // For Mobile Towers
+                    $this->_mobileTowerInstallDate = $this->_propertyDetails['mobileTower']['dateFrom'];
+                    $this->_mobileTowerArea = $this->_propertyDetails['mobileTower']['area'];
+                    $mobileQuaterlyRuleSets = $this->calculateQuaterlyRulesets("mobileTower");
+                }
+
                 $floors = $this->_floors;
                 // readTaxCalculation Floor Wise
                 $calculateFloorTaxQuaterly = collect($floors)->map(function ($floor, $key) {
@@ -68,8 +76,9 @@ class SafCalculation
                     return $calculateQuaterlyRuleSets;
                 });
                 // Collapsion of the all taxes which contains saperately array collection
-                $readFinalFloorTax = collect($calculateFloorTaxQuaterly)->collapse();
-                $this->_GRID['details'] = $readFinalFloorTax;
+                $readFinalFloorTax = collect($calculateFloorTaxQuaterly)->collapse();           // Collapsable collections with all Floors
+                $readFinalFloorWithMobileTower = collect($mobileQuaterlyRuleSets)->merge($readFinalFloorTax);       // Collapsable Collection With Mobile Tower and Floors
+                $this->_GRID['details'] = $readFinalFloorWithMobileTower;
             }
 
             return responseMsg(true, "Data Fetched", remove_null($this->_GRID));
@@ -90,24 +99,33 @@ class SafCalculation
         $this->_effectiveDateRule2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE2");
         $this->_effectiveDateRule3 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3");
 
-        $this->_todayDate = Carbon::now();
-        $this->_virtualDate = $this->_todayDate->subYears(12)->format('Y-m-d');
+        $todayDate = Carbon::now();
+        $this->_virtualDate = $todayDate->subYears(12)->format('Y-m-d');
         $this->_floors = $propertyDetails['floor'];
+        $this->_ulbId = auth()->user()->ulb_id;
+
+        // Rain Water Harvesting Penalty If The Plot Area is Greater than 3228 sqft. and Rain Water Harvesting is none
+        $readAreaOfPlot =  $this->_propertyDetails['areaOfPlot'] * 435.6;                                    // (In Decimal To SqFt)
+        if ($propertyDetails['isWaterHarvesting'] == 0 && $readAreaOfPlot > 3228) {
+            $this->_rwhPenaltyStatus = true;
+        }
+
+        $refParamRentalRate = PropMBuildingRentalConst::where('ulb_id', $this->_ulbId)->first();
+        if (!$refParamRentalRate) {
+            return responseMsg(false, "Rental Rate Parameter not found for this ulb", "");
+        }
+        $this->_paramRentalRate = $refParamRentalRate->x;
 
         // Check If the one of the floors is commercial
         $readCommercial = collect($this->_floors)->where('useType', '!=', 1);
         $this->_isResidential = $readCommercial->isEmpty();
-        $this->_ulbId = auth()->user()->ulb_id;
 
-        $this->_rentalValue = $this->readRentalValue();                                              // Calculation of Rental Values and Storing in Global Variable (function 1.1.1)
-        $this->_multiFactorRule2 = $this->readMultiFactor($this->_effectiveDateRule2);               // Calculation of Multi Factors and Storing in Global Variable $_multiFactor (function 1.1.2)
-        $this->_multiFactorRule3 = $this->readMultiFactor($this->_effectiveDateRule3);               // Calculation of Multi Factors and Storing in Global Variable $_multiFactor (function 1.1.2)
+        $this->_rentalValue = $this->readRentalValue();
+        $this->_multiFactors = $this->readMultiFactor();                                                            // Calculation of Rental rate and Storing in Global Variable (function 1.1.1)
         $this->_readRoadType[$this->_effectiveDateRule2] = $this->readRoadType($this->_effectiveDateRule2);         // Road Type ID According to ruleset2 effective Date
         $this->_readRoadType[$this->_effectiveDateRule3] = $this->readRoadType($this->_effectiveDateRule3);         // Road Type id according to ruleset3 effective Date
-        $this->_rentalRatesRule2 = $this->calculateRentalRatesRule($this->_effectiveDateRule2);      // Calculate and collection of all Rental Rate for all floors (function 1.1.3)
-        $this->_rentalRatesRule3 = $this->calculateRentalRatesRule($this->_effectiveDateRule3);      // Calculate and collection of all Rental Rate for all floors (function 1.1.3)
-
-        $this->_capitalValueRate = $this->readCapitalvalueRate();                                    // Calculate Capital Value Rate 
+        $this->_rentalRates = $this->calculateRentalRates();
+        $this->_capitalValueRate = $this->readCapitalvalueRate();                                                   // Calculate Capital Value Rate 
     }
 
     /**
@@ -115,37 +133,24 @@ class SafCalculation
      */
     public function readRentalValue()
     {
-        $readRentalValue = collect($this->_floors)->map(function ($floors) {
-            $readZoneId = $this->_propertyDetails['zone'];
-            $readUlbId = $this->_ulbId;
-            $readUsageType = $floors['useType'];
-            $readConstructionType = $floors['constructionType'];
-            $refRentalValue = PropMRentalValue::select('rate')
-                ->where('usage_types_id', $readUsageType)
-                ->where('zone_id', $readZoneId)
-                ->where('construction_types_id', $readConstructionType)
-                ->where('ulb_id', $readUlbId)
-                ->where('status', 1)
-                ->first();
-            return $refRentalValue;
-        });
-        return $readRentalValue;
+        $readZoneId = $this->_propertyDetails['zone'];
+        $refRentalValue = PropMRentalValue::select('usage_types_id', 'zone_id', 'construction_types_id', 'rate')
+            ->where('zone_id', $readZoneId)
+            ->where('ulb_id', $this->_ulbId)
+            ->where('status', 1)
+            ->get();
+        return $refRentalValue;
     }
 
     /**
      * | MultiFactor Calculation (1.1.2)
      */
-    public function readMultiFactor($effectiveDate)
+    public function readMultiFactor()
     {
-        $readMultiFactor = collect($this->_floors)->map(function ($floors) use ($effectiveDate) {
-            $readFloorUsageType = $floors['useType'];
-            $refMultiFactor = PropMUsageTypeMultiFactor::select('multi_factor')
-                ->where('usage_type_id', $readFloorUsageType)
-                ->where('effective_date', $effectiveDate)
-                ->first();
-            return $refMultiFactor;
-        });
-        return $readMultiFactor;
+        $refMultiFactor = PropMUsageTypeMultiFactor::select('usage_type_id', 'multi_factor', 'effective_date')
+            ->where('status', 1)
+            ->get();
+        return $refMultiFactor;
     }
 
     /**
@@ -188,7 +193,7 @@ class SafCalculation
 
             $capitalValueRate = PropMCapitalValueRateRaw::select($column)
                 ->where('ulb_id', $this->_ulbId)
-                ->where('ward_no', 1)                                                           // Ward No Fixed 
+                ->where('ward_no', 1)                                                           // Ward No Fixed temprory
                 ->first();
             return $capitalValueRate->$column;
         });
@@ -197,31 +202,15 @@ class SafCalculation
 
     /**
      * | Calculation Rental Rate (1.1.3)
-     * | @var queryRoadType Query for the execution for the road Type Id
-     * | @var refRoadType the Road Type ID for the Property
      * | @var refParamRentalRate Rental Rate Parameter to calculate rentalRate for the Property
-     * | ------------------------ Calculation -------------------------------------------------
-     * | $calculatedRentalRate = $refParamRentalRate->rate * $paramRentalRate;
-     * | --------------------------------------------------------------------------------------
-     * | Dump 
      * | @return readRentalRate final Calculated Rental Rate
      */
-    public function calculateRentalRatesRule($effectiveDate)
+    public function calculateRentalRates()
     {
-        $roadTypeId = $this->_readRoadType[$effectiveDate];
-
-        $readRentalRate = collect($this->_floors)->map(function ($floors) use ($effectiveDate, $roadTypeId) {
-            $paramRentalRate = $this->_paramRentalRate;
-            $readConstructionType = $floors['constructionType'];
-            $refParamRentalRate = PropMBuildingRentalRate::where('prop_road_type_id', $roadTypeId)
-                ->where('construction_types_id', $readConstructionType)
-                ->where('effective_date', $effectiveDate)
-                ->first();
-
-            $calculatedRentalRate = $refParamRentalRate->rate * $paramRentalRate;
-            return $calculatedRentalRate;
-        });
-        return $readRentalRate;
+        $refParamRentalRate = PropMBuildingRentalRate::select('id', 'prop_road_type_id', 'construction_types_id', 'rate', 'effective_date', 'status')
+            ->where('status', 1)
+            ->get();
+        return $refParamRentalRate;
     }
 
     /**
@@ -240,23 +229,36 @@ class SafCalculation
      */
     public function calculateQuaterlyRulesets($key)
     {
-        $readDateFrom = $this->_propertyDetails['floor'][$key]['dateFrom'];
-        $readDateUpto = $this->_propertyDetails['floor'][$key]['dateUpto'];
-        $arrayRuleSet = [];
-
-        $carbonDateFrom = Carbon::parse($readDateFrom)->format('Y-m-d');
-        $carbonDateUpto = Carbon::parse($readDateUpto)->format('Y-m-d');
-
-        if ($readDateUpto == null) {
-            $readDateUpto = $this->_todayDate->format('Y-m-d');
+        if ($key == "mobileTower") {
+            $arrayRuleSet = [];
+            $dateFrom = $this->__mobileTowerInstallDate;
+            if ($dateFrom < '2016-04-01')
+                $dateFrom = '2016-04-01';
+            $dateTo = Carbon::now();
+            $readRuleSet = $this->readRuleSet($dateFrom, $key);
+            $carbonDateFrom = Carbon::parse($dateFrom)->format('Y-m-d');
+            $carbonDateUpto = $dateTo->format('Y-m-d');
         }
 
-        if ($readDateFrom > $this->_virtualDate) {
-            $dateFrom = $readDateFrom;
-        }
+        if (is_numeric($key)) {                                                 // i.e. Floors
+            $readDateFrom = $this->_propertyDetails['floor'][$key]['dateFrom'];
+            $readDateUpto = $this->_propertyDetails['floor'][$key]['dateUpto'];
+            $arrayRuleSet = [];
 
-        if ($dateFrom < $this->_virtualDate) {
-            $dateFrom = $this->_virtualDate;
+            $carbonDateFrom = Carbon::parse($readDateFrom)->format('Y-m-d');
+            $carbonDateUpto = Carbon::parse($readDateUpto)->format('Y-m-d');
+
+            if ($readDateUpto == null) {
+                $readDateUpto = Carbon::now()->format('Y-m-d');
+            }
+
+            if ($readDateFrom > $this->_virtualDate) {
+                $dateFrom = $readDateFrom;
+            }
+
+            if ($dateFrom < $this->_virtualDate) {
+                $dateFrom = $this->_virtualDate;
+            }
         }
 
         // Itteration for the RuleSets dateFrom wise 
@@ -269,9 +271,7 @@ class SafCalculation
         $collectRuleSets = collect($arrayRuleSet);
         $uniqueRuleSets = $collectRuleSets->unique('dueDate');
         $ruleSet = $uniqueRuleSets->values();
-
-        $this->_ruleSets = $ruleSet;
-        return $this->_ruleSets;
+        return $ruleSet;
     }
 
     /**
@@ -283,15 +283,24 @@ class SafCalculation
      */
     public function readRuleSet($dateFrom, $key)
     {
-        $readFloorDetail =
-            [
-                'floorNo' => $this->_floors[$key]['floorNo'],
-                'useType' => $this->_floors[$key]['useType'],
-                'constructionType' => $this->_floors[$key]['constructionType'],
-                'buildupArea' => $this->_floors[$key]['buildupArea'],
-                'dateFrom' => $this->_floors[$key]['dateFrom'],
-                'dateTo' => $this->_floors[$key]['dateUpto']
+        if ($key == "mobileTower") {
+            $readFloorDetail = [
+                'floorNo' => "MobileTower",
+                'buildupArea' => $this->_mobileTowerArea
             ];
+        }
+
+        if (is_numeric($key)) {
+            $readFloorDetail =
+                [
+                    'floorNo' => $this->_floors[$key]['floorNo'],
+                    'useType' => $this->_floors[$key]['useType'],
+                    'constructionType' => $this->_floors[$key]['constructionType'],
+                    'buildupArea' => $this->_floors[$key]['buildupArea'],
+                    'dateFrom' => $this->_floors[$key]['dateFrom'],
+                    'dateTo' => $this->_floors[$key]['dateUpto']
+                ];
+        }
 
         // is implimented rule set 1 (before 2016-2017), (2016-2017 TO 2021-2022), (2021-2022 TO TILL NOW)
         if ($dateFrom < $this->_effectiveDateRule2) {
@@ -366,7 +375,9 @@ class SafCalculation
         $readOccupancyType = $this->_floors[$key]['occupancyType'];
         $readPropertyType = $this->_propertyDetails['propertyType'];
 
-        $readRentalValue = $this->_rentalValue[$key];
+        $readRentalValue = collect($this->_rentalValue)->where('usage_types_id', $readUsageType)
+            ->where('construction_types_id', $this->_floors[$key]['constructionType'])
+            ->first();
 
         if (!$readRentalValue) {
             return responseMsg(false, "Rental Value Not Available", "");
@@ -434,37 +445,64 @@ class SafCalculation
      */
     public function calculateRuleSet2($key)
     {
-        $propertyDetails = $this->_propertyDetails;
-        $readFloorUsageType = $this->_floors[$key]['useType'];
-        $readFloorBuildupArea = $this->_floors[$key]['buildupArea'];
-        $readFloorOccupancyType = $this->_floors[$key]['occupancyType'];
-        $paramCarpetAreaPerc = ($readFloorUsageType == 1) ? 70 : 80;
-        $paramOccupancyFactor = ($readFloorOccupancyType == 2) ? 1 : 1.5;
-        $readAreaOfPlot =  $this->_propertyDetails['areaOfPlot'] * 435.6;                                    // (In Decimal To SqFt)
+        $paramRentalRate = $this->_paramRentalRate;
 
-        $readMultiFactor = $this->_multiFactorRule2[$key];
+        if ($key == "mobileTower") {
+            $carpetArea = $this->_mobileTowerArea;
+            $readMultiFactor = collect($this->_multiFactors)->where('usage_type_id', 45)
+                ->where('effective_date', $this->_effectiveDateRule2)
+                ->first();
+            $multiFactor = (float)$readMultiFactor->multi_factor;
 
-        $carpetArea = ($readFloorBuildupArea * $paramCarpetAreaPerc) / 100;
-        $rwhPenalty = 0;
+            $paramOccupancyFactor = 1.5;
+            // Rental Rate Calculation
+            $rentalRates = collect($this->_rentalRates)
+                ->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule2])
+                ->where('construction_types_id', 1)
+                ->where('effective_date', $this->_effectiveDateRule2)
+                ->first();
+            $rentalRate = $rentalRates->rate * $paramRentalRate;
+        }
 
-        // Rental Rate Calculation
-        $rentalRate = $this->_rentalRatesRule2[$key];
-        $tempArv = $carpetArea * ($readMultiFactor->multi_factor) * $paramOccupancyFactor * $rentalRate;
+        if (is_numeric($key)) {                                                             // Applicable For Floors
+            $readFloorUsageType = $this->_floors[$key]['useType'];
+            $readFloorBuildupArea = $this->_floors[$key]['buildupArea'];
+            $readFloorOccupancyType = $this->_floors[$key]['occupancyType'];
+            $paramCarpetAreaPerc = ($readFloorUsageType == 1) ? 70 : 80;
+            $paramOccupancyFactor = ($readFloorOccupancyType == 2) ? 1 : 1.5;
+
+            $readMultiFactor = collect($this->_multiFactors)->where('usage_type_id', $readFloorUsageType)
+                ->where('effective_date', $this->_effectiveDateRule2)
+                ->first();
+            $multiFactor = (float)$readMultiFactor->multi_factor;
+
+            $carpetArea = ($readFloorBuildupArea * $paramCarpetAreaPerc) / 100;
+            $rwhPenalty = 0;
+
+            // Rental Rate Calculation
+            $rentalRates = collect($this->_rentalRates)
+                ->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule2])
+                ->where('construction_types_id', $this->_floors[$key]['constructionType'])
+                ->where('effective_date', $this->_effectiveDateRule2)
+                ->first();
+            $rentalRate = $rentalRates->rate * $paramRentalRate;
+        }
+
+        $tempArv = $carpetArea * $multiFactor * $paramOccupancyFactor * (float)$rentalRate;
         $arv = ($tempArv * 2) / 100;
 
         // Rain Water Harvesting Penalty If The Plot Area is Greater than 3228 sqft. and Rain Water Harvesting is none
-        if ($propertyDetails['isWaterHarvesting'] == 1 && $readAreaOfPlot > 3228) {
+        if ($this->_rwhPenaltyStatus == true) {
             $rwhPenalty = $arv / 2;
         }
         $totalTax = $arv + $rwhPenalty;
         // All Taxes Quaterly
         $tax = [
             "arv" => roundFigure($arv / 4),
-            "holdingTax" => 0,
-            "latrineTax" => 0,
-            "waterTax" => 0,
-            "healthTax" => 0,
-            "educationTax" => 0,
+            "carpetArea" => $carpetArea,
+            "multiFactor" => $multiFactor,
+            "rentalRate" => (float)$rentalRate,
+            "occupancyFactor" => $paramOccupancyFactor,
             "rwhPenalty" => roundFigure($rwhPenalty / 4),
             "totalTax" => roundFigure($totalTax / 4)
         ];
@@ -477,24 +515,58 @@ class SafCalculation
      */
     public function calculateRuleSet3($key)
     {
-        $readCircleRate = $this->_capitalValueRate[$key];
+        if ($key == "mobileTower") {
+            $readCircleRate = 1;
+            $readBuildupArea = 1;
+            $paramOccupancyFactor = 1;
+            $taxPerc = 1;
+            $readCalculationFactor = 1;
+            $readMatrixFactor = 1;
+        }
 
-        $readBuildupArea = $this->_floors[$key]['buildupArea'];
+        if (is_numeric($key)) {                                                                            // Applicable for floors
+            $readCircleRate = $this->_capitalValueRate[$key];
+            $readFloorUsageType = $this->_floors[$key]['useType'];
+            $readBuildupArea = $this->_floors[$key]['buildupArea'];
 
-        $readFloorOccupancyType = $this->_floors[$key]['occupancyType'];
-        $paramOccupancyFactor = ($readFloorOccupancyType == 2) ? 1 : 1.5;
+            $readFloorOccupancyType = $this->_floors[$key]['occupancyType'];
+            $paramOccupancyFactor = ($readFloorOccupancyType == 2) ? 1 : 1.5;
 
-        $readUsageType = $this->_floors[$key]['useType'];
-        $taxPerc = ($readUsageType == 1) ? 0.075 : 0.15;                                                // 0.075 for Residential and 0.15 for Commercial
+            $readUsageType = $this->_floors[$key]['useType'];
+            $taxPerc = ($readUsageType == 1) ? 0.075 : 0.15;                                                // 0.075 for Residential and 0.15 for Commercial
 
-        $readCalculationFactor = $this->_multiFactorRule3[$key]->multi_factor;                          // (Calculation Factor as Multi Factor)
-        $readMatrixFactor = $this->_rentalRatesRule3[$key];                                             // (Matrix Factor as Rental Rate)
+            $readMultiFactor = collect($this->_multiFactors)->where('usage_type_id', $readFloorUsageType)
+                ->where('effective_date', $this->_effectiveDateRule3)
+                ->first();
 
-        $calculatePropertyTax = ($readCircleRate * $readBuildupArea * $paramOccupancyFactor * $taxPerc * (float)$readCalculationFactor * (float)$readMatrixFactor) / 100;
+            $readCalculationFactor = $readMultiFactor->multi_factor;                                        // (Calculation Factor as Multi Factor)
+            $rentalRates = collect($this->_rentalRates)
+                ->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule2])
+                ->where('construction_types_id', $this->_floors[$key]['constructionType'])
+                ->where('effective_date', $this->_effectiveDateRule2)
+                ->first();
+            $readMatrixFactor = $rentalRates->rate;                                                         // (Matrix Factor as Rental Rate)
+        }
+
+        $calculatePropertyTax = ($readCircleRate * $readBuildupArea * $paramOccupancyFactor * $taxPerc * (float)$readCalculationFactor) / 100;
+        $calculatePropertyTax = $calculatePropertyTax * $readMatrixFactor;
+        $rwhPenalty = 0;
+        if ($this->_rwhPenaltyStatus == true) {
+            $rwhPenalty = $calculatePropertyTax / 2;
+        }
+
+        $totalTax = $calculatePropertyTax + $rwhPenalty;
         // Tax Calculation Quaterly
         $tax = [
             "arv" => $calculatePropertyTax / 4,
-            "holdingTax" => 0
+            "circleRate" => $readCircleRate,
+            "buildupArea" => $readBuildupArea,
+            "occupancyFactor" => $paramOccupancyFactor,
+            "taxPerc" => $taxPerc,
+            "calculationFactor" => $readCalculationFactor,
+            "matrixFactor" => $readMatrixFactor,
+            "rwhPenalty" => $rwhPenalty,
+            "totalTax" => roundFigure($totalTax / 4)
         ];
         return $tax;
     }
