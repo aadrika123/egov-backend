@@ -10,6 +10,7 @@ use App\Repository\Water\Interfaces\iNewConnection;
 use Carbon\Carbon;
 use DateTime;
 use Exception;
+use Hamcrest\Arrays\IsArray;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -184,13 +185,13 @@ class NewConnectionRepository implements iNewConnection
     {
         try {
             $connectionTypes = DB::table('water_connection_type_mstrs')
-                ->select('water_connection_type_mstrs.connection_type')
+                ->select('water_connection_type_mstrs.id','water_connection_type_mstrs.connection_type')
                 ->get();
-            $collection = collect($connectionTypes)->map(function ($value) {
-                return $value->connection_type;
-            });
-            $type['connectionType'] = $collection;
-            return response()->json(['status' => true, 'message' => 'data of the connectionType', 'data' => $type]);
+            // $collection = collect($connectionTypes)->map(function ($value) {
+            //     return $value->connection_type;
+            // });
+            // $type['connectionType'] = $collection;
+            return response()->json(['status' => true, 'message' => 'data of the connectionType', 'data' => $connectionTypes]);
         } catch (Exception $e) {
             return $e;
         }
@@ -207,13 +208,9 @@ class NewConnectionRepository implements iNewConnection
     {
         try {
             $connectionThrough = DB::table('water_connection_through_mstrs')
-                ->select('water_connection_through_mstrs.connection_through')
+                ->select('water_connection_through_mstrs.id','water_connection_through_mstrs.connection_through')
                 ->get();
-            $collection = collect($connectionThrough)->map(function ($value) {
-                return $value->connection_through;
-            });
-            $connection['connectionType'] = $collection;
-            return response()->json(['status' => true, 'message' => 'data of the connectionThrough', 'data' => $connection]);
+            return response()->json(['status' => true, 'message' => 'data of the connectionThrough', 'data' => $connectionThrough]);
         } catch (Exception $e) {
             return $e;
         }
@@ -230,13 +227,9 @@ class NewConnectionRepository implements iNewConnection
     {
         try {
             $propertyType = DB::table('water_property_type_mstrs')
-                ->select('water_property_type_mstrs.property_type')
+                ->select('water_property_type_mstrs.id','water_property_type_mstrs.property_type')
                 ->get();
-            $collection = collect($propertyType)->map(function ($value) {
-                return $value->property_type;
-            });
-            $property['propertyType'] = $collection;
-            return response()->json(['status' => true, 'message' => 'data of the propertyType', 'data' => $property]);
+            return response()->json(['status' => true, 'message' => 'data of the propertyType', 'data' => $propertyType]);
         } catch (Exception $e) {
             return $e;
         }
@@ -253,13 +246,9 @@ class NewConnectionRepository implements iNewConnection
     {
         try {
             $ownerType = DB::table('water_owner_type_mstrs')
-                ->select('water_owner_type_mstrs.owner_type')
+                ->select('water_owner_type_mstrs.id','water_owner_type_mstrs.owner_type')
                 ->get();
-            $collection = collect($ownerType)->map(function ($value) {
-                return $value->owner_type;
-            });
-            $owner['ownerType'] = $collection;
-            return response()->json(['status' => true, 'message' => 'data of the ownerType', 'data' => $owner]);
+            return response()->json(['status' => true, 'message' => 'data of the ownerType', 'data' => $ownerType]);
         } catch (Exception $e) {
             return $e;
         }
@@ -274,20 +263,20 @@ class NewConnectionRepository implements iNewConnection
      */
     public function getWardNo()
     {
-        $wfmaster = 3;  //<--------------- this is fot the water ie. 3 is the wfmasterid
+        $wfmaster = 3;  //<--------------- this is fot the water ie. 3 is the wfmasterid create a constant
         try {
             $ward = DB::table('ulb_ward_masters')
-                ->select('ulb_ward_masters.id')
+                ->select('ulb_ward_masters.id','ulb_ward_masters.ward_name')
                 ->join('wf_workflows', 'wf_workflows.ulb_id', '=', 'ulb_ward_masters.ulb_id')
                 ->where('wf_workflows.wf_master_id', $wfmaster)
                 ->get();
-            // return ($ownerType);
-            // $wardId = array();
-            $collection = collect($ward)->map(function ($value) {
-                return $value->id;
-            });
-            $wardId['wardNo'] = $collection;
-            return response()->json(['status' => true, 'message' => 'data of the Ward NO', 'data' => $wardId]);
+                // $a=$ward->map(function($val)
+                // {
+                //     return $val['ward_no'] =$val['ward_name'];
+                // },
+                // $ward->toArray());
+                // dd($a);
+            return response()->json(['status' => true, 'message' => 'data of the Ward NO', 'data' => $ward]);
         } catch (Exception $e) {
             return $e;
         }
