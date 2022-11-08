@@ -296,3 +296,21 @@ if (!function_exists('getIndianCurrency')) {
         return ($Rupees ? $Rupees . 'Rupees ' : 'Zero Rupee') . $paise;
     }
 }
+
+// Decimal to SqMt Conversion
+if (!function_exists('decimalToSqMt')) {
+    function decimalToSqMt(float $num)
+    {
+        $num = $num * 40.50;
+        return $num;
+    }
+}
+
+// Decimal to Acre Conversion
+if (!function_exists('decimalToAcre')) {
+    function decimalToAcre(float $num)
+    {
+        $num = $num / 100;
+        return $num;
+    }
+}
