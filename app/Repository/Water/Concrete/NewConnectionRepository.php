@@ -55,9 +55,13 @@ class NewConnectionRepository implements iNewConnection
             $newApplication->elec_account_no = $req->elecAccountNo;
             $newApplication->elec_category = $req->elecCategory;
 
-            $newApplication->id_proof = $req->connection_through;
+            $newApplication->connection_through = $req->connection_through;
             $newApplication->saf_no = $req->saf_no;
 
+            if($req->connection_through = 3)
+            {
+                $newApplication->id_proof = 3;
+            }
             // Generating Application No 
             $now = Carbon::now();
             $applicationNo = 'APP' . $now->getTimeStamp();
