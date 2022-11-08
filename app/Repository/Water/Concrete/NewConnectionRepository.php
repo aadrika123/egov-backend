@@ -10,6 +10,7 @@ use App\Repository\Water\Interfaces\iNewConnection;
 use Carbon\Carbon;
 use DateTime;
 use Exception;
+use Hamcrest\Arrays\IsArray;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -54,6 +55,13 @@ class NewConnectionRepository implements iNewConnection
             $newApplication->elec_account_no = $req->elecAccountNo;
             $newApplication->elec_category = $req->elecCategory;
 
+            $newApplication->connection_through = $req->connection_through;
+            $newApplication->saf_no = $req->saf_no;
+
+            if($req->connection_through = 3)
+            {
+                $newApplication->id_proof = 3;
+            }
             // Generating Application No 
             $now = Carbon::now();
             $applicationNo = 'APP' . $now->getTimeStamp();
@@ -184,13 +192,14 @@ class NewConnectionRepository implements iNewConnection
     {
         try {
             $connectionTypes = DB::table('water_connection_type_mstrs')
-                ->select('water_connection_type_mstrs.connection_type')
+                ->select('water_connection_type_mstrs.id', 'water_connection_type_mstrs.connection_type')
+                ->where('status', 1)
                 ->get();
-            $collection = collect($connectionTypes)->map(function ($value) {
-                return $value->connection_type;
-            });
-            $type['connectionType'] = $collection;
-            return response()->json(['status' => true, 'message' => 'data of the connectionType', 'data' => $type]);
+            // $collection = collect($connectionTypes)->map(function ($value) {
+            //     return $value->connection_type;
+            // });
+            // $type['connectionType'] = $collection;
+            return response()->json(['status' => true, 'message' => 'data of the connectionType', 'data' => $connectionTypes]);
         } catch (Exception $e) {
             return $e;
         }
@@ -207,13 +216,11 @@ class NewConnectionRepository implements iNewConnection
     {
         try {
             $connectionThrough = DB::table('water_connection_through_mstrs')
-                ->select('water_connection_through_mstrs.connection_through')
+                ->select('water_connection_through_mstrs.id', 'water_connection_through_mstrs.connection_through')
+                ->where('status', 1)
+                ->orderBy('id')
                 ->get();
-            $collection = collect($connectionThrough)->map(function ($value) {
-                return $value->connection_through;
-            });
-            $connection['connectionType'] = $collection;
-            return response()->json(['status' => true, 'message' => 'data of the connectionThrough', 'data' => $connection]);
+            return response()->json(['status' => true, 'message' => 'data of the connectionThrough', 'data' => $connectionThrough]);
         } catch (Exception $e) {
             return $e;
         }
@@ -230,13 +237,10 @@ class NewConnectionRepository implements iNewConnection
     {
         try {
             $propertyType = DB::table('water_property_type_mstrs')
-                ->select('water_property_type_mstrs.property_type')
+                ->select('water_property_type_mstrs.id', 'water_property_type_mstrs.property_type')
+                ->where('status', 1)
                 ->get();
-            $collection = collect($propertyType)->map(function ($value) {
-                return $value->property_type;
-            });
-            $property['propertyType'] = $collection;
-            return response()->json(['status' => true, 'message' => 'data of the propertyType', 'data' => $property]);
+            return response()->json(['status' => true, 'message' => 'data of the propertyType', 'data' => $propertyType]);
         } catch (Exception $e) {
             return $e;
         }
@@ -253,13 +257,10 @@ class NewConnectionRepository implements iNewConnection
     {
         try {
             $ownerType = DB::table('water_owner_type_mstrs')
-                ->select('water_owner_type_mstrs.owner_type')
+                ->select('water_owner_type_mstrs.id', 'water_owner_type_mstrs.owner_type')
+                ->where('status', 1)
                 ->get();
-            $collection = collect($ownerType)->map(function ($value) {
-                return $value->owner_type;
-            });
-            $owner['ownerType'] = $collection;
-            return response()->json(['status' => true, 'message' => 'data of the ownerType', 'data' => $owner]);
+            return response()->json(['status' => true, 'message' => 'data of the ownerType', 'data' => $ownerType]);
         } catch (Exception $e) {
             return $e;
         }
@@ -274,20 +275,20 @@ class NewConnectionRepository implements iNewConnection
      */
     public function getWardNo()
     {
-        $wfmaster = 3;  //<--------------- this is fot the water ie. 3 is the wfmasterid
+        $wfmaster = 3;  //<--------------- this is fot the water ie. 3 is the wfmasterid create a constant
         try {
             $ward = DB::table('ulb_ward_masters')
-                ->select('ulb_ward_masters.id')
+                ->select('ulb_ward_masters.id', 'ulb_ward_masters.ward_name')
                 ->join('wf_workflows', 'wf_workflows.ulb_id', '=', 'ulb_ward_masters.ulb_id')
                 ->where('wf_workflows.wf_master_id', $wfmaster)
                 ->get();
-            // return ($ownerType);
-            // $wardId = array();
-            $collection = collect($ward)->map(function ($value) {
-                return $value->id;
-            });
-            $wardId['wardNo'] = $collection;
-            return response()->json(['status' => true, 'message' => 'data of the Ward NO', 'data' => $wardId]);
+            // $a=$ward->map(function($val)
+            // {
+            //     return $val['ward_no'] =$val['ward_name'];
+            // },
+            // $ward->toArray());
+
+            return response()->json(['status' => true, 'message' => 'data of the Ward NO', 'data' => $ward]);
         } catch (Exception $e) {
             return $e;
         }
@@ -313,7 +314,7 @@ class NewConnectionRepository implements iNewConnection
     //     try {
     //         if ($request['approved_status'] = true) {
 
-    //             $application = WaterApplication::query()
+    //             $application = WaterApplication::query()     //<------------- operation req
     //                 ->where('id', $request->safId)
     //                 ->first();
     //             $approvedSaf = $application->replicate();
@@ -323,10 +324,9 @@ class NewConnectionRepository implements iNewConnection
     //             $approvedSaf->consumer_no = rand(10); //<------------- (Reminder) Default generated consumerId here
     //             $approvedSaf->push();
     //             $application->delete();  //<--------------- (Caution)perform after all the process
-    //             $msg = "Application Successfully Approved";
     //         }
     //         DB::commit();
-    //         return response()->json(["status" => true, "message" => $msg, "data" => ""]);
+    //         return response()->json(["status" => true, "message" => "Application Successfully Approved", "data" => ""]);
     //     } catch (Exception $e) {
     //         DB::rollBack();
     //         return response()->json([$e]);
@@ -349,7 +349,7 @@ class NewConnectionRepository implements iNewConnection
     //     try {
     //         if ($request['reject_status'] = true) {
 
-    //             $application = WaterApplication::query()
+    //             $application = WaterApplication::query()    //<------------ operation of rejection
     //                 ->where('id', $request->safId)
     //                 ->first();
     //             $rejectedSaf = $application->replicate();
@@ -384,9 +384,9 @@ class NewConnectionRepository implements iNewConnection
     //     try {
     //         #   previous level pending verification updation
     //         $levelPending = WaterlevelPending::where('saf_id', $request->safId)  //<---------- Make the Model
-    //             ->where('verification_status', '0')
+    //             ->where('verification_status', 0)
     //             ->first();
-    //         $levelPending->verification_status = '1';
+    //         $levelPending->verification_status = 1;
     //         $levelPending->remarks = $request->remarks;
     //         $levelPending->save();
 
@@ -431,9 +431,9 @@ class NewConnectionRepository implements iNewConnection
     //     try {
     //         #   previous level pending verification updation
     //         $levelPending = WaterlevelPending::where('saf_id', $request->safId)  //<---------- Make the Model
-    //             ->where('verification_status', '0')
+    //             ->where('verification_status', 0)
     //             ->first();
-    //         $levelPending->verification_status = '1';
+    //         $levelPending->verification_status = 1;
     //         $levelPending->remarks = $request->remarks;
     //         $levelPending->save();
 
@@ -475,6 +475,7 @@ class NewConnectionRepository implements iNewConnection
     //     #   auth of the user list
     //     $user = auth()->user()->id;
     //     $ulbId = auth()->user()->ulb_id;
+
     //     $roles = DB::table('wf_roles')
     //         ->select('id')
     //         ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
@@ -482,10 +483,11 @@ class NewConnectionRepository implements iNewConnection
     //         ->where('users.ulb_id', $ulbId)
     //         ->where('users.id', $user)
     //         ->get();
+
     //     try {
     //         $data = WaterApplication::select('water_application.*')
-    //             ->join('prop_level_pendings', 'prop_level_pendings.saf_id', '=', 'water_application.id') //<---------- prop_level_pendings will be replaced by the water_level_pending
-    //             ->where('prop_level_pendings.reciver_role_id', $roles)  //<--------- prop_level_pending replace it
+    //             ->join('water_level_pendings', 'water_level_pendings.saf_id', '=', 'water_application.id') //<---------- prop_level_pendings will be replaced by the water_level_pending
+    //             ->where('water_level_pendings.reciver_role_id', $roles)  //<--------- prop_level_pending replace it
     //             ->where('verification_status', 0)
     //             ->where('status', 1)
     //             ->get();
@@ -509,19 +511,23 @@ class NewConnectionRepository implements iNewConnection
     //     #   auth of the user list
     //     $user = auth()->user()->id;
     //     $ulbId = auth()->user()->ulb_id;
-    //     $roles = WfRole::select('id')
+
+    //     $roles = WfRole::select('id')   //<---------- create the Model here
     //         ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
     //         ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
     //         ->where('users.ulb_id', $ulbId)
     //         ->where('user.id', $user)
     //         ->get();
+
     //     try {
-    //         $data = WaterApplication::join('prop_level_pendings', 'prop_level_pendings.saf_id', '=', 'water_application.id')    //<----- prop_level_pending will be replaced by water_level_pending
+    //         $data = WaterApplication::select('water_application.*')
+    //             ->join('water_level_pendings', 'water_level_pendings.saf_id', '=', 'water_application.id')    //<----- prop_level_pending will be replaced by water_level_pending
     //             ->where('water_level_pendings.sender_role_id', $roles)  //<------ prop_level_pending will replace
     //             ->where('verification_status', 0)   //<------------- Codition may not be req.
     //             ->where('verification_status', 1)   //<------------- Condition may not be req.
     //             ->where('status', '=', 1)
-    //             ->get('water_application.*');
+    //             ->get();
+
     //         return response()->json(["data" => $data, "status" => true, "message" => "Data Available", 200]);
     //     } catch (Exception $e) {
     //         return response()->json($e, 400);
