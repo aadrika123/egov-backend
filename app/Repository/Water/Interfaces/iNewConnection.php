@@ -16,4 +16,10 @@ interface iNewConnection
    public function getUserWaterConnectionCharges(Request $req);
    public function waterPayment(Request $req);
    public function applicantDocumentUpload(Request $req);
+   // Citizen View Water Screen for Mobile
+   public function getConnectionType();
+   public function getConnectionThrough();
+   public function getPropertyType();
+   public function getOwnerType();
+   public function getWardNo();
 }

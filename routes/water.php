@@ -16,6 +16,15 @@ Route::post('/apply-new-connection', function () {
     dd('Welcome to simple Water route file');
 });
 
+// Citizen View Water Screen For Mobile 
+// Route::controller(NewConnectionController::class)->group(function () {
+//     Route::get('get-connection-type', 'getConnectionType');
+//     Route::get('get-connection-through', 'getConnectionThrough');
+//     Route::get('get-property-type', 'getPropertyType');
+//     Route::get('get-owner-type', 'getOwnerType');
+//     Route::get('get-ward-no', 'getWardNo');
+// });
+
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     /**
      * | Created On-07-10-2022 
@@ -29,5 +38,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('user-water-connection-charges', 'getUserWaterConnectionCharges');                           // Get Water Connection Charges of Logged In User
         Route::post('applicant-document-upload', 'applicantDocumentUpload');                                     // User Document Upload
         Route::post('water-payment', 'waterPayment');                                                            // Water Payment
+    });
+
+    // req for the citizen
+    Route::controller(NewConnectionController::class)->group(function () {
+        Route::get('get-connection-type', 'getConnectionType');
+        Route::get('get-connection-through', 'getConnectionThrough');
+        Route::get('get-property-type', 'getPropertyType');
+        Route::get('get-owner-type', 'getOwnerType');
+        Route::get('get-ward-no', 'getWardNo');
     });
 });
