@@ -7,6 +7,8 @@ use App\Models\Property\PropMBuildingRentalRate;
 use App\Models\Property\PropMCapitalValueRateRaw;
 use App\Models\Property\PropMRentalValue;
 use App\Models\Property\PropMUsageTypeMultiFactor;
+use App\Models\Property\PropMVacantRentalRate;
+use App\Models\UlbWardMaster;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -25,6 +27,7 @@ class SafCalculation
     private array $_GRID;
     private array $_propertyDetails;
     private array $_floors;
+    private $_wardNo;
     private $_isResidential;
     private $_ruleSets;
     private $_ulbId;
@@ -40,6 +43,13 @@ class SafCalculation
     private bool $_rwhPenaltyStatus = false;
     private $_mobileTowerArea;
     private $__mobileTowerInstallDate;
+    private array $_hoardingBoard;
+    private array $_petrolPump;
+    private $_mobileQuaterlyRuleSets;
+    private $_hoardingQuaterlyRuleSets;
+    private $_petrolPumpQuaterlyRuleSets;
+    private $_vacantRentalRates;
+    private $_vacantPropertyTypeId;
 
     /** 
      * | For Building
@@ -58,28 +68,16 @@ class SafCalculation
     {
         try {
             $this->_propertyDetails = $req->all();
-            $this->readPropertyMasterData();                                                    // Make all master data as global
-            $readPropertyType = $req->propertyType;
-            $mobileQuaterlyRuleSets = [];
-            // Means the Property Type is not a vacant Land
-            if ($readPropertyType != 4) {
-                if ($this->_propertyDetails['isMobileTower'] == 1) {                            // For Mobile Towers
-                    $this->_mobileTowerInstallDate = $this->_propertyDetails['mobileTower']['dateFrom'];
-                    $this->_mobileTowerArea = $this->_propertyDetails['mobileTower']['area'];
-                    $mobileQuaterlyRuleSets = $this->calculateQuaterlyRulesets("mobileTower");
-                }
 
-                $floors = $this->_floors;
-                // readTaxCalculation Floor Wise
-                $calculateFloorTaxQuaterly = collect($floors)->map(function ($floor, $key) {
-                    $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets($key);
-                    return $calculateQuaterlyRuleSets;
-                });
-                // Collapsion of the all taxes which contains saperately array collection
-                $readFinalFloorTax = collect($calculateFloorTaxQuaterly)->collapse();           // Collapsable collections with all Floors
-                $readFinalFloorWithMobileTower = collect($mobileQuaterlyRuleSets)->merge($readFinalFloorTax);       // Collapsable Collection With Mobile Tower and Floors
-                $this->_GRID['details'] = $readFinalFloorWithMobileTower;
-            }
+            $this->readPropertyMasterData();                                                        // Make all master data as global
+
+            $this->calculateMobileTowerTax();                                                       // For Mobile Towers
+
+            $this->calculateHoardingBoardTax();                                                     // For Hoarding Board
+
+            $this->calculateBuildingTax();                                                          // Means the Property Type is not a vacant Land
+
+            $this->calculateVacantLandTax();                                                        // If The Property Type is the type of Vacant Land
 
             return responseMsg(true, "Data Fetched", remove_null($this->_GRID));
         } catch (Exception $e) {
@@ -91,7 +89,7 @@ class SafCalculation
      * | Make All Master Data in a Global Variable (1.1)
      */
 
-    private function readPropertyMasterData()
+    public function readPropertyMasterData()
     {
         $propertyDetails = $this->_propertyDetails;
         $this->_paramRentalRate = Config::get("PropertyConstaint.PARAM_RENTAL_RATE");
@@ -104,9 +102,14 @@ class SafCalculation
         $this->_floors = $propertyDetails['floor'];
         $this->_ulbId = auth()->user()->ulb_id;
 
+        $this->_vacantPropertyTypeId = Config::get("PropertyConstaint.VACANT_PROPERTY_TYPE");               // Vacant Property Type Id
+
+        // Ward No
+        $this->_wardNo = UlbWardMaster::find($propertyDetails['ward'])->ward_name;
+
         // Rain Water Harvesting Penalty If The Plot Area is Greater than 3228 sqft. and Rain Water Harvesting is none
         $readAreaOfPlot =  $this->_propertyDetails['areaOfPlot'] * 435.6;                                    // (In Decimal To SqFt)
-        if ($propertyDetails['isWaterHarvesting'] == 0 && $readAreaOfPlot > 3228) {
+        if ($propertyDetails['propertyType'] != $this->_vacantPropertyTypeId && $propertyDetails['isWaterHarvesting'] == 0 && $readAreaOfPlot > 3228) {
             $this->_rwhPenaltyStatus = true;
         }
 
@@ -126,8 +129,12 @@ class SafCalculation
         $this->_readRoadType[$this->_effectiveDateRule3] = $this->readRoadType($this->_effectiveDateRule3);         // Road Type id according to ruleset3 effective Date
         $this->_rentalRates = $this->calculateRentalRates();
         $this->_capitalValueRate = $this->readCapitalvalueRate();                                                   // Calculate Capital Value Rate 
-        if ($propertyDetails['isMobileTower'] == 1 || $propertyDetails['isHoardingBoard'] == 1) {
-            $this->_capitalValueRateMPH = $this->readCapitalValueRateMH();                                          // Capital Value Rate for MobileTower, PetrolPump,HoardingBoard
+        if ($propertyDetails['isMobileTower'] == 1 || $propertyDetails['isHoardingBoard'] == 1 || $propertyDetails['isPetrolPump'] == 1) {
+            $this->_capitalValueRateMPH = $this->readCapitalValueRateMHP();                                         // Capital Value Rate for MobileTower, PetrolPump,HoardingBoard
+        }
+
+        if ($this->_propertyDetails['propertyType'] == 4) {                                                         // i.e for Vacant Land
+            $this->_vacantRentalRates = $this->readVacantRentalRates();
         }
     }
 
@@ -180,33 +187,38 @@ class SafCalculation
      */
     public function readCapitalValueRate()
     {
-        $readFloors = $this->_floors;
-        // Capital Value Rate
-        $readPropertyType = $this->_propertyDetails['propertyType'] == 1 ? 1 : 2;
-        $col1 = Config::get("PropertyConstaint.CIRCALE-RATE-USAGE.$readPropertyType");
+        try {
+            $readFloors = $this->_floors;
+            // Capital Value Rate
+            $readPropertyType = $this->_propertyDetails['propertyType'] == 1 ? 1 : 2;
+            $col1 = Config::get("PropertyConstaint.CIRCALE-RATE-USAGE.$readPropertyType");
 
-        $readRoadType = $this->_readRoadType[$this->_effectiveDateRule3];
-        $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$readRoadType");
+            $readRoadType = $this->_readRoadType[$this->_effectiveDateRule3];
+            $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$readRoadType");
 
-        $capitalValue = collect($readFloors)->map(function ($readfloor) use ($col1, $col3) {
+            $capitalValue = collect($readFloors)->map(function ($readfloor) use ($col1, $col3) {
 
-            $readConstructionType = $readfloor['constructionType'];
-            $col2 = Config::get("PropertyConstaint.CIRCALE-RATE-PROP.$readConstructionType");
-            $column = $col1 . $col2 . $col3;
+                $readConstructionType = $readfloor['constructionType'];
+                $col2 = Config::get("PropertyConstaint.CIRCALE-RATE-PROP.$readConstructionType");
+                $column = $col1 . $col2 . $col3;
 
-            $capitalValueRate = PropMCapitalValueRateRaw::select($column)
-                ->where('ulb_id', $this->_ulbId)
-                ->where('ward_no', 1)                                                           // Ward No Fixed temprory
-                ->first();
-            return $capitalValueRate->$column;
-        });
-        return $capitalValue;
+                $capitalValueRate = PropMCapitalValueRateRaw::select($column)
+                    ->where('ulb_id', $this->_ulbId)
+                    ->where('ward_no', $this->_wardNo)
+                    ->first();
+
+                return $capitalValueRate->$column;
+            });
+            return $capitalValue;
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     /**
      * | Read Capital Value Rate for mobile tower, Hoarding Board, Petrol Pump
      */
-    public function readCapitalValueRateMH()
+    public function readCapitalValueRateMHP()
     {
         $col1 = 'com';
         $col2 = '_pakka';
@@ -234,6 +246,84 @@ class SafCalculation
     }
 
     /**
+     * | Calculate Mobile Tower
+     */
+    public function calculateMobileTowerTax()
+    {
+        if ($this->_propertyDetails['isMobileTower'] == 1) {
+            $this->_mobileTowerInstallDate = $this->_propertyDetails['mobileTower']['dateFrom'];
+            $this->_mobileTowerArea = $this->_propertyDetails['mobileTower']['area'];
+            $this->_mobileQuaterlyRuleSets = $this->calculateQuaterlyRulesets("mobileTower");
+        }
+    }
+
+    /**
+     * | In Case of the Property Have Hoarding Board
+     */
+    public function calculateHoardingBoardTax()
+    {
+        if ($this->_propertyDetails['isHoardingBoard'] == 1) {                                          // For Hoarding Board
+            $this->_hoardingBoard['installDate'] = $this->_propertyDetails['hoardingBoard']['dateFrom'];
+            $this->_hoardingBoard['area'] = $this->_propertyDetails['hoardingBoard']['area'];
+            $this->_hoardingQuaterlyRuleSets = $this->calculateQuaterlyRulesets("hoardingBoard");
+        }
+    }
+
+    /**
+     * | In Case of the Property is a Building or SuperStructure
+     */
+    public function calculateBuildingTax()
+    {
+        $readPropertyType = $this->_propertyDetails['propertyType'];
+        if ($readPropertyType != $this->_vacantPropertyTypeId) {
+            if ($this->_propertyDetails['isPetrolPump'] == 1) {                                 // For Petrol Pump
+                $this->_petrolPump['installDate'] = $this->_propertyDetails['petrolPump']['dateFrom'];
+                $this->_petrolPump['area'] = $this->_propertyDetails['petrolPump']['area'];
+                $this->_petrolPumpQuaterlyRuleSets = $this->calculateQuaterlyRulesets("petrolPump");
+            }
+
+            $floors = $this->_floors;
+            // readTaxCalculation Floor Wise
+            $calculateFloorTaxQuaterly = collect($floors)->map(function ($floor, $key) {
+                $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets($key);
+                return $calculateQuaterlyRuleSets;
+            });
+
+            // Collapsion of the all taxes which contains saperately array collection
+            $readFinalFloorTax = collect($calculateFloorTaxQuaterly)->collapse();                                                       // Collapsable collections with all Floors
+            $readFinalFloorWithMobileTower = collect($this->_mobileQuaterlyRuleSets)->merge($readFinalFloorTax);                        // Collapsable Collection With Mobile Tower and Floors
+            $readFinalWithMobileHoarding = collect($this->_hoardingQuaterlyRuleSets)->merge($readFinalFloorWithMobileTower);            // Collapsable Collection with mobile tower floors and Hoarding
+            $readFinalWithMobilHoardingPetrolPump = collect($this->_petrolPumpQuaterlyRuleSets)->merge($readFinalWithMobileHoarding);   // Collapsable Collection With Mobile floors Hoarding and Petrol Pump
+            $this->_GRID['details'] = $readFinalWithMobilHoardingPetrolPump;
+        }
+    }
+
+    /**
+     * | Calculate Vacant Rental Rate
+     */
+    public function readVacantRentalRates()
+    {
+        $rentalRate = PropMVacantRentalRate::select('id', 'prop_road_type_id', 'rate', 'ulb_type_id', 'effective_date')
+            ->where('status', 1)
+            ->get();
+        return $rentalRate;
+    }
+
+    /**
+     * | Calculate Vacant Land Tax
+     */
+    public function calculateVacantLandTax()
+    {
+        $readPropertyType = $this->_propertyDetails['propertyType'];
+        if ($readPropertyType == $this->_vacantPropertyTypeId) {
+            $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets("vacantLand");
+            $ruleSetsWithMobileTower = collect($this->_mobileQuaterlyRuleSets)->merge($calculateQuaterlyRuleSets);        // Collapse with mobile tower
+            $ruleSetsWithHoardingBoard = collect($this->_hoardingQuaterlyRuleSets)->merge($ruleSetsWithMobileTower);      // Collapse with hoarding board
+            $this->_GRID['details'] = $ruleSetsWithHoardingBoard;
+        }
+    }
+
+    /**
      * | Calculate Quaterly Rulesets (1.2)
      * | @param key the key of the array from function 1 to distribute by floor details
      * ----------------------------------------------------------------
@@ -247,11 +337,26 @@ class SafCalculation
      * | Query Run Time - 4
      * 
      */
+
     public function calculateQuaterlyRulesets($key)
     {
-        if ($key == "mobileTower") {                                          // Mobile Tower
+        if ($key == "mobileTower" || $key == "hoardingBoard" || $key == "petrolPump" || $key == "vacantLand") {          // For Mobile Tower, hoarding board or petrol pump
             $arrayRuleSet = [];
-            $dateFrom = $this->__mobileTowerInstallDate;
+            switch ($key) {
+                case "mobileTower";
+                    $dateFrom = $this->_mobileTowerInstallDate;
+                    break;
+                case "hoardingBoard";
+                    $dateFrom = $this->_hoardingBoard['installDate'];
+                    break;
+                case "petrolPump";
+                    $dateFrom = $this->_petrolPump['installDate'];
+                    break;
+                case "vacantLand";
+                    $dateFrom = $this->_propertyDetails['dateOfPurchase'];
+                    break;
+            }
+
             if ($dateFrom < '2016-04-01')
                 $dateFrom = '2016-04-01';
             $dateTo = Carbon::now();
@@ -303,11 +408,33 @@ class SafCalculation
      */
     public function readRuleSet($dateFrom, $key)
     {
-        if ($key == "mobileTower") {
-            $readFloorDetail = [
-                'floorNo' => "MobileTower",
-                'buildupArea' => $this->_mobileTowerArea
-            ];
+        if ($key == "mobileTower" || $key == "hoardingBoard" || $key == "petrolPump" || $key == "vacantLand") {                                           // Mobile Tower
+            switch ($key) {
+                case "mobileTower";
+                    $readFloorDetail = [
+                        'floorNo' => "MobileTower",
+                        'buildupArea' => $this->_mobileTowerArea
+                    ];
+                    break;
+                case "hoardingBoard";
+                    $readFloorDetail = [
+                        'floorNo' => "hoardingBoard",
+                        'buildupArea' => $this->_hoardingBoard['area']
+                    ];
+                    break;
+                case "petrolPump";
+                    $readFloorDetail = [
+                        'floorNo' => "petrolPump",
+                        'buildupArea' => $this->_petrolPump['area']
+                    ];
+                    break;
+                case "vacantLand";
+                    $readFloorDetail = [
+                        'propertyType' => "vacantLand",
+                        'buildupArea' => $this->_propertyDetails['areaOfPlot']
+                    ];
+                    break;
+            }
         }
 
         if (is_numeric($key)) {
@@ -378,6 +505,7 @@ class SafCalculation
      * | @var arv the quaterly ARV
      * ------------------ Calculation -----------------------------------
      * | $arv = ($tempArv * $arvCalPerFactor)/100;
+     * | $arv=$tempArv-$arv;
      * | $latrineTax = ($arv * 7.5) / 100;
      * | $waterTax = ($arv * 7.5) / 100;
      * | $healthTax = ($arv * 6.25) / 100;
@@ -416,6 +544,7 @@ class SafCalculation
             $arvCalcPercFactor += 15;
         // Total ARV and other Taxes
         $arv = ($tempArv * $arvCalcPercFactor) / 100;
+        $arv = $tempArv - $arv;
 
         $holdingTax = ($arv * 12.5) / 100;
         $latrineTax = ($arv * 7.5) / 100;
@@ -429,6 +558,7 @@ class SafCalculation
         // Tax Calculation Quaterly
         $tax = [
             "arv" => roundFigure($arv / 4),
+            "rentalRate" => $readRentalValue->rate,
             "holdingTax" => roundFigure($holdingTax / 4),
             "latrineTax" => roundFigure($latrineTax / 4),
             "waterTax" => roundFigure($waterTax / 4),
@@ -466,9 +596,47 @@ class SafCalculation
     public function calculateRuleSet2($key)
     {
         $paramRentalRate = $this->_paramRentalRate;
+        // Vacant Land RuleSet2
+        if ($key == "vacantLand") {
+            $plotArea = $this->_propertyDetails['areaOfPlot'];
+            $roadTypeId = $this->_readRoadType[$this->_effectiveDateRule2];
+            if ($roadTypeId == 4)                                                // i.e. No Road
+                $area = decimalToAcre($plotArea);
+            else
+                $area = decimalToSqMt($plotArea);
 
-        if ($key == "mobileTower") {
-            $carpetArea = $this->_mobileTowerArea;
+            $rentalRate = collect($this->_vacantRentalRates)->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule2])
+                ->where('ulb_type_id', 1)
+                ->where('effective_date', $this->_effectiveDateRule2)
+                ->first();
+
+            $rentalRate = $rentalRate->rate;
+            $occupancyFactor = 1;
+            $tax = $area * $rentalRate * $occupancyFactor;
+
+            $taxQuaterly = [
+                "tax" => roundFigure($tax / 4),
+                "area" => roundFigure($area),
+                "rentalRate" => $rentalRate,
+                "occupancyFactor" => $occupancyFactor
+            ];
+            return $taxQuaterly;
+        }
+
+        // Mobile Tower, Hoarding Board, Petrol Pump
+        if ($key == "mobileTower" || $key == "hoardingBoard" || $key == "petrolPump") {
+            switch ($key) {
+                case "mobileTower";
+                    $carpetArea = $this->_mobileTowerArea;
+                    break;
+                case "hoardingBoard":
+                    $carpetArea = $this->_hoardingBoard['area'];
+                    break;
+                case "petrolPump":
+                    $carpetArea = $this->_petrolPump['area'];
+                    break;
+            }
+
             $readMultiFactor = collect($this->_multiFactors)->where('usage_type_id', 45)
                 ->where('effective_date', $this->_effectiveDateRule2)
                 ->first();
@@ -497,7 +665,6 @@ class SafCalculation
             $multiFactor = (float)$readMultiFactor->multi_factor;
 
             $carpetArea = ($readFloorBuildupArea * $paramCarpetAreaPerc) / 100;
-            $rwhPenalty = 0;
 
             // Rental Rate Calculation
             $rentalRates = collect($this->_rentalRates)
@@ -507,6 +674,8 @@ class SafCalculation
                 ->first();
             $rentalRate = $rentalRates->rate * $paramRentalRate;
         }
+
+        $rwhPenalty = 0;
 
         $tempArv = $carpetArea * $multiFactor * $paramOccupancyFactor * (float)$rentalRate;
         $arv = ($tempArv * 2) / 100;
@@ -535,15 +704,63 @@ class SafCalculation
      */
     public function calculateRuleSet3($key)
     {
-        if ($key == "mobileTower") {
-            $readCircleRate = 1;
-            $readBuildupArea = 1;
-            $paramOccupancyFactor = 1;
-            $taxPerc = 1;
-            $readCalculationFactor = 1;
-            $readMatrixFactor = 1;
+        // Vacant Land RuleSet3
+        if ($key == "vacantLand") {
+            $plotArea = $this->_propertyDetails['areaOfPlot'];
+            $roadTypeId = $this->_readRoadType[$this->_effectiveDateRule3];
+            if ($roadTypeId == 4)                                                // i.e. No Road
+                $area = decimalToAcre($plotArea);
+            else
+                $area = decimalToSqMt($plotArea);
+            $rentalRate = collect($this->_vacantRentalRates)->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule3])
+                ->where('ulb_type_id', 1)
+                ->where('effective_date', $this->_effectiveDateRule3)
+                ->first();
+
+            $rentalRate = $rentalRate->rate;
+            $occupancyFactor = 1;
+            $tax = (float)$area * $rentalRate * $occupancyFactor;
+
+            $taxQuaterly = [
+                "tax" => roundFigure($tax / 4),
+                "area" => roundFigure($area),
+                "rentalRate" => $rentalRate,
+                "occupancyFactor" => $occupancyFactor
+            ];
+            return $taxQuaterly;
         }
 
+        // For Mobile Tower, Hoarding Board, Petrol Pump
+        if ($key == "mobileTower" || $key == "hoardingBoard" || $key == "petrolPump") {
+            $readCircleRate = $this->_capitalValueRateMPH;
+            switch ($key) {
+                case "mobileTower";
+                    $readBuildupArea = $this->_mobileTowerArea;
+                    break;
+                case "hoardingBoard":
+                    $readBuildupArea = $this->_hoardingBoard['area'];
+                    break;
+                case "petrolPump":
+                    $readBuildupArea = $this->_petrolPump['area'];
+                    break;
+            }
+
+            $paramOccupancyFactor = 1.5;
+            $taxPerc = 0.15;
+            $readMultiFactor = collect($this->_multiFactors)->where('usage_type_id', 45)
+                ->where('effective_date', $this->_effectiveDateRule3)
+                ->first();
+            $readCalculationFactor = $readMultiFactor->multi_factor;
+
+            $rentalRates = collect($this->_rentalRates)
+                ->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule3])
+                ->where('construction_types_id', 1)
+                ->where('effective_date', $this->_effectiveDateRule3)
+                ->first();
+            $readMatrixFactor = $rentalRates->rate;
+        }
+
+        // For Floors
         if (is_numeric($key)) {                                                                            // Applicable for floors
             $readCircleRate = $this->_capitalValueRate[$key];
             $readFloorUsageType = $this->_floors[$key]['useType'];
@@ -561,9 +778,9 @@ class SafCalculation
 
             $readCalculationFactor = $readMultiFactor->multi_factor;                                        // (Calculation Factor as Multi Factor)
             $rentalRates = collect($this->_rentalRates)
-                ->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule2])
+                ->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule3])
                 ->where('construction_types_id', $this->_floors[$key]['constructionType'])
-                ->where('effective_date', $this->_effectiveDateRule2)
+                ->where('effective_date', $this->_effectiveDateRule3)
                 ->first();
             $readMatrixFactor = $rentalRates->rate;                                                         // (Matrix Factor as Rental Rate)
         }
@@ -578,14 +795,14 @@ class SafCalculation
         $totalTax = $calculatePropertyTax + $rwhPenalty;
         // Tax Calculation Quaterly
         $tax = [
-            "arv" => $calculatePropertyTax / 4,
+            "arv" => roundFigure($calculatePropertyTax / 4),
             "circleRate" => $readCircleRate,
             "buildupArea" => $readBuildupArea,
             "occupancyFactor" => $paramOccupancyFactor,
             "taxPerc" => $taxPerc,
             "calculationFactor" => $readCalculationFactor,
             "matrixFactor" => $readMatrixFactor,
-            "rwhPenalty" => $rwhPenalty,
+            "rwhPenalty" => roundFigure($rwhPenalty / 4),
             "totalTax" => roundFigure($totalTax / 4)
         ];
         return $tax;

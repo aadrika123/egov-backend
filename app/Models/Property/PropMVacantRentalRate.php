@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PropParamVacantRentalRate extends Model
+class PropMVacantRentalRate extends Model
 {
     use HasFactory;
 }
