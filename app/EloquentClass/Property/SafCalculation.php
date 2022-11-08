@@ -126,6 +126,9 @@ class SafCalculation
         $this->_readRoadType[$this->_effectiveDateRule3] = $this->readRoadType($this->_effectiveDateRule3);         // Road Type id according to ruleset3 effective Date
         $this->_rentalRates = $this->calculateRentalRates();
         $this->_capitalValueRate = $this->readCapitalvalueRate();                                                   // Calculate Capital Value Rate 
+        if ($propertyDetails['isMobileTower'] == 1 || $propertyDetails['isHoardingBoard'] == 1) {
+            $this->_capitalValueRateMPH = $this->readCapitalValueRateMH();                                          // Capital Value Rate for MobileTower, PetrolPump,HoardingBoard
+        }
     }
 
     /**
@@ -201,6 +204,23 @@ class SafCalculation
     }
 
     /**
+     * | Read Capital Value Rate for mobile tower, Hoarding Board, Petrol Pump
+     */
+    public function readCapitalValueRateMH()
+    {
+        $col1 = 'com';
+        $col2 = '_pakka';
+        $readRoadType = $this->_readRoadType[$this->_effectiveDateRule3];
+        $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$readRoadType");
+        $column = $col1 . $col2 . $col3;
+        $capitalValueRate = PropMCapitalValueRateRaw::select($column)
+            ->where('ulb_id', $this->_ulbId)
+            ->where('ward_no', 1)                                                           // Ward No Fixed temprory
+            ->first();
+        return $capitalValueRate->$column;
+    }
+
+    /**
      * | Calculation Rental Rate (1.1.3)
      * | @var refParamRentalRate Rental Rate Parameter to calculate rentalRate for the Property
      * | @return readRentalRate final Calculated Rental Rate
@@ -229,7 +249,7 @@ class SafCalculation
      */
     public function calculateQuaterlyRulesets($key)
     {
-        if ($key == "mobileTower") {
+        if ($key == "mobileTower") {                                          // Mobile Tower
             $arrayRuleSet = [];
             $dateFrom = $this->__mobileTowerInstallDate;
             if ($dateFrom < '2016-04-01')
