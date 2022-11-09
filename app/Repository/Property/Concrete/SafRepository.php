@@ -4,12 +4,6 @@ namespace App\Repository\Property\Concrete;
 
 use App\Repository\Property\Interfaces\iSafRepository;
 use Illuminate\Http\Request;
-use App\Models\PropParamConstructionType;
-use App\Models\PropParamFloorType;
-use App\Models\PropParamOccupancyType;
-use App\Models\PropParamOwnershipType;
-use App\Models\PropParamPropertyType;
-use App\Models\PropParamUsageType;
 use App\Models\UlbWardMaster;
 use App\Models\UlbWorkflowMaster;
 use App\Models\Workflow;
@@ -33,10 +27,8 @@ use App\Models\Property\PropMConstructionType;
 use App\Models\Property\PropMFloor;
 use App\Models\Property\PropMOccupancyType;
 use App\Models\Property\PropMOwnershipType as PropertyPropMOwnershipType;
-use App\Models\Property\PropMParamPropertyType;
 use App\Models\Property\PropMPropertyType;
 use App\Models\Property\PropMUsageType;
-use App\Models\PropMOwnershipType;
 use App\Models\WfWorkflow;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
@@ -469,10 +461,6 @@ class SafRepository implements iSafRepository
         return $safNo = "SAF/" . str_pad($assessment_type, 2, '0', STR_PAD_LEFT) . "/" . str_pad($ward_no, 3, '0', STR_PAD_LEFT) . "/" . str_pad($count, 5, '0', STR_PAD_LEFT);
     }
 
-    public function taxCalculater(Request $request)
-    {
-    }
-
     /**
      * ---------------------- Saf Workflow Inbox --------------------
      * | Initialization
@@ -621,12 +609,19 @@ class SafRepository implements iSafRepository
         ]);
         try {
             // Saf Details
-            $data = ActiveSaf::find($req->id);
-
-            $ownerDetails = ActiveSafsOwnerDtl::where('saf_id', $data->id)->get();
+            $data = [];
+            $data = DB::table('active_safs')
+                ->select('active_safs.*', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                ->join('ulb_ward_masters as w', 'w.id', '=', 'active_safs.ward_mstr_id')
+                ->join('prop_m_ownership_types as o', 'o.id', '=', 'active_safs.ownership_type_mstr_id')
+                ->leftJoin('prop_m_property_types as p', 'p.id', '=', 'active_safs.property_assessment_id')
+                ->where('active_safs.id', $req->id)
+                ->first();
+            $data = json_decode(json_encode($data), true);
+            $ownerDetails = ActiveSafsOwnerDtl::where('saf_id', $data['id'])->get();
             $data['owners'] = $ownerDetails;
 
-            $floorDetails = ActiveSafsFloorDtls::where('saf_id', $data->id)->get();
+            $floorDetails = ActiveSafsFloorDtls::where('saf_id', $data['id'])->get();
             $data['floors'] = $floorDetails;
 
             return responseMsg(true, 'Data Fetched', remove_null($data));

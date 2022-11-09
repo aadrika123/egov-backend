@@ -69,15 +69,15 @@ class SafCalculation
         try {
             $this->_propertyDetails = $req->all();
 
-            $this->readPropertyMasterData();                                                        // Make all master data as global
+            $this->readPropertyMasterData();                                                        // Make all master data as global(1.1)
 
-            $this->calculateMobileTowerTax();                                                       // For Mobile Towers
+            $this->calculateMobileTowerTax();                                                       // For Mobile Towers(1.2)
 
-            $this->calculateHoardingBoardTax();                                                     // For Hoarding Board
+            $this->calculateHoardingBoardTax();                                                     // For Hoarding Board(1.3)
 
-            $this->calculateBuildingTax();                                                          // Means the Property Type is not a vacant Land
+            $this->calculateBuildingTax();                                                          // Means the Property Type is a Building(1.4)
 
-            $this->calculateVacantLandTax();                                                        // If The Property Type is the type of Vacant Land
+            $this->calculateVacantLandTax();                                                        // If The Property Type is the type of Vacant Land(1.5)
 
             return responseMsg(true, "Data Fetched", remove_null($this->_GRID));
         } catch (Exception $e) {
@@ -136,6 +136,8 @@ class SafCalculation
         if ($this->_propertyDetails['propertyType'] == 4) {                                                         // i.e for Vacant Land
             $this->_vacantRentalRates = $this->readVacantRentalRates();
         }
+
+        // $startDate=calculateQuarterStartDate('2022')
     }
 
     /**
@@ -246,7 +248,7 @@ class SafCalculation
     }
 
     /**
-     * | Calculate Mobile Tower
+     * | Calculate Mobile Tower (1.2)
      */
     public function calculateMobileTowerTax()
     {
@@ -258,7 +260,7 @@ class SafCalculation
     }
 
     /**
-     * | In Case of the Property Have Hoarding Board
+     * | In Case of the Property Have Hoarding Board(1.3)
      */
     public function calculateHoardingBoardTax()
     {
@@ -270,7 +272,7 @@ class SafCalculation
     }
 
     /**
-     * | In Case of the Property is a Building or SuperStructure
+     * | In Case of the Property is a Building or SuperStructure (1.4)
      */
     public function calculateBuildingTax()
     {
@@ -299,7 +301,7 @@ class SafCalculation
     }
 
     /**
-     * | Calculate Vacant Rental Rate
+     * | Calculate Vacant Rental Rate 
      */
     public function readVacantRentalRates()
     {
@@ -310,7 +312,7 @@ class SafCalculation
     }
 
     /**
-     * | Calculate Vacant Land Tax
+     * | Calculate Vacant Land Tax (1.5)
      */
     public function calculateVacantLandTax()
     {
