@@ -1791,12 +1791,93 @@ class Trade implements ITrade
         }
         
     }
+    public function applicationList(Request $request)
+    {
+        try{
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+            if (!$workflowId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $apply_from = $this->applyFrom();
+            $wardList = $this->ModelWard->getAllWard($ulb_id)->map(function($val){
+                $val->ward_no = $val->ward_name;
+                return $val;
+            });
+            $inputs = $request->all();  
+            // DB::enableQueryLog();          
+            $licence = ActiveLicence::select("active_licences.id",
+                                            "active_licences.application_no",
+                                            "active_licences.provisional_license_no",
+                                            "active_licences.license_no",
+                                            "active_licences.firm_name",
+                                            "active_licences.apply_date",
+                                            "active_licences.apply_from",
+                                            "owner.owner_name",
+                                            "owner.guardian_name",
+                                            "owner.mobile_no",
+                                            "owner.email_id",
+                                            )                        
+                        ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                            STRING_AGG(guardian_name,',') AS guardian_name,
+                                            STRING_AGG(mobile::TEXT,',') AS mobile_no,
+                                            STRING_AGG(emailid,',') AS email_id,
+                                            licence_id
+                                        FROM active_licence_owners 
+                                        WHERE status =1
+                                        GROUP BY licence_id
+                                        )owner"),function($join){
+                                            $join->on("owner.licence_id","active_licences.id");
+                                        })
+                        ->where("active_licences.status",1)                        
+                        ->where("active_licences.ulb_id",$ulb_id);
+            if(isset($inputs['key']) && trim($inputs['key']))
+            {
+                $key = trim($inputs['key']);
+                $licence = $licence->where(function ($query) use ($key) {
+                    $query->orwhere('active_licences.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('active_licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')                                            
+                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
+            {
+                $licence = $licence->where("active_licences.ward_mstr_id",$inputs['wardNo']); 
+            }
+            if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
+            {
+                $licence = $licence
+                            ->whereBetween('active_licences.apply_date',[$inputs['formDate'],$inputs['formDate']]); 
+            }
+            $licence = $licence->get();
+            $data = [
+                "wardList"=>$wardList,                
+                "licence"=>$licence,
+            ] ;           
+            return responseMsg(true, "", $data);
+
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
     public function inbox(Request $request)
     {
         try {
             $user = Auth()->user();
             $user_id = $user->id;
-            $ulb_id = $user->ulb_id;//dd($ulb_id);
+            $ulb_id = $user->ulb_id;
             $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
             $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
                 ->where('ulb_id', $ulb_id)
@@ -1819,7 +1900,6 @@ class Trade implements ITrade
                     return $val;
                 });
                 $ward_permission = adjToArray($ward_permission);
-
                 $joins = "leftjoin";
             }
             else
@@ -1838,6 +1918,8 @@ class Trade implements ITrade
                                             "active_licences.application_no",
                                             "active_licences.provisional_license_no",
                                             "active_licences.license_no",
+                                            "active_licences.document_upload_status",
+                                            "active_licences.payment_status",
                                             "active_licences.firm_name",
                                             "active_licences.apply_date",
                                             "active_licences.apply_from",
@@ -1899,8 +1981,12 @@ class Trade implements ITrade
             $licence = $licence
                     ->whereIn('active_licences.ward_mstr_id', $ward_ids)
                     ->get();
-            // dd(DB::getQueryLog());            
-            return responseMsg(true, "", $licence);
+            // dd(DB::getQueryLog());
+            $data = [
+                "wardList"=>$ward_permission,                
+                "licence"=>$licence,
+            ] ;           
+            return responseMsg(true, "", $data);
             
         } 
         catch (Exception $e) 
@@ -2014,7 +2100,11 @@ class Trade implements ITrade
             $licence = $licence
                         ->whereIn('active_licences.ward_mstr_id', $ward_ids)
                         ->get();
-            return responseMsg(true, "", $licence);
+            $data = [
+                "wardList"=>$ward_permission,                
+                "licence"=>$licence,
+            ] ; 
+            return responseMsg(true, "", $data);
             
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
