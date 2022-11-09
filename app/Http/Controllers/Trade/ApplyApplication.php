@@ -73,6 +73,10 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->searchLicenceByNo($request);
     }
+    public function applicationList(Request $request)
+    {
+        return $this->Repository->applicationList($request);
+    }
     public function inbox(Request $request)
     {
         return $this->Repository->inbox($request);
