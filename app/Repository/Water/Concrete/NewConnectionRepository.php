@@ -24,6 +24,7 @@ class NewConnectionRepository implements iNewConnection
 {
     /**
      * | -------------  Apply for the new Application for Water Application ------------- |
+     * | Edited by Sam Kerketta
      * | @param Request $req
      * | Post the value in Water Application table
      * | post the value in Water Applicants table by loop
@@ -32,7 +33,7 @@ class NewConnectionRepository implements iNewConnection
      */
     public function store(Request $req)
     {
-        DB::beginTransaction();
+        DB::beginTransaction(); 
         try {
             $newApplication = new WaterApplication();
             $newApplication->connection_type_id = $req->connectionTypeId;
@@ -40,7 +41,7 @@ class NewConnectionRepository implements iNewConnection
             $newApplication->owner_type = $req->ownerType;
             $newApplication->category = $req->category;
             // $newApplication->proof_document_id = $req->proofDocumentId;
-            // $newApplication->pipeline_type_id = $req->pipelineTypeId;
+            $newApplication->pipeline_type_id = $req->pipelineTypeId;
 
             $newApplication->holding_no = $req->holdingNo;
             $newApplication->ward_id = $req->wardId;
@@ -208,7 +209,7 @@ class NewConnectionRepository implements iNewConnection
     /**
      * | code : Sam Kerketta
      * | ----------------- Get Connection Through / Water ------------------------------- |
-     * | @var connectionTypes 
+     * | @var connectionThrough 
      * | #request null
      * | Operation : data fetched by table water_connection_through_mstrs 
      */
@@ -229,7 +230,7 @@ class NewConnectionRepository implements iNewConnection
     /**
      * | code : Sam Kerketta
      * | ----------------- Get Property Type / Water ------------------------------- |
-     * | @var connectionTypes 
+     * | @var propertyType 
      * | #request null
      * | Operation : data fetched by table water_property_type_mstrs 
      */
@@ -249,7 +250,7 @@ class NewConnectionRepository implements iNewConnection
     /**
      * | code : Sam Kerketta
      * | ----------------- Get Owner Type / Water ------------------------------- |
-     * | @var connectionTypes 
+     * | @var ownerType 
      * | #request null
      * | Operation : data fetched by table water_owner_type_mstrs 
      */
@@ -269,7 +270,8 @@ class NewConnectionRepository implements iNewConnection
     /**
      * | code : Sam Kerketta
      * | ----------------- Get Owner Type / Water ------------------------------- |
-     * | @var connectionTypes 
+     * | @var wfmaster 
+     * | @var ward
      * | #request null
      * | Operation : data fetched by table ulb_ward_masters 
      */
@@ -282,11 +284,6 @@ class NewConnectionRepository implements iNewConnection
                 ->join('wf_workflows', 'wf_workflows.ulb_id', '=', 'ulb_ward_masters.ulb_id')
                 ->where('wf_workflows.wf_master_id', $wfmaster)
                 ->get();
-            // $a=$ward->map(function($val)
-            // {
-            //     return $val['ward_no'] =$val['ward_name'];
-            // },
-            // $ward->toArray());
 
             return response()->json(['status' => true, 'message' => 'data of the Ward NO', 'data' => $ward]);
         } catch (Exception $e) {
