@@ -98,7 +98,7 @@ class NewConnectionRepository implements iNewConnection
             return responseMsg(true, "Successfully Saved", $applicationNo);
         } catch (Exception $e) {
             DB::rollBack();
-            return $e;
+            return responseMsg(false, "Error is listed below", $e);
         }
     }
 
