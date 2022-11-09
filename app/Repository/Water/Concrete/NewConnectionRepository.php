@@ -38,9 +38,9 @@ class NewConnectionRepository implements iNewConnection
             $newApplication->connection_type_id = $req->connectionTypeId;
             $newApplication->property_type_id = $req->propertyTypeId;
             $newApplication->owner_type = $req->ownerType;
-            $newApplication->proof_document_id = $req->proofDocumentId;
             $newApplication->category = $req->category;
-            $newApplication->pipeline_type_id = $req->pipelineTypeId;
+            // $newApplication->proof_document_id = $req->proofDocumentId;
+            // $newApplication->pipeline_type_id = $req->pipelineTypeId;
 
             $newApplication->holding_no = $req->holdingNo;
             $newApplication->ward_id = $req->wardId;
