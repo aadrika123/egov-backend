@@ -517,11 +517,11 @@ class SafRepository implements iSafRepository
                 });
 
                 $data = $this->getSaf()                                               // Global SAF 
-                    ->where('active_saf_details.ulb_id', $ulbId)
-                    ->where('active_saf_details.status', 1)
+                    ->where('active_safs.ulb_id', $ulbId)
+                    ->where('active_safs.status', 1)
                     ->whereIn('current_role', $roleId)
                     ->orderByDesc('id')
-                    ->groupBy('active_saf_details.id', 'p.property_type', 'ward.ward_name')
+                    ->groupBy('active_safs.id', 'p.property_type', 'ward.ward_name')
                     ->get();
 
                 $occupiedWard = $this->getWardByUserId($userId);                        // Get All Occupied Ward By user id
@@ -547,12 +547,12 @@ class SafRepository implements iSafRepository
             });
 
             $safInbox = $this->getSaf()                                            // Global SAF 
-                ->where('active_saf_details.ulb_id', $ulbId)
-                ->where('active_saf_details.status', 1)
+                ->where('active_safs.ulb_id', $ulbId)
+                ->where('active_safs.status', 1)
                 ->whereIn('current_role', $roleId)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
-                ->groupBy('active_saf_details.id', 'p.property_type', 'ward.ward_name')
+                ->groupBy('active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
 
             return responseMsg(true, "Data Fetched", remove_null($safInbox));
@@ -588,7 +588,7 @@ class SafRepository implements iSafRepository
                 ->whereNotIn('current_role', $roles)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
-                ->groupBy('active_saf_details.id', 'p.property_type', 'ward.ward_name')
+                ->groupBy('active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
             return responseMsg(true, "Data Fetched", remove_null($safData));
         } catch (Exception $e) {
@@ -620,44 +620,8 @@ class SafRepository implements iSafRepository
             'id' => 'required|integer'
         ]);
         try {
-            $saf_id = $req->id;
-            $user_id = auth()->user()->id;
-            $role_id = ($this->getUserRoll($user_id)->role_id ?? -1);
-            $ulb_id = auth()->user()->ulb_id;
-            $saf_data = ActiveSaf::select(
-                DB::raw("prop_param_property_types.property_type as property_type,
-                                                       prop_param_ownership_types.ownership_type,
-                                                       ulb_ward_masters.ward_name as ward_no
-                                                      "),
-                "active_saf_details.*"
-            )
-                ->join('ulb_ward_masters', function ($join) {
-                    $join->on("ulb_ward_masters.id", "=", "active_saf_details.ward_mstr_id");
-                })
-                ->join('prop_param_property_types', function ($join) {
-                    $join->on("prop_param_property_types.id", "=", "active_saf_details.prop_type_mstr_id")
-                        ->where("prop_param_property_types.status", 1);
-                })
-                ->join('prop_param_ownership_types', function ($join) {
-                    $join->on("prop_param_ownership_types.id", "=", "active_saf_details.ownership_type_mstr_id")
-                        ->where("prop_param_ownership_types.status", 1);
-                })
-                ->where('active_saf_details.id', "=", $saf_id)
-                ->first();
-            $data = remove_null($saf_data);
-            // if (!$saf_data->workflow_id || $role_id == -1) {
-            //     throw new Exception("Workflow Not Found of This SAF !...");
-            // }
-            $owner_dtl = ActiveSafsOwnerDtl::select('*')
-                ->where('status', 1)
-                ->where('saf_dtl_id', $saf_id)
-                ->get();
-            $data['owner_dtl'] =  remove_null($owner_dtl);
-            $floor = ActiveSafsFloorDtls::select("*")
-                ->where('status', 1)
-                ->where('saf_dtl_id', $saf_id)
-                ->get();
-            $data['floor'] =  remove_null($floor);
+            $data = ActiveSaf::find($req->id);
+
             // $time_line =  DB::table('workflow_tracks')->select(
             //     "workflow_tracks.message",
             //     "role_masters.role_name",
@@ -678,9 +642,9 @@ class SafRepository implements iSafRepository
             // }
             // $forward_backword =  $this->getForwordBackwordRoll($user_id, $ulb_id, $saf_data->workflow_id, $role_id);
             // $data['forward_backward'] =  remove_null($forward_backword);
-            return responseMsg(true, 'Data Fetched', $data);
+            return responseMsg(true, 'Data Fetched', remove_null($data));
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $saf_id);
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -751,9 +715,9 @@ class SafRepository implements iSafRepository
             });
             $safData = $this->getSaf()
                 ->where('is_escalate', 1)
-                ->where('active_saf_details.ulb_id', $ulbId)
+                ->where('active_safs.ulb_id', $ulbId)
                 ->whereIn('ward_mstr_id', $wardId)
-                ->groupBy('active_saf_details.id', 'active_saf_details.saf_no', 'ward.ward_name', 'p.property_type')
+                ->groupBy('active_safs.id', 'active_safs.saf_no', 'ward.ward_name', 'p.property_type')
                 ->get();
             return responseMsg(true, "Data Fetched", remove_null($safData));
         } catch (Exception $e) {
