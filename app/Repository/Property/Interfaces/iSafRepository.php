@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
  */
 interface iSafRepository
 {
+    public function masterSaf();                            // Get all master data while applying Saf
     public function applySaf(Request $request);             // Apply For SAF
     public function inbox();                                // Saf Inbox
     public function outbox();                               // Saf Outbox

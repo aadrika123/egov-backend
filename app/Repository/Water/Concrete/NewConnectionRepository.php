@@ -10,6 +10,7 @@ use App\Repository\Water\Interfaces\iNewConnection;
 use Carbon\Carbon;
 use DateTime;
 use Exception;
+use Hamcrest\Arrays\IsArray;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -23,6 +24,7 @@ class NewConnectionRepository implements iNewConnection
 {
     /**
      * | -------------  Apply for the new Application for Water Application ------------- |
+     * | Edited by Sam Kerketta
      * | @param Request $req
      * | Post the value in Water Application table
      * | post the value in Water Applicants table by loop
@@ -31,14 +33,14 @@ class NewConnectionRepository implements iNewConnection
      */
     public function store(Request $req)
     {
-        DB::beginTransaction();
+        DB::beginTransaction(); 
         try {
             $newApplication = new WaterApplication();
             $newApplication->connection_type_id = $req->connectionTypeId;
             $newApplication->property_type_id = $req->propertyTypeId;
             $newApplication->owner_type = $req->ownerType;
-            $newApplication->proof_document_id = $req->proofDocumentId;
             $newApplication->category = $req->category;
+            // $newApplication->proof_document_id = $req->proofDocumentId;
             $newApplication->pipeline_type_id = $req->pipelineTypeId;
 
             $newApplication->holding_no = $req->holdingNo;
@@ -54,6 +56,13 @@ class NewConnectionRepository implements iNewConnection
             $newApplication->elec_account_no = $req->elecAccountNo;
             $newApplication->elec_category = $req->elecCategory;
 
+            $newApplication->connection_through = $req->connection_through;
+            $newApplication->saf_no = $req->saf_no;
+
+            if($req->connection_through = 3)
+            {
+                $newApplication->id_proof = 3;
+            }
             // Generating Application No 
             $now = Carbon::now();
             $applicationNo = 'APP' . $now->getTimeStamp();
@@ -175,164 +184,350 @@ class NewConnectionRepository implements iNewConnection
 
     /**
      * | code : Sam Kerketta
-     * | ----------------- Final Applicant approval structure ------------------------------- |
-     * | @param Request
-     * | @param Request $req
-     * | #application > contains all the data of the applicant
-     * | #request > contain all data of the applicant provided by the fontend
-     * | Operation : data is to be deleted from application and store in approval and consumer table
+     * | ----------------- Get Connection Type / Water ------------------------------- |
+     * | @var connectionTypes 
+     * | #request null
+     * | Operation : data fetched by table water_connection_type_mstrs 
      */
-    public function approvalOfApplication(Request $request)
+    public function getConnectionType()
     {
-        DB::beginTransaction();
         try {
-            if ($request['approved_status'] = true) {
-
-                $application = WaterApplication::query()
-                    ->where('id', $request->safId)
-                    ->first();
-                $approvedSaf = $application->replicate();
-                $approvedSaf->setTable('water_approved_application_details');
-                $approvedSaf->setTable('water_consumers');  //<---------- (Caution) operation may not be used
-                $approvedSaf->id = $application->id;
-                $approvedSaf->consumer_no = rand(10); //<------------- (Reminder) Default generated consumerId here
-                $approvedSaf->push();
-                //$application->delete();  //<--------------- (Caution)perform after all the process
-                $msg = "Application Successfully Approved";
-            }
-            DB::commit();
-            return response()->json(["status" => true, "message" => $msg, "data" => ""]);
+            $connectionTypes = DB::table('water_connection_type_mstrs')
+                ->select('water_connection_type_mstrs.id', 'water_connection_type_mstrs.connection_type')
+                ->where('status', 1)
+                ->get();
+            // $collection = collect($connectionTypes)->map(function ($value) {
+            //     return $value->connection_type;
+            // });
+            // $type['connectionType'] = $collection;
+            return response()->json(['status' => true, 'message' => 'data of the connectionType', 'data' => $connectionTypes]);
         } catch (Exception $e) {
-            DB::rollBack();
-            return response()->json([$e]);
+            return $e;
         }
     }
 
     /**
-     * | ----------------- Applicant reject structure ------------------------------- |
-     * | @param Request
-     * | @param Request $req
-     * | #application > contains all the data of the applicant
-     * | #rejectedSaf > data to be push 
-     * | #request > contain all data of the applicant provided by the fontend
-     * | Operation : data is to be deleted from application and store in reject   
+     * | code : Sam Kerketta
+     * | ----------------- Get Connection Through / Water ------------------------------- |
+     * | @var connectionThrough 
+     * | #request null
+     * | Operation : data fetched by table water_connection_through_mstrs 
      */
-    public function rejectionOfApplication(Request $request)
+    public function getConnectionThrough()
     {
-        # code...
-        DB::beginTransaction();
         try {
-            if ($request['reject_status'] = true) {
-
-                $application = WaterApplication::query()
-                    ->where('id', $request->safId)
-                    ->first();
-                $rejectedSaf = $application->replicate();
-                $rejectedSaf->setTable('Water_rejected_application_details');
-                $rejectedSaf->id = $application->id;
-                $rejectedSaf->push();
-                // $application->delete();   //<-------------- (Caution) maybe the status will also be changed
-                $msg = "Application Rejected Successfully";
-            }
-            DB::commit();
-            return response()->json(["status" => true, "message" => $msg]);
+            $connectionThrough = DB::table('water_connection_through_mstrs')
+                ->select('water_connection_through_mstrs.id', 'water_connection_through_mstrs.connection_through')
+                ->where('status', 1)
+                ->orderBy('id')
+                ->get();
+            return response()->json(['status' => true, 'message' => 'data of the connectionThrough', 'data' => $connectionThrough]);
         } catch (Exception $e) {
-            DB::rollBack();
-            return response()->json([$e]);
+            return $e;
         }
     }
 
     /**
-     * | ----------------- Applicant level approval structure ------------------------------- |
-     * | @param Request
-     * | @param Request $req
-     * | #user
-     * | #ulbId
-     * | #levelPending
-     * | #reciverRole
+     * | code : Sam Kerketta
+     * | ----------------- Get Property Type / Water ------------------------------- |
+     * | @var propertyType 
+     * | #request null
+     * | Operation : data fetched by table water_property_type_mstrs 
      */
-    public function updationOflevel(Request $request)
+    public function getPropertyType()
     {
-        DB::beginTransaction();
-        $user = auth()->user()->id;
-        $ulbId = auth()->user()->ulb_id;
         try {
-            // previous level pending verification updation
-            $levelPending = WaterlevelPending::where('saf_id', $request->safId)  //<---------- Make the Model
-                ->where('verification_status', '0')
-                ->first();
-            $levelPending->verification_status = '1';
-            $levelPending->remarks = $request->remarks;
-            $levelPending->save();
-
-            //reciver role_id may not be provided 
-            $reciverRole = WfRole::select('farword_role_id')    // <------------------ Make the Model
-                ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
-                ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
-                ->where('users.ulb_id', $ulbId)
-                ->where('user.id', $user)
+            $propertyType = DB::table('water_property_type_mstrs')
+                ->select('water_property_type_mstrs.id', 'water_property_type_mstrs.property_type')
+                ->where('status', 1)
                 ->get();
-
-            //data to be added in the waterlevelPending as it is passsed farward
-            $levelPending = new WaterlevelPending();    // <----------- Make the Model
-            $levelPending->saf_id = $request->safId;
-            $levelPending->sender_role_id = $request->senderRoleId ;    // <------------- here
-            $levelPending->receiver_role_id =$reciverRole;    // <------------- here
-            $levelPending->sender_user_id = auth()->user()->id;
-            $levelPending->save();
-
-            DB::commit();
-            return responseMsg(true, "Forwarded The Application", "");
+            return response()->json(['status' => true, 'message' => 'data of the propertyType', 'data' => $propertyType]);
         } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return $e;
         }
     }
 
-     /**
-     * | ----------------- Applicant level Backword structure ------------------------------- |
-     * | @param Request
-     * | @param Request $req
-     * | #user
-     * | #ulbId
-     * | #levelPending
-     * | #reciverRole
+    /**
+     * | code : Sam Kerketta
+     * | ----------------- Get Owner Type / Water ------------------------------- |
+     * | @var ownerType 
+     * | #request null
+     * | Operation : data fetched by table water_owner_type_mstrs 
      */
-    public function reverseInLevel()
+    public function getOwnerType()
     {
-        DB::beginTransaction();
-        $user = auth()->user()->id;
-        $ulbId = auth()->user()->ulb_id;
         try {
-            // previous level pending verification updation
-            $levelPending = WaterlevelPending::where('saf_id', $request->safId)  //<---------- Make the Model
-                ->where('verification_status', '0')
-                ->first();
-            $levelPending->verification_status = '1';
-            $levelPending->remarks = $request->remarks;
-            $levelPending->save();
-
-            //reciver role_id may not be provided in case of backward
-            $reciverRole = WfRole::select('backward_role_id')    // <------------------ Make the Model
-                ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
-                ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
-                ->where('users.ulb_id', $ulbId)
-                ->where('user.id', $user)
+            $ownerType = DB::table('water_owner_type_mstrs')
+                ->select('water_owner_type_mstrs.id', 'water_owner_type_mstrs.owner_type')
+                ->where('status', 1)
                 ->get();
-
-            //data to be added in the waterlevelPending as it is passsed farward
-            $levelPending = new WaterlevelPending();    // <----------- Make the Model
-            $levelPending->saf_id = $request->safId;
-            $levelPending->sender_role_id = $request->senderRoleId;    // <------------- here
-            $levelPending->receiver_role_id = $reciverRole;    // <------------- here
-            $levelPending->sender_user_id = auth()->user()->id;
-            $levelPending->save();
-
-            DB::commit();
-            return responseMsg(true, "Forwarded The Application", "");
+            return response()->json(['status' => true, 'message' => 'data of the ownerType', 'data' => $ownerType]);
         } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return $e;
         }
     }
+
+    /**
+     * | code : Sam Kerketta
+     * | ----------------- Get Owner Type / Water ------------------------------- |
+     * | @var wfmaster 
+     * | @var ward
+     * | #request null
+     * | Operation : data fetched by table ulb_ward_masters 
+     */
+    public function getWardNo()
+    {
+        $wfmaster = 3;  //<--------------- this is fot the water ie. 3 is the wfmasterid create a constant
+        try {
+            $ward = DB::table('ulb_ward_masters')
+                ->select('ulb_ward_masters.id', 'ulb_ward_masters.ward_name')
+                ->join('wf_workflows', 'wf_workflows.ulb_id', '=', 'ulb_ward_masters.ulb_id')
+                ->where('wf_workflows.wf_master_id', $wfmaster)
+                ->get();
+
+            return response()->json(['status' => true, 'message' => 'data of the Ward NO', 'data' => $ward]);
+        } catch (Exception $e) {
+            return $e;
+        }
+    }
+
+
+
+
+
+
+    // /**
+    //  * | code : Sam Kerketta
+    //  * | ----------------- Final Applicant approval structure ------------------------------- |
+    //  * | @param Request
+    //  * | @param Request $req
+    //  * | #application > contains all the data of the applicant
+    //  * | #request > contain all data of the applicant provided by the fontend
+    //  * | Operation : data is to be deleted from application and store in approval and consumer table
+    //  */
+    // public function approvalOfApplication(Request $request)
+    // {
+    //     DB::beginTransaction();
+    //     try {
+    //         if ($request['approved_status'] = true) {
+
+    //             $application = WaterApplication::query()     //<------------- operation req
+    //                 ->where('id', $request->safId)
+    //                 ->first();
+    //             $approvedSaf = $application->replicate();
+    //             $approvedSaf->setTable('water_approved_application_details');
+    //             $approvedSaf->setTable('water_consumers');  //<---------- (Caution) operation may not be used
+    //             $approvedSaf->id = $application->id;
+    //             $approvedSaf->consumer_no = rand(10); //<------------- (Reminder) Default generated consumerId here
+    //             $approvedSaf->push();
+    //             $application->delete();  //<--------------- (Caution)perform after all the process
+    //         }
+    //         DB::commit();
+    //         return response()->json(["status" => true, "message" => "Application Successfully Approved", "data" => ""]);
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return response()->json([$e]);
+    //     }
+    // }
+
+    // /**
+    //  * | ----------------- Applicant reject structure ------------------------------- |
+    //  * | @param Request
+    //  * | @param Request $req
+    //  * | #application > contains all the data of the applicant
+    //  * | #rejectedSaf > data to be push 
+    //  * | #request > contain all data of the applicant provided by the fontend
+    //  * | Operation : data is to be deleted from application and store in reject   
+    //  */
+    // public function rejectionOfApplication(Request $request)
+    // {
+    //     # code...
+    //     DB::beginTransaction();
+    //     try {
+    //         if ($request['reject_status'] = true) {
+
+    //             $application = WaterApplication::query()    //<------------ operation of rejection
+    //                 ->where('id', $request->safId)
+    //                 ->first();
+    //             $rejectedSaf = $application->replicate();
+    //             $rejectedSaf->setTable('Water_rejected_application_details');
+    //             $rejectedSaf->id = $application->id;
+    //             $rejectedSaf->push();
+    //             $application->delete();   //<-------------- (Caution) maybe the status will also be changed
+    //             $msg = "Application Rejected Successfully";
+    //         }
+    //         DB::commit();
+    //         return response()->json(["status" => true, "message" => $msg]);
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return response()->json([$e]);
+    //     }
+    // }
+
+    // /**
+    //  * | ----------------- Applicant level approval structure ------------------------------- |
+    //  * | @param Request
+    //  * | @param Request $req
+    //  * | #user
+    //  * | #ulbId
+    //  * | #levelPending
+    //  * | #reciverRole
+    //  */
+    // public function updationOflevel(Request $request)
+    // {
+    //     DB::beginTransaction();
+    //     $user = auth()->user()->id;
+    //     $ulbId = auth()->user()->ulb_id;
+    //     try {
+    //         #   previous level pending verification updation
+    //         $levelPending = WaterlevelPending::where('saf_id', $request->safId)  //<---------- Make the Model
+    //             ->where('verification_status', 0)
+    //             ->first();
+    //         $levelPending->verification_status = 1;
+    //         $levelPending->remarks = $request->remarks;
+    //         $levelPending->save();
+
+    //         #   reciver role_id may not be provided 
+    //         $reciverRole = WfRole::select('farword_role_id')    // <------------------ Make the Model
+    //             ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
+    //             ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
+    //             ->where('users.ulb_id', $ulbId)
+    //             ->where('user.id', $user)
+    //             ->get();
+
+    //         #   data to be added in the waterlevelPending as it is passsed farward
+    //         $levelPending = new WaterlevelPending();    // <----------- Make the Model
+    //         $levelPending->saf_id = $request->safId;
+    //         $levelPending->sender_role_id = $request->senderRoleId;    // <------------- here
+    //         $levelPending->receiver_role_id = $reciverRole;    // <------------- here
+    //         $levelPending->sender_user_id = auth()->user()->id;
+    //         $levelPending->save();
+
+    //         DB::commit();
+    //         return responseMsg(true, "Forwarded The Application", "");
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return responseMsg(false, $e->getMessage(), $request->all());
+    //     }
+    // }
+
+    // /**
+    //  * | ----------------- Applicant level Backword structure ------------------------------- |
+    //  * | @param Request
+    //  * | @param Request $req
+    //  * | #user
+    //  * | #ulbId
+    //  * | #levelPending
+    //  * | #reciverRole
+    //  */
+    // public function reverseInLevel(Request $request)
+    // {
+    //     DB::beginTransaction();
+    //     $user = auth()->user()->id;
+    //     $ulbId = auth()->user()->ulb_id;
+    //     try {
+    //         #   previous level pending verification updation
+    //         $levelPending = WaterlevelPending::where('saf_id', $request->safId)  //<---------- Make the Model
+    //             ->where('verification_status', 0)
+    //             ->first();
+    //         $levelPending->verification_status = 1;
+    //         $levelPending->remarks = $request->remarks;
+    //         $levelPending->save();
+
+    //         #   reciver role_id may not be provided in case of backward
+    //         $reciverRole = WfRole::select('backward_role_id')    // <------------------ Make the Model
+    //             ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
+    //             ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
+    //             ->where('users.ulb_id', $ulbId)
+    //             ->where('user.id', $user)
+    //             ->get();
+
+    //         #   data to be added in the waterlevelPending as it is passsed farward
+    //         $levelPending = new WaterlevelPending();    // <----------- Make the Model
+    //         $levelPending->saf_id = $request->safId;
+    //         $levelPending->sender_role_id = $request->senderRoleId;    // <------------- here
+    //         $levelPending->receiver_role_id = $reciverRole;    // <------------- here
+    //         $levelPending->sender_user_id = auth()->user()->id;
+    //         $levelPending->save();
+
+    //         DB::commit();
+    //         return responseMsg(true, "Forwarded The Application", "");
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return responseMsg(false, $e->getMessage(), $request->all());
+    //     }
+    // }
+
+    // /**
+    //  * | ----------------- Inbox ------------------------------- |
+    //  * | @param Request
+    //  * | @param Request $request
+    //  * | #user
+    //  * | #ulbId
+    //  * | #roles
+    //  * | #data
+    //  */
+    // public function showDataInbox(Request $request)
+    // {
+    //     #   auth of the user list
+    //     $user = auth()->user()->id;
+    //     $ulbId = auth()->user()->ulb_id;
+
+    //     $roles = DB::table('wf_roles')
+    //         ->select('id')
+    //         ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
+    //         ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
+    //         ->where('users.ulb_id', $ulbId)
+    //         ->where('users.id', $user)
+    //         ->get();
+
+    //     try {
+    //         $data = WaterApplication::select('water_application.*')
+    //             ->join('water_level_pendings', 'water_level_pendings.saf_id', '=', 'water_application.id') //<---------- prop_level_pendings will be replaced by the water_level_pending
+    //             ->where('water_level_pendings.reciver_role_id', $roles)  //<--------- prop_level_pending replace it
+    //             ->where('verification_status', 0)
+    //             ->where('status', 1)
+    //             ->get();
+    //         return response()->json(["data" => $data, "status" => true, "message" => "Data Available", 200]);
+    //     } catch (Exception $e) {
+    //         return response()->json($e, 400);
+    //     }
+    // }
+
+    // /**
+    //  * | ----------------- Outbox ------------------------------- |
+    //  * | @param Request
+    //  * | @param Request $request
+    //  * | #user
+    //  * | #ulbId
+    //  * | #roles
+    //  * | #data
+    //  */
+    // public function getDataInOutbox()
+    // {
+    //     #   auth of the user list
+    //     $user = auth()->user()->id;
+    //     $ulbId = auth()->user()->ulb_id;
+
+    //     $roles = WfRole::select('id')   //<---------- create the Model here
+    //         ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
+    //         ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
+    //         ->where('users.ulb_id', $ulbId)
+    //         ->where('user.id', $user)
+    //         ->get();
+
+    //     try {
+    //         $data = WaterApplication::select('water_application.*')
+    //             ->join('water_level_pendings', 'water_level_pendings.saf_id', '=', 'water_application.id')    //<----- prop_level_pending will be replaced by water_level_pending
+    //             ->where('water_level_pendings.sender_role_id', $roles)  //<------ prop_level_pending will replace
+    //             ->where('verification_status', 0)   //<------------- Codition may not be req.
+    //             ->where('verification_status', 1)   //<------------- Condition may not be req.
+    //             ->where('status', '=', 1)
+    //             ->get();
+
+    //         return response()->json(["data" => $data, "status" => true, "message" => "Data Available", 200]);
+    //     } catch (Exception $e) {
+    //         return response()->json($e, 400);
+    //     }
+    // }
 }
