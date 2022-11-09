@@ -620,28 +620,15 @@ class SafRepository implements iSafRepository
             'id' => 'required|integer'
         ]);
         try {
+            // Saf Details
             $data = ActiveSaf::find($req->id);
 
-            // $time_line =  DB::table('workflow_tracks')->select(
-            //     "workflow_tracks.message",
-            //     "role_masters.role_name",
-            //     DB::raw("workflow_tracks.track_date::date as track_date")
-            // )
-            //     ->leftjoin('users', "users.id", "workflow_tracks.citizen_id")
-            //     ->leftjoin('role_users', 'role_users.user_id', 'users.id')
-            //     ->leftjoin('role_masters', 'role_masters.id', 'role_users.role_id')
-            //     ->where('ref_table_dot_id', 'active_saf_details.id')
-            //     ->where('ref_table_id_value', $saf_id)
-            //     ->orderBy('track_date', 'desc')
-            //     ->get();
-            // $data['time_line'] =  remove_null($time_line);
-            // $data['work_flow_candidate'] = [];
-            // if ($saf_data->is_escalate) {
-            //     $rol_type =  $this->getAllRoles($user_id, $ulb_id, $saf_data->workflow_id, $role_id);
-            //     $data['work_flow_candidate'] =  remove_null(ConstToArray($rol_type));
-            // }
-            // $forward_backword =  $this->getForwordBackwordRoll($user_id, $ulb_id, $saf_data->workflow_id, $role_id);
-            // $data['forward_backward'] =  remove_null($forward_backword);
+            $ownerDetails = ActiveSafsOwnerDtl::where('saf_id', $data->id)->get();
+            $data['owners'] = $ownerDetails;
+
+            $floorDetails = ActiveSafsFloorDtls::where('saf_id', $data->id)->get();
+            $data['floors'] = $floorDetails;
+
             return responseMsg(true, 'Data Fetched', remove_null($data));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
