@@ -116,6 +116,41 @@ if (!function_exists('calculateQuaterDueDate')) {
         if ($MM >= 1 && $MM <= 3) return ($YYYY) . "-03-31";
     }
 }
+
+// Get Quarter Start Date
+if (!function_exists('calculateQuarterStartDate')) {
+    function calculateQuarterStartDate(String $date): String
+    {
+        /* ------------------------------------------------------------
+            * Request
+            * ------------------------------------------------------------
+            * #reqFromdate
+            * ------------------------------------------------------------
+            * Calculation
+            * ------------------------------------------------------------
+            * #MM =         | Get month from reqFromdate
+            * #YYYY =       | Get year from reqFromdate
+            * #dueDate =    | IF MM >=4 AND MM <=6 THE 
+                            |       #YYYY-06-30
+                            | IF MM >=7 AND MM <=9 THE 
+                            |       #YYYY-09-30
+                            | IF MM >=10 AND MM <=12 THE 
+                            |       #YYYY-12-31
+                            | IF MM >=1 AND MM <=3 THE 
+                            |       (#YYYY+1)-03-31
+        
+        */
+        $carbonDate = Carbon::createFromFormat("Y-m-d", $date);
+        $MM = (int) $carbonDate->format("m");
+        $YYYY = (int) $carbonDate->format("Y");
+
+        if ($MM >= 4 && $MM <= 6) return $YYYY . "-04-01";
+        if ($MM >= 7 && $MM <= 9) return $YYYY . "-07-01";
+        if ($MM >= 10 && $MM <= 12) return $YYYY . "-10-01";
+        if ($MM >= 1 && $MM <= 3) return ($YYYY) . "-01-01";
+    }
+}
+
 // get Financual Year by date
 if (!function_exists('calculateQtr')) {
     function calculateQtr(String $date): String

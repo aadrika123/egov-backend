@@ -50,6 +50,8 @@ class SafCalculation
     private $_petrolPumpQuaterlyRuleSets;
     private $_vacantRentalRates;
     private $_vacantPropertyTypeId;
+    private $_currentQuarterStartDate;
+    private $_currentQuarterDate;
 
     /** 
      * | For Building
@@ -69,15 +71,23 @@ class SafCalculation
         try {
             $this->_propertyDetails = $req->all();
 
-            $this->readPropertyMasterData();                                                        // Make all master data as global
+            $this->readPropertyMasterData();                                                        // Make all master data as global(1.1)
 
-            $this->calculateMobileTowerTax();                                                       // For Mobile Towers
+            $this->calculateMobileTowerTax();                                                       // For Mobile Towers(1.2)
 
-            $this->calculateHoardingBoardTax();                                                     // For Hoarding Board
+            $this->calculateHoardingBoardTax();                                                     // For Hoarding Board(1.3)
 
-            $this->calculateBuildingTax();                                                          // Means the Property Type is not a vacant Land
+            $this->calculateBuildingTax();                                                          // Means the Property Type is a Building(1.4)
 
-            $this->calculateVacantLandTax();                                                        // If The Property Type is the type of Vacant Land
+            $this->calculateVacantLandTax();                                                        // If The Property Type is the type of Vacant Land(1.5)
+
+            $demand = collect($this->_GRID['details'])->pipe(function ($values) {
+                return collect([
+                    'totalTax' => roundFigure($values->sum('totalTax')),
+                    'totalOnePercPenalty' => roundFigure($values->sum('onePercPenaltyTax'))
+                ]);
+            });
+            $this->_GRID['demand'] = $demand;
 
             return responseMsg(true, "Data Fetched", remove_null($this->_GRID));
         } catch (Exception $e) {
@@ -136,6 +146,13 @@ class SafCalculation
         if ($this->_propertyDetails['propertyType'] == 4) {                                                         // i.e for Vacant Land
             $this->_vacantRentalRates = $this->readVacantRentalRates();
         }
+
+        // Current Quarter End Date and Start Date for 1% Penalty
+        $current = Carbon::now()->format('Y-m-d');
+        $currentQuarterDueDate = Carbon::parse(calculateQuaterDueDate($current))->floorMonth();
+        $this->_currentQuarterDueDate = $currentQuarterDueDate;                                                     // Quarter Due Date
+        $currentQuarterDate = Carbon::parse($current)->floorMonth();
+        $this->_currentQuarterDate = $currentQuarterDate;                                                           // Quarter Current Date
     }
 
     /**
@@ -246,7 +263,7 @@ class SafCalculation
     }
 
     /**
-     * | Calculate Mobile Tower
+     * | Calculate Mobile Tower (1.2)
      */
     public function calculateMobileTowerTax()
     {
@@ -258,7 +275,7 @@ class SafCalculation
     }
 
     /**
-     * | In Case of the Property Have Hoarding Board
+     * | In Case of the Property Have Hoarding Board(1.3)
      */
     public function calculateHoardingBoardTax()
     {
@@ -270,7 +287,7 @@ class SafCalculation
     }
 
     /**
-     * | In Case of the Property is a Building or SuperStructure
+     * | In Case of the Property is a Building or SuperStructure (1.4)
      */
     public function calculateBuildingTax()
     {
@@ -299,7 +316,7 @@ class SafCalculation
     }
 
     /**
-     * | Calculate Vacant Rental Rate
+     * | Calculate Vacant Rental Rate 
      */
     public function readVacantRentalRates()
     {
@@ -310,7 +327,7 @@ class SafCalculation
     }
 
     /**
-     * | Calculate Vacant Land Tax
+     * | Calculate Vacant Land Tax (1.5)
      */
     public function calculateVacantLandTax()
     {
@@ -451,42 +468,63 @@ class SafCalculation
 
         // is implimented rule set 1 (before 2016-2017), (2016-2017 TO 2021-2022), (2021-2022 TO TILL NOW)
         if ($dateFrom < $this->_effectiveDateRule2) {
+            $quarterDueDate = calculateQuaterDueDate($dateFrom);
+            $onePercPenalty = $this->onePercPenalty($quarterDueDate);                   // One Percent Penalty
             $ruleSets[] = [
                 "quarterYear" => calculateFyear($dateFrom),                              // Calculate Financial Year means to Calculate the FinancialYear
                 "ruleSet" => "RuleSet1",
                 "qtr" => calculateQtr($dateFrom),                                        // Calculate Quarter from the date
-                "dueDate" => calculateQuaterDueDate($dateFrom),                          // Calculate Quarter Due Date of the Date
-
+                "dueDate" => $quarterDueDate                                             // Calculate Quarter Due Date of the Date
             ];
-            $tax = $this->calculateRuleSet1($key);                                       // Tax Calculation
+            $tax = $this->calculateRuleSet1($key, $onePercPenalty);                      // Tax Calculation
             $ruleSetsWithTaxes = array_merge($readFloorDetail, $ruleSets[0], $tax);
             return $ruleSetsWithTaxes;
         }
         // is implimented rule set 2 (2016-2017 TO 2021-2022), (2021-2022 TO TILL NOW)
         if ($dateFrom < $this->_effectiveDateRule3) {
+            $quarterDueDate = calculateQuaterDueDate($dateFrom);
+            $onePercPenalty = $this->onePercPenalty($quarterDueDate);                   // One Percent Penalty
             $ruleSets[] = [
                 "quarterYear" => calculateFyear($dateFrom),
                 "ruleSet" => "RuleSet2",
                 "qtr" => calculateQtr($dateFrom),
-                "dueDate" => calculateQuaterDueDate($dateFrom)
+                "dueDate" => $quarterDueDate
             ];
-            $tax = $this->calculateRuleSet2($key);
+            $tax = $this->calculateRuleSet2($key, $onePercPenalty);
             $ruleSetsWithTaxes = array_merge($readFloorDetail, $ruleSets[0], $tax);
             return $ruleSetsWithTaxes;
         }
 
         // is implimented rule set 3 (2021-2022 TO TILL NOW)
         if ($dateFrom >= $this->_effectiveDateRule3) {
+            $quarterDueDate = calculateQuaterDueDate($dateFrom);                        // One Percent Penalty
+            $onePercPenalty = $this->onePercPenalty($quarterDueDate);
             $ruleSets[] = [
                 "quarterYear" => calculateFyear($dateFrom),
                 "ruleSet" => "RuleSet3",
                 "qtr" => calculateQtr($dateFrom),
                 "dueDate" => calculateQuaterDueDate($dateFrom)
             ];
-            $tax = $this->calculateRuleSet3($key);
+            $tax = $this->calculateRuleSet3($key, $onePercPenalty);
             $ruleSetsWithTaxes = array_merge($readFloorDetail, $ruleSets[0], $tax);
             return $ruleSetsWithTaxes;
         }
+    }
+
+    /**
+     * | One Perc Penalty(1.2.1.1)
+     * | @param quarterDueDate Floor Quaterly Due Date
+     */
+    public function onePercPenalty($quarterDueDate)
+    {
+        // One Perc Penalty
+        $quarterDueDate = Carbon::parse($quarterDueDate)->floorMonth();
+        $diffInMonths = $quarterDueDate->diffInMonths($this->_currentQuarterDate);
+        if ($quarterDueDate >= $this->_currentQuarterDueDate)                      // Means the quarter due date is on current quarter or next quarter
+            $onePercPenalty = 0;
+        else
+            $onePercPenalty = $diffInMonths;
+        return $onePercPenalty;
     }
 
     /**
@@ -515,7 +553,7 @@ class SafCalculation
      * | @return Tax totalTax/4 (Quaterly)
      * | Query RunTime=1
      */
-    public function calculateRuleSet1($key)
+    public function calculateRuleSet1($key, $onePercPenalty)
     {
         $readBuildupArea =  $this->_floors[$key]['buildupArea'];
         $readFloorInstallationDate =  $this->_floors[$key]['dateFrom'];
@@ -553,7 +591,8 @@ class SafCalculation
         $educationTax = ($arv * 5.0) / 100;
         $rwhPenalty = 0;
 
-        $totalTax = $holdingTax + $latrineTax + $waterTax + $healthTax + $educationTax + $rwhPenalty;
+        $totalTax = $holdingTax + $latrineTax + $waterTax + $healthTax + $educationTax;
+        $onePercPenaltyTax = ($totalTax * $onePercPenalty) / 100;
 
         // Tax Calculation Quaterly
         $tax = [
@@ -565,7 +604,9 @@ class SafCalculation
             "healthTax" => roundFigure($healthTax / 4),
             "educationTax" => roundFigure($educationTax / 4),
             "rwhPenalty" => roundFigure($rwhPenalty),
-            "totalTax" => roundFigure($totalTax / 4)
+            "totalTax" => roundFigure($totalTax / 4),
+            "onePercPenalty" => $onePercPenalty,
+            "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
         ];
         return $tax;
     }
@@ -593,7 +634,7 @@ class SafCalculation
      * | $rwhPenalty = $arv/2
      * | $totalTax = $arv + $rwhPenalty;
      */
-    public function calculateRuleSet2($key)
+    public function calculateRuleSet2($key, $onePercPenalty)
     {
         $paramRentalRate = $this->_paramRentalRate;
         // Vacant Land RuleSet2
@@ -618,7 +659,8 @@ class SafCalculation
                 "tax" => roundFigure($tax / 4),
                 "area" => roundFigure($area),
                 "rentalRate" => $rentalRate,
-                "occupancyFactor" => $occupancyFactor
+                "occupancyFactor" => $occupancyFactor,
+                "onePercPenalty"   => $onePercPenalty
             ];
             return $taxQuaterly;
         }
@@ -684,7 +726,9 @@ class SafCalculation
         if ($this->_rwhPenaltyStatus == true) {
             $rwhPenalty = $arv / 2;
         }
+
         $totalTax = $arv + $rwhPenalty;
+        $onePercPenaltyTax = ($totalTax * $onePercPenalty) / 100;
         // All Taxes Quaterly
         $tax = [
             "arv" => roundFigure($arv / 4),
@@ -693,7 +737,9 @@ class SafCalculation
             "rentalRate" => (float)$rentalRate,
             "occupancyFactor" => $paramOccupancyFactor,
             "rwhPenalty" => roundFigure($rwhPenalty / 4),
-            "totalTax" => roundFigure($totalTax / 4)
+            "totalTax" => roundFigure($totalTax / 4),
+            "onePercPenalty" => $onePercPenalty,
+            "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
         ];
         return $tax;
     }
@@ -702,7 +748,7 @@ class SafCalculation
      * | RuleSet 3 Calculation (1.2.1.3)
      * | @param key arrayKey value
      */
-    public function calculateRuleSet3($key)
+    public function calculateRuleSet3($key, $onePercPenalty)
     {
         // Vacant Land RuleSet3
         if ($key == "vacantLand") {
@@ -725,7 +771,8 @@ class SafCalculation
                 "tax" => roundFigure($tax / 4),
                 "area" => roundFigure($area),
                 "rentalRate" => $rentalRate,
-                "occupancyFactor" => $occupancyFactor
+                "occupancyFactor" => $occupancyFactor,
+                "onePercPenalty"   => $onePercPenalty
             ];
             return $taxQuaterly;
         }
@@ -793,6 +840,8 @@ class SafCalculation
         }
 
         $totalTax = $calculatePropertyTax + $rwhPenalty;
+        $onePercPenaltyTax = ($totalTax * $onePercPenalty) / 100;                                           // One Percent Penalty
+
         // Tax Calculation Quaterly
         $tax = [
             "arv" => roundFigure($calculatePropertyTax / 4),
@@ -803,7 +852,9 @@ class SafCalculation
             "calculationFactor" => $readCalculationFactor,
             "matrixFactor" => $readMatrixFactor,
             "rwhPenalty" => roundFigure($rwhPenalty / 4),
-            "totalTax" => roundFigure($totalTax / 4)
+            "totalTax" => roundFigure($totalTax / 4),
+            "onePercPenalty" => $onePercPenalty,
+            "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
         ];
         return $tax;
     }

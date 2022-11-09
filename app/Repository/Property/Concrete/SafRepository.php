@@ -4,12 +4,6 @@ namespace App\Repository\Property\Concrete;
 
 use App\Repository\Property\Interfaces\iSafRepository;
 use Illuminate\Http\Request;
-use App\Models\PropParamConstructionType;
-use App\Models\PropParamFloorType;
-use App\Models\PropParamOccupancyType;
-use App\Models\PropParamOwnershipType;
-use App\Models\PropParamPropertyType;
-use App\Models\PropParamUsageType;
 use App\Models\UlbWardMaster;
 use App\Models\UlbWorkflowMaster;
 use App\Models\Workflow;
@@ -33,10 +27,8 @@ use App\Models\Property\PropMConstructionType;
 use App\Models\Property\PropMFloor;
 use App\Models\Property\PropMOccupancyType;
 use App\Models\Property\PropMOwnershipType as PropertyPropMOwnershipType;
-use App\Models\Property\PropMParamPropertyType;
 use App\Models\Property\PropMPropertyType;
 use App\Models\Property\PropMUsageType;
-use App\Models\PropMOwnershipType;
 use App\Models\WfWorkflow;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
@@ -469,10 +461,6 @@ class SafRepository implements iSafRepository
         return $safNo = "SAF/" . str_pad($assessment_type, 2, '0', STR_PAD_LEFT) . "/" . str_pad($ward_no, 3, '0', STR_PAD_LEFT) . "/" . str_pad($count, 5, '0', STR_PAD_LEFT);
     }
 
-    public function taxCalculater(Request $request)
-    {
-    }
-
     /**
      * ---------------------- Saf Workflow Inbox --------------------
      * | Initialization
@@ -620,28 +608,22 @@ class SafRepository implements iSafRepository
             'id' => 'required|integer'
         ]);
         try {
-            $data = ActiveSaf::find($req->id);
+            // Saf Details
+            $data = [];
+            $data = DB::table('active_safs')
+                ->select('active_safs.*', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                ->join('ulb_ward_masters as w', 'w.id', '=', 'active_safs.ward_mstr_id')
+                ->join('prop_m_ownership_types as o', 'o.id', '=', 'active_safs.ownership_type_mstr_id')
+                ->leftJoin('prop_m_property_types as p', 'p.id', '=', 'active_safs.property_assessment_id')
+                ->where('active_safs.id', $req->id)
+                ->first();
+            $data = json_decode(json_encode($data), true);
+            $ownerDetails = ActiveSafsOwnerDtl::where('saf_id', $data['id'])->get();
+            $data['owners'] = $ownerDetails;
 
-            // $time_line =  DB::table('workflow_tracks')->select(
-            //     "workflow_tracks.message",
-            //     "role_masters.role_name",
-            //     DB::raw("workflow_tracks.track_date::date as track_date")
-            // )
-            //     ->leftjoin('users', "users.id", "workflow_tracks.citizen_id")
-            //     ->leftjoin('role_users', 'role_users.user_id', 'users.id')
-            //     ->leftjoin('role_masters', 'role_masters.id', 'role_users.role_id')
-            //     ->where('ref_table_dot_id', 'active_saf_details.id')
-            //     ->where('ref_table_id_value', $saf_id)
-            //     ->orderBy('track_date', 'desc')
-            //     ->get();
-            // $data['time_line'] =  remove_null($time_line);
-            // $data['work_flow_candidate'] = [];
-            // if ($saf_data->is_escalate) {
-            //     $rol_type =  $this->getAllRoles($user_id, $ulb_id, $saf_data->workflow_id, $role_id);
-            //     $data['work_flow_candidate'] =  remove_null(ConstToArray($rol_type));
-            // }
-            // $forward_backword =  $this->getForwordBackwordRoll($user_id, $ulb_id, $saf_data->workflow_id, $role_id);
-            // $data['forward_backward'] =  remove_null($forward_backword);
+            $floorDetails = ActiveSafsFloorDtls::where('saf_id', $data['id'])->get();
+            $data['floors'] = $floorDetails;
+
             return responseMsg(true, 'Data Fetched', remove_null($data));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

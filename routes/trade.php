@@ -28,6 +28,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('getLicenceDtl/{id}', 'getLicenceDtl');
         Route::post('getDenialDetails',"getDenialDetails");
         Route::post('searchLicense', 'searchLicence');
+        Route::post('getApplicationList', 'applicationList');
         Route::post('inbox', 'inbox');
         Route::post('outbox', 'outbox');
         Route::post('postNext', 'postNextLevel');
