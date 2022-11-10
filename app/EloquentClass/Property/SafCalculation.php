@@ -14,7 +14,8 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Psy\ConfigPaths;
+use Illuminate\Support\Facades\Redis;
+use Monolog\Handler\RedisPubSubHandler;
 
 /**
  * | --------- Saf Calculation Class -----------------
@@ -33,7 +34,7 @@ class SafCalculation
     private $_ulbId;
     private $_rentalValue;
     private $_multiFactors;
-    private $_paramRentalRate;              // 144
+    private $_paramRentalRate;
     private $_rentalRates;
     private $_virtualDate;
     private $_effectiveDateRule2;
@@ -52,6 +53,8 @@ class SafCalculation
     private $_vacantPropertyTypeId;
     private $_currentQuarterStartDate;
     private $_currentQuarterDate;
+    private $_loggedInUserType;
+    private $_redis;
 
     /** 
      * | For Building
@@ -81,13 +84,7 @@ class SafCalculation
 
             $this->calculateVacantLandTax();                                                        // If The Property Type is the type of Vacant Land(1.5)
 
-            $demand = collect($this->_GRID['details'])->pipe(function ($values) {
-                return collect([
-                    'totalTax' => roundFigure($values->sum('totalTax')),
-                    'totalOnePercPenalty' => roundFigure($values->sum('onePercPenaltyTax'))
-                ]);
-            });
-            $this->_GRID['demand'] = $demand;
+            $this->calculateFinalPayableAmount();                                                   // Adding Total Final Tax with fine and Penalties(1.6)
 
             return responseMsg(true, "Data Fetched", remove_null($this->_GRID));
         } catch (Exception $e) {
@@ -101,6 +98,7 @@ class SafCalculation
 
     public function readPropertyMasterData()
     {
+        $this->_redis = Redis::connection();
         $propertyDetails = $this->_propertyDetails;
         $this->_paramRentalRate = Config::get("PropertyConstaint.PARAM_RENTAL_RATE");
 
@@ -115,7 +113,11 @@ class SafCalculation
         $this->_vacantPropertyTypeId = Config::get("PropertyConstaint.VACANT_PROPERTY_TYPE");               // Vacant Property Type Id
 
         // Ward No
-        $this->_wardNo = UlbWardMaster::find($propertyDetails['ward'])->ward_name;
+        $this->_wardNo = Redis::get('ulbWardMaster:' . $propertyDetails['ward']);                           // Ward No Value from Redis
+        if (!$this->_wardNo) {
+            $this->_wardNo = UlbWardMaster::find($propertyDetails['ward'])->ward_name;
+            $this->_redis->set('ulbWardMaster:' . $propertyDetails['ward'], $this->_wardNo);
+        }
 
         // Rain Water Harvesting Penalty If The Plot Area is Greater than 3228 sqft. and Rain Water Harvesting is none
         $readAreaOfPlot =  $this->_propertyDetails['areaOfPlot'] * 435.6;                                    // (In Decimal To SqFt)
@@ -123,15 +125,26 @@ class SafCalculation
             $this->_rwhPenaltyStatus = true;
         }
 
-        $refParamRentalRate = PropMBuildingRentalConst::where('ulb_id', $this->_ulbId)->first();
-        if (!$refParamRentalRate) {
-            return responseMsg(false, "Rental Rate Parameter not found for this ulb", "");
+        $refParamRentalRate = json_decode(Redis::get('propMBuildingRentalConst:' . $this->_ulbId));         // Get Building Rental Constant From Redis
+
+        if (!$refParamRentalRate) {                                                                         // Get Building Rental Constant From Database
+            $refParamRentalRate = PropMBuildingRentalConst::where('ulb_id', $this->_ulbId)->first();
+            $this->_redis->set('propMBuildingRentalConst:' . $this->_ulbId, json_encode($refParamRentalRate));
         }
+
         $this->_paramRentalRate = $refParamRentalRate->x;
 
-        // Check If the one of the floors is commercial
-        $readCommercial = collect($this->_floors)->where('useType', '!=', 1);
-        $this->_isResidential = $readCommercial->isEmpty();
+        // Check If the one of the floors is commercial for Building
+        if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
+            $readCommercial = collect($this->_floors)->where('useType', '!=', 1);
+            $this->_isResidential = $readCommercial->isEmpty();
+        }
+
+        // Check if the vacant land is residential or not
+        if ($propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
+            $condition = $propertyDetails['isMobileTower'] == true || $propertyDetails['isHoardingBoard'] == true;
+            $this->_isResidential = $condition ? false : true;
+        }
 
         $this->_rentalValue = $this->readRentalValue();
         $this->_multiFactors = $this->readMultiFactor();                                                            // Calculation of Rental rate and Storing in Global Variable (function 1.1.1)
@@ -153,6 +166,7 @@ class SafCalculation
         $this->_currentQuarterDueDate = $currentQuarterDueDate;                                                     // Quarter Due Date
         $currentQuarterDate = Carbon::parse($current)->floorMonth();
         $this->_currentQuarterDate = $currentQuarterDate;                                                           // Quarter Current Date
+        $this->_loggedInUserType = auth()->user()->user_type;                                                       // User Type of current Logged In User
     }
 
     /**
@@ -161,11 +175,15 @@ class SafCalculation
     public function readRentalValue()
     {
         $readZoneId = $this->_propertyDetails['zone'];
-        $refRentalValue = PropMRentalValue::select('usage_types_id', 'zone_id', 'construction_types_id', 'rate')
-            ->where('zone_id', $readZoneId)
-            ->where('ulb_id', $this->_ulbId)
-            ->where('status', 1)
-            ->get();
+        $refRentalValue = json_decode(Redis::get('propMRentalValue-z-' . $readZoneId . '-u-' . $this->_ulbId));         // Get Rental Value from Redis
+        if (!$refRentalValue) {
+            $refRentalValue = PropMRentalValue::select('usage_types_id', 'zone_id', 'construction_types_id', 'rate')    // Get Rental value from DB
+                ->where('zone_id', $readZoneId)
+                ->where('ulb_id', $this->_ulbId)
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('propMRentalValue-z-' . $readZoneId . '-u-' . $this->_ulbId, json_encode($refRentalValue));
+        }
         return $refRentalValue;
     }
 
@@ -174,9 +192,13 @@ class SafCalculation
      */
     public function readMultiFactor()
     {
-        $refMultiFactor = PropMUsageTypeMultiFactor::select('usage_type_id', 'multi_factor', 'effective_date')
-            ->where('status', 1)
-            ->get();
+        $refMultiFactor = json_decode(Redis::get('propMUsageTypeMultiFactor'));                                      // Get Usage Type Multi Factor From Redis
+        if (!$refMultiFactor) {
+            $refMultiFactor = PropMUsageTypeMultiFactor::select('usage_type_id', 'multi_factor', 'effective_date')   // Get Usage Type Multi Factor From DB
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('propMUsageTypeMultiFactor', json_encode($refMultiFactor));
+        }
         return $refMultiFactor;
     }
 
@@ -189,14 +211,36 @@ class SafCalculation
     {
         $readRoadWidth = $this->_propertyDetails['roadType'];
 
-        $queryRoadType = "SELECT * FROM prop_m_road_types
-                          WHERE range_from_sqft<=ROUND($readRoadWidth)
-                          AND effective_date = '$effectiveDate'
-                          ORDER BY range_from_sqft DESC LIMIT 1";
+        $refRoadType = json_decode(Redis::get('roadType-effective-' . $effectiveDate . 'roadWidth-' . $readRoadWidth));
+        if (!$refRoadType) {
+            $queryRoadType = "SELECT * FROM prop_m_road_types
+                                WHERE range_from_sqft<=ROUND($readRoadWidth)
+                                AND effective_date = '$effectiveDate'
+                                ORDER BY range_from_sqft DESC LIMIT 1";
 
-        $refRoadType = DB::select($queryRoadType);
-        $roadTypeId = $refRoadType[0]->prop_road_typ_id;
+            $refRoadType = collect(DB::select($queryRoadType))->first();
+            $this->_redis->set('roadType-effective-' . $effectiveDate . 'roadWidth-' . $readRoadWidth, json_encode($refRoadType));
+        }
+
+        $roadTypeId = $refRoadType->prop_road_typ_id;
         return $roadTypeId;
+    }
+
+    /**
+     * | Calculation Rental Rate (1.1.3)
+     * | @var refParamRentalRate Rental Rate Parameter to calculate rentalRate for the Property
+     * | @return readRentalRate final Calculated Rental Rate
+     */
+    public function calculateRentalRates()
+    {
+        $refParamRentalRate = json_decode(Redis::get('propMBuildingRentalRate'));
+        if (!$refParamRentalRate) {
+            $refParamRentalRate = PropMBuildingRentalRate::select('id', 'prop_road_type_id', 'construction_types_id', 'rate', 'effective_date', 'status')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('propMBuildingRentalRate', json_encode($refParamRentalRate));
+        }
+        return $refParamRentalRate;
     }
 
     /**
@@ -219,10 +263,14 @@ class SafCalculation
                 $col2 = Config::get("PropertyConstaint.CIRCALE-RATE-PROP.$readConstructionType");
                 $column = $col1 . $col2 . $col3;
 
-                $capitalValueRate = PropMCapitalValueRateRaw::select($column)
-                    ->where('ulb_id', $this->_ulbId)
-                    ->where('ward_no', $this->_wardNo)
-                    ->first();
+                $capitalValueRate = json_decode(Redis::get('propMCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-col-' . $column));
+                if (!$capitalValueRate) {
+                    $capitalValueRate = PropMCapitalValueRateRaw::select($column)
+                        ->where('ulb_id', $this->_ulbId)
+                        ->where('ward_no', $this->_wardNo)
+                        ->first();
+                    $this->_redis->set('propMCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-col-' . $column, json_encode($capitalValueRate));
+                }
 
                 return $capitalValueRate->$column;
             });
@@ -242,24 +290,30 @@ class SafCalculation
         $readRoadType = $this->_readRoadType[$this->_effectiveDateRule3];
         $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$readRoadType");
         $column = $col1 . $col2 . $col3;
-        $capitalValueRate = PropMCapitalValueRateRaw::select($column)
-            ->where('ulb_id', $this->_ulbId)
-            ->where('ward_no', 1)                                                           // Ward No Fixed temprory
-            ->first();
+        $capitalValueRate = json_decode(Redis::get('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo));         // Check Capital Value on Redis
+        if (!$capitalValueRate) {
+            $capitalValueRate = PropMCapitalValueRateRaw::select($column)
+                ->where('ulb_id', $this->_ulbId)
+                ->where('ward_no', $this->_wardNo)                                                           // Ward No Fixed temprory
+                ->first();
+            $this->_redis->set('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo, json_encode($capitalValueRate));
+        }
         return $capitalValueRate->$column;
     }
 
     /**
-     * | Calculation Rental Rate (1.1.3)
-     * | @var refParamRentalRate Rental Rate Parameter to calculate rentalRate for the Property
-     * | @return readRentalRate final Calculated Rental Rate
+     * | Calculate Vacant Rental Rate 
      */
-    public function calculateRentalRates()
+    public function readVacantRentalRates()
     {
-        $refParamRentalRate = PropMBuildingRentalRate::select('id', 'prop_road_type_id', 'construction_types_id', 'rate', 'effective_date', 'status')
-            ->where('status', 1)
-            ->get();
-        return $refParamRentalRate;
+        $rentalRate = json_decode(Redis::get('propMVacantRentalRate'));
+        if (!$rentalRate) {
+            $rentalRate = PropMVacantRentalRate::select('id', 'prop_road_type_id', 'rate', 'ulb_type_id', 'effective_date')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('propMVacantRentalRate', json_encode($rentalRate));
+        }
+        return $rentalRate;
     }
 
     /**
@@ -313,17 +367,6 @@ class SafCalculation
             $readFinalWithMobilHoardingPetrolPump = collect($this->_petrolPumpQuaterlyRuleSets)->merge($readFinalWithMobileHoarding);   // Collapsable Collection With Mobile floors Hoarding and Petrol Pump
             $this->_GRID['details'] = $readFinalWithMobilHoardingPetrolPump;
         }
-    }
-
-    /**
-     * | Calculate Vacant Rental Rate 
-     */
-    public function readVacantRentalRates()
-    {
-        $rentalRate = PropMVacantRentalRate::select('id', 'prop_road_type_id', 'rate', 'ulb_type_id', 'effective_date')
-            ->where('status', 1)
-            ->get();
-        return $rentalRate;
     }
 
     /**
@@ -454,7 +497,7 @@ class SafCalculation
             }
         }
 
-        if (is_numeric($key)) {
+        if (is_numeric($key)) {                                                                 // For Floors
             $readFloorDetail =
                 [
                     'floorNo' => $this->_floors[$key]['floorNo'],
@@ -655,12 +698,14 @@ class SafCalculation
             $occupancyFactor = 1;
             $tax = $area * $rentalRate * $occupancyFactor;
 
+            $onePercPenaltyTax = ($tax * $onePercPenalty) / 100;                                // One Perc Penalty Tax
             $taxQuaterly = [
-                "tax" => roundFigure($tax / 4),
                 "area" => roundFigure($area),
                 "rentalRate" => $rentalRate,
                 "occupancyFactor" => $occupancyFactor,
-                "onePercPenalty"   => $onePercPenalty
+                "onePercPenalty"   => $onePercPenalty,
+                "totalTax" => roundFigure($tax / 4),
+                "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
             ];
             return $taxQuaterly;
         }
@@ -766,13 +811,14 @@ class SafCalculation
             $rentalRate = $rentalRate->rate;
             $occupancyFactor = 1;
             $tax = (float)$area * $rentalRate * $occupancyFactor;
-
+            $onePercPenaltyTax = ($tax * $onePercPenalty) / 100;
             $taxQuaterly = [
-                "tax" => roundFigure($tax / 4),
                 "area" => roundFigure($area),
                 "rentalRate" => $rentalRate,
                 "occupancyFactor" => $occupancyFactor,
-                "onePercPenalty"   => $onePercPenalty
+                "onePercPenalty"   => $onePercPenalty,
+                "totalTax" => roundFigure($tax / 4),
+                "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
             ];
             return $taxQuaterly;
         }
@@ -857,5 +903,101 @@ class SafCalculation
             "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
         ];
         return $tax;
+    }
+
+    /**
+     * | Total Final Payable Amount (1.6)
+     */
+    public function calculateFinalPayableAmount()
+    {
+        $demand = collect($this->_GRID['details'])->pipe(function ($values) {
+            return collect([
+                'totalTax' => roundFigure($values->sum('totalTax')),
+                'totalOnePercPenalty' => roundFigure($values->sum('onePercPenaltyTax'))
+            ]);
+        });
+
+        $this->_GRID['demand'] = $demand;
+        $this->_GRID['demand']['isResidential'] = $this->_isResidential;
+
+        $fine = 0;
+        // Check Late Assessment Penalty for Building
+        if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
+            $floorDetails = collect($this->_floors);
+            $lateAssementFloors = $floorDetails->filter(function ($value, $key) {                           // Collection of floors which have late Assessment
+                $currentDate = Carbon::now()->floorMonth();
+                $dateFrom = Carbon::createFromFormat('Y-m-d', $value['dateFrom'])->floorMonth();
+                $diffInMonths = $currentDate->diffInMonths($dateFrom);
+                return $diffInMonths > 3;
+            });
+            $lateAssessmentStatus = $lateAssementFloors->isEmpty() == true ? false : true;
+
+            // Late Assessment Penalty
+            if ($lateAssessmentStatus == true) {
+                $fine = $this->_isResidential == true ? 2000 : 5000;
+            }
+        }
+
+        // Check Late Assessment Penalty for Vacant Land
+        if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
+            $currentDate = Carbon::now()->floorMonth();
+            $dateFrom = Carbon::createFromFormat('Y-m-d', $this->_propertyDetails['dateOfPurchase'])->floorMonth();
+            $diffInMonths = $currentDate->diffInMonths($dateFrom);
+            $lateAssessmentStatus = $diffInMonths > 3 ? true : false;
+            if ($lateAssessmentStatus == true) {
+                $fine = $this->_isResidential == true ? 2000 : 5000;
+            }
+        }
+
+        $this->_GRID['demand']['lateAssessmentStatus'] = $lateAssessmentStatus;
+        $this->_GRID['demand']['lateAssessmentPenalty'] = $fine;
+
+        $taxes = collect($this->_GRID['demand'])->only(['totalTax', 'totalOnePercPenalty', 'lateAssessmentPenalty']);
+        $totalDemandAmount = $taxes->sum();                                                                             // Total Demand with Penalty
+        $this->_GRID['demand']['totalDemand'] = roundFigure($totalDemandAmount);
+        $this->_GRID['demand']['rebatePerc'] = $this->readRebate();
+        $this->_GRID['demand']['payableAmount'] = $this->calculatePayableAmount();
+    }
+
+    /**
+     * | Total Rebate Percent(1.6.1)
+     * | @var ownerDetails the first Prefered owner to be given the discount rebate
+     * | @var rebate the Rebate Percentage
+     */
+    public function readRebate()
+    {
+        $ownerDetails = collect($this->_propertyDetails['owner'])->first();
+        $rebate = 0;
+        if ($this->_loggedInUserType == 'Citizen') {                // In Case of Citizen
+            $rebate += 5;
+        }
+        if ($this->_loggedInUserType == 'JSK') {                    // In Case of JSK
+            $rebate += 2.5;
+        }
+
+        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  > 1) {
+            $rebate += 5;
+        }
+        return $rebate;
+    }
+
+    /**
+     * | Final Payable Amount
+     * --------------------- Initialization ------------------
+     * | @var totalDemand generated total demand with all the penalties 
+     * | @var rebatePerc rebate Percent to be given to the user
+     * ----------------- Calculation -------------------------
+     * | $rebateAmount = ($totalDemand * $rebatePerc) / 100;
+     * | $payableAmount = $totalDemand - $rebateAmount;
+     * @return payableAmount Final Payable Amount of the User
+     */
+    public function calculatePayableAmount()
+    {
+        $totalDemand = $this->_GRID['demand']['totalDemand'];
+        $rebatePerc = $this->_GRID['demand']['rebatePerc'];
+
+        $rebateAmount = ($totalDemand * $rebatePerc) / 100;
+        $payableAmount = $totalDemand - $rebateAmount;
+        return roundFigure($payableAmount);
     }
 }
