@@ -683,7 +683,7 @@ class Trade implements ITrade
                 }
                 if($applicationTypeId==4)
                 {
-                    $mprovno                         = $shortUlbName . $ward_no . date('mdy') . $licenceId;
+                    $mprovno                         = $this->createProvisinalNo($shortUlbName,$ward_no,$licenceId);
                     $licence->provisional_license_no = $mprovno;
                     $licence->payment_status         = 1;
                     $licence->save();
@@ -866,7 +866,7 @@ class Trade implements ITrade
                     $lecenceData->current_user_id = $workflows['initiator']['id'];
                 }
                 
-                $prov_no = $shortUlbName . $ward_no . date('mdy') . $licenceId;
+                $prov_no = $this->createProvisinalNo($shortUlbName,$ward_no,$licenceId);
                 $lecenceData->provisional_license_no = $prov_no;
                 $lecenceData->payment_status = $paymentStatus;
                 $lecenceData->save();
@@ -894,13 +894,13 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
-    public function createApplicationNo()
+    public function createApplicationNo($wardNo,$licenceId)
     {
-        return "APN".str_pad($this->_wardNo, 2, '0', STR_PAD_LEFT).str_pad($this->_licenceId, 7, '0', STR_PAD_LEFT);
+        return "APN".str_pad($wardNo, 2, '0', STR_PAD_LEFT).str_pad($licenceId, 7, '0', STR_PAD_LEFT);
     }
-    public function createProvisinalNo()
+    public function createProvisinalNo($shortUlbName,$wardNo,$licenceId)
     {
-        return $this->_shortUlbName . $this->_wardNo . date('mdy') . $this->_licenceId;
+        return $shortUlbName . $wardNo . date('mdy') . $licenceId;
     }
     public function paymentRecipt($id, $transectionId) # unauthorised  function
     { 
@@ -1493,14 +1493,14 @@ class Trade implements ITrade
             }
             $application->items = $item_name;
             $application->items_code = $cods;
-            $owner_dtl = $this->getOwnereDtlByLId($id);
+            $ownerDtl = $this->getOwnereDtlByLId($id);
             $transactionDtl = $this->readTranDtl($id);
-            $time_line = [];//$this->getTimelin($id);
+            $timeLine = $this->getTimelin($id);
             $documents = $this->getLicenceDocuments($id);
             $data['licenceDtl'] = $application;
-            $data['ownerDtl'] = $owner_dtl;
+            $data['ownerDtl'] = $ownerDtl;
             $data['transactionDtl'] = $transactionDtl;
-            $data['timeLine'] = $time_line;
+            $data['timeLine'] = $timeLine;
             $data['documents'] = $documents;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
@@ -1874,22 +1874,12 @@ class Trade implements ITrade
         }
         
     }
-    public function applicationList(Request $request)
+    public function readApplication(Request $request)
     {
         try{
             $user = Auth()->user();
-            $user_id = $user->id;
-            $ulb_id = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
-                ->where('ulb_id', $ulb_id)
-                ->first();
-            if (!$workflowId) 
-            {
-                throw new Exception("Workflow Not Available");
-            }
-            $apply_from = $this->applyFrom();
-            $wardList = $this->_modelWard->getAllWard($ulb_id)->map(function($val){
+            $ulbId = $user->ulb_id;
+            $wardList = $this->_modelWard->getAllWard($ulbId)->map(function($val){
                 $val->ward_no = $val->ward_name;
                 return $val;
             });
@@ -1919,37 +1909,37 @@ class Trade implements ITrade
                                             $join->on("owner.licence_id","active_licences.id");
                                         })
                         ->where("active_licences.status",1)                        
-                        ->where("active_licences.ulb_id",$ulb_id);
+                        ->where("active_licences.ulb_id",$ulbId);
             if(isset($inputs['entityValue']) && trim($inputs['entityValue']) && isset($inputs['entityName']) && trim($inputs['entityName']))
             {
                 $key = trim($inputs['entityValue']);
                 $column = strtoupper(trim($inputs['entityName']));
                 $licence = $licence->where(function ($query) use ($key, $column) {
-                    if($column == "HOLDINGNO")
+                    if($column == "FIRM")
                     {
-                        $query->orwhere('active_licences.holding_no', 'ILIKE', '%' . $key . '%');
+                        $query->orwhere('active_licences.firm_name', 'ILIKE', '%' . $key . '%');
                     }
-                    elseif($column == "APPLICATIONNO")
+                    elseif($column == "APPLICATION")
                     {
                         $query->orwhere('active_licences.application_no', 'ILIKE', '%' . $key . '%');
                     }
-                    elseif($column == "LICENSENO")
+                    elseif($column == "LICENSE")
                     {
                         $query->orwhere('active_licences.license_no', 'ILIKE', '%' . $key . '%');
                     }
-                    elseif($column == "PROVISIONALNO")
+                    elseif($column == "PROVISIONAL")
                     {
                         $query->orwhere('active_licences.provisional_license_no', 'ILIKE', '%' . $key . '%');
                     }
-                    elseif($column == "OWNERNAME")
+                    elseif($column == "OWNER")
                     {
                         $query->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%');
                     }
-                    elseif($column == "GUARDIANNAME")
+                    elseif($column == "GUARDIAN")
                     {
                         $query->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%');
                     }
-                    elseif($column == "MOBILENO")
+                    elseif($column == "MOBILE")
                     {
                         $query->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
                     }
@@ -3455,11 +3445,12 @@ class Trade implements ITrade
                         "sender_user_type_id",
                         "receiver_user_type_id",
                         "role_name",
+                        DB::raw("trade_level_pendings.created_at::date as receiving_date"),
                     )
                     ->leftjoin('wf_roles', "wf_roles.id", "trade_level_pendings.receiver_user_type_id")
                     ->where('trade_level_pendings.licence_id', $id)     
                     ->whereIn('trade_level_pendings.status',[1,2])                 
-                    ->orderBy('trade_level_pendings.created_at::date', 'desc')
+                    ->orderBy('trade_level_pendings.created_at', 'desc')
                     ->groupBy('trade_level_pendings.receiver_user_type_id')
                     ->get();
             return $time_line;
