@@ -1499,9 +1499,9 @@ class Trade implements ITrade
             $time_line = [];//$this->getTimelin($id);
             $documents = $this->getLicenceDocuments($id);
             $data['licenceDtl'] = $application;
-            $data['owner_dtl'] = $owner_dtl;
+            $data['ownerDtl'] = $owner_dtl;
             $data['transectionDtl'] = $transectionDtl;
-            $data['time_line'] = $time_line;
+            $data['timeLine'] = $time_line;
             $data['documents'] = $documents;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
