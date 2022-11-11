@@ -41,6 +41,7 @@ class NewConnectionController extends Controller
      */
     public function store(Request $request)
     {
+        // dd($request);
         return $this->newConnection->store($request);
     }
 

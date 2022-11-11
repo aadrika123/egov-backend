@@ -81,15 +81,9 @@ class ActiveSafController extends Controller
         return $this->Repository->safApprovalRejection($req);
     }
 
-    public function getPropIdByWardNoHodingNo(Request $request)
+    // Back to Citizen
+    public function backToCitizen(Request $req)
     {
-        $data = $this->Repository->getPropIdByWardNoHodingNo($request);
-        return $data;
-    }
-
-    public function setWorkFlowForwordBackword(Request $request)
-    {
-        $data = $this->Repository->setWorkFlowForwordBackword($request);
-        return $data;
+        return $this->Repository->backToCitizen($req);
     }
 }

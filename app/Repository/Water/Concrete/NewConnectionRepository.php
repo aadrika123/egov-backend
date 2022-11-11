@@ -13,6 +13,8 @@ use Exception;
 use Hamcrest\Arrays\IsArray;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+
 
 /**
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
@@ -22,6 +24,7 @@ use Illuminate\Support\Facades\DB;
 
 class NewConnectionRepository implements iNewConnection
 {
+    private $refPropertyType = 4; //<-------------------- here 
     /**
      * | -------------  Apply for the new Application for Water Application ------------- |
      * | Edited by Sam Kerketta
@@ -33,7 +36,70 @@ class NewConnectionRepository implements iNewConnection
      */
     public function store(Request $req)
     {
-        DB::beginTransaction(); 
+        #   validation
+        $validateUser = Validator::make(
+            $req->all(),
+            [
+                'connectionTypeId'   => 'required|integer',
+                'propertyTypeId'     => 'required|integer',
+                'ownerType'          => 'required',
+                'category'           => 'required',
+                'pipelineTypeId'     => 'required|integer',
+                'wardId'             => 'required|integer',
+                'areaSqft'           => 'required|integer',
+                'address'            => 'required',
+                'landmark'           => 'required',
+                'pin'                => 'required|integer',
+                'flatCount'          => 'required|integer',
+                'elecKNo'            => 'required',
+                'elecBindBookNo'     => 'required',
+                'elecAccountNo'      => 'required',
+                'elecCategory'       => 'required',
+                'connection_through' => 'required|integer',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validateUser->errors()
+            ], 401);
+        }
+
+
+        # check the property type by saf no
+        if ($req->saf_no != null) {
+
+            $readPropetySafCheck = DB::table('active_safs')
+                ->select('active_safs.prop_type_mstr_id')
+                ->join('prop_m_property_types', 'prop_m_property_types.id', '=', 'active_safs.prop_type_mstr_id')
+                ->where('active_safs.saf_no', $req->saf_no)
+                ->get()
+                ->first();
+            if ($readPropetySafCheck->prop_type_mstr_id == $this->refPropertyType) //<---------- 4 for the vacand land
+            {
+                return responseMsg(false, "water cannot be applied on Vacand land!", "");
+            }
+        }
+
+        # check the property type by holding no  
+        if ($req->holdingNo != null) {
+
+            $readpropetyHoldingCheck = DB::table('active_safs')
+                ->select('active_safs.prop_type_mstr_id')
+                ->join('prop_m_property_types', 'prop_m_property_types.id', '=', 'active_safs.prop_type_mstr_id')
+                ->join('prop_properties', 'prop_properties.saf_id', '=', 'active_safs.id')
+                ->where('prop_properties.new_holding_no', $req->holdingNo)
+                ->get()
+                ->first();
+            if ($readpropetyHoldingCheck->prop_type_mstr_id == $this->refPropertyType) //<------------- 4 for the vacand land
+            {
+                return responseMsg(false, "water cannot be applied on Vacand land!", "");
+            }
+        }
+
+        DB::beginTransaction();
         try {
             $newApplication = new WaterApplication();
             $newApplication->connection_type_id = $req->connectionTypeId;
@@ -42,27 +108,25 @@ class NewConnectionRepository implements iNewConnection
             $newApplication->category = $req->category;
             // $newApplication->proof_document_id = $req->proofDocumentId;
             $newApplication->pipeline_type_id = $req->pipelineTypeId;
-
-            $newApplication->holding_no = $req->holdingNo;
             $newApplication->ward_id = $req->wardId;
             $newApplication->area_sqft = $req->areaSqft;
             $newApplication->address = $req->address;
             $newApplication->landmark = $req->landmark;
             $newApplication->pin = $req->pin;
             $newApplication->flat_count = $req->flatCount;
-
             $newApplication->elec_k_no = $req->elecKNo;
             $newApplication->elec_bind_book_no = $req->elecBindBookNo;
             $newApplication->elec_account_no = $req->elecAccountNo;
             $newApplication->elec_category = $req->elecCategory;
-
             $newApplication->connection_through = $req->connection_through;
+            $newApplication->holding_no = $req->holdingNo;
             $newApplication->saf_no = $req->saf_no;
 
-            if($req->connection_through = 3)
-            {
+            # connection through condition
+            if ($req->connection_through == 3) {
                 $newApplication->id_proof = 3;
             }
+
             // Generating Application No 
             $now = Carbon::now();
             $applicationNo = 'APP' . $now->getTimeStamp();
@@ -94,11 +158,11 @@ class NewConnectionRepository implements iNewConnection
             $charges->amount = $penalty + $conn_fee;
             $charges->save();
 
-            DB::commit();
+            // DB::commit(); //<----------- reminder 
             return responseMsg(true, "Successfully Saved", $applicationNo);
         } catch (Exception $e) {
             DB::rollBack();
-            return $e;
+            return  $e;
         }
     }
 
@@ -528,6 +592,58 @@ class NewConnectionRepository implements iNewConnection
     //         return response()->json(["data" => $data, "status" => true, "message" => "Data Available", 200]);
     //     } catch (Exception $e) {
     //         return response()->json($e, 400);
+    //     }
+    // }
+
+
+    // /**
+    //  * | ----------------- proerty Owner Detail By Saf No ------------------------------- |
+    //  * | @param Req $request
+    //  * | @var readPropertyOwnerDetails
+    //  */
+    // public function propertyOwnerDetailsBySafNo(Request $req)
+    // {
+    //     // property details according to safNo
+    //     try {
+    //         $readPropertyOwnerDetails = DB::table('active_safs')
+    //             ->select(
+    //                 'active_safs_owner_dtls.owner_name AS name',
+    //                 'active_safs_owner_dtls.mobile_no AS phoneNo',
+    //                 'active_safs_owner_dtls.email AS email',
+    //                 'active_safs_owner_dtls.gender AS gender',
+    //                 'active_safs_owner_dtls.id AS id'
+    //             )
+    //             ->join('active_safs_owner_dtls', 'active_safs_owner_dtls.saf_id', '=', 'active_safs.id')
+    //             ->where('active_safs.saf_no', $req->saf_no)
+    //             ->get();
+    //         return responseMsg(true, "owner detail", $readPropertyOwnerDetails);
+    //     } catch (Exception $e) {
+    //         return $e;
+    //     }
+    // }
+
+    // /**
+    //  * | ----------------- proerty Owner Detail By Holding No ------------------------------- |
+    //  * | @param Req $request
+    //  * | @var readPropertyOwnerDetails
+    //  */
+    // public function propertyOwnerDetailsByHoldingNo(Request $req)
+    // {
+    //     try {
+    //         $readPropertyOwnerDetails = DB::table('active_safs')
+    //             ->select(
+    //                 'active_safs_owner_dtls.owner_name AS name',
+    //                 'active_safs_owner_dtls.mobile_no AS phoneNo',
+    //                 'active_safs_owner_dtls.email AS email',
+    //                 'active_safs_owner_dtls.gender AS gender',
+    //                 'active_safs_owner_dtls.id AS id'
+    //             )
+    //             ->join('active_safs_owner_dtls', 'active_safs_owner_dtls.saf_id', '=', 'prop_properties.saf_id')
+    //             ->where('prop_properties.new_holding_no', $req->holdingNo)
+    //             ->get();
+    //         return responseMsg(true, "owner detail", $readPropertyOwnerDetails);
+    //     } catch (Exception $e) {
+    //         return $e;
     //     }
     // }
 }
