@@ -743,7 +743,7 @@ class Trade implements ITrade
                     return responseMsg(false, $validator->errors(),$request->all());
                 }                
                 $lecenceData = ActiveLicence::find($request->licenceId);
-                $licenceId = $request->licenceId;
+                $this->_licenceId = $request->licenceId;
                 if(!$lecenceData)
                 {
                     throw new Exception("Licence Data Not Found !!!!!");
@@ -773,11 +773,13 @@ class Trade implements ITrade
                 foreach($ulbName as $val)
                 {
                     $shortUlbName.=$val[0];
-                }
+                }                
                 $ward_no = UlbWardMaster::select("ward_name")
                             ->where("id",$lecenceData->ward_mstr_id)
                             ->first();
                 $ward_no = $ward_no['ward_name'];
+                $this->_wardNo = $ward_no;
+                $this->_shortUlbName = $shortUlbName;
 
                 #-----------End valication-------------------
                 #-------------Calculation-----------------------------                
@@ -806,7 +808,7 @@ class Trade implements ITrade
                 #-------- Transection -------------------
                 DB::beginTransaction();
                 $Tradetransaction = new TradeTransaction ;
-                $Tradetransaction->related_id = $licenceId;
+                $Tradetransaction->related_id = $this->_licenceId;
                 $Tradetransaction->ward_mstr_id = $lecenceData->ward_mstr_id;
                 $Tradetransaction->transaction_type = $transactionType;
                 $Tradetransaction->transaction_date = $nowdate;
@@ -1494,7 +1496,7 @@ class Trade implements ITrade
             $application->items_code = $cods;
             $owner_dtl = $this->getOwnereDtlByLId($id);
             $transectionDtl = $this->readTranDtl($id);
-            $time_line = $this->getTimelin($id);
+            $time_line = [];//$this->getTimelin($id);
             $documents = $this->getLicenceDocuments($id);
             $data['licenceDtl'] = $application;
             $data['owner_dtl'] = $owner_dtl;
