@@ -21,18 +21,18 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(ApplyApplication::class)->group(function () {        
         Route::match(["get", "post"], 'apply/{applicationType}/{id?}', 'applyApplication');
         Route::post('getCharge', 'paybleAmount');
-        Route::post('getPropertyByHolding', 'validate_holding_no');
+        Route::post('getPropertyByHolding', 'validateHoldingNo');
         Route::post('updateBasicDtl', 'updateBasicDtl');
         Route::match(["get", "post"],'documentUpload/{id}', 'documentUpload');
         Route::match(["get", "post"],'documentVirify/{id}', 'documentVirify');
         Route::get('getLicenceDtl/{id}', 'getLicenceDtl');
         Route::post('getDenialDetails',"getDenialDetails");
         Route::post('searchLicense', 'searchLicence');
-        Route::post('getApplicationList', 'applicationList');
+        Route::post('getApplicationList', 'readApplication');
         Route::post('inbox', 'inbox');
         Route::post('outbox', 'outbox');
         Route::post('postNext', 'postNextLevel');
-        Route::post('pay', 'procidToPaymentCounter');
+        Route::post('pay', 'PaymentCounter');
         Route::match(["get", "post"],'applyDenail', 'applyDenail');
         Route::match(["get", "post"],'denialInbox', 'denialInbox');
         Route::match(["get", "post"],'denialview/{id}/{mailId}', 'denialview');

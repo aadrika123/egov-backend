@@ -29,11 +29,13 @@ use App\Models\Property\PropMOccupancyType;
 use App\Models\Property\PropMOwnershipType as PropertyPropMOwnershipType;
 use App\Models\Property\PropMPropertyType;
 use App\Models\Property\PropMUsageType;
+use App\Models\WfRole;
 use App\Models\WfWorkflow;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
 use App\Traits\Property\SAF as GlobalSAF;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * | Created On-10-08-2022
@@ -43,7 +45,7 @@ use Carbon\Carbon;
  */
 class SafRepository implements iSafRepository
 {
-    use Auth;               // Trait Used added by sandeep bara date 17-08-2022
+    use Auth;                                                               // Trait Used added by sandeep bara date 17-08-2022
     use WardPermission;
     use WorkflowTrait;
     use GlobalSAF;
@@ -504,7 +506,7 @@ class SafRepository implements iSafRepository
                     return $item->wf_role_id;
                 });
 
-                $data = $this->getSaf()                                               // Global SAF 
+                $data = $this->getSaf()                                                     // Global SAF 
                     ->where('active_safs.ulb_id', $ulbId)
                     ->where('active_safs.status', 1)
                     ->whereIn('current_role', $roleId)
@@ -512,7 +514,7 @@ class SafRepository implements iSafRepository
                     ->groupBy('active_safs.id', 'p.property_type', 'ward.ward_name')
                     ->get();
 
-                $occupiedWard = $this->getWardByUserId($userId);                        // Get All Occupied Ward By user id
+                $occupiedWard = $this->getWardByUserId($userId);                            // Get All Occupied Ward By user id
 
                 $wardId = $occupiedWard->map(function ($item, $key) {
                     return $item->ward_id;
@@ -521,6 +523,7 @@ class SafRepository implements iSafRepository
                 $safInbox = $data->whereIn('ward_mstr_id', $wardId);
                 return responseMsg(true, "Data Fetched", remove_null($safInbox));
             }
+
             // If current role Is a Initiator
 
             // Filteration only Ward id from workflow collection
@@ -808,6 +811,10 @@ class SafRepository implements iSafRepository
             DB::beginTransaction();
             // Approval
             if ($req->status == 1) {
+                $safDetails = ActiveSaf::find($req->safId);
+                $safDetails->holding_no = 'Hol/Ward/001';
+                $safDetails->save();
+
                 $activeSaf = ActiveSaf::query()
                     ->where('id', $req->safId)
                     ->first();
@@ -839,222 +846,25 @@ class SafRepository implements iSafRepository
         }
     }
 
-
-
-    # add workflow_tracks
-    public function workflowTracks(array $inputs)
+    /**
+     * | Back to Citizen
+     * | @param Request $req
+     */
+    public function backToCitizen($req)
     {
         try {
-            $track = new WorkflowTrack();
-            $track->workflow_candidate_id = $inputs['workflowCandidateID'] ?? null;
-            $track->citizen_id = $inputs['citizenID'] ?? null;
-            $track->module_id = $inputs['moduleID'] ?? null;
-            $track->ref_table_dot_id = $inputs['refTableDotID'] ?? null;
-            $track->ref_table_id_value = $inputs['refTableIDValue'] ?? null;
-            $track->message = $inputs['message'] ?? null;
-            $track->track_date = date('Y-m-d H:i:s');
-            $track->forwarded_to = $inputs['forwardedTo'] ?? null;
-            $track->save();
-            $message = ["status" => true, "message" => "Successfully Saved The Remarks", "data" => ''];
-            return $message;
-        } catch (Exception $e) {
-            return  ['status' => false, 'message' => $e->getMessage()];
-        }
-    }
-    public function updateWorkflowTracks(array $where, array $values)
-    {
-        try {
-            WorkflowTrack::where($where)->update($values);
-            return true;
-        } catch (Exception $e) {
-            return  ['status' => false, 'message' => $e->getMessage()];
-        }
-    }
-
-    public function setWorkFlowForwordBackword(Request $request)
-    {
-        try {
-            $rules = [
-                "ulbID" => "required",
-                "workflowsID" => "required"
-            ];
-            $validator = Validator::make($request->all(), $rules);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
+            $redis = Redis::connection();
+            $backId = json_decode(Redis::get('workflow_roles'));
+            if (!$backId) {
+                $backId = WfRole::where('is_initiator', 1)->first();
+                $redis->set('workflow_roles', json_encode($backId));
             }
-            $ulbID = $request->ulbID;
-            $workflowsID = $request->workflowsID;
-            // if(!is_numeric($ulbID))
-            // {
-            //     $ulbID = Crypt::decrypt($ulbID);
-            // }
-            // if(!is_numeric($workflowsID))
-            // {
-            //     $workflowsID = Crypt::decrypt($workflowsID);
-            // } dd("hhhh"); 
-            $data = Workflow::select(DB::raw(" ulb_workflow_masters.ulb_id, 
-                                            workflows.id as workflows_id,
-                                            workflow_name,
-                                            role_name,
-                                            role_masters.id as rolle_id,
-                                            case when show_full_list = true then  show_full_list 
-                                                else false end as show_full_list,
-                                            ulb_workflow_roles.id as ulb_workflow_roles_id
-                                            "))
-                ->join("ulb_workflow_masters", function ($join) {
-                    $join->on("workflows.id", "=", "ulb_workflow_masters.workflow_id");
-                })
-                ->join("ulb_workflow_roles", function ($join) {
-                    $join->on("ulb_workflow_roles.ulb_workflow_id", "=", "ulb_workflow_masters.id")
-                        ->whereNull("ulb_workflow_roles.deleted_at");
-                })
-                ->join("role_masters", function ($join) {
-                    $join->on("role_masters.id", "=", "ulb_workflow_roles.role_id");
-                })
-                ->where("ulb_workflow_masters.ulb_id", $ulbID)
-                ->where("workflows.id", $workflowsID)
-                ->orderBy("role_masters.id")
-                ->get();
-            $initiator = DB::select("select role_masters.id , role_name                             
-                        from ulb_workflow_masters
-                        inner join role_masters on role_masters.id = ulb_workflow_masters.initiator
-                        where ulb_workflow_masters.ulb_id = $ulbID and ulb_workflow_masters.workflow_id = $workflowsID
-                        and ulb_workflow_masters.deleted_at is null");
-
-            $finisher = DB::select("select role_masters.id , role_name                             
-            from ulb_workflow_masters
-            inner join role_masters on role_masters.id = ulb_workflow_masters.finisher
-            where ulb_workflow_masters.ulb_id = $ulbID and ulb_workflow_masters.workflow_id = $workflowsID
-            and ulb_workflow_masters.deleted_at is null");
-            if ($request->getMethod() == "GET") {
-                $mapping =
-                    $response["rolls"] = $data;
-                $response["initiator"] = $initiator;
-                $response["finisher"] = $finisher;
-                return responseMsg(true, '', remove_null($response));
-            } elseif ($request->getMethod() == "POST") {
-                $rules = [
-                    "ulbID"         => "required",
-                    "workflowsID"   => "required",
-                    "initiator"      => "required",
-                    "finisher"      => "required",
-                    "rolles"       => "required|array",
-                    "rolles.*.ID"   => "required",
-                    "rolles.*.forwodID" => "required",
-                    "rolles.*.backwodID" => "required",
-                    "rolles.*.showFullList" => "required|bool",
-                ];
-                $validator = Validator::make($request->all(), $rules);
-                if ($validator->fails()) {
-                    return responseMsg(false, $validator->errors(), $request->all());
-                }
-                $rolls = adjToArray($data);
-
-                $data = array_map(function ($val) {
-                    return $val['rolle_id'];
-                }, adjToArray($data));
-                $initiator = $request->initiator;
-                $finisher = $request->finisher;
-                $Rolles = $request->rolles;
-                foreach ($Rolles as $key => $val) {
-                    $id = $val['ID'];
-                    $roll_name = array_filter($rolls, function ($val) use ($id) {
-                        return $val['rolle_id'] == $id;
-                    });
-                    $roll_name = array_values($roll_name)[0] ?? [];
-                    $Rolles[$key]["RollName"] = $roll_name["role_name"] ?? "Unknown User";
-                    $Rolles[$key]["ulb_workflow_roles_id"] = $roll_name["ulb_workflow_roles_id"] ?? 0;
-                }
-                $message = array_map(function ($val) use ($initiator, $finisher, $data) {
-                    if ($val['ID'] == $initiator && $val['backwodID'])
-                        return "Initiator Has No Backword Id";
-                    elseif ($val['ID'] == $finisher && $val['forwodID'])
-                        return "Finisher Has No Forwrod Id";
-                    elseif ((!$val['backwodID'] || !$val['forwodID']) && !in_array($val['ID'], [$initiator, $finisher]))
-                        return $val['RollName'] . " Have Forword And Backword Id ";
-                    elseif ($val['ID'] == $val['forwodID'] || $val['ID'] == $val['forwodID'])
-                        return " Rolle " . $val['RollName'] . " Can't Forword And Backword Itself ";
-                    elseif (!in_array($val['ID'], $data))
-                        return " Undefind Role Id " . $val['ID'];
-                }, $Rolles);
-
-                $message["initiator"] = array_filter($Rolles, function ($val) use ($initiator) {
-                    if ($val['ID'] == $initiator)
-                        return true;
-                });
-                $message["finisher"] = array_filter($Rolles, function ($val) use ($finisher) {
-                    if ($val['ID'] == $finisher)
-                        return true;
-                });
-                if (sizeof($message["finisher"]) > 1)
-                    $message["finisher"] = "Finisher Id Is Multyple Time";
-                if (!$message["finisher"])
-                    $message["finisher"] = "Finisher Is Not Inclueded";
-                else
-                    $message["finisher"] = [];
-                if (sizeof($message["initiator"]) > 1)
-                    $message["initiator"] = "Initiator Id Is Multyple Time";
-                if (!$message["initiator"])
-                    $message["initiator"] = "Initiator Is Not Inclueded";
-
-                $mapping = array_map(function ($val) use ($Rolles) {
-                    $ID = $val['ID'];
-                    $FID = $val['forwodID'];
-                    $BID = $val['backwodID'];
-                    $RollName = $val['RollName'];
-                    $m = array_map(function ($v) use ($ID, $FID, $BID, $RollName) {
-                        if ($v['ID'] == $FID && $v['backwodID'] != $ID)
-                            return "$RollName Has No Proper Forword Id";
-                        elseif ($v['ID'] == $BID && $v['forwodID'] != $ID)
-                            return "$RollName Has No Proper Backword Id";
-                    }, $Rolles);
-                    $m = array_filter($m, function ($val) {
-                        return $val;
-                    });
-                    $m = array_values($m)[0] ?? [];
-                    if (!empty($m))
-                        return ($m);
-                }, $Rolles);
-                if (is_array($message["initiator"]))
-                    $message["initiator"] = [];
-                if (is_array($message["finisher"]))
-                    $message["finisher"] = [];
-                $message = array_filter($message, function ($val) {
-                    return $val;
-                });
-                $message = array_values($message);
-                $mapping = array_filter($mapping, function ($val) {
-                    return $val;
-                });
-                $mapping = array_values($mapping);
-
-                if ($mapping) {
-                    foreach ($mapping as $key => $value) {
-                        $message[] = $value;
-                    }
-                }
-                if ($message) {
-                    return responseMsg(false, $message, $request->all());
-                }
-                DB::beginTransaction();
-                $UlbWorkflowMaster =  UlbWorkflowMaster::where("workflow_id", $workflowsID)
-                    ->where("ulb_id", $ulbID)
-                    ->update(["initiator" => $initiator, "finisher" => $finisher]);
-                foreach ($Rolles as $val) {
-                    $UlbWorkflowRoles = UlbWorkflowRole::find($val['ulb_workflow_roles_id']);
-                    if (!$UlbWorkflowRoles) {
-                        throw new Exception("Some Errors Please Contact To Admin");
-                    }
-                    $UlbWorkflowRoles->forward_id = $val['forwodID'] ? $val['forwodID'] : null;
-                    $UlbWorkflowRoles->backward_id = $val['backwodID'] ? $val['backwodID'] : null;
-                    $UlbWorkflowRoles->show_full_list = $val['showFullList'] ? $val['showFullList'] : false;
-                    $UlbWorkflowRoles->save();
-                }
-                DB::commit();
-                return responseMsg(true, "Workflow Memeber Add Succsessfully", "");
-            }
+            $saf = ActiveSaf::find($req->safId);
+            $saf->current_role = $backId->id;
+            $saf->save();
+            return responseMsg(true, "Successfully Done", "");
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }
