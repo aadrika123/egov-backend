@@ -39,9 +39,9 @@ class ApplyApplication extends Controller
     {      
         return $this->Repository->paybleAmount($request);
     }
-    public function validate_holding_no(Request $request)
+    public function validateHoldingNo(Request $request)
     {
-        return $this->Repository->validate_holding_no($request);
+        return $this->Repository->validateHoldingNo($request);
     }
     public function paymentRecipt(Request $request)
     {
