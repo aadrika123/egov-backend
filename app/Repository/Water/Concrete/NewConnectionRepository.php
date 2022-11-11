@@ -79,7 +79,7 @@ class NewConnectionRepository implements iNewConnection
                 ->first();
             if ($readPropetySafCheck->prop_type_mstr_id == $this->refPropertyType) //<---------- 4 for the vacand land
             {
-                return responseMsg(false, "water cannot be applied on Vacand land!", "");
+                return responseMsg(false, "water cannot be applied on Vacant land!", "");
             }
         }
 
@@ -95,7 +95,7 @@ class NewConnectionRepository implements iNewConnection
                 ->first();
             if ($readpropetyHoldingCheck->prop_type_mstr_id == $this->refPropertyType) //<------------- 4 for the vacand land
             {
-                return responseMsg(false, "water cannot be applied on Vacand land!", "");
+                return responseMsg(false, "water cannot be applied on Vacant land!", "");
             }
         }
 
@@ -452,7 +452,7 @@ class NewConnectionRepository implements iNewConnection
     //         $levelPending->save();
 
     //         #   reciver role_id may not be provided 
-    //         $reciverRole = WfRole::select('farword_role_id')    // <------------------ Make the Model
+    //         $reciverRole = WfRole::select('forward_role_id')    // <------------------ Make the Model
     //             ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
     //             ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
     //             ->where('users.ulb_id', $ulbId)

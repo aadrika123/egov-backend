@@ -39,9 +39,9 @@ class ApplyApplication extends Controller
     {      
         return $this->Repository->paybleAmount($request);
     }
-    public function validate_holding_no(Request $request)
+    public function validateHoldingNo(Request $request)
     {
-        return $this->Repository->validate_holding_no($request);
+        return $this->Repository->validateHoldingNo($request);
     }
     public function paymentRecipt(Request $request)
     {
@@ -73,9 +73,9 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->searchLicenceByNo($request);
     }
-    public function applicationList(Request $request)
+    public function readApplication(Request $request)
     {
-        return $this->Repository->applicationList($request);
+        return $this->Repository->readApplication($request);
     }
     public function inbox(Request $request)
     {

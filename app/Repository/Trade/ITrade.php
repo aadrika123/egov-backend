@@ -17,10 +17,10 @@ interface ITrade
     public function __construct();
     public function createApplication(Request $request);
     public function paymentCounter(Request $request);
-    public function validate_holding_no(Request $request);
+    public function validateHoldingNo(Request $request);
     public function searchLicenceByNo(Request $request);
     public function searchLicence(string $licence_no,$ulb_id);
-    public function applicationList(Request $request);
+    public function readApplication(Request $request);
     public function updateBasicDtl(Request $request);
     public function documentUpload(Request $request);
     public function documentVirify(Request $request);

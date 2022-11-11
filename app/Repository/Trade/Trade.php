@@ -592,7 +592,7 @@ class Trade implements ITrade
                         $args['nature_of_business']  = $licence->nature_of_bussiness;
                         $args['noticeDate']          = $notice_date;
 
-                        $rate_data = $this->getcharge($args);
+                        $rate_data = $this->cltCarge($args);
                     }
                     if($rate_data['total_charge']!=$request->licenseDetails["totalCharge"])
                     {
@@ -683,7 +683,7 @@ class Trade implements ITrade
                 }
                 if($applicationTypeId==4)
                 {
-                    $mprovno                         = $shortUlbName . $ward_no . date('mdy') . $licenceId;
+                    $mprovno                         = $this->createProvisinalNo($shortUlbName,$ward_no,$licenceId);
                     $licence->provisional_license_no = $mprovno;
                     $licence->payment_status         = 1;
                     $licence->save();
@@ -697,9 +697,7 @@ class Trade implements ITrade
             
         }
         catch (Exception $e) {
-            DB::rollBack(); 
-            // echo $e->getFile(); 
-            // echo $e->getLine();          
+            DB::rollBack();           
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
@@ -793,7 +791,7 @@ class Trade implements ITrade
                 $args['licenseFor']          =  $request->licenseFor ;
                 $args['nature_of_business']  = $lecenceData->nature_of_bussiness;
                 $args['noticeDate']          = $noticeDate;
-                $rate_data = $this->getcharge($args);
+                $rate_data = $this->cltCarge($args);
                 if($rate_data['total_charge']!=$request->totalCharge)
                 {
                     throw new Exception("Payble Amount Missmatch!!!");
@@ -866,7 +864,7 @@ class Trade implements ITrade
                     $lecenceData->current_user_id = $workflows['initiator']['id'];
                 }
                 
-                $prov_no = $shortUlbName . $ward_no . date('mdy') . $licenceId;
+                $prov_no = $this->createProvisinalNo($shortUlbName,$ward_no,$licenceId);
                 $lecenceData->provisional_license_no = $prov_no;
                 $lecenceData->payment_status = $paymentStatus;
                 $lecenceData->save();
@@ -894,13 +892,13 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
-    public function createApplicationNo()
+    public function createApplicationNo($wardNo,$licenceId)
     {
-        return "APN".str_pad($this->_wardNo, 2, '0', STR_PAD_LEFT).str_pad($this->_licenceId, 7, '0', STR_PAD_LEFT);
+        return "APN".str_pad($wardNo, 2, '0', STR_PAD_LEFT).str_pad($licenceId, 7, '0', STR_PAD_LEFT);
     }
-    public function createProvisinalNo()
+    public function createProvisinalNo($shortUlbName,$wardNo,$licenceId)
     {
-        return $this->_shortUlbName . $this->_wardNo . date('mdy') . $this->_licenceId;
+        return $shortUlbName . $wardNo . date('mdy') . $licenceId;
     }
     public function paymentRecipt($id, $transectionId) # unauthorised  function
     { 
@@ -1493,14 +1491,14 @@ class Trade implements ITrade
             }
             $application->items = $item_name;
             $application->items_code = $cods;
-            $owner_dtl = $this->getOwnereDtlByLId($id);
+            $ownerDtl = $this->getOwnereDtlByLId($id);
             $transactionDtl = $this->readTranDtl($id);
-            $time_line = [];//$this->getTimelin($id);
+            $timeLine = $this->getTimelin($id);
             $documents = $this->getLicenceDocuments($id);
             $data['licenceDtl'] = $application;
-            $data['ownerDtl'] = $owner_dtl;
+            $data['ownerDtl'] = $ownerDtl;
             $data['transactionDtl'] = $transactionDtl;
-            $data['timeLine'] = $time_line;
+            $data['timeLine'] = $timeLine;
             $data['documents'] = $documents;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
@@ -1594,7 +1592,7 @@ class Trade implements ITrade
             $data['noticeDate'] =  $request->noticeDate??null;
             $data["licenseFor"] = $request->licenseFor;
             $data["nature_of_business"] = $natureOfBussiness; 
-            $data = $this->getcharge($data);
+            $data = $this->cltCarge($data);
             if($data['response'])
                 return responseMsg(true,"", $data);
             else
@@ -1644,119 +1642,19 @@ class Trade implements ITrade
         }
     }
 
-    public function getcharge(array $args)
-    {
-        $response=['response' => false];
-        try 
-        {
-            $data = array();
-            $inputs = $args;
-            $data['area_in_sqft'] = (float)$inputs['areaSqft'];
-            $data['application_type_id'] = $inputs['application_type_id'];
-            $data['firm_date'] = $inputs['firmEstdDate'];
-            $data['firm_date'] = date('Y-m-d', strtotime($data['firm_date']));
-           
-            $data['tobacco_status'] = $inputs['tobacco_status'];
-            $data['timeforlicense'] = $inputs['licenseFor'];
-            $data['curdate'] = $inputs['curdate']??date("Y-m-d");
-            
-            $denial_amount_month = 0;
-            $count = $this->getrate($data);
-            $rate = $count->rate * $data['timeforlicense'];
-            $notice_amount = 0;
-            if(isset($inputs['noticeDate']) && $inputs['noticeDate'])
-            {
-                $notice_amount = $this->getDenialAmountTrade($inputs['noticeDate']);
-            }
-            $pre_app_amount = 0;
-            if (isset($data['application_type_id']) && in_array($data['application_type_id'], [1, 2])) 
-            {
-                $nob = array();
-                $data['nature_of_business'] = null;
-                if (isset($inputs['nature_of_business']))
-                    $nob = explode(',', $inputs['nature_of_business']);
-                if (sizeof($nob) == 1) 
-                {
-                    $data['nature_of_business'] = $nob[0];
-                }
-
-                $temp = $data['firm_date'];
-                $temp2 = $data['firm_date'];
-                if ($data['nature_of_business'] == 198 && strtotime($temp) <= strtotime('2021-10-30')) 
-                {
-                    $temp = '2021-10-30';
-                    $temp2 = $temp;
-                } 
-                elseif ($data['nature_of_business'] != 198 && strtotime($temp) <= strtotime('2020-01-01')) 
-                {
-                    $temp = '2020-01-01';
-                }
-                $data['firm_date'] = $temp;
-                $diff_year = date_diff(date_create($temp2), date_create($data['curdate']))->format('%R%y');
-                $pre_app_amount = ($diff_year > 0 ? $diff_year : 0) * $count->rate;
-            }
-
-            $vDiff = abs(strtotime($data['curdate']) - strtotime($data['firm_date'])); // here abs in case theres a mix in the dates
-            $vMonths = ceil($vDiff / (30 * 60 * 60 * 24)); // number of seconds in a month of 30 days
-            // if(strtotime($data['firm_date']) >= strtotime($data['curdate']))
-            // { 
-            //    $vMonths = round($vDiff / (30 * 60 * 60 * 24));
-            // }
-            if ($vMonths > 0 && strtotime($data['firm_date']) < strtotime($data['curdate'])) 
-            {
-                $denial_amount_month = 100 + (($vMonths) * 20);                
-            }
-            # In case of ammendment no denial amount
-            if ($data['application_type_id'] == 3)
-            {
-                $denial_amount_month = 0;
-            }
-            $total_denial_amount = $denial_amount_month + $rate + $pre_app_amount + $notice_amount ;
-
-            # Check If Any cheque bounce charges
-            if (isset($inputs['apply_licence_id'], $inputs['apply_licence_id'])) 
-            {
-                $penalty = $this->getChequeBouncePenalty($inputs['apply_licence_id']);
-                $denial_amount_month += $penalty;
-                $total_denial_amount += $penalty;
-            }
-
-            if ($count) 
-            {
-                $response = ['response' => true, 'rate' => $rate, 'penalty' => $denial_amount_month, 'total_charge' => $total_denial_amount, 'rate_id' => $count['id'], 'arear_amount' => $pre_app_amount,"notice_amount" =>$notice_amount];
-            } 
-            else 
-            {
-                $response = ['response' => false];
-            }
-            return $response;
-        }
-        catch(Exception $e)
-        {
-            echo $e->getLine();
-            echo $e->getMessage();
-            echo $e->getFile();
-            return $response;
-        }
-    }
-    public function validate_saf_no(Request $request)
+    public function validateSafNo(Request $request)
     {
         $user = Auth()->user();
-        $user_id = $user->id;
         $ulb_id = $user->ulb_id;
         if ($request->getMethod() == "POST") 
         {
             $data = array();
             $inputs = $request->all();
-
             $saf_no = $inputs['saf_no']??null;
-
             $safdet = $this->getSafDtlBySafno($saf_no,$ulb_id);
-
             if($safdet['status'])
             {
                 $response = ['response' => true,$safdet];
-
             }
             else 
             {
@@ -1770,7 +1668,7 @@ class Trade implements ITrade
         return json_encode($response);
     }
 
-    public function validate_holding_no(Request $request)
+    public function validateHoldingNo(Request $request)
     {
         $user = Auth()->user();
         $user_id = $user->id;
@@ -1874,22 +1772,12 @@ class Trade implements ITrade
         }
         
     }
-    public function applicationList(Request $request)
+    public function readApplication(Request $request)
     {
         try{
             $user = Auth()->user();
-            $user_id = $user->id;
-            $ulb_id = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
-                ->where('ulb_id', $ulb_id)
-                ->first();
-            if (!$workflowId) 
-            {
-                throw new Exception("Workflow Not Available");
-            }
-            $apply_from = $this->applyFrom();
-            $wardList = $this->_modelWard->getAllWard($ulb_id)->map(function($val){
+            $ulbId = $user->ulb_id;
+            $wardList = $this->_modelWard->getAllWard($ulbId)->map(function($val){
                 $val->ward_no = $val->ward_name;
                 return $val;
             });
@@ -1902,6 +1790,7 @@ class Trade implements ITrade
                                             "active_licences.firm_name",
                                             "active_licences.apply_date",
                                             "active_licences.apply_from",
+                                            "active_licences.valid_upto",
                                             "owner.owner_name",
                                             "owner.guardian_name",
                                             "owner.mobile_no",
@@ -1919,37 +1808,37 @@ class Trade implements ITrade
                                             $join->on("owner.licence_id","active_licences.id");
                                         })
                         ->where("active_licences.status",1)                        
-                        ->where("active_licences.ulb_id",$ulb_id);
+                        ->where("active_licences.ulb_id",$ulbId);
             if(isset($inputs['entityValue']) && trim($inputs['entityValue']) && isset($inputs['entityName']) && trim($inputs['entityName']))
             {
                 $key = trim($inputs['entityValue']);
                 $column = strtoupper(trim($inputs['entityName']));
                 $licence = $licence->where(function ($query) use ($key, $column) {
-                    if($column == "HOLDINGNO")
+                    if($column == "FIRM")
                     {
-                        $query->orwhere('active_licences.holding_no', 'ILIKE', '%' . $key . '%');
+                        $query->orwhere('active_licences.firm_name', 'ILIKE', '%' . $key . '%');
                     }
-                    elseif($column == "APPLICATIONNO")
+                    elseif($column == "APPLICATION")
                     {
                         $query->orwhere('active_licences.application_no', 'ILIKE', '%' . $key . '%');
                     }
-                    elseif($column == "LICENSENO")
+                    elseif($column == "LICENSE")
                     {
                         $query->orwhere('active_licences.license_no', 'ILIKE', '%' . $key . '%');
                     }
-                    elseif($column == "PROVISIONALNO")
+                    elseif($column == "PROVISIONAL")
                     {
                         $query->orwhere('active_licences.provisional_license_no', 'ILIKE', '%' . $key . '%');
                     }
-                    elseif($column == "OWNERNAME")
+                    elseif($column == "OWNER")
                     {
                         $query->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%');
                     }
-                    elseif($column == "GUARDIANNAME")
+                    elseif($column == "GUARDIAN")
                     {
                         $query->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%');
                     }
-                    elseif($column == "MOBILENO")
+                    elseif($column == "MOBILE")
                     {
                         $query->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
                     }
@@ -1969,9 +1858,12 @@ class Trade implements ITrade
                 $licence = $licence
                             ->whereBetween('active_licences.apply_date',[$inputs['formDate'],$inputs['formDate']]); 
             }
-            $licence = $licence->get();
-            $data = [
-                "wardList"=>$wardList,                
+            $licence = $licence->get();            
+            if($licence->isEmpty())
+            {  
+                throw new Exception("Application Not Found");
+            }
+            $data = [             
                 "licence"=>$licence,
             ] ;           
             return responseMsg(true, "", $data);
@@ -3086,7 +2978,95 @@ class Trade implements ITrade
 
     #---------- core function for trade Application--------
 
-    
+    public function cltCarge(array $args)
+    {
+        $response=['response' => false];
+        try 
+        {
+            $data = array();
+            $inputs = $args;
+            $data['area_in_sqft'] = (float)$inputs['areaSqft'];
+            $data['application_type_id'] = $inputs['application_type_id'];
+            $data['firm_date'] = $inputs['firmEstdDate'];
+            $data['firm_date'] = date('Y-m-d', strtotime($data['firm_date']));
+           
+            $data['tobacco_status'] = $inputs['tobacco_status'];
+            $data['timeforlicense'] = $inputs['licenseFor'];
+            $data['curdate'] = $inputs['curdate']??date("Y-m-d");
+            
+            $denial_amount_month = 0;
+            $count = $this->getrate($data);
+            $rate = $count->rate * $data['timeforlicense'];
+            $notice_amount = 0;
+            if(isset($inputs['noticeDate']) && $inputs['noticeDate'])
+            {
+                $notice_amount = $this->getDenialAmountTrade($inputs['noticeDate']);
+            }
+            $pre_app_amount = 0;
+            if (isset($data['application_type_id']) && in_array($data['application_type_id'], [1, 2])) 
+            {
+                $nob = array();
+                $data['nature_of_business'] = null;
+                if (isset($inputs['nature_of_business']))
+                    $nob = explode(',', $inputs['nature_of_business']);
+                if (sizeof($nob) == 1) 
+                {
+                    $data['nature_of_business'] = $nob[0];
+                }
+
+                $temp = $data['firm_date'];
+                $temp2 = $data['firm_date'];
+                if ($data['nature_of_business'] == 198 && strtotime($temp) <= strtotime('2021-10-30')) 
+                {
+                    $temp = '2021-10-30';
+                    $temp2 = $temp;
+                } 
+                elseif ($data['nature_of_business'] != 198 && strtotime($temp) <= strtotime('2020-01-01')) 
+                {
+                    $temp = '2020-01-01';
+                }
+                $data['firm_date'] = $temp;
+                $diff_year = date_diff(date_create($temp2), date_create($data['curdate']))->format('%R%y');
+                $pre_app_amount = ($diff_year > 0 ? $diff_year : 0) * $count->rate;
+            }
+
+            $vDiff = abs(strtotime($data['curdate']) - strtotime($data['firm_date'])); // here abs in case theres a mix in the dates
+            $vMonths = ceil($vDiff / (30 * 60 * 60 * 24)); // number of seconds in a month of 30 days
+           
+            if ($vMonths > 0 && strtotime($data['firm_date']) < strtotime($data['curdate'])) 
+            {
+                $denial_amount_month = 100 + (($vMonths) * 20);                
+            }
+            # In case of ammendment no denial amount
+            if ($data['application_type_id'] == 3)
+            {
+                $denial_amount_month = 0;
+            }
+            $total_denial_amount = $denial_amount_month + $rate + $pre_app_amount + $notice_amount ;
+
+            # Check If Any cheque bounce charges
+            if (isset($inputs['apply_licence_id'], $inputs['apply_licence_id'])) 
+            {
+                $penalty = $this->getChequeBouncePenalty($inputs['apply_licence_id']);
+                $denial_amount_month += $penalty;
+                $total_denial_amount += $penalty;
+            }
+
+            if ($count) 
+            {
+                $response = ['response' => true, 'rate' => $rate, 'penalty' => $denial_amount_month, 'total_charge' => $total_denial_amount, 'rate_id' => $count['id'], 'arear_amount' => $pre_app_amount,"notice_amount" =>$notice_amount];
+            } 
+            else 
+            {
+                $response = ['response' => false];
+            }
+            return $response;
+        }
+        catch(Exception $e)
+        {
+            return $response;
+        }
+    }
     function getDenialAmountTrade($notice_date=null,$current_date=null)
     {
         $notice_date=$notice_date?Carbon::createFromFormat("Y-m-d",$notice_date)->format("Y-m-d"):Carbon::now()->format('Y-m-d');
@@ -3455,11 +3435,12 @@ class Trade implements ITrade
                         "sender_user_type_id",
                         "receiver_user_type_id",
                         "role_name",
+                        DB::raw("trade_level_pendings.created_at::date as receiving_date"),
                     )
                     ->leftjoin('wf_roles', "wf_roles.id", "trade_level_pendings.receiver_user_type_id")
                     ->where('trade_level_pendings.licence_id', $id)     
                     ->whereIn('trade_level_pendings.status',[1,2])                 
-                    ->orderBy('trade_level_pendings.created_at::date', 'desc')
+                    ->orderBy('trade_level_pendings.created_at', 'desc')
                     ->groupBy('trade_level_pendings.receiver_user_type_id')
                     ->get();
             return $time_line;

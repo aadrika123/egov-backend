@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 interface iGrievance
 {
     // grievance
-    public function postFileComplain(Request $request);
+    public function saveFileComplain(Request $request);
     public function getAllComplainById($id);
+    public function updateRateComplaintById(Request $req, $id);
 }
