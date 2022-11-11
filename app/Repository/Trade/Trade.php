@@ -743,7 +743,7 @@ class Trade implements ITrade
                     return responseMsg(false, $validator->errors(),$request->all());
                 }                
                 $lecenceData = ActiveLicence::find($request->licenceId);
-                $this->_licenceId = $request->licenceId;
+                $licenceId = $request->licenceId;
                 if(!$lecenceData)
                 {
                     throw new Exception("Licence Data Not Found !!!!!");
@@ -777,9 +777,8 @@ class Trade implements ITrade
                 $ward_no = UlbWardMaster::select("ward_name")
                             ->where("id",$lecenceData->ward_mstr_id)
                             ->first();
-                $ward_no = $ward_no['ward_name'];
-                $this->_wardNo = $ward_no;
-                $this->_shortUlbName = $shortUlbName;
+                $wardNo = $ward_no['ward_name'];               
+                $shortUlbName = $shortUlbName;
 
                 #-----------End valication-------------------
                 #-------------Calculation-----------------------------                
@@ -1495,12 +1494,12 @@ class Trade implements ITrade
             $application->items = $item_name;
             $application->items_code = $cods;
             $owner_dtl = $this->getOwnereDtlByLId($id);
-            $transectionDtl = $this->readTranDtl($id);
+            $transactionDtl = $this->readTranDtl($id);
             $time_line = [];//$this->getTimelin($id);
             $documents = $this->getLicenceDocuments($id);
             $data['licenceDtl'] = $application;
             $data['ownerDtl'] = $owner_dtl;
-            $data['transectionDtl'] = $transectionDtl;
+            $data['transactionDtl'] = $transactionDtl;
             $data['timeLine'] = $time_line;
             $data['documents'] = $documents;
             $data = remove_null($data);
