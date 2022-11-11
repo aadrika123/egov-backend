@@ -15,11 +15,12 @@ use Illuminate\Http\Request;
 interface ITrade
 {
     public function __construct();
-    public function applyApplication(Request $request);
-    public function procidToPaymentCounter(Request $request);
+    public function createApplication(Request $request);
+    public function paymentCounter(Request $request);
     public function validate_holding_no(Request $request);
     public function searchLicenceByNo(Request $request);
     public function searchLicence(string $licence_no,$ulb_id);
+    public function applicationList(Request $request);
     public function updateBasicDtl(Request $request);
     public function documentUpload(Request $request);
     public function documentVirify(Request $request);
@@ -40,4 +41,5 @@ interface ITrade
     public function applyDenail(Request $request);
     public function denialInbox(Request $request);
     public function denialview($id,$mailID,Request $request);
+    public function reports(Request $request);
 }

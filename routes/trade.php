@@ -28,13 +28,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('getLicenceDtl/{id}', 'getLicenceDtl');
         Route::post('getDenialDetails',"getDenialDetails");
         Route::post('searchLicense', 'searchLicence');
+        Route::post('getApplicationList', 'applicationList');
         Route::post('inbox', 'inbox');
         Route::post('outbox', 'outbox');
         Route::post('postNext', 'postNextLevel');
-        Route::post('pay', 'procidToPaymentCounter');
+        Route::post('pay', 'PaymentCounter');
         Route::match(["get", "post"],'applyDenail', 'applyDenail');
         Route::match(["get", "post"],'denialInbox', 'denialInbox');
         Route::match(["get", "post"],'denialview/{id}/{mailId}', 'denialview');
+        Route::post('reports', 'reports');
     });
 });
 Route::controller(ApplyApplication::class)->group(function () {    

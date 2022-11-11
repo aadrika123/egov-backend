@@ -58,10 +58,10 @@ class dPropertyTax
         $PrivFyTax = 0;
         foreach ($t as $val) {
             $FyTax = array_column($taxs, $val);
-            $Q1 = array_column($FyTax, '1');
-            $Q2 = array_column($FyTax, '2');
-            $Q3 = array_column($FyTax, '3');
-            $Q4 = array_column($FyTax, '4');
+            $Q1 = array_column($FyTax, 'qtr-1');
+            $Q2 = array_column($FyTax, 'qtr-2');
+            $Q3 = array_column($FyTax, 'qtr-3');
+            $Q4 = array_column($FyTax, 'qtr-4');
             $Q1 = array_sum($Q1);
             $Q2 = array_sum($Q2);
             $Q3 = array_sum($Q3);
@@ -70,9 +70,12 @@ class dPropertyTax
             $arv = array_column($FyTax, 'ARV');
             $arv = array_sum($arv);
 
-            $HoldingTax = array_column($FyTax, 'HoldingTax');
-            $HoldingTax = array_sum($HoldingTax);
+            $totalTax = array_column($FyTax, 'TotalTax');
 
+            $HoldingTax = array_column($FyTax, 'HoldingTax');
+
+            $HoldingTax = array_sum($HoldingTax);
+            // print_var($HoldingTax);
             $LatineTax = array_column($FyTax, 'LatineTax');
             $LatineTax = array_sum($LatineTax);
 
@@ -90,6 +93,7 @@ class dPropertyTax
                 echo "demand insert 1 $val priv = $PrivFyTax  current = $Q1 <br>";
                 $inputs = [];
                 $inputs = [
+                    'total_tax'         => $totalTax,
                     'saf_dtl_id'         => $this->saf_dtl_id,
                     'fy_mstr_id'        => null,
                     "arv"               => $arv,
@@ -109,6 +113,7 @@ class dPropertyTax
                 echo "demand insert 2 $val priv = $PrivFyTax  current = $Q2 <br>";
                 $inputs = [];
                 $inputs = [
+                    'total_tax'         => $totalTax,
                     'saf_dtl_id'         => $this->saf_dtl_id,
                     'fy_mstr_id'        => null,
                     "arv"               => $arv,
@@ -128,6 +133,7 @@ class dPropertyTax
                 echo "demand insert 3 $val priv = $PrivFyTax  current = $Q3 <br>";
                 $inputs = [];
                 $inputs = [
+                    'total_tax'         => $totalTax,
                     'saf_dtl_id'         => $this->saf_dtl_id,
                     'fy_mstr_id'        => null,
                     "arv"               => $arv,
@@ -148,6 +154,7 @@ class dPropertyTax
                 echo "demand insert 4 $val priv = $PrivFyTax  current = $Q4 <br>";
                 $inputs = [];
                 $inputs = [
+                    'total_tax'         => $totalTax,
                     'saf_dtl_id'         => $this->saf_dtl_id,
                     'fy_mstr_id'        => null,
                     "arv"               => $arv,
@@ -164,6 +171,7 @@ class dPropertyTax
                 $PrivFyTax = $Q4;
             }
         }
+        die;
     }
 
     public function insert(array $inputs)

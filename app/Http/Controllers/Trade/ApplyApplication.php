@@ -33,7 +33,7 @@ class ApplyApplication extends Controller
     }
     public function applyApplication(Request $request)
     {        
-        return $this->Repository->applyApplication($request);
+        return $this->Repository->createApplication($request);
     }
     public function paybleAmount(Request $request)
     {      
@@ -73,6 +73,10 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->searchLicenceByNo($request);
     }
+    public function applicationList(Request $request)
+    {
+        return $this->Repository->applicationList($request);
+    }
     public function inbox(Request $request)
     {
         return $this->Repository->inbox($request);
@@ -85,9 +89,9 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->postNextLevel($request);
     }
-    public function procidToPaymentCounter(Request $request)
+    public function paymentCounter(Request $request)
     {
-        return $this->Repository->procidToPaymentCounter($request);
+        return $this->Repository->paymentCounter($request);
     }
     public function provisionalCertificate(Request $request)
     {
@@ -110,5 +114,9 @@ class ApplyApplication extends Controller
         $id = $request->id;
         $mailID = $request->mailID;
         return $this->Repository->denialview($id,$mailID,$request);
+    }
+    public function reports(Request $request)
+    {
+        return $this->Repository->reports($request);
     }
 }

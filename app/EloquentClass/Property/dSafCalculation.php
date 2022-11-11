@@ -299,7 +299,7 @@ class dSafCalculation
         $AllRentalValue = json_decode(Redis::get("AllRentalValue:$ulb_id")) ?? null;
         if (!$AllRentalValue) {
             $AllRentalValue = DB::select("select * from prop_param_rental_values where status=1");
-            $this->AllRentalValueSet($redis, $ulb_id, $AllRentalValue);
+            // $this->AllRentalValueSet($redis, $ulb_id, $AllRentalValue);                 // Set Redis value
         }
         return $AllRentalValue;
     }
@@ -652,7 +652,8 @@ class dSafCalculation
          * $buildupDate          -> construction date Of floar
          * 
          * ======================= Response ==========================
-         * Array = ["ARV"           => $arv,
+         * Array = [
+                    "ARV"           => $arv,
                     "TotalTax"      => $tax,
                     "buildupAreaSqft" =>$buildupAreaSqft,
                     "usegeTypeID"       => $usegeTypeID,
@@ -690,21 +691,22 @@ class dSafCalculation
         $education_tax = ($arv * 5.0) / 100;
         $tax = ($holding_tax + $latine_tax + $water_tax + $health_tax + $education_tax);
         return [
-            "ARV"           => $arv,
-            "TotalTax"      => $tax,
-            "buildupAreaSqft" => $buildupAreaSqft,
+            "ARV"           => roundFigure($arv),
+            "RentalValue"   => roundFigure($rentalVal),
+            "TotalTax"      => roundFigure($tax),
+            "buildupAreaSqft" => roundFigure($buildupAreaSqft),
             "usegeTypeID"       => $usegeTypeID,
             "zoneID"            => $zoneID,
             "PropertyTypeID"    => $PropertyTypeID,
             "Residential100"   => $Residential100,
             "buildupDate"     => $buildupDate,
             "constructionTypeID" => $constructionTypeID,
-            "pesentage"     => $pesentage,
-            "HoldingTax"    => $holding_tax,
-            "LatineTax"     => $latine_tax,
-            "WaterTax"      => $water_tax,
-            "HealthTax"     => $health_tax,
-            "EducationTax"  => $education_tax
+            "pesentage"     => roundFigure($pesentage),
+            "HoldingTax"    => roundFigure($holding_tax),
+            "LatineTax"     => roundFigure($latine_tax),
+            "WaterTax"      => roundFigure($water_tax),
+            "HealthTax"     => roundFigure($health_tax),
+            "EducationTax"  => roundFigure($education_tax)
         ];
     }
     public function buildingRulSet2(int $ulb_id, float $buildupAreaSqft, int $usegeTypeID, int $OccuTypeID, float $road_width_in_sft, int $constructionTypeID, $buildupDate)
@@ -779,18 +781,18 @@ class dSafCalculation
         $ARV = $CarpetArea * $UsageFacter * $OccuPencyFacter * $RentalValue;
         $tax = $ARV * 2 / 100;
         $data = [
-            "ARV"                => $ARV,
-            "TotalTax"          => $tax,
-            "buildupAreaSqft"   => $buildupAreaSqft,
+            "ARV"                => roundFigure($ARV),
+            "TotalTax"          => roundFigure($tax),
+            "buildupAreaSqft"   => roundFigure($buildupAreaSqft),
             "CarpetPresent"     => $CarpetPresent,
-            "CarpetArea"        => $CarpetArea,
+            "CarpetArea"        => roundFigure($CarpetArea),
             "usegeTypeID"       => $usegeTypeID,
-            "UsageFacter"       => $UsageFacter,
+            "UsageFacter"       => roundFigure($UsageFacter),
             "OccuType"          => $OccuType,
-            "OccuPencyFacter"   => $OccuPencyFacter,
+            "OccuPencyFacter"   => roundFigure($OccuPencyFacter),
             "GetRodeTypeID"     => $GetRodeTypeID,
             "constructionTypeID" => $constructionTypeID,
-            "RentalValue"       => $RentalValue,
+            "RentalValue"       => roundFigure($RentalValue),
         ];
         return  $data;
     }
@@ -885,9 +887,9 @@ class dSafCalculation
         }
 
         $data = [
-            "TotalTax" => $Tax,
-            "buildupAreaSqft" => $buildupAreaSqft,
-            "CircalRate" => $CircalRate,
+            "TotalTax" => roundFigure($Tax),
+            "buildupAreaSqft" => roundFigure($buildupAreaSqft),
+            "CircalRate" => roundFigure($CircalRate),
             "TaxPresent" => $TaxPresent,
             "usegeTypeID" => $usegeTypeID,
             "CalculationFactor" => $CalculationFactor,
@@ -914,6 +916,7 @@ class dSafCalculation
     // } 
     public function BuildingTax($request): array
     {
+        $oldeTax = 0;
         $this->TotalTax = [];
         $M_property = [];
         $L_PropertyTypeId       = $request['propertyType'];
@@ -924,6 +927,7 @@ class dSafCalculation
         $L_ploat_area           = $request['areaOfPlot'];
         $L_ulb_type_id          = $request['ulb_type_id'] ?? 1;
         if ($request['isMobileTower']) {
+            $this->Tax = [];
             $this->FYearQuater = [];
             $L_towerArea               = $request['towerArea'];
             $L_towerInstallationDate   = $request['towerInstallationDate'] ?? '2016-04-01';
@@ -944,6 +948,16 @@ class dSafCalculation
             foreach ($L_MobileRuleSet as $key => $ruls) {
                 $this->Tax = [];
                 foreach ($ruls as $rul) {
+                    $this_month = Carbon::now()->format("m");
+                    $curentYear = Carbon::now()->format("Y");
+                    $carbonDate = Carbon::createFromFormat("Y-m-d", $rul['due_date']);
+                    $uptoMonth = (int) $carbonDate->format("m");
+                    $uptoYear = (int) $carbonDate->format("Y");;
+                    $monthsDiff  = $this_month - $uptoMonth;
+                    $monthsDiff  += (($curentYear - $uptoYear) * 12);
+                    if ($monthsDiff < 0 && $rul['due_date'] < Carbon::now()->format("Y-m-d")) {
+                        $monthsDiff = 12 + $monthsDiff;
+                    }
                     switch ($rul['rule_set']) {
                         case "buildingRulSet1": //buildingRulSet1(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID, int $zoneID, int $constructionTypeID,int $PropertyTypeID, bool $Residential100, $buildupDate ):array
                             if (isset($this->Tax[$key])) {
@@ -951,8 +965,13 @@ class dSafCalculation
                             } else
                                 $yearly = $this->buildingRulSet1($L_ulb_id, $L_towerArea, $L_usageTypeId, $L_zoneId, $L_constructionTypeId, $L_PropertyTypeId, false, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
+                            $oldeTax += $quaterly;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                            $this->Tax[$key]['curentTax - ' . $rul['qtr']] = $oldeTax;
+                            $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                            $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
+                            $this->Tax[$key]["TotalOnpercentpenalty"] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet2": //buildingRulSet2(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, $buildupDate )
@@ -962,8 +981,13 @@ class dSafCalculation
                             } else
                                 $yearly = $this->buildingRulSet2($L_ulb_id, $L_towerArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
+                            $oldeTax += $quaterly;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                            $this->Tax[$key]['curentTax - ' . $rul['qtr']] = $oldeTax;
+                            $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                            $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
+                            $this->Tax[$key]["TotalOnpercentpenalty"] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet3": //buildingRulSet3(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, bool $Residential100 ,int $PropertyTypeID,string $ward_no,$buildupDate ):array
@@ -972,8 +996,13 @@ class dSafCalculation
                             } else
                                 $yearly = $this->buildingRulSet3($L_ulb_id, $L_towerArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, false, $L_PropertyTypeId, $L_ward_no, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
+                            $oldeTax += $quaterly;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                            $this->Tax[$key]['curentTax - ' . $rul['qtr']] = $oldeTax;
+                            $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                            $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
+                            $this->Tax[$key]["TotalOnpercentpenalty"] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         default:
@@ -985,6 +1014,7 @@ class dSafCalculation
         }
 
         if ($request['isHoardingBoard']) {
+            $this->Tax = [];
             $this->FYearQuater = [];
             $L_isHoardingBoard          = $request['isHoardingBoard'];
             $L_hoardingArea             = $request['hoardingArea'];
@@ -1008,6 +1038,16 @@ class dSafCalculation
             foreach ($L_HoardingBoardRuleSet as $key => $ruls) {
                 $this->Tax = [];
                 foreach ($ruls as $rul) {
+                    $this_month = Carbon::now()->format("m");
+                    $curentYear = Carbon::now()->format("Y");
+                    $carbonDate = Carbon::createFromFormat("Y-m-d", $rul['due_date']);
+                    $uptoMonth = (int) $carbonDate->format("m");
+                    $uptoYear = (int) $carbonDate->format("Y");;
+                    $monthsDiff  = $this_month - $uptoMonth;
+                    $monthsDiff  += (($curentYear - $uptoYear) * 12);
+                    if ($monthsDiff < 0 && $rul['due_date'] < Carbon::now()->format("Y-m-d")) {
+                        $monthsDiff = 12 + $monthsDiff;
+                    }
                     switch ($rul['rule_set']) {
                         case "buildingRulSet1": //buildingRulSet1(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID, int $zoneID, int $constructionTypeID,int $PropertyTypeID, bool $Residential100, $buildupDate ):array
                             if (isset($this->Tax[$key])) {
@@ -1015,8 +1055,13 @@ class dSafCalculation
                             } else
                                 $yearly = $this->buildingRulSet1($L_ulb_id, $L_hoardingArea, $L_usageTypeId, $L_zoneId, $L_constructionTypeId, $L_PropertyTypeId, false, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
+                            $oldeTax += $quaterly;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                            $this->Tax[$key]['curentTax - ' . $rul['qtr']] = $oldeTax;
+                            $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                            $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
+                            $this->Tax[$key]["TotalOnpercentpenalty"] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet2": //buildingRulSet2(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, $buildupDate )
@@ -1026,8 +1071,13 @@ class dSafCalculation
                             } else
                                 $yearly = $this->buildingRulSet2($L_ulb_id, $L_hoardingArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
+                            $oldeTax += $quaterly;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                            $this->Tax[$key]['curentTax - ' . $rul['qtr']] = $oldeTax;
+                            $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                            $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
+                            $this->Tax[$key]["TotalOnpercentpenalty"] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet3": //buildingRulSet3(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, bool $Residential100 ,int $PropertyTypeID,string $ward_no,$buildupDate ):array
@@ -1036,8 +1086,13 @@ class dSafCalculation
                             } else
                                 $yearly = $this->buildingRulSet3($L_ulb_id, $L_hoardingArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, false, $L_PropertyTypeId, $L_ward_no, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
+                            $oldeTax += $quaterly;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                            $this->Tax[$key]['curentTax - ' . $rul['qtr']] = $oldeTax;
+                            $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                            $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
+                            $this->Tax[$key]["TotalOnpercentpenalty"] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         default:
@@ -1049,6 +1104,7 @@ class dSafCalculation
         }
 
         if ($request['isPetrolPump']) {
+            $this->Tax = [];
             $this->FYearQuater = [];
             $L_isPetrolPump          = $request['isPetrolPump'];
             $L_undergroundArea         = $request['undergroundArea'];
@@ -1069,7 +1125,18 @@ class dSafCalculation
 
             foreach ($L_PetrolPumpRuleSet as $key => $ruls) {
                 $this->Tax = [];
+
                 foreach ($ruls as $rul) {
+                    $this_month = Carbon::now()->format("m");
+                    $curentYear = Carbon::now()->format("Y");
+                    $carbonDate = Carbon::createFromFormat("Y-m-d", $rul['due_date']);
+                    $uptoMonth = (int) $carbonDate->format("m");
+                    $uptoYear = (int) $carbonDate->format("Y");;
+                    $monthsDiff  = $this_month - $uptoMonth;
+                    $monthsDiff  += (($curentYear - $uptoYear) * 12);
+                    if ($monthsDiff < 0 && $rul['due_date'] < Carbon::now()->format("Y-m-d")) {
+                        $monthsDiff = 12 + $monthsDiff;
+                    }
                     switch ($rul['rule_set']) {
                         case "buildingRulSet1": //buildingRulSet1(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID, int $zoneID, int $constructionTypeID,int $PropertyTypeID, bool $Residential100, $buildupDate ):array
                             if (isset($this->Tax[$key])) {
@@ -1077,8 +1144,13 @@ class dSafCalculation
                             } else
                                 $yearly = $this->buildingRulSet1($L_ulb_id, $L_undergroundArea, $L_usageTypeId, $L_zoneId, $L_constructionTypeId, $L_PropertyTypeId, false, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
+                            $oldeTax += $quaterly;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                            $this->Tax[$key]['curentTax - ' . $rul['qtr']] = roundFigure($oldeTax);
+                            $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                            $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = roundFigure(($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0);
+                            $this->Tax[$key]["TotalOnpercentpenalty"] = roundFigure(($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet2": //buildingRulSet2(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, $buildupDate )
@@ -1088,8 +1160,13 @@ class dSafCalculation
                             } else
                                 $yearly = $this->buildingRulSet2($L_ulb_id, $L_undergroundArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
+                            $oldeTax += $quaterly;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                            $this->Tax[$key]['curentTax - ' . $rul['qtr']] = roundFigure($oldeTax);
+                            $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                            $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = roundFigure(($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0);
+                            $this->Tax[$key]["TotalOnpercentpenalty"] = roundFigure(($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "buildingRulSet3": //buildingRulSet3(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, bool $Residential100 ,int $PropertyTypeID,string $ward_no,$buildupDate ):array
@@ -1098,8 +1175,13 @@ class dSafCalculation
                             } else
                                 $yearly = $this->buildingRulSet3($L_ulb_id, $L_undergroundArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, false, $L_PropertyTypeId, $L_ward_no, $request['towerInstallationDate']);
                             $quaterly = $yearly['TotalTax'] / 4;
+                            $oldeTax += $quaterly;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                            $this->Tax[$key]['curentTax - ' . $rul['qtr']] = roundFigure($oldeTax);
+                            $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                            $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = roundFigure(($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0);
+                            $this->Tax[$key]["TotalOnpercentpenalty"] = roundFigure(($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         default:
@@ -1114,23 +1196,44 @@ class dSafCalculation
 
         if ($L_PropertyTypeId != 4) {
             $this->FYearQuater = [];
+            // Checking the floor usertype is totally residential or not
             $L_residential100 = array_filter($request['floor'], function ($val) {
                 return $val['useType'] != 1;
             });
             $L_residential100 = !empty($L_residential100) ? false : true;
+
             foreach ($request['floor'] as $keys => $floor) {
                 $this->Tax = [];
+                $this->FYearQuater = [];
                 $reqFromDate = $floor["dateFrom"];
                 $reqUptoDate = $floor["dateUpto"];
+                $fromRuleEmplimenteddate = fromRuleEmplimenteddate();               // helper function to get 12 years back
+
+                if ($fromRuleEmplimenteddate > $reqFromDate) {
+                    $reqFromDate = $fromRuleEmplimenteddate;
+                }
                 $ruleSets = $this->getFYearQutery($reqFromDate, $reqUptoDate);
                 $floor['RuleSet'] = $ruleSets;
+                $monthsDiff = 1;
+                $totalPenalty = 0;
                 foreach ($ruleSets as $key => $val) {
                     foreach ($val as $rul) {
                         $L_usageTypeId          = $floor['useType'];
                         $L_buildupArea          = $floor['buildupArea'];
-                        $L_constructionTypeId   = $floor['occupancyType'];
+                        $L_constructionTypeId   = $floor['constructionType'];
                         $L_buildutDate          = $floor['dateFrom'];
                         $L_occuType             = $floor['occupancyType'];
+
+                        $this_month = Carbon::now()->format("m");
+                        $curentYear = Carbon::now()->format("Y");
+                        $carbonDate = Carbon::createFromFormat("Y-m-d", $rul['due_date']);
+                        $uptoMonth = (int) $carbonDate->format("m");
+                        $uptoYear = (int) $carbonDate->format("Y");;
+                        $monthsDiff  = $this_month - $uptoMonth;
+                        $monthsDiff  += (($curentYear - $uptoYear) * 12);
+                        if ($monthsDiff < 0 && $rul['due_date'] < Carbon::now()->format("Y-m-d")) {
+                            $monthsDiff = 12 + $monthsDiff;
+                        }
                         switch ($rul['rule_set']) {
                             case "buildingRulSet1": //buildingRulSet1(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID, int $zoneID, int $constructionTypeID,int $PropertyTypeID, bool $Residential100, $buildupDate ):array
                                 if (isset($this->Tax[$key])) {
@@ -1138,8 +1241,13 @@ class dSafCalculation
                                 } else
                                     $yearly = $this->buildingRulSet1($L_ulb_id, $L_buildupArea, $L_usageTypeId, $L_zoneId, $L_constructionTypeId, $L_PropertyTypeId, $L_residential100, $L_buildutDate);
                                 $quaterly = $yearly['TotalTax'] / 4;
+                                $oldeTax += $quaterly;
                                 $this->Tax[$key] = $yearly;
-                                $this->Tax[$key][$rul['qtr']] = $quaterly;
+                                $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                                $this->Tax[$key]['curentTax - ' . $rul['qtr']] = roundFigure($oldeTax);
+                                $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                                $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
+                                $this->Tax[$key]["TotalOnpercentpenalty"] = roundFigure(($this->Tax[$key]["TotalOnpercentpenalty"] ?? 0) + $this->Tax[$key]['onePercPenalty-' . $rul['qtr']]);
                                 $this->Tax[$key]['due_date'] = $rul['due_date'];
                                 break;
                             case "buildingRulSet2": //buildingRulSet2(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, $buildupDate )
@@ -1149,8 +1257,13 @@ class dSafCalculation
                                 } else
                                     $yearly = $this->buildingRulSet2($L_ulb_id, $L_buildupArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, $L_buildutDate);
                                 $quaterly = $yearly['TotalTax'] / 4;
+                                $oldeTax += $quaterly;
                                 $this->Tax[$key] = $yearly;
-                                $this->Tax[$key][$rul['qtr']] = $quaterly;
+                                $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                                $this->Tax[$key]['curentTax - ' . $rul['qtr']] = roundFigure($oldeTax);
+                                $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                                $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? ((roundFigure(($oldeTax / 100) * $monthsDiff))) : 0;
+                                $this->Tax[$key]["TotalOnpercentpenalty"] = roundFigure(($this->Tax[$key]["TotalOnpercentpenalty"] ?? 0) + $this->Tax[$key]['onePercPenalty-' . $rul['qtr']]);
                                 $this->Tax[$key]['due_date'] = $rul['due_date'];
                                 break;
                             case "buildingRulSet3": //buildingRulSet3(int $ulb_id,float $buildupAreaSqft, int $usegeTypeID,int $OccuTypeID, float $road_width_in_sft,int $constructionTypeID, bool $Residential100 ,int $PropertyTypeID,string $ward_no,$buildupDate ):array
@@ -1159,8 +1272,13 @@ class dSafCalculation
                                 } else
                                     $yearly = $this->buildingRulSet3($L_ulb_id, $L_buildupArea, $L_usageTypeId, $L_occuType, $L_road_width, $L_constructionTypeId, $L_residential100, $L_PropertyTypeId, $L_ward_no, $L_buildutDate);
                                 $quaterly = $yearly['TotalTax'] / 4;
+                                $oldeTax += $quaterly;
                                 $this->Tax[$key] = $yearly;
-                                $this->Tax[$key][$rul['qtr']] = $quaterly;
+                                $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                                $this->Tax[$key]['curentTax - ' . $rul['qtr']] = roundFigure($oldeTax);
+                                $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                                $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? (roundFigure(($oldeTax / 100) * $monthsDiff)) : 0;
+                                $this->Tax[$key]["TotalOnpercentpenalty"] = roundFigure(($this->Tax[$key]["TotalOnpercentpenalty"] ?? 0) + $this->Tax[$key]['onePercPenalty-' . $rul['qtr']]);
                                 $this->Tax[$key]['due_date'] = $rul['due_date'];
                                 break;
                             default:
@@ -1171,7 +1289,9 @@ class dSafCalculation
                 $floor['Tax'] = $this->Tax;
                 $M_property['floorsDtl'][$keys] = $floor;
             }
-        } elseif ($L_PropertyTypeId == 4) {
+        }
+        if ($L_PropertyTypeId == 4) {
+            $this->Tax = [];
             $this->FYearQuater = [];
             $L_landOccupationDate = $request['landOccupationDate'];
             if ($L_landOccupationDate <= '2016-04-01') {
@@ -1192,7 +1312,11 @@ class dSafCalculation
                                 $yearly = $this->vacantRulSet1($L_road_width, $L_ploat_area, $L_ulb_type_id, $OccuType);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                            $this->Tax[$key]['curentTax - ' . $rul['qtr']] = roundFigure($oldeTax);
+                            $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                            $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? (roundFigure(($oldeTax / 100) * $monthsDiff)) : 0;
+                            $this->Tax[$key]["TotalOnpercentpenalty"] = roundFigure(($this->Tax[$key]["TotalOnpercentpenalty"] ?? 0) + $this->Tax[$key]['onePercPenalty-' . $rul['qtr']]);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         case "vacantRulSet2": //vacantRulSet2(float $road_width_in_sft,float $area_in_dml,int $ulb_type_id, string $usege_type):float
@@ -1203,7 +1327,11 @@ class dSafCalculation
                                 $yearly = $this->vacantRulSet2($L_road_width, $L_ploat_area, $L_ulb_type_id, $OccuType);
                             $quaterly = $yearly['TotalTax'] / 4;
                             $this->Tax[$key] = $yearly;
-                            $this->Tax[$key][$rul['qtr']] = $quaterly;
+                            $this->Tax[$key]['qtr-' . $rul['qtr']] = roundFigure($quaterly);
+                            $this->Tax[$key]['curentTax - ' . $rul['qtr']] = roundFigure($oldeTax);
+                            $this->Tax[$key]['monthsDiff - ' . $rul['qtr']] = $rul['due_date'] < Carbon::now()->format("Y-m-d") ? $monthsDiff : 0;
+                            $this->Tax[$key]['onePercPenalty-' . $rul['qtr']] = ($rul['due_date'] < Carbon::now()->format("Y-m-d")) ? (roundFigure(($oldeTax / 100) * $monthsDiff)) : 0;
+                            $this->Tax[$key]["TotalOnpercentpenalty"] = roundFigure(($this->Tax[$key]["TotalOnpercentpenalty"] ?? 0) + $this->Tax[$key]['onePercPenalty-' . $rul['qtr']]);
                             $this->Tax[$key]['due_date'] = $rul['due_date'];
                             break;
                         default:
@@ -1213,41 +1341,55 @@ class dSafCalculation
                 $M_property['vacandLand']['Tax'][$key] = $this->Tax[$key];
             }
         }
+
         $this->TotalTax = $M_property;
         return  $M_property;
     }
 
+    /**
+     * | get Total Quaterly Years and Quaterly Ruleset
+     */
     public function getFYearQutery($fromdate, $uptodate = null, $PropertyTypeID = 1)
     {
         if (!$uptodate)
             $uptodate = Carbon::now()->format('Y-m-d');
-
         $carbonDate = Carbon::createFromFormat("Y-m-d", $fromdate);
         $MM = (int) $carbonDate->format("m");
         $YYYY = (int) $carbonDate->format("Y");
         $carbonUpto =  Carbon::createFromFormat("Y-m-d", $uptodate);
-        // print_var($fromdate ."  " . $uptodate."    " .$PropertyTypeID);
+        // print_var($fromdate . "  #||# " . $uptodate . "   #||# " . $PropertyTypeID);
         if ($carbonDate->format("Y-m") < $carbonUpto->format("Y-m")) {
+
             $m = 4;
             if ($MM % 4 != 0) {
                 $m = 4 - $MM;
             }
+            if ($m < 0) {
+                $m = (-1 * $m) + 1;
+            }
             $L_fromdate = $carbonDate->addMonth($m)->format('Y-m-d');
-            $fquater = getQtr($fromdate);
-            $FYear = getFYear($fromdate);
+            $fquater = calculateQtr($fromdate);                               // Get Quarter Value
+            $FYear = calculateFYear($fromdate);                               // Get Financial Year
             $this->FYearQuater[$FYear][] = $this->getRulsets($fromdate, $PropertyTypeID)[0];
-            if ($fquater == 3 && getFYear($fromdate) != getFYear($uptodate)) {
+            if ($fquater == 3 && calculateFYear($fromdate) != calculateFYear($uptodate)) {
                 $dd = (int) $carbonDate->format("d");
                 $fromdate = Carbon::createFromFormat("Y-m-d", $L_fromdate)->subDay($dd)->format('Y-m-d');
 
                 $this->FYearQuater[$FYear][] = $this->getRulsets($fromdate, $PropertyTypeID)[0];
             }
             return ($this->getFYearQutery($L_fromdate, $uptodate, $PropertyTypeID));
-        }
-        if ($fromdate >= $uptodate) {
-            $FYear = getFYear($uptodate);
+        } elseif ($fromdate >= $uptodate && $this->FYearQuater) {
+            $FYear = calculateFYear($uptodate);
             $fromdate = Carbon::createFromFormat("Y-m-d", $uptodate)->format('Y-m-d');
             $rul = $this->getRulsets($uptodate, $PropertyTypeID)[0];
+            if ($this->FYearQuater[$FYear][sizeof($this->FYearQuater[$FYear]) - 1] != $rul)
+                $this->FYearQuater[$FYear][] = $rul;
+        } else {
+
+            $FYear = calculateFYear($fromdate);
+            $uptodate = Carbon::createFromFormat("Y-m-d", $uptodate)->format('Y-m-d');
+            $rul = $this->getRulsets($fromdate, $PropertyTypeID)[0];
+            $this->FYearQuater[$FYear][] = $this->getRulsets($fromdate, $PropertyTypeID)[0];
             if ($this->FYearQuater[$FYear][sizeof($this->FYearQuater[$FYear]) - 1] != $rul)
                 $this->FYearQuater[$FYear][] = $rul;
         }
@@ -1255,12 +1397,16 @@ class dSafCalculation
         return $this->FYearQuater;
     }
 
+    /**
+     * | Get Total applied Rulesets
+     * | Parent Function getFYearQuaterly
+     */
     public function getRulsets($dateFrom, $PropertyTypeID = 1)
     {
         $fromRuleEmplimenteddate = fromRuleEmplimenteddate();
         $reqFromDate = $dateFrom;
         $ruleSets = [];
-        // dd($reqFromDate);
+        // print_var($fromRuleEmplimenteddate);
         if ($fromRuleEmplimenteddate > $reqFromDate) {
             $reqFromDate = $fromRuleEmplimenteddate;
         }
@@ -1269,8 +1415,8 @@ class dSafCalculation
         if ("2016-04-01" > $reqFromDate && $PropertyTypeID == 1) {
             $ruleSets[] = [
                 "rule_set" => "buildingRulSet1",
-                "qtr" => getQtr($reqFromDate),
-                "due_date" => getQuaterDueDate($reqFromDate)
+                "qtr" => calculateQtr($reqFromDate),
+                "due_date" => calculateQuaterDueDate($reqFromDate)
             ];
             return $ruleSets;
         }
@@ -1278,8 +1424,8 @@ class dSafCalculation
         elseif ("2022-04-01" > $reqFromDate && $PropertyTypeID == 1) {
             $ruleSets[] = [
                 "rule_set" => "buildingRulSet2",
-                "qtr" => getQtr($reqFromDate),
-                "due_date" => getQuaterDueDate($reqFromDate)
+                "qtr" => calculateQtr($reqFromDate),
+                "due_date" => calculateQuaterDueDate($reqFromDate)
             ];
             return $ruleSets;
         }
@@ -1287,8 +1433,8 @@ class dSafCalculation
         elseif ("2022-04-01" <= $reqFromDate && $PropertyTypeID == 1) {
             $ruleSets[] = [
                 "rule_set" => "buildingRulSet3",
-                "qtr" => getQtr($reqFromDate),
-                "due_date" => getQuaterDueDate($reqFromDate)
+                "qtr" => calculateQtr($reqFromDate),
+                "due_date" => calculateQuaterDueDate($reqFromDate)
             ];
             return $ruleSets;
         }
@@ -1296,8 +1442,8 @@ class dSafCalculation
         elseif ("2022-04-01" > $reqFromDate && $PropertyTypeID == 4) {
             $ruleSets[] = [
                 "rule_set" => "vacantRulSet1",
-                "qtr" => getQtr($reqFromDate),
-                "due_date" => getQuaterDueDate($reqFromDate)
+                "qtr" => calculateQtr($reqFromDate),
+                "due_date" => calculateQuaterDueDate($reqFromDate)
             ];
             return $ruleSets;
         }
@@ -1305,18 +1451,148 @@ class dSafCalculation
         elseif ("2022-04-01" <= $reqFromDate && $PropertyTypeID == 4) {
             $ruleSets[] = [
                 "rule_set" => "vacantRulSet2",
-                "qtr" => getQtr($reqFromDate),
-                "due_date" => getQuaterDueDate($reqFromDate)
+                "qtr" => calculateQtr($reqFromDate),
+                "due_date" => calculateQuaterDueDate($reqFromDate)
             ];
             return $ruleSets;
         }
     }
 
 
+    /**
+     * | get Late Assessment Penalty
+     * | Created By- Anshu Kumar
+     * | Created On- 28-10-2022
+     * | -------------------------------------------------------------------------------------------
+     * | @param request all the requested payload
+     * | @param floorDetails floor Details
+     * | @var filter1 returns all floors with total tax floorwise
+     * | @var totalTax returns both floor total tax
+     * | @var checkLateAssement checks if the floor assessment has crossed the 3 months or not
+     * | @var checkLateAssement return the status in boolean
+     * | @var isResidential contains the data with which floor are not residential
+     * | @var isResidentialStatus return the value in boolean if the floor is fully residential or not
+     * | 
+     */
+    public function getLateAssessmentPenalty(array $request, array $floorDetails)
+    {
+        $filter1 = collect($floorDetails)->map(function ($val) {
+            return collect($val)->map(function ($val2) {
+                $filter2 = $val2['Tax'];
+                $total = collect($filter2)->sum('TotalTax');
+                return $total;
+            });
+        });
+
+        $totalOnePercPenalty = roundFigure($this->onePercPenalty($floorDetails));
+
+        $grandTotal = collect($filter1['floorsDtl'])->sum();
+        $floorDetails['totalTax'] = roundFigure($grandTotal);
+
+        // Checking if the Floor has Late Assesment Fine or Not
+        $checkLateAssesment = array_filter($request['floor'], function ($val1) {
+            $currentDate = Carbon::now();
+            $toDate = Carbon::createFromFormat('Y-m-d', $val1['dateFrom']);
+            $months = $currentDate->diffInMonths($toDate);
+            return $months > 3;
+        });
+        $lateAssessmentStatus = empty($checkLateAssesment) ? false : true;
+        $floorDetails['lateAssessmentPenaltyStatus'] = $lateAssessmentStatus;
+        $a = (float)$floorDetails['totalTax'];
+
+        // Checking the floor usertype is totally residential or not
+        $isResidential = array_filter($request['floor'], function ($val) {
+            return $val['useType'] != 1;
+        });
+        $isResidentialStatus = !empty($isResidential) ? false : true;
+
+        $totalAssessmentFine = 0;
+        $fine = 0;
+        // If the property is residential the fine will 2000
+        if ($floorDetails['lateAssessmentPenaltyStatus'] == true) {
+            $fine = 2000;
+            $totalAssessmentFine = $grandTotal + (float)$fine;
+        }
+        $totalAssessmentFine = $grandTotal + (float)$fine;
+        $isResidentialStatus == true ? $floorDetails['isResidential'] = true : $floorDetails['isResidential'] = false;
+        $floorDetails['lateAssessmentFee'] = roundFigure($fine);
+
+        $floorDetails['onePercPenalty'] = $totalOnePercPenalty;                                          // One Perc Penalty
+
+        $floorDetails['grandTotal'] = roundFigure($totalAssessmentFine + $totalOnePercPenalty);          // total with One Perc Penalty
+        return $floorDetails;
+    }
+
+    /**
+     * | Calculating 1 % Penalty
+     * | @param request all the requested payloads
+     * | @param propertyDetails
+     * | @var filter1 filters the array and extracts the sum of the value of total One Percent penalty Tax
+     */
+    public function onePercPenalty($propertyDetails)
+    {
+        $filter1 = collect($propertyDetails)->map(function ($val) {
+            return collect($val)->map(function ($val2) {
+                $filter2 = $val2['Tax'];
+                $total = collect($filter2)->sum('TotalOnpercentpenalty');
+                return $total;
+            });
+        });
+        $total = collect($filter1['floorsDtl'])->sum();
+        return $total;
+    }
+
+    /**
+     * | Demand Rebates
+     * | @var inputs all requested input fields
+     * | @var demand total demandable amount
+     * | @var isCitizen checks is the logged in user citizen or not
+     * | @var isJsk checks if the logged in user jsk or not 
+     * | @var special contains the data in array of special categories
+     * | @var filtered filters the special type array 
+     * | @var array $array
+     * | @var rebate percentage of rebate
+     */
+    public function demandRebate(array $inputs, array $demand)
+    {
+        $ownerDetails = $inputs['owner'][0];
+        $isCitizen = auth()->user()->user_type == 'Citizen';
+        $isJsk = auth()->user()->user_type == 'JSK';
+
+        $rebate = 0;
+        if ($isCitizen == true) {
+            $rebate += 5;
+        }
+        if ($isJsk == true) {
+            $rebate += 2.5;
+        }
+        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  > 1) {
+            $rebate += 5;
+        }
+
+        $demand['rebatePerc'] = $rebate;
+        return $demand;
+    }
+
+    /**
+     * | Final Payable Amount
+     * | ------------------------ Initialization -------------------------
+     * | @param finalWithRebates final payable amount including all rebates
+     * | @var totalDemand Total Demandable Amount
+     * | @var rebatePerc Percentage of rebate
+     * | @var amount amount to be paid
+     * | ------------------------ Calculation ----------------------------
+     * | $amount = $totalDamand - ($totalDemand x $rebatePerc%)
+     */
+    public function payableAmount(array $finalWithRebates)
+    {
+        $totalDemand = $finalWithRebates['grandTotal'];
+        $rebatePerc = $finalWithRebates['rebatePerc'];
+
+        $amount = $totalDemand - (($totalDemand * $rebatePerc) / 100);
+        $finalWithRebates['payableAmount'] = roundFigure($amount);
+        return $finalWithRebates;
+    }
     #================================ End Tax Calculation============================================
-
-
-
-
 
 }

@@ -41,6 +41,7 @@ class NewConnectionController extends Controller
      */
     public function store(Request $request)
     {
+        // dd($request);
         return $this->newConnection->store($request);
     }
 
@@ -110,4 +111,35 @@ class NewConnectionController extends Controller
     {
         return $this->newConnection->applicantDocumentUpload($req);
     }
+
+    // Citizen View Water Screen For Mobile
+    // Get connection type / water
+    public function getConnectionType()
+    {
+        return $this->newConnection->getConnectionType();
+    }
+
+    // Get connection through / water
+    public function getConnectionThrough()
+    {
+        return $this->newConnection->getConnectionThrough();
+    }
+
+     // Get property type / water
+     public function getPropertyType()
+     {
+         return $this->newConnection->getPropertyType();
+     }
+
+     // Get owner type / water
+     public function getOwnerType()
+     {
+         return $this->newConnection->getOwnerType();
+     }
+
+      // Get ward no / water
+      public function getWardNo()
+      {
+          return $this->newConnection->getWardNo();
+      }
 }

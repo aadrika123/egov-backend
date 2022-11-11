@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Repository\Grievance\Concrete\NewGrievanceRepository;
+use App\Repository\Grievance\Interfaces\iGrievance;
 use App\Repository\MenuPermission\Concrete\EloquentMenuGroups;
 use App\Repository\MenuPermission\Concrete\EloquentMenuItems;
 use App\Repository\MenuPermission\Concrete\EloquentMenuMap;
@@ -71,6 +73,9 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(iWorkflowRoleMapRepository::class, WorkflowRoleMapRepository::class);
         $this->app->bind(iWorkflowRoleUserMapRepository::class, WorkflowRoleUserMapRepository::class);
         $this->app->bind(iWorkflowWardUserRepository::class, WorkflowWardUserRepository::class);
+        
+        // Grievance
+        $this->app->bind(iGrievance::class, NewGrievanceRepository::class);
     }
 
     /**

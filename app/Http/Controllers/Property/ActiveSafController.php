@@ -22,6 +22,12 @@ class ActiveSafController extends Controller
         $this->Repository = $saf_repository;
     }
 
+    // Get All master data in saf
+    public function masterSaf()
+    {
+        return $this->Repository->masterSaf();
+    }
+
     //  Function for applying SAF
     public function applySaf(Request $request)
     {
@@ -75,15 +81,9 @@ class ActiveSafController extends Controller
         return $this->Repository->safApprovalRejection($req);
     }
 
-    public function getPropIdByWardNoHodingNo(Request $request)
+    // Back to Citizen
+    public function backToCitizen(Request $req)
     {
-        $data = $this->Repository->getPropIdByWardNoHodingNo($request);
-        return $data;
-    }
-
-    public function setWorkFlowForwordBackword(Request $request)
-    {
-        $data = $this->Repository->setWorkFlowForwordBackword($request);
-        return $data;
+        return $this->Repository->backToCitizen($req);
     }
 }

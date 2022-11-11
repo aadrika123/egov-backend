@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PropParamOwnershipType extends Model
+class PropMOccupancyType extends Model
 {
     use HasFactory;
 }
