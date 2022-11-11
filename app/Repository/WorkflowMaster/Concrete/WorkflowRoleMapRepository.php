@@ -4,7 +4,7 @@ namespace App\Repository\WorkflowMaster\Concrete;
 
 use App\Repository\WorkflowMaster\Interface\iWorkflowRoleMapRepository;
 use Illuminate\Http\Request;
-use App\Models\WfWorkflowrolemap;
+use App\Models\Workflows\WfWorkflowrolemap;
 use Exception;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;

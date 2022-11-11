@@ -2,14 +2,15 @@
 
 namespace App\Repository\WorkflowMaster\Concrete;
 
-use App\Models\WfRole;
+
 use App\Repository\WorkflowMaster\Interface\iWorkflowWardUserRepository;
 use Illuminate\Http\Request;
-use App\Models\WfWardUser;
-use App\Models\WfWorkflow;
+use App\Models\Workflows\WfRole;
+use App\Models\Workflows\WfWardUser;
+use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\UlbWardMaster;
-use App\Models\WfRoleusermap;
-use App\Models\WfWorkflowrolemap;
 use Exception;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -234,7 +235,7 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
         ]);
 
         $workkFlow = WfWorkflow::where('ulb_id', $request->ulbId)
-            ->where('id', $request->id)
+            ->where('wf_workflows.id', $request->id)
             ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.workflow_id', '=', 'wf_workflows.id')
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
             ->get('wf_roles.role_name');
@@ -358,6 +359,7 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
     }
 
     // get users in a role
+    // not working
     public function getUserByRoleId(Request $request)
     {
         $users = WfRoleusermap::where('wf_role_id', $request->roleId)
