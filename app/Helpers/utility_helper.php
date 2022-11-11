@@ -7,8 +7,6 @@
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
 
-use function PHPSTORM_META\elementType;
-
 if (!function_exists("responseMsg")) {
     function responseMsg($status, $message, $data)
     {

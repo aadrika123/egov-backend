@@ -72,6 +72,15 @@ class SafCalculation
     public function calculateTax(Request $req)
     {
         try {
+            $apiId = [
+                "status" => true,
+                "uniqueId" => 'SAF/01',
+                "version" => "1",
+                "ts" => "",
+                "action" => "POST",
+                "did" => ""
+            ];
+
             $this->_propertyDetails = $req->all();
 
             $this->readPropertyMasterData();                                                        // Make all master data as global(1.1)
@@ -86,7 +95,8 @@ class SafCalculation
 
             $this->calculateFinalPayableAmount();                                                   // Adding Total Final Tax with fine and Penalties(1.6)
 
-            return responseMsg(true, "Data Fetched", remove_null($this->_GRID));
+            $collection = collect($this->_GRID)->reverse();                                         // Final Collection of the Contained Grid
+            return responseMsg($apiId, $this->summarySafCalculation(), remove_null($collection));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -640,7 +650,8 @@ class SafCalculation
         // Tax Calculation Quaterly
         $tax = [
             "arv" => roundFigure($arv / 4),
-            "rentalRate" => $readRentalValue->rate,
+            "rebatePerc" => $arvCalcPercFactor,
+            "rentalValue" => $readRentalValue->rate,
             "holdingTax" => roundFigure($holdingTax / 4),
             "latrineTax" => roundFigure($latrineTax / 4),
             "waterTax" => roundFigure($waterTax / 4),
@@ -999,5 +1010,65 @@ class SafCalculation
         $rebateAmount = ($totalDemand * $rebatePerc) / 100;
         $payableAmount = $totalDemand - $rebateAmount;
         return roundFigure($payableAmount);
+    }
+
+    /**
+     * | Summary Preview for The Saf Tax Calculation
+     */
+    public function summarySafCalculation()
+    {
+        $propertyTypeId = $this->_propertyDetails['propertyType'];                          // i.e Property Type Building
+        if ($propertyTypeId != $this->_vacantPropertyTypeId) {
+            $ruleSets = [
+                "Annual Rental Value - As Per Old Rule (Effect Upto 31-03-2016)" => [                   // RuleSet1
+                    "Annual Rental Value(ARV)" => "BuiltUpArea x Rental value",
+                    "After calculating the A.R.V. the rebates are allowed in following manner :-" =>
+                    [
+                        "Holding older than 25 years (as on 1967-68)" => "10% Own occupation",
+                        "Residential" => "30%",
+                        "Commercial" => "15%"
+                    ],
+                    "Tax at the following rates are imposed on the claculated ARV as per old rule" => [
+                        "Holding tax" => "12.5%",
+                        "Latrine tax" => "7.5%",
+                        "Water tax" => "7.5%",
+                        "Health cess" => "6.25%",
+                        "Education cess" => "5.0%"
+                    ],
+                    "Calculated Quaterly Tax" => "(Yearly Tax) ÷ 4"
+                ],
+                "Annual Rental Value - As ARV Rule (Effect From 01-04-2016 to 31-03-2022)" => [          // RuleSet2
+                    "Carpet Area" => [
+                        "Residential" => "70% of Builtup Area",
+                        "Commercial" => "80% Of Builtup Area"
+                    ],
+                    "Annual Rental Value (ARV)" => "Carpet Area X Usage Factor X Occupancy Factor X Rental Rate",
+                    "Total Quarterly Tax Details" => "((ARV X 2%) ÷ 4)"
+                ],
+                "Capital Value - As Per Current Rule (Effect From 01-04-2022)" => [                      // RuleSet 3
+                    "Tax Percentage" => [
+                        "Residential" => 0.075,
+                        "Commercial" => 0.150,
+                        "Commercial & greater than 25000 sqft" => 0.20
+                    ],
+                    "Property Tax" => "Circle Rate X Buildup Area X Occupancy Factor X Tax Percentage X Calculation Factor X Matrix Factor Rate (Only in case of 100% residential property)"
+                ]
+            ];
+        }
+
+        if ($propertyTypeId == $this->_vacantPropertyTypeId) {                              // i.e Property Type is Vacant Land
+            $ruleSets = [
+                "Tax - As Per Old Rule (Effect From 01-04-2016 to 31-03-2022)" => [         // Rule 1
+                    "Tax" => "Area (sqmt) X Rental Rate X Occupancy Factor",
+                    "taxes calculated on quarterly basis" => "Yearly Tax ÷ 4"
+                ],
+                "Tax - As Per Current Rule (Effect From 01-04-2022)" => [                   // Rule 2
+                    "Tax" => " Area (sqm) X Rental Rate X Occupancy Factor",
+                    "Taxes calculated on quarterly basis" => "(Yearly Tax ÷ 4)"
+                ]
+
+            ];
+        }
+        return $ruleSets;
     }
 }
