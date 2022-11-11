@@ -12,12 +12,14 @@ use Illuminate\Support\Facades\Validator;
 
 class NewGrievanceRepository implements iGrievance
 {
-    
+
     /**
      * | code : Sam Kerketta
-     * | ----------------- Get Connection Through / Water ------------------------------- |
-     * | @var connectionThrough 
-     * | #request null
+     * | ----------------- Saving application data ------------------------------- |
+     * | @param request
+     * | @var validateUser 
+     * | @var complainNo
+     * | @var now
      * | Operation : saving data
      */
 
@@ -32,7 +34,7 @@ class NewGrievanceRepository implements iGrievance
                 'complaintPincode'       => 'required',
                 'complaintCity'          => 'required',
                 'complaintLocality'      => 'required',
-                'complaintWardNo'        => 'required',
+                // 'complaintWardNo'        => 'required',
                 'complaintLandmark'      => 'required',
                 'complaintHouseNo'       => 'required',
                 'complaintDescription'   => 'required',
@@ -60,11 +62,12 @@ class NewGrievanceRepository implements iGrievance
             // $newApplication->complain_landmark = $request->complainLandmark;
             // $newApplication->complain_image = $request->complainImage;
             // $newApplication->complaint_description = $request->complaintDescription;
+            // $newApplication->complaint_comment = $request->complaintComment;
 
             // // Generating Application No 
             $now = Carbon::now();
             // $applicationNo = 'APP/grievance' . $now->getTimeStamp();    //<-------------- here
-            $complainNo = 'G' . $request->wardId . $now->getTimeStamp(); //<-------------- here
+            $complainNo = 'PG-PGR' . date("-Y") . date("-d-m") . sprintf("%06d", mt_rand(1, 999999)); //<-------------- here
             // $newApplication->complain_no = $complainNo;
             // $newApplication->application_no = $applicationNo;
             // $newApplication->ulb_id = auth()->user()->ulb_id;
@@ -74,7 +77,7 @@ class NewGrievanceRepository implements iGrievance
 
             DB::commit();
 
-            $data = ["complaintNo" => $complainNo, "ComplaintDate" => $now->getTimeStamp(), "pendingStatus" => 1];
+            $data = ["complaintNo" => $complainNo, "ComplaintDate" => date("d/m/y"), "pendingStatus" => 1];
             return responseMsg(true, "Successfully Saved !", [$data]);
         } catch (Exception $e) {
             DB::rollBack();
@@ -84,7 +87,7 @@ class NewGrievanceRepository implements iGrievance
 
     /**
      * | code : Sam Kerketta
-     * | ----------------- Get Connection Through / Water ------------------------------- |
+     * | ----------------- Get All Complain ById  ------------------------------- |
      * | @var connectionThrough 
      * | #request null
      * | Operation : get all coplainlis by id
@@ -92,7 +95,7 @@ class NewGrievanceRepository implements iGrievance
 
     public function getAllComplainById($id)
     {
-        $data =  DB::table('grievance_application AS t') //<----------- here
+        $readApplicationData =  DB::table('grievance_application AS t') //<----------- here
             ->select(
                 't.complaint_date AS complain',
                 't.complaint_status AS complainStatus',
@@ -108,6 +111,62 @@ class NewGrievanceRepository implements iGrievance
                 't.complaint_landmark AS Landmark'
             )->where('id', $id)
             ->get();
-        return responseMsg(true, "data fetched !", $data);
+        return responseMsg(true, "data fetched !", $readApplicationData);
     }
+
+    // /**
+    //  * | code : Sam Kerketta
+    //  * | ----------------- Get Connection Through  ------------------------------- |
+    //  * | @param req
+    //  * | @param id
+    //  * | @var readApplicationDetail 
+    //  * | Operation : adding rating to the application
+    //  */
+    // public function updateRateComplaintById(Request $req, $id)
+    // {
+    //     try {
+    //         $readApplicationDetail = DB::table('grievance_application AS t') //<---- here
+    //             ->find($id)
+    //             ->update([
+    //                 't.complaint_rate' => $req->complaintRate,
+    //                 't.complaint_remark' => $req->complaint_remark,
+    //                 't.complaint_comment' => $req->complaintComment
+    //             ]);
+    //         if ($readApplicationDetail) {
+    //             return responseMsg(true, "rated Success!", "");
+    //         }
+    //     } catch (Exception $e) {
+    //         return $e;
+    //     }
+    // }
+
+    // /**
+    //  * | code : Sam Kerketta
+    //  * | ----------------- Reopen Complain ById  ------------------------------- |
+    //  * | @var readApplicationDetailList 
+    //  * | @param req
+    //  * | @param id
+    //  * | Operation : Reopening of the application
+    //  */
+    // public function putReopenComplaintById(Request $req, $id)
+    // {
+    //     try {
+    //         DB::beginTransaction();
+    //         DB::table('grievance_application AS t') //<---------- here(CAUTION)
+    //             ->find($id)
+    //             ->update([
+    //                 't.complaint_response_reason' => $req->complaintReopenReason,
+    //                 // 't.complain_reopen_image'=>$req->images,
+    //                 't.complaint_reopen_additional_details' => $req->complainReopenAdditionalDetails,
+    //                 't.complaint_reopen_count' => 't.complaint_reopen_count' + 1
+    //             ]);
+    //         DB::commit();
+    //         $readApplicationDetailList = DB::table('grievance_application AS t') //<----------- here(CAUTION)
+    //             ->find($id)
+    //             ->get();
+    //         return responseMsg(true, "reopening detail", $readApplicationDetailList);
+    //     } catch (Exception $e) {
+    //         return $e;
+    //     }
+    // }
 }
