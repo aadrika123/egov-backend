@@ -32,7 +32,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('inbox', 'inbox');
         Route::post('outbox', 'outbox');
         Route::post('postNext', 'postNextLevel');
-        Route::post('pay', 'procidToPaymentCounter');
+        Route::post('pay', 'PaymentCounter');
         Route::match(["get", "post"],'applyDenail', 'applyDenail');
         Route::match(["get", "post"],'denialInbox', 'denialInbox');
         Route::match(["get", "post"],'denialview/{id}/{mailId}', 'denialview');

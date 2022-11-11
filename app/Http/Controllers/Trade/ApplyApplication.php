@@ -33,7 +33,7 @@ class ApplyApplication extends Controller
     }
     public function applyApplication(Request $request)
     {        
-        return $this->Repository->applyApplication($request);
+        return $this->Repository->createApplication($request);
     }
     public function paybleAmount(Request $request)
     {      
@@ -89,9 +89,9 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->postNextLevel($request);
     }
-    public function procidToPaymentCounter(Request $request)
+    public function paymentCounter(Request $request)
     {
-        return $this->Repository->procidToPaymentCounter($request);
+        return $this->Repository->paymentCounter($request);
     }
     public function provisionalCertificate(Request $request)
     {
