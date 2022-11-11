@@ -45,7 +45,7 @@ use Illuminate\Support\Facades\Redis;
  */
 class SafRepository implements iSafRepository
 {
-    use Auth;               // Trait Used added by sandeep bara date 17-08-2022
+    use Auth;                                                               // Trait Used added by sandeep bara date 17-08-2022
     use WardPermission;
     use WorkflowTrait;
     use GlobalSAF;
@@ -506,7 +506,7 @@ class SafRepository implements iSafRepository
                     return $item->wf_role_id;
                 });
 
-                $data = $this->getSaf()                                               // Global SAF 
+                $data = $this->getSaf()                                                     // Global SAF 
                     ->where('active_safs.ulb_id', $ulbId)
                     ->where('active_safs.status', 1)
                     ->whereIn('current_role', $roleId)
@@ -514,7 +514,7 @@ class SafRepository implements iSafRepository
                     ->groupBy('active_safs.id', 'p.property_type', 'ward.ward_name')
                     ->get();
 
-                $occupiedWard = $this->getWardByUserId($userId);                        // Get All Occupied Ward By user id
+                $occupiedWard = $this->getWardByUserId($userId);                            // Get All Occupied Ward By user id
 
                 $wardId = $occupiedWard->map(function ($item, $key) {
                     return $item->ward_id;
@@ -811,6 +811,10 @@ class SafRepository implements iSafRepository
             DB::beginTransaction();
             // Approval
             if ($req->status == 1) {
+                $safDetails = ActiveSaf::find($req->safId);
+                $safDetails->holding_no = 'Hol/Ward/001';
+                $safDetails->save();
+
                 $activeSaf = ActiveSaf::query()
                     ->where('id', $req->safId)
                     ->first();
