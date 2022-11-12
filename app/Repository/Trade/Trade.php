@@ -6,7 +6,7 @@ use App\EloquentModels\Common\ModelWard;
 use App\Models\Property\ActiveSafsOwnerDtl;
 use App\Models\Property\ActiveSaf ;
 use App\Models\Property\PropOwner;
-use App\Models\Property\PropPropertie;
+use App\Models\Property\PropProperty;
 use App\Models\Trade\ActiveLicence;
 use App\Models\Trade\ActiveLicenceOwner;
 use App\Models\Trade\ExpireLicence;
@@ -3300,7 +3300,7 @@ class Trade implements ITrade
     public function propertyDetailsfortradebyHoldingNo(string $holdingNo,int $ulb_id):array
     {
         // DB::enableQueryLog();
-        $property = PropPropertie::select("*")
+        $property = PropProperty::select("*")
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name ,property_id
                                         FROM Prop_OwnerS 
                                         WHERE status = 1
