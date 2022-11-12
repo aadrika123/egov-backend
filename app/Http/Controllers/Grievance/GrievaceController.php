@@ -17,13 +17,19 @@ class GrievaceController extends Controller
     //
     public function postFileComplain(Request $request)
     {
-        return $this->newGrievance->postFileComplain($request);
+        return $this->newGrievance->saveFileComplain($request);
     }
 
     //
     public function getAllComplainById($id)
     {
         return $this->newGrievance->getAllComplainById($id);
+    }
+
+    //
+    public function updateRateComplaintById(Request $req, $id)
+    {
+        return $this->newGrievance->updateRateComplaintById($req, $id);
     }
 
 }
