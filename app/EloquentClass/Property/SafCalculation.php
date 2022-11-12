@@ -304,7 +304,7 @@ class SafCalculation
         if (!$capitalValueRate) {
             $capitalValueRate = PropMCapitalValueRateRaw::select($column)
                 ->where('ulb_id', $this->_ulbId)
-                ->where('ward_no', $this->_wardNo)                                                           // Ward No Fixed temprory
+                ->where('ward_no', $this->_wardNo)                                                                                  // Ward No Fixed temprory
                 ->first();
             $this->_redis->set('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo, json_encode($capitalValueRate));
         }
@@ -343,7 +343,7 @@ class SafCalculation
      */
     public function calculateHoardingBoardTax()
     {
-        if ($this->_propertyDetails['isHoardingBoard'] == 1) {                                          // For Hoarding Board
+        if ($this->_propertyDetails['isHoardingBoard'] == 1) {                                                                      // For Hoarding Board
             $this->_hoardingBoard['installDate'] = $this->_propertyDetails['hoardingBoard']['dateFrom'];
             $this->_hoardingBoard['area'] = $this->_propertyDetails['hoardingBoard']['area'];
             $this->_hoardingQuaterlyRuleSets = $this->calculateQuaterlyRulesets("hoardingBoard");
@@ -357,7 +357,7 @@ class SafCalculation
     {
         $readPropertyType = $this->_propertyDetails['propertyType'];
         if ($readPropertyType != $this->_vacantPropertyTypeId) {
-            if ($this->_propertyDetails['isPetrolPump'] == 1) {                                 // For Petrol Pump
+            if ($this->_propertyDetails['isPetrolPump'] == 1) {                                                                     // For Petrol Pump
                 $this->_petrolPump['installDate'] = $this->_propertyDetails['petrolPump']['dateFrom'];
                 $this->_petrolPump['area'] = $this->_propertyDetails['petrolPump']['area'];
                 $this->_petrolPumpQuaterlyRuleSets = $this->calculateQuaterlyRulesets("petrolPump");
@@ -410,7 +410,7 @@ class SafCalculation
 
     public function calculateQuaterlyRulesets($key)
     {
-        if ($key == "mobileTower" || $key == "hoardingBoard" || $key == "petrolPump" || $key == "vacantLand") {          // For Mobile Tower, hoarding board or petrol pump
+        if (is_string($key)) {                                                          // For Mobile Tower, hoarding board or petrol pump
             $arrayRuleSet = [];
             switch ($key) {
                 case "mobileTower";
@@ -478,7 +478,7 @@ class SafCalculation
      */
     public function readRuleSet($dateFrom, $key)
     {
-        if ($key == "mobileTower" || $key == "hoardingBoard" || $key == "petrolPump" || $key == "vacantLand") {                                           // Mobile Tower
+        if (is_string($key)) {                                                                          // Mobile Tower or Hoarding Board Or Petrol Pump
             switch ($key) {
                 case "mobileTower";
                     $readFloorDetail = [
@@ -573,7 +573,7 @@ class SafCalculation
         // One Perc Penalty
         $quarterDueDate = Carbon::parse($quarterDueDate)->floorMonth();
         $diffInMonths = $quarterDueDate->diffInMonths($this->_currentQuarterDate);
-        if ($quarterDueDate >= $this->_currentQuarterDueDate)                      // Means the quarter due date is on current quarter or next quarter
+        if ($quarterDueDate >= $this->_currentQuarterDueDate)                                       // Means the quarter due date is on current quarter or next quarter
             $onePercPenalty = 0;
         else
             $onePercPenalty = $diffInMonths;
@@ -979,10 +979,10 @@ class SafCalculation
     {
         $ownerDetails = collect($this->_propertyDetails['owner'])->first();
         $rebate = 0;
-        if ($this->_loggedInUserType == 'Citizen') {                // In Case of Citizen
+        if ($this->_loggedInUserType == 'Citizen') {                                                // In Case of Citizen
             $rebate += 5;
         }
-        if ($this->_loggedInUserType == 'JSK') {                    // In Case of JSK
+        if ($this->_loggedInUserType == 'JSK') {                                                    // In Case of JSK
             $rebate += 2.5;
         }
 
@@ -1017,7 +1017,7 @@ class SafCalculation
      */
     public function summarySafCalculation()
     {
-        $propertyTypeId = $this->_propertyDetails['propertyType'];                          // i.e Property Type Building
+        $propertyTypeId = $this->_propertyDetails['propertyType'];                                      // i.e Property Type Building
         if ($propertyTypeId != $this->_vacantPropertyTypeId) {
             $ruleSets = [
                 "Annual Rental Value - As Per Old Rule (Effect Upto 31-03-2016)" => [                   // RuleSet1

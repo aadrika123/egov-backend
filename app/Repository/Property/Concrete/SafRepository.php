@@ -148,7 +148,7 @@ class SafRepository implements iSafRepository
             $inputs['ulb_id'] =  $ulb_id;
             $inputs['ward_no'] =  $ward_no;
             // $floorDetails = $this->saf->BuildingTax($inputs);                     // Get all The floor Details
-            // //return $this->propertyTax->InsertTax(1, $this->saf->TotalTax);
+            // return $this->propertyTax->InsertTax(1, $this->saf->TotalTax);
 
             // // Late Assessment Penalty 
             // $demand = $this->saf->getLateAssessmentPenalty($inputs, $floorDetails);
@@ -413,6 +413,7 @@ class SafRepository implements iSafRepository
             return $e;
         }
     }
+
     public function getPropIdByWardNoHodingNo(Request $request)
     {
         try {
