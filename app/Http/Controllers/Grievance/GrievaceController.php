@@ -21,9 +21,9 @@ class GrievaceController extends Controller
     }
 
     //
-    public function getAllComplainById($id)
+    public function getAllComplainById(Request $req)
     {
-        return $this->newGrievance->getAllComplainById($id);
+        return $this->newGrievance->getAllComplainById($req);
     }
 
     //
@@ -32,4 +32,15 @@ class GrievaceController extends Controller
         return $this->newGrievance->updateRateComplaintById($req, $id);
     }
 
+    //
+    public function getAllComplaintList($id)
+    {
+        return $this->newGrievance->getAllComplaintList($id);
+    }
+
+     //
+     public function putReopenComplaintById(Request $req, $id)
+     {
+         return $this->newGrievance->putReopenComplaintById($req, $id);
+     }
 }
