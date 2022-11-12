@@ -141,4 +141,8 @@ class EloquentCitizenRepository implements CitizenRepository
             return response()->json('Something Went Wrong', 400);
         }
     }
+
+    /**
+     * | Get All Applied Applications
+     */
 }

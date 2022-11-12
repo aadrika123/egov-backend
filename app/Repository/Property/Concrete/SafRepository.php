@@ -5,10 +5,6 @@ namespace App\Repository\Property\Concrete;
 use App\Repository\Property\Interfaces\iSafRepository;
 use Illuminate\Http\Request;
 use App\Models\UlbWardMaster;
-use App\Models\UlbWorkflowMaster;
-use App\Models\Workflow;
-use App\Models\Workflows\UlbWorkflowRole;
-use App\Models\WorkflowTrack;
 
 use App\Traits\Auth;
 use App\Traits\Property\WardPermission;
@@ -29,8 +25,9 @@ use App\Models\Property\PropMOccupancyType;
 use App\Models\Property\PropMOwnershipType as PropertyPropMOwnershipType;
 use App\Models\Property\PropMPropertyType;
 use App\Models\Property\PropMUsageType;
-use App\Models\WfRole;
-use App\Models\WfWorkflow;
+use App\Models\Workflows\WfRole as WorkflowsWfRole;
+use App\Models\Workflows\WfWorkflow;
+use App\Models\WorkflowTrack;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
 use App\Traits\Property\SAF as GlobalSAF;
@@ -742,6 +739,21 @@ class SafRepository implements iSafRepository
             $levelPending->remarks = $request->comment;
             $levelPending->receiver_user_id = $userId;
             $levelPending->save();
+
+            // SAF Details
+            $saf = ActiveSaf::find($request->safId);
+
+            // Save On Workflow Track
+            $workflowTrack = new WorkflowTrack();
+            $workflowTrack->workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            $workflowTrack->citizen_id = $saf->user_id;
+            $workflowTrack->module_id = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $workflowTrack->ref_table_dot_id = "active_safs.id";
+            $workflowTrack->ref_table_id_value = $saf->id;
+            $workflowTrack->message = $request->comment;
+            $workflowTrack->commented_by = $userId;
+            $workflowTrack->save();
+
             DB::commit();
             return responseMsg(true, "You Have Commented Successfully!!", ['Comment' => $request->comment]);
         } catch (Exception $e) {
@@ -823,7 +835,7 @@ class SafRepository implements iSafRepository
                 $approvedSaf->id = $activeSaf->id;
                 $approvedSaf->push();
                 $activeSaf->delete();
-                $msg = "Application Successfully Approved";
+                $msg = "Application Successfully Approved !! Holding No " . $safDetails->holding_no;
             }
             // Rejection
             if ($req->status == 0) {
@@ -856,7 +868,7 @@ class SafRepository implements iSafRepository
             $redis = Redis::connection();
             $backId = json_decode(Redis::get('workflow_roles'));
             if (!$backId) {
-                $backId = WfRole::where('is_initiator', 1)->first();
+                $backId = WorkflowsWfRole::where('is_initiator', 1)->first();
                 $redis->set('workflow_roles', json_encode($backId));
             }
             $saf = ActiveSaf::find($req->safId);
