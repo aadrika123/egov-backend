@@ -5,10 +5,6 @@ namespace App\Repository\Property\Concrete;
 use App\Repository\Property\Interfaces\iSafRepository;
 use Illuminate\Http\Request;
 use App\Models\UlbWardMaster;
-use App\Models\UlbWorkflowMaster;
-use App\Models\Workflow;
-use App\Models\Workflows\UlbWorkflowRole;
-use App\Models\WorkflowTrack;
 
 use App\Traits\Auth;
 use App\Traits\Property\WardPermission;
@@ -29,8 +25,8 @@ use App\Models\Property\PropMOccupancyType;
 use App\Models\Property\PropMOwnershipType as PropertyPropMOwnershipType;
 use App\Models\Property\PropMPropertyType;
 use App\Models\Property\PropMUsageType;
-use App\Models\WfRole;
-use App\Models\WfWorkflow;
+use App\Models\Workflows\WfRole as WorkflowsWfRole;
+use App\Models\Workflows\WfWorkflow;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
 use App\Traits\Property\SAF as GlobalSAF;
@@ -856,7 +852,7 @@ class SafRepository implements iSafRepository
             $redis = Redis::connection();
             $backId = json_decode(Redis::get('workflow_roles'));
             if (!$backId) {
-                $backId = WfRole::where('is_initiator', 1)->first();
+                $backId = WorkflowsWfRole::where('is_initiator', 1)->first();
                 $redis->set('workflow_roles', json_encode($backId));
             }
             $saf = ActiveSaf::find($req->safId);
