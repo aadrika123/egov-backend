@@ -44,4 +44,10 @@ class CitizenController extends Controller
     {
         return $this->Repository->editCitizenByID($request, $id);
     }
+
+    // Get all applications
+    public function getAllAppliedApplications()
+    {
+        return $this->Repository->getAllAppliedApplications();
+    }
 }
