@@ -27,6 +27,7 @@ use App\Models\Property\PropMPropertyType;
 use App\Models\Property\PropMUsageType;
 use App\Models\Workflows\WfRole as WorkflowsWfRole;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\WorkflowTrack;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
 use App\Traits\Property\SAF as GlobalSAF;
@@ -738,6 +739,21 @@ class SafRepository implements iSafRepository
             $levelPending->remarks = $request->comment;
             $levelPending->receiver_user_id = $userId;
             $levelPending->save();
+
+            // SAF Details
+            $saf = ActiveSaf::find($request->safId);
+
+            // Save On Workflow Track
+            $workflowTrack = new WorkflowTrack();
+            $workflowTrack->workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            $workflowTrack->citizen_id = $saf->user_id;
+            $workflowTrack->module_id = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $workflowTrack->ref_table_dot_id = "active_safs.id";
+            $workflowTrack->ref_table_id_value = $saf->id;
+            $workflowTrack->message = $request->comment;
+            $workflowTrack->commented_by = $userId;
+            $workflowTrack->save();
+
             DB::commit();
             return responseMsg(true, "You Have Commented Successfully!!", ['Comment' => $request->comment]);
         } catch (Exception $e) {
