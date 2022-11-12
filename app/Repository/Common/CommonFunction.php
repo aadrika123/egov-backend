@@ -2,9 +2,9 @@
 namespace App\Repository\Common;
 
 use App\Models\Ward\WardUser;
-use App\Models\WfMaster;
-use App\Models\WfRole;
-use App\Models\WfWardUser;
+use App\Models\Workflows\WfMaster;
+use App\Models\Workflows\WfWardUser;
+use App\Models\Workflows\WfRole;
 use App\Traits\Auth;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -154,7 +154,7 @@ class CommonFunction implements ICommonFunction
     }
     public function getUserRoll($user_id,$ulb_id,$workflow_id)
     { 
-        try{//
+        try{
             // DB::enableQueryLog();
             $data = WfRole::select(DB::raw("wf_roles.id as role_id,wf_roles.role_name,
                                             wf_roles.is_initiator, wf_roles.is_finisher,
