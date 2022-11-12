@@ -823,7 +823,7 @@ class SafRepository implements iSafRepository
                 $approvedSaf->id = $activeSaf->id;
                 $approvedSaf->push();
                 $activeSaf->delete();
-                $msg = "Application Successfully Approved";
+                $msg = "Application Successfully Approved !! Holding No " . $safDetails->holding_no;
             }
             // Rejection
             if ($req->status == 0) {
