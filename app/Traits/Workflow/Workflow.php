@@ -2,9 +2,9 @@
 
 namespace App\Traits\Workflow;
 
-use App\Models\WfRoleusermap;
-use App\Models\WfWardUser;
 use App\Models\WorkflowCandidate;
+use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWardUser;
 use Illuminate\Support\Facades\DB;
 
 /**

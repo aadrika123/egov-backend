@@ -4,7 +4,7 @@ namespace App\Repository\WorkflowMaster\Concrete;
 
 use App\Repository\WorkflowMaster\Interface\iWorkflowMasterRepository;
 use Illuminate\Http\Request;
-use App\Models\WfMaster;
+use App\Models\Workflows\WfMaster;
 use App\Models\User;
 use Exception;
 use Carbon\Carbon;

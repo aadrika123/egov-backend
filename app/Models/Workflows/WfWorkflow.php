@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Workflows;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PropRebate extends Model
+class WfWorkflow extends Model
 {
     use HasFactory;
 }
