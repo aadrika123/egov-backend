@@ -1486,7 +1486,7 @@ class Trade implements ITrade
             $application->items_code = $cods;
             $ownerDtl = $this->getOwnereDtlByLId($id);
             $transactionDtl = $this->readTranDtl($id);
-            $timeLine = $this->getTimelin($id);
+            $timeLine = [];//$this->getTimelin($id);
             $documents = $this->getLicenceDocuments($id);
             $data['licenceDtl'] = $application;
             $data['ownerDtl'] = $ownerDtl;
