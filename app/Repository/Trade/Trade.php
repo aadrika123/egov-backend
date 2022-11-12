@@ -5,8 +5,8 @@ namespace App\Repository\Trade;
 use App\EloquentModels\Common\ModelWard;
 use App\Models\Property\ActiveSafsOwnerDtl;
 use App\Models\Property\ActiveSaf ;
-use App\Models\PropOwner;
-use App\Models\PropPropertie;
+use App\Models\Property\PropOwner;
+use App\Models\Property\PropProperty;
 use App\Models\Trade\ActiveLicence;
 use App\Models\Trade\ActiveLicenceOwner;
 use App\Models\Trade\ExpireLicence;
@@ -29,8 +29,8 @@ use App\Models\Trade\TradeTransaction;
 use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
 use App\Models\UlbWorkflowMaster;
-use App\Models\WfWorkflow;
-use App\Models\WorkflowTrack;
+use App\Models\Workflows\WfWorkflow;
+// use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use Illuminate\Http\Request;
 
@@ -758,7 +758,7 @@ class Trade implements ITrade
                 {
                     throw new Exception("Tobaco Application Not Take Licence More Than One Year");
                 }
-                if($lecenceData->applyWith==1 && $noticeDetails = $this->getNotisDtl($lecenceData->id))
+                if($lecenceData->applyWith==1 && $noticeDetails = $this->readNotisDtl($lecenceData->id))
                 { 
                     $denialId = $noticeDetails->dnialid;
                     $noticeDate = strtotime($noticeDetails['created_on']); //notice date 
@@ -892,14 +892,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
-    public function createApplicationNo($wardNo,$licenceId)
-    {
-        return "APN".str_pad($wardNo, 2, '0', STR_PAD_LEFT).str_pad($licenceId, 7, '0', STR_PAD_LEFT);
-    }
-    public function createProvisinalNo($shortUlbName,$wardNo,$licenceId)
-    {
-        return $shortUlbName . $wardNo . date('mdy') . $licenceId;
-    }
+   
     public function paymentRecipt($id, $transectionId) # unauthorised  function
     { 
         try{
@@ -1493,7 +1486,7 @@ class Trade implements ITrade
             $application->items_code = $cods;
             $ownerDtl = $this->getOwnereDtlByLId($id);
             $transactionDtl = $this->readTranDtl($id);
-            $timeLine = $this->getTimelin($id);
+            $timeLine = [];//$this->getTimelin($id);
             $documents = $this->getLicenceDocuments($id);
             $data['licenceDtl'] = $application;
             $data['ownerDtl'] = $ownerDtl;
@@ -1626,7 +1619,7 @@ class Trade implements ITrade
         }
           
     }
-    public function getNotisDtl($licence_id)
+    public function readNotisDtl($licence_id)
     {
         try{
             $data = TradeDenialNotice::select("*",
@@ -1776,12 +1769,17 @@ class Trade implements ITrade
     {
         try{
             $user = Auth()->user();
-            $ulbId = $user->ulb_id;
-            $wardList = $this->_modelWard->getAllWard($ulbId)->map(function($val){
-                $val->ward_no = $val->ward_name;
-                return $val;
-            });
-            $inputs = $request->all();  
+            $ulbId = $user->ulb_id;            
+            $inputs = $request->all();
+            $rules =[
+                "entityValue"=>"required",
+                "entityName"=>"required",
+            ];
+            $validator = Validator::make($request->all(), $rules, );
+            if ($validator->fails()) 
+            {
+                return responseMsg(false, $validator->errors(),$request->all());
+            }   
             // DB::enableQueryLog();          
             $licence = ActiveLicence::select("active_licences.id",
                                             "active_licences.application_no",
@@ -1849,16 +1847,10 @@ class Trade implements ITrade
                         
                 });
             }
-            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
-            {
-                $licence = $licence->where("active_licences.ward_mstr_id",$inputs['wardNo']); 
-            }
-            if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
-            {
-                $licence = $licence
-                            ->whereBetween('active_licences.apply_date',[$inputs['formDate'],$inputs['formDate']]); 
-            }
-            $licence = $licence->get();            
+            $licence = $licence
+                      ->orderBy("active_licences.id","DESC")
+                      ->limit(10)
+                      ->get();            
             if($licence->isEmpty())
             {  
                 throw new Exception("Application Not Found");
@@ -2635,8 +2627,8 @@ class Trade implements ITrade
     public function applyDenail(Request $request)
     {
         $user = Auth()->user();
-        $user_id = $user->id;
-        $ulb_id = $user->ulb_id;
+        $userId = $user->id;
+        $ulbId = $user->ulb_id;
         $nowdate = Carbon::now()->format('Y-m-d'); 
         $timstamp = Carbon::now()->format('Y-m-d H:i:s');                
         $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
@@ -2650,26 +2642,26 @@ class Trade implements ITrade
             $data = array();
             $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
             $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
-                ->where('ulb_id', $ulb_id)
+                ->where('ulb_id', $ulbId)
                 ->first();
             if (!$workflowId) 
             {
                 throw new Exception("Workflow Not Available");
             }
-            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id); 
+            $role = $this->_parent->getUserRoll($userId,$ulbId,$workflowId->wf_master_id); 
             if (!$role) 
             {
                 throw new Exception("You Are Not Authorized");
             } 
             $role_id = $role->role_id;  
-            $apply_from = $this->applyFrom();
-            if(!in_array(strtoupper($apply_from),["TC","UTC","JSK"]))
+            $userType = $this->applyFrom();
+            if(!in_array(strtoupper($userType),["TC","UTC"]))
             {
                 throw new Exception("You Are Not Authorize For Apply Denial");
             }
             if($request->getMethod()=='GET')
             {
-                $data['wardList'] = $this->_parent->WardPermission($user_id);
+                $data['wardList'] = $this->_parent->WardPermission($userId);
                 return  responseMsg(true,"",$data);
             }
             if($request->getMethod()=='POST')
@@ -2697,7 +2689,7 @@ class Trade implements ITrade
                 $denialConsumer->firm_name  =$request->firmName;
                 $denialConsumer->applicant_name =$request->ownerName;
                 $denialConsumer->ward_id    =$request->wardNo;      
-                $denialConsumer->ulb_id     =$ulb_id;                  
+                $denialConsumer->ulb_id     =$ulbId;                  
                 $denialConsumer->holding_no =$request->holdingNo;
                 $denialConsumer->address    =$request->address;
                 $denialConsumer->landmark   =$request->landmark;
@@ -2714,7 +2706,7 @@ class Trade implements ITrade
                     $denialConsumer->mobileno = $request->mobileNo;
                 }
                 $denialConsumer->remarks = $request->comment;
-                $denialConsumer->emp_details_id = $user_id;
+                $denialConsumer->emp_details_id = $userId;
                 $denialConsumer->save();
                 $denial_id = $denialConsumer->id;
                 
@@ -2733,7 +2725,7 @@ class Trade implements ITrade
                     
                     $tradeMail = new TradeDenialMailDtl;
                     $tradeMail->denial_consumer_id = $denial_id;
-                    $tradeMail->sender_id = $user_id;
+                    $tradeMail->sender_id = $userId;
                     $tradeMail->sender_user_type_id = $role_id;
                     $tradeMail->receiver_user_type_id = 10; 
                     $tradeMail->remarks     = $request->comment;
@@ -2978,6 +2970,14 @@ class Trade implements ITrade
 
     #---------- core function for trade Application--------
 
+    public function createApplicationNo($wardNo,$licenceId)
+    {
+        return "APN".str_pad($wardNo, 2, '0', STR_PAD_LEFT).str_pad($licenceId, 7, '0', STR_PAD_LEFT);
+    }
+    public function createProvisinalNo($shortUlbName,$wardNo,$licenceId)
+    {
+        return $shortUlbName . $wardNo . date('mdy') . $licenceId;
+    }
     public function cltCarge(array $args)
     {
         $response=['response' => false];
@@ -3300,7 +3300,7 @@ class Trade implements ITrade
     public function propertyDetailsfortradebyHoldingNo(string $holdingNo,int $ulb_id):array
     {
         // DB::enableQueryLog();
-        $property = PropPropertie::select("*")
+        $property = PropProperty::select("*")
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name ,property_id
                                         FROM Prop_OwnerS 
                                         WHERE status = 1
