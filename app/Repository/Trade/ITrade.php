@@ -17,7 +17,7 @@ interface ITrade
     public function __construct();
     public function addRecorde(Request $request);
     public function paymentCounter(Request $request);
-    public function validateHoldingNo(Request $request);
+    public function isvalidateHolding(Request $request);
     public function searchLicenceByNo(Request $request);
     public function searchLicence(string $licence_no,$ulb_id);
     public function readApplication(Request $request);
@@ -38,8 +38,8 @@ interface ITrade
     public function postNextLevel(Request $request);
     public function provisionalCertificate($id);
     public function licenceCertificate($id);
-    public function applyDenail(Request $request);
+    public function addDenail(Request $request);
     public function denialInbox(Request $request);
-    public function denialview($id,$mailID,Request $request);
+    public function denialView($id,$mailID,Request $request);
     public function reports(Request $request);
 }

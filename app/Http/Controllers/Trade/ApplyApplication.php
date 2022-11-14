@@ -41,7 +41,7 @@ class ApplyApplication extends Controller
     }
     public function validateHoldingNo(Request $request)
     {
-        return $this->Repository->validateHoldingNo($request);
+        return $this->Repository->isvalidateHolding($request);
     }
     public function paymentRecipt(Request $request)
     {
@@ -103,7 +103,7 @@ class ApplyApplication extends Controller
     }
     public function applyDenail(Request $request)
     {
-        return $this->Repository->applyDenail($request);
+        return $this->Repository->addDenail($request);
     }
     public function denialInbox(Request $request)
     {
@@ -113,7 +113,7 @@ class ApplyApplication extends Controller
     {
         $id = $request->id;
         $mailID = $request->mailID;
-        return $this->Repository->denialview($id,$mailID,$request);
+        return $this->Repository->denialView($id,$mailID,$request);
     }
     public function reports(Request $request)
     {

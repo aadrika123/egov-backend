@@ -1446,7 +1446,7 @@ class Trade implements ITrade
                 $level_data = $this->getLevelData($licenceId);
                 if(!$level_data || $level_data->receiver_user_type_id != $roll_id)
                 {
-                    throw new Exception("You Have Not Pending Application");
+                    throw new Exception("You Are Not Authorized For This Action");
                 }
                 DB::beginTransaction();                
                 $tradeDoc = TradeLicenceDocument::find($request->id);
@@ -1617,7 +1617,7 @@ class Trade implements ITrade
         }
     }
 
-    public function validateSafNo(Request $request)
+    public function isvalidateSaf(Request $request)
     {
         $user = Auth()->user();
         $ulb_id = $user->ulb_id;
@@ -1643,7 +1643,7 @@ class Trade implements ITrade
         return json_encode($response);
     }
 
-    public function validateHoldingNo(Request $request)
+    public function isvalidateHolding(Request $request)
     {
         $user = Auth()->user();
         $user_id = $user->id;
@@ -1867,7 +1867,7 @@ class Trade implements ITrade
             $role = $this->_parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id); 
             if (!$role) 
             {
-                throw new Exception("You Are Not Authorized");
+                throw new Exception("You Are Not Authorized For This Action");
             } 
             if($role->is_initiator || in_array(strtoupper($apply_from),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
             {
@@ -2121,9 +2121,9 @@ class Trade implements ITrade
                 "comment" => "required|min:10|regex:$regex",
             ];
             $message = [
-                "btn.in"=>"button Value May be In btc,forward,backward",
+                "btn.in"=>"Button Value must be In BTC,FORWARD,BACKWARD",
                 "comment.required" => "Comment Is Required",
-                "comment.min" => "Comment Length At Least 10 Charecters",
+                "comment.min" => "Comment Length can't be less than 10 charecters",
             ];
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
@@ -2131,7 +2131,7 @@ class Trade implements ITrade
             }
             if($role->is_initiator && in_array($request->btn,['btc','backward']))
             {
-               throw new Exception("Initator Can Not Back The Application");
+               throw new Exception("Initator Can Not send Back The Application");
             }
             $licenc_data = ActiveLicence::find($request->licenceId);            
             $level_data = $this->getLevelData($request->licenceId);
@@ -2145,55 +2145,55 @@ class Trade implements ITrade
             }
             elseif(!$role->is_initiator && isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
             {
-                throw new Exception("You Have Not Pending Application");
+                throw new Exception("You are not authorised for this action");
             }
             elseif(!$role->is_initiator && ! $level_data)
             {
-                throw new Exception("Please Contact To Admin!!!1...");
+                throw new Exception("Data Not Found On Level. Please Contact Admin!!!...");
             }  
             elseif(isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
             {
-                throw new Exception("You Are Already Taken The Action On This Application");
+                throw new Exception("You Have Already Taken The Action On This Application");
             }           
             if(!$init_finish)
             {
-                throw new Exception("Full Work Flow Not Desigen Proper Please Contact To Admin !!!2...");
+                throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
             }
             elseif(!$init_finish["initiator"])
             {
-                throw new Exception("Initiar Not Avelable Please Contact To Admin !!!...");
+                throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
             }
             elseif(!$init_finish["finisher"])
             {
-                throw new Exception("Finisher Not Avelable Please Contact To Admin !!!...");
+                throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
             }
             
             // dd($role);
             if($request->btn=="forward" && !$role->is_finisher && !$role->is_initiator)
             {
-                $sms ="Application Forword To ".$role->forword_name;
+                $sms ="Application Forwarded To ".$role->forword_name;
                 $receiver_user_type_id = $role->forward_role_id;
             }
             elseif($request->btn=="backward" && !$role->is_initiator)
             {
-                $sms ="Application Forword To ".$role->backword_name;
+                $sms ="Application Forwarded To ".$role->backword_name;
                 $receiver_user_type_id = $role->backward_role_id;
             }
             elseif($request->btn=="btc" && !$role->is_initiator)
             {
                 $licence_pending = 3;
-                $sms ="Application Forword To ".$init_finish["initiator"]['role_name'];
+                $sms ="Application Forwarded To ".$init_finish["initiator"]['role_name'];
                 $receiver_user_type_id = $init_finish["initiator"]['id'];
             } 
             elseif($request->btn=="forward" && !$role->is_initiator && $level_data)
             {
-                $sms ="Application Forword ";
+                $sms ="Application Forwarded ";
                 $receiver_user_type_id = $level_data->sender_user_type_id;
             }
             elseif($request->btn=="forward" && $role->is_initiator && !$level_data)
             {
                 $licence_pending = 2;
-                $sms ="Application Forword To ".$role->forword_name;
+                $sms ="Application Forwarded To ".$role->forword_name;
                 $receiver_user_type_id = $role->forward_role_id;
 
             } 
@@ -2204,7 +2204,7 @@ class Trade implements ITrade
                 $documentsList = $this->getDocumentTypeList($licenc_data);  
                 if($licenc_data->payment_status!=1)
                 {
-                    $doc[]="Pyment is Not Clear";
+                    $doc[]="Payment is Not Clear";
                 }               
                 foreach($documentsList as $val)
                 {   
@@ -2276,7 +2276,7 @@ class Trade implements ITrade
 
             if(!$role->is_finisher && !$receiver_user_type_id)  
             {
-                throw new Exception("Next Roll Not Found !!!....");
+                throw new Exception("Next Role Not Found !!!....");
             }
 
             DB::beginTransaction();
@@ -2604,7 +2604,7 @@ class Trade implements ITrade
         }
 
     }
-    public function applyDenail(Request $request)
+    public function addDenail(Request $request)
     {
         $user = Auth()->user();
         $userId = $user->id;
@@ -2813,7 +2813,7 @@ class Trade implements ITrade
      * |+ @var denialID =  denial_details->id
      * |     
      */
-    public function denialview($id,$mailID,Request $request)
+    public function denialView($id,$mailID,Request $request)
     {
         try{
             $data =(array)null;
@@ -3167,7 +3167,6 @@ class Trade implements ITrade
                     ->where('tobacco_status', $input['tobacco_status'])
                     ->orderBy('effective_date','Desc')
                     ->first();
-                    // dd($builder);
             return $builder;
         }
         catch(Exception $e)
