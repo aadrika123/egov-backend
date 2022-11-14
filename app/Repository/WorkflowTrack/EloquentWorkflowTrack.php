@@ -90,4 +90,26 @@ class EloquentWorkflowTrack implements WorkflowTrack
         $arr = array();
         return $this->fetchData($arr, $track);                      // Trait function for Fetch data on array format
     }
+
+    //changes by Mrinal
+    //Date:12/11/2022
+    //notification by citixen id
+
+    public function getNotificationByCitizenId(Request $request)
+    {
+        $citizen_id = Auth()->user()->id;
+        $notification  = Track::where('citizen_id', $citizen_id)
+            ->select(
+                'workflow_id',
+                'module_id',
+                'ref_table_dot_id',
+                'ref_table_id_value',
+                'message',
+                'workflow_tracks.created_at as track_date',
+                'user_name'
+            )
+            ->join('users', 'users.id', '=', 'workflow_tracks.commented_by')
+            ->first();
+        return responseMsg(true, "Data Retrived", $notification);
+    }
 }
