@@ -15,19 +15,19 @@ use Illuminate\Http\Request;
 interface ITrade
 {
     public function __construct();
-    public function createApplication(Request $request);
+    public function addRecorde(Request $request);
     public function paymentCounter(Request $request);
-    public function validateHoldingNo(Request $request);
+    public function isvalidateHolding(Request $request);
     public function searchLicenceByNo(Request $request);
     public function searchLicence(string $licence_no,$ulb_id);
     public function readApplication(Request $request);
     public function updateBasicDtl(Request $request);
     public function documentUpload(Request $request);
     public function documentVirify(Request $request);
-    public function getLicenceDtl($id);
-    public function getDenialDetails(Request $request);
-    public function paybleAmount(Request $request);
-    public function paymentRecipt($id, $transectionId);
+    public function readLicenceDtl($id);
+    public function readDenialdtlbyNoticno(Request $request);
+    public function getPaybleAmount(Request $request);
+    public function readPaymentRecipt($id, $transectionId);
     public function getCotegoryList();
     public function getFirmTypeList();
     public function getownershipTypeList();
@@ -38,8 +38,8 @@ interface ITrade
     public function postNextLevel(Request $request);
     public function provisionalCertificate($id);
     public function licenceCertificate($id);
-    public function applyDenail(Request $request);
+    public function addDenail(Request $request);
     public function denialInbox(Request $request);
-    public function denialview($id,$mailID,Request $request);
+    public function denialView($id,$mailID,Request $request);
     public function reports(Request $request);
 }
