@@ -2,6 +2,7 @@
 
 namespace App\Repository\Trade;
 
+use Illuminate\Support\Facades\Storage;
 use App\EloquentModels\Common\ModelWard;
 use App\Models\Property\ActiveSafsOwnerDtl;
 use App\Models\Property\ActiveSaf ;
@@ -1486,12 +1487,15 @@ class Trade implements ITrade
             $application->items_code = $cods;
             $ownerDtl = $this->getOwnereDtlByLId($id);
             $transactionDtl = $this->readTranDtl($id);
-            $timeLine = [];//$this->getTimelin($id);
-            $documents = $this->getLicenceDocuments($id);
+            $timeLine = $this->getTimelin($id);
+            $documents = $this->getLicenceDocuments($id)->map(function($val){
+                $val->document_pat = !empty(trim($val->document_path))? Storage::url("1.pdf"):"";
+                return $val;
+            });
             $data['licenceDtl'] = $application;
             $data['ownerDtl'] = $ownerDtl;
             $data['transactionDtl'] = $transactionDtl;
-            $data['timeLine'] = $timeLine;
+            $data['remaks'] = $timeLine;
             $data['documents'] = $documents;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
@@ -2140,7 +2144,7 @@ class Trade implements ITrade
             ];
             $message = [
                 // "receiverId.int" => "Receiver User Id Must Be Integer",
-                "btn.in"=>"button Value May be In btc,forward,backword",
+                "btn.in"=>"button Value May be In btc,forward,backward",
                 "comment.required" => "Comment Is Required",
                 "comment.min" => "Comment Length At Least 10 Charecters",
             ];
@@ -2148,7 +2152,7 @@ class Trade implements ITrade
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
-            if($role->is_initiator && in_array($request->btn,['btc','backword']))
+            if($role->is_initiator && in_array($request->btn,['btc','backward']))
             {
                throw new Exception("Initator Can Not Back The Application");
             }
@@ -2193,7 +2197,7 @@ class Trade implements ITrade
                 $sms ="Application Forword To ".$role->forword_name;
                 $receiver_user_type_id = $role->forward_role_id;
             }
-            elseif($request->btn=="backword" && !$role->is_initiator)
+            elseif($request->btn=="backward" && !$role->is_initiator)
             {
                 $sms ="Application Forword To ".$role->backword_name;
                 $receiver_user_type_id = $role->backward_role_id;
@@ -2262,14 +2266,14 @@ class Trade implements ITrade
                     }         
 
                 }
-                if($doc)
-                {   $err = "";
-                    foreach($doc as $val)
-                    {
-                        $err.="<li>$val</li>";
-                    }                
-                    throw new Exception($err);
-                }
+                // if($doc)
+                // {   $err = "";
+                //     foreach($doc as $val)
+                //     {
+                //         $err.="<li>$val</li>";
+                //     }                
+                //     throw new Exception($err);
+                // }
             }           
             if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
             {
@@ -3284,7 +3288,7 @@ class Trade implements ITrade
         $ulb_id = $user->ulb_id;
         $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
         $user_data = $this->_parent->getUserRoll($user_id, $ulb_id,$refWorkflowId); 
-        $roll_id =  $user_data->role_id??-1;       
+        $roll_id =  $user_data->role_id??-1;      
         if($roll_id != -1)
         {
             $user_type_sort = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.'.strtoupper($user_data->role_name));
@@ -3429,19 +3433,32 @@ class Trade implements ITrade
         try{
            
             $time_line =  TradeLevelPending::select(
-                        "remarks",
-                        "forward_date",
-                        "forward_time",
-                        "sender_user_type_id",
-                        "receiver_user_type_id",
+                        "remaks_for.remarks",
+                        "trade_level_pendings.forward_date",
+                        "trade_level_pendings.forward_time",
+                        "trade_level_pendings.receiver_user_type_id",
                         "role_name",
-                        DB::raw("trade_level_pendings.created_at::date as receiving_date"),
+                        DB::raw("trade_level_pendings.created_at as receiving_date")
+                    )
+                    ->leftjoin(DB::raw("(SELECT receiver_user_type_id::bigint, licence_id::bigint, remarks
+                                        FROM trade_level_pendings 
+                                        WHERE licence_id = $id
+                                    )remaks_for"
+                                ),function($join){
+                                $join->on("remaks_for.receiver_user_type_id","trade_level_pendings.sender_user_type_id");
+                                // ->where("remaks_for.licence_id","trade_level_pendings.licence_id");
+                                }
                     )
                     ->leftjoin('wf_roles', "wf_roles.id", "trade_level_pendings.receiver_user_type_id")
                     ->where('trade_level_pendings.licence_id', $id)     
                     ->whereIn('trade_level_pendings.status',[1,2])                 
+                    ->groupBy('trade_level_pendings.receiver_user_type_id',
+                            'remaks_for.remarks',
+                            'trade_level_pendings.forward_date',
+                            'trade_level_pendings.forward_time','wf_roles.role_name',
+                            'trade_level_pendings.created_at'
+                    )
                     ->orderBy('trade_level_pendings.created_at', 'desc')
-                    ->groupBy('trade_level_pendings.receiver_user_type_id')
                     ->get();
             return $time_line;
         }
