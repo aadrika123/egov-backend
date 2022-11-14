@@ -9,7 +9,9 @@ use Illuminate\Support\Facades\Route;
 # Grievamne API list basic 
 Route::controller(GrievaceController::class)->group(function () {
     Route::post('postFileComplaint', 'postFileComplain');
-    Route::get('getAllComplainById/{id}', 'getAllComplainById'); 
+    Route::post('getAllComplainById', 'getAllComplainById');
     Route::post('updateRateComplaintById/{id}', 'updateRateComplaintById');
+    Route::get('getAllComplaintList/{id?}', 'getAllComplaintList');
+    Route::post('putReopenComplaintById/{id?}', 'putReopenComplaintById');
 });
 // });

@@ -9,6 +9,8 @@ interface iGrievance
 {
     // grievance
     public function saveFileComplain(Request $request);
-    public function getAllComplainById($id);
+    public function getAllComplainById(Request $req);
     public function updateRateComplaintById(Request $req, $id);
+    public function getAllComplaintList($id);
+    public function putReopenComplaintById(Request $req, $id);
 }

@@ -63,7 +63,7 @@ class NewConnectionRepository implements iNewConnection
             return response()->json([
                 'status' => false,
                 'message' => 'validation error',
-                'errors' => $validateUser->errors()
+                'data' => $validateUser->errors()
             ], 401);
         }
 
@@ -84,7 +84,7 @@ class NewConnectionRepository implements iNewConnection
         }
 
         # check the property type by holding no  
-        if ($req->holdingNo != null) {
+        elseif ($req->holdingNo != null) {
 
             $readpropetyHoldingCheck = DB::table('active_safs')
                 ->select('active_safs.prop_type_mstr_id')
@@ -429,7 +429,7 @@ class NewConnectionRepository implements iNewConnection
     // }
 
     // /**
-    //  * | ----------------- Applicant level approval structure ------------------------------- |
+    //  * | ----------------- Applicant level Forward structure ------------------------------- |
     //  * | @param Request
     //  * | @param Request $req
     //  * | #user
@@ -456,7 +456,7 @@ class NewConnectionRepository implements iNewConnection
     //             ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
     //             ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
     //             ->where('users.ulb_id', $ulbId)
-    //             ->where('user.id', $user)
+    //             ->where('users.id', $user)
     //             ->get();
 
     //         #   data to be added in the waterlevelPending as it is passsed farward
@@ -503,7 +503,7 @@ class NewConnectionRepository implements iNewConnection
     //             ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
     //             ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
     //             ->where('users.ulb_id', $ulbId)
-    //             ->where('user.id', $user)
+    //             ->where('users.id', $user)
     //             ->get();
 
     //         #   data to be added in the waterlevelPending as it is passsed farward
@@ -515,7 +515,7 @@ class NewConnectionRepository implements iNewConnection
     //         $levelPending->save();
 
     //         DB::commit();
-    //         return responseMsg(true, "Forwarded The Application", "");
+    //         return responseMsg(true, "Backward of The Application", "");
     //     } catch (Exception $e) {
     //         DB::rollBack();
     //         return responseMsg(false, $e->getMessage(), $request->all());
@@ -536,25 +536,28 @@ class NewConnectionRepository implements iNewConnection
     //     #   auth of the user list
     //     $user = auth()->user()->id;
     //     $ulbId = auth()->user()->ulb_id;
-
-    //     $roles = DB::table('wf_roles')
-    //         ->select('id')
-    //         ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
-    //         ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
-    //         ->where('users.ulb_id', $ulbId)
-    //         ->where('users.id', $user)
-    //         ->get();
-
     //     try {
-    //         $data = WaterApplication::select('water_application.*')
-    //             ->join('water_level_pendings', 'water_level_pendings.saf_id', '=', 'water_application.id') //<---------- prop_level_pendings will be replaced by the water_level_pending
-    //             ->where('water_level_pendings.reciver_role_id', $roles)  //<--------- prop_level_pending replace it
-    //             ->where('verification_status', 0)
-    //             ->where('status', 1)
+    //         $roles = DB::table('wf_roles')
+    //             ->select('id')
+    //             ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
+    //             ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
+    //             ->where('users.ulb_id', $ulbId)
+    //             ->where('users.id', $user)
     //             ->get();
-    //         return response()->json(["data" => $data, "status" => true, "message" => "Data Available", 200]);
-    //     } catch (Exception $e) {
-    //         return response()->json($e, 400);
+
+    //         try {
+    //             $data = WaterApplication::select('water_application.*')
+    //                 ->join('water_level_pendings', 'water_level_pendings.saf_id', '=', 'water_application.id') //<---------- prop_level_pendings will be replaced by the water_level_pending
+    //                 ->where('water_level_pendings.reciver_role_id', $roles)  //<--------- prop_level_pending replace it
+    //                 ->where('verification_status', 0)
+    //                 ->where('status', 1)
+    //                 ->get();
+    //             return response()->json(["data" => $data, "status" => true, "message" => "Data Available", 200]);
+    //         } catch (Exception $e) {
+    //             return responseMsg(false, "Application related error!", $e->getMessage());
+    //         }
+    //     } catch (Exception $error) {
+    //         return responseMsg(false, "role related error!", $error->getMessage());
     //     }
     // }
 
@@ -572,26 +575,29 @@ class NewConnectionRepository implements iNewConnection
     //     #   auth of the user list
     //     $user = auth()->user()->id;
     //     $ulbId = auth()->user()->ulb_id;
-
-    //     $roles = WfRole::select('id')   //<---------- create the Model here
-    //         ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
-    //         ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
-    //         ->where('users.ulb_id', $ulbId)
-    //         ->where('user.id', $user)
-    //         ->get();
-
     //     try {
-    //         $data = WaterApplication::select('water_application.*')
-    //             ->join('water_level_pendings', 'water_level_pendings.saf_id', '=', 'water_application.id')    //<----- prop_level_pending will be replaced by water_level_pending
-    //             ->where('water_level_pendings.sender_role_id', $roles)  //<------ prop_level_pending will replace
-    //             ->where('verification_status', 0)   //<------------- Codition may not be req.
-    //             ->where('verification_status', 1)   //<------------- Condition may not be req.
-    //             ->where('status', '=', 1)
+    //         $roles = WfRole::select('id')   //<---------- create the Model here
+    //             ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', '=', 'users.id')
+    //             ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_roleid')
+    //             ->where('users.ulb_id', $ulbId)
+    //             ->where('user.id', $user)
     //             ->get();
 
-    //         return response()->json(["data" => $data, "status" => true, "message" => "Data Available", 200]);
-    //     } catch (Exception $e) {
-    //         return response()->json($e, 400);
+    //         try {
+    //             $data = WaterApplication::select('water_application.*')
+    //                 ->join('water_level_pendings', 'water_level_pendings.saf_id', '=', 'water_application.id')    //<----- prop_level_pending will be replaced by water_level_pending
+    //                 ->where('water_level_pendings.sender_role_id', $roles)  //<------ prop_level_pending will replace
+    //                 ->where('verification_status', 0)   //<------------- Codition may not be req.
+    //                 ->where('verification_status', 1)   //<------------- Condition may not be req.
+    //                 ->where('status', '=', 1)
+    //                 ->get();
+
+    //             return response()->json(["data" => $data, "status" => true, "message" => "Data Available", 200]);
+    //         } catch (Exception $e) {
+    //             return responseMsg(false, "Application related error", $e->getMessage());
+    //         }
+    //     } catch (Exception $error) {
+    //         return responseMsg(false, "Role related error", $error->getMessage());
     //     }
     // }
 
@@ -607,11 +613,17 @@ class NewConnectionRepository implements iNewConnection
     //     try {
     //         $readPropertyOwnerDetails = DB::table('active_safs')
     //             ->select(
+    //                 'active_safs_owner_dtls.id AS id',
     //                 'active_safs_owner_dtls.owner_name AS name',
     //                 'active_safs_owner_dtls.mobile_no AS phoneNo',
     //                 'active_safs_owner_dtls.email AS email',
     //                 'active_safs_owner_dtls.gender AS gender',
-    //                 'active_safs_owner_dtls.id AS id'
+
+    //                 'active_safs.no_electric_connection AS electricConnection',
+    //                 'active_safs.elect_consumer_no AS electricConsumerNo',
+    //                 'active_safs.elect_acc_no AS electricAccNo',
+    //                 'active_safs.elect_bind_book_no AS electricBindBookNo',
+    //                 'active_safs.elect_cons_category AS electricConsCategory',
     //             )
     //             ->join('active_safs_owner_dtls', 'active_safs_owner_dtls.saf_id', '=', 'active_safs.id')
     //             ->where('active_safs.saf_no', $req->saf_no)
@@ -624,8 +636,9 @@ class NewConnectionRepository implements iNewConnection
 
     // /**
     //  * | ----------------- proerty Owner Detail By Holding No ------------------------------- |
-    //  * | @param Req $request
+    //  * | @param Req 
     //  * | @var readPropertyOwnerDetails
+    //  * | @var e
     //  */
     // public function propertyOwnerDetailsByHoldingNo(Request $req)
     // {
@@ -636,7 +649,13 @@ class NewConnectionRepository implements iNewConnection
     //                 'active_safs_owner_dtls.mobile_no AS phoneNo',
     //                 'active_safs_owner_dtls.email AS email',
     //                 'active_safs_owner_dtls.gender AS gender',
-    //                 'active_safs_owner_dtls.id AS id'
+    //                 'active_safs_owner_dtls.id AS id',
+
+    //                 'active_safs.no_electric_connection AS electricConnection',
+    //                 'active_safs.elect_consumer_no AS electricConsumerNo',
+    //                 'active_safs.elect_acc_no AS electricAccNo',
+    //                 'active_safs.elect_bind_book_no AS electricBindBookNo',
+    //                 'active_safs.elect_cons_category AS electricConsCategory',
     //             )
     //             ->join('active_safs_owner_dtls', 'active_safs_owner_dtls.saf_id', '=', 'prop_properties.saf_id')
     //             ->where('prop_properties.new_holding_no', $req->holdingNo)

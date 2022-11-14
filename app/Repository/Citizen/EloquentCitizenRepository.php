@@ -5,7 +5,10 @@ namespace App\Repository\Citizen;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\CitizenRepository;
 use App\Models\ActiveCitizen;
+use App\Models\Property\ActiveSaf;
+use App\Models\Trade\ActiveLicence;
 use App\Models\User;
+use App\Models\Water\WaterApplication;
 use App\Traits\Auth;
 use Exception;
 use Illuminate\Support\Facades\Hash;
@@ -145,4 +148,27 @@ class EloquentCitizenRepository implements CitizenRepository
     /**
      * | Get All Applied Applications
      */
+    public function getAllAppliedApplications()
+    {
+        $userId = auth()->user()->id;
+        $applications = [];
+
+        $propertyApplications = ActiveSaf::select('id as application_id', 'saf_no', 'holding_no', 'created_at', 'updated_at')
+            ->where('user_id', $userId)
+            ->get();
+        $applications['Property'] = $propertyApplications;
+
+        $waterApplications = WaterApplication::select('id as application_id', 'category', 'application_no', 'holding_no', 'created_at', 'updated_at')
+            ->where('citizen_id', $userId)
+            ->get();
+
+        $applications['Water'] = $waterApplications;
+
+        $tradeApplications = ActiveLicence::select('id as application_id', 'application_no', 'holding_no', 'created_at', 'updated_at')
+            ->where('emp_details_id', $userId)
+            ->get();
+        $applications['Trade'] = $tradeApplications;
+
+        return responseMsg(true, "All Applied Applications", remove_null($applications));
+    }
 }
