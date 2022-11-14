@@ -7,6 +7,7 @@ use App\Repository\Trade\ITrade;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use App\Http\Requests\Trade\addRecorde;
 
 class ApplyApplication extends Controller
 {

@@ -2116,7 +2116,7 @@ class Trade implements ITrade
             $apply_from = $this->applyFrom();            
             $rules = [
                 // "receiverId" => "required|int",
-                "btn" => "required|in:btc,forward,backword",
+                "btn" => "required|in:btc,forward,backward",
                 "licenceId" => "required|int",
                 "comment" => "required|min:10|regex:$regex",
             ];
