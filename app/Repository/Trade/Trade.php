@@ -1495,7 +1495,7 @@ class Trade implements ITrade
             $data['licenceDtl'] = $application;
             $data['ownerDtl'] = $ownerDtl;
             $data['transactionDtl'] = $transactionDtl;
-            $data['remaks'] = $timeLine;
+            $data['remarks'] = $timeLine;
             $data['documents'] = $documents;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
