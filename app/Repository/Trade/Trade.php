@@ -98,7 +98,7 @@ class Trade implements ITrade
      * | 
      * |
      */
-    public function createApplication(Request $request)
+    public function addRecorde(Request $request)
     {           
         try
         {
@@ -593,7 +593,7 @@ class Trade implements ITrade
                         $args['nature_of_business']  = $licence->nature_of_bussiness;
                         $args['noticeDate']          = $notice_date;
 
-                        $rate_data = $this->cltCarge($args);
+                        $rate_data = $this->cltCharge($args);
                     }
                     if($rate_data['total_charge']!=$request->licenseDetails["totalCharge"])
                     {
@@ -792,7 +792,7 @@ class Trade implements ITrade
                 $args['licenseFor']          =  $request->licenseFor ;
                 $args['nature_of_business']  = $lecenceData->nature_of_bussiness;
                 $args['noticeDate']          = $noticeDate;
-                $rate_data = $this->cltCarge($args);
+                $rate_data = $this->cltCharge($args);
                 if($rate_data['total_charge']!=$request->totalCharge)
                 {
                     throw new Exception("Payble Amount Missmatch!!!");
@@ -894,7 +894,7 @@ class Trade implements ITrade
         }
     }
    
-    public function paymentRecipt($id, $transectionId) # unauthorised  function
+    public function readPaymentRecipt($id, $transectionId) # unauthorised  function
     { 
         try{
             // DB::enableQueryLog();
@@ -1465,7 +1465,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }    
-    public function getLicenceDtl($id)
+    public function readLicenceDtl($id)
     {
         try{
             
@@ -1506,7 +1506,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),'');
         }
     }
-    public function getDenialDetails(Request $request)
+    public function readDenialdtlbyNoticno(Request $request)
     {
         $data = (array)null;
         $user = Auth()->user();
@@ -1543,7 +1543,7 @@ class Trade implements ITrade
         }
     }
 
-    public function paybleAmount(Request $request)
+    public function getPaybleAmount(Request $request)
     {
         try{
             $rules["applicationType"] = "required|string";
@@ -1589,7 +1589,7 @@ class Trade implements ITrade
             $data['noticeDate'] =  $request->noticeDate??null;
             $data["licenseFor"] = $request->licenseFor;
             $data["nature_of_business"] = $natureOfBussiness; 
-            $data = $this->cltCarge($data);
+            $data = $this->cltCharge($data);
             if($data['response'])
                 return responseMsg(true,"", $data);
             else
@@ -1600,29 +1600,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }        
     }
-    public function getDenialFirmDetails($ulb_id,$notice_no)//for apply application
-    {
-        try{
-            $data = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
-                        DB::raw("trade_denial_notices.notice_no,
-                                trade_denial_notices.created_on::date AS noticedate,
-                                trade_denial_notices.id as dnialid")
-                    )
-                    ->join("trade_denial_notices","trade_denial_notices.denial_id","=","trade_denial_consumer_dtls.id")
-                    ->where("trade_denial_notices.notice_no",$notice_no)
-                    // ->where("trade_denial_notices.created_on","<",$firm_date)
-                    ->where("trade_denial_consumer_dtls.status","=", 5)
-                    ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
-                    ->where("trade_denial_notices.status","=", 1)
-                    ->first();                   
-            return $data;
-        }
-        catch (Exception $e)
-        {
-            echo $e->getMessage();
-        }
-          
-    }
+    
     public function readNotisDtl($licence_id)
     {
         try{
@@ -2143,7 +2121,6 @@ class Trade implements ITrade
                 "comment" => "required|min:10|regex:$regex",
             ];
             $message = [
-                // "receiverId.int" => "Receiver User Id Must Be Integer",
                 "btn.in"=>"button Value May be In btc,forward,backward",
                 "comment.required" => "Comment Is Required",
                 "comment.min" => "Comment Length At Least 10 Charecters",
@@ -2422,12 +2399,11 @@ class Trade implements ITrade
             $licenc_data->pending_status = $licence_pending;            
             $licenc_data->save();            
             DB::commit();
-            return responseMsg(false, $sms, "");
+            return responseMsg(true, $sms, "");
 
         }
         catch(Exception $e)
         {
-            echo $e->getLine();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
@@ -2982,7 +2958,7 @@ class Trade implements ITrade
     {
         return $shortUlbName . $wardNo . date('mdy') . $licenceId;
     }
-    public function cltCarge(array $args)
+    public function cltCharge(array $args)
     {
         $response=['response' => false];
         try 
@@ -3070,6 +3046,29 @@ class Trade implements ITrade
         {
             return $response;
         }
+    }
+    public function getDenialFirmDetails($ulb_id,$notice_no)//for apply application
+    {
+        try{
+            $data = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
+                        DB::raw("trade_denial_notices.notice_no,
+                                trade_denial_notices.created_on::date AS noticedate,
+                                trade_denial_notices.id as dnialid")
+                    )
+                    ->join("trade_denial_notices","trade_denial_notices.denial_id","=","trade_denial_consumer_dtls.id")
+                    ->where("trade_denial_notices.notice_no",$notice_no)
+                    // ->where("trade_denial_notices.created_on","<",$firm_date)
+                    ->where("trade_denial_consumer_dtls.status","=", 5)
+                    ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
+                    ->where("trade_denial_notices.status","=", 1)
+                    ->first();                   
+            return $data;
+        }
+        catch (Exception $e)
+        {
+            echo $e->getMessage();
+        }
+          
     }
     function getDenialAmountTrade($notice_date=null,$current_date=null)
     {

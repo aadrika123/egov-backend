@@ -33,11 +33,11 @@ class ApplyApplication extends Controller
     }
     public function applyApplication(Request $request)
     {        
-        return $this->Repository->createApplication($request);
+        return $this->Repository->addRecorde($request);
     }
     public function paybleAmount(Request $request)
     {      
-        return $this->Repository->paybleAmount($request);
+        return $this->Repository->getPaybleAmount($request);
     }
     public function validateHoldingNo(Request $request)
     {
@@ -47,7 +47,7 @@ class ApplyApplication extends Controller
     {
         $id = $request->id;
         $transectionId =  $request->transectionId;
-        return $this->Repository->paymentRecipt($id,$transectionId);
+        return $this->Repository->readPaymentRecipt($id,$transectionId);
     }
     public function updateBasicDtl(Request $request)
     {
@@ -63,11 +63,11 @@ class ApplyApplication extends Controller
     }
     public function getLicenceDtl(Request $request)
     {
-        return $this->Repository->getLicenceDtl($request->id);
+        return $this->Repository->readLicenceDtl($request->id);
     }
     public function getDenialDetails(Request $request)
     {
-        return $this->Repository->getDenialDetails($request);
+        return $this->Repository->readDenialdtlbyNoticno($request);
     }
     public function searchLicence(Request $request)
     {
