@@ -2,6 +2,7 @@
 
 namespace App\Repository\Trade;
 
+use Illuminate\Support\Facades\Storage;
 use App\EloquentModels\Common\ModelWard;
 use App\Models\Property\ActiveSafsOwnerDtl;
 use App\Models\Property\ActiveSaf ;
@@ -97,7 +98,7 @@ class Trade implements ITrade
      * | 
      * |
      */
-    public function createApplication(Request $request)
+    public function addRecorde(Request $request)
     {           
         try
         {
@@ -592,7 +593,7 @@ class Trade implements ITrade
                         $args['nature_of_business']  = $licence->nature_of_bussiness;
                         $args['noticeDate']          = $notice_date;
 
-                        $rate_data = $this->cltCarge($args);
+                        $rate_data = $this->cltCharge($args);
                     }
                     if($rate_data['total_charge']!=$request->licenseDetails["totalCharge"])
                     {
@@ -791,7 +792,7 @@ class Trade implements ITrade
                 $args['licenseFor']          =  $request->licenseFor ;
                 $args['nature_of_business']  = $lecenceData->nature_of_bussiness;
                 $args['noticeDate']          = $noticeDate;
-                $rate_data = $this->cltCarge($args);
+                $rate_data = $this->cltCharge($args);
                 if($rate_data['total_charge']!=$request->totalCharge)
                 {
                     throw new Exception("Payble Amount Missmatch!!!");
@@ -893,7 +894,7 @@ class Trade implements ITrade
         }
     }
    
-    public function paymentRecipt($id, $transectionId) # unauthorised  function
+    public function readPaymentRecipt($id, $transectionId) # unauthorised  function
     { 
         try{
             // DB::enableQueryLog();
@@ -1445,7 +1446,7 @@ class Trade implements ITrade
                 $level_data = $this->getLevelData($licenceId);
                 if(!$level_data || $level_data->receiver_user_type_id != $roll_id)
                 {
-                    throw new Exception("You Have Not Pending Application");
+                    throw new Exception("You Are Not Authorized For This Action");
                 }
                 DB::beginTransaction();                
                 $tradeDoc = TradeLicenceDocument::find($request->id);
@@ -1464,7 +1465,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }    
-    public function getLicenceDtl($id)
+    public function readLicenceDtl($id)
     {
         try{
             
@@ -1486,12 +1487,15 @@ class Trade implements ITrade
             $application->items_code = $cods;
             $ownerDtl = $this->getOwnereDtlByLId($id);
             $transactionDtl = $this->readTranDtl($id);
-            $timeLine = [];//$this->getTimelin($id);
-            $documents = $this->getLicenceDocuments($id);
+            $timeLine = $this->getTimelin($id);
+            $documents = $this->getLicenceDocuments($id)->map(function($val){
+                $val->document_pat = !empty(trim($val->document_path))? Storage::url("1.pdf"):"";
+                return $val;
+            });
             $data['licenceDtl'] = $application;
             $data['ownerDtl'] = $ownerDtl;
             $data['transactionDtl'] = $transactionDtl;
-            $data['timeLine'] = $timeLine;
+            $data['remarks'] = $timeLine;
             $data['documents'] = $documents;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
@@ -1502,7 +1506,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),'');
         }
     }
-    public function getDenialDetails(Request $request)
+    public function readDenialdtlbyNoticno(Request $request)
     {
         $data = (array)null;
         $user = Auth()->user();
@@ -1539,7 +1543,7 @@ class Trade implements ITrade
         }
     }
 
-    public function paybleAmount(Request $request)
+    public function getPaybleAmount(Request $request)
     {
         try{
             $rules["applicationType"] = "required|string";
@@ -1585,7 +1589,7 @@ class Trade implements ITrade
             $data['noticeDate'] =  $request->noticeDate??null;
             $data["licenseFor"] = $request->licenseFor;
             $data["nature_of_business"] = $natureOfBussiness; 
-            $data = $this->cltCarge($data);
+            $data = $this->cltCharge($data);
             if($data['response'])
                 return responseMsg(true,"", $data);
             else
@@ -1596,29 +1600,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }        
     }
-    public function getDenialFirmDetails($ulb_id,$notice_no)//for apply application
-    {
-        try{
-            $data = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
-                        DB::raw("trade_denial_notices.notice_no,
-                                trade_denial_notices.created_on::date AS noticedate,
-                                trade_denial_notices.id as dnialid")
-                    )
-                    ->join("trade_denial_notices","trade_denial_notices.denial_id","=","trade_denial_consumer_dtls.id")
-                    ->where("trade_denial_notices.notice_no",$notice_no)
-                    // ->where("trade_denial_notices.created_on","<",$firm_date)
-                    ->where("trade_denial_consumer_dtls.status","=", 5)
-                    ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
-                    ->where("trade_denial_notices.status","=", 1)
-                    ->first();                   
-            return $data;
-        }
-        catch (Exception $e)
-        {
-            echo $e->getMessage();
-        }
-          
-    }
+    
     public function readNotisDtl($licence_id)
     {
         try{
@@ -1635,7 +1617,7 @@ class Trade implements ITrade
         }
     }
 
-    public function validateSafNo(Request $request)
+    public function isvalidateSaf(Request $request)
     {
         $user = Auth()->user();
         $ulb_id = $user->ulb_id;
@@ -1661,7 +1643,7 @@ class Trade implements ITrade
         return json_encode($response);
     }
 
-    public function validateHoldingNo(Request $request)
+    public function isvalidateHolding(Request $request)
     {
         $user = Auth()->user();
         $user_id = $user->id;
@@ -1885,7 +1867,7 @@ class Trade implements ITrade
             $role = $this->_parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id); 
             if (!$role) 
             {
-                throw new Exception("You Are Not Authorized");
+                throw new Exception("You Are Not Authorized For This Action");
             } 
             if($role->is_initiator || in_array(strtoupper($apply_from),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
             {
@@ -2134,23 +2116,22 @@ class Trade implements ITrade
             $apply_from = $this->applyFrom();            
             $rules = [
                 // "receiverId" => "required|int",
-                "btn" => "required|in:btc,forward,backword",
+                "btn" => "required|in:btc,forward,backward",
                 "licenceId" => "required|int",
                 "comment" => "required|min:10|regex:$regex",
             ];
             $message = [
-                // "receiverId.int" => "Receiver User Id Must Be Integer",
-                "btn.in"=>"button Value May be In btc,forward,backword",
+                "btn.in"=>"Button Value must be In BTC,FORWARD,BACKWARD",
                 "comment.required" => "Comment Is Required",
-                "comment.min" => "Comment Length At Least 10 Charecters",
+                "comment.min" => "Comment Length can't be less than 10 charecters",
             ];
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
-            if($role->is_initiator && in_array($request->btn,['btc','backword']))
+            if($role->is_initiator && in_array($request->btn,['btc','backward']))
             {
-               throw new Exception("Initator Can Not Back The Application");
+               throw new Exception("Initator Can Not send Back The Application");
             }
             $licenc_data = ActiveLicence::find($request->licenceId);            
             $level_data = $this->getLevelData($request->licenceId);
@@ -2164,55 +2145,55 @@ class Trade implements ITrade
             }
             elseif(!$role->is_initiator && isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
             {
-                throw new Exception("You Have Not Pending Application");
+                throw new Exception("You are not authorised for this action");
             }
             elseif(!$role->is_initiator && ! $level_data)
             {
-                throw new Exception("Please Contact To Admin!!!1...");
+                throw new Exception("Data Not Found On Level. Please Contact Admin!!!...");
             }  
             elseif(isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
             {
-                throw new Exception("You Are Already Taken The Action On This Application");
+                throw new Exception("You Have Already Taken The Action On This Application");
             }           
             if(!$init_finish)
             {
-                throw new Exception("Full Work Flow Not Desigen Proper Please Contact To Admin !!!2...");
+                throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
             }
             elseif(!$init_finish["initiator"])
             {
-                throw new Exception("Initiar Not Avelable Please Contact To Admin !!!...");
+                throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
             }
             elseif(!$init_finish["finisher"])
             {
-                throw new Exception("Finisher Not Avelable Please Contact To Admin !!!...");
+                throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
             }
             
             // dd($role);
             if($request->btn=="forward" && !$role->is_finisher && !$role->is_initiator)
             {
-                $sms ="Application Forword To ".$role->forword_name;
+                $sms ="Application Forwarded To ".$role->forword_name;
                 $receiver_user_type_id = $role->forward_role_id;
             }
-            elseif($request->btn=="backword" && !$role->is_initiator)
+            elseif($request->btn=="backward" && !$role->is_initiator)
             {
-                $sms ="Application Forword To ".$role->backword_name;
+                $sms ="Application Forwarded To ".$role->backword_name;
                 $receiver_user_type_id = $role->backward_role_id;
             }
             elseif($request->btn=="btc" && !$role->is_initiator)
             {
                 $licence_pending = 3;
-                $sms ="Application Forword To ".$init_finish["initiator"]['role_name'];
+                $sms ="Application Forwarded To ".$init_finish["initiator"]['role_name'];
                 $receiver_user_type_id = $init_finish["initiator"]['id'];
             } 
             elseif($request->btn=="forward" && !$role->is_initiator && $level_data)
             {
-                $sms ="Application Forword ";
+                $sms ="Application Forwarded ";
                 $receiver_user_type_id = $level_data->sender_user_type_id;
             }
             elseif($request->btn=="forward" && $role->is_initiator && !$level_data)
             {
                 $licence_pending = 2;
-                $sms ="Application Forword To ".$role->forword_name;
+                $sms ="Application Forwarded To ".$role->forword_name;
                 $receiver_user_type_id = $role->forward_role_id;
 
             } 
@@ -2223,7 +2204,7 @@ class Trade implements ITrade
                 $documentsList = $this->getDocumentTypeList($licenc_data);  
                 if($licenc_data->payment_status!=1)
                 {
-                    $doc[]="Pyment is Not Clear";
+                    $doc[]="Payment is Not Clear";
                 }               
                 foreach($documentsList as $val)
                 {   
@@ -2262,14 +2243,14 @@ class Trade implements ITrade
                     }         
 
                 }
-                if($doc)
-                {   $err = "";
-                    foreach($doc as $val)
-                    {
-                        $err.="<li>$val</li>";
-                    }                
-                    throw new Exception($err);
-                }
+                // if($doc)
+                // {   $err = "";
+                //     foreach($doc as $val)
+                //     {
+                //         $err.="<li>$val</li>";
+                //     }                
+                //     throw new Exception($err);
+                // }
             }           
             if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
             {
@@ -2295,7 +2276,7 @@ class Trade implements ITrade
 
             if(!$role->is_finisher && !$receiver_user_type_id)  
             {
-                throw new Exception("Next Roll Not Found !!!....");
+                throw new Exception("Next Role Not Found !!!....");
             }
 
             DB::beginTransaction();
@@ -2418,12 +2399,11 @@ class Trade implements ITrade
             $licenc_data->pending_status = $licence_pending;            
             $licenc_data->save();            
             DB::commit();
-            return responseMsg(false, $sms, "");
+            return responseMsg(true, $sms, "");
 
         }
         catch(Exception $e)
         {
-            echo $e->getLine();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
@@ -2624,7 +2604,7 @@ class Trade implements ITrade
         }
 
     }
-    public function applyDenail(Request $request)
+    public function addDenail(Request $request)
     {
         $user = Auth()->user();
         $userId = $user->id;
@@ -2833,7 +2813,7 @@ class Trade implements ITrade
      * |+ @var denialID =  denial_details->id
      * |     
      */
-    public function denialview($id,$mailID,Request $request)
+    public function denialView($id,$mailID,Request $request)
     {
         try{
             $data =(array)null;
@@ -2978,7 +2958,7 @@ class Trade implements ITrade
     {
         return $shortUlbName . $wardNo . date('mdy') . $licenceId;
     }
-    public function cltCarge(array $args)
+    public function cltCharge(array $args)
     {
         $response=['response' => false];
         try 
@@ -3066,6 +3046,29 @@ class Trade implements ITrade
         {
             return $response;
         }
+    }
+    public function getDenialFirmDetails($ulb_id,$notice_no)//for apply application
+    {
+        try{
+            $data = TradeDenialConsumerDtl::select("trade_denial_consumer_dtls.*",
+                        DB::raw("trade_denial_notices.notice_no,
+                                trade_denial_notices.created_on::date AS noticedate,
+                                trade_denial_notices.id as dnialid")
+                    )
+                    ->join("trade_denial_notices","trade_denial_notices.denial_id","=","trade_denial_consumer_dtls.id")
+                    ->where("trade_denial_notices.notice_no",$notice_no)
+                    // ->where("trade_denial_notices.created_on","<",$firm_date)
+                    ->where("trade_denial_consumer_dtls.status","=", 5)
+                    ->where("trade_denial_consumer_dtls.ulb_id",$ulb_id)
+                    ->where("trade_denial_notices.status","=", 1)
+                    ->first();                   
+            return $data;
+        }
+        catch (Exception $e)
+        {
+            echo $e->getMessage();
+        }
+          
     }
     function getDenialAmountTrade($notice_date=null,$current_date=null)
     {
@@ -3164,7 +3167,6 @@ class Trade implements ITrade
                     ->where('tobacco_status', $input['tobacco_status'])
                     ->orderBy('effective_date','Desc')
                     ->first();
-                    // dd($builder);
             return $builder;
         }
         catch(Exception $e)
@@ -3284,7 +3286,7 @@ class Trade implements ITrade
         $ulb_id = $user->ulb_id;
         $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
         $user_data = $this->_parent->getUserRoll($user_id, $ulb_id,$refWorkflowId); 
-        $roll_id =  $user_data->role_id??-1;       
+        $roll_id =  $user_data->role_id??-1;      
         if($roll_id != -1)
         {
             $user_type_sort = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.'.strtoupper($user_data->role_name));
@@ -3429,19 +3431,32 @@ class Trade implements ITrade
         try{
            
             $time_line =  TradeLevelPending::select(
-                        "remarks",
-                        "forward_date",
-                        "forward_time",
-                        "sender_user_type_id",
-                        "receiver_user_type_id",
+                        "remaks_for.remarks",
+                        "trade_level_pendings.forward_date",
+                        "trade_level_pendings.forward_time",
+                        "trade_level_pendings.receiver_user_type_id",
                         "role_name",
-                        DB::raw("trade_level_pendings.created_at::date as receiving_date"),
+                        DB::raw("trade_level_pendings.created_at as receiving_date")
+                    )
+                    ->leftjoin(DB::raw("(SELECT receiver_user_type_id::bigint, licence_id::bigint, remarks
+                                        FROM trade_level_pendings 
+                                        WHERE licence_id = $id
+                                    )remaks_for"
+                                ),function($join){
+                                $join->on("remaks_for.receiver_user_type_id","trade_level_pendings.sender_user_type_id");
+                                // ->where("remaks_for.licence_id","trade_level_pendings.licence_id");
+                                }
                     )
                     ->leftjoin('wf_roles', "wf_roles.id", "trade_level_pendings.receiver_user_type_id")
                     ->where('trade_level_pendings.licence_id', $id)     
                     ->whereIn('trade_level_pendings.status',[1,2])                 
+                    ->groupBy('trade_level_pendings.receiver_user_type_id',
+                            'remaks_for.remarks',
+                            'trade_level_pendings.forward_date',
+                            'trade_level_pendings.forward_time','wf_roles.role_name',
+                            'trade_level_pendings.created_at'
+                    )
                     ->orderBy('trade_level_pendings.created_at', 'desc')
-                    ->groupBy('trade_level_pendings.receiver_user_type_id')
                     ->get();
             return $time_line;
         }

@@ -38,6 +38,7 @@ return [
         "ULB TAX COLLECTOR"=>"UTC",
         "UTC"=>"UTC",
         "AJENCY TAX COLLECTOR"=>"TC",
+        "TAX COLLECTOR"=>"TC",
         "TC"=>"TC",
         "ATC"=>"TC", 
         "SECTION INCHARGE" =>"SI",  
@@ -50,6 +51,8 @@ return [
         "JE" =>"JE", 
         "ASSISTANT ENGINEER" =>"AE",
         "AE" =>"AE",
+        "EXECUTIVE OFFICER" =>"EO",
+        "EO" =>"EO",
         
     ],
 ];

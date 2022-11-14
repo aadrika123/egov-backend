@@ -11,6 +11,7 @@ use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\UlbWardMaster;
+use App\Models\Workflows\WfMaster;
 use Exception;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -491,4 +492,24 @@ class WorkflowWardUserRepository implements iWorkflowWardUserRepository
             return $e;
         }
     }
+
+    //
+    // public function getWorkflownameByWorkfkow(Request $request)
+    // {
+    //     $request->validate([
+    //         'id' => 'required|int'
+    //     ]);
+    //     try {
+    //         $workflow = WfWorkflow::select('workflow_name')
+    //             ->where('wf_workflows.id', $request->id)
+    //             ->join('wf_masters', 'wf_masters.id', '=', 'wf_workflows.wf_master_id')
+    //             ->first();
+    //         if ($workflow) {
+    //             return responseMsg(true, "Data Retrived", $workflow);
+    //         }
+    //         return responseMsg(false, "No Data available", "");
+    //     } catch (Exception $e) {
+    //         return $e;
+    //     }
+    // }
 }
