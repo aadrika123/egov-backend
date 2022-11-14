@@ -23,4 +23,5 @@ interface iSafRepository
     public function postNextLevel($request);                // Forward Or Backward to next Level
     public function safApprovalRejection($req);             // Approve or Reject The Application
     public function backToCitizen($req);                    // Back To Citizen
+    public function safPayment($req);                       // SAF Payment
 }

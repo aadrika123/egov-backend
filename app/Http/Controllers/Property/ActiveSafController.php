@@ -86,4 +86,10 @@ class ActiveSafController extends Controller
     {
         return $this->Repository->backToCitizen($req);
     }
+
+    // SAF Payment 
+    public function safPayment(Request $req)
+    {
+        return $this->Repository->safPayment($req);
+    }
 }

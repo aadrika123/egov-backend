@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\dSafCalculation;
 use App\EloquentClass\Property\dPropertyTax;
+use App\EloquentClass\Property\InsertTax;
+use App\EloquentClass\Property\SafCalculation;
 use App\Models\Property\ActiveSaf;
 use App\Models\Property\ActiveSafsFloorDtls;
 use App\Models\Property\ActiveSafsOwnerDtl;
@@ -25,6 +27,7 @@ use App\Models\Property\PropMOccupancyType;
 use App\Models\Property\PropMOwnershipType as PropertyPropMOwnershipType;
 use App\Models\Property\PropMPropertyType;
 use App\Models\Property\PropMUsageType;
+use App\Models\Property\SafsDemand;
 use App\Models\Workflows\WfRole as WorkflowsWfRole;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
@@ -106,10 +109,9 @@ class SafRepository implements iSafRepository
     {
         $message = ["status" => false, "data" => $request->all(), "message" => ""];
         $user_id = auth()->user()->id;
-        $isCitizen = auth()->user()->user_type == "Citizen" ? true : false;
         $ulb_id = auth()->user()->ulb_id;
-        try {
 
+        try {
             // Determining the initiator and finisher id
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
@@ -117,153 +119,23 @@ class SafRepository implements iSafRepository
                 ->first();
 
 
-            if (!in_array($request->assessmentType, ["NewAssessment", "Reassessment", "Mutation"])) {
+            if (!in_array($request->assessmentType, ["NewAssessment", "New Assessment", "ReAssessment", "Mutation"])) {
                 return responseMsg(false, "Invalid Assessment Type", "");
             }
             $rules = [];
-            if (in_array($request->assessmentType, ["Reassessment", "Mutation"])) {
+
+            if (in_array($request->assessmentType, ["ReAssessment", "Mutation"])) {
                 $rules["previousHoldingId"] = "required";
                 $message["previousHoldingId.required"] = "Old Property Id Requird";
                 $rules["holdingNo"] = "required";
                 $message["holdingNo.required"] = "holding No. Is Requird";
             }
+
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
 
-            $wardMaster = UlbWardMaster::select('id', 'ward_name')
-                ->where('ulb_id', $ulb_id)
-                ->get();
-
-            $ward_no = array_filter(adjToArray($wardMaster), function ($val) {
-                return $val['id'] == 111;
-            });
-            $ward_no = array_values($ward_no)[0]['ward_name'];
-
-            // return $this->saf->buildingRulSet1(auth()->user()->ulb_id, 500, 1, 1, 1, 2, true, '1540-04-01');
-            // return $this->saf->buildingRulSet2(auth()->user()->ulb_id, 500, 12, 2, 40, 1, '2020-04-01');
-            // return $this->saf->buildingRulSet3(auth()->user()->ulb_id, 500, 12, 2, 19.9919, 1, true, 1, $ward_no, '2020-04-01');
-            $inputs = $request->all();
-            $inputs['ulb_id'] =  $ulb_id;
-            $inputs['ward_no'] =  $ward_no;
-            // $floorDetails = $this->saf->BuildingTax($inputs);                     // Get all The floor Details
-            // return $this->propertyTax->InsertTax(1, $this->saf->TotalTax);
-
-            // // Late Assessment Penalty 
-            // $demand = $this->saf->getLateAssessmentPenalty($inputs, $floorDetails);
-
-            // // Total Rebates
-            // $finalWithRebates = $this->saf->demandRebate($inputs, $demand);
-            // // Final Payable Amount
-            // $finalPayableAmount = $this->saf->payableAmount($finalWithRebates);
-            // return $finalPayableAmount;
-
-            // return ($this->saf->TotalTax);
-            // $rules["ward"]="required|int";
-            // $message["ward.required"]="Ward No. Required";
-            // $message["ward.int"]="Ward ID Must Be Int Type";
-
-            // $rules["ownershipType"] ="required|int";
-            // $message["ownershipType.required"]="Ownership Type Is Required";
-            // $message["ownershipType.int"]="Ownership Type ID Must Be Int Type";
-
-            // $rules["propertyType"]  ="required|int";
-            // $message["propertyType.required"]="Property Type Is Required";
-            // $message["propertyType.int"]="Property Type ID Must Be Int Type";
-
-            // $rules["roadType"]      ="required|numeric";
-            // $message["roadType.required"]="Road Type Is Required";
-            // $message["propertyType.numeric"]="Road Type Must Be Numeric Type";
-
-            // $rules["areaOfPlot"]    ="required|numeric";
-            // $message["areaOfPlot.required"]="AreaOfPlot Is Required";
-            // $message["propertyType.numeric"]="AreaOfPlot Must Be Numeric Type";
-
-            // $rules["isMobileTower"] ="required|bool";
-            // $message["isMobileTower.required"]="isMobileTower Is Required";
-            // $message["isMobileTower.bool"]="isMobileTower Must Be Boolean Type";
-
-            // $rules["isHoardingBoard"]="required|bool";
-            // $message["isHoardingBoard.required"]="isHoardingBoard Is Required";
-            // $message["isHoardingBoard.bool"]="isHoardingBoard Must Be Boolean Type";
-
-            // $rules["owner"]         ="required|array";
-            // $message["owner.required"]= "Owner Required";
-
-            // if(in_array($request->assessmentType,["Reassessment","Mutation"]))
-            // {
-            //     $rules["oldHoldingId"]="required";
-            //     $message["oldHoldingId.required"]="Old Property Id Requird";                
-            // }
-            // if(in_array($request->assessmentType,["Mutation"]))
-            // {
-            //     $rules["transferMode"]="required";
-            //     $message["transferMode.required"]="Transfer Mode Required";                
-            // }
-            // if(!in_array($request->propertyType,[4]))
-            // {
-            //     $rules["floor"]="required";
-            //     $message["floor.required"]="Floor Is Required";
-
-            //     if($request->propertyType==1)
-            //     {
-            //         $rules["isPetrolPump"]="required|bool";
-            //         $message["isPetrolPump.required"]="isPetrolPump Is Required";
-            //         $message["isPetrolPump.bool"]="isPetrolPump Is Boolian Type";
-            //     }
-
-            //     $rules["isWaterHarvesting"]="required|bool";   
-            //     $message["isWaterHarvesting.required"]="isWaterHarvesting Is Required";   
-            //     $message["isWaterHarvesting.bool"]="isWaterHarvesting Is Boolian Type";          
-            // }
-            // if($request->isPetrolPump)
-            // {
-            //     $rules["undergroundArea"]="required|numeric";
-            //     $message["undergroundArea.required"]="Underground Area Is Required";
-
-            //     $rules["petrolPumpCompletionDate"]="required|date";
-            //     $message["petrolPumpCompletionDate.required"]="Petrol Pump Completion Date Is Required";
-            // }
-            // if($request->isHoardingBoard)
-            // {
-            //     $rules["hoardingArea"]="required|numeric";
-            //     $message["hoardingArea.required"]="Hoarding Area Is Required";
-
-            //     $rules["hoardingInstallationDate"]="required|date";
-            //     $message["hoardingInstallationDate.required"]="Hoarding Installation Date Is Required";
-            // }
-            // if($request->isMobileTower)
-            // {
-            //     $rules["towerArea"]="required|numeric";
-            //     $message["towerArea.required"]="Tower Area Is Required";
-
-            //     $rules["towerInstallationDate"]="required|date";
-            //     $message["towerInstallationDate.required"]="Tower Installation Date Is Required";
-            // }
-            // if($request->floor)
-            // { 
-            //     $rules["floor.*.floorNo"] = "required|int";
-            //     $rules["floor.*.useType"] = "required|int";
-            //     $rules["floor.*.constructionType"]="required|int";
-            //     $rules["floor.*.occupancyType"]="required|int";
-            //     $rules["floor.*.buildupArea"]="required|numeric";
-            //     $rules["floor.*.dateFrom"]="required|date";
-            //     $rules["floor.*.dateUpto"]="required|date";
-            // }
-            // if($request->owner)
-            // { 
-            //     #"/^([a-zA-Z]+)(\s[a-zA-Z]+)*$/" "[a-zA-Z0-9- ]+$/i"
-            //     $rules["owner.*.ownerName"]="required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-            //     $rules["owner.*.guardianName"]="regex:/^([a-zA-Z]+)(\s[a-zA-Z]+)*$/";
-            //     $rules["owner.*.relation"]="in:S/O,C/O,W/O,D/O,";
-            //     $rules["owner.*.mobileNo"]="required|digits:10|regex:/[0-9]{10}/";
-            //     $rules["owner.*.email"]="email";
-            //     // $rules["owner.*.pan"]="required";
-            //     $rules["owner.*.aadhar"]="digits:12|regex:/[0-9]{12}/";
-            //     $rules["owner.*.isArmedForce"]="required|bool";
-            //     $rules["owner.*.isSpeciallyAbled"]="required|bool";
-            // }
 
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
@@ -279,6 +151,10 @@ class SafRepository implements iSafRepository
                 $request->roadType = 2;
             elseif ($request->roadType > 40)
                 $request->roadType = 1;
+
+            $safCalculation = new SafCalculation();
+            $safTaxes = collect($safCalculation->calculateTax($request));
+
             DB::beginTransaction();
             $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $request->assessmentType);
             // dd($request->ward);
@@ -405,6 +281,10 @@ class SafRepository implements iSafRepository
             $labelPending->saf_id = $saf->id;
             $labelPending->receiver_role_id = $SenderRoleId[0]->role_id;
             $labelPending->save();
+
+            // Insert Tax
+            $tax = new InsertTax();
+            return $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
 
             DB::commit();
             return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo]);
@@ -878,6 +758,25 @@ class SafRepository implements iSafRepository
             return responseMsg(true, "Successfully Done", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | SAF Payment 
+     */
+    public function safPayment($req)
+    {
+        $readUserId = auth()->user()->id;
+        $safCalculation = new SafCalculation();
+        $safTaxes = $safCalculation->calculateTax($req);
+        $taxDetails = $safTaxes->original['data']['details'];
+        $payableAmount = $safTaxes->original['data']['demand'];
+
+        $readSafDemand = SafsDemand::select('id')->where('saf_id', $req->safId)->get();
+        $readFirstDemandId = $readSafDemand->first()->id;
+        $readLastDemandId = $readSafDemand->last()->id;
+        // return $readSafDemand;
+        foreach ($readSafDemand as $readSafDemands) {
         }
     }
 }

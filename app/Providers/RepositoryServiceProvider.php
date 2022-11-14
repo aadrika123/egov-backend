@@ -36,6 +36,13 @@ use App\Repository\WorkflowMaster\Interface\iWorkflowRoleMapRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowRoleUserMapRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowWardUserRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowMappingRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowMapRepository;
+
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
+
+
+
+
 
 
 
@@ -75,7 +82,9 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(iWorkflowRoleMapRepository::class, WorkflowRoleMapRepository::class);
         $this->app->bind(iWorkflowRoleUserMapRepository::class, WorkflowRoleUserMapRepository::class);
         $this->app->bind(iWorkflowWardUserRepository::class, WorkflowWardUserRepository::class);
-        
+
+        $this->app->bind(iWorkflowMapRepository::class, WorkflowMap::class);
+
         // Grievance
         $this->app->bind(iGrievance::class, NewGrievanceRepository::class);
 

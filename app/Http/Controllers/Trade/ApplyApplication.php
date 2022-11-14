@@ -7,6 +7,7 @@ use App\Repository\Trade\ITrade;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use App\Http\Requests\Trade\addRecorde;
 
 class ApplyApplication extends Controller
 {
@@ -33,21 +34,21 @@ class ApplyApplication extends Controller
     }
     public function applyApplication(Request $request)
     {        
-        return $this->Repository->createApplication($request);
+        return $this->Repository->addRecorde($request);
     }
     public function paybleAmount(Request $request)
     {      
-        return $this->Repository->paybleAmount($request);
+        return $this->Repository->getPaybleAmount($request);
     }
     public function validateHoldingNo(Request $request)
     {
-        return $this->Repository->validateHoldingNo($request);
+        return $this->Repository->isvalidateHolding($request);
     }
     public function paymentRecipt(Request $request)
     {
         $id = $request->id;
         $transectionId =  $request->transectionId;
-        return $this->Repository->paymentRecipt($id,$transectionId);
+        return $this->Repository->readPaymentRecipt($id,$transectionId);
     }
     public function updateBasicDtl(Request $request)
     {
@@ -63,11 +64,11 @@ class ApplyApplication extends Controller
     }
     public function getLicenceDtl(Request $request)
     {
-        return $this->Repository->getLicenceDtl($request->id);
+        return $this->Repository->readLicenceDtl($request->id);
     }
     public function getDenialDetails(Request $request)
     {
-        return $this->Repository->getDenialDetails($request);
+        return $this->Repository->readDenialdtlbyNoticno($request);
     }
     public function searchLicence(Request $request)
     {
@@ -103,7 +104,7 @@ class ApplyApplication extends Controller
     }
     public function applyDenail(Request $request)
     {
-        return $this->Repository->applyDenail($request);
+        return $this->Repository->addDenail($request);
     }
     public function denialInbox(Request $request)
     {
@@ -113,7 +114,7 @@ class ApplyApplication extends Controller
     {
         $id = $request->id;
         $mailID = $request->mailID;
-        return $this->Repository->denialview($id,$mailID,$request);
+        return $this->Repository->denialView($id,$mailID,$request);
     }
     public function reports(Request $request)
     {
