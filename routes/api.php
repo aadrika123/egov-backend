@@ -24,6 +24,7 @@ use App\Http\Controllers\Ward\WardUserController;
 use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
 use App\Http\Controllers\WorkflowMaster\WorkflowMasterController;
 use App\Http\Controllers\WorkflowMaster\WfWorkflowController;
+use App\Http\Controllers\WorkflowMaster\WorkflowMap;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleController;
 use App\Http\Controllers\WorkflowMaster\WorkflowWardUserController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleUserMapController;
@@ -219,6 +220,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('save-workflow-track', 'store');                                       // Save Workflow Track Messages
         Route::get('get-workflow-track/{id}', 'getWorkflowTrackByID');                     // Get Workflow Track Message By TrackID
         Route::get('gen/workflow-track/{RefTableID}/{RefTableValue}', 'getWorkflowTrackByTableIDValue');                     // Get WorkflowTrack By TableRefID and RefTableValue
+
+        //changes by mrinal
+        Route::get('workflow-track/getNotificationByCitizenId', 'getNotificationByCitizenId');
     });
 
     // Citizen Register
@@ -246,16 +250,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');       // Delete Self Advertisement By ID
     });
 
-    /**
-     * | Created On-17-08-2022 
-     * | Created By- Anshu Kumar
-     * | Payment Master for Testing Payment Gateways
-     */
-    Route::controller(PaymentMasterController::class)->group(function () {
-        Route::post('store-payment', 'storePayment');           // Store Payment in payment Masters
-        Route::get('get-payment-by-id/{id}', 'getPaymentByID'); // Get Payment by Id
-        Route::get('get-all-payments', 'getAllPayments');       // Get All Payments
-    });
+    
 
     /**
      * | Created On-19-08-2022 
@@ -366,9 +361,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::post('workflow/getRoleByUserUlbId', 'getRoleByUserUlbId');
         Route::post('workflow/getRoleByWardUlbId', 'getRoleByWardUlbId');
+
+        Route::post('workflow/getWorkflownameByWorkfkow', 'getWorkflownameByWorkfkow');
     });
 
-
+    //
+    Route::controller(WorkflowMapController::class)->group(function () {
+        Route::post('workflow/getWorkflownameByWorkflow', 'getWorkflownameByWorkflow');
+    });
 
 
     /**
@@ -473,3 +473,5 @@ Route::controller(MenuItemsController::class)->group(function () {
     // });
 });
 // });
+
+Route::post('workflow/getWorkflownameByWorkflow', [WorkflowMap::class, 'getWorkflownameByWorkflow']);

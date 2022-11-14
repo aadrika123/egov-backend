@@ -45,4 +45,12 @@ class WorkflowTrackController extends Controller
     {
         return $this->EloquentWorkflowTrack->getWorkflowTrackByTableIDValue($ref_table_id, $ref_table_value);
     }
+
+    //changes by Mrinal
+    //Date:12/11/2022
+    //notification by citixen id
+    public function getNotificationByCitizenId(Request $request)
+    {
+        return $this->EloquentWorkflowTrack->getNotificationByCitizenId($request);
+    }
 }

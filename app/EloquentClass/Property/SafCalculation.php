@@ -15,7 +15,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
-use Monolog\Handler\RedisPubSubHandler;
 
 /**
  * | --------- Saf Calculation Class -----------------
@@ -43,7 +42,7 @@ class SafCalculation
     private $_capitalValueRate;
     private bool $_rwhPenaltyStatus = false;
     private $_mobileTowerArea;
-    private $__mobileTowerInstallDate;
+    private $_mobileTowerInstallDate;
     private array $_hoardingBoard;
     private array $_petrolPump;
     private $_mobileQuaterlyRuleSets;
@@ -792,6 +791,13 @@ class SafCalculation
             "multiFactor" => $multiFactor,
             "rentalRate" => (float)$rentalRate,
             "occupancyFactor" => $paramOccupancyFactor,
+
+            "holdingTax" => 0,
+            "latrineTax" => 0,
+            "waterTax" => 0,
+            "healthTax" => 0,
+            "educationTax" => 0,
+
             "rwhPenalty" => roundFigure($rwhPenalty / 4),
             "totalTax" => roundFigure($totalTax / 4),
             "onePercPenalty" => $onePercPenalty,
@@ -908,6 +914,13 @@ class SafCalculation
             "taxPerc" => $taxPerc,
             "calculationFactor" => $readCalculationFactor,
             "matrixFactor" => $readMatrixFactor,
+
+            "holdingTax" => 0,
+            "latrineTax" => 0,
+            "waterTax" => 0,
+            "healthTax" => 0,
+            "educationTax" => 0,
+
             "rwhPenalty" => roundFigure($rwhPenalty / 4),
             "totalTax" => roundFigure($totalTax / 4),
             "onePercPenalty" => $onePercPenalty,
@@ -918,6 +931,8 @@ class SafCalculation
 
     /**
      * | Total Final Payable Amount (1.6)
+     * | @var demand Sum Collection of TotalTax and TotalOnePercPenalty
+     * | @var fine LateAssessment Fine (5000 For Commercial, 2000 For Residential)
      */
     public function calculateFinalPayableAmount()
     {

@@ -165,4 +165,9 @@ class WorkflowWardUserController extends Controller
     {
         return $this->EloquentWardUser->getRoleByWardUlbId($request);
     }
+
+    // public function getWorkflownameByWorkfkow(Request $request)
+    // {
+    //     return $this->EloquentWardUser->getWorkflownameByWorkfkow($request);
+    // }
 }
