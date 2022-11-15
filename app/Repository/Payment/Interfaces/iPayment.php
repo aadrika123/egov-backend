@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 
 interface iPayment
 {
-    /*
+    /* 
     public function storePayment(Request $request);
     public function getPaymentByID($id);
     public function getAllPayments();

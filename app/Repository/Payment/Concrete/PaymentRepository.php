@@ -83,16 +83,31 @@ class PaymentRepository implements iPayment
     {
         try {
             $mReadDepartment = DepartmentMaster::select(
-                    'department_masters.id',
-                    'department_masters.department_name AS departmentName'
-                )
+                'department_masters.id',
+                'department_masters.department_name AS departmentName'
+            )
                 ->join('ulb_department_maps', 'ulb_department_maps.department_id', '=', 'department_masters.id')
                 ->where('ulb_department_maps.ulb_id', $req->ulbId)
                 ->get();
 
-            return responseMsg(true, "Data according to ulbid", $mReadDepartment);
+            if (!empty($mReadDepartment['0'])) {
+                return responseMsg(true, "Data according to ulbid", $mReadDepartment);
+            }
+            return responseMsg(false, "Data not exist", "");
         } catch (Exception $error) {
-            return responseMsg(false, "error", $error->getMessage());
+            return responseMsg(false, "Error", $error->getMessage());
         }
     }
+
+
+    /**
+     * | Get Department By Ulb
+     * | @return req request from the frontend
+     * | @var mReadDepartment collecting data from the table DepartmentMaster
+     * | 
+     */
+    // public function getPg(Request $req)
+    // {
+
+    // }
 }

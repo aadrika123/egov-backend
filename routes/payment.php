@@ -23,5 +23,5 @@ use Illuminate\Support\Facades\Route;
         Route::get('get-all-payments', 'getAllPayments');                       // Get All Payments
 
         // razorpay PG
-        Route::post('getDepartmentByulb', 'getDepartmentByulb'); 
+        Route::post('get-department-byulb', 'getDepartmentByulb'); 
     });
