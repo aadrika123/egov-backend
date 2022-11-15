@@ -32,14 +32,19 @@ class RazorpayPaymentController extends Controller
     public function getAllPayments()
     {
         return $this->Repository->getAllPayments();
-    }
-    
+    }  
     */
 
     //get department by ulbid
-    // Get All Payments
     public function getDepartmentByulb(Request $req)
     {
         return $this->Prepository->getDepartmentByulb($req);
+    }
+
+
+    //get PaymentGateway by request
+    public function getPaymentgatewayByrequests(Request $req)
+    {
+        return $this->Prepository->getPaymentgatewayByrequests($req);
     }
 }

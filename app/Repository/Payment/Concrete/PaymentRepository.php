@@ -2,7 +2,9 @@
 
 namespace App\Repository\Payment\Concrete;
 
+use App\Models\Payment;
 use App\Models\Payment\DepartmentMaster; //<----------- model(CAUTION)
+use App\Models\Payment\PaymentGatewayMaster;
 use App\Models\Payment\UlbDepartmentMap; //<----------- model(CAUTION)
 use App\Models\PaymentMaster; //<----------- model(CAUTION)
 use Illuminate\Http\Request;
@@ -75,7 +77,7 @@ class PaymentRepository implements iPayment
 
     /**
      * | Get Department By Ulb
-     * | @return req request from the frontend
+     * | @param req request from the frontend
      * | @var mReadDepartment collecting data from the table DepartmentMaster
      * | 
      */
@@ -101,13 +103,31 @@ class PaymentRepository implements iPayment
 
 
     /**
-     * | Get Department By Ulb
-     * | @return req request from the frontend
-     * | @var mReadDepartment collecting data from the table DepartmentMaster
+     * | Get Payment gateway details by provided requests
+     * | @param req request from the frontend
+     * | @param error collecting the operation error
+     * | @var mReadPg collecting data from the table PaymentGatewayMaster
      * | 
      */
-    // public function getPg(Request $req)
-    // {
+    public function getPaymentgatewayByrequests(Request $req)
+    {
+        try {
+            $mReadPg = PaymentGatewayMaster::select(
+                'payment_gateway_masters.id',
+                'payment_gateway_masters.pg_full_name AS paymentGatewayName'
+            )          
+                ->join('department_pg_maps', 'department_pg_maps.pg_id', '=', 'payment_gateway_masters.id')
+                ->join('ulb_department_maps','ulb_department_maps.department_id','=','department_pg_maps.department_id')
+                ->where('ulb_department_maps.department_id', $req->departmentId)
+                ->where('ulb_department_maps.ulb_id',$req->ulbId)
+                ->get();
 
-    // }
+            if (!empty($mReadPg['0'])) {
+                return responseMsg(true, "Data of PaymentGateway", $mReadPg);
+            }
+            return responseMsg(false, "Data not found", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "error", $error);
+        }
+    }
 }
