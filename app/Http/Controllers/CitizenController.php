@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Repository\Citizen\EloquentCitizenRepository;
+use App\Repository\Citizen\iCitizenRepository;
 
 /**
  * | Created On-08-08-2022 
@@ -14,11 +14,11 @@ use App\Repository\Citizen\EloquentCitizenRepository;
 class CitizenController extends Controller
 {
     // Initializing Repository
-    protected $eloquent_repository;
+    protected $repository;
 
-    public function __construct(EloquentCitizenRepository $eloquent_repository)
+    public function __construct(iCitizenRepository $repository)
     {
-        $this->Repository = $eloquent_repository;
+        $this->Repository = $repository;
     }
 
     // Citizen Registrations
@@ -46,8 +46,8 @@ class CitizenController extends Controller
     }
 
     // Get all applications
-    public function getAllAppliedApplications()
+    public function getAllAppliedApplications(Request $req)
     {
-        return $this->Repository->getAllAppliedApplications();
+        return $this->Repository->getAllAppliedApplications($req);
     }
 }

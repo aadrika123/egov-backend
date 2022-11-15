@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Repository\Citizen\CitizenRepository;
+use App\Repository\Citizen\iCitizenRepository;
 use App\Repository\Grievance\Concrete\NewGrievanceRepository;
 use App\Repository\Grievance\Interfaces\iGrievance;
 use App\Repository\MenuPermission\Concrete\EloquentMenuGroups;
@@ -90,6 +92,7 @@ class RepositoryServiceProvider extends ServiceProvider
 
         //payment gatewway
         $this->app->bind(iPayment::class, PaymentRepository::class);
+        $this->app->bind(iCitizenRepository::class, CitizenRepository::class);
     }
 
     /**
