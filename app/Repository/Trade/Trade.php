@@ -555,7 +555,7 @@ class Trade implements ITrade
                     $licence->payment_status         = 1;
                     $licence->save();
                 }
-                // DB::commit();
+                DB::commit();
 
                 $res['applicationNo']=$mAppNo;
                 $res['applyLicenseId'] = $licenceId;
@@ -587,8 +587,7 @@ class Trade implements ITrade
      * | @var mUserData      = this->_parent->getUserRoll(refUserId, refUlbId,refWorkflowId)
      * | @var mUserType      = this->_parent->userType()
      * | @var mNowDate       = Carbon::now()->format('Y-m-d')
-     * | 
-            $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
+     * | @var mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
             $mDenialAmount   = 0;
             $mPaymentStatus = 1;            
             $mNoticeDate = null;            
