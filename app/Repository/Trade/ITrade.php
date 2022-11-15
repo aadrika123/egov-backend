@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 interface ITrade
 {
     public function __construct();
-    public function addRecorde(Request $request);
+    public function addRecord(Request $request);
     public function paymentCounter(Request $request);
     public function isvalidateHolding(Request $request);
     public function searchLicenceByNo(Request $request);
