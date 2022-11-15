@@ -25,4 +25,5 @@ Route::controller(RazorpayPaymentController::class)->group(function () {
     // razorpay PG
     Route::post('get-department-byulb', 'getDepartmentByulb');
     Route::post('get-paymentgateway-byrequests', 'getPaymentgatewayByrequests');
+    Route::post('get-pg-details', 'getPgDetails');
 });
