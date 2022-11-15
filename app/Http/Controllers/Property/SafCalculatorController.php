@@ -8,7 +8,7 @@ use App\EloquentClass\Property\SafCalculation;
 
 class SafCalculatorController extends Controller
 {
-    public function safCalculation(Request $req)
+    public function calculateSaf(Request $req)
     {
         $safCalculation = new SafCalculation();
         return $safCalculation->calculateTax($req);

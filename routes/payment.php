@@ -13,15 +13,16 @@ use Illuminate\Support\Facades\Route;
  */
 
 /**
-     * | Created On-14-11-2022 
-     * | Created By- sam kerketta
-     * | Payment Master for Testing Payment Gateways
-     */
-    Route::controller(RazorpayPaymentController::class)->group(function () {
-        Route::post('store-payment', 'storePayment');                           // Store Payment in payment Masters
-        Route::get('get-payment-by-id/{id}', 'getPaymentByID');                 // Get Payment by Id
-        Route::get('get-all-payments', 'getAllPayments');                       // Get All Payments
+ * | Created On-14-11-2022 
+ * | Created By- sam kerketta
+ * | Payment Master for Testing Payment Gateways
+ */
+Route::controller(RazorpayPaymentController::class)->group(function () {
+    Route::post('store-payment', 'storePayment');                           // Store Payment in payment Masters
+    Route::get('get-payment-by-id/{id}', 'getPaymentByID');                 // Get Payment by Id
+    Route::get('get-all-payments', 'getAllPayments');                       // Get All Payments
 
-        // razorpay PG
-        Route::post('getDepartmentByulb', 'getDepartmentByulb'); 
-    });
+    // razorpay PG
+    Route::post('get-department-byulb', 'getDepartmentByulb');
+    Route::post('get-paymentgateway-byrequests', 'getPaymentgatewayByrequests');
+});

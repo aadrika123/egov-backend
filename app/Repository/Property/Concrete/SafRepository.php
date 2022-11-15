@@ -69,6 +69,7 @@ class SafRepository implements iSafRepository
     /**
      * | Master data in Saf Apply
      * | @var ulbId Logged In User Ulb 
+     * | Status-Closed
      */
     public function masterSaf()
     {
@@ -105,14 +106,17 @@ class SafRepository implements iSafRepository
         return  responseMsg(true, '', $data);
     }
 
+    /**
+     * | Apply for New Application
+     * | Status-Closed
+     */
+
     public function applySaf(Request $request)
     {
-        $message = ["status" => false, "data" => $request->all(), "message" => ""];
         $user_id = auth()->user()->id;
         $ulb_id = auth()->user()->ulb_id;
 
         try {
-            // Determining the initiator and finisher id
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
                 ->where('ulb_id', $ulb_id)
@@ -122,6 +126,7 @@ class SafRepository implements iSafRepository
             if (!in_array($request->assessmentType, ["NewAssessment", "New Assessment", "ReAssessment", "Mutation"])) {
                 return responseMsg(false, "Invalid Assessment Type", "");
             }
+
             $rules = [];
 
             if (in_array($request->assessmentType, ["ReAssessment", "Mutation"])) {
@@ -129,17 +134,6 @@ class SafRepository implements iSafRepository
                 $message["previousHoldingId.required"] = "Old Property Id Requird";
                 $rules["holdingNo"] = "required";
                 $message["holdingNo.required"] = "holding No. Is Requird";
-            }
-
-            $validator = Validator::make($request->all(), $rules, $message);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
-            }
-
-
-            $validator = Validator::make($request->all(), $rules, $message);
-            if ($validator->fails()) {
-                return responseMsg(false, $request->all(), $validator->errors());
             }
 
             $request->assessmentType = $request->assessmentType == "NewAssessment" ? "New Assessment" : $request->assessmentType;
@@ -294,30 +288,6 @@ class SafRepository implements iSafRepository
         }
     }
 
-    public function getPropIdByWardNoHodingNo(Request $request)
-    {
-        try {
-            $rules = [
-                "wardId" => "required",
-                "holdingNo" => "required",
-            ];
-            $message = [
-                "wardId.required" => "Ward id required",
-                "holdingNo.required" => "Holding No required",
-            ];
-            $validator = Validator::make($request->all(), $rules, $message);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
-            } else {
-                $inputs['ward_mstr_id'] = $request->ward_id;
-                $inputs['holding_no'] = $request->holding_no;
-                $data = $this->property->getPropIdByWardNoHodingNo($inputs);
-                return responseMsg(true, '', $data,);
-            }
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
     /**
      * desc This function return the safNo of the application
      * format: SAF/application_type/ward_no/count active application on the basise of ward_id
@@ -331,6 +301,7 @@ class SafRepository implements iSafRepository
      * #count <- count(activ_saf_details.*)
      * #ward_no <- ward_matrs.ward_no
      * #safNo <- "SAF/".str_pad($assessment_type,2,'0',STR_PAD_LEFT)."/".str_pad($word_no,3,'0',STR_PAD_LEFT)."/".str_pad($count,5,'0',STR_PAD_LEFT)
+     * Status-Closed
      */
     public function safNo($ward_id, $assessment_type, $ulb_id)
     {
@@ -358,6 +329,7 @@ class SafRepository implements iSafRepository
      * | @var wardId > filtered Ward Id from the data collection
      * | @var safInbox > Final returned Data
      * | @return response #safInbox
+     * | Status-Closed
      * ---------------------------------------------------------------
      */
     #Inbox
@@ -436,6 +408,7 @@ class SafRepository implements iSafRepository
      * | @var ulbId authenticated user Ulb Id
      * | @var workflowRoles get All Roles of the user id
      * | @var roles filteration of roleid from collections
+     * | Status-Closed
      */
     #OutBox
     public function outbox()
@@ -481,6 +454,7 @@ class SafRepository implements iSafRepository
      * role_masters                  |
      * =======================================
      * helpers : Helpers/utility_helper.php   ->remove_null() -> for remove  null values
+     * | Status-Closed
      */
     #Saf Details
     public function details(Request $req)
@@ -522,6 +496,7 @@ class SafRepository implements iSafRepository
      * active_saf_details.escalate_by <- request->escalateStatus 
      * ============================================
      * #message -> return response 
+     * Status-Closed
      */
     #Add Inbox  special category
     public function postEscalate($request)
@@ -565,6 +540,7 @@ class SafRepository implements iSafRepository
      * | @var safData SAF Data List
      * | @return
      * | @var \Illuminate\Support\Collection $safData
+     * | Status-Closed
      */
     #Inbox  special category
     public function specialInbox()
@@ -594,8 +570,9 @@ class SafRepository implements iSafRepository
      * | @var userId Logged In user Id
      * | @var levelPending The Level Pending Data of the Saf Id
      * | @return responseMsg
+     * | Status-Closed
      */
-    public function postIndependentComment($request)
+    public function commentIndependent($request)
     {
         try {
             DB::beginTransaction();
@@ -647,6 +624,7 @@ class SafRepository implements iSafRepository
      * | @param mixed $request
      * | @var preLevelPending Get the Previous level pending data for the saf id
      * | @var levelPending new Level Pending to be add
+     * | Status-Closed
      */
     # postNextLevel
     public function postNextLevel($request)
@@ -693,13 +671,15 @@ class SafRepository implements iSafRepository
      * | $req->status (if 1 Application to be approved && if 0 application to be rejected)
      * ------------------- Dump --------------------------
      * | @return msg
+     * | Status-Closed
      */
-    public function safApprovalRejection($req)
+    public function approvalRejectionSaf($req)
     {
         $req->validate([
             'safId' => 'required|int',
             'status' => 'required|int'
         ]);
+
         try {
             DB::beginTransaction();
             // Approval
@@ -712,7 +692,7 @@ class SafRepository implements iSafRepository
                     ->where('id', $req->safId)
                     ->first();
                 $approvedSaf = $activeSaf->replicate();
-                $approvedSaf->setTable('prop_approved_saf_details');
+                $approvedSaf->setTable('safs');
                 $approvedSaf->id = $activeSaf->id;
                 $approvedSaf->push();
                 $activeSaf->delete();
@@ -724,7 +704,7 @@ class SafRepository implements iSafRepository
                     ->where('id', $req->safId)
                     ->first();
                 $rejectedSaf = $activeSaf->replicate();
-                $rejectedSaf->setTable('prop_rejected_saf_details');
+                $rejectedSaf->setTable('rejected_safs');
                 $rejectedSaf->id = $activeSaf->id;
                 $rejectedSaf->push();
                 $activeSaf->delete();
@@ -742,6 +722,7 @@ class SafRepository implements iSafRepository
     /**
      * | Back to Citizen
      * | @param Request $req
+     * | Status-Closed
      */
     public function backToCitizen($req)
     {
@@ -763,10 +744,10 @@ class SafRepository implements iSafRepository
 
     /**
      * | SAF Payment 
+     * | Status-Open
      */
-    public function safPayment($req)
+    public function paymentSaf($req)
     {
-        $readUserId = auth()->user()->id;
         $safCalculation = new SafCalculation();
         $safTaxes = $safCalculation->calculateTax($req);
         $taxDetails = $safTaxes->original['data']['details'];
