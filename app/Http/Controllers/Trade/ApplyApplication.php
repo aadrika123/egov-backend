@@ -35,7 +35,7 @@ class ApplyApplication extends Controller
     }
     public function applyApplication(addRecorde $request)
     {        
-        return $this->Repository->addRecorde($request);
+        return $this->Repository->addRecord($request);
     }
     public function paybleAmount(Request $request)
     {      

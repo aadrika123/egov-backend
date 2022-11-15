@@ -8,6 +8,7 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfRole;
 use App\Traits\Auth;
 use Exception;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
@@ -206,5 +207,25 @@ class CommonFunction implements ICommonFunction
         } catch (Exception $e) {
             echo $e->getMessage();
         }
+    }
+    public function userType():string
+    {
+        $user = Auth()->user();
+        $user_id = $user->id;
+        $ulb_id = $user->ulb_id;
+        $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        $user_data = $this->_parent->getUserRoll($user_id, $ulb_id,$refWorkflowId); 
+        $roll_id =  $user_data->role_id??-1;      
+        if($roll_id != -1)
+        {
+            $user_type_sort = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.'.strtoupper($user_data->role_name));
+            if(!$user_type_sort)
+            {
+                return "Online";
+            }
+            return $user_type_sort;
+        }
+        else
+            return "Online";
     }
 }
