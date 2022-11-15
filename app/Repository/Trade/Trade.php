@@ -50,6 +50,11 @@ class Trade implements ITrade
     use WardPermission;
 
     /**
+     * | Created On-01-10-2022 
+     * | Created By-Sandeep Bara
+     * | Status (open)
+     * |
+     * |----------------------
      * | Applying For Trade License
      * | Proper Validation will be applied 
      * | @param Illuminate\Http\Request
@@ -575,8 +580,8 @@ class Trade implements ITrade
      * | make Payment only ["JSK","UTC","TC","SUPER ADMIN","TL"]
      * |-------------------------------------------------------------------
      * | @var refUser        = Auth()->user()
-     * | @var refUserId      = refUser->id
-     * | @var refUlbId       = refUser->ulb_id
+     * | @var refUserId      = refUser->id          | loging user Id
+     * | @var refUlbId       = refUser->ulb_id      | loging user Ulb Id
      * | @var refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID')
      * | @var refWorkflows   = this->_parent->iniatorFinisher(refUserId,refUlbId,refWorkflowId)
      * | @var refNoticeDetails= null
@@ -586,13 +591,13 @@ class Trade implements ITrade
      * |   
      * | @var mUserData      = this->_parent->getUserRoll(refUserId, refUlbId,refWorkflowId)
      * | @var mUserType      = this->_parent->userType()
-     * | @var mNowDate       = Carbon::now()->format('Y-m-d')
-     * | @var mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
-            $mDenialAmount   = 0;
-            $mPaymentStatus = 1;            
-            $mNoticeDate = null;            
-            $mShortUlbName = "";
-            $mWardNo        = "";
+     * | @var mNowDate       = Carbon::now()->format('Y-m-d')   | curent date
+     * | @var mTimstamp      = Carbon::now()->format('Y-m-d H:i:s')     | curent timestamp
+     * | @var mDenialAmount  = 0
+     * | @var mPaymentStatus = 1
+     * | @var mNoticeDate = null
+     * | @var mShortUlbName = ""        | first charecter of each word
+     * | @var mWardNo        = ""
      */
     public function paymentCounter(Request $request)
     {        
