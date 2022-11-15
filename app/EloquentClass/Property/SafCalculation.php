@@ -95,7 +95,7 @@ class SafCalculation
             $this->calculateFinalPayableAmount();                                                   // Adding Total Final Tax with fine and Penalties(1.6)
 
             $collection = collect($this->_GRID)->reverse();                                         // Final Collection of the Contained Grid
-            return responseMsg($apiId, $this->summarySafCalculation(), remove_null($collection));
+            return responseMsg(true, $this->summarySafCalculation(), remove_null($collection));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

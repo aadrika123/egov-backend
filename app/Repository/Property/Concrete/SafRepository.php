@@ -147,7 +147,7 @@ class SafRepository implements iSafRepository
                 $request->roadType = 1;
 
             $safCalculation = new SafCalculation();
-            $safTaxes = collect($safCalculation->calculateTax($request));
+            $safTaxes = $safCalculation->calculateTax($request);
 
             DB::beginTransaction();
             $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $request->assessmentType);
@@ -278,7 +278,7 @@ class SafRepository implements iSafRepository
 
             // Insert Tax
             $tax = new InsertTax();
-            return $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
+            $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
 
             DB::commit();
             return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo]);
@@ -348,7 +348,7 @@ class SafRepository implements iSafRepository
             $checkDataExisting = $workflow->toArray();
 
 
-            // If the Current Role Is not a Initiator
+            // If the Current Role Is a Initiator
             if (!$checkDataExisting) {
                 $roles = $this->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
 
@@ -374,7 +374,7 @@ class SafRepository implements iSafRepository
                 return responseMsg(true, "Data Fetched", remove_null($safInbox));
             }
 
-            // If current role Is a Initiator
+            // If current role Is not a Initiator
 
             // Filteration only Ward id from workflow collection
             $wardId = $workflow->map(function ($item, $key) {
