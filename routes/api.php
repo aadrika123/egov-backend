@@ -250,16 +250,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');       // Delete Self Advertisement By ID
     });
 
-    /**
-     * | Created On-17-08-2022 
-     * | Created By- Anshu Kumar
-     * | Payment Master for Testing Payment Gateways
-     */
-    Route::controller(PaymentMasterController::class)->group(function () {
-        Route::post('store-payment', 'storePayment');           // Store Payment in payment Masters
-        Route::get('get-payment-by-id/{id}', 'getPaymentByID'); // Get Payment by Id
-        Route::get('get-all-payments', 'getAllPayments');       // Get All Payments
-    });
+    
 
     /**
      * | Created On-19-08-2022 

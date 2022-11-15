@@ -9,6 +9,7 @@ use Carbon\Carbon;
 
 class addRecorde extends FormRequest
 {
+    
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -25,44 +26,39 @@ class addRecorde extends FormRequest
      * @return array
      */
     public function rules()
-    {
-        $mapplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE.".$this->applicationType);
-        $mnowdate = Carbon::now()->format('Y-m-d'); 
-        $mtimstamp = Carbon::now()->format('Y-m-d H:i:s');                
-        $mregex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
-        $malphaNumCommaSlash='/^[a-zA-Z0-9- ]+$/i';
-        $malphaSpace ='/^[a-zA-Z ]+$/i';
-        $malphaNumhyphen ='/^[a-zA-Z0-9- ]+$/i';
-        $mnumDot = '/^\d+(?:\.\d+)+$/i';
-        $mdateFormatYYYMMDD ='/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))+$/i';
-        $mdateFormatYYYMM='/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';
+    { 
+        $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE.".$this->applicationType);
+        $mNowdate = Carbon::now()->format('Y-m-d'); 
+        $mTimstamp = Carbon::now()->format('Y-m-d H:i:s');                
+        $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
+        $mAlphaNumCommaSlash='/^[a-zA-Z0-9- ]+$/i';
+        $mAlphaSpace ='/^[a-zA-Z ]+$/i';
+        $mAlphaNumhyphen ='/^[a-zA-Z0-9- ]+$/i';
+        $mNumDot = '/^\d+(?:\.\d+)+$/i';
+        $mDateFormatYYYMMDD ='/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))+$/i';
+        $mDateFormatYYYMM='/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';
         $reftrade = new Trade();
-        $muserType = $reftrade->applyFrom();
+        $mUserType = $reftrade->applyFrom();
         $rules = [];
-        if(in_array($mapplicationTypeId, [1]))
+        if(in_array($mApplicationTypeId,[1]))
         {
-
             $rules["firmDetails.areaSqft"]="required|numeric";
-            $rules["firmDetails.businessAddress"]="required|regex:$mregex";
-            $rules["firmDetails.businessDescription"]="required|regex:$mregex"; 
+            $rules["firmDetails.businessAddress"]="required|regex:$mRegex";
+            $rules["firmDetails.businessDescription"]="required|regex:$mRegex"; 
             $rules["firmDetails.firmEstdDate"]="required|date"; 
-            $rules["firmDetails.firmName"]="required|regex:$mregex";
-            if (in_array($mapplicationTypeId, ["2"])) 
-            {                    
-                $rules["firmDetails.holdingNo"]="required|regex:$mregex";
-            } 
-            $rules["firmDetails.premisesOwner"]="required|regex:$mregex";
+            $rules["firmDetails.firmName"]="required|regex:$mRegex";
+            $rules["firmDetails.premisesOwner"]="required|regex:$mRegex";
             $rules["firmDetails.natureOfBusiness"]="required|array";
             $rules["firmDetails.natureOfBusiness.*.id"]="required|int";
             $rules["firmDetails.newWardNo"]="required|int";
             $rules["firmDetails.wardNo"]="required|int";
             $rules["firmDetails.tocStatus"] = "required|bool";
-            $rules["firmDetails.landmark"]="regex:$mregex";
+            $rules["firmDetails.landmark"]="regex:$mRegex";
             $rules["firmDetails.categoryTypeId"]="int";
             $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
-            $rules["firmDetails.bind_book_no"] = "regex:$mregex";
-            $rules["firmDetails.account_no"] = "regex:$mregex";
-            if(strtoupper($muserType)=="ONLINE")
+            $rules["firmDetails.bind_book_no"] = "regex:$mRegex";
+            $rules["firmDetails.account_no"] = "regex:$mRegex";
+            if(strtoupper($mUserType)=="ONLINE")
             {
                 $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
             }               
@@ -71,7 +67,7 @@ class addRecorde extends FormRequest
             $rules["initialBusinessDetails.firmType"]="required|int";
             if(isset($this->initialBusinessDetails['firmType']) && $this->initialBusinessDetails['firmType']==5)
             {
-                $rules["initialBusinessDetails.otherFirmType"]="required|regex:$mregex";
+                $rules["initialBusinessDetails.otherFirmType"]="required|regex:$mRegex";
             }
             $rules["initialBusinessDetails.ownershipType"]="required|int";
             if( isset($this->initialBusinessDetails['applyWith']) && $this->initialBusinessDetails['applyWith']==1)
@@ -80,7 +76,7 @@ class addRecorde extends FormRequest
                 $rules["initialBusinessDetails.noticeDate"]="required|date";  
             }
             $rules["licenseDetails.licenseFor"]="required|int";
-            if($mapplicationTypeId!=4 && strtoupper($muserType)!="ONLINE")
+            if($mApplicationTypeId!=4 && strtoupper($mUserType)!="ONLINE")
             {
                 $rules["licenseDetails.totalCharge"] = "required|numeric";
             }
@@ -88,15 +84,15 @@ class addRecorde extends FormRequest
             {
                 $rules["licenseDetails.licenseFor"]="required|int|max:1";
             }
-            if(in_array(strtoupper($muserType),["JSK","UTC","TC","SUPER ADMIN","TL"]))
+            if(in_array(strtoupper($mUserType),["JSK","UTC","TC","SUPER ADMIN","TL"]))
             {
                 $rules["licenseDetails.paymentMode"]="required|alpha"; 
                 if(isset($this->licenseDetails['paymentMode']) && $this->licenseDetails['paymentMode']!="CASH")
                 {
                     $rules["licenseDetails.chequeNo"] ="required";
-                    $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$mnowdate";
-                    $rules["licenseDetails.bankName"] ="required|regex:$mregex";
-                    $rules["licenseDetails.branchName"] ="required|regex:$mregex";
+                    $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$mNowdate";
+                    $rules["licenseDetails.bankName"] ="required|regex:$mRegex";
+                    $rules["licenseDetails.branchName"] ="required|regex:$mRegex";
                 } 
             }
 
@@ -108,7 +104,7 @@ class addRecorde extends FormRequest
             
             
         }
-        elseif(in_array($mapplicationTypeId, [2,4])) # 2- Renewal ,4- Surender
+        elseif(in_array($mApplicationTypeId, [2,4])) # 2- Renewal ,4- Surender
         {
             // if (in_array($application_type_id, ["2"])) 
             {                    
@@ -119,43 +115,43 @@ class addRecorde extends FormRequest
             {
                 $rules["licenseDetails.licenseFor"]="required|int|max:1";
             }
-            if($mapplicationTypeId!=4 && strtoupper($muserType)!="ONLINE")
+            if($mApplicationTypeId!=4 && strtoupper($mUserType)!="ONLINE")
             {
                 $rules["licenseDetails.totalCharge"] = "required|numeric";
             }
-            if(in_array(strtoupper($muserType),["JSK","UTC","TC","SUPER ADMIN","TL"]) && $mapplicationTypeId==2)
+            if(in_array(strtoupper($mUserType),["JSK","UTC","TC","SUPER ADMIN","TL"]) && $mApplicationTypeId==2)
             {
                 $rules["licenseDetails.paymentMode"]="required|alpha"; 
                 if(isset($this->licenseDetails['paymentMode']) && $this->licenseDetails['paymentMode']!="CASH")
                 {
                     $rules["licenseDetails.chequeNo"] ="required";
-                    $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$mnowdate";
-                    $rules["licenseDetails.bankName"] ="required|regex:$mregex";
-                    $rules["licenseDetails.branchName"] ="required|regex:$mregex";
+                    $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$mNowdate";
+                    $rules["licenseDetails.bankName"] ="required|regex:$mRegex";
+                    $rules["licenseDetails.branchName"] ="required|regex:$mRegex";
                 } 
             }
             
         }
-        elseif(in_array($mapplicationTypeId, [3])) # 3- Amendment
+        elseif(in_array($mApplicationTypeId, [3])) # 3- Amendment
         {
             $rules["firmDetails.areaSqft"]="required|numeric";
-            $rules["firmDetails.businessAddress"]="required|regex:$mregex";
-            $rules["firmDetails.businessDescription"]="required|regex:$mregex"; 
+            $rules["firmDetails.businessAddress"]="required|regex:$mRegex";
+            $rules["firmDetails.businessDescription"]="required|regex:$mRegex"; 
             $rules["firmDetails.firmEstdDate"]="required|date"; 
-            $rules["firmDetails.firmName"]="required|regex:$mregex";
+            $rules["firmDetails.firmName"]="required|regex:$mRegex";
             $rules["firmDetails.holdingNo"]="required";
-            $rules["firmDetails.premisesOwner"]="required|regex:$mregex";
+            $rules["firmDetails.premisesOwner"]="required|regex:$mRegex";
             $rules["firmDetails.natureOfBusiness"]="required|array";
             $rules["firmDetails.natureOfBusiness.*.id"]="required|int";
             $rules["firmDetails.newWardNo"]="required|int";
             $rules["firmDetails.wardNo"]="required|int";
             $rules["firmDetails.tocStatus"] = "required|bool";
-            $rules["firmDetails.landmark"]="regex:$mregex";
+            $rules["firmDetails.landmark"]="regex:$mRegex";
             $rules["firmDetails.categoryTypeId"]="int";
             $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
-            $rules["firmDetails.bind_book_no"] = "regex:$mregex";
-            $rules["firmDetails.account_no"] = "regex:$mregex";
-            if(strtoupper($muserType)=="ONLINE")
+            $rules["firmDetails.bind_book_no"] = "regex:$mRegex";
+            $rules["firmDetails.account_no"] = "regex:$mRegex";
+            if(strtoupper($mUserType)=="ONLINE")
             {
                 $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
             } 
@@ -170,7 +166,7 @@ class addRecorde extends FormRequest
             {
                 $rules["licenseDetails.licenseFor"]="required|int|max:1";
             }
-            if($mapplicationTypeId!=4 && strtoupper($muserType)!="ONLINE")
+            if($mApplicationTypeId!=4 && strtoupper($mUserType)!="ONLINE")
             {
                 $rules["licenseDetails.totalCharge"] = "required|numeric";
             }
@@ -178,15 +174,15 @@ class addRecorde extends FormRequest
             {
                 $rules["licenseDetails.licenseFor"]="required|int|max:1";
             }
-            if(in_array(strtoupper($muserType),["JSK","UTC","TC","SUPER ADMIN","TL"]))
+            if(in_array(strtoupper($mUserType),["JSK","UTC","TC","SUPER ADMIN","TL"]))
             {
                 $rules["licenseDetails.paymentMode"]="required|alpha"; 
                 if(isset($this->licenseDetails['paymentMode']) && $this->licenseDetails['paymentMode']!="CASH")
                 {
                     $rules["licenseDetails.chequeNo"] ="required";
-                    $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$mnowdate";
-                    $rules["licenseDetails.bankName"] ="required|regex:$mregex";
-                    $rules["licenseDetails.branchName"] ="required|regex:$mregex";
+                    $rules["licenseDetails.chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$mNowdate";
+                    $rules["licenseDetails.bankName"] ="required|regex:$mRegex";
+                    $rules["licenseDetails.branchName"] ="required|regex:$mRegex";
                 } 
             }    
         }
