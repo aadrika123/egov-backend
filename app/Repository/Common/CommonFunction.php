@@ -214,7 +214,7 @@ class CommonFunction implements ICommonFunction
         $user_id = $user->id;
         $ulb_id = $user->ulb_id;
         $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-        $user_data = $this->_parent->getUserRoll($user_id, $ulb_id,$refWorkflowId); 
+        $user_data = $this->getUserRoll($user_id, $ulb_id,$refWorkflowId); 
         $roll_id =  $user_data->role_id??-1;      
         if($roll_id != -1)
         {
