@@ -227,10 +227,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     // Citizen Register
     Route::controller(CitizenController::class)->group(function () {
-        Route::get('get-citizen-by-id/{id}', 'getCitizenByID');     // Get Citizen By ID
-        Route::get('get-all-citizens', 'getAllCitizens');           // Get All Citizens
-        Route::post('edit-citizen-by-id/{id}', 'editCitizenByID');         // Approve Or Reject Citizen by Id
-        Route::get('citizens/applied-applications', 'getAllAppliedApplications');    // Get All Applied Applications
+        Route::get('get-citizen-by-id/{id}', 'getCitizenByID');                                                // Get Citizen By ID
+        Route::get('get-all-citizens', 'getAllCitizens');                                                      // Get All Citizens
+        Route::post('edit-citizen-by-id/{id}', 'editCitizenByID');                                             // Approve Or Reject Citizen by Id
+        Route::match(['get', 'post'], 'citizens/applied-applications', 'getAllAppliedApplications');           // Get Applied Applications
     });
 
     /**
@@ -250,7 +250,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');       // Delete Self Advertisement By ID
     });
 
-    
+
 
     /**
      * | Created On-19-08-2022 

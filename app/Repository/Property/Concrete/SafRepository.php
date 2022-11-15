@@ -686,6 +686,7 @@ class SafRepository implements iSafRepository
             if ($req->status == 1) {
                 $safDetails = ActiveSaf::find($req->safId);
                 $safDetails->holding_no = 'Hol/Ward/001';
+                $safDetails->saf_pending_status = 1;
                 $safDetails->save();
 
                 $activeSaf = ActiveSaf::query()
