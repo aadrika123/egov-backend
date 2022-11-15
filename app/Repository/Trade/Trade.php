@@ -722,7 +722,7 @@ class Trade implements ITrade
             $noticeDate = null;
             $noticeDetails=null;
 
-            if(collect(["JSK","UTC","TC","SUPER ADMIN","TL"])->search(strtoupper($userType)))
+            if(in_array($userType,["JSK","UTC","TC","SUPER ADMIN","TL"]))
             {
                 #-----------valication-------------------
                 $rules["paymentMode"]="required|alpha"; 
@@ -2072,7 +2072,7 @@ class Trade implements ITrade
             }
             else
             {
-                $licence = $licence->whereIn('active_licences.pending_status',[0,3]);
+                $licence = $licence->whereIn('active_licences.pending_status',[2]);
             }
             $licence = $licence
                         ->whereIn('active_licences.ward_mstr_id', $ward_ids)
