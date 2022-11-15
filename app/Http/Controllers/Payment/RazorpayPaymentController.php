@@ -47,4 +47,11 @@ class RazorpayPaymentController extends Controller
     {
         return $this->Prepository->getPaymentgatewayByrequests($req);
     }
+
+     //get specific PaymentGateway Details according request
+     public function getPgDetails(Request $req)
+     {
+         return $this->Prepository->getPgDetails($req);
+     }
+
 }

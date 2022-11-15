@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
+use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\SafCalculatorController;
 
@@ -57,5 +58,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     // Property Calculator
     Route::controller(SafCalculatorController::class)->group(function () {
         Route::post('saf-calculation', 'calculateSaf');
+    });
+
+    //Property Cocession
+    Route::controller(ConcessionController::class)->group(function () {
+        Route::post('concession/UpdateConDetail', 'UpdateConDetail');
+        Route::post('concession/UpdateDocuments', 'UpdateDocuments');
     });
 });

@@ -3,12 +3,15 @@
 namespace App\Repository\Payment\Concrete;
 
 use App\Models\Payment;
-use App\Models\Payment\DepartmentMaster; //<----------- model(CAUTION)
-use App\Models\Payment\PaymentGatewayMaster;
-use App\Models\Payment\UlbDepartmentMap; //<----------- model(CAUTION)
+use App\Models\Payment\DepartmentMaster; 
+use App\Models\Payment\PaymentGatewayDetail;
+use App\Models\Payment\PaymentGatewayMaster; 
 use App\Models\PaymentMaster; //<----------- model(CAUTION)
 use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
+use Illuminate\Support\Facades\Validator;
+
+
 use Exception;
 
 /**
@@ -18,7 +21,6 @@ use Exception;
  */
 class PaymentRepository implements iPayment
 {
-
     /**
      * | Function for Store Payment
      * | @param Request
@@ -83,6 +85,17 @@ class PaymentRepository implements iPayment
      */
     public function getDepartmentByulb(Request $req)
     {
+        #   validation
+        $validateUser = Validator::make(
+            $req->all(),
+            [
+                'ulbId'   => 'required|integer',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return responseMsg(false, 'validation error', $validateUser->errors(), 401);
+        }
         try {
             $mReadDepartment = DepartmentMaster::select(
                 'department_masters.id',
@@ -111,15 +124,28 @@ class PaymentRepository implements iPayment
      */
     public function getPaymentgatewayByrequests(Request $req)
     {
+        #   validation
+        $validateUser = Validator::make(
+            $req->all(),
+            [
+                'departmentId'   => 'required|integer',
+                'ulbId'   => 'required|integer',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return responseMsg(false, 'validation error', $validateUser->errors(), 401);
+        }
+
         try {
             $mReadPg = PaymentGatewayMaster::select(
                 'payment_gateway_masters.id',
                 'payment_gateway_masters.pg_full_name AS paymentGatewayName'
-            )          
+            )
                 ->join('department_pg_maps', 'department_pg_maps.pg_id', '=', 'payment_gateway_masters.id')
-                ->join('ulb_department_maps','ulb_department_maps.department_id','=','department_pg_maps.department_id')
+                ->join('ulb_department_maps', 'ulb_department_maps.department_id', '=', 'department_pg_maps.department_id')
                 ->where('ulb_department_maps.department_id', $req->departmentId)
-                ->where('ulb_department_maps.ulb_id',$req->ulbId)
+                ->where('ulb_department_maps.ulb_id', $req->ulbId)
                 ->get();
 
             if (!empty($mReadPg['0'])) {
@@ -128,6 +154,51 @@ class PaymentRepository implements iPayment
             return responseMsg(false, "Data not found", "");
         } catch (Exception $error) {
             return responseMsg(false, "error", $error);
+        }
+    }
+
+
+    /**
+     * | Get Payment gateway details by required gateway
+     * | @param req request from the frontend
+     * | @param error collecting the operation error
+     * | @var mReadRazorpay collecting data from the table RazorpayPgMaster
+     * | 
+     */
+    public function getPgDetails(Request $req)
+    {
+        # validation
+        $validateUser = Validator::make(
+            $req->all(),
+            [
+                'departmentId'   => 'required|integer',
+                'ulbId'   => 'required|integer',
+                'paymentGatewayId'   => 'required|integer',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return responseMsg(false, 'validation error', $validateUser->errors(), 401);
+        }
+        try {
+            $mReadRazorpay = PaymentGatewayDetail::select(
+                'payment_gateway_details.pg_name AS paymentGatewayName',
+                'payment_gateway_details.pg_details AS details'
+            )
+                ->join('payment_gateway_masters', 'payment_gateway_masters.id', '=', 'payment_gateway_details.id')
+                ->join('department_pg_maps', 'department_pg_maps.pg_id', '=', 'payment_gateway_masters.id')
+                ->join('ulb_department_maps', 'ulb_department_maps.department_id', '=', 'department_pg_maps.department_id')
+
+                ->where('ulb_department_maps.department_id', $req->departmentId)
+                ->where('ulb_department_maps.ulb_id', $req->ulbId)
+                ->where('payment_gateway_masters.id', $req->paymentGatewayId)
+                ->get();
+            if (!empty($mReadRazorpay['0'])) {
+                return responseMsg(true, "Razorpay Data!", $mReadRazorpay);
+            }
+            return responseMsg(false, "Data Not found", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "error", $error->getMessage());
         }
     }
 }

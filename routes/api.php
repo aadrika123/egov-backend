@@ -311,10 +311,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::apiResource("warduser", WorkflowWardUserController::class);
 
-    //
-    Route::controller(WorkflowWardUserController::class)->group(function () {
-        Route::post('workflows/getroledetails', 'getRoleDetails');
-    });
 
     /**
      * Role User Map CRUD operation
@@ -336,9 +332,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * Workflow Mapping CRUD operation
      */
 
-    Route::controller(WorkflowWardUserController::class)->group(function () {
+    Route::controller(WorkflowMap::class)->group(function () {
 
         //Mapping
+        Route::post('workflows/getroledetails', 'getRoleDetails');
         Route::post('workflow/getUserById', 'getUserById');
         Route::post('workflow/getWorkflowNameByUlb', 'getWorkflowNameByUlb');
         Route::post('workflow/getRoleByUlb', 'getRoleByUlb');
@@ -362,13 +359,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('workflow/getRoleByUserUlbId', 'getRoleByUserUlbId');
         Route::post('workflow/getRoleByWardUlbId', 'getRoleByWardUlbId');
 
-        Route::post('workflow/getWorkflownameByWorkfkow', 'getWorkflownameByWorkfkow');
-    });
-
-    //
-    Route::controller(WorkflowMapController::class)->group(function () {
         Route::post('workflow/getWorkflownameByWorkflow', 'getWorkflownameByWorkflow');
     });
+
+
 
 
     /**
@@ -473,5 +467,3 @@ Route::controller(MenuItemsController::class)->group(function () {
     // });
 });
 // });
-
-Route::post('workflow/getWorkflownameByWorkflow', [WorkflowMap::class, 'getWorkflownameByWorkflow']);
