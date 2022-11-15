@@ -186,7 +186,7 @@ class addRecorde extends FormRequest
                 } 
             }    
         }
-        dd($rules);
+        
         return $rules;
     }
 }
