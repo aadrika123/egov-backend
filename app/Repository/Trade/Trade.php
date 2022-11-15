@@ -101,13 +101,33 @@ class Trade implements ITrade
      * | @var mWardNo      ward no | ulb_ward_masters->ward_name 
      * | @var refOldowners  priviuse licence owner data only for applicationType(2,3,4) 
      * | @var owner model object(active_licence_owners)
+     * | @var Tradetransaction model object(trade_transactions)
+     * | @var TradeFineRebet model object(trade_fine_rebet_details)
+     * | @var TradeFineRebet2 model object(trade_fine_rebet_details)
+     * | @var tradeChq model object(trade_cheque_dtls)
      * |
      * |----------------function-------------------------------------------
+     * |    this->getFirmTypeList()                               |   read FirmType
+     * |    this->getOwnershipTypeList()                          |   read OwnerShipType
+     * |    this->getCategoryList()                               |   read Category Type                   
+     * |    this->geItemsList(true)                               |    read Trade Item List without tomacco item
+     * |    this->getLicenceById(request->id)                           |    only for applicationType(2,3,4)  |  read Old Licence Dtl
+     * |    this->getOwnereDtlByLId($request->id)                       |    only for applicationType(2,3,4)  |  read Old Licence Owner Dtl
+     * |    this->getLicenceItemsById(refOldLicece->nature_of_bussiness)|    only for applicationType(2,3,4)  |  read Old Licence Trade Items
+     * 
      * |    this->transferExpire(mOldLicenceId,licenceId)               |    only for applicationType(2,3,4)  | transfer Aclive Licence To Expire Licence
      * |    this->createApplicationNo(mWardNo,licenceId)                |    Create the Application no
      * |    this->createProvisinalNo(mShortUlbName,mWardNo,licenceId)   |    Create Provisinal Certification No (provisinal certificati valide 20 day from apply date)
      * |    this->getDenialFirmDetails($refUlbId,strtoupper(trim($noticeNo))) |  Get the Notice Data 
-     * |    this->updateStatusFine(refDenialId, mChargeData['notice_amount'], licence)
+     * |    this->updateStatusFine(refDenialId, mChargeData['notice_amount'], licence) | update The Notice Ammount And Licence Id
+     * |
+     * |    * | add records only ["JSK","UTC","TC","SUPER ADMIN","TL"] Authorize User For Cute The Mement In Ofline Mode
+     * |    this->cltCharge(args)       | Calculation Of Charges
+     * |
+     * |----------------Basic Logic-------------------------------------------
+     * |    case 1) mApplicationTypeId !=1  -> Transfer Old Licece into Expire and create New Records According To Old Licence Dtl
+     * |         2)  mApplicationTypeId ==1 ->  create New Records According To Old Licence Dtl
+     * |    
      * |
      */
     public function addRecord(Request $request)
@@ -189,9 +209,9 @@ class Trade implements ITrade
 
                 $data['userType']          = $mUserType;
                 $data["firmTypeList"]       = $this->getFirmTypeList();
-                $data["ownershipTypeList"]  = $this->getownershipTypeList();
-                $data["categoryTypeList"]   = $this->getCotegoryList();
-                $data["natureOfBusiness"]   = $this->gettradeitemsList(true);
+                $data["ownershipTypeList"]  = $this->getOwnershipTypeList();
+                $data["categoryTypeList"]   = $this->getCategoryList();
+                $data["natureOfBusiness"]   = $this->geItemsList(true);
                 if(isset($request->id) && $request->id  && $mApplicationTypeId !=1)
                 {
                     $refOldLicece = $this->getLicenceById($request->id); // recieving olde lisense id from url
@@ -1696,7 +1716,7 @@ class Trade implements ITrade
             {
                 throw new Exception("You Are Not Authorized For This Action");
             } 
-            if($role->is_initiator || in_array(strtoupper($apply_from),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
+            if($role->is_initiator )    //|| in_array(strtoupper($apply_from),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"])
             {
                 $ward_permission = $this->_modelWard->getAllWard($ulb_id)->map(function($val){
                     $val->ward_no = $val->ward_name;
@@ -2922,7 +2942,7 @@ class Trade implements ITrade
     
         return $denialAmount;
     }    
-    public function getCotegoryList()
+    public function getCategoryList()
     {
         try{
             return TradeParamCategoryType::select("id","category_type")
@@ -2946,7 +2966,7 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-    public function getownershipTypeList()
+    public function getOwnershipTypeList()
     {
         try{
             return TradeParamOwnershipType::select("id","ownership_type")
@@ -2958,7 +2978,7 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-    public function gettradeitemsList($all=false)
+    public function geItemsList($all=false)
     {
         try{
             if($all)
