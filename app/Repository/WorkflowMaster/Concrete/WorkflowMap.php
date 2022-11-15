@@ -4,10 +4,17 @@ namespace App\Repository\WorkflowMaster\Concrete;
 
 use App\Repository\WorkflowMaster\Interface\iWorkflowMapRepository;
 use Illuminate\Http\Request;
+use App\Models\Workflows\WfRole;
+use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWorkflowrolemap;
+use App\Models\UlbWardMaster;
+use App\Models\User;
 use Exception;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 
 
@@ -23,6 +30,320 @@ use Illuminate\Support\Facades\Validator;
 
 class WorkflowMap implements iWorkflowMapRepository
 {
+    //get role details by 
+    public function getRoleDetails(Request $request)
+    {
+        $request->validate([
+            'workflowId' => 'required|int',
+            'wfRoleId' => 'required|int'
+
+        ]);
+        $roleDetails = DB::table('wf_workflowrolemaps')
+            ->leftJoin('wf_roles as r', 'wf_workflowrolemaps.forward_role_id', '=', 'r.id')
+            ->leftJoin('wf_roles as rr', 'wf_workflowrolemaps.backward_role_id', '=', 'rr.id')
+            ->select('wf_workflowrolemaps.*', 'r.role_name as forward_role_name', 'rr.role_name as backward_role_name')
+            ->where('workflow_id', $request->workflowId)
+            ->where('wf_role_id', $request->wfRoleId)
+            ->first();
+        return responseMsg(true, "Data Retrived", remove_null($roleDetails));
+    }
+
+
+    //getting data of user & ulb  by selecting  id
+    //m_users && m_ulb_wards  && wf_ward_users
+
+    public function getUserById(Request $request)
+    {
+        $request->validate([
+            'wardUserId' => 'required|int'
+        ]);
+        $users = WfWardUser::where('wf_ward_users.id', $request->wardUserId)
+            ->select('user_name', 'mobile', 'email', 'user_type')
+            ->join('users', 'users.id', '=', 'wf_ward_users.user_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'wf_ward_users.ward_id')
+            ->get(['users.*', 'ulb_ward_masters.*']);
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+
+    // tables = wf_workflows + wf_masters
+    // ulbId -> workflow name
+    // workflows in a ulb
+    public function getWorkflowNameByUlb(Request $request)
+    {
+        //validating
+        $request->validate([
+            'ulbId' => 'required|int'
+        ]);
+
+        $workkFlow = WfWorkflow::where('ulb_id', $request->ulbId)
+            ->join('wf_masters', 'wf_masters.id', '=', 'wf_workflows.wf_master_id')
+            ->get('wf_masters.workflow_name');
+        return responseMsg(true, "Data Retrived", $workkFlow);
+    }
+
+    // tables = wf_workflows + wf_workflowrolemap + wf_roles
+    // ulbId -> rolename
+    // roles in a ulb 
+    public function getRoleByUlb(Request $request)
+    {
+        //validating
+
+        $request->validate([
+            'ulbId' => 'required|int'
+        ]);
+        try {
+            $workkFlow = WfWorkflow::where('ulb_id', $request->ulbId)
+
+                ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.workflow_id', '=', 'wf_workflows.id')
+                ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
+                ->get('wf_roles.role_name');
+            return responseMsg(true, "Data Retrived", $workkFlow);
+        } catch (Exception $e) {
+            return $e;
+        }
+    }
+
+    //table = ulb_ward_master
+    //ulbId->WardName
+    //wards in ulb
+    public function getWardByUlb(Request $request)
+    {
+        //validating
+        $request->validate([
+            'ulbId' => 'required|int'
+        ]);
+
+        $workkFlow = UlbWardMaster::where('ulb_id', $request->ulbId)
+            ->get('ward_name');
+        return responseMsg(true, "Data Retrived", $workkFlow);
+    }
+
+    // get role by workflow id
+    // provide ulb id
+    public function getRoleByWorkflowId(Request $request)
+    {
+        //validating
+        $request->validate([
+            'ulbId' => 'required|int'
+        ]);
+
+        $roles = WfWorkflow::where('ulb_id', $request->ulbId)
+            ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.workflow_id', '=', 'wf_workflows.id')
+            ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
+            ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_roles.id')
+            ->select('wf_roles.*')
+            // ->join('users', 'users.id', '=', 'wf_roleusermaps.user_id')
+            ->get();
+        return responseMsg(true, "Data Retrived", remove_null($roles));
+    }
+
+    // table = 6 & 7
+    //role_id -> users
+    //users in a role
+    public function getUserByRole(Request $request)
+    {
+        $workkFlow = WfRoleusermap::where('wf_role_id', $request->roleId)
+            ->select('user_name', 'mobile', 'email', 'user_type')
+            ->join('users', 'users.id', '=', 'wf_roleusermaps.user_id')
+            ->get('users.user_name');
+        return responseMsg(true, "Data Retrived", $workkFlow);
+    }
+
+    //============================================================================================
+    //=============================       NEW MAPPING          ===================================
+    //============================================================================================
+
+
+    //role in a workflow
+    public function getRoleByWorkflow(Request $request)
+    {
+        $request->validate([
+            'workflowId' => 'required|int'
+        ]);
+        $users = WfWorkflowrolemap::where('workflow_id', $request->workflowId)
+            ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
+            ->select('wf_roles.id as role_id', 'wf_roles.role_name')
+            ->get();
+        // $roles=DB::table('wf_workflowrolemaps')
+        //             ->where('workflow_id',$request->workflowId)
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+    //get user by workflowId
+    public function getUserByWorkflow(Request $request)
+    {
+        $request->validate([
+            'workflowId' => 'required|int'
+        ]);
+        $users = WfWorkflowrolemap::where('workflow_id', $request->workflowId)
+            ->select('user_name', 'mobile', 'email', 'user_type')
+            ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
+            ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_roles.id')
+            ->join('users', 'users.id', '=', 'wf_roleusermaps.user_id')
+            ->get();
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+    //wards in a workflow
+    public function getWardsInWorkflow(Request $request)
+    {
+        $users = WfWorkflowrolemap::where('workflow_id', $request->workflowId)
+            ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
+            ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_roles.id')
+            ->join('wf_ward_users', 'wf_ward_users.user_id', '=', 'wf_roleusermaps.user_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'wf_ward_users.ward_id')
+            ->get('ulb_ward_masters.ward_name');
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+
+    //ulb in a workflow
+    public function getUlbInWorkflow(Request $request)
+    {
+        $users = WfWorkflow::where('wf_master_id', $request->id)
+            ->select('ulb_masters.*')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'wf_workflows.ulb_id')
+            ->get();
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+
+
+    //get wf by role id
+    public function getWorkflowByRole(Request $request)
+    {
+        $users = WfWorkflowrolemap::where('wf_role_id', $request->roleId)
+            ->select('workflow_name')
+            ->join('wf_workflows', 'wf_workflows.id', '=', 'wf_workflowrolemaps.workflow_id')
+            ->join('wf_masters', 'wf_masters.id', '=', 'wf_workflows.wf_master_id')
+            ->get();
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+    // get users in a role
+    public function getUserByRoleId(Request $request)
+    {
+        $users = WfRoleusermap::where('wf_role_id', $request->roleId)
+            ->select('user_name', 'mobile', 'email', 'user_type')
+            ->join('users', 'users.id', '=', 'wf_roleusermaps.user_id')
+            ->get();
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+    //get wards by role
+    public function getWardByRole(Request $request)
+    {
+        try {
+            $users = WfRoleusermap::where('wf_role_id', $request->roleId)
+                ->select('ulb_masters.*')
+                ->join('wf_ward_users', 'wf_ward_users.user_id', '=', 'wf_roleusermaps.user_id')
+                ->join('ulb_masters', 'ulb_masters.id', '=', 'wf_ward_users.ward_id')
+                ->get();
+            if ($users) {
+                return responseMsg(true, "Data Retrived", $users);
+            }
+            return responseMsg(false, "No Data Available", "");
+        } catch (Exception $e) {
+            return $e;
+        }
+    }
+
+    //get ulb by role
+    public function getUlbByRole(Request $request)
+    {
+        $users = WfWorkflowrolemap::where('wf_role_id', $request->roleId)
+            ->join('wf_workflows', 'wf_workflows.id', '=', 'wf_workflowrolemaps.workflow_id')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'wf_workflows.ulb_id')
+            ->get('ulb_masters.*');
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+
+    //users in a ulb
+    public function getUserInUlb(Request $request) //
+    {
+        $users = User::select('users.*')
+            ->where('users.ulb_id', $request->ulbId)
+            ->get();
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+    //role in ulb
+    public function getRoleInUlb(Request $request)
+    {
+        $users = WfWorkflow::where('ulb_id', $request->ulbId)
+            ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.workflow_id', '=', 'wf_workflows.id')
+            ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
+            ->get('role_name');
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+
+    //workflow in ulb
+    public function getWorkflowInUlb(Request $request)
+    {
+        $users = WfWorkflow::where('ulb_id', $request->ulbId)
+            ->join('wf_workflows', 'wf_workflows.wf_matser_id', '=', 'wf_masters.id')
+            ->get('wf_masters.workflow_name');
+        return responseMsg(true, "Data Retrived", $users);
+    }
+
+    //get role by ulb & user id
+    public function getRoleByUserUlbId(Request $request)
+    {
+        try {
+            $users = WfRole::select('wf_roles.*')
+                ->where('ulb_ward_masters.ulb_id', $request->ulbId)
+                ->where('wf_roleusermaps.user_id', $request->userId)
+                ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', 'wf_roles.id')
+                ->join('wf_ward_users', 'wf_ward_users.user_id', 'wf_roleusermaps.user_id')
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'wf_ward_users.ward_id')
+                ->first();
+            if ($users) {
+                return responseMsg(true, "Data Retrived", $users);
+            }
+            return responseMsg(false, "No Data Available", "");
+        } catch (Exception $e) {
+            return $e;
+        }
+    }
+
+
+    // public function getRoleByWardUlbId(Request $request)
+    // {
+    //     $users = WfRole::select('wf_roles.*')
+    //         ->where('ulb_ward_masters.ulb_id', $request->ulbId)
+    //         ->where('ulb_ward_masters.id', $request->wardId)
+    //         ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', 'wf_roles.id')
+    //         ->join('users', 'users.id', 'wf_roleusermaps.user_id')
+    //         ->join('wf_ward_users', 'wf_ward_users.user_id', 'users.id')
+    //         ->join('ulb_ward_masters', 'ulb_ward_masters.ulb_id', 'wf_ward_users.ward_id')
+    //         ->first();
+    //     return responseMsg(true, "Data Retrived", $users);
+    // }
+
+    //get role by ward & ulb id
+    public function getRoleByWardUlbId(Request $request)
+    {
+        try {
+            $users = UlbWardMaster::select('wf_roles.*')
+                ->where('ulb_ward_masters.ulb_id', $request->ulbId)
+                ->where('ulb_ward_masters.id', $request->wardId)
+                ->join('wf_ward_users', 'wf_ward_users.ward_id', 'ulb_ward_masters.id')
+                ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', 'wf_ward_users.user_id')
+                ->join('wf_roles', 'wf_roles.id', 'wf_roleusermaps.wf_role_id')
+                ->first();
+            if ($users) {
+                return responseMsg(true, "Data Retrived", $users);
+            }
+            return responseMsg(false, "No Data available", "");
+        } catch (Exception $e) {
+            return $e;
+        }
+    }
+
+    //get workflow name by workflow
     public function getWorkflownameByWorkflow(Request $request)
     {
         $request->validate([

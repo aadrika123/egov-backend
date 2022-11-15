@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 interface ITrade
 {
     public function __construct();
-    public function addRecorde(Request $request);
+    public function addRecord(Request $request);
     public function paymentCounter(Request $request);
     public function isvalidateHolding(Request $request);
     public function searchLicenceByNo(Request $request);
@@ -28,10 +28,10 @@ interface ITrade
     public function readDenialdtlbyNoticno(Request $request);
     public function getPaybleAmount(Request $request);
     public function readPaymentRecipt($id, $transectionId);
-    public function getCotegoryList();
+    public function getCategoryList();
     public function getFirmTypeList();
-    public function getownershipTypeList();
-    public function gettradeitemsList();
+    public function getOwnershipTypeList();
+    public function geItemsList();
     public function getAllApplicationType();
     public function inbox(Request $request);
     public function outbox(Request $request);
