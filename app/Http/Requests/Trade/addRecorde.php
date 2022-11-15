@@ -33,6 +33,7 @@ class addRecorde extends FormRequest
         $mNowdate = Carbon::now()->format('Y-m-d'); 
         $mTimstamp = Carbon::now()->format('Y-m-d H:i:s');                
         $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
+        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.&\s]+$/';
         $mAlphaNumCommaSlash='/^[a-zA-Z0-9- ]+$/i';
         $mAlphaSpace ='/^[a-zA-Z ]+$/i';
         $mAlphaNumhyphen ='/^[a-zA-Z0-9- ]+$/i';
@@ -48,7 +49,7 @@ class addRecorde extends FormRequest
             $rules["firmDetails.businessAddress"]="required|regex:$mRegex";
             $rules["firmDetails.businessDescription"]="required|regex:$mRegex"; 
             $rules["firmDetails.firmEstdDate"]="required|date"; 
-            $rules["firmDetails.firmName"]="required|regex:$mRegex";
+            $rules["firmDetails.firmName"]="required|regex:$mFramNameRegex";
             $rules["firmDetails.premisesOwner"]="required|regex:$mRegex";
             $rules["firmDetails.natureOfBusiness"]="required|array";
             $rules["firmDetails.natureOfBusiness.*.id"]="required|int";
@@ -140,7 +141,7 @@ class addRecorde extends FormRequest
             $rules["firmDetails.businessAddress"]="required|regex:$mRegex";
             $rules["firmDetails.businessDescription"]="required|regex:$mRegex"; 
             $rules["firmDetails.firmEstdDate"]="required|date"; 
-            $rules["firmDetails.firmName"]="required|regex:$mRegex";
+            $rules["firmDetails.firmName"]="required|regex:$mFramNameRegex";
             $rules["firmDetails.holdingNo"]="required";
             $rules["firmDetails.premisesOwner"]="required|regex:$mRegex";
             $rules["firmDetails.natureOfBusiness"]="required|array";

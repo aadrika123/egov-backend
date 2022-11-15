@@ -256,6 +256,7 @@ class Trade implements ITrade
                 
                 DB::beginTransaction();                
                 $licence = new ActiveLicence();
+                
                 #----------------Crate Application--------------------
                 if (in_array($mApplicationTypeId, ["2", "3","4"])) # code for Renewal,Amendment,Surender respectively
                 {   
@@ -283,10 +284,11 @@ class Trade implements ITrade
                     $mWardNo = array_values($mWardNo)[0]['ward_no']??"";
                     $refOldowners = ActiveLicenceOwner::where('licence_id',$mOldLicenceId)
                                 ->get();
+                    
                     $licence->firm_type_id        = $refOldLicece->firm_type_id;
                     $licence->otherfirmtype       = $refOldLicece->otherfirmtype;
-                    $licence->application_type_id = $refOldLicece;
-                    $licence->category_type_id    = $refOldLicece->category_type_id;
+                    $licence->application_type_id = $mApplicationTypeId;                    
+                    $licence->category_type_id    = $refOldLicece->category_type_id ;
                     $licence->ownership_type_id   = $refOldLicece->ownership_type_id;
                     $licence->ward_mstr_id        = $refOldLicece->ward_mstr_id;
                     $licence->new_ward_mstr_id    = $refOldLicece->new_ward_mstr_id;
@@ -299,7 +301,7 @@ class Trade implements ITrade
                     $licence->premises_owner_name = $refOldLicece->premises_owner_name;
                     $licence->brife_desp_firm     = $refOldLicece->brife_desp_firm;
                     $licence->area_in_sqft        = $refOldLicece->area_in_sqft;
-    
+                    
                     $licence->k_no                = $refOldLicece->k_no;
                     $licence->bind_book_no        = $refOldLicece->bind_book_no;
                     $licence->account_no          = $refOldLicece->account_no;
@@ -309,7 +311,7 @@ class Trade implements ITrade
                     $licence->emp_details_id      = $refUserId;
                     $licence->establishment_date  = $refOldLicece->establishment_date;
                     $licence->apply_date          = $mNowdate;
-    
+                    
                     $licence->licence_for_years   = $request->licenseDetails['licenseFor'];
                     $licence->address             = $refOldLicece->address;
                     $licence->landmark            = $refOldLicece->landmark;
@@ -326,10 +328,10 @@ class Trade implements ITrade
                     $licence->initiator_id        = $refWorkflows['initiator']['id'];
                     $licence->finisher_id         = $refWorkflows['finisher']['id'];
                     $licence->workflow_id         = $refWorkflowId;
-    
+                    
                     $licence->save();
                     $licenceId = $licence->id;
-
+                    
                     $mAppNo = $this->createApplicationNo($mWardNo,$licenceId);
                     $licence->application_no = $mAppNo;
                     $licence->save();
@@ -425,7 +427,7 @@ class Trade implements ITrade
                         $owner->save();
     
                     }
-                } 
+                }
                 #----------------End Crate Application--------------------
                 #---------------- transaction of payment-------------------------------
                 if($mApplicationTypeId==1 && $request->initialBusinessDetails['applyWith']==1 )
@@ -553,7 +555,7 @@ class Trade implements ITrade
                     $licence->payment_status         = 1;
                     $licence->save();
                 }
-                DB::commit();
+                // DB::commit();
 
                 $res['applicationNo']=$mAppNo;
                 $res['applyLicenseId'] = $licenceId;
@@ -561,11 +563,38 @@ class Trade implements ITrade
             }
             
         }
-        catch (Exception $e) {
+        catch (Exception $e) {            
             DB::rollBack();           
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
+
+    /**
+     * | Trade Licence Charge Payment (offline Mode)
+     * | --------------------descriptin------------------------------------
+     * | make Payment only ["JSK","UTC","TC","SUPER ADMIN","TL"]
+     * |-------------------------------------------------------------------
+     * | @var refUser        = Auth()->user()
+     * | @var refUserId      = refUser->id
+     * | @var refUlbId       = refUser->ulb_id
+     * | @var refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID')
+     * | @var refWorkflows   = this->_parent->iniatorFinisher(refUserId,refUlbId,refWorkflowId)
+     * | @var refNoticeDetails= null
+     * | @var refDenialId    = null
+     * | @var refUlbDtl      = UlbMaster::find(refUlbId)
+     * | @var refUlbName     = explode(' ',refUlbDtl->ulb_name)
+     * |   
+     * | @var mUserData      = this->_parent->getUserRoll(refUserId, refUlbId,refWorkflowId)
+     * | @var mUserType      = this->_parent->userType()
+     * | @var mNowDate       = Carbon::now()->format('Y-m-d')
+     * | 
+            $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
+            $mDenialAmount   = 0;
+            $mPaymentStatus = 1;            
+            $mNoticeDate = null;            
+            $mShortUlbName = "";
+            $mWardNo        = "";
+     */
     public function paymentCounter(Request $request)
     {        
         try{
@@ -587,6 +616,7 @@ class Trade implements ITrade
             $mPaymentStatus = 1;            
             $mNoticeDate = null;            
             $mShortUlbName = "";
+            $mWardNo        = "";
             foreach($refUlbName as $val)
             {
                 $mShortUlbName.=$val[0];
@@ -614,10 +644,10 @@ class Trade implements ITrade
                 {
                     throw new Exception("Tobaco Application Not Take Licence More Than One Year");
                 }
-                if($lecenceData->applyWith==1 && $noticeDetails = $this->readNotisDtl($lecenceData->id))
+                if($lecenceData->applyWith==1 && $refNoticeDetails = $this->readNotisDtl($lecenceData->id))
                 { 
-                    $refDenialId = $noticeDetails->dnialid;
-                    $mNoticeDate = strtotime($noticeDetails['created_on']); //notice date 
+                    $refDenialId = $refNoticeDetails->dnialid;
+                    $mNoticeDate = strtotime($refNoticeDetails['created_on']); //notice date 
                     
                 }
 
@@ -713,12 +743,12 @@ class Trade implements ITrade
                     $lecenceData->current_user_id = $refWorkflows['initiator']['id'];
                 }
                 
-                $provNo = $this->createProvisinalNo($mShortUlbName,$ward_no,$licenceId);
+                $provNo = $this->createProvisinalNo($mShortUlbName,$mWardNo,$licenceId);
                 $lecenceData->provisional_license_no = $provNo;
                 $lecenceData->payment_status = $mPaymentStatus;
                 $lecenceData->save();
                                 
-                if($noticeDetails)
+                if($refNoticeDetails)
                 {
                     $this->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId,1); //update status and fineAmount                     
                 }
@@ -1709,7 +1739,7 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
-            $apply_from = $this->_parent->userType();
+            $mUserType = $this->_parent->userType();
             $ward_permission = $this->_parent->WardPermission($user_id);           
             $role = $this->_parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id); 
             if (!$role) 
