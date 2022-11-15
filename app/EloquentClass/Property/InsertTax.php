@@ -8,10 +8,7 @@ class InsertTax
 {
     public function insertTax($safId, $userId, $demand)
     {
-        $details = $demand['original']['data']['details'];
-        $filtered = $details->toArray();
-        $a = collect($filtered)->only(['totalTax']);
-        return $a;
+        $details = collect($demand->original['data']['details'])->toArray();
 
         foreach ($details as $detail) {
             $safDemand = new SafsDemand();
