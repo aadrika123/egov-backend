@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use App\Http\Requests\Trade\addRecorde;
+use App\Http\Requests\Trade\paymentCounter;
 
 class ApplyApplication extends Controller
 {
@@ -32,9 +33,9 @@ class ApplyApplication extends Controller
         // });
         $this->Repository = $TradeRepository ;
     }
-    public function applyApplication(Request $request)
+    public function applyApplication(addRecorde $request)
     {        
-        return $this->Repository->addRecorde($request);
+        return $this->Repository->addRecord($request);
     }
     public function paybleAmount(Request $request)
     {      
@@ -90,7 +91,7 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->postNextLevel($request);
     }
-    public function paymentCounter(Request $request)
+    public function paymentCounter(paymentCounter $request)
     {
         return $this->Repository->paymentCounter($request);
     }

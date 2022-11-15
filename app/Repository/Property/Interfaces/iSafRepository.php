@@ -19,8 +19,9 @@ interface iSafRepository
     public function details(Request $request);              // Get SAF By ID
     public function postEscalate($request);                 // Adding SAF application to special Category 
     public function specialInbox();                         // Special Inbox applications
-    public function postIndependentComment($request);       // Comment For the SAF Application
+    public function commentIndependent($request);           // Comment For the SAF Application
     public function postNextLevel($request);                // Forward Or Backward to next Level
-    public function safApprovalRejection($req);             // Approve or Reject The Application
+    public function approvalRejectionSaf($req);             // Approve or Reject The Application
     public function backToCitizen($req);                    // Back To Citizen
+    public function paymentSaf($req);                       // SAF Payment
 }

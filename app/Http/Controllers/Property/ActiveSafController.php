@@ -63,9 +63,9 @@ class ActiveSafController extends Controller
     }
 
     // Post Independent Comment
-    public function postIndependentComment(Request $request)
+    public function commentIndependent(Request $request)
     {
-        return $this->Repository->postIndependentComment($request);
+        return $this->Repository->commentIndependent($request);
     }
 
     // Forward to Next Level
@@ -76,14 +76,20 @@ class ActiveSafController extends Controller
     }
 
     // Saf Application Approval Or Reject
-    public function safApprovalRejection(Request $req)
+    public function approvalRejectionSaf(Request $req)
     {
-        return $this->Repository->safApprovalRejection($req);
+        return $this->Repository->approvalRejectionSaf($req);
     }
 
     // Back to Citizen
     public function backToCitizen(Request $req)
     {
         return $this->Repository->backToCitizen($req);
+    }
+
+    // SAF Payment 
+    public function paymentSaf(Request $req)
+    {
+        return $this->Repository->paymentSaf($req);
     }
 }

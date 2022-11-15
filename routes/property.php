@@ -38,12 +38,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('saf/candidates', 'getSafCandidates');                                                  // Get SAF Candidates
         Route::post('saf/escalate', 'postEscalate');                                                        // Saf Workflow special and safDetails By id
         Route::get('saf/escalate/inbox/{key?}', 'specialInbox');                                            // Saf workflow Inbox and Inbox By search key
-        Route::post('saf/independent-comment', 'postIndependentComment');                                   // Independent Comment for SAF Application
+        Route::post('saf/independent-comment', 'commentIndependent');                                       // Independent Comment for SAF Application
         Route::post('saf/post/level', 'postNextLevel');                                                     // Forward or Backward Application
-        Route::post('saf/approvalrejection', 'safApprovalRejection');                                       // Approval Rejection SAF Application
+        Route::post('saf/approvalrejection', 'approvalRejectionSaf');                                       // Approval Rejection SAF Application
         Route::post('saf/back-to-citizen', 'backToCitizen');                                                // Saf Application Back To Citizen
         Route::post('getProperty', 'getPropIdByWardNoHodingNo');                                            // get Property (search) by ward no and holding no
         Route::match(["get", "post"], 'ulb/workflow/member', 'setWorkFlowForwordBackword');                 // get Property (search) by ward no and holding no
+
+        Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment
     });
     //Property Objection
     Route::controller(ObjectionController::class)->group(function () {
@@ -55,7 +57,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     // Property Calculator
     Route::controller(SafCalculatorController::class)->group(function () {
-        Route::post('saf-calculation', 'safCalculation');
+        Route::post('saf-calculation', 'calculateSaf');
     });
 
     //Property Cocession
