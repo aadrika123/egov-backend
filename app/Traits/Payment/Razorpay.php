@@ -50,8 +50,8 @@ trait Razorpay
             $request->all(),
             [
                 'amount' => 'required|max:200',
-                'userId' => 'required',
-                'workflowId' => 'required'
+                // 'userId' => 'required',
+                // 'workflowId' => 'required'
             ]
         );
         if ($validated->fails()) {
@@ -64,6 +64,8 @@ trait Razorpay
 
         DB::beginTransaction(); //<----------- here(CAUTION)
         try {
+            $mUserID = auth()->user()->ulb_id;
+            // $m = new SafRepository();
             $mReciptId = Str::random(10); //<--------- here (STATIC)
             $mApi = new Api($this->refRazorpayId, $this->refRazorpayKey);
 
@@ -78,6 +80,10 @@ trait Razorpay
                 'orderId' => $mOrder['id'],
                 'amount' => $request->all()['amount'],
                 'currency' => 'INR',
+                'userId' => $mUserID,
+                'workflowId' => $request->workflowId,//<-----here
+                'safId' => $request->id,
+                'module' => $request->module
 
             ];
             #   (condition applied) 
@@ -91,9 +97,9 @@ trait Razorpay
             $transaction->save();
 
             // DB::commit(); //<----------- here(CAUTION)
-            return responseMsg(true, "Order Id Generated!", $mReturndata);
+            return $mReturndata; //<------------------ here(RESPONSE)
         } catch (Exception $error) {
-            return responseMsg(false, "Error Listed Below!", $error);
+            return responseMsg(false, "Error Listed Below!", $error->getMessage());
         }
     }
 

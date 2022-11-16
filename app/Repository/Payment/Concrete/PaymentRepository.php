@@ -10,9 +10,9 @@ use App\Models\Payment\WebhookPaymentData;
 use App\Models\PaymentMaster; //<----------- model(CAUTION)
 use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
+use App\Repository\Property\Concrete\SafRepository;
 use Illuminate\Support\Facades\Validator;
 use App\Traits\Payment\Razorpay;
-use App\Repository\Property\Interfaces\iSafRepository;
 
 
 use Exception;
@@ -245,24 +245,29 @@ class PaymentRepository implements iPayment
      */
     public function getTraitOrderId(Request $request)
     {
-        # validation....
-        $validated = Validator::make(
-            $request->all(),
-            [
-                'amount' => 'required|max:200',
-                'userId' => 'required',
-                'workflowId' => 'required'
-            ]
-        );
-        if ($validated->fails()) {
-            return responseMsg(false, "validation error!", $validated->errors(), 401);
-        }
+        // # validation....
+        // $validated = Validator::make(
+        //     $request->all(),
+        //     [
+        //         'amount' => 'required|max:200',
+        //         'userId' => 'required',
+        //         'workflowId' => 'required'
+        //     ]
+        // );
+        // if ($validated->fails()) {
+        //     return responseMsg(false, "validation error!", $validated->errors(), 401);
+        // }
 
         try {
-            $safRepo=new iSafRepository();
-            $calculateSafById=$safRepo->calculateSafBySafId();
-            $mOrderDetails = $this->saveGenerateOrderid($request);
-            return responseMsg(true, "Order id Gernerated!", $mOrderDetails);
+            $safRepo = new SafRepository();
+            $calculateSafById = $safRepo->calculateSafBySafId($request);
+            $mTotalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
+            // return responseMsg($calculateSafById);
+            if ($request->amount == $mTotalAmount) {
+                $mOrderDetails = $this->saveGenerateOrderid($request);
+                return responseMsg(true, "OrderId Generated!", $mOrderDetails);
+            }
+            return responseMsg(false, "Operation Amount not matched!",$request->amount);
         } catch (Exception $error) {
             return $error;
         }
