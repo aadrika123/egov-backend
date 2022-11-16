@@ -65,6 +65,7 @@ trait Razorpay
         DB::beginTransaction(); //<----------- here(CAUTION)
         try {
             $mUserID = auth()->user()->id;
+            $mUlbID = auth()->user()->ulb_id;
             // $m = new SafRepository();
             $mReciptId = Str::random(10); //<--------- here (STATIC)
             $mApi = new Api($this->refRazorpayId, $this->refRazorpayKey);
@@ -81,6 +82,7 @@ trait Razorpay
                 'amount' => $request->all()['amount'],
                 'currency' => 'INR',
                 'userId' => $mUserID,
+                'ulbId' => $mUlbID,
                 'workflowId' => $request->workflowId,//<-----here
                 'safId' => $request->id,
                 'module' => $request->module
