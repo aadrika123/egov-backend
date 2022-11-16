@@ -760,8 +760,15 @@ class Trade implements ITrade
      * | level_insert->licence_id            = licenceId
      * | level_insert->sender_user_type_id   = refWorkflows['initiator']['id']
      * | level_insert->receiver_user_type_id = refWorkflows['initiator']['forward_id']
+     * | level_insert->sender_user_id        = refUserId
      * |
-                $level_insert->sender_user_id        = $refUserId
+     * |    ***************finally**************************
+     * | provNo = $this->createProvisinalNo($mShortUlbName,$mWardNo,$licenceId)
+     * | refLecenceData->provisional_license_no = provNo
+     * | refLecenceData->payment_status         = mPaymentStatus
+     * |
+     * |-----------------------------------------------------------------------------
+     * |
      */
     public function paymentCounter(Request $request)
     {        
@@ -1670,9 +1677,16 @@ class Trade implements ITrade
         $ulb_id = $user->ulb_id;
         if ($request->getMethod() == "POST") 
         {
+            $rules=[
+                "safNo"=>"required|string",
+            ];
+            $validator = Validator::make($request->all(), $rules, ); 
+            if ($validator->fails()) {                        
+                return responseMsg(false, $validator->errors(),$request->all());
+            } 
             $data = array();
             $inputs = $request->all();
-            $saf_no = $inputs['saf_no']??null;
+            $saf_no = $inputs['safNo']??null;
             $safdet = $this->getSafDtlBySafno($saf_no,$ulb_id);
             if($safdet['status'])
             {
@@ -1697,6 +1711,14 @@ class Trade implements ITrade
         $ulb_id = $user->ulb_id;
         if ($request->getMethod() == "POST") 
         {
+            $rules=[
+                "holdingNo"=>"required|string",
+            ];
+            $validator = Validator::make($request->all(), $rules, ); 
+            if ($validator->fails()) {                        
+                return responseMsg(false, $validator->errors(),$request->all());
+            } 
+
             $data = array();
             $inputs = $request->all();
 
