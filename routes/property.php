@@ -44,7 +44,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('saf/back-to-citizen', 'backToCitizen');                                                // Saf Application Back To Citizen
         Route::post('getProperty', 'getPropIdByWardNoHodingNo');                                            // get Property (search) by ward no and holding no
         Route::match(["get", "post"], 'ulb/workflow/member', 'setWorkFlowForwordBackword');                 // get Property (search) by ward no and holding no
-
+        Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID
         Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment
     });
     //Property Objection

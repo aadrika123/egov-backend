@@ -87,6 +87,12 @@ class ActiveSafController extends Controller
         return $this->Repository->backToCitizen($req);
     }
 
+    // Calculate SAF by saf ID
+    public function calculateSafBySafId(Request $req)
+    {
+        return $this->Repository->calculateSafBySafId($req);
+    }
+
     // SAF Payment 
     public function paymentSaf(Request $req)
     {
