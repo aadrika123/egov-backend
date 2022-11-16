@@ -262,12 +262,12 @@ class PaymentRepository implements iPayment
             $safRepo = new SafRepository();
             $calculateSafById = $safRepo->calculateSafBySafId($request);
             $mTotalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
-            return $calculateSafById;
+            // return $calculateSafById;
             if ($request->amount == $mTotalAmount) {
                 $mOrderDetails = $this->saveGenerateOrderid($request);
                 return responseMsg(true, "OrderId Generated!", $mOrderDetails);
             }
-            return responseMsg(false, "Operation Amount not matched!",$request->amount);
+            return responseMsg(false, "Operation Amount not matched!", $request->amount);
         } catch (Exception $error) {
             return $error;
         }
