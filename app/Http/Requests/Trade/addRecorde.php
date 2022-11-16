@@ -32,7 +32,7 @@ class addRecorde extends FormRequest
         $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE.".$this->applicationType);
         $mNowdate = Carbon::now()->format('Y-m-d'); 
         $mTimstamp = Carbon::now()->format('Y-m-d H:i:s');                
-        $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
+        $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
         $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.&\s]+$/';
         $mAlphaNumCommaSlash='/^[a-zA-Z0-9- ]+$/i';
         $mAlphaSpace ='/^[a-zA-Z ]+$/i';
