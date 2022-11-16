@@ -238,26 +238,13 @@ class PaymentRepository implements iPayment
 
     /**
      * | calling trait for the generation of order id
-     * | @param req request from the frontend
-     * | @param error collecting the operation error
-     * | @var mReadRazorpay collecting data from the table RazorpayPgMaster
+     * | @param request request from the frontend
+     * | @param 
+     * | @var 
      * | 
      */
-    public function getTraitOrderId(Request $request)
+    public function getTraitOrderId(Request $request)  //<------------------ here (INVALID)
     {
-        // # validation....
-        // $validated = Validator::make(
-        //     $request->all(),
-        //     [
-        //         'amount' => 'required|max:200',
-        //         'userId' => 'required',
-        //         'workflowId' => 'required'
-        //     ]
-        // );
-        // if ($validated->fails()) {
-        //     return responseMsg(false, "validation error!", $validated->errors(), 401);
-        // }
-
         try {
             $safRepo = new SafRepository();
             $calculateSafById = $safRepo->calculateSafBySafId($request);
@@ -270,6 +257,40 @@ class PaymentRepository implements iPayment
             return responseMsg(false, "Operation Amount not matched!", $request->amount);
         } catch (Exception $error) {
             return $error;
+        }
+    }
+
+
+    /**
+     * | verifiying the payment success and the signature key
+     * | @param requet request from the frontend
+     * | @param error collecting the operation error
+     * | @var 
+     * | 
+     */
+    public function verifyPaymentStatus(Request $request)
+    {
+        # validation 
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'razorpayOrderId' => 'required',
+                'razorpayPaymentId' => 'required',
+                // 'razorpaySignature' => 'required'
+            ]
+        );
+        if ($validated->fails()) {
+            return responseMsg(false, "validation error", $validated->errors(), 401);
+        }
+        try {
+            $mAttributes = null;
+            if (!empty($request->razorpaySignature)) {
+                $mVerification = $this->paymentVerify($request, $mAttributes);
+                return responseMsg(true, "Operation Success!", $mVerification);
+            }
+            return ("error");
+        } catch (Exception $error) {
+            return responseMsg(false, "Error listed Below!", $error->getMessage());
         }
     }
 }
