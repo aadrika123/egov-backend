@@ -2378,7 +2378,7 @@ class Trade implements ITrade
                 $level_data->forward_time =Carbon::now()->format('H:s:i');
                 $level_data->save();
             }
-            if(!$role->is_finisher)
+            if(!$role->is_finisher || in_array($request->btn,["backward","btc"]))
             {                
                 $level_insert = new TradeLevelPending;
                 $level_insert->licence_id = $licenc_data->id;
@@ -2399,7 +2399,7 @@ class Trade implements ITrade
                     {
                         $short_ulb_name.=$val[0];
                     }
-                    $ward_no = UlbWorkflowMaster::select("ward_name")
+                    $ward_no = UlbWardMaster::select("ward_name")
                             ->where("id",$licenc_data->ward_mstr_id)
                             ->first();
                     $ward_no = $ward_no['ward_name'];
@@ -2491,7 +2491,7 @@ class Trade implements ITrade
 
         }
         catch(Exception $e)
-        {
+        { 
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
