@@ -789,7 +789,7 @@ class SafCalculation
             "arv" => roundFigure($arv / 4),
             "carpetArea" => $carpetArea,
             "multiFactor" => $multiFactor,
-            "rentalRate" => (float)$rentalRate,
+            "rentalRate" => roundFigure($rentalRate),
             "occupancyFactor" => $paramOccupancyFactor,
 
             "holdingTax" => 0,
