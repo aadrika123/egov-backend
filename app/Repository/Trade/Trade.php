@@ -699,6 +699,7 @@ class Trade implements ITrade
      * | @var refUlbName     = explode(' ',refUlbDtl->ulb_name)
      * | @var refLecenceData  = model object(active_licences)
      * | @var licenceId   = request->licenceId
+     * | @var refLevelData = $this->getLevelData(licenceId)
      * |   
      * | @var mUserData      = this->_parent->getUserRoll(refUserId, refUlbId,refWorkflowId)
      * | @var mUserType      = this->_parent->userType()
@@ -709,6 +710,15 @@ class Trade implements ITrade
      * | @var mNoticeDate = null
      * | @var mShortUlbName = ""        | first charecter of each word
      * | @var mWardNo        = ""
+     * |
+     * |-------------------functions-------------------------------------
+     * |
+     * |  mUserData      = this->_parent->getUserRoll(refUserId, refUlbId,refWorkflowId)
+     * |  mUserType      = $this->_parent->userType()
+     * |  refLevelData   = $this->getLevelData(licenceId)
+     * |  refNoticeDetails = this->readNotisDtl(refLecenceData->id)
+     * |  chargeData    = this->cltCharge(args)
+     * |  this->updateStatusFine(refDenialId, chargeData['notice_amount'], licenceId,1)
      * |
      * |------------------------------------------------------------------
      * | *********************validation**********************************
@@ -948,7 +958,9 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
-   
+   /**
+    * 
+    */
     public function readPaymentRecipt($id, $transectionId) # unauthorised  function
     { 
         try{
@@ -2247,6 +2259,7 @@ class Trade implements ITrade
             {
                 $sms ="Application Forwarded To ".$role->backword_name;
                 $receiver_user_type_id = $role->backward_role_id;
+                $licence_pending = $init_finish["initiator"]['id']==$role->backward_role_id ? 3 : $licence_pending;
             }
             elseif($request->btn=="btc" && !$role->is_initiator)
             {
