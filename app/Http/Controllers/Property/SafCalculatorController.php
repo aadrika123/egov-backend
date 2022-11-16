@@ -15,57 +15,6 @@ class SafCalculatorController extends Controller
     }
     public function calculateSaf(Request $req)
     {
-        $ref = '{
-			"assessmentType":"ReAssessment",
-			"ward":1,
-			"propertyType":1,
-			"dateOfPurchase":"2021-11-01",
-			"ownershipType":1,
-			"roadType":41,
-			"areaOfPlot":750,
-			"isMobileTower":0,
-			"mobileTower":{
-					"area":100,
-					"dateFrom":"2014-10-07"
-			},	
-			"towerArea":222.1,
-			"towerInstallationDate":"",
-			"isHoardingBoard":0,
-			"hoardingBoard":{
-					"area":100,
-					"dateFrom":"2016-10-07"
-			},	
-			"isPetrolPump":0,
-			"petrolPump":{
-					"area":100,
-					"dateFrom":"2014-10-07"
-			},
-			"landOccupationDate":"",
-			"isWaterHarvesting":0,
-			"previousHoldingId":"1",
-			"holdingNo":"sadf474",
-			"zone":1,
-			"floor":[	
-				{
-					"floorNo":1,
-					"useType":1,
-					"constructionType":1,
-					"occupancyType":2,
-					"buildupArea":800,
-					"dateFrom":"2022-10-01",
-					"dateUpto":""
-				},
-				{
-					"floorNo":2,
-					"useType":1,
-					"constructionType":1,
-					"occupancyType":2,
-					"buildupArea":800,
-					"dateFrom":"2022-10-01",
-					"dateUpto":""
-				}
-			]';
-
         $array = array();
 
         $data = $this->Repository->details($req);
