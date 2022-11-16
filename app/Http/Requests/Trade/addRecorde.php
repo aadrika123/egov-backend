@@ -113,10 +113,14 @@ class addRecorde extends FormRequest
             {                    
                 $rules["firmDetails.holdingNo"]="required";
             } 
-            $rules["licenseDetails.licenseFor"]="required|int";
-            if(isset($this->firmDetails["tocStatus"]) && $this->firmDetails["tocStatus"])
+            if($mApplicationTypeId==2)
             {
-                $rules["licenseDetails.licenseFor"]="required|int|max:1";
+                $rules["licenseDetails.licenseFor"]="required|int";
+                if(isset($this->firmDetails["tocStatus"]) && $this->firmDetails["tocStatus"])
+                {
+                    $rules["licenseDetails.licenseFor"]="required|int|max:1";
+                }
+
             }
             if($mApplicationTypeId!=4 && strtoupper($mUserType)!="ONLINE")
             {
