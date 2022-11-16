@@ -2279,6 +2279,13 @@ class Trade implements ITrade
                 $receiver_user_type_id = $role->forward_role_id;
 
             } 
+            elseif($request->btn=="forward" && $role->is_initiator && $level_data)
+            {
+                $licence_pending = 2;
+                $sms ="Application Forwarded To ";
+                $receiver_user_type_id = $level_data->sender_user_type_id;
+
+            }
             if($request->btn=="forward" && $role->is_initiator)
             {
                 $doc = (array) null;
@@ -2354,7 +2361,7 @@ class Trade implements ITrade
 
                 
             }
-
+            
             if(!$role->is_finisher && !$receiver_user_type_id)  
             {
                 throw new Exception("Next Role Not Found !!!....");
