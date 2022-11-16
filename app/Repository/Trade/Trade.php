@@ -344,7 +344,6 @@ class Trade implements ITrade
                     foreach($refOldowners as $owners)
                     {
                         $owner = new ActiveLicenceOwner();
-                        $owner->id              = $owners->id;
                         $owner->licence_id      = $licenceId;
                         $owner->owner_name      = $owners->owner_name;
                         $owner->guardian_name   = $owners->guardian_name;
@@ -439,7 +438,6 @@ class Trade implements ITrade
                     foreach($refOldowners as $owners)
                     {
                         $owner = new ActiveLicenceOwner();
-                        $owner->id              = $owners->id;
                         $owner->licence_id      = $licenceId;
                         $owner->owner_name      = $owners->owner_name;
                         $owner->guardian_name   = $owners->guardian_name;
