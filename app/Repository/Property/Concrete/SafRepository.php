@@ -749,6 +749,7 @@ class SafRepository implements iSafRepository
      * | @var array contains all the details for the saf id
      * | @var data contains the details of the saf id by the current object function
      * | @return safTaxes returns all the calculated demand
+     * | Status-Closed
      */
     public function calculateSafBySafId($req)
     {
@@ -811,16 +812,5 @@ class SafRepository implements iSafRepository
      */
     public function paymentSaf($req)
     {
-        $safCalculation = new SafCalculation();
-        $safTaxes = $safCalculation->calculateTax($req);
-        $taxDetails = $safTaxes->original['data']['details'];
-        $payableAmount = $safTaxes->original['data']['demand'];
-
-        $readSafDemand = SafsDemand::select('id')->where('saf_id', $req->safId)->get();
-        $readFirstDemandId = $readSafDemand->first()->id;
-        $readLastDemandId = $readSafDemand->last()->id;
-        // return $readSafDemand;
-        foreach ($readSafDemand as $readSafDemands) {
-        }
     }
 }
