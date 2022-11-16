@@ -267,7 +267,7 @@ class PaymentRepository implements iPayment
                 $mOrderDetails = $this->saveGenerateOrderid($request);
                 return responseMsg(true, "OrderId Generated!", $mOrderDetails);
             }
-            return responseMsg(false, "Operation Amount not matched!",$request->amount);
+            return responseMsg(false, "Operation Amount not matched!", $request->amount);
         } catch (Exception $error) {
             return $error;
         }

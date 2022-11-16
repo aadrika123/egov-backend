@@ -199,6 +199,8 @@ class CitizenRepository implements iCitizenRepository
             ->orderByDesc('id')
             ->get();
         return $propertyApplications;
+        // $propertyApplications['totalApplications'] = $propertyApplications->count();
+        // return $propertyApplications->reverse();
     }
 
     /**
