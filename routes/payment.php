@@ -17,13 +17,17 @@ use Illuminate\Support\Facades\Route;
  * | Created By- sam kerketta
  * | Payment Master for Testing Payment Gateways
  */
-Route::controller(RazorpayPaymentController::class)->group(function () {
-    Route::post('store-payment', 'storePayment');                           // Store Payment in payment Masters
-    Route::get('get-payment-by-id/{id}', 'getPaymentByID');                 // Get Payment by Id
-    Route::get('get-all-payments', 'getAllPayments');                       // Get All Payments
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+    Route::controller(RazorpayPaymentController::class)->group(function () {
+        Route::post('store-payment', 'storePayment');                           // Store Payment in payment Masters
+        Route::get('get-payment-by-id/{id}', 'getPaymentByID');                 // Get Payment by Id
+        Route::get('get-all-payments', 'getAllPayments');                       // Get All Payments
 
-    // razorpay PG
-    Route::post('get-department-byulb', 'getDepartmentByulb');
-    Route::post('get-paymentgateway-byrequests', 'getPaymentgatewayByrequests');
-    Route::post('get-pg-details', 'getPgDetails');
+        // razorpay PG
+        Route::post('get-department-byulb', 'getDepartmentByulb');
+        Route::post('get-paymentgateway-byrequests', 'getPaymentgatewayByrequests');
+        Route::post('get-pg-details', 'getPgDetails');
+        Route::get('get-webhook-details', 'getWebhookDetails');
+        Route::post('get-order-id', 'getTraitOrderId');
+    });
 });
