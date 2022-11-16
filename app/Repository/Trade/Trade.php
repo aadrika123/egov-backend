@@ -317,7 +317,7 @@ class Trade implements ITrade
                     $licence->establishment_date  = $refOldLicece->establishment_date;
                     $licence->apply_date          = $mNowdate;
                     
-                    $licence->licence_for_years   = $request->licenseDetails['licenseFor'];
+                    $licence->licence_for_years   = $mApplicationTypeId==2 ? $request->licenseDetails['licenseFor']: $refOldLicece->licence_for_years ;
                     $licence->address             = $refOldLicece->address;
                     $licence->landmark            = $refOldLicece->landmark;
                     $licence->pin_code            = $refOldLicece->pin_code;
@@ -719,6 +719,49 @@ class Trade implements ITrade
      * |      5) chargeData['response']==false || chargeData['total_charge']!=request->totalCharge      | (Charge not Calculate Or Total Charge Missmatch)
      * |
      * |----------------------basic logic---------------------------------
+     * | @var totalCharge = chargeData['total_charge'] 
+     * | @var mDenialAmount = chargeData['notice_amount']
+     * | @var transactionType = Config::get('TradeConstant.APPLICATION-TYPE-BY-ID.'.refLecenceData->application_type_id)    | NEW LICENSE, RENEWAL, AMENDMENT
+     * | @var Tradetransaction model(Tradetransaction)
+     * | Tradetransaction->transaction_type = transactionType
+     * | Tradetransaction->transaction_date = mNowDate      |   curent date
+     * | Tradetransaction->payment_mode     = request->paymentMode
+     * | Tradetransaction->paid_amount      = totalCharge        |  total paid amount
+     * | Tradetransaction->penalty          = chargeData['penalty'] + mDenialAmount + chargeData['arear_amount'] (total penalty)
+     * | Tradetransaction->status =         |   when request->paymentMode != CASH then 2 else 1 (default)
+     * |
+     * |   **************************transaction on Fin-Rebet model(TradeFineRebetDetail)*******************
+     * | ++++++ first row
+     * | TradeFineRebet->transaction_id = transaction_id (Tradetransaction->id)
+     * | TradeFineRebet->head_name      = 'Delay Apply License'
+     * | TradeFineRebet->amount         = chargeData['penalty']  (leat penalty)
+     * |
+     * | ++++++ second row (not neccesary)
+     * | mDenialAmount = mDenialAmount + $chargeData['arear_amount']       | update priviuse value (Other Penalty)
+     * | ---TradeFineRebet2  model(TradeFineRebetDetail)
+     * | TradeFineRebet2->transaction_id = transaction_id (Tradetransaction->id)
+     * | TradeFineRebet2->head_name      = 'Denial Apply'
+     * | TradeFineRebet2->amount         = mDenialAmount
+     * 
+     * |    *************************transaction on Cheque Details model(TradeChequeDtl) *****************************************
+     * | ++++++ only on Case Of request->paymentMode != 'CASH'
+     * | tradeChq->transaction_id = transaction_id (Tradetransaction->id)
+     * | tradeChq->cheque_no      = request->chequeNo
+     * | tradeChq->cheque_date    = request->chequeDate
+     * | tradeChq->bank_name      = request->bankName
+     * | tradeChq->branch_name    = request->branchName
+     * | tradeChq->emp_details_id = refUserId
+     * | tradeChq->created_on     = mTimstamp
+     * | 
+     * | mPaymentStatus           = 2
+     * |
+     * |    *********************** transaction on level model(TradeLevelPending)******************************
+     * | ++++++ only on Case Of (mPaymentStatus==1 && refLecenceData->document_upload_status =1 && refLecenceData->pending_status=0 && !refLevelData)
+     * | level_insert->licence_id            = licenceId
+     * | level_insert->sender_user_type_id   = refWorkflows['initiator']['id']
+     * | level_insert->receiver_user_type_id = refWorkflows['initiator']['forward_id']
+     * |
+                $level_insert->sender_user_id        = $refUserId
      */
     public function paymentCounter(Request $request)
     {        
@@ -727,7 +770,7 @@ class Trade implements ITrade
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id; 
             $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID'); 
-            $refWorkflows   = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);    
+            $refWorkflows   = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);  
             $refNoticeDetails= null;
             $refDenialId    = null;
             $refUlbDtl      = UlbMaster::find($refUlbId);
@@ -737,10 +780,10 @@ class Trade implements ITrade
             $mUserType      = $this->_parent->userType();
             $mNowDate       = Carbon::now()->format('Y-m-d'); 
             $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
-            $mDenialAmount   = 0;
+            $mDenialAmount  = 0;
             $mPaymentStatus = 1;            
-            $mNoticeDate = null;            
-            $mShortUlbName = "";
+            $mNoticeDate    = null;            
+            $mShortUlbName  = "";
             $mWardNo        = "";
             foreach($refUlbName as $val)
             {
@@ -755,6 +798,7 @@ class Trade implements ITrade
             }
             $refLecenceData = ActiveLicence::find($request->licenceId);
             $licenceId = $request->licenceId;
+            $refLevelData = $this->getLevelData($licenceId);
             if(!$refLecenceData)
             {
                 throw new Exception("Licence Data Not Found !!!!!");
@@ -810,32 +854,32 @@ class Trade implements ITrade
             #-------- Transection -------------------
             DB::beginTransaction();
             $Tradetransaction = new TradeTransaction ;
-            $Tradetransaction->related_id = $licenceId;
-            $Tradetransaction->ward_mstr_id = $refLecenceData->ward_mstr_id;
+            $Tradetransaction->related_id       = $licenceId;
+            $Tradetransaction->ward_mstr_id     = $refLecenceData->ward_mstr_id;
             $Tradetransaction->transaction_type = $transactionType;
             $Tradetransaction->transaction_date = $mNowDate;
-            $Tradetransaction->payment_mode = $request->paymentMode;
-            $Tradetransaction->paid_amount = $totalCharge;
-            $Tradetransaction->penalty = $chargeData['penalty'] + $mDenialAmount + $chargeData['arear_amount'];
+            $Tradetransaction->payment_mode     = $request->paymentMode;
+            $Tradetransaction->paid_amount      = $totalCharge;
+            $Tradetransaction->penalty          = $chargeData['penalty'] + $mDenialAmount + $chargeData['arear_amount'];
             if ($request->paymentMode != 'CASH') 
             {
                 $Tradetransaction->status = 2;
             }
-            $Tradetransaction->emp_details_id = $refUserId;
-            $Tradetransaction->created_on = $mTimstamp;
-            $Tradetransaction->ip_address = '';
-            $Tradetransaction->ulb_id = $refUlbId;
+            $Tradetransaction->emp_details_id   = $refUserId;
+            $Tradetransaction->created_on       = $mTimstamp;
+            $Tradetransaction->ip_address       = '';
+            $Tradetransaction->ulb_id           = $refUlbId;
             $Tradetransaction->save();
-            $transaction_id = $Tradetransaction->id;
-            $Tradetransaction->transaction_no = "TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
+            $transaction_id                     = $Tradetransaction->id;
+            $Tradetransaction->transaction_no   = $this->createTransactionNo($transaction_id);//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
             $Tradetransaction->update();
 
             $TradeFineRebet = new TradeFineRebetDetail;
             $TradeFineRebet->transaction_id = $transaction_id;
-            $TradeFineRebet->head_name = 'Delay Apply License';
-            $TradeFineRebet->amount = $chargeData['penalty'];
+            $TradeFineRebet->head_name      = 'Delay Apply License';
+            $TradeFineRebet->amount         = $chargeData['penalty'];
             $TradeFineRebet->value_add_minus = 'Add';
-            $TradeFineRebet->created_on = $mTimstamp;
+            $TradeFineRebet->created_on     = $mTimstamp;
             $TradeFineRebet->save();
 
             $mDenialAmount = $mDenialAmount + $chargeData['arear_amount'];
@@ -843,10 +887,10 @@ class Trade implements ITrade
             {
                 $TradeFineRebet2 = new TradeFineRebetDetail;
                 $TradeFineRebet2->transaction_id = $transaction_id;
-                $TradeFineRebet2->head_name = 'Denial Apply';
-                $TradeFineRebet2->amount = $mDenialAmount;
+                $TradeFineRebet2->head_name      = 'Denial Apply';
+                $TradeFineRebet2->amount         = $mDenialAmount;
                 $TradeFineRebet2->value_add_minus = 'Add';
-                $TradeFineRebet2->created_on = $mTimstamp;
+                $TradeFineRebet2->created_on     = $mTimstamp;
                 $TradeFineRebet2->save();
             }
 
@@ -854,23 +898,29 @@ class Trade implements ITrade
             {
                 $tradeChq = new TradeChequeDtl;
                 $tradeChq->transaction_id = $transaction_id;
-                $tradeChq->cheque_no = $request->chequeNo;
-                $tradeChq->cheque_date = $request->chequeDate;
-                $tradeChq->bank_name = $request->bankName;
-                $tradeChq->branch_name = $request->branchName;
+                $tradeChq->cheque_no      = $request->chequeNo;
+                $tradeChq->cheque_date    = $request->chequeDate;
+                $tradeChq->bank_name      = $request->bankName;
+                $tradeChq->branch_name    = $request->branchName;
                 $tradeChq->emp_details_id = $refUserId;
-                $tradeChq->created_on = $mTimstamp;
-                $mPaymentStatus = 2;
+                $tradeChq->created_on     = $mTimstamp;
                 $tradeChq->save();
+                $mPaymentStatus = 2;
             } 
-            if($mPaymentStatus==1 && $refLecenceData->document_upload_status =1 && $refLecenceData->pending_status=0)
+            if($mPaymentStatus==1 && $refLecenceData->document_upload_status =1 && $refLecenceData->pending_status=0 && !$refLevelData)
             {
                 $refLecenceData->current_user_id = $refWorkflows['initiator']['id'];
+                $level_insert = new TradeLevelPending;
+                $level_insert->licence_id            = $licenceId;
+                $level_insert->sender_user_type_id   = $refWorkflows['initiator']['id'];
+                $level_insert->receiver_user_type_id = $refWorkflows['initiator']['forward_id'];
+                $level_insert->sender_user_id        = $refUserId;
+                $level_insert->save();
             }
             
             $provNo = $this->createProvisinalNo($mShortUlbName,$mWardNo,$licenceId);
             $refLecenceData->provisional_license_no = $provNo;
-            $refLecenceData->payment_status = $mPaymentStatus;
+            $refLecenceData->payment_status         = $mPaymentStatus;
             $refLecenceData->save();
                             
             if($refNoticeDetails)
@@ -2230,7 +2280,6 @@ class Trade implements ITrade
                 {
                     foreach($owneres as $key=>$val)
                     {
-                    
                         $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenc_data->id,$val->id);
                         if(!isset($owneres[$key]["Identity Proof"]["document_path"]) && $data["documentsList"]["Identity Proof"]["is_mandatory"])
                         {
@@ -2968,6 +3017,17 @@ class Trade implements ITrade
     public function createProvisinalNo($shortUlbName,$wardNo,$licenceId)
     {
         return $shortUlbName . $wardNo . date('mdy') . $licenceId;
+    }
+
+    /**
+     * |-----------------------------------------------------------------------------------
+     * |  TRANML      |    14        |  1234         | 2022       | 01        |  53        |
+     * |    (3)       |   date('d')  | transactionId | date('Y')  | date('m') | date('s')  |
+     * |____________________________________________________________________________________
+     */
+    public function createTransactionNo($transactionId)
+    {
+        return "TRANML" . date('d') . $transactionId . date('Y') . date('m') . date('s');
     }
     public function cltCharge(array $args)
     {
