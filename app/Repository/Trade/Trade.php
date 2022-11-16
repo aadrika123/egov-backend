@@ -671,7 +671,7 @@ class Trade implements ITrade
                     $licence->payment_status         = 1;
                     $licence->save();
                 }
-                DB::commit();
+                // DB::commit();
 
                 $res['applicationNo']=$mAppNo;
                 $res['applyLicenseId'] = $licenceId;
