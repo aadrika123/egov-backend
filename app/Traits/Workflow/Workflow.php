@@ -5,6 +5,7 @@ namespace App\Traits\Workflow;
 use App\Models\WorkflowCandidate;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -188,5 +189,23 @@ trait Workflow
                     WHERE r.is_initiator=TRUE 
                     ";
         return $query;
+    }
+
+    /**
+     * | Workflow Track Trait
+     * | @param workflowTrack new model object
+     * | @param req requested parameters to be saved in workflow track
+     */
+    public function workflowTrack($workflowTrack, $req)
+    {
+        $workflowTrack->workflow_id = $req['workflowId'];
+        $workflowTrack->citizen_id = $req['citizenId'];
+        $workflowTrack->module_id = $req['moduleId'];
+        $workflowTrack->ref_table_dot_id = 'active_safs.id';
+        $workflowTrack->ref_table_id_value = $req['safId'];
+        $workflowTrack->message = $req['message'];
+        $workflowTrack->commented_by = $req['citizenId'];
+        $workflowTrack->track_date = Carbon::now()->format('Y-m-d H:i:s');
+        $workflowTrack->forwarded_to = $req['forwardedTo'] ?? null;
     }
 }

@@ -16,6 +16,8 @@ use App\Repository\MenuPermission\Interface\iMenuItemsRepository;
 use App\Repository\MenuPermission\Interface\iMenuMapRepository;
 use App\Repository\MenuPermission\Interface\iMenuRolesRepository;
 use App\Repository\MenuPermission\Interface\iMenuUlbrolesRepository;
+use App\Repository\Payment\Concrete\PaymentRepository;
+use App\Repository\Payment\Interfaces\iPayment;
 use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\Property\Concrete\ConcessionRepository;
 use App\Repository\Property\Interfaces\iConcessionRepository;

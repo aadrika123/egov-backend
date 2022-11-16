@@ -50,4 +50,14 @@ class CitizenController extends Controller
     {
         return $this->Repository->getAllAppliedApplications($req);
     }
+
+    // Independent Comment
+    public function commentIndependent(Request $req)
+    {
+        $req->validate([
+            'message' => 'required|string'
+        ]);
+
+        return $this->Repository->commentIndependent($req);
+    }
 }

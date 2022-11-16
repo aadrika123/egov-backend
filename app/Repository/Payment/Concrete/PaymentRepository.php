@@ -3,12 +3,18 @@
 namespace App\Repository\Payment\Concrete;
 
 use App\Models\Payment;
-use App\Models\Payment\DepartmentMaster; //<----------- model(CAUTION)
+use App\Models\Payment\DepartmentMaster;
+use App\Models\Payment\PaymentGatewayDetail;
 use App\Models\Payment\PaymentGatewayMaster;
-use App\Models\Payment\UlbDepartmentMap; //<----------- model(CAUTION)
+use App\Models\Payment\WebhookPaymentData;
 use App\Models\PaymentMaster; //<----------- model(CAUTION)
 use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
+use App\Repository\Property\Concrete\SafRepository;
+use Illuminate\Support\Facades\Validator;
+use App\Traits\Payment\Razorpay;
+
+
 use Exception;
 
 /**
@@ -18,6 +24,7 @@ use Exception;
  */
 class PaymentRepository implements iPayment
 {
+    use Razorpay; //<-------------- here (TRAIT)
 
     /**
      * | Function for Store Payment
@@ -83,6 +90,17 @@ class PaymentRepository implements iPayment
      */
     public function getDepartmentByulb(Request $req)
     {
+        #   validation
+        $validateUser = Validator::make(
+            $req->all(),
+            [
+                'ulbId'   => 'required|integer',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return responseMsg(false, 'validation error', $validateUser->errors(), 401);
+        }
         try {
             $mReadDepartment = DepartmentMaster::select(
                 'department_masters.id',
@@ -111,15 +129,28 @@ class PaymentRepository implements iPayment
      */
     public function getPaymentgatewayByrequests(Request $req)
     {
+        #   validation
+        $validateUser = Validator::make(
+            $req->all(),
+            [
+                'departmentId'   => 'required|integer',
+                'ulbId'   => 'required|integer',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return responseMsg(false, 'validation error', $validateUser->errors(), 401);
+        }
+
         try {
             $mReadPg = PaymentGatewayMaster::select(
                 'payment_gateway_masters.id',
                 'payment_gateway_masters.pg_full_name AS paymentGatewayName'
-            )          
+            )
                 ->join('department_pg_maps', 'department_pg_maps.pg_id', '=', 'payment_gateway_masters.id')
-                ->join('ulb_department_maps','ulb_department_maps.department_id','=','department_pg_maps.department_id')
+                ->join('ulb_department_maps', 'ulb_department_maps.department_id', '=', 'department_pg_maps.department_id')
                 ->where('ulb_department_maps.department_id', $req->departmentId)
-                ->where('ulb_department_maps.ulb_id',$req->ulbId)
+                ->where('ulb_department_maps.ulb_id', $req->ulbId)
                 ->get();
 
             if (!empty($mReadPg['0'])) {
@@ -128,6 +159,138 @@ class PaymentRepository implements iPayment
             return responseMsg(false, "Data not found", "");
         } catch (Exception $error) {
             return responseMsg(false, "error", $error);
+        }
+    }
+
+
+    /**
+     * | Get Payment gateway details by required gateway
+     * | @param req request from the frontend
+     * | @param error collecting the operation error
+     * | @var mReadRazorpay collecting data from the table RazorpayPgMaster
+     * | 
+     */
+    public function getPgDetails(Request $req)
+    {
+        # validation
+        $validateUser = Validator::make(
+            $req->all(),
+            [
+                'departmentId'   => 'required|integer',
+                'ulbId'   => 'required|integer',
+                'paymentGatewayId'   => 'required|integer',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return responseMsg(false, 'validation error', $validateUser->errors(), 401);
+        }
+        try {
+            $mReadRazorpay = PaymentGatewayDetail::select(
+                'payment_gateway_details.pg_name AS paymentGatewayName',
+                'payment_gateway_details.pg_details AS details'
+            )
+                ->join('payment_gateway_masters', 'payment_gateway_masters.id', '=', 'payment_gateway_details.id')
+                ->join('department_pg_maps', 'department_pg_maps.pg_id', '=', 'payment_gateway_masters.id')
+                ->join('ulb_department_maps', 'ulb_department_maps.department_id', '=', 'department_pg_maps.department_id')
+
+                ->where('ulb_department_maps.department_id', $req->departmentId)
+                ->where('ulb_department_maps.ulb_id', $req->ulbId)
+                ->where('payment_gateway_masters.id', $req->paymentGatewayId)
+                ->get();
+            if (!empty($mReadRazorpay['0'])) {
+                return responseMsg(true, "Razorpay Data!", $mReadRazorpay);
+            }
+
+            return responseMsg(false, "Data Not found", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "error", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * | Get Payment details by readind the webhook table
+     * | @param req request from the frontend
+     * | @param error collecting the operation error
+     * | @var mReadPayment collecting data from the table WebhookPaymentData
+     * | 
+     */
+    public function getWebhookDetails()
+    {
+        try {
+            $mReadPayment =  WebhookPaymentData::select(array(
+                'event',
+                'payment_amount AS amount',
+                'payment_order_id AS orderId',
+                'payment_contact AS contact',
+                'payment_method AS method',
+                'payment_email AS email',
+                'payment_status AS status'
+            ))->get();
+
+            return responseMsg(true, "Data fetched!", $mReadPayment);
+        } catch (Exception $error) {
+            return responseMsg(false, "Error listed below!", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * | calling trait for the generation of order id
+     * | @param request request from the frontend
+     * | @param 
+     * | @var 
+     * | 
+     */
+    public function getTraitOrderId(Request $request)  //<------------------ here (INVALID)
+    {
+        try {
+            $safRepo = new SafRepository();
+            $calculateSafById = $safRepo->calculateSafBySafId($request);
+            $mTotalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
+            // return $calculateSafById;
+            if ($request->amount == $mTotalAmount) {
+                $mOrderDetails = $this->saveGenerateOrderid($request);
+                return responseMsg(true, "OrderId Generated!", $mOrderDetails);
+            }
+            return responseMsg(false, "Operation Amount not matched!", $request->amount);
+        } catch (Exception $error) {
+            return $error;
+        }
+    }
+
+
+    /**
+     * | verifiying the payment success and the signature key
+     * | @param requet request from the frontend
+     * | @param error collecting the operation error
+     * | @var 
+     * | 
+     */
+    public function verifyPaymentStatus(Request $request)
+    {
+        # validation 
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'razorpayOrderId' => 'required',
+                'razorpayPaymentId' => 'required',
+                // 'razorpaySignature' => 'required'
+            ]
+        );
+        if ($validated->fails()) {
+            return responseMsg(false, "validation error", $validated->errors(), 401);
+        }
+        try {
+            $mAttributes = null;
+            if (!empty($request->razorpaySignature)) {
+                $mVerification = $this->paymentVerify($request, $mAttributes);
+                return responseMsg(true, "Operation Success!", $mVerification);
+            }
+            return ("error");
+        } catch (Exception $error) {
+            return responseMsg(false, "Error listed Below!", $error->getMessage());
         }
     }
 }

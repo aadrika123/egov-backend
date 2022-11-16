@@ -299,13 +299,13 @@ class SafCalculation
         $readRoadType = $this->_readRoadType[$this->_effectiveDateRule3];
         $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$readRoadType");
         $column = $col1 . $col2 . $col3;
-        $capitalValueRate = json_decode(Redis::get('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo));         // Check Capital Value on Redis
+        $capitalValueRate = json_decode(Redis::get('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-' . $column));         // Check Capital Value on Redis
         if (!$capitalValueRate) {
             $capitalValueRate = PropMCapitalValueRateRaw::select($column)
                 ->where('ulb_id', $this->_ulbId)
-                ->where('ward_no', $this->_wardNo)                                                                                  // Ward No Fixed temprory
+                ->where('ward_no', $this->_wardNo)                                                                                                  // Ward No Fixed temprory
                 ->first();
-            $this->_redis->set('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo, json_encode($capitalValueRate));
+            $this->_redis->set('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-' . $column, json_encode($capitalValueRate));
         }
         return $capitalValueRate->$column;
     }
@@ -789,7 +789,7 @@ class SafCalculation
             "arv" => roundFigure($arv / 4),
             "carpetArea" => $carpetArea,
             "multiFactor" => $multiFactor,
-            "rentalRate" => (float)$rentalRate,
+            "rentalRate" => roundFigure($rentalRate),
             "occupancyFactor" => $paramOccupancyFactor,
 
             "holdingTax" => 0,

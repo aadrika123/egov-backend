@@ -21,4 +21,9 @@ interface iPayment
     # payment Gateway (RAZORPAY/Property)
     public function getDepartmentByulb(Request $req);
     public function getPaymentgatewayByrequests(Request $req);
+    public function getPgDetails(Request $req);
+    public function getWebhookDetails();
+    public function getTraitOrderId(Request $request); //<--------------- here(INVALID) 
+    public function verifyPaymentStatus(Request $request);
+
 }

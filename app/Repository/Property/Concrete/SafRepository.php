@@ -27,12 +27,14 @@ use App\Models\Property\PropMOccupancyType;
 use App\Models\Property\PropMOwnershipType as PropertyPropMOwnershipType;
 use App\Models\Property\PropMPropertyType;
 use App\Models\Property\PropMUsageType;
+use App\Models\Property\PropTransaction;
 use App\Models\Property\SafsDemand;
 use App\Models\Workflows\WfRole as WorkflowsWfRole;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
+use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF as GlobalSAF;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Redis;
@@ -49,6 +51,7 @@ class SafRepository implements iSafRepository
     use WardPermission;
     use WorkflowTrait;
     use GlobalSAF;
+    use Razorpay;
     /**
      * | Citizens Applying For SAF
      * | Proper Validation will be applied after 
@@ -744,21 +747,65 @@ class SafRepository implements iSafRepository
     }
 
     /**
-     * | SAF Payment 
+     * | Calculate SAF by Saf ID
+     * | @param req request saf id
+     * | @var array contains all the details for the saf id
+     * | @var data contains the details of the saf id by the current object function
+     * | @return safTaxes returns all the calculated demand
+     * | Status-Closed
+     */
+    public function calculateSafBySafId($req)
+    {
+        $safDetails = $this->details($req);
+        $req = $safDetails->original['data'];
+        $array = $this->generateSafRequest($req);                                                       // Generate SAF Request Using Trait
+        $safCalculation = new SafCalculation();
+        $request = new Request($array);
+        $safTaxes = $safCalculation->calculateTax($request);
+        return $safTaxes;
+    }
+
+    /**
+     * | Generate Order ID 
+     * | @param req requested Data
+     */
+
+    public function generateOrderId($req)
+    {
+        try {
+            $safRepo = new SafRepository();
+            $calculateSafById = $safRepo->calculateSafBySafId($req);
+            $totalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
+
+            if ($req->amount == $totalAmount) {
+                $orderDetails = $this->saveGenerateOrderid($req);
+
+                return responseMsg(true, "Order ID Generated", remove_null($orderDetails));
+            }
+
+            return responseMsg(false, "Amount Not Matched", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | SAF Payment
+     * | @param req  
      * | Status-Open
      */
     public function paymentSaf($req)
     {
+        $safDetails = $this->details($req);
+        $req = $safDetails->original['data'];
+        $array = $this->generateSafRequest($req);
         $safCalculation = new SafCalculation();
-        $safTaxes = $safCalculation->calculateTax($req);
-        $taxDetails = $safTaxes->original['data']['details'];
-        $payableAmount = $safTaxes->original['data']['demand'];
+        $request = new Request($array);
+        $safTaxes = $safCalculation->calculateTax($request);
+        $demands = $safTaxes->original['data']['demand'];
 
-        $readSafDemand = SafsDemand::select('id')->where('saf_id', $req->safId)->get();
-        $readFirstDemandId = $readSafDemand->first()->id;
-        $readLastDemandId = $readSafDemand->last()->id;
-        // return $readSafDemand;
-        foreach ($readSafDemand as $readSafDemands) {
-        }
+        $propTrans = new PropTransaction();
+        $propTrans->saf_id = $req->id;
+        $propTrans->tran_date = "";
     }
 }
