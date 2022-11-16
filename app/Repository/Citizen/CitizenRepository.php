@@ -193,14 +193,11 @@ class CitizenRepository implements iCitizenRepository
      */
     public function appliedSafApplications($userId)
     {
-        $propertyApplications = json_decode(Redis::get('appliedSafApplications:' . $userId));                        // Get Applied Applications by Redis (Redis Expiration On Property Apply)
-        if (!$propertyApplications) {
-            $propertyApplications = DB::table('active_safs')
-                ->select('id as application_id', 'saf_no', 'holding_no', 'assessment_type', 'application_date', 'payment_status', 'saf_pending_status', 'created_at', 'updated_at')
-                ->where('user_id', $userId)
-                ->get();
-            $this->_redis->set('appliedSafApplications:' . $userId, json_encode($propertyApplications));
-        }
+        $propertyApplications = DB::table('active_safs')
+            ->select('id as application_id', 'saf_no', 'holding_no', 'assessment_type', 'application_date', 'payment_status', 'saf_pending_status', 'created_at', 'updated_at')
+            ->where('user_id', $userId)
+            ->orderByDesc('id')
+            ->get();
         return $propertyApplications;
     }
 
