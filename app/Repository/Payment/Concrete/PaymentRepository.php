@@ -3,13 +3,16 @@
 namespace App\Repository\Payment\Concrete;
 
 use App\Models\Payment;
-use App\Models\Payment\DepartmentMaster; 
+use App\Models\Payment\DepartmentMaster;
 use App\Models\Payment\PaymentGatewayDetail;
-use App\Models\Payment\PaymentGatewayMaster; 
+use App\Models\Payment\PaymentGatewayMaster;
+use App\Models\Payment\WebhookPaymentData;
 use App\Models\PaymentMaster; //<----------- model(CAUTION)
 use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\Payment\Razorpay;
+use App\Repository\Property\Interfaces\iSafRepository;
 
 
 use Exception;
@@ -21,6 +24,8 @@ use Exception;
  */
 class PaymentRepository implements iPayment
 {
+    use Razorpay; //<-------------- here (TRAIT)
+
     /**
      * | Function for Store Payment
      * | @param Request
@@ -196,9 +201,70 @@ class PaymentRepository implements iPayment
             if (!empty($mReadRazorpay['0'])) {
                 return responseMsg(true, "Razorpay Data!", $mReadRazorpay);
             }
+
             return responseMsg(false, "Data Not found", "");
         } catch (Exception $error) {
             return responseMsg(false, "error", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * | Get Payment details by readind the webhook table
+     * | @param req request from the frontend
+     * | @param error collecting the operation error
+     * | @var mReadPayment collecting data from the table WebhookPaymentData
+     * | 
+     */
+    public function getWebhookDetails()
+    {
+        try {
+            $mReadPayment =  WebhookPaymentData::select(array(
+                'event',
+                'payment_amount AS amount',
+                'payment_order_id AS orderId',
+                'payment_contact AS contact',
+                'payment_method AS method',
+                'payment_email AS email',
+                'payment_status AS status'
+            ))->get();
+
+            return responseMsg(true, "Data fetched!", $mReadPayment);
+        } catch (Exception $error) {
+            return responseMsg(false, "Error listed below!", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * | calling trait for the generation of order id
+     * | @param req request from the frontend
+     * | @param error collecting the operation error
+     * | @var mReadRazorpay collecting data from the table RazorpayPgMaster
+     * | 
+     */
+    public function getTraitOrderId(Request $request)
+    {
+        # validation....
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'amount' => 'required|max:200',
+                'userId' => 'required',
+                'workflowId' => 'required'
+            ]
+        );
+        if ($validated->fails()) {
+            return responseMsg(false, "validation error!", $validated->errors(), 401);
+        }
+
+        try {
+            $safRepo=new iSafRepository();
+            $calculateSafById=$safRepo->calculateSafBySafId();
+            $mOrderDetails = $this->saveGenerateOrderid($request);
+            return responseMsg(true, "Order id Gernerated!", $mOrderDetails);
+        } catch (Exception $error) {
+            return $error;
         }
     }
 }

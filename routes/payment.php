@@ -26,4 +26,6 @@ Route::controller(RazorpayPaymentController::class)->group(function () {
     Route::post('get-department-byulb', 'getDepartmentByulb');
     Route::post('get-paymentgateway-byrequests', 'getPaymentgatewayByrequests');
     Route::post('get-pg-details', 'getPgDetails');
+    Route::get('get-webhook-details', 'getWebhookDetails'); 
+    Route::post('get-order-id', 'getTraitOrderId');
 });

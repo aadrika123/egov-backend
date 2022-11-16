@@ -54,4 +54,15 @@ class RazorpayPaymentController extends Controller
          return $this->Prepository->getPgDetails($req);
      }
 
+     //get finla payment details of the webhook
+     public function getWebhookDetails()
+     {
+         return $this->Prepository->getWebhookDetails();
+     }
+
+     //get order Id of the transaction
+     public function getTraitOrderId(Request $req)
+     {
+         return $this->Prepository->getTraitOrderId($req);
+     }
 }

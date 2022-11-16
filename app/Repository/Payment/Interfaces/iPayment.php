@@ -22,5 +22,7 @@ interface iPayment
     public function getDepartmentByulb(Request $req);
     public function getPaymentgatewayByrequests(Request $req);
     public function getPgDetails(Request $req);
+    public function getWebhookDetails();
+    public function getTraitOrderId(Request $request);
 
 }
