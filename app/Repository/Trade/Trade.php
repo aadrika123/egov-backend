@@ -263,7 +263,7 @@ class Trade implements ITrade
                 $licence = new ActiveLicence();
                 
                 #----------------Crate Application--------------------
-                if (in_array($mApplicationTypeId, ["2", "3","4"])) # code for Renewal,Amendment,Surender respectively
+                if (in_array($mApplicationTypeId, ["2","4"])) # code for Renewal,Amendment,Surender respectively
                 {   
                     
                     $mOldLicenceId = $request->id; 
@@ -354,6 +354,117 @@ class Trade implements ITrade
                         $owner->district        = $owners->district;
                         $owner->state           = $owners->state;
                         $owner->emailid         = $owners->emailid;
+                        $owner->emp_details_id  = $refUserId;
+                        $owner->save();
+    
+                    }
+                }
+                elseif($mApplicationTypeId==3)
+                {
+                    $mOldLicenceId = $request->id; 
+                    $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+                    $refOldLicece = ActiveLicence::find($mOldLicenceId);
+                    if(!$refOldLicece)
+                    {
+                        throw new Exception("Old Licence Not Found");
+                    }
+                    elseif($refOldLicece->valid_upto > $nextMonth)
+                    {
+                            throw new Exception("Licence Valice Upto ".$refOldLicece->valid_upto);
+                    } 
+                    elseif($refOldLicece->pending_status!=5)
+                    {
+                            throw new Exception("Application Aready Apply Please Track  ".$refOldLicece->application_no);
+                    }
+                    $mnaturOfBusiness = $refOldLicece->nature_of_bussiness;
+                    $wardId = $refOldLicece->ward_mstr_id;                
+                    $mWardNo = array_filter($data['wardList'], function ($val) use($wardId ){
+                        return $val['id'] == $wardId ;
+                    });
+                    $mWardNo = array_values($mWardNo)[0]['ward_no']??"";
+                    $refOldowners = ActiveLicenceOwner::where('licence_id',$mOldLicenceId)
+                                ->get();
+                    
+                    $licence->firm_type_id        = $request->initialBusinessDetails['firmType'];
+                    $licence->otherfirmtype       = $request->initialBusinessDetails['otherFirmType']??null;
+                    $licence->application_type_id = $mApplicationTypeId;                    
+                    $licence->category_type_id    = $refOldLicece->category_type_id ;
+                    $licence->ownership_type_id   = $request->initialBusinessDetails['ownershipType'];//$refOldLicece->ownership_type_id;
+                    $licence->ward_mstr_id        = $refOldLicece->ward_mstr_id;
+                    $licence->new_ward_mstr_id    = $refOldLicece->new_ward_mstr_id;
+                    $licence->ulb_id              = $refUlbId;
+    
+                    $licence->prop_dtl_id         = $mProprtyId;
+                    $licence->holding_no          = $request->firmDetails['holdingNo'];
+                    $licence->nature_of_bussiness = $refOldLicece->nature_of_bussiness;
+                    $licence->firm_name           = $refOldLicece->firm_name;
+                    $licence->premises_owner_name = $refOldLicece->premises_owner_name;
+                    $licence->brife_desp_firm     = $request->firmDetails['businessDescription'];//$refOldLicece->brife_desp_firm;
+                    $licence->area_in_sqft        = $request->firmDetails['areaSqft'];//$refOldLicece->area_in_sqft;
+                    
+                    $licence->k_no                = $refOldLicece->k_no;
+                    $licence->bind_book_no        = $refOldLicece->bind_book_no;
+                    $licence->account_no          = $refOldLicece->account_no;
+                    $licence->pan_no              = $refOldLicece->pan_no;
+                    $licence->tin_no              = $refOldLicece->tin_no;
+                    $licence->salestax_no         = $refOldLicece->salestax_no;
+                    $licence->emp_details_id      = $refUserId;
+                    $licence->establishment_date  = $refOldLicece->establishment_date;
+                    $licence->apply_date          = $mNowdate;
+                    
+                    $licence->licence_for_years   = $request->licenseDetails['licenseFor'];
+                    $licence->address             = $refOldLicece->address;
+                    $licence->landmark            = $refOldLicece->landmark;
+                    $licence->pin_code            = $refOldLicece->pin_code;
+                    $licence->street_name         = $refOldLicece->street_name;
+                    $licence->property_type       = $refOldLicece->property_type;
+                    $licence->update_status       = 0;
+                    $licence->valid_from          = $refOldLicece->valid_upto;
+                    $licence->license_no          = $refOldLicece->license_no;
+                    $licence->tobacco_status      = $refOldLicece->tobacco_status;
+                    
+                    $licence->apply_from          = $mUserType;
+                    // $licence->current_user_id     = null;
+                    $licence->initiator_id        = $refWorkflows['initiator']['id'];
+                    $licence->finisher_id         = $refWorkflows['finisher']['id'];
+                    $licence->workflow_id         = $refWorkflowId;
+                    
+                    $licence->save();
+                    $licenceId = $licence->id;
+                    
+                    $mAppNo = $this->createApplicationNo($mWardNo,$licenceId);
+                    $licence->application_no = $mAppNo;
+                    $licence->save();
+                    $this->transferExpire($mOldLicenceId,$licenceId);
+                    foreach($refOldowners as $owners)
+                    {
+                        $owner = new ActiveLicenceOwner();
+                        $owner->id              = $owners->id;
+                        $owner->licence_id      = $licenceId;
+                        $owner->owner_name      = $owners->owner_name;
+                        $owner->guardian_name   = $owners->guardian_name;
+                        $owner->address         = $owners->address;
+                        $owner->mobile          = $owners->mobile;
+                        $owner->city            = $owners->city;
+                        $owner->district        = $owners->district;
+                        $owner->state           = $owners->state;
+                        $owner->emailid         = $owners->emailid;
+                        $owner->emp_details_id  = $refUserId;
+                        $owner->save();
+    
+                    }
+                    foreach($request->ownerDetails as $owners)
+                    {
+                        $owner = new ActiveLicenceOwner();
+                        $owner->licence_id      = $licenceId;
+                        $owner->owner_name      = $owners['businessOwnerName'];
+                        $owner->guardian_name   = $owners['guardianName']??null;
+                        $owner->address         = $owners['address']??null;
+                        $owner->mobile          = $owners['mobileNo'];
+                        $owner->city            = $owners['city']??null;
+                        $owner->district        = $owners['district']??null;
+                        $owner->state           = $owners['state']??null;
+                        $owner->emailid         = $owners['email']??null;
                         $owner->emp_details_id  = $refUserId;
                         $owner->save();
     
