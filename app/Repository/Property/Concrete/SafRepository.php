@@ -34,6 +34,7 @@ use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
+use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF as GlobalSAF;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Redis;
@@ -50,6 +51,7 @@ class SafRepository implements iSafRepository
     use WardPermission;
     use WorkflowTrait;
     use GlobalSAF;
+    use Razorpay;
     /**
      * | Citizens Applying For SAF
      * | Proper Validation will be applied after 
@@ -761,6 +763,30 @@ class SafRepository implements iSafRepository
         $request = new Request($array);
         $safTaxes = $safCalculation->calculateTax($request);
         return $safTaxes;
+    }
+
+    /**
+     * | Generate Order ID 
+     * | @param req requested Data
+     */
+
+    public function generateOrderId($req)
+    {
+        try {
+            $safRepo = new SafRepository();
+            $calculateSafById = $safRepo->calculateSafBySafId($req);
+            $totalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
+
+            if ($req->amount == $totalAmount) {
+                $orderDetails = $this->saveGenerateOrderid($req);
+
+                return responseMsg(true, "Order ID Generated", remove_null($orderDetails));
+            }
+
+            return responseMsg(false, "Amount Not Matched", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     /**
