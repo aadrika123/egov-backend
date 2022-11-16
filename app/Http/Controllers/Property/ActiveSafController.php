@@ -93,6 +93,18 @@ class ActiveSafController extends Controller
         return $this->Repository->calculateSafBySafId($req);
     }
 
+    // Generate Payment Order ID
+    public function generateOrderId(Request $req)
+    {
+        $req->validate([
+            'id' => 'required|integer',
+            'amount' => 'required|numeric',
+            'module' => 'required|string'
+        ]);
+
+        return $this->Repository->generateOrderId($req);
+    }
+
     // SAF Payment 
     public function paymentSaf(Request $req)
     {

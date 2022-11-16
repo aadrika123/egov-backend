@@ -699,6 +699,7 @@ class Trade implements ITrade
      * | @var refUlbName     = explode(' ',refUlbDtl->ulb_name)
      * | @var refLecenceData  = model object(active_licences)
      * | @var licenceId   = request->licenceId
+     * | @var refLevelData = $this->getLevelData(licenceId)
      * |   
      * | @var mUserData      = this->_parent->getUserRoll(refUserId, refUlbId,refWorkflowId)
      * | @var mUserType      = this->_parent->userType()
@@ -709,6 +710,15 @@ class Trade implements ITrade
      * | @var mNoticeDate = null
      * | @var mShortUlbName = ""        | first charecter of each word
      * | @var mWardNo        = ""
+     * |
+     * |-------------------functions-------------------------------------
+     * |
+     * |  mUserData      = this->_parent->getUserRoll(refUserId, refUlbId,refWorkflowId)
+     * |  mUserType      = $this->_parent->userType()
+     * |  refLevelData   = $this->getLevelData(licenceId)
+     * |  refNoticeDetails = this->readNotisDtl(refLecenceData->id)
+     * |  chargeData    = this->cltCharge(args)
+     * |  this->updateStatusFine(refDenialId, chargeData['notice_amount'], licenceId,1)
      * |
      * |------------------------------------------------------------------
      * | *********************validation**********************************
@@ -948,7 +958,9 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
-   
+   /**
+    * 
+    */
     public function readPaymentRecipt($id, $transectionId) # unauthorised  function
     { 
         try{
@@ -2247,6 +2259,7 @@ class Trade implements ITrade
             {
                 $sms ="Application Forwarded To ".$role->backword_name;
                 $receiver_user_type_id = $role->backward_role_id;
+                $licence_pending = $init_finish["initiator"]['id']==$role->backward_role_id ? 3 : $licence_pending;
             }
             elseif($request->btn=="btc" && !$role->is_initiator)
             {
@@ -2266,6 +2279,13 @@ class Trade implements ITrade
                 $receiver_user_type_id = $role->forward_role_id;
 
             } 
+            elseif($request->btn=="forward" && $role->is_initiator && $level_data)
+            {
+                $licence_pending = 2;
+                $sms ="Application Forwarded To ";
+                $receiver_user_type_id = $level_data->sender_user_type_id;
+
+            }
             if($request->btn=="forward" && $role->is_initiator)
             {
                 $doc = (array) null;
@@ -2341,7 +2361,7 @@ class Trade implements ITrade
 
                 
             }
-
+            
             if(!$role->is_finisher && !$receiver_user_type_id)  
             {
                 throw new Exception("Next Role Not Found !!!....");
@@ -2358,7 +2378,7 @@ class Trade implements ITrade
                 $level_data->forward_time =Carbon::now()->format('H:s:i');
                 $level_data->save();
             }
-            if(!$role->is_finisher)
+            if(!$role->is_finisher || in_array($request->btn,["backward","btc"]))
             {                
                 $level_insert = new TradeLevelPending;
                 $level_insert->licence_id = $licenc_data->id;
@@ -2379,7 +2399,7 @@ class Trade implements ITrade
                     {
                         $short_ulb_name.=$val[0];
                     }
-                    $ward_no = UlbWorkflowMaster::select("ward_name")
+                    $ward_no = UlbWardMaster::select("ward_name")
                             ->where("id",$licenc_data->ward_mstr_id)
                             ->first();
                     $ward_no = $ward_no['ward_name'];
@@ -2471,7 +2491,7 @@ class Trade implements ITrade
 
         }
         catch(Exception $e)
-        {
+        { 
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
