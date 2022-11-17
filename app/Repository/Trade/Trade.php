@@ -1537,35 +1537,37 @@ class Trade implements ITrade
     public function readLicenceDtl($id)
     {
         try{
-            
-            $application = $this->getLicenceById($id);
-            $item_name="";
-            $cods = "";
-            if($application->nature_of_bussiness)
+            $mUserType      = $this->_parent->userType();
+            $refApplication = $this->getLicenceById($id);
+            $mItemName      ="";
+            $mCods          = "";
+            if($refApplication->nature_of_bussiness)
             {
-                $items = $this->getLicenceItemsById($application->nature_of_bussiness);                
+                $items = $this->getLicenceItemsById($refApplication->nature_of_bussiness);                
                 foreach($items as $val)
                 {
-                    $item_name .= $val->trade_item.",";
-                    $cods .= $val->trade_code.",";                    
+                    $mItemName  .= $val->trade_item.",";
+                    $mCods      .= $val->trade_code.",";                    
                 }
-                $item_name= trim($item_name,',');
-                $cods= trim($cods,',');
+                $mItemName= trim($mItemName,',');
+                $mCods= trim($mCods,',');
             }
-            $application->items = $item_name;
-            $application->items_code = $cods;
-            $ownerDtl = $this->getOwnereDtlByLId($id);
-            $transactionDtl = $this->readTranDtl($id);
-            $timeLine = $this->getTimelin($id);
-            $documents = $this->getLicenceDocuments($id)->map(function($val){
-                $val->document_pat = !empty(trim($val->document_path))? Storage::url("1.pdf"):"";
-                return $val;
-            });
-            $data['licenceDtl'] = $application;
-            $data['ownerDtl'] = $ownerDtl;
-            $data['transactionDtl'] = $transactionDtl;
-            $data['remarks'] = $timeLine;
-            $data['documents'] = $documents;
+            $refApplication->items      = $mItemName;
+            $refApplication->items_code = $mCods;
+            $refOwnerDtl                = $this->getOwnereDtlByLId($id);
+            $refTransactionDtl          = $this->readTranDtl($id);
+            $refTimeLine                = $this->getTimelin($id);
+            $refUploadDocuments         = $this->getLicenceDocuments($id)->map(function($val){
+                                                $val->document_pat = !empty(trim($val->document_path))? Storage::url("1.pdf"):"";
+                                                return $val;
+                                            });
+
+            $data['licenceDtl']     = $refApplication;
+            $data['ownerDtl']       = $refOwnerDtl;
+            $data['transactionDtl'] = $refTransactionDtl;
+            $data['remarks']        = $refTimeLine;
+            $data['documents']      = $refUploadDocuments;            
+            $data["userType"]       = $mUserType;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
             
@@ -1676,22 +1678,6 @@ class Trade implements ITrade
         {
             return responseMsg(false,$e->getMessage(),$request->all());
         }        
-    }
-    
-    public function readNotisDtl($licence_id)
-    {
-        try{
-            $data = TradeDenialNotice::select("*",
-                    DB::raw("trade_denial_notices.created_on::date AS noticedate")
-                    )
-                    ->where("apply_id",$licence_id)
-                    ->first();
-            return $data;
-        }
-        catch (Exception $e)
-        {
-            echo $e->getMessage();
-        }
     }
 
     public function isvalidateSaf(Request $request)
@@ -2053,7 +2039,6 @@ class Trade implements ITrade
             $data = [
                 "wardList"=>$ward_permission,                
                 "licence"=>$licence,
-                "userType"=>$mUserType,
             ] ;           
             return responseMsg(true, "", $data);
             
@@ -3170,6 +3155,21 @@ class Trade implements ITrade
         catch(Exception $e)
         {
             return $response;
+        }
+    }
+    public function readNotisDtl($licence_id)
+    {
+        try{
+            $data = TradeDenialNotice::select("*",
+                    DB::raw("trade_denial_notices.created_on::date AS noticedate")
+                    )
+                    ->where("apply_id",$licence_id)
+                    ->first();
+            return $data;
+        }
+        catch (Exception $e)
+        {
+            echo $e->getMessage();
         }
     }
     public function getDenialFirmDetails($ulb_id,$notice_no)//for apply application
