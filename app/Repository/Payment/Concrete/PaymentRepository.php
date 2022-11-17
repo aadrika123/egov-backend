@@ -293,19 +293,26 @@ class PaymentRepository implements iPayment
         } catch (Exception $error) {
             return responseMsg(false, "Error listed Below!", $error->getMessage());
         }
-       
     }
 
 
-     /**
+    /**
      * | verifiying the payment success and the signature key
      * | @param requet request from the frontend
      * | @param error collecting the operation error
      * | @var mAttributes
      * | @var mVerification
      */
-    // public function webhookDetails()
-    // {
-    //     return ("EMPTY STACK");
-    // }
+    public function gettingWebhookDetails(Request $request)
+    {
+        try {
+            if (!empty($request)) {
+                $mWebhookDetails = $this->collectWebhookDetails($request);
+                return responseMsg(true, "OPERATION SUCCESS", $mWebhookDetails);
+            }
+            return responseMsg(false, "WEBHOOK DATA NOT ACCUIRED!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "OPERATIONAL ERROR!", $error->getMessage());
+        }
+    }
 }
