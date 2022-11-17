@@ -28,12 +28,12 @@ use App\Models\Property\PropMOwnershipType as PropertyPropMOwnershipType;
 use App\Models\Property\PropMPropertyType;
 use App\Models\Property\PropMUsageType;
 use App\Models\Property\PropTransaction;
-use App\Models\Property\SafsDemand;
 use App\Models\Workflows\WfRole as WorkflowsWfRole;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
+use App\Traits\Helper;
 use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF as GlobalSAF;
 use Carbon\Carbon;
@@ -52,6 +52,7 @@ class SafRepository implements iSafRepository
     use WorkflowTrait;
     use GlobalSAF;
     use Razorpay;
+    use Helper;
     /**
      * | Citizens Applying For SAF
      * | Proper Validation will be applied after 
@@ -808,5 +809,23 @@ class SafRepository implements iSafRepository
         $propTrans = new PropTransaction();
         $propTrans->saf_id = $req->id;
         $propTrans->tran_date = "";
+    }
+
+    /**
+     * | Get Property Transactions
+     */
+    public function getPropTransactions($req)
+    {
+        // return $this->numberToWord(500000.20) . ' only';
+        $userId = auth()->user()->id;
+
+        $propTrans = DB::table('prop_transactions')
+            ->select('prop_transactions.*', 'a.saf_no', 'p.holding_no')
+            ->leftJoin('active_safs as a', 'a.id', '=', 'prop_transactions.saf_id')
+            ->leftJoin('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
+            ->where('prop_transactions.user_id', $userId)
+            ->where('prop_transactions.status', 1)
+            ->get();
+        return responseMsg(true, "Transactions History", remove_null($propTrans));
     }
 }
