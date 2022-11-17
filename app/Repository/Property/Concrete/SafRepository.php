@@ -292,29 +292,7 @@ class SafRepository implements iSafRepository
         }
     }
 
-    /**
-     * desc This function return the safNo of the application
-     * format: SAF/application_type/ward_no/count active application on the basise of ward_id
-     *         3 |       02       |   03   |            05    ;
-     * request : ward_id,assessment_type,ulb_id;
-     * #==========================================
-     * --------Tables------------
-     * activ_saf_details  -> for counting;
-     * ward_matrs   -> for ward_no;
-     * ===========================================
-     * #count <- count(activ_saf_details.*)
-     * #ward_no <- ward_matrs.ward_no
-     * #safNo <- "SAF/".str_pad($assessment_type,2,'0',STR_PAD_LEFT)."/".str_pad($word_no,3,'0',STR_PAD_LEFT)."/".str_pad($count,5,'0',STR_PAD_LEFT)
-     * Status-Closed
-     */
-    public function safNo($ward_id, $assessment_type, $ulb_id)
-    {
-        $count = ActiveSaf::where('ward_mstr_id', $ward_id)
-            ->where('ulb_id', $ulb_id)
-            ->count() + 1;
-        $ward_no = UlbWardMaster::select("ward_name")->where('id', $ward_id)->first()->ward_name;
-        return $safNo = "SAF/" . str_pad($assessment_type, 2, '0', STR_PAD_LEFT) . "/" . str_pad($ward_no, 3, '0', STR_PAD_LEFT) . "/" . str_pad($count, 5, '0', STR_PAD_LEFT);
-    }
+
 
     /**
      * ---------------------- Saf Workflow Inbox --------------------

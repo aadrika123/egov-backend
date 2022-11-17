@@ -20,8 +20,10 @@ use App\Repository\Payment\Concrete\PaymentRepository;
 use App\Repository\Payment\Interfaces\iPayment;
 use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\Property\Concrete\ConcessionRepository;
+use App\Repository\Property\Concrete\SafReassessRepo;
 use App\Repository\Property\Interfaces\iConcessionRepository;
 use App\Repository\Property\Interfaces\iSafRepository;
+use App\Repository\Property\Interfaces\iSafReassessRepo;
 use App\Repository\Trade\ITrade;
 use App\Repository\Trade\Trade;
 use App\Repository\Water\Concrete\NewConnectionRepository;
@@ -66,8 +68,10 @@ class RepositoryServiceProvider extends ServiceProvider
     {
         $this->app->bind(iNewConnection::class, NewConnectionRepository::class);
         $this->app->bind(ITrade::class, Trade::class);
-        // SAF
+        // Property
         $this->app->bind(iSafRepository::class, SafRepository::class);
+        $this->app->bind(iSafReassessRepo::class, SafReassessRepo::class);
+
         //menu permission
         $this->app->bind(IMenuGroupsRepository::class, EloquentMenuGroups::class);
         $this->app->bind(IMenuItemsRepository::class, EloquentMenuItems::class);
