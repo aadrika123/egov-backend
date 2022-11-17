@@ -77,8 +77,9 @@ class WorkflowMap implements iWorkflowMapRepository
         ]);
 
         $workkFlow = WfWorkflow::where('ulb_id', $request->ulbId)
+            ->select('wf_masters.id', 'wf_masters.workflow_name')
             ->join('wf_masters', 'wf_masters.id', '=', 'wf_workflows.wf_master_id')
-            ->get('wf_masters.workflow_name');
+            ->get();
         return responseMsg(true, "Data Retrived", $workkFlow);
     }
 

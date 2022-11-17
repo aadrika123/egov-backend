@@ -21,4 +21,6 @@ interface iCitizenRepository
     public function editCitizenByID(Request $request, $id);
 
     public function getAllAppliedApplications($req);
+
+    public function commentIndependent($req);
 }

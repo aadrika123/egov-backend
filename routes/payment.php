@@ -28,6 +28,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get-paymentgateway-byrequests', 'getPaymentgatewayByrequests');
         Route::post('get-pg-details', 'getPgDetails');
         Route::get('get-webhook-details', 'getWebhookDetails');
-        Route::post('get-order-id', 'getTraitOrderId');
+        Route::post('get-order-id', 'getTraitOrderId'); //<----------------- here (INVALID)
+        Route::post('verify-payment-status', 'verifyPaymentStatus');
     });
 });

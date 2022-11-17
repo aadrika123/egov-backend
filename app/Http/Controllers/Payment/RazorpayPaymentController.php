@@ -61,8 +61,14 @@ class RazorpayPaymentController extends Controller
      }
 
      //get order Id of the transaction
-     public function getTraitOrderId(Request $req)
+     public function getTraitOrderId(Request $req) //<------------------ here (INVALID)
      {
          return $this->Prepository->getTraitOrderId($req);
+     }
+
+     //verify the payment status
+     public function verifyPaymentStatus(Request $req)
+     {
+         return $this->Prepository->verifyPaymentStatus($req);
      }
 }

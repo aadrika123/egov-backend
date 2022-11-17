@@ -9,11 +9,14 @@ use App\Models\Property\ActiveSaf;
 use App\Models\Trade\ActiveLicence;
 use App\Models\User;
 use App\Models\Water\WaterApplication;
+use App\Models\WorkflowTrack;
 use App\Traits\Auth;
+use App\Traits\Workflow\Workflow;
 use Exception;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
@@ -30,7 +33,7 @@ class CitizenRepository implements iCitizenRepository
     private $_appliedApplications;
     private $_redis;
 
-    use Auth;
+    use Auth, Workflow;
 
     public function __construct()
     {
@@ -183,6 +186,12 @@ class CitizenRepository implements iCitizenRepository
             }
         }
 
+        $totalApplications = collect($applications)->map(function ($application) {              // collection total applications sum of all modules
+            return $application['totalApplications'];
+        });
+
+        $applications['totalApplications'] = $totalApplications->sum();
+
         return responseMsg(true, "All Applied Applications", remove_null($applications));
     }
 
@@ -193,14 +202,17 @@ class CitizenRepository implements iCitizenRepository
      */
     public function appliedSafApplications($userId)
     {
+        $applications = array();
         $propertyApplications = DB::table('active_safs')
             ->select('id as application_id', 'saf_no', 'holding_no', 'assessment_type', 'application_date', 'payment_status', 'saf_pending_status', 'created_at', 'updated_at')
             ->where('user_id', $userId)
+            ->where('status', 1)
             ->orderByDesc('id')
             ->get();
-        return $propertyApplications;
-        // $propertyApplications['totalApplications'] = $propertyApplications->count();
-        // return $propertyApplications->reverse();
+
+        $applications['applications'] = $propertyApplications;
+        $applications['totalApplications'] = $propertyApplications->count();                // Total Applications
+        return collect($applications)->reverse();
     }
 
     /**
@@ -209,14 +221,15 @@ class CitizenRepository implements iCitizenRepository
      */
     public function appliedWaterApplications($userId)
     {
-        $waterApplications = json_decode(Redis::get('appliedWaterApplications:' . $userId));                        // Redis Data
-        if (!$waterApplications) {
-            $waterApplications = WaterApplication::select('id as application_id', 'category', 'application_no', 'holding_no', 'created_at', 'updated_at')
-                ->where('citizen_id', $userId)
-                ->get();
-            $this->_redis->set('appliedWaterApplications:' . $userId, json_encode($waterApplications));
-        }
-        return $waterApplications;
+        $applications = array();
+        $waterApplications = WaterApplication::select('id as application_id', 'category', 'application_no', 'holding_no', 'created_at', 'updated_at')
+            ->where('citizen_id', $userId)
+            ->where('status', 1)
+            ->orderByDesc('id')
+            ->get();
+        $applications['applications'] = $waterApplications;
+        $applications['totalApplications'] = $waterApplications->count();
+        return collect($applications)->reverse();
     }
 
     /**
@@ -225,13 +238,35 @@ class CitizenRepository implements iCitizenRepository
      */
     public function appliedTradeApplications($userId)
     {
-        $tradeApplications = json_decode(Redis::get('appliedTradeApplications:' . $userId));                        // Redis Data
-        if (!$tradeApplications) {
-            $tradeApplications = ActiveLicence::select('id as application_id', 'application_no', 'holding_no', 'created_at', 'updated_at')
-                ->where('emp_details_id', $userId)
-                ->get();
-            $this->_redis->set('appliedTradeApplications:' . $userId, json_encode($tradeApplications));
-        }
-        return $tradeApplications;
+        $applications = array();
+        $tradeApplications = ActiveLicence::select('id as application_id', 'application_no', 'holding_no', 'created_at', 'updated_at')
+            ->where('emp_details_id', $userId)
+            ->where('status', 1)
+            ->orderByDesc('id')
+            ->get();
+        $applications['applications'] = $tradeApplications;
+        $applications['totalApplications'] = $tradeApplications->count();
+        return collect($applications)->reverse();
+    }
+
+    /**
+     * | Independent Comment for the Citizen on their applications
+     * | @param req requested parameters
+     * | Status-Done
+     */
+    public function commentIndependent($req)
+    {
+        $array = array();
+        $array['workflowId'] = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+        $array['citizenId'] = auth()->user()->id;
+        $array['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $array['refTableId'] = 'active_safs.id';
+        $array['safId'] = $req->safId;
+        $array['message'] = $req->message;
+
+        $workflowTrack = new WorkflowTrack();
+        $this->workflowTrack($workflowTrack, $array);                                                                   // Trait For Workflow Track
+        $workflowTrack->save();
+        return responseMsg(true, "Successfully Given the Message", "");
     }
 }
