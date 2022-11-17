@@ -26,4 +26,5 @@ interface iSafRepository
     public function calculateSafBySafId($req);              // SAF Calculation by Existing SAF ID
     public function generateOrderId($req);                  // Generate Payment Order ID
     public function paymentSaf($req);                       // SAF Payment
+    public function getPropTransactions($req);              // Get Property Transactions
 }

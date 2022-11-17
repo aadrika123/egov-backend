@@ -293,11 +293,10 @@ class PaymentRepository implements iPayment
         } catch (Exception $error) {
             return responseMsg(false, "Error listed Below!", $error->getMessage());
         }
-       
     }
 
 
-     /**
+    /**
      * | verifiying the payment success and the signature key
      * | @param requet request from the frontend
      * | @param error collecting the operation error
