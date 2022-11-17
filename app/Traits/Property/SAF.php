@@ -2,8 +2,6 @@
 
 namespace App\Traits\Property;
 
-use App\EloquentClass\Property\SafCalculation;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**

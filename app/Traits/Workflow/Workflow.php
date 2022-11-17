@@ -132,19 +132,19 @@ trait Workflow
     public function getWorkflowInitiatorData($userId, $workflowId)
     {
         $query = "SELECT 
-                    wf.id,
-                    wf.workflow_id,
-                    wf.wf_role_id,
-                    r.role_name,
-                    r.is_initiator,
-                    r.is_finisher,
-                    rum.user_id,
-                    wu.ward_id
-            FROM wf_workflowrolemaps  wf
-            INNER JOIN (SELECT * FROM wf_roleusermaps WHERE user_id=$userId) rum ON rum.wf_role_id=wf.wf_role_id
-            INNER JOIN (SELECT * FROM wf_roles WHERE is_initiator=TRUE) r ON r.id=rum.wf_role_id
-            INNER JOIN (SELECT * FROM wf_ward_users WHERE user_id=$userId) wu ON wu.user_id=rum.user_id
-            WHERE wf.workflow_id=$workflowId->id";
+                        wf.id,
+                        wf.workflow_id,
+                        wf.wf_role_id,
+                        r.role_name,
+                        wf.is_initiator,
+                        wf.is_finisher,
+                        rum.user_id,
+                        wu.ward_id
+                FROM wf_workflowrolemaps  wf
+                INNER JOIN (SELECT * FROM wf_roleusermaps WHERE user_id=$userId) rum ON rum.wf_role_id=wf.wf_role_id
+                INNER JOIN (SELECT * FROM wf_roles) r ON r.id=rum.wf_role_id
+                INNER JOIN (SELECT * FROM wf_ward_users WHERE user_id=$userId) wu ON wu.user_id=rum.user_id
+                WHERE wf.workflow_id=$workflowId AND wf.is_initiator=true";
         return $query;
     }
 
@@ -200,9 +200,8 @@ trait Workflow
     {
         $workflowTrack->workflow_id = $req['workflowId'];
         $workflowTrack->citizen_id = $req['citizenId'];
-        $workflowTrack->module_id = $req['moduleId'];
-        $workflowTrack->ref_table_dot_id = 'active_safs.id';
-        $workflowTrack->ref_table_id_value = $req['safId'];
+        $workflowTrack->ref_table_dot_id = $req['refTableId'];
+        $workflowTrack->ref_table_id_value = $req['applicationId'];
         $workflowTrack->message = $req['message'];
         $workflowTrack->commented_by = $req['citizenId'];
         $workflowTrack->track_date = Carbon::now()->format('Y-m-d H:i:s');

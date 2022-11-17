@@ -204,7 +204,7 @@ class CitizenRepository implements iCitizenRepository
     {
         $applications = array();
         $propertyApplications = DB::table('active_safs')
-            ->select('id as application_id', 'saf_no', 'holding_no', 'assessment_type', 'application_date', 'payment_status', 'saf_pending_status', 'created_at', 'updated_at')
+            ->select('id as application_id', 'saf_no', 'holding_no', 'assessment_type', 'application_date', 'payment_status', 'saf_pending_status', 'workflow_id', 'created_at', 'updated_at')
             ->where('user_id', $userId)
             ->where('status', 1)
             ->orderByDesc('id')
@@ -222,7 +222,7 @@ class CitizenRepository implements iCitizenRepository
     public function appliedWaterApplications($userId)
     {
         $applications = array();
-        $waterApplications = WaterApplication::select('id as application_id', 'category', 'application_no', 'holding_no', 'created_at', 'updated_at')
+        $waterApplications = WaterApplication::select('id as application_id', 'category', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
             ->where('citizen_id', $userId)
             ->where('status', 1)
             ->orderByDesc('id')
@@ -239,7 +239,7 @@ class CitizenRepository implements iCitizenRepository
     public function appliedTradeApplications($userId)
     {
         $applications = array();
-        $tradeApplications = ActiveLicence::select('id as application_id', 'application_no', 'holding_no', 'created_at', 'updated_at')
+        $tradeApplications = ActiveLicence::select('id as application_id', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
             ->where('emp_details_id', $userId)
             ->where('status', 1)
             ->orderByDesc('id')
@@ -252,16 +252,15 @@ class CitizenRepository implements iCitizenRepository
     /**
      * | Independent Comment for the Citizen on their applications
      * | @param req requested parameters
-     * | Status-Done
+     * | Status-Closed
      */
     public function commentIndependent($req)
     {
         $array = array();
-        $array['workflowId'] = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+        $array['workflowId'] = $req->workflowId;
         $array['citizenId'] = auth()->user()->id;
-        $array['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $array['refTableId'] = 'active_safs.id';
-        $array['safId'] = $req->safId;
+        $array['refTableId'] = $req->refTableId;
+        $array['applicationId'] = $req->applicationId;
         $array['message'] = $req->message;
 
         $workflowTrack = new WorkflowTrack();
