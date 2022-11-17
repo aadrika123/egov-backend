@@ -24,8 +24,8 @@ if (!function_exists("print_var")) {
     }
 }
 
-if (!function_exists("adjToArray")) {
-    function adjToArray(object $data)
+if (!function_exists("objToArray")) {
+    function objToArray(object $data)
     {
         $arrays = $data->toArray();
         return $arrays;
