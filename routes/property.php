@@ -5,6 +5,7 @@ use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\SafCalculatorController;
+use App\Http\Controllers\Property\SafReassessmentController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -47,23 +48,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID
         Route::post('saf/generate-order-id', 'generateOrderId');                                            // Generate Order ID
         Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment
+        Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions
     });
-    //Property Objection
-    Route::controller(ObjectionController::class)->group(function () {
-        Route::match(["get", "post"], 'property-objection/{id}', 'propertyObjection'); // Objection Workflow Apply By id
-        Route::get('objection/inbox/{key?}', 'propObjectionInbox');          // Objection Workflow Inbox  By key
-        Route::get('objection/outbox/{key?}', 'propObjectionOutbox');        // Objection Workflow Outbox  By key
-        Route::get('objection/escalate/inbox/{key?}', 'specialObjectionInbox');        // Objection Workflow special Inbox  By key
+
+    // SAF Reassessment
+    Route::controller(SafReassessmentController::class)->group(function () {
+        Route::post('saf/reassessment/apply', 'applyReassessment');                                 // Apply for Reassessment
     });
 
     // Property Calculator
     Route::controller(SafCalculatorController::class)->group(function () {
         Route::post('saf-calculation', 'calculateSaf');
-    });
-
-    //Property Cocession
-    Route::controller(ConcessionController::class)->group(function () {
-        Route::post('concession/UpdateConDetail', 'UpdateConDetail');
-        Route::post('concession/UpdateDocuments', 'UpdateDocuments');
     });
 });
