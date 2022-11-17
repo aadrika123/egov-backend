@@ -1973,7 +1973,7 @@ class Trade implements ITrade
      * | @var mRole           = this->_parent->getUserRoll(refUserId, refUlbId, refWorkflowMstrId->wf_master_id)
      * | @var mJoins          = ""
      * | @var mRoleId         = mRole->role_id
-     * |
+     * | @var mWardIds                      | permited ward ids
      */
     public function inbox(Request $request)
     {
@@ -3862,12 +3862,27 @@ class Trade implements ITrade
     public function updateLicenseBo(Request $request)
     {
         try{
+            $refUser            = Auth()->user();
+            $refUserId          = $refUser->id;
+            $refUlbId           = $refUser->ulb_id;
             $rules["id"]="required|int";
             $validator = Validator::make($request->all(), $rules, );
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(),$request->all());
             }
             $mUserType          = $this->_parent->userType();
+            if(in_array(strtoupper($mUserType),["SUPER ADMIN","BO"]))
+            {
+                $data['wardList'] = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $data['wardList'] = objToArray($data['wardList']);
+            }
+            else
+            {                
+                $data['wardList'] = $this->_parent->WardPermission($refUserId);
+            }
             $refOldLicece       = $this->getLicenceById($request->id); 
             if(!$refOldLicece)
             {
