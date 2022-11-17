@@ -202,7 +202,7 @@ class Trade implements ITrade
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
-                $data['wardList'] = adjToArray($data['wardList']);
+                $data['wardList'] = objToArray($data['wardList']);
             }
             else
             {                
@@ -1239,7 +1239,7 @@ class Trade implements ITrade
                     
                 }
                 
-                $owners = adjtoArray($refOwneres);
+                $owners = objToArray($refOwneres);
                 # Upload Owner Document Id Proof
                 if(isset($request->btn_doc_path_owner))
                 { 
@@ -1960,6 +1960,20 @@ class Trade implements ITrade
      * |    2.  wardNo  -> optinal
      * |    3.  formDate-> optinal
      * |    4.  toDate  -> optinal 
+     * |
+     * |----------------------------------------------------------------------------------
+     * | @var refUser        = Auth()->user()
+     * | @var refUserId      = refUser->id
+     * | @var refUlbId       = refUser->ulb_id
+     * | @var refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID')
+     * | @var refWorkflowMstrId = WfWorkflow  | (model)
+     * |
+     * | @var mUserType       = this->_parent->userType()
+     * | @var mWardPermission = this->_parent->WardPermission(refUserId)
+     * | @var mRole           = this->_parent->getUserRoll(refUserId, refUlbId, refWorkflowMstrId->wf_master_id)
+     * | @var mJoins          = ""
+     * | @var mRoleId         = mRole->role_id
+     * |
      */
     public function inbox(Request $request)
     {
@@ -1989,7 +2003,7 @@ class Trade implements ITrade
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
-                $mWardPermission = adjToArray($mWardPermission);
+                $mWardPermission = objToArray($mWardPermission);
                 $mJoins = "leftjoin";
             }
             else
@@ -2112,7 +2126,7 @@ class Trade implements ITrade
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
-                $ward_permission = adjToArray($ward_permission);
+                $ward_permission = objToArray($ward_permission);
             }
             else
             {
@@ -2380,7 +2394,7 @@ class Trade implements ITrade
                 {
                     throw new Exception("No Anny Document Found");
                 }
-                $docs = adjToArray($docs);
+                $docs = objToArray($docs);
                 $test = array_filter($docs,function($val){
                      if($val["verify_status"]!=1)
                      {
@@ -3462,7 +3476,7 @@ class Trade implements ITrade
                         // dd(DB::getQueryLog());
         if($property)
         {
-            return ["status"=>true,'property'=>adjToArray($property)];
+            return ["status"=>true,'property'=>objToArray($property)];
 
         }
         return ["status"=>false,'property'=>''];
@@ -3480,7 +3494,7 @@ class Trade implements ITrade
                         ->where("saf_dtl_id",$saf->id)
                         ->where('status',1)
                         ->get();
-            return ["status"=>true,'saf'=>adjToArray($saf),'owneres'=>adjToArray($owneres)];
+            return ["status"=>true,'saf'=>objToArray($saf),'owneres'=>objToArray($owneres)];
 
         }
         return ["status"=>false,'property'=>'','owneres'=>''];
@@ -3947,7 +3961,7 @@ class Trade implements ITrade
                 $val->ward_no = $val->ward_name;
                 return $val;
             });
-            $ward_permission = adjToArray($ward_permission);
+            $ward_permission = objToArray($ward_permission);
 
             $ward_ids = array_map(function ($val) {
                 return $val['id'];
@@ -4029,7 +4043,7 @@ class Trade implements ITrade
                 $val->ward_no = $val->ward_name;
                 return $val;
             });
-            $ward_permission = adjToArray($ward_permission);
+            $ward_permission = objToArray($ward_permission);
 
             $ward_ids = array_map(function ($val) {
                 return $val['id'];

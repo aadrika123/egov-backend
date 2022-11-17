@@ -30,7 +30,7 @@ class CommonFunction implements ICommonFunction
                 ->where('user_id', $user_id)
                 ->orderBy('ward_id')
                 ->get();
-            $ward_permission = adjToArray($ward_permission);
+            $ward_permission = objToArray($ward_permission);
             $this->WardPermissionSet($redis, $user_id, $ward_permission);
         }
         return $ward_permission;
@@ -74,7 +74,7 @@ class CommonFunction implements ICommonFunction
                 ->orderBy("wf_roles.id")
                 ->get();
             //dd(DB::getQueryLog());
-            $workflow_rolse = adjToArray($workflow_rolse);
+            $workflow_rolse = objToArray($workflow_rolse);
             $this->WorkFlowRolesSet($redis, $user_id, $workflow_rolse, $work_flow_id);
         }
         return $workflow_rolse;

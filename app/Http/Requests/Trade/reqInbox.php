@@ -13,7 +13,7 @@ class reqInbox extends FormRequest
      */
     public function authorize()
     {
-        return false;
+        return true;
     }
 
     /**
@@ -24,7 +24,10 @@ class reqInbox extends FormRequest
     public function rules()
     {
         return [
-            //
+            "key"       =>  "string",
+            "wardNo"    =>  "int",
+            "formDate"  =>  "date",
+            "toDate"    =>  "date",
         ];
     }
 }

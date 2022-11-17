@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Config;
 use App\Http\Requests\Trade\addRecorde;
 use App\Http\Requests\Trade\paymentCounter;
 use App\Http\Requests\Trade\reqPaybleAmount;
+use App\Http\Requests\Trade\reqInbox;
 
 class ApplyApplication extends Controller
 {
@@ -84,7 +85,7 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->readApplication($request);
     }
-    public function inbox(Request $request)
+    public function inbox(reqInbox $request)
     {
         return $this->Repository->inbox($request);
     }
