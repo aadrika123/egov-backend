@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\NewPdfController; //<----------traits
 use App\Models\Payment\PaymentReject;
 use App\Models\Payment\PaymentSuccess;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +49,7 @@ trait Razorpay
         try {
             $mUserID = auth()->user()->id;
             $mUlbID = auth()->user()->ulb_id;
+
             $mReciptId = Str::random(10); //<--------- here (STATIC)
             $mApi = new Api($this->refRazorpayId, $this->refRazorpayKey); //<--------- here (CAUTION)
 
@@ -65,8 +67,8 @@ trait Razorpay
                 'userId' => $mUserID,
                 'ulbId' => $mUlbID,
                 'workflowId' => $request->workflowId, //<-----here(FETCH)
-                'safId' => $request->id,
-                'module' => $request->module
+                'applicationId' => $request->id,
+                'departmentId' => $request->module
 
             ];
             #   (condition applied) 
@@ -75,12 +77,12 @@ trait Razorpay
             $transaction->user_id = $mUserID;
             $transaction->workflow_id = $request->workflowId; //<--------here(FETCH)
             $transaction->ulb_id = $mUlbID;
-            $transaction->saf_id = $request->id;
-            $transaction->module = $request->module;
+            $transaction->application_id = $request->id;
+            $transaction->department_id = $request->module;
             $transaction->razorpay_order_id = $mReturndata['orderId'];
             $transaction->amount = $request->amount;
             $transaction->currency = 'INR';
-            $transaction->save();
+            // $transaction->save(); //<--------- here (REMINDER)
 
             return $mReturndata; //<------------------ here(RESPONSE)
         } catch (Exception $error) {
@@ -107,9 +109,9 @@ trait Razorpay
     {
         try {
             $success = false;
-            $error = "Payment Failed!";
+            $error = "Payment Failed";
             # verify the existence of the razerpay Id
-            if (!empty($request->razorpayPaymentId)) {
+            if (!null==($request->razorpayPaymentId) && !empty($request->razorpaySignature)) {
                 $api = new Api($this->refRazorpayId, $this->refRazorpayKey);
                 try {
                     $attributes = [
@@ -120,35 +122,34 @@ trait Razorpay
                     $api->utility->verifyPaymentSignature($attributes);
                     $success = true;
                 } catch (SignatureVerificationError $exception) {
-                    // $success = false; //<------------------- here (IRRELEVENT)
+                    $success = false;
                     $error = $exception->getMessage();
                 }
             }
-
-            # validation complete now storing of data
-            if ($success == true) { //<--------------------------here (CONDITION)
+            # validation complete and the storing of data
+            if ($success === true) {
                 # Update database with success data
                 try {
-                    $data = new PaymentSuccess(); //<---------- here
+                    $data = new PaymentSuccess();
                     $data->razerpay_order_id = $request->razorpayOrderId;
                     $data->razerpay_payment_id = $request->razorpayPaymentId;
                     $data->razerpay_signature = $request->razorpaySignature;
-                    $data->save();
+                    // $data->save();  //<----------- here (RECHECK)
 
                     return responseMsg(true, "Payment Success!", "");
-                } catch (Exception $e) {
-                    return responseMsg(false, "Error listed below", $e->getMessage());
+                } catch (Exception $exception) {
+                    return responseMsg(false, "Error listed below", $exception->getMessage());
                 }
             }
             # Update database with error data
-            $data = new PaymentReject(); //<--------------- here
+            $data = new PaymentReject();
             $data->razerpay_order_id = $request->razorpayOrderId;
             $data->razerpay_payment_id = $request->razorpayPaymentId;
             $data->razerpay_signature = $request->razorpaySignature;
-            $data->save();
-            return responseMsg(false, "Faild operstion!", $error);
-        } catch (Exception $e) {
-            return responseMsg(false, "Operation Error", $e->getMessage());
+            // $data->save();   //<----------- here (RECHECK)
+            return responseMsg(false, "Faild operation!", $error);
+        } catch (Exception $exception) {
+            return responseMsg(false, "Operation Error", $exception->getMessage());
         }
     }
 }
