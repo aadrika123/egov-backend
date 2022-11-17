@@ -3871,7 +3871,7 @@ class Trade implements ITrade
                 return responseMsg(false, $validator->errors(),$request->all());
             }
             $mUserType          = $this->_parent->userType();
-            if(in_array(strtoupper($mUserType),["ONLINE","JSK","SUPER ADMIN","TL"]))
+            if(in_array(strtoupper($mUserType),["SUPER ADMIN","BO"]))
             {
                 $data['wardList'] = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
                     $val->ward_no = $val->ward_name;
