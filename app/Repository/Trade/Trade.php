@@ -1533,7 +1533,15 @@ class Trade implements ITrade
         {
             return responseMsg(false,$e->getMessage(),$request->all());
         }
-    }    
+    }  
+    /**
+     * | Get License All Dtl
+     * |-------------------------------------------------------------------------
+     * | @var mUserType      = this->_parent->userType() | login user Role Name
+     * | @var refApplication = this->getLicenceById(id)  | read application dtl
+     * | @var items          = this->getLicenceItemsById(refApplication->nature_of_bussiness) | read trade licence Items
+     * | @var 
+     */  
     public function readLicenceDtl($id)
     {
         try{

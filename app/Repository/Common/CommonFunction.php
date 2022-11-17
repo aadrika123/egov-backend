@@ -58,10 +58,10 @@ class CommonFunction implements ICommonFunction
                 })
                 ->join(
                     DB::raw("(SELECT distinct(wf_role_id) as wf_role_id ,
-                                                workflow_id , forward_role_id , backward_role_id
+                                                workflow_id , forward_role_id , backward_role_id,is_initiator,is_finisher
                                             FROM wf_workflowrolemaps 
                                             WHERE  wf_workflowrolemaps.is_suspended = false 
-                                            GROUP BY workflow_id,wf_role_id , forward_role_id , backward_role_id
+                                            GROUP BY workflow_id,wf_role_id , forward_role_id , backward_role_id, is_initiator, is_finisher
                                             ) wf_workflowrolemaps "),
                     function ($join) use ($ulb_id) {
                         $join->on("wf_workflowrolemaps.workflow_id", "wf_workflows.id");
@@ -152,7 +152,7 @@ class CommonFunction implements ICommonFunction
             // DB::enableQueryLog();
             $data = WfRole::select(
                 DB::raw("wf_roles.id as role_id,wf_roles.role_name,
-                                            wf_roles.is_initiator, wf_roles.is_finisher,
+                                            wf_workflowrolemaps.is_initiator, wf_workflowrolemaps.is_finisher,
                                             wf_workflowrolemaps.forward_role_id,forword.role_name as forword_name,
                                             wf_workflowrolemaps.backward_role_id,backword.role_name as backword_name,
                                             wf_masters.id as workflow_id,wf_masters.workflow_name,
