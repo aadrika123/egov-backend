@@ -1078,49 +1078,53 @@ class Trade implements ITrade
     {
         $refUser = Auth()->user();
         $refUserId = $refUser->id;
-        $refUlbUd = $refUser->ulb_id;
+        $refUlbId = $refUser->ulb_id;
+        $refLicence = null;
+        $refOwneres = (array)null;
+        $mUploadDocument = (array)null;
+        $mDocumentsList  = (array)null;
+        $mItemName="";
+        $mCods = "";
         try{
             $licenceId = $request->id;
             if(!$licenceId)
             {
                 throw new Exception("Licence Id Required");
             }
-            $licence = $this->getLicenceById($licenceId);
-            if(!$licence)
+            $refLicence = $this->getLicenceById($licenceId);
+            if(!$refLicence)
             {
                 throw new Exception("Data Not Found");
             }
-            elseif($licence->doc_verify_date)
+            elseif($refLicence->doc_verify_date)
             {
                 throw new Exception("Document Verified You Can Not Upload Documents");
             }
-            $item_name="";
-            $cods = "";
-            if($licence->nature_of_bussiness)
+            if($refLicence->nature_of_bussiness)
             {
-                $items = $this->getLicenceItemsById($licence->nature_of_bussiness);                
+                $items = $this->getLicenceItemsById($refLicence->nature_of_bussiness);                
                 foreach($items as $val)
                 {
-                    $item_name .= $val->trade_item.",";
-                    $cods .= $val->trade_code.",";                    
+                    $mItemName .= $val->trade_item.",";
+                    $mCods .= $val->trade_code.",";                    
                 }
-                $item_name= trim($item_name,',');
-                $cods= trim($cods,',');
+                $mItemName= trim($mItemName,',');
+                $mCods= trim($mCods,',');
             }
-            $licence->items = $item_name;
-            $licence->items_code = $cods;
-            $owneres = $this->getOwnereDtlByLId($licenceId);
-            $uploadDocument = $this->getLicenceDocuments($licenceId);
+            $refLicence->items = $mItemName;
+            $refLicence->items_code = $mCods;
+            $refOwneres = $this->getOwnereDtlByLId($licenceId);
+            $mUploadDocument = $this->getLicenceDocuments($licenceId);
             
-            $documentsList = $this->getDocumentTypeList($licence);                 
-            foreach($documentsList as $val)
+            $mDocumentsList = $this->getDocumentTypeList($refLicence);                 
+            foreach($mDocumentsList as $val)
             {   
-                $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$licence->application_type_id,$val->show);
+                $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$refLicence->application_type_id,$val->show);
                 $data["documentsList"][$val->doc_for]["is_mandatory"] = $val->is_mandatory;
             }
-            if($licence->application_type_id==1)
+            if($refLicence->application_type_id==1)
             {                
-                $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$licence->application_type_id,0);
+                $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0);
                 $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
             }
             $doc = (array) null;
@@ -1137,29 +1141,29 @@ class Trade implements ITrade
 
                 }
             } 
-            if($licence->application_type_id==1)
+            if($refLicence->application_type_id==1)
             {
-                foreach($owneres as $key=>$val)
+                foreach($refOwneres as $key=>$val)
                 {
                    
-                    $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
-                    if(isset($owneres[$key]["Identity Proof"]["document_path"]))
+                    $refOwneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
+                    if(isset($refOwneres[$key]["Identity Proof"]["document_path"]))
                     {
-                        $owneres[$key]["Identity Proof"]["document_path"] = !empty(trim($owneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["Identity Proof"]["document_path"]):null;
+                        $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["Identity Proof"]["document_path"]):null;
     
                     }
-                    $owneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
-                    if(isset( $owneres[$key]["image"]["document_path"]))
+                    $refOwneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
+                    if(isset( $refOwneres[$key]["image"]["document_path"]))
                     {
-                        $owneres[$key]["image"]["document_path"] = !empty(trim($owneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $owneres[$key]["image"]["document_path"]):null;
+                        $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["image"]["document_path"]):null;
     
                     }
                 }         
 
             }
-            $data["licence"] = $licence;
-            $data["owneres"] = $owneres;
-            $data["uploadDocument"] = $uploadDocument;
+            $data["licence"] = $refLicence;
+            $data["owneres"] = $refOwneres;
+            $data["uploadDocument"] = $mUploadDocument;
             if($request->getMethod()=="GET")
             {
                 return responseMsg(true,"",$data);
@@ -1192,7 +1196,6 @@ class Trade implements ITrade
                         if ($app_doc_dtl_id = $this->check_doc_exist($licenceId,$request->$doc_for))
                         {                                                          
                             $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                            // dd(file_exists($delete_path));
                             if (file_exists($delete_path)) 
                             {   
                                 unlink($delete_path);
@@ -1236,7 +1239,7 @@ class Trade implements ITrade
                     
                 }
                 
-                $owners = adjtoArray($owneres);
+                $owners = adjtoArray($refOwneres);
                 # Upload Owner Document Id Proof
                 if(isset($request->btn_doc_path_owner))
                 { 
@@ -1530,39 +1533,49 @@ class Trade implements ITrade
         {
             return responseMsg(false,$e->getMessage(),$request->all());
         }
-    }    
+    }  
+    /**
+     * | Get License All Dtl
+     * |-------------------------------------------------------------------------
+     * | @var mUserType      = this->_parent->userType() | login user Role Name
+     * | @var refApplication = this->getLicenceById(id)  | read application dtl
+     * | @var items          = this->getLicenceItemsById(refApplication->nature_of_bussiness) | read trade licence Items
+     * | @var 
+     */  
     public function readLicenceDtl($id)
     {
         try{
-            
-            $application = $this->getLicenceById($id);
-            $item_name="";
-            $cods = "";
-            if($application->nature_of_bussiness)
+            $mUserType      = $this->_parent->userType();
+            $refApplication = $this->getLicenceById($id);
+            $mItemName      ="";
+            $mCods          = "";
+            if($refApplication->nature_of_bussiness)
             {
-                $items = $this->getLicenceItemsById($application->nature_of_bussiness);                
+                $items = $this->getLicenceItemsById($refApplication->nature_of_bussiness);                
                 foreach($items as $val)
                 {
-                    $item_name .= $val->trade_item.",";
-                    $cods .= $val->trade_code.",";                    
+                    $mItemName  .= $val->trade_item.",";
+                    $mCods      .= $val->trade_code.",";                    
                 }
-                $item_name= trim($item_name,',');
-                $cods= trim($cods,',');
+                $mItemName= trim($mItemName,',');
+                $mCods= trim($mCods,',');
             }
-            $application->items = $item_name;
-            $application->items_code = $cods;
-            $ownerDtl = $this->getOwnereDtlByLId($id);
-            $transactionDtl = $this->readTranDtl($id);
-            $timeLine = $this->getTimelin($id);
-            $documents = $this->getLicenceDocuments($id)->map(function($val){
-                $val->document_pat = !empty(trim($val->document_path))? Storage::url("1.pdf"):"";
-                return $val;
-            });
-            $data['licenceDtl'] = $application;
-            $data['ownerDtl'] = $ownerDtl;
-            $data['transactionDtl'] = $transactionDtl;
-            $data['remarks'] = $timeLine;
-            $data['documents'] = $documents;
+            $refApplication->items      = $mItemName;
+            $refApplication->items_code = $mCods;
+            $refOwnerDtl                = $this->getOwnereDtlByLId($id);
+            $refTransactionDtl          = $this->readTranDtl($id);
+            $refTimeLine                = $this->getTimelin($id);
+            $refUploadDocuments         = $this->getLicenceDocuments($id)->map(function($val){
+                                                $val->document_pat = !empty(trim($val->document_path))? Storage::url("1.pdf"):"";
+                                                return $val;
+                                            });
+
+            $data['licenceDtl']     = $refApplication;
+            $data['ownerDtl']       = $refOwnerDtl;
+            $data['transactionDtl'] = $refTransactionDtl;
+            $data['remarks']        = $refTimeLine;
+            $data['documents']      = $refUploadDocuments;            
+            $data["userType"]       = $mUserType;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
             
@@ -1572,41 +1585,48 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),'');
         }
     }
+    /**
+     * | Get Notice Data
+     */
     public function readDenialdtlbyNoticno(Request $request)
     {
         $data = (array)null;
-        $user = Auth()->user();
-        $user_id = $user->id;
-        $ulb_id = $user->ulb_id;
-        if ($request->getMethod()== 'POST') 
+        $refUser = Auth()->user();
+        $refUserId = $refUser->id;
+        $refUlbId = $refUser->ulb_id;
+        $mNoticeNo = null;
+        $mNowDate = Carbon::now()->format('Y-m-d'); // todays date
+        try 
         {
-            try 
-            {
-                $noticeNo = $request->noticeNo;
-                // $firm_date = $request->firm_date; //firm establishment date
-
-                $denialDetails = $this->getDenialFirmDetails($ulb_id,strtoupper(trim($noticeNo)));
-                if ($denialDetails) 
-                {
-
-                    $now = Carbon::now()->format('Y-m-d'); // todays date
-                    $notice_date = Carbon::parse($denialDetails->noticedate)->format('Y-m-d'); //notice date
-                    $denialAmount = $this->getDenialAmountTrade($notice_date, $now);
-                    $data['denialDetails'] = $denialDetails;
-                    $data['denialAmount'] = $denialAmount;
-                    return responseMsg(true,"",$data);
-                } 
-                else 
-                {
-                    $response = "no Data";
-                    return responseMsg(false,$response,$request->all());
-                }
-            } 
-            catch (Exception $e) 
-            {
-                return responseMsg(false,$e->getMessage(),$request->all());
+            $rules=[
+                "noticeNo"=>"required|string",
+            ];
+            $validator = Validator::make($request->all(), $rules, ); 
+            if ($validator->fails()) {                        
+                return responseMsg(false, $validator->errors(),$request->all());
             }
+            $mNoticeNo = $request->noticeNo;
+
+            $refDenialDetails = $this->getDenialFirmDetails($refUlbId,strtoupper(trim($mNoticeNo)));
+            if ($refDenialDetails) 
+            {
+                $notice_date = Carbon::parse($refDenialDetails->noticedate)->format('Y-m-d'); //notice date
+                $denialAmount = $this->getDenialAmountTrade($notice_date, $mNowDate);
+                $data['denialDetails'] = $refDenialDetails;
+                $data['denialAmount'] = $denialAmount;
+                return responseMsg(true,"",$data);
+            } 
+            else 
+            {
+                $response = "no Data";
+                return responseMsg(false,$response,$request->all());
+            }
+        } 
+        catch (Exception $e) 
+        {
+            return responseMsg(false,$e->getMessage(),$request->all());
         }
+        
     }
 
     public function getPaybleAmount(Request $request)
@@ -1643,10 +1663,11 @@ class Trade implements ITrade
             {
                 throw new Exception("Invalide Application Type");
             }
-            $natureOfBussiness = array_map(function($val){
+            $mNatureOfBussiness = array_map(function($val){
                 return $val['id'];
             },$request->natureOfBusiness);
-            $natureOfBussiness = implode(',', $natureOfBussiness);
+
+            $mNatureOfBussiness = implode(',', $mNatureOfBussiness);
 
             $data["areaSqft"] = $request->areaSqft;
             $data['curdate'] =Carbon::now()->format('Y-m-d');
@@ -1654,7 +1675,7 @@ class Trade implements ITrade
             $data["tobacco_status"] =  $request->tocStatus;
             $data['noticeDate'] =  $request->noticeDate??null;
             $data["licenseFor"] = $request->licenseFor;
-            $data["nature_of_business"] = $natureOfBussiness; 
+            $data["nature_of_business"] = $mNatureOfBussiness; 
             $data = $this->cltCharge($data);
             if($data['response'])
                 return responseMsg(true,"", $data);
@@ -1665,22 +1686,6 @@ class Trade implements ITrade
         {
             return responseMsg(false,$e->getMessage(),$request->all());
         }        
-    }
-    
-    public function readNotisDtl($licence_id)
-    {
-        try{
-            $data = TradeDenialNotice::select("*",
-                    DB::raw("trade_denial_notices.created_on::date AS noticedate")
-                    )
-                    ->where("apply_id",$licence_id)
-                    ->first();
-            return $data;
-        }
-        catch (Exception $e)
-        {
-            echo $e->getMessage();
-        }
     }
 
     public function isvalidateSaf(Request $request)
@@ -3158,6 +3163,21 @@ class Trade implements ITrade
         catch(Exception $e)
         {
             return $response;
+        }
+    }
+    public function readNotisDtl($licence_id)
+    {
+        try{
+            $data = TradeDenialNotice::select("*",
+                    DB::raw("trade_denial_notices.created_on::date AS noticedate")
+                    )
+                    ->where("apply_id",$licence_id)
+                    ->first();
+            return $data;
+        }
+        catch (Exception $e)
+        {
+            echo $e->getMessage();
         }
     }
     public function getDenialFirmDetails($ulb_id,$notice_no)//for apply application
