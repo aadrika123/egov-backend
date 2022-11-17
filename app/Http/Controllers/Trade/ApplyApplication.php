@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use App\Http\Requests\Trade\addRecorde;
 use App\Http\Requests\Trade\paymentCounter;
+use App\Http\Requests\Trade\reqPaybleAmount;
 
 class ApplyApplication extends Controller
 {
@@ -37,7 +38,7 @@ class ApplyApplication extends Controller
     {        
         return $this->Repository->addRecord($request);
     }
-    public function paybleAmount(Request $request)
+    public function paybleAmount(reqPaybleAmount $request)
     {      
         return $this->Repository->getPaybleAmount($request);
     }
@@ -50,6 +51,10 @@ class ApplyApplication extends Controller
         $id = $request->id;
         $transectionId =  $request->transectionId;
         return $this->Repository->readPaymentRecipt($id,$transectionId);
+    }
+    public function updateLicenseBo(Request $request)
+    {
+        return $this->Repository->updateLicenseBo($request);
     }
     public function updateBasicDtl(Request $request)
     {

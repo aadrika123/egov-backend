@@ -151,14 +151,15 @@ class CommonFunction implements ICommonFunction
         try{
             // DB::enableQueryLog();
             $data = WfRole::select(
-                DB::raw("wf_roles.id as role_id,wf_roles.role_name,
+                                    DB::raw("wf_roles.id as role_id,wf_roles.role_name,
                                             wf_workflowrolemaps.is_initiator, wf_workflowrolemaps.is_finisher,
                                             wf_workflowrolemaps.forward_role_id,forword.role_name as forword_name,
                                             wf_workflowrolemaps.backward_role_id,backword.role_name as backword_name,
                                             wf_masters.id as workflow_id,wf_masters.workflow_name,
                                             ulb_masters.id as ulb_id, ulb_masters.ulb_name,
-                                            ulb_masters.ulb_type")
-            )
+                                            ulb_masters.ulb_type"
+                                            )
+                )
                 ->join("wf_roleusermaps", function ($join) {
                     $join->on("wf_roleusermaps.wf_role_id", "=", "wf_roles.id")
                         ->where("wf_roleusermaps.is_suspended", "=", FALSE);
