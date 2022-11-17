@@ -345,13 +345,13 @@ class SafRepository implements iSafRepository
             ->where('ulb_id', $ulbId)
             ->first();
         try {
-            $query = $this->getWorkflowInitiatorData($userId, $workflowId);                 // Trait get Workflow Initiator
+            $query = $this->getWorkflowInitiatorData($userId, $workflowId->id);                 // Trait get Workflow Initiator
             $workflow = collect(DB::select($query));
 
             $checkDataExisting = $workflow->toArray();
 
 
-            // If the Current Role Is a Initiator
+            // If the Current Role Is not a Initiator
             if (!$checkDataExisting) {
                 $roles = $this->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
 
@@ -377,7 +377,8 @@ class SafRepository implements iSafRepository
                 return responseMsg(true, "Data Fetched", remove_null($safInbox));
             }
 
-            // If current role Is not a Initiator
+
+            // If current role Is a Initiator
 
             // Filteration only Ward id from workflow collection
             $wardId = $workflow->map(function ($item, $key) {

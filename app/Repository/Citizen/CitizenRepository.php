@@ -252,16 +252,15 @@ class CitizenRepository implements iCitizenRepository
     /**
      * | Independent Comment for the Citizen on their applications
      * | @param req requested parameters
-     * | Status-Done
+     * | Status-Closed
      */
     public function commentIndependent($req)
     {
         $array = array();
-        $array['workflowId'] = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+        $array['workflowId'] = $req->workflowId;
         $array['citizenId'] = auth()->user()->id;
-        $array['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $array['refTableId'] = 'active_safs.id';
-        $array['safId'] = $req->safId;
+        $array['refTableId'] = $req->refTableId;
+        $array['applicationId'] = $req->applicationId;
         $array['message'] = $req->message;
 
         $workflowTrack = new WorkflowTrack();
