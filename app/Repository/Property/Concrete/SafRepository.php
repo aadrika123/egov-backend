@@ -668,7 +668,6 @@ class SafRepository implements iSafRepository
 
             if ($req->amount == $totalAmount) {
                 $orderDetails = $this->saveGenerateOrderid($req);
-
                 return responseMsg(true, "Order ID Generated", remove_null($orderDetails));
             }
 
