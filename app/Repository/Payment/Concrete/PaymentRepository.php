@@ -303,8 +303,16 @@ class PaymentRepository implements iPayment
      * | @var mAttributes
      * | @var mVerification
      */
-    // public function webhookDetails()
-    // {
-    //     return ("EMPTY STACK");
-    // }
+    public function gettingWebhookDetails(Request $request)
+    {
+        try {
+            if (!empty($request)) {
+                $mWebhookDetails = $this->collectWebhookDetails($request);
+                return responseMsg(true, "OPERATION SUCCESS", $mWebhookDetails);
+            }
+            return responseMsg(false, "WEBHOOK DATA NOT ACCUIRED!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "OPERATIONAL ERROR!", $error->getMessage());
+        }
+    }
 }
