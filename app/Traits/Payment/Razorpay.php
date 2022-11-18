@@ -288,7 +288,7 @@ trait Razorpay
             // DB::commit();                                                                                       //<------------------ here (CAUTION)
 
             # property data transfer
-            $transfer['method'] = $data->payment_method;
+            $transfer['paymentMode'] = $data->payment_method;
             $transfer['id'] = $request->payload['payment']['entity']['notes']['0']['id'];
             $transfer['amount'] = $actulaAmount;
             $transfer['workflowId'] = $request->payload['payment']['entity']['notes']['0']['workflowId'];
@@ -301,7 +301,7 @@ trait Razorpay
 
                 # calling function for the kink
                 switch ($depatmentId) {
-                    case (1):
+                    case ('1'):
                         $obj = new SafRepository();
                         $obj->paymentSaf($transfer);
                         break;
