@@ -262,7 +262,7 @@ class SafRepository implements iSafRepository
                 });
                 // return $wardId;
                 $safInbox = $data->whereIn('ward_mstr_id', $wardId);
-                return responseMsg(true, "Data Fetched", remove_null($safInbox));
+                return responseMsg(true, "Data Fetched", remove_null($safInbox->values()));
             }
 
 
@@ -288,7 +288,7 @@ class SafRepository implements iSafRepository
                 ->groupBy('active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
 
-            return responseMsg(true, "Data Fetched", remove_null($safInbox));
+            return responseMsg(true, "Data Fetched", remove_null($safInbox->values()));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -324,7 +324,7 @@ class SafRepository implements iSafRepository
                 ->orderByDesc('id')
                 ->groupBy('active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
-            return responseMsg(true, "Data Fetched", remove_null($safData));
+            return responseMsg(true, "Data Fetched", remove_null($safData->values()));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -668,7 +668,6 @@ class SafRepository implements iSafRepository
 
             if ($req->amount == $totalAmount) {
                 $orderDetails = $this->saveGenerateOrderid($req);
-
                 return responseMsg(true, "Order ID Generated", remove_null($orderDetails));
             }
 

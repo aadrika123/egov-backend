@@ -99,7 +99,7 @@ class ActiveSafController extends Controller
         $req->validate([
             'id' => 'required|integer',
             'amount' => 'required|numeric',
-            'module' => 'required|string'
+            'departmentId' => 'required|integer'
         ]);
 
         return $this->Repository->generateOrderId($req);
