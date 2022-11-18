@@ -5,6 +5,7 @@ use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\SafCalculatorController;
+use App\Http\Controllers\ObjectionController as NewObjectionController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -61,9 +62,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('saf-calculation', 'calculateSaf');
     });
 
-    //Property Cocession
+    //Property Concession
     Route::controller(ConcessionController::class)->group(function () {
         Route::post('concession/UpdateConDetail', 'UpdateConDetail');
-        Route::post('concession/UpdateDocuments', 'UpdateDocuments');
+        Route::post('concession/UpdateDocuments/{id}', 'UpdateDocuments');
+    });
+
+    //Property Objection
+    Route::controller(NewObjectionController::class)->group(function () {
+        Route::post('objection/ClericalMistake/{id}', 'ClericalMistake');
+        Route::post('objection/OwnerDtls', 'getOwnerDetails');
     });
 });

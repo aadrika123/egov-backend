@@ -20,7 +20,9 @@ use App\Repository\Payment\Concrete\PaymentRepository;
 use App\Repository\Payment\Interfaces\iPayment;
 use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\Property\Concrete\ConcessionRepository;
+use App\Repository\Property\Concrete\ObjectionRepository;
 use App\Repository\Property\Interfaces\iConcessionRepository;
+use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Repository\Trade\ITrade;
 use App\Repository\Trade\Trade;
@@ -42,7 +44,6 @@ use App\Repository\WorkflowMaster\Interface\iWorkflowRoleUserMapRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowWardUserRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowMappingRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowMapRepository;
-
 
 
 
@@ -94,6 +95,9 @@ class RepositoryServiceProvider extends ServiceProvider
 
         //Concession
         $this->app->bind(iConcessionRepository::class, ConcessionRepository::class);
+
+        //Objection
+        $this->app->bind(iObjectionRepository::class, ObjectionRepository::class);
     }
 
     /**

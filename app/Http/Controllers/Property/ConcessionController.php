@@ -30,8 +30,8 @@ class ConcessionController extends Controller
     }
 
     //documents upload
-    public function UpdateDocuments(Request $request)
+    public function UpdateDocuments(Request $request, $id)
     {
-        return $this->Repository->UpdateDocuments($request);
+        return $this->Repository->UpdateDocuments($request, $id);
     }
 }
