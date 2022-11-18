@@ -70,6 +70,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     //Property Objection
     Route::controller(NewObjectionController::class)->group(function () {
         Route::post('objection/ClericalMistake/{id}', 'ClericalMistake');
-        Route::post('objection/OwnerDtls', 'getOwnerDetails');
+        Route::post('objection/ownerDetails', 'getOwnerDetails');
+        Route::post('objection/rectification', 'rectification');
     });
 });
