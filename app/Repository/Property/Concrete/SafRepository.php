@@ -682,19 +682,24 @@ class SafRepository implements iSafRepository
      * | @param req  
      * | Status-Open
      */
+
     public function paymentSaf($req)
     {
-        $safDetails = $this->details($req);
-        $req = $safDetails->original['data'];
-        $array = $this->generateSafRequest($req);
-        $safCalculation = new SafCalculation();
-        $request = new Request($array);
-        $safTaxes = $safCalculation->calculateTax($request);
-        $demands = $safTaxes->original['data']['demand'];
-
-        $propTrans = new PropTransaction();
-        $propTrans->saf_id = $req->id;
-        $propTrans->tran_date = "";
+        try {
+            $propTrans = new PropTransaction();
+            if ($req->workflowId == 4)
+                $propTrans->saf_id = $req->id;
+            else
+                $propTrans->property_id = $req->id;
+            $propTrans->amount = $req->amount;
+            $propTrans->tran_date = Carbon::now()->format('Y-m-d');
+            $propTrans->tran_no = 'TRAN/001';
+            $propTrans->payment_mode = $req->paymentMode;
+            $propTrans->tran_date = $req->tranDate;
+            $propTrans->save();
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     /**
