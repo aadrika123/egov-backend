@@ -9,5 +9,4 @@ namespace App\Repository\Property\Interfaces;
  */
 interface iSafReassessRepo
 {
-    public function applyReassessment($req);                                         // New Apply For Reasssessment
 }

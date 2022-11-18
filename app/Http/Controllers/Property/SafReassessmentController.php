@@ -20,10 +20,4 @@ class SafReassessmentController extends Controller
     {
         $this->_Repo = $repo;
     }
-
-    // Apply For Reassessment
-    public function applyReassessment(Request $req)
-    {
-        return $this->_Repo->applyReassessment($req);
-    }
 }
