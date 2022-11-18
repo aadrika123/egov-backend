@@ -5,10 +5,10 @@ namespace App\Repository\Citizen;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use App\Models\ActiveCitizen;
-use App\Models\Property\ActiveSaf;
 use App\Models\Trade\ActiveLicence;
 use App\Models\User;
 use App\Models\Water\WaterApplication;
+use App\Models\Workflows\WfMaster;
 use App\Models\WorkflowTrack;
 use App\Traits\Auth;
 use App\Traits\Workflow\Workflow;
@@ -16,7 +16,6 @@ use Exception;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
@@ -204,7 +203,7 @@ class CitizenRepository implements iCitizenRepository
     {
         $applications = array();
         $propertyApplications = DB::table('active_safs')
-            ->select('id as application_id', 'saf_no', 'holding_no', 'assessment_type', 'application_date', 'payment_status', 'saf_pending_status', 'created_at', 'updated_at')
+            ->select('id as application_id', 'saf_no', 'holding_no', 'assessment_type', 'application_date', 'payment_status', 'saf_pending_status', 'workflow_id', 'created_at', 'updated_at')
             ->where('user_id', $userId)
             ->where('status', 1)
             ->orderByDesc('id')
@@ -222,7 +221,7 @@ class CitizenRepository implements iCitizenRepository
     public function appliedWaterApplications($userId)
     {
         $applications = array();
-        $waterApplications = WaterApplication::select('id as application_id', 'category', 'application_no', 'holding_no', 'created_at', 'updated_at')
+        $waterApplications = WaterApplication::select('id as application_id', 'category', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
             ->where('citizen_id', $userId)
             ->where('status', 1)
             ->orderByDesc('id')
@@ -239,7 +238,7 @@ class CitizenRepository implements iCitizenRepository
     public function appliedTradeApplications($userId)
     {
         $applications = array();
-        $tradeApplications = ActiveLicence::select('id as application_id', 'application_no', 'holding_no', 'created_at', 'updated_at')
+        $tradeApplications = ActiveLicence::select('id as application_id', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
             ->where('emp_details_id', $userId)
             ->where('status', 1)
             ->orderByDesc('id')
@@ -252,20 +251,24 @@ class CitizenRepository implements iCitizenRepository
     /**
      * | Independent Comment for the Citizen on their applications
      * | @param req requested parameters
-     * | Status-Done
+     * | Status-Closed
      */
     public function commentIndependent($req)
     {
+        $path = storage_path() . "/json/workflow.json";
+        $json = json_decode(file_get_contents($path), true);                                                    // get Data from the storage path workflow
+        $collection = collect($json['workflowId']);
+        $refTable = collect($collection)->where('id', 4)->first();
+
         $array = array();
-        $array['workflowId'] = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+        $array['workflowId'] = $req->workflowId;
         $array['citizenId'] = auth()->user()->id;
-        $array['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $array['refTableId'] = 'active_safs.id';
-        $array['safId'] = $req->safId;
+        $array['refTableId'] = $refTable['workflow_name'] . '.id';
+        $array['applicationId'] = $req->applicationId;
         $array['message'] = $req->message;
 
         $workflowTrack = new WorkflowTrack();
-        $this->workflowTrack($workflowTrack, $array);                                                                   // Trait For Workflow Track
+        $this->workflowTrack($workflowTrack, $array);                                                            // Trait For Workflow Track
         $workflowTrack->save();
         return responseMsg(true, "Successfully Given the Message", "");
     }

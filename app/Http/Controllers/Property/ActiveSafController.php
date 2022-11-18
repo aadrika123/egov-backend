@@ -110,4 +110,10 @@ class ActiveSafController extends Controller
     {
         return $this->Repository->paymentSaf($req);
     }
+
+    // Get Property Transactions
+    public function getPropTransactions(Request $req)
+    {
+        return $this->Repository->getPropTransactions($req);
+    }
 }

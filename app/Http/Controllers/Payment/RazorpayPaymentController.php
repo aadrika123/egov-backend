@@ -48,27 +48,33 @@ class RazorpayPaymentController extends Controller
         return $this->Prepository->getPaymentgatewayByrequests($req);
     }
 
-     //get specific PaymentGateway Details according request
-     public function getPgDetails(Request $req)
-     {
-         return $this->Prepository->getPgDetails($req);
-     }
+    //get specific PaymentGateway Details according request
+    public function getPgDetails(Request $req)
+    {
+        return $this->Prepository->getPgDetails($req);
+    }
 
-     //get finla payment details of the webhook
-     public function getWebhookDetails()
-     {
-         return $this->Prepository->getWebhookDetails();
-     }
+    //get finla payment details of the webhook
+    public function getWebhookDetails()
+    {
+        return $this->Prepository->getWebhookDetails();
+    }
 
-     //get order Id of the transaction
-     public function getTraitOrderId(Request $req) //<------------------ here (INVALID)
-     {
-         return $this->Prepository->getTraitOrderId($req);
-     }
+    //get order Id of the transaction
+    public function getTraitOrderId(Request $req) //<------------------ here (INVALID)
+    {
+        return $this->Prepository->getTraitOrderId($req);
+    }
 
-     //verify the payment status
-     public function verifyPaymentStatus(Request $req)
-     {
-         return $this->Prepository->verifyPaymentStatus($req);
-     }
+    //verify the payment status
+    public function verifyPaymentStatus(Request $req)
+    {
+        return $this->Prepository->verifyPaymentStatus($req);
+    }
+
+    //verify the payment status
+    public function gettingWebhookDetails(Request $req)
+    {
+        return $this->Prepository->gettingWebhookDetails($req);
+    }
 }

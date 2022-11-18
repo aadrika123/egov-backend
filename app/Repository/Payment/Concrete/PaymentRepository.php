@@ -6,6 +6,8 @@ use App\Models\Payment;
 use App\Models\Payment\DepartmentMaster;
 use App\Models\Payment\PaymentGatewayDetail;
 use App\Models\Payment\PaymentGatewayMaster;
+use App\Models\Payment\PaymentReject;
+use App\Models\Payment\PaymentSuccess;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\PaymentMaster; //<----------- model(CAUTION)
 use Illuminate\Http\Request;
@@ -13,7 +15,8 @@ use App\Repository\Payment\Interfaces\iPayment;
 use App\Repository\Property\Concrete\SafRepository;
 use Illuminate\Support\Facades\Validator;
 use App\Traits\Payment\Razorpay;
-
+use Razorpay\Api\Api;
+use Razorpay\Api\Errors\SignatureVerificationError;
 
 use Exception;
 
@@ -25,6 +28,8 @@ use Exception;
 class PaymentRepository implements iPayment
 {
     use Razorpay; //<-------------- here (TRAIT)
+    private $refRazorpayId = "rzp_test_3MPOKRI8WOd54p";
+    private $refRazorpayKey = "k23OSfMevkBszuPY5ZtZwutU";
 
     /**
      * | Function for Store Payment
@@ -265,8 +270,8 @@ class PaymentRepository implements iPayment
      * | verifiying the payment success and the signature key
      * | @param requet request from the frontend
      * | @param error collecting the operation error
-     * | @var 
-     * | 
+     * | @var mAttributes
+     * | @var mVerification
      */
     public function verifyPaymentStatus(Request $request)
     {
@@ -275,8 +280,7 @@ class PaymentRepository implements iPayment
             $request->all(),
             [
                 'razorpayOrderId' => 'required',
-                'razorpayPaymentId' => 'required',
-                // 'razorpaySignature' => 'required'
+                'razorpayPaymentId' => 'required'
             ]
         );
         if ($validated->fails()) {
@@ -284,13 +288,31 @@ class PaymentRepository implements iPayment
         }
         try {
             $mAttributes = null;
-            if (!empty($request->razorpaySignature)) {
-                $mVerification = $this->paymentVerify($request, $mAttributes);
-                return responseMsg(true, "Operation Success!", $mVerification);
-            }
-            return ("error");
+            $mVerification = $this->paymentVerify($request, $mAttributes);
+            return responseMsg(true, "Operation Success!", $mVerification);
         } catch (Exception $error) {
             return responseMsg(false, "Error listed Below!", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * | verifiying the payment success and the signature key
+     * | @param requet request from the frontend
+     * | @param error collecting the operation error
+     * | @var mAttributes
+     * | @var mVerification
+     */
+    public function gettingWebhookDetails(Request $request)
+    {
+        try {
+            if (!empty($request)) {
+                $mWebhookDetails = $this->collectWebhookDetails($request);
+                return responseMsg(true, "OPERATION SUCCESS", $mWebhookDetails);
+            }
+            return responseMsg(false, "WEBHOOK DATA NOT ACCUIRED!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "OPERATIONAL ERROR!", $error->getMessage());
         }
     }
 }
