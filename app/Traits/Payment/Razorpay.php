@@ -285,8 +285,6 @@ trait Razorpay
 
             $data->save();
 
-            // DB::commit();                                                                                       //<------------------ here (CAUTION)
-
             # property data transfer
             $transfer['paymentMode'] = $data->payment_method;
             $transfer['id'] = $request->payload['payment']['entity']['notes']['0']['id'];
@@ -312,10 +310,11 @@ trait Razorpay
                         $msg = 'Something went wrong on switch';
                 }
             }
-
+            DB::commit();                                                                                       //<------------------ here (CAUTION)
             return responseMsg(true, "Webhook Data Collected!", $request->event);
         } catch (Exception $error) {
-            return responseMsg(true, "ERROR LISTED BELOW!", $error->getMessage(),$msg);
+            DB::rollBack();
+            return responseMsg(true, "ERROR LISTED BELOW!", $error->getMessage(), $msg);
         }
     }
 }
