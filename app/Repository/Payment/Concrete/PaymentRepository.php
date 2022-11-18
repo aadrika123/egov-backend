@@ -224,16 +224,31 @@ class PaymentRepository implements iPayment
     public function getWebhookDetails()
     {
         try {
-            $mReadPayment =  WebhookPaymentData::select(array(
-                'event',
-                'payment_amount AS amount',
+            $mReadPayment =  WebhookPaymentData::select(
                 'payment_order_id AS orderId',
+                'payment_amount AS amount',
+                'event',
+                'payment_status AS status',
+                'payment_bank AS bank',     
                 'payment_contact AS contact',
                 'payment_method AS method',
+                'payment_card_id AS cardID',
+                'payment_vpa AS vapNo',
                 'payment_email AS email',
-                'payment_status AS status'
-            ))->get();
-
+                'contains',
+                'payment_error_code AS errorCode',
+                'payment_error_description AS errorDescription',
+                'payment_error_reason AS errorReason',
+                'payment_id AS paymentId'
+            )->get();
+            // return $mReadPayment[$value]->orderId;
+            // $mCollection = collect($mReadPayment)->map(function ($value, $key) {
+            //     $value['userDetails'] =  WebhookPaymentData::select('payment_notes AS userDetails')
+            //     ->where($value[''])
+            //     ->get();
+            //     return $value
+            // });
+            // return $mCollection
             return responseMsg(true, "Data fetched!", $mReadPayment);
         } catch (Exception $error) {
             return responseMsg(false, "Error listed below!", $error->getMessage());
@@ -316,3 +331,32 @@ class PaymentRepository implements iPayment
         }
     }
 }
+
+
+#########################################################
+// return [
+                    //     $key['orderId'] => array(
+                    //         $key['event'],
+                    //         $key['amount'],
+                    //         $key['orderId'],
+                    //         $key['contact'],
+                    //         $key['method'],
+                    //         $key['email'],
+                    //         $key['status'],
+                    //         $key['contains'] = WebhookPaymentData::join('payment_requests', 'payment_requests.razorpay_order_id', '=', 'webhook_payment_data.payment_order_id')
+                    //         ->select(array(
+                    //             'payment_requests.user_id AS userID'
+                    //         ))
+                    //         ->where($key['orderId'] , 'webhook_payment_data.payment_order_id')
+                    //         ->get(),
+                    //     ),
+                    // ];
+
+#########################################################
+// $mCollection = collect($mReadPayment)->map(function ($value, $key) {
+            //     $value['userDetails'] =  WebhookPaymentData::select('payment_notes')
+            //     ->where($value[''])
+            //     ->get();
+            //     return $value
+            // });
+            // return $mCollection                 
