@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\NewPdfController; //<----------traits
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\WebhookPaymentData;
+use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
@@ -205,6 +206,8 @@ trait Razorpay
 
             # data of notes from request
             $notes = json_encode($request->payload['payment']['entity']['notes']);
+            $depatmentId=$request->payload['payment']['entity']['notes']['0']['depatmentId'];
+            // return $req;
 
             # manuplation of amount data
             $amount = $request->payload['payment']['entity']['amount'];
@@ -282,17 +285,38 @@ trait Razorpay
 
             $data->save();
 
-            DB::commit();                                                                                       //<------------------ here (CAUTION)
+            // DB::commit();                                                                                       //<------------------ here (CAUTION)
 
             # conditionaly upadting the request data
             if ($status == 'captured' && $captured == 1) {
                 PaymentRequest::where('razorpay_order_id', $request->payload['payment']['entity']['order_id'])
                     ->update(['payment_status' => 1]);
             }
-                                                                                              
+               
+            # property data transfer
+            $transfer['method']=$data->payment_method;
+            $transfer['id']=$request->payload['payment']['entity']['notes']['0']['id'];
+            $transfer['amount']=$actulaAmount;
+            $transfer['workflowId'] = $request->payload['payment']['entity']['notes']['0']['workflowId'];
+            
+           # calling function for the kink
+            switch($depatmentId) {
+                case(1):
+                    $obj=new SafRepository();
+                    $obj->paymentSaf($transfer);  
+                    break; 
+                case(2):
+                     $msge= "operation";
+                    break;    
+                default:
+                    $msg = 'Something went wrong on switch';
+            }
+
+            
+
             return responseMsg(true, "Webhook Data Collected!", $request->event);
         } catch (Exception $error) {
-            return responseMsg(true, "ERROR LISTED BELOW!", $error->getMessage());
+            return responseMsg(true, "ERROR LISTED BELOW!", $error->getMessage(),$msg);
         }
     }
 }
