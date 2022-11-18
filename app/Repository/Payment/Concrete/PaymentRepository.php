@@ -328,7 +328,8 @@ class PaymentRepository implements iPayment
         try {
             if (!empty($request)) {
                 $mWebhookDetails = $this->collectWebhookDetails($request);
-                return responseMsg(true, "OPERATION SUCCESS", $mWebhookDetails);
+                // return responseMsg(true, "OPERATION SUCCESS", $mWebhookDetails);
+                return $mWebhookDetails;
             }
             return responseMsg(false, "WEBHOOK DATA NOT ACCUIRED!", "");
         } catch (Exception $error) {
