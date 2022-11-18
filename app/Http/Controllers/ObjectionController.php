@@ -24,4 +24,10 @@ class ObjectionController extends Controller
     {
         return $this->Repository->getOwnerDetails($request);
     }
+
+    //
+    public function rectification(Request $request)
+    {
+        return $this->Repository->rectification($request);
+    }
 }
