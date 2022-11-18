@@ -198,6 +198,10 @@ trait Razorpay
             # data of notes from request
             $notes = json_encode($request->payload['payment']['entity']['notes']);
 
+            # manuplation of data
+            $amount= $request->payload['payment']['entity']['amount'];
+            $actulaAmount=$amount/100;
+
             # key name of the aquired data 
             $arrayInAquirer = $dataOfRequest['payload']['payment']['entity']['acquirer_data'];
             $firstKey = array_key_first($arrayInAquirer);
@@ -230,7 +234,7 @@ trait Razorpay
             $data->contains                     = $contains; //<---------- this(CONTAINS)
             $data->payment_id                   = $request->payload['payment']['entity']['id'];
             $data->payment_entity               = $request->payload['payment']['entity']['entity'];
-            $data->payment_amount               = $request->payload['payment']['entity']['amount'];
+            $data->payment_amount               = $actulaAmount; //<-------- here
             $data->payment_currency             = $request->payload['payment']['entity']['currency'];
             $data->payment_status               = $request->payload['payment']['entity']['status'];
             $data->payment_order_id             = $request->payload['payment']['entity']['order_id'];
