@@ -20,6 +20,7 @@ use App\EloquentClass\Property\SafCalculation;
 use App\Models\Property\ActiveSaf;
 use App\Models\Property\ActiveSafsFloorDtls;
 use App\Models\Property\ActiveSafsOwnerDtl;
+use App\Models\Property\MPropTransferModeMaster;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropMConstructionType;
 use App\Models\Property\PropMFloor;
@@ -100,6 +101,11 @@ class SafRepository implements iSafRepository
             ->where('status', 1)
             ->get();
         $data['construction_type'] = $constructionType;
+
+        $transferModuleType = MPropTransferModeMaster::select('id', 'transfer_mode')
+            ->where('status', 1)
+            ->get();
+        $data['transfer_mode'] = $transferModuleType;
         return  responseMsg(true, '', $data);
     }
 
@@ -131,12 +137,21 @@ class SafRepository implements iSafRepository
             $safCalculation = new SafCalculation();
             $safTaxes = $safCalculation->calculateTax($request);
 
-            DB::beginTransaction();
-            $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.NewAssessment");
+            if ($request->assessmentType == 1) {                                                    // New Assessment 
+                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.NewAssessment");
+            }
+
+            if ($request->assessmentType == 2) {                                                    // Reassessment
+                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.ReAssessment");
+            }
+
+            if ($request->assessmentType == 3) {                                                    // Mutation
+                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.Mutation");
+            }
 
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
-
+            DB::beginTransaction();
             // dd($request->ward);
             $safNo = $this->safNo($request->ward, $assessmentTypeId, $ulb_id);
             $saf = new ActiveSaf();

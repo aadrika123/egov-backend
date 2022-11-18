@@ -24,7 +24,7 @@ trait SAF
         $saf->previous_holding_id = $req->previousHoldingId;
         $saf->previous_ward_mstr_id = $req->previousWard;
         $saf->is_owner_changed = $req->isOwnerChanged;
-        $saf->transfer_mode_mstr_id = $req->transferMode;
+        $saf->transfer_mode_mstr_id = $req->transferModeId;
         $saf->saf_no = $safNo;
         $saf->holding_no = $req->holdingNo;
         $saf->ward_mstr_id = $req->ward;
