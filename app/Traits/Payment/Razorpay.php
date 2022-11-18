@@ -82,7 +82,7 @@ trait Razorpay
             $transaction->razorpay_order_id = $mReturndata['orderId'];
             $transaction->amount = $request->amount;
             $transaction->currency = 'INR';
-            // $transaction->save(); //<--------- here (REMINDER)
+            $transaction->save(); //<--------- here (REMINDER)
 
             return $mReturndata; //<------------------ here(RESPONSE)
         } catch (Exception $error) {
