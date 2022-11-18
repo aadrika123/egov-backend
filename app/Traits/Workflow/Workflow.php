@@ -186,7 +186,7 @@ trait Workflow
                     r.role_name AS role_name 
                     FROM wf_roles r
                     INNER JOIN (SELECT * FROM wf_workflowrolemaps WHERE workflow_id=$wfWorkflowId) w ON w.wf_role_id=r.id
-                    WHERE r.is_initiator=TRUE 
+                    WHERE w.is_initiator=TRUE 
                     ";
         return $query;
     }

@@ -21,8 +21,8 @@ class ConcessionRepository implements iConcessionRepository
             $device = PropOwnerDtl::find($request->propDtlId);
             $device->gender = $request->gender;
             $device->dob = $request->dob;
-            $device->is_armed_force = $request->isArmedForce;
-            $device->is_specially_abled = $request->isSpeciallyAbled;
+            $device->is_armed_force = $request->armedForce;
+            $device->is_specially_abled = $request->speciallyAbled;
             $device->updated_at = Carbon::now();
             $device->save();
             return responseMsg(true, "Successfully Updated", "");
@@ -32,7 +32,7 @@ class ConcessionRepository implements iConcessionRepository
     }
 
     //document upload
-    public function UpdateDocuments(Request $request)
+    public function UpdateDocuments(Request $request, $id)
     {
         // $uploaded_files = $request->file->store('public/uploads/');
         // return ["result" => $uploaded_files];
@@ -40,13 +40,15 @@ class ConcessionRepository implements iConcessionRepository
 
         // for single image upload
         // if ($request->has('image')) {
-        //     $image = $request->image;
+        // $image = $request->gender;
 
-        //     $name = time() . '.' . $image->getClientOriginalExtension();
+        // foreach ($image as $images) {
+        //     $name = time() . '.' . $images->getClientOriginalExtension();
         //     $path = public_path('image');
-        //     $image->move($path, $name);
+        //     $images->move($path, $name);
 
-        //     return responseMsg('200', 'Successfully Uploaded', $path);
+        //     return responseMsg('200', 'Successfully Uploaded', $path . '/' . $name);
+        // }
         // }
 
         //for multiple image upload
@@ -55,18 +57,36 @@ class ConcessionRepository implements iConcessionRepository
         //     'image.*' => 'mimes:csv,txt,pdf,jpg,jpeg'
         // ]);
 
+        // try {
 
-        if ($request->has('image')) {
-            $image = $request->image;
+        $device = PropOwnerDtl::find($id);
+        $device->gender = $request->gender;
+        $device->dob = $request->dob;
+        $device->is_armed_force = $request->armedForce;
+        $device->is_specially_abled = $request->speciallyAbled;
+        $device->updated_at = Carbon::now();
+        $device->save();
+        // return responseMsg(true, "Successfully Updated", "");
+        // } catch (Exception $e) {
+        //     return response()->json($e, 400);
+        // }
 
-            foreach ($image as $key => $value) {
-                $name = $key . time() . '.' . $value->getClientOriginalExtension();
-                $path = public_path('image');
-                $value->move($path, $name);
-                $data[$key] = $name;
+
+        try {
+            if ($request->hasFile('file')) {
+                $file = $request->file;
+
+                foreach ($file as $key => $value) {
+                    $name = $key . time() . '.' . $value->getClientOriginalExtension();
+                    $path = public_path('image');
+                    $value->move($path, $name);
+                    $data[$key] = $name;
+                }
+
+                return responseMsg('200', 'Successfully Uploaded', $data, $device);
             }
-
-            return responseMsg('200', 'Successfully Uploaded', $data);
+        } catch (Exception $e) {
+            return $e;
         }
     }
 }
