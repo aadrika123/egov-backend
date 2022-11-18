@@ -262,7 +262,7 @@ trait Razorpay
             $data->webhook_created_at          = $request->created_at;
 
             $data->save();
-            // DB::commit(); //<------------------ here (CAUTION)
+            DB::commit(); //<------------------ here (CAUTION)
             return responseMsg(true, "Webhook Data Collected!", $request->event);
         } catch (Exception $error) {
             return responseMsg(true, "ERROR LISTED BELOW!", $error->getMessage());
