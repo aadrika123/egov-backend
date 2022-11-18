@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Repository\Property\Interfaces\iSafReassessRepo;
 
 /**
  * | Created On- 17-11-2022 
@@ -13,9 +14,10 @@ use Illuminate\Http\Request;
 
 class SafReassessmentController extends Controller
 {
-    // Apply For Reassessment
-    public function applyReassessment(Request $req)
+    protected $_Repo;
+
+    public function __construct(iSafReassessRepo $repo)
     {
-        dd($req->all());
+        $this->_Repo = $repo;
     }
 }

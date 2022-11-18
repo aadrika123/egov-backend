@@ -54,7 +54,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     // SAF Reassessment
     Route::controller(SafReassessmentController::class)->group(function () {
-        Route::post('saf/reassessment/apply', 'applyReassessment');                                 // Apply for Reassessment
     });
 
     // Property Calculator

@@ -16,3 +16,4 @@ yarn-error.log
 /database/factories
 /public/concession
 /public/objection
+/public/image/
