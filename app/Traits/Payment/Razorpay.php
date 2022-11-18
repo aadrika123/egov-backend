@@ -206,7 +206,7 @@ trait Razorpay
 
             # data of notes from request
             $notes = json_encode($request->payload['payment']['entity']['notes']);
-            $depatmentId=$request->payload['payment']['entity']['notes']['0']['depatmentId'];
+            $depatmentId = $request->payload['payment']['entity']['notes']['0']['depatmentId'];
             // return $req;
 
             # manuplation of amount data
@@ -287,32 +287,31 @@ trait Razorpay
 
             // DB::commit();                                                                                       //<------------------ here (CAUTION)
 
+            # property data transfer
+            $transfer['method'] = $data->payment_method;
+            $transfer['id'] = $request->payload['payment']['entity']['notes']['0']['id'];
+            $transfer['amount'] = $actulaAmount;
+            $transfer['workflowId'] = $request->payload['payment']['entity']['notes']['0']['workflowId'];
+            // return $transfer;
+
             # conditionaly upadting the request data
             if ($status == 'captured' && $captured == 1) {
                 PaymentRequest::where('razorpay_order_id', $request->payload['payment']['entity']['order_id'])
                     ->update(['payment_status' => 1]);
-            }
-               
-            # property data transfer
-            $transfer['method']=$data->payment_method;
-            $transfer['id']=$request->payload['payment']['entity']['notes']['0']['id'];
-            $transfer['amount']=$actulaAmount;
-            $transfer['workflowId'] = $request->payload['payment']['entity']['notes']['0']['workflowId'];
-            
-           # calling function for the kink
-            switch($depatmentId) {
-                case(1):
-                    $obj=new SafRepository();
-                    $obj->paymentSaf($transfer);  
-                    break; 
-                case(2):
-                     $msge= "operation";
-                    break;    
-                default:
-                    $msg = 'Something went wrong on switch';
-            }
 
-            
+                # calling function for the kink
+                switch ($depatmentId) {
+                    case (1):
+                        $obj = new SafRepository();
+                        $obj->paymentSaf($transfer);
+                        break;
+                        // case(2):
+                        //     //  $msge= "operation";
+                        //     break;    
+                    default:
+                        $msg = 'Something went wrong on switch';
+                }
+            }
 
             return responseMsg(true, "Webhook Data Collected!", $request->event);
         } catch (Exception $error) {
