@@ -106,6 +106,7 @@ class PaymentRepository implements iPayment
         if ($validateUser->fails()) {
             return responseMsg(false, 'validation error', $validateUser->errors(), 401);
         }
+        # operation
         try {
             $mReadDepartment = DepartmentMaster::select(
                 'department_masters.id',
@@ -273,7 +274,7 @@ class PaymentRepository implements iPayment
             $safRepo = new SafRepository();
             $calculateSafById = $safRepo->calculateSafBySafId($request);
             $mTotalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
-            // return $calculateSafById;
+        
             if ($request->amount == $mTotalAmount) {
                 $mOrderDetails = $this->saveGenerateOrderid($request);
                 return responseMsg(true, "OrderId Generated!", $mOrderDetails);
