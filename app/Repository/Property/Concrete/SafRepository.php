@@ -31,6 +31,7 @@ use App\Models\Property\PropMUsageType;
 use App\Models\Property\PropTransaction;
 use App\Models\Workflows\WfRole as WorkflowsWfRole;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Repository\Property\EloquentProperty;
@@ -621,10 +622,13 @@ class SafRepository implements iSafRepository
     {
         try {
             $redis = Redis::connection();
-            $backId = json_decode(Redis::get('workflow_roles'));
+            $workflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
             if (!$backId) {
-                $backId = WorkflowsWfRole::where('is_initiator', 1)->first();
-                $redis->set('workflow_roles', json_encode($backId));
+                $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
+                    ->where('is_initiator', true)
+                    ->first();
+                $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
             }
             $saf = ActiveSaf::find($req->safId);
             $saf->current_role = $backId->id;
