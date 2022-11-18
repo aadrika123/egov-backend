@@ -229,7 +229,7 @@ class PaymentRepository implements iPayment
                 'payment_amount AS amount',
                 'event',
                 'payment_status AS status',
-                'payment_bank AS bank',     
+                'payment_bank AS bank',
                 'payment_contact AS contact',
                 'payment_method AS method',
                 'payment_card_id AS cardID',
@@ -240,16 +240,20 @@ class PaymentRepository implements iPayment
                 'payment_error_description AS errorDescription',
                 'payment_error_reason AS errorReason',
                 'payment_id AS paymentId'
+
             )->get();
-            // return $mReadPayment[$value]->orderId;
-            // $mCollection = collect($mReadPayment)->map(function ($value, $key) {
-            //     $value['userDetails'] =  WebhookPaymentData::select('payment_notes AS userDetails')
-            //     ->where($value[''])
-            //     ->get();
-            //     return $value
-            // });
-            // return $mCollection
-            return responseMsg(true, "Data fetched!", $mReadPayment);
+
+            $mCollection = collect($mReadPayment)->map(function ($value, $key) {
+                $decode = WebhookPaymentData::select('payment_notes AS userDetails')
+                    ->where('payment_id', $value['paymentId'])
+                    ->where('payment_order_id', $value['orderId'])
+                    ->where('payment_status', $value['status'])
+                    ->get();
+                $details = json_decode($decode['0']->userDetails);
+                $value['userDetails'] =  $details;
+                return $value;
+            });
+            return responseMsg(true, "Data fetched!", $mCollection);
         } catch (Exception $error) {
             return responseMsg(false, "Error listed below!", $error->getMessage());
         }
