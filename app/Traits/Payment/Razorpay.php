@@ -15,6 +15,7 @@ use App\Models\Payment\CardDetail;
 use App\Models\Payment\WebhookPaymentData;
 use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -207,7 +208,6 @@ trait Razorpay
             # data of notes from request
             $notes = json_encode($request->payload['payment']['entity']['notes']);
             $depatmentId = $request->payload['payment']['entity']['notes']['0']['depatmentId'];
-            // return $req;
 
             # manuplation of amount data
             $amount = $request->payload['payment']['entity']['amount'];
@@ -223,12 +223,15 @@ trait Razorpay
             # captured status from webhook
             $captured = $request->payload['payment']['entity']['captured'];
 
+            # details for the transactionId
+            $transTransferDetails['paymentId'] = $request->payload['payment']['entity']['id'];
+            $transTransferDetails['orderId'] = $request->payload['payment']['entity']['order_id'];
+            $transTransferDetails['status'] = $status;
 
             DB::beginTransaction();                                                                             //<----------here
             #   data to be saved in card detail table
             $aCard = $request->payload['payment']['entity']['card_id'];
             if (!is_null($aCard)) {
-
                 $card = new CardDetail();
                 $card->id               = $request->payload['payment']['entity']['card']['id'];
                 $card->entity           = $request->payload['payment']['entity']['card']['entity'];
@@ -281,23 +284,27 @@ trait Razorpay
             $data->payment_acquirer_data_type   = $firstKey;                                                    //<------------here (FIRSTKEY)
             $data->payment_acquirer_data_value  = $request->payload['payment']['entity']['acquirer_data'][$firstKey];
             $data->payment_created_at           = $request->payload['payment']['entity']['created_at'];
-            $data->webhook_created_at          = $request->created_at;
-
+            $data->webhook_created_at           = $request->created_at;
             $data->save();
-
+            
+            # transaction id generation and saving
+            $actualTransactionNo = $this->generatingTransactionId($transTransferDetails);
+            $data->payment_transaction_id = $actualTransactionNo;
+            $data->save();
+           
             # property data transfer
             $transfer['paymentMode'] = $data->payment_method;
             $transfer['id'] = $request->payload['payment']['entity']['notes']['0']['id'];
             $transfer['amount'] = $actulaAmount;
             $transfer['workflowId'] = $request->payload['payment']['entity']['notes']['0']['workflowId'];
-            // return $transfer;
+            $transfer['transactionNo'] = $actualTransactionNo;
 
             # conditionaly upadting the request data
             if ($status == 'captured' && $captured == 1) {
                 PaymentRequest::where('razorpay_order_id', $request->payload['payment']['entity']['order_id'])
                     ->update(['payment_status' => 1]);
 
-                # calling function for the kink
+                # calling function for the modules
                 switch ($depatmentId) {
                     case ('1'):
                         $obj = new SafRepository();
@@ -307,14 +314,40 @@ trait Razorpay
                         //     //  $msge= "operation";
                         //     break;    
                     default:
-                        $msg = 'Something went wrong on switch';
+                        // $msg = 'Something went wrong on switch';
                 }
             }
             DB::commit();                                                                                       //<------------------ here (CAUTION)
             return responseMsg(true, "Webhook Data Collected!", $request->event);
         } catch (Exception $error) {
             DB::rollBack();
-            return responseMsg(true, "ERROR LISTED BELOW!", $error->getMessage(), $msg);
+            return responseMsg(true, "ERROR LISTED BELOW!", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * | ----------------- generating Application ID ------------------------------- |
+     * | @param request
+     * | @param error
+     * | @var mid
+     * | Operation : this function generate a random and unique transactionID
+     * | this -> naming
+     * | here -> variable
+     */
+    public function generatingTransactionId($request)
+    {
+        try {
+            # generate transactionID
+            $id = WebhookPaymentData::select('id')
+                ->where('payment_id', $request['paymentId'])
+                ->where('payment_order_id', $request['orderId'])
+                ->where('payment_status', $request['status'])
+                ->get()
+                ->first();
+            return Carbon::createFromDate()->milli . $id->id . carbon::now()->diffInMicroseconds();
+        } catch (Exception $error) {
+            return response()->json([$error->getMessage()]);
         }
     }
 }
