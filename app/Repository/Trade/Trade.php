@@ -479,7 +479,7 @@ class Trade implements ITrade
                     $licence->firm_type_id        = $request->initialBusinessDetails['firmType'];
                     $licence->otherfirmtype       = $request->initialBusinessDetails['otherFirmType']??null;
                     $licence->application_type_id = $mApplicationTypeId;
-                    $licence->category_type_id    = $request->firmDetails['categoryTypeId']??null;
+                    $licence->category_type_id    = $request->initialBusinessDetails['categoryTypeId']??null;
                     $licence->ownership_type_id   = $request->initialBusinessDetails['ownershipType'];
                     $licence->ward_mstr_id        = $request->firmDetails['wardNo'];
                     $licence->new_ward_mstr_id    = $request->firmDetails['newWardNo'];
@@ -3865,11 +3865,6 @@ class Trade implements ITrade
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id;
-            $rules["id"]="required|int";
-            $validator = Validator::make($request->all(), $rules, );
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(),$request->all());
-            }
             $mUserType          = $this->_parent->userType();
             if(in_array(strtoupper($mUserType),["SUPER ADMIN","BO"]))
             {
@@ -3886,7 +3881,7 @@ class Trade implements ITrade
             $refOldLicece       = $this->getLicenceById($request->id); 
             if(!$refOldLicece)
             {
-                throw new Exception("No Priviuse Licence Found");
+                throw new Exception("No Licence Found");
             }
             $refOldOwneres =$this->getOwnereDtlByLId($request->id);
             $mnaturOfBusiness = $this->getLicenceItemsById($refOldLicece->nature_of_bussiness);
@@ -3914,43 +3909,167 @@ class Trade implements ITrade
         }
     }
     public function updateBasicDtl(Request $request)
-    {
-        $user = Auth()->user();
-        $user_id = $user->id;
-        $ulb_id = $user->ulb_id;
-        $redis = new Redis;
-        $user_data = json_decode($redis::get('user:' . $user_id), true);
-        $roll_id =  $user_data['role_id']??($this->getUserRoll($user_id,'Trade','Trade')->role_id??-1);
+    { 
+        $user       = Auth()->user();
+        $refUserId  = $user->id;
+        $refUlbId   = $user->ulb_id;
+        $redis      = new Redis;
+        $mUserData  = json_decode($redis::get('user:' . $refUserId), true);
+        $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        $rollId     =  $mUserData['role_id']??($this->_parent->getUserRoll($refUserId, $refUlbId,$refWorkflowId)->role_id??-1);
+        
+        $mUserType = $this->_parent->userType();
+        $mProprtyId=null;
         $rules = [];
         $message = [];
+
+        $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
+        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.&\s]+$/';
         try{
-            if($roll_id==-1)
+            if($rollId==-1 || (!in_array($mUserType,['BO','SUPER ADMIN'])))
             {
                 throw new Exception("You Are Not Authorized");
+            }   
+            $refOldLicece       = ActiveLicence::find($request->id);
+            $mLicenceId         = $request->id;
+            if(!$refOldLicece)
+            {
+                throw new Exception("No Licence Found");
             }
-            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
-            $rules["licenceId"] = "required";
-            $message["licenceId.required"] = "Licence Id Requird";
-            $rules["wordNo"] = "int";
-            $rules["newWordNo"] = "int";
-            $rules["businessAddress"] = "regex:$regex";
-            $rules["businessDescription"] = "regex:$regex";
-            $rules["premisesOwner"] = "regex:$regex";
-            $rules["pincode"] = "digits:6|regex:/[0-9]{6}/";
-            $rules["landmark"] = "regex:$regex";
-            $rules["ownershipType"] = "int";
-            $rules['ownerDetails.*.id']="required|digits";
-            $rules['ownerDetails.*.businessOwnerName'] = "regex:$regex"; 
-            $rules['ownerDetails.*.guardianName'] = "regex:$regex"; 
-            $rules['ownerDetails.*.mobileNo'] = "digits:10|regex:/[0-9]{10}/"; 
-            $rules['ownerDetails.*.email'] = "email"; 
+            elseif($refOldLicece->payment_status==0)
+            {
+                $rules["firmDetails.areaSqft"]="required|numeric";
+                $rules["firmDetails.firmEstdDate"]="required|date"; 
+                $rules["firmDetails.natureOfBusiness"]="required|array";
+                $rules["firmDetails.natureOfBusiness.*.id"]="required|digits_between:1,9223372036854775807";
+                $rules["firmDetails.tocStatus"] = "required|bool";
+            }
+            $rules["firmDetails.businessAddress"] = "required|regex:$mRegex";
+            $rules["firmDetails.businessAddress"]="required|regex:$mRegex";
+            $rules["firmDetails.businessDescription"]="required|regex:$mRegex"; 
+            $rules["firmDetails.firmName"]="required|regex:$mFramNameRegex";
+            $rules["firmDetails.premisesOwner"]="required|regex:$mRegex";
+            $rules["firmDetails.newWardNo"]="required|digits_between:1,9223372036854775807";
+            $rules["firmDetails.wardNo"]="required|digits_between:1,9223372036854775807";
+            $rules["firmDetails.pincode"]="required|digits:6|regex:/[0-9]{6}/"; 
+
+            $rules["firmDetails.landmark"]="regex:$mRegex";           
+            $rules["firmDetails.kNo"] = "digits|regex:/[0-9]{10}/";
+            $rules["firmDetails.bindBookNo"] = "regex:$mRegex";
+            $rules["firmDetails.accountNo"] = "regex:$mRegex";
+
+            $rules["initialBusinessDetails.firmType"]="required|digits_between:1,9223372036854775807";
+            $rules["initialBusinessDetails.categoryTypeId"]="requird|digits_between:1,9223372036854775807";
+            if(isset($this->initialBusinessDetails['firmType']) && $this->initialBusinessDetails['firmType']==5)
+            {
+                $rules["initialBusinessDetails.otherFirmType"]="required|regex:$mRegex";
+            }
+            $rules["initialBusinessDetails.ownershipType"]="required|digits_between:1,9223372036854775807"; 
+
+            $rules["ownerDetails"] = "required|array";
+            $rules["ownerDetails.*.id"] = "digits_between:1,9223372036854775807";
+            $rules["ownerDetails.*.businessOwnerName"]="required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
+            $rules["ownerDetails.*.guardianName"]="regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
+            $rules["ownerDetails.*.mobileNo"]="required|digits:10|regex:/[0-9]{10}/";
+            $rules["ownerDetails.*.email"]="email";
+
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) 
             {
                 return responseMsg(false, $validator->errors(),$request->all());
             }
+            $mnaturOfBusiness = array_map(function($val){
+                return $val['id'];
+            },$request->firmDetails['natureOfBusiness']);
+            $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
+            if($request->firmDetails['holdingNo'])
+            {
+                $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'],$refUlbId);
+                if($property['status'])
+                    $mProprtyId = $property['property']['id'];
+                else
+                    throw new Exception("Property Details Not Found");
+            }
 
-            return responseMsg(true,'',$request->all());
+            DB::beginTransaction();
+
+            if($refOldLicece->payment_status==0)
+            {
+                $refOldLicece->area_in_sqft        = $request->firmDetails['areaSqft'];
+                $refOldLicece->establishment_date  = $request->firmDetails['firmEstdDate'];
+                $refOldLicece->nature_of_bussiness = $mnaturOfBusiness;
+                $refOldLicece->tobacco_status      = $request->firmDetails['tocStatus'];
+                if($refOldLicece->tobacco_status==1)
+                {
+                    $refOldLicece->licence_for_years   = 1;
+                    $refOldLicece->nature_of_bussiness = 187;
+                }
+            }
+            $refOldLicece->firm_type_id        = $request->initialBusinessDetails['firmType'];
+            $refOldLicece->otherfirmtype       = $request->initialBusinessDetails['otherFirmType']??null;
+            $refOldLicece->category_type_id    = $request->initialBusinessDetails['categoryTypeId']??null;
+            $refOldLicece->ownership_type_id   = $request->initialBusinessDetails['ownershipType'];
+            $refOldLicece->ward_mstr_id        = $request->firmDetails['wardNo'];
+            $refOldLicece->new_ward_mstr_id    = $request->firmDetails['newWardNo'];
+
+            $refOldLicece->prop_dtl_id         = $mProprtyId;
+            $refOldLicece->holding_no          = $request->firmDetails['holdingNo'];
+            $refOldLicece->firm_name           = $request->firmDetails['firmName'];
+            $refOldLicece->premises_owner_name = $request->firmDetails['premisesOwner']??null;
+            $refOldLicece->brife_desp_firm     = $request->firmDetails['businessDescription'];
+
+            $refOldLicece->k_no                = $request->firmDetails['kNo']??null;
+            $refOldLicece->bind_book_no        = $request->firmDetails['bindBookNo']??null;
+            $refOldLicece->account_no          = $request->firmDetails['accountNo']??null;
+            $refOldLicece->pan_no              = $request->firmDetails['panNo']??null;
+            $refOldLicece->tin_no              = $request->firmDetails['tinNo']??null;
+            $refOldLicece->salestax_no         = $request->firmDetails['salestaxNo']??null;
+            $refOldLicece->address             = $request->firmDetails['businessAddress'];
+            $refOldLicece->landmark            = $request->firmDetails['landmark']??null;
+            $refOldLicece->pin_code            = $request->firmDetails['pincode']??null;
+            $refOldLicece->street_name         = $request->firmDetails['streetName']??null;
+            $refOldLicece->update();
+            foreach($request->ownerDetails as $owner)
+            {
+                if(isset($owner['id']) && trim($owner['id']))
+                {
+                    $refOldOwner = ActiveLicenceOwner::find($owner['id']);                    
+                    if(!$refOldOwner || $refOldOwner->licence_id!= $mLicenceId)
+                    {
+                        throw new Exception("Invalid Owner Id Supply!!!");
+                    }
+                    $refOldOwner->owner_name       = $owner['businessOwnerName'];
+                    $refOldOwner->guardian_name    = $owner['guardianName']??null;
+                    $refOldOwner->address          = $owner['address']??null;
+                    $refOldOwner->mobile           = $owner['mobileNo'];
+                    $refOldOwner->city             = $owner['city']??null;
+                    $refOldOwner->district         = $owner['district']??null;
+                    $refOldOwner->state            = $owner['state']??null;
+                    $refOldOwner->emailid          = $owner['email']??null;                    
+                    $refOldOwner->update();
+                }
+                elseif(!$refOldLicece->doc_verify_emp_details_id)
+                {
+                    $newOwner = new ActiveLicenceOwner();
+                    $newOwner->licence_id      = $mLicenceId;
+                    $newOwner->owner_name      = $owner['businessOwnerName'];
+                    $newOwner->guardian_name   = $owner['guardianName']??null;
+                    $newOwner->address         = $owner['address']??null;
+                    $newOwner->mobile          = $owner['mobileNo'];
+                    $newOwner->city            = $owner['city']??null;
+                    $newOwner->district        = $owner['district']??null;
+                    $newOwner->state           = $owner['state']??null;
+                    $newOwner->emailid         = $owner['email']??null;
+                    $newOwner->emp_details_id  = $refUserId;
+                    $newOwner->save();
+                }
+                else
+                {
+                    throw new Exception("You Can Not Update Owner Document is VeriFy On ".$refOldLicece->doc_verify_date." !!!");
+                }
+            }
+            DB::commit();
+            return responseMsg(true,'',"Application Update SuccessFully!");
         }
         catch(Exception $e)
         {
