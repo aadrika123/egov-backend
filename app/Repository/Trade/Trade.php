@@ -3606,7 +3606,7 @@ class Trade implements ITrade
                     ->where('trade_level_pendings.licence_id', $id)     
                     ->whereIn('trade_level_pendings.status',[1,2])                 
                     ->groupBy('trade_level_pendings.receiver_user_type_id',
-                            'remaks_for.remarks',
+                            'trade_level_pendings.remarks',
                             'trade_level_pendings.forward_date',
                             'trade_level_pendings.forward_time','wf_roles.role_name',
                             'trade_level_pendings.created_at'
