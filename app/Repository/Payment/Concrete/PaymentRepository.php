@@ -19,6 +19,7 @@ use Carbon\Carbon;
 use Razorpay\Api\Api;
 use Razorpay\Api\Errors\SignatureVerificationError;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 use Exception;
 
@@ -227,11 +228,6 @@ class PaymentRepository implements iPayment
     public function getWebhookDetails()
     {
         try {
-
-            // $mdate = WebhookPaymentData::select('created_at AS date',)
-            //     ->get();
-            // $a = $mdate['0']->date;
-            // return Str::limit($a, 10);
             $mReadPayment =  WebhookPaymentData::select(
                 'payment_transaction_id AS transactionNo',
                 'payment_order_id AS orderId',
@@ -326,6 +322,10 @@ class PaymentRepository implements iPayment
     public function gettingWebhookDetails(Request $request)
     {
         try {
+            # creating json of webhook data
+            $paymentId = $request->payload['payment']['entity']['id'];
+            Storage::disk('public')->put($paymentId . '.json', json_encode($request->all()));
+
             if (!empty($request)) {
                 $mWebhookDetails = $this->collectWebhookDetails($request);
                 // return responseMsg(true, "OPERATION SUCCESS", $mWebhookDetails);
