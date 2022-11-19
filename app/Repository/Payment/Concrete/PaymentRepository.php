@@ -346,6 +346,16 @@ class PaymentRepository implements iPayment
      */
     public function getTransactionNoDetails(Request $request)
     {
+        # validation 
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'transactionNo' => 'required|integer',
+            ]
+        );
+        if ($validated->fails()) {
+            return responseMsg(false, "validation error", $validated->errors(), 401);
+        }
         try {
             $mReadTransactions =  WebhookPaymentData::select(
                 'payment_order_id AS orderId',
@@ -355,13 +365,6 @@ class PaymentRepository implements iPayment
                 'payment_bank AS bank',
                 'payment_contact AS contact',
                 'payment_method AS method',
-                'payment_card_id AS cardID',
-                'payment_vpa AS vapNo',
-                'payment_email AS email',
-                'contains',
-                'payment_error_code AS errorCode',
-                'payment_error_description AS errorDescription',
-                'payment_error_reason AS errorReason',
                 'payment_id AS paymentId',
                 'payment_transaction_id AS transactionNo'
             )
@@ -378,7 +381,10 @@ class PaymentRepository implements iPayment
                 $value['userDetails'] =  $details;
                 return $value;
             });
-            return responseMsg(true, "Data fetched!", $mCollection);
+            if (!empty($mCollection['0']) && $mCollection['0'] == !null) {
+                return responseMsg(true, "Data fetched!", $mCollection['0']);
+            }
+            return responseMsg(false, "data not found", "");
         } catch (Exception $error) {
             return responseMsg(false, "Error listed below!", $error->getMessage());
         }
