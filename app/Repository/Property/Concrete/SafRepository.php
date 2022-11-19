@@ -764,7 +764,7 @@ class SafRepository implements iSafRepository
                 $propTrans->property_id = $req['id'];
             $propTrans->amount = $req['amount'];
             $propTrans->tran_date = Carbon::now()->format('Y-m-d');
-            $propTrans->tran_no = 'TRAN/001';
+            $propTrans->tran_no = $req['transactionNo'];
             $propTrans->payment_mode = $req['paymentMode'];
             $propTrans->save();
         } catch (Exception $e) {
