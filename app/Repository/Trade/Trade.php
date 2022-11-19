@@ -2222,7 +2222,7 @@ class Trade implements ITrade
             $receiver_user_type_id="";
             $sms = "";
             $licence_pending=2;
-            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\\s]+$/';
+            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\-, \s]+$/';
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
@@ -3586,7 +3586,7 @@ class Trade implements ITrade
         try{
            
             $time_line =  TradeLevelPending::select(
-                        "remaks_for.remarks",
+                        "trade_level_pendings.remarks",
                         "trade_level_pendings.forward_date",
                         "trade_level_pendings.forward_time",
                         "trade_level_pendings.receiver_user_type_id",
@@ -3606,7 +3606,7 @@ class Trade implements ITrade
                     ->where('trade_level_pendings.licence_id', $id)     
                     ->whereIn('trade_level_pendings.status',[1,2])                 
                     ->groupBy('trade_level_pendings.receiver_user_type_id',
-                            'remaks_for.remarks',
+                            'trade_level_pendings.remarks',
                             'trade_level_pendings.forward_date',
                             'trade_level_pendings.forward_time','wf_roles.role_name',
                             'trade_level_pendings.created_at'

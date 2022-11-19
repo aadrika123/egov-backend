@@ -26,4 +26,5 @@ interface iPayment
     public function getTraitOrderId(Request $request); //<--------------- here(INVALID) 
     public function verifyPaymentStatus(Request $request);
     public function gettingWebhookDetails(Request $request);
+    public function getTransactionNoDetails(Request $request);
 }
