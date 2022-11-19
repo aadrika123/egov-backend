@@ -631,7 +631,7 @@ class SafRepository implements iSafRepository
                 $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
             }
             $saf = ActiveSaf::find($req->safId);
-            $saf->current_role = $backId->id;
+            $saf->current_role = $backId->wf_role_id;
             $saf->save();
             return responseMsg(true, "Successfully Done", "");
         } catch (Exception $e) {
@@ -691,7 +691,8 @@ class SafRepository implements iSafRepository
     {
         try {
             $propTrans = new PropTransaction();
-            if ($req['workflowId'] == 4)
+            $workflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            if ($req['workflowId'] == $workflowId)
                 $propTrans->saf_id = $req['id'];
             else
                 $propTrans->property_id = $req['id'];
