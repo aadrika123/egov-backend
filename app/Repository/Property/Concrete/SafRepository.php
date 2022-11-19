@@ -580,9 +580,9 @@ class SafRepository implements iSafRepository
                     $safDetails->holding_no = $safDetails->previous_holding_id;
                 if ($req->assessmentType != 2) {
                     $safDetails->holding_no = 'Hol/Ward/001';
-                    $safDetails->fam_no = 'FAM/002/00001';
                 }
 
+                $safDetails->fam_no = 'FAM/002/00001';
                 $safDetails->saf_pending_status = 0;
                 $safDetails->save();
 
@@ -728,12 +728,16 @@ class SafRepository implements iSafRepository
     public function generateOrderId($req)
     {
         try {
+            $auth = auth()->user();
             $safRepo = new SafRepository();
             $calculateSafById = $safRepo->calculateSafBySafId($req);
             $totalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
 
             if ($req->amount == $totalAmount) {
                 $orderDetails = $this->saveGenerateOrderid($req);
+                $orderDetails['name'] = $auth->user_name;
+                $orderDetails['mobile'] = $auth->mobile;
+                $orderDetails['email'] = $auth->email;
                 return responseMsg(true, "Order ID Generated", remove_null($orderDetails));
             }
 
@@ -773,7 +777,6 @@ class SafRepository implements iSafRepository
      */
     public function getPropTransactions($req)
     {
-        // return $this->numberToWord(500000.20) . ' only';
         $userId = auth()->user()->id;
 
         $propTrans = DB::table('prop_transactions')
