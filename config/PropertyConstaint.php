@@ -268,8 +268,7 @@ return [
     "ASSESSMENT-TYPE" =>
     [
         "NewAssessment" => "1",
-        "New Assessment" => "1",
-        "Reassessment" => "2",
+        "ReAssessment" => "2",
         "Mutation" => "3"
     ],
     "ULB-TYPE-ID" => [
