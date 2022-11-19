@@ -78,6 +78,13 @@ class ActiveSafController extends Controller
     // Saf Application Approval Or Reject
     public function approvalRejectionSaf(Request $req)
     {
+        $req->validate([
+            'workflowId' => 'required|integer',
+            'roleId' => 'required|integer',
+            'safId' => 'required|integer',
+            'status' => 'required|integer'
+        ]);
+
         return $this->Repository->approvalRejectionSaf($req);
     }
 

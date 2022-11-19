@@ -130,15 +130,13 @@ class EloquentAuthRepository implements AuthRepository
             $emailInfo = User::where('email', $request->email)->first();
             if (!$emailInfo) {
                 $msg = "Oops! Given email does not exist";
-                $message = $this->tResponseFail($msg);               // Response Message Using Trait
-                return responseMsg(true, $message, "");
+                return responseMsg(false, $msg, "");
             }
 
             // check if suspended user
             if ($emailInfo->suspended == true) {
                 $msg = "Cant logged in!! You Have Been Suspended !";
-                $message = $this->tResponseFail($msg);               // Response Message Using Trait
-                return responseMsg(true, $message, "");
+                return responseMsg(false, $msg, "");
             }
 
             // Redis Authentication if data already existing in redis database
