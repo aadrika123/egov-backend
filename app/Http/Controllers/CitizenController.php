@@ -60,4 +60,10 @@ class CitizenController extends Controller
 
         return $this->Repository->commentIndependent($req);
     }
+
+    // Citizen Transaction History
+    public function getTransactionHistory()
+    {
+        return $this->Repository->getTransactionHistory();
+    }
 }

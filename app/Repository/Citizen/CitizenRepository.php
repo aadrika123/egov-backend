@@ -5,6 +5,7 @@ namespace App\Repository\Citizen;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use App\Models\ActiveCitizen;
+use App\Models\Payment\PaymentRequest;
 use App\Models\Trade\ActiveLicence;
 use App\Models\User;
 use App\Models\Water\WaterApplication;
@@ -271,5 +272,20 @@ class CitizenRepository implements iCitizenRepository
         $this->workflowTrack($workflowTrack, $array);                                                            // Trait For Workflow Track
         $workflowTrack->save();
         return responseMsg(true, "Successfully Given the Message", "");
+    }
+
+    /**
+     * | Get Transaction History
+     */
+    public function getTransactionHistory()
+    {
+        try {
+            $userId = auth()->user()->id;
+            $trans = PaymentRequest::where('user_id', $userId)
+                ->get();
+            return responseMsg(true, "Data Fetched", remove_null($trans));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }

@@ -5,7 +5,6 @@ namespace App\Repository\Property\Concrete;
 use App\Repository\Property\Interfaces\iSafRepository;
 use Illuminate\Http\Request;
 use App\Models\UlbWardMaster;
-
 use App\Traits\Auth;
 use App\Traits\Property\WardPermission;
 
@@ -723,6 +722,7 @@ class SafRepository implements iSafRepository
     /**
      * | Generate Order ID 
      * | @param req requested Data
+     * | Status-closed
      */
 
     public function generateOrderId($req)
@@ -750,7 +750,7 @@ class SafRepository implements iSafRepository
     /**
      * | SAF Payment
      * | @param req  
-     * | Status-Open
+     * | Status-Closed
      */
 
     public function paymentSaf($req)
@@ -764,7 +764,7 @@ class SafRepository implements iSafRepository
                 $propTrans->property_id = $req['id'];
             $propTrans->amount = $req['amount'];
             $propTrans->tran_date = Carbon::now()->format('Y-m-d');
-            $propTrans->tran_no = 'TRAN/001';
+            $propTrans->tran_no = $req['transactionNo'];
             $propTrans->payment_mode = $req['paymentMode'];
             $propTrans->save();
         } catch (Exception $e) {
@@ -774,6 +774,7 @@ class SafRepository implements iSafRepository
 
     /**
      * | Get Property Transactions
+     * | Status-Closed
      */
     public function getPropTransactions($req)
     {
