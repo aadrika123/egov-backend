@@ -9,14 +9,16 @@ use Exception;
 use Razorpay\Api\Api;
 use Illuminate\Support\Str;
 use Razorpay\Api\Errors\SignatureVerificationError;
-use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\NewPdfController; //<----------traits
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\WebhookPaymentData;
+use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Trait for Razorpay
@@ -196,103 +198,151 @@ trait Razorpay
      */
     public function collectWebhookDetails($request)
     {
+        #collecting all data
+        $dataOfRequest = $request->all();
+
+        # data of the contains from request
+        $contains = json_encode($request->contains);
+
+        # data of notes from request
+        $notes = json_encode($request->payload['payment']['entity']['notes']);
+        $depatmentId = $request->payload['payment']['entity']['notes']['departmentId'];
+
+        # manuplation of amount data
+        $amount = $request->payload['payment']['entity']['amount'];
+        $actulaAmount = $amount / 100;
+
+        # key name of the aquired data 
+        $arrayInAquirer = $dataOfRequest['payload']['payment']['entity']['acquirer_data'];
+        $firstKey = array_key_first($arrayInAquirer);
+
+        # status from webhook 
+        $status = $request->payload['payment']['entity']['status'];
+
+        # captured status from webhook
+        $captured = $request->payload['payment']['entity']['captured'];
+
+        # details for the transactionId
+        $transTransferDetails['paymentId'] = $request->payload['payment']['entity']['id'];
+        $transTransferDetails['orderId'] = $request->payload['payment']['entity']['order_id'];
+        $transTransferDetails['status'] = $status;
+
+        DB::beginTransaction();                                                                             //<----------here
+        #   data to be saved in card detail table
+        $aCard = $request->payload['payment']['entity']['card_id'];
+        if (!is_null($aCard)) {
+            $card = new CardDetail();
+            $card->id               = $request->payload['payment']['entity']['card']['id'];
+            $card->entity           = $request->payload['payment']['entity']['card']['entity'];
+            $card->name             = $request->payload['payment']['entity']['card']['name'];
+            $card->last4            = $request->payload['payment']['entity']['card']['last4'];
+            $card->network          = $request->payload['payment']['entity']['card']['network'];
+            $card->type             = $request->payload['payment']['entity']['card']['type'];
+            $card->issuer           = $request->payload['payment']['entity']['card']['issuer'];
+            $card->international    = $request->payload['payment']['entity']['card']['international'];
+            $card->emi              = $request->payload['payment']['entity']['card']['emi'];
+            $card->sub_type         = $request->payload['payment']['entity']['card']['sub_type'];
+
+            $card->save();
+        }
+
+        # data to be stored in the database       
+        $data = new WebhookPaymentData();
+        $data->entity                       = $request->entity;
+        $data->account_id                   = $request->account_id;
+        $data->event                        = $request->event;
+        $data->contains                     = $contains;                                                    //<---------- this(CONTAINS)
+        $data->payment_id                   = $request->payload['payment']['entity']['id'];
+        $data->payment_entity               = $request->payload['payment']['entity']['entity'];
+        $data->payment_amount               = $actulaAmount;                                                //<-------- here
+        $data->payment_currency             = $request->payload['payment']['entity']['currency'];
+        $data->payment_status               = $status;                                                      //<---------------- here (STATUS)
+        $data->payment_order_id             = $request->payload['payment']['entity']['order_id'];
+        $data->payment_invoice_id           = $request->payload['payment']['entity']['invoice_id'];
+        $data->payment_international        = $request->payload['payment']['entity']['international'];
+        $data->payment_method               = $request->payload['payment']['entity']['method'];
+        $data->payment_amount_refunded      = $request->payload['payment']['entity']['amount_refunded'];
+        $data->payment_refund_status        = $request->payload['payment']['entity']['refund_status'];
+        $data->payment_captured             = $captured;
+        $data->payment_description          = $request->payload['payment']['entity']['description'];
+        $data->payment_card_id              = $request->payload['payment']['entity']['card_id'];
+        // $data->card_detail_id               = $card->cid;                                                //<----------- this(EXCEPTION)
+        $data->payment_bank                 = $request->payload['payment']['entity']['bank'];
+        $data->payment_wallet               = $request->payload['payment']['entity']['wallet'];
+        $data->payment_vpa                  = $request->payload['payment']['entity']['vpa'];
+        $data->payment_email                = $request->payload['payment']['entity']['email'];
+        $data->payment_contact              = $request->payload['payment']['entity']['contact'];
+        $data->payment_notes                = $notes;                                                       //<-----here (NOTES)
+        $data->payment_fee                  = $request->payload['payment']['entity']['fee'];
+        $data->payment_tax                  = $request->payload['payment']['entity']['tax'];
+        $data->payment_error_code           = $request->payload['payment']['entity']['error_code'];
+        $data->payment_error_description    = $request->payload['payment']['entity']['error_description'];
+        $data->payment_error_source         = $request->payload['payment']['entity']['error_source'];
+        $data->payment_error_step           = $request->payload['payment']['entity']['error_step'];
+        $data->payment_error_reason         = $request->payload['payment']['entity']['error_reason'];
+        $data->payment_acquirer_data_type   = $firstKey;                                                    //<------------here (FIRSTKEY)
+        $data->payment_acquirer_data_value  = $request->payload['payment']['entity']['acquirer_data'][$firstKey];
+        $data->payment_created_at           = $request->payload['payment']['entity']['created_at'];
+        $data->webhook_created_at           = $request->created_at;
+        $data->save();
+
+        # transaction id generation and saving
+        $actualTransactionNo = $this->generatingTransactionId($transTransferDetails);
+        $data->payment_transaction_id = $actualTransactionNo;
+        $data->save();
+
+        # property data transfer
+        $transfer['paymentMode'] = $data->payment_method;
+        $transfer['id'] = $request->payload['payment']['entity']['notes']['applicationId'];
+        $transfer['amount'] = $actulaAmount;
+        $transfer['workflowId'] = $request->payload['payment']['entity']['notes']['workflowId'];
+        $transfer['transactionNo'] = $actualTransactionNo;
+
+        # conditionaly upadting the request data
+        if ($status == 'captured' && $captured == 1) {
+            PaymentRequest::where('razorpay_order_id', $request->payload['payment']['entity']['order_id'])
+                ->update(['payment_status' => 1]);
+
+            # calling function for the modules
+            switch ($depatmentId) {
+                case ('1'):
+                    $obj = new SafRepository();
+                    $obj->paymentSaf($transfer);
+                    break;
+                    // case(2):
+                    //     //  $msge= "operation";
+                    //     break;    
+                default:
+                    // $msg = 'Something went wrong on switch';
+            }
+        }
+        DB::commit();                                                                                       //<------------------ here (CAUTION)
+        return responseMsg(true, "Webhook Data Collected!", $request->event);
+    }
+
+
+    /**
+     * | ----------------- generating Application ID ------------------------------- |
+     * | @param request
+     * | @param error
+     * | @var mid
+     * | Operation : this function generate a random and unique transactionID
+     * | this -> naming
+     * | here -> variable
+     */
+    public function generatingTransactionId($request)
+    {
         try {
-            #collecting all data
-            $dataOfRequest = $request->all();
-
-            # data of the contains from request
-            $contains = json_encode($request->contains);
-
-            # data of notes from request
-            $notes = json_encode($request->payload['payment']['entity']['notes']);
-
-            # manuplation of amount data
-            $amount = $request->payload['payment']['entity']['amount'];
-            $actulaAmount = $amount / 100;
-
-            # key name of the aquired data 
-            $arrayInAquirer = $dataOfRequest['payload']['payment']['entity']['acquirer_data'];
-            $firstKey = array_key_first($arrayInAquirer);
-
-            # status from webhook 
-            $status = $request->payload['payment']['entity']['status'];
-
-            # captured status from webhook
-            $captured = $request->payload['payment']['entity']['captured'];
-
-
-            DB::beginTransaction();                                                                             //<----------here
-            #   data to be saved in card detail table
-            $aCard = $request->payload['payment']['entity']['card_id'];
-            if (!is_null($aCard)) {
-
-                $card = new CardDetail();
-                $card->id               = $request->payload['payment']['entity']['card']['id'];
-                $card->entity           = $request->payload['payment']['entity']['card']['entity'];
-                $card->name             = $request->payload['payment']['entity']['card']['name'];
-                $card->last4            = $request->payload['payment']['entity']['card']['last4'];
-                $card->network          = $request->payload['payment']['entity']['card']['network'];
-                $card->type             = $request->payload['payment']['entity']['card']['type'];
-                $card->issuer           = $request->payload['payment']['entity']['card']['issuer'];
-                $card->international    = $request->payload['payment']['entity']['card']['international'];
-                $card->emi              = $request->payload['payment']['entity']['card']['emi'];
-                $card->sub_type         = $request->payload['payment']['entity']['card']['sub_type'];
-
-                $card->save();
-            }
-
-            # data to be stored in the database       
-            $data = new WebhookPaymentData();
-            $data->entity                       = $request->entity;
-            $data->account_id                   = $request->account_id;
-            $data->event                        = $request->event;
-            $data->contains                     = $contains;                                                    //<---------- this(CONTAINS)
-            $data->payment_id                   = $request->payload['payment']['entity']['id'];
-            $data->payment_entity               = $request->payload['payment']['entity']['entity'];
-            $data->payment_amount               = $actulaAmount;                                                //<-------- here
-            $data->payment_currency             = $request->payload['payment']['entity']['currency'];
-            $data->payment_status               = $status;                                                      //<---------------- here (STATUS)
-            $data->payment_order_id             = $request->payload['payment']['entity']['order_id'];
-            $data->payment_invoice_id           = $request->payload['payment']['entity']['invoice_id'];
-            $data->payment_international        = $request->payload['payment']['entity']['international'];
-            $data->payment_method               = $request->payload['payment']['entity']['method'];
-            $data->payment_amount_refunded      = $request->payload['payment']['entity']['amount_refunded'];
-            $data->payment_refund_status        = $request->payload['payment']['entity']['refund_status'];
-            $data->payment_captured             = $captured;
-            $data->payment_description          = $request->payload['payment']['entity']['description'];
-            $data->payment_card_id              = $request->payload['payment']['entity']['card_id'];
-            // $data->card_detail_id               = $card->cid;                                                //<----------- this(EXCEPTION)
-            $data->payment_bank                 = $request->payload['payment']['entity']['bank'];
-            $data->payment_wallet               = $request->payload['payment']['entity']['wallet'];
-            $data->payment_vpa                  = $request->payload['payment']['entity']['vpa'];
-            $data->payment_email                = $request->payload['payment']['entity']['email'];
-            $data->payment_contact              = $request->payload['payment']['entity']['contact'];
-            $data->payment_notes                = $notes;                                                       //<-----here (NOTES)
-            $data->payment_fee                  = $request->payload['payment']['entity']['fee'];
-            $data->payment_tax                  = $request->payload['payment']['entity']['tax'];
-            $data->payment_error_code           = $request->payload['payment']['entity']['error_code'];
-            $data->payment_error_description    = $request->payload['payment']['entity']['error_description'];
-            $data->payment_error_source         = $request->payload['payment']['entity']['error_source'];
-            $data->payment_error_step           = $request->payload['payment']['entity']['error_step'];
-            $data->payment_error_reason         = $request->payload['payment']['entity']['error_reason'];
-            $data->payment_acquirer_data_type   = $firstKey;                                                    //<------------here (FIRSTKEY)
-            $data->payment_acquirer_data_value  = $request->payload['payment']['entity']['acquirer_data'][$firstKey];
-            $data->payment_created_at           = $request->payload['payment']['entity']['created_at'];
-            $data->webhook_created_at          = $request->created_at;
-
-            $data->save();
-
-            DB::commit();                                                                                       //<------------------ here (CAUTION)
-
-            # conditionaly upadting the request data
-            if ($status == 'captured' && $captured == 1) {
-                PaymentRequest::where('razorpay_order_id', $request->payload['payment']['entity']['order_id'])
-                    ->update(['payment_status' => 1]);
-            }
-                                                                                              
-            return responseMsg(true, "Webhook Data Collected!", $request->event);
+            # generate transactionID
+            $id = WebhookPaymentData::select('id')
+                ->where('payment_id', $request['paymentId'])
+                ->where('payment_order_id', $request['orderId'])
+                ->where('payment_status', $request['status'])
+                ->get()
+                ->first();
+            return Carbon::createFromDate()->milli . $id->id . carbon::now()->diffInMicroseconds();
         } catch (Exception $error) {
-            return responseMsg(true, "ERROR LISTED BELOW!", $error->getMessage());
+            return response()->json([$error->getMessage()]);
         }
     }
 }

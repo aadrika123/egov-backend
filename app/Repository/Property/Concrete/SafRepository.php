@@ -5,7 +5,6 @@ namespace App\Repository\Property\Concrete;
 use App\Repository\Property\Interfaces\iSafRepository;
 use Illuminate\Http\Request;
 use App\Models\UlbWardMaster;
-
 use App\Traits\Auth;
 use App\Traits\Property\WardPermission;
 
@@ -13,8 +12,6 @@ use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\EloquentClass\Property\dSafCalculation;
-use App\EloquentClass\Property\dPropertyTax;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
 use App\Models\Property\ActiveSaf;
@@ -29,11 +26,10 @@ use App\Models\Property\PropMOwnershipType as PropertyPropMOwnershipType;
 use App\Models\Property\PropMPropertyType;
 use App\Models\Property\PropMUsageType;
 use App\Models\Property\PropTransaction;
-use App\Models\Workflows\WfRole as WorkflowsWfRole;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
-use App\Repository\Property\EloquentProperty;
 use App\Traits\Helper;
 use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF as GlobalSAF;
@@ -62,8 +58,6 @@ class SafRepository implements iSafRepository
      * | @param response
      */
     protected $user_id;
-
-
     /**
      * | Master data in Saf Apply
      * | @var ulbId Logged In User Ulb 
@@ -120,7 +114,21 @@ class SafRepository implements iSafRepository
         $ulb_id = auth()->user()->ulb_id;
 
         try {
-            $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            if ($request->assessmentType == 1) {                                                    // New Assessment 
+                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.NewAssessment");
+                $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            }
+
+            if ($request->assessmentType == 2) {                                                    // Reassessment
+                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.ReAssessment");
+                $workflow_id = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
+            }
+
+            if ($request->assessmentType == 3) {                                                    // Mutation
+                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.Mutation");
+                $workflow_id = Config::get('workflow-constants.SAF_MUTATION_ID');
+            }
+
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
                 ->where('ulb_id', $ulb_id)
                 ->first();
@@ -136,18 +144,6 @@ class SafRepository implements iSafRepository
 
             $safCalculation = new SafCalculation();
             $safTaxes = $safCalculation->calculateTax($request);
-
-            if ($request->assessmentType == 1) {                                                    // New Assessment 
-                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.NewAssessment");
-            }
-
-            if ($request->assessmentType == 2) {                                                    // Reassessment
-                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.ReAssessment");
-            }
-
-            if ($request->assessmentType == 3) {                                                    // Mutation
-                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.Mutation");
-            }
 
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
@@ -228,7 +224,7 @@ class SafRepository implements iSafRepository
     {
         $userId = auth()->user()->id;
         $ulbId = auth()->user()->ulb_id;
-        $refWorkflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+        $refWorkflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');                                             // (4) For Property New Assessment
         $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
             ->where('ulb_id', $ulbId)
             ->first();
@@ -241,13 +237,13 @@ class SafRepository implements iSafRepository
 
             // If the Current Role Is not a Initiator
             if (!$checkDataExisting) {
-                $roles = $this->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
+                $roles = $this->getRoleIdByUserId($userId);                                     // Trait get Role By User Id
 
                 $roleId = $roles->map(function ($item, $key) {
                     return $item->wf_role_id;
                 });
 
-                $data = $this->getSaf()                                                     // Global SAF 
+                $data = $this->getSaf()                                                         // Global SAF 
                     ->where('active_safs.ulb_id', $ulbId)
                     ->where('active_safs.status', 1)
                     ->whereIn('current_role', $roleId)
@@ -255,7 +251,7 @@ class SafRepository implements iSafRepository
                     ->groupBy('active_safs.id', 'p.property_type', 'ward.ward_name')
                     ->get();
 
-                $occupiedWard = $this->getWardByUserId($userId);                            // Get All Occupied Ward By user id
+                $occupiedWard = $this->getWardByUserId($userId);                                // Get All Occupied Ward By user id
 
                 $wardId = $occupiedWard->map(function ($item, $key) {
                     return $item->ward_id;
@@ -567,28 +563,65 @@ class SafRepository implements iSafRepository
      */
     public function approvalRejectionSaf($req)
     {
-        $req->validate([
-            'safId' => 'required|int',
-            'status' => 'required|int'
-        ]);
-
         try {
+            // Check if the Current User is Finisher or Not
+            $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
+            $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
+            if ($refGetFinisher->role_id != $req->roleId) {
+                return responseMsg(false, "Forbidden Access", "");
+            }
+
             DB::beginTransaction();
             // Approval
             if ($req->status == 1) {
                 $safDetails = ActiveSaf::find($req->safId);
-                $safDetails->holding_no = 'Hol/Ward/001';
-                $safDetails->saf_pending_status = 1;
+                if ($req->assessmentType == 2)
+                    $safDetails->holding_no = $safDetails->previous_holding_id;
+                if ($req->assessmentType != 2) {
+                    $safDetails->holding_no = 'Hol/Ward/001';
+                }
+
+                $safDetails->fam_no = 'FAM/002/00001';
+                $safDetails->saf_pending_status = 0;
                 $safDetails->save();
 
+                // SAF Application replication
                 $activeSaf = ActiveSaf::query()
                     ->where('id', $req->safId)
                     ->first();
+                $ownerDetails = ActiveSafsOwnerDtl::query()
+                    ->where('saf_id', $req->safId)
+                    ->get();
+                $floorDetails = ActiveSafsFloorDtls::query()
+                    ->where('saf_id', $req->safId)
+                    ->get();
+
                 $approvedSaf = $activeSaf->replicate();
                 $approvedSaf->setTable('safs');
                 $approvedSaf->id = $activeSaf->id;
-                $approvedSaf->push();
+                $approvedSaf->save();
                 $activeSaf->delete();
+
+                // SAF Owners replication
+
+                foreach ($ownerDetails as $ownerDetail) {
+                    $approvedOwner = $ownerDetail->replicate();
+                    $approvedOwner->setTable('safs_owner_dtls');
+                    $approvedOwner->id = $ownerDetail->id;
+                    $approvedOwner->save();
+                    $ownerDetail->delete();
+                }
+
+                // SAF Floors Replication
+
+                foreach ($floorDetails as $floorDetail) {
+                    $approvedFloor = $floorDetail->replicate();
+                    $approvedFloor->setTable('safs_floor_dtls');
+                    $approvedFloor->id = $floorDetail->id;
+                    $approvedFloor->save();
+                    $floorDetail->delete();
+                }
+
                 $msg = "Application Successfully Approved !! Holding No " . $safDetails->holding_no;
             }
             // Rejection
@@ -596,11 +629,40 @@ class SafRepository implements iSafRepository
                 $activeSaf = ActiveSaf::query()
                     ->where('id', $req->safId)
                     ->first();
+
+                $ownerDetails = ActiveSafsOwnerDtl::query()
+                    ->where('saf_id', $req->safId)
+                    ->get();
+
+                $floorDetails = ActiveSafsFloorDtls::query()
+                    ->where('saf_id', $req->safId)
+                    ->get();
+
+                // Rejected SAF Application replication
                 $rejectedSaf = $activeSaf->replicate();
                 $rejectedSaf->setTable('rejected_safs');
                 $rejectedSaf->id = $activeSaf->id;
                 $rejectedSaf->push();
                 $activeSaf->delete();
+
+                // SAF Owners replication
+                foreach ($ownerDetails as $ownerDetail) {
+                    $approvedOwner = $ownerDetail->replicate();
+                    $approvedOwner->setTable('rejected_safs_owner_dtls');
+                    $approvedOwner->id = $ownerDetail->id;
+                    $approvedOwner->save();
+                    $ownerDetail->delete();
+                }
+
+                // SAF Floors Replication
+                foreach ($floorDetails as $floorDetail) {
+                    $approvedFloor = $floorDetail->replicate();
+                    $approvedFloor->setTable('rejected_safs_floor_dtls');
+                    $approvedFloor->id = $floorDetail->id;
+                    $approvedFloor->save();
+                    $floorDetail->delete();
+                }
+
                 $msg = "Application Rejected Successfully";
             }
 
@@ -615,19 +677,24 @@ class SafRepository implements iSafRepository
     /**
      * | Back to Citizen
      * | @param Request $req
+     * | @var redis Establishing Redis Connection
+     * | @var workflowId Workflow id of the SAF 
      * | Status-Closed
      */
     public function backToCitizen($req)
     {
         try {
             $redis = Redis::connection();
-            $backId = json_decode(Redis::get('workflow_roles'));
+            $workflowId = $req->workflowId;
+            $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
             if (!$backId) {
-                $backId = WorkflowsWfRole::where('is_initiator', 1)->first();
-                $redis->set('workflow_roles', json_encode($backId));
+                $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
+                    ->where('is_initiator', true)
+                    ->first();
+                $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
             }
             $saf = ActiveSaf::find($req->safId);
-            $saf->current_role = $backId->id;
+            $saf->current_role = $backId->wf_role_id;
             $saf->save();
             return responseMsg(true, "Successfully Done", "");
         } catch (Exception $e) {
@@ -657,17 +724,25 @@ class SafRepository implements iSafRepository
     /**
      * | Generate Order ID 
      * | @param req requested Data
+     * | @var auth authenticated users credentials
+     * | @var calculateSafById calculated SAF amounts and details by request SAF ID
+     * | @var totalAmount filtered total amount from the collection
+     * | Status-closed
      */
 
     public function generateOrderId($req)
     {
         try {
+            $auth = auth()->user();
             $safRepo = new SafRepository();
             $calculateSafById = $safRepo->calculateSafBySafId($req);
             $totalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
-
+            // Check Requested amount is matching with the generated amount or not
             if ($req->amount == $totalAmount) {
                 $orderDetails = $this->saveGenerateOrderid($req);
+                $orderDetails['name'] = $auth->user_name;
+                $orderDetails['mobile'] = $auth->mobile;
+                $orderDetails['email'] = $auth->email;
                 return responseMsg(true, "Order ID Generated", remove_null($orderDetails));
             }
 
@@ -680,29 +755,39 @@ class SafRepository implements iSafRepository
     /**
      * | SAF Payment
      * | @param req  
-     * | Status-Open
+     * | @var workflowId SAF workflow ID
+     * | Status-Closed
      */
+
     public function paymentSaf($req)
     {
-        $safDetails = $this->details($req);
-        $req = $safDetails->original['data'];
-        $array = $this->generateSafRequest($req);
-        $safCalculation = new SafCalculation();
-        $request = new Request($array);
-        $safTaxes = $safCalculation->calculateTax($request);
-        $demands = $safTaxes->original['data']['demand'];
-
-        $propTrans = new PropTransaction();
-        $propTrans->saf_id = $req->id;
-        $propTrans->tran_date = "";
+        try {
+            $propTrans = new PropTransaction();
+            $workflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            if ($req['workflowId'] == $workflowId)
+                $propTrans->saf_id = $req['id'];
+            else
+                $propTrans->property_id = $req['id'];
+            $propTrans->amount = $req['amount'];
+            $propTrans->tran_date = Carbon::now()->format('Y-m-d');
+            $propTrans->tran_no = $req['transactionNo'];
+            $propTrans->payment_mode = $req['paymentMode'];
+            $propTrans->save();
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     /**
      * | Get Property Transactions
+     * | @param req requested parameters
+     * | @var userId authenticated user id
+     * | @var propTrans Property Transaction details of the Logged In User
+     * | @return responseMsg
+     * | Status-Closed
      */
     public function getPropTransactions($req)
     {
-        // return $this->numberToWord(500000.20) . ' only';
         $userId = auth()->user()->id;
 
         $propTrans = DB::table('prop_transactions')

@@ -11,6 +11,7 @@ use App\Http\Requests\Trade\addRecorde;
 use App\Http\Requests\Trade\paymentCounter;
 use App\Http\Requests\Trade\reqPaybleAmount;
 use App\Http\Requests\Trade\reqInbox;
+use App\Http\Requests\Trade\requpdateBasicDtl;
 
 class ApplyApplication extends Controller
 {
@@ -53,11 +54,11 @@ class ApplyApplication extends Controller
         $transectionId =  $request->transectionId;
         return $this->Repository->readPaymentRecipt($id,$transectionId);
     }
-    public function updateLicenseBo(Request $request)
+    public function updateLicenseBo(requpdateBasicDtl $request)
     {
         return $this->Repository->updateLicenseBo($request);
     }
-    public function updateBasicDtl(Request $request)
+    public function updateBasicDtl(requpdateBasicDtl $request)
     {
         return $this->Repository->updateBasicDtl($request);
     }

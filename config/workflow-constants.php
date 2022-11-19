@@ -9,7 +9,7 @@
 return [
     "SAF_WORKFLOW_ID" => "4",
     "SAF_REASSESSMENT_ID" => "5",
-    "SELF_ADVERTISEMENT_WORKFLOW_ID" => "9",
+    "SAF_MUTATION_ID" => "9",
     "PROPPERTY_OBJECTION_ID" => "7",
     "TRADE_WORKFLOW_ID" => "19",
 ];

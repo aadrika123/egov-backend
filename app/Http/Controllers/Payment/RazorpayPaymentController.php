@@ -77,4 +77,10 @@ class RazorpayPaymentController extends Controller
     {
         return $this->Prepository->gettingWebhookDetails($req);
     }
+
+     //get the details of webhook according to transactionNo
+     public function getTransactionNoDetails(Request $req)
+     {
+         return $this->Prepository->getTransactionNoDetails($req);
+     }
 }
