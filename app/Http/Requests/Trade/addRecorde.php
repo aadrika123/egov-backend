@@ -52,12 +52,11 @@ class addRecorde extends FormRequest
             $rules["firmDetails.firmName"]="required|regex:$mFramNameRegex";
             $rules["firmDetails.premisesOwner"]="required|regex:$mRegex";
             $rules["firmDetails.natureOfBusiness"]="required|array";
-            $rules["firmDetails.natureOfBusiness.*.id"]="required|int";
-            $rules["firmDetails.newWardNo"]="required|int";
-            $rules["firmDetails.wardNo"]="required|int";
+            $rules["firmDetails.natureOfBusiness.*.id"]="required|digits_between:1,9223372036854775807";
+            $rules["firmDetails.newWardNo"]="required|digits_between:1,9223372036854775807";
+            $rules["firmDetails.wardNo"]="required|digits_between:1,9223372036854775807";
             $rules["firmDetails.tocStatus"] = "required|bool";
-            $rules["firmDetails.landmark"]="regex:$mRegex";
-            $rules["firmDetails.categoryTypeId"]="int";
+            $rules["firmDetails.landmark"]="regex:$mRegex";            
             $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
             $rules["firmDetails.bind_book_no"] = "regex:$mRegex";
             $rules["firmDetails.account_no"] = "regex:$mRegex";
@@ -66,13 +65,14 @@ class addRecorde extends FormRequest
                 $rules["firmDetails.pincode"]="digits:6|regex:/[0-9]{6}/";                    
             }               
             
-            $rules["initialBusinessDetails.applyWith"]="required|int";
-            $rules["initialBusinessDetails.firmType"]="required|int";
+            $rules["initialBusinessDetails.applyWith"]="required|digits_between:1,9223372036854775807";
+            $rules["initialBusinessDetails.firmType"]="required|digits_between:1,9223372036854775807";
+            $rules["initialBusinessDetails.categoryTypeId"]="digits_between:1,9223372036854775807";
             if(isset($this->initialBusinessDetails['firmType']) && $this->initialBusinessDetails['firmType']==5)
             {
                 $rules["initialBusinessDetails.otherFirmType"]="required|regex:$mRegex";
             }
-            $rules["initialBusinessDetails.ownershipType"]="required|int";
+            $rules["initialBusinessDetails.ownershipType"]="required|digits_between:1,9223372036854775807";
             if( isset($this->initialBusinessDetails['applyWith']) && $this->initialBusinessDetails['applyWith']==1)
             {
                 $rules["initialBusinessDetails.noticeNo"]="required";
@@ -146,9 +146,9 @@ class addRecorde extends FormRequest
             $rules["firmDetails.businessDescription"]="required|regex:$mRegex"; 
             // $rules["firmDetails.firmName"]="required|regex:$mFramNameRegex";
             $rules["firmDetails.holdingNo"]="required";
-            $rules["initialBusinessDetails.ownershipType"]="required|int";            
+            $rules["initialBusinessDetails.ownershipType"]="required|digits_between:1,9223372036854775807";            
             $rules["licenseDetails.licenseFor"]="required|int";    
-            $rules["initialBusinessDetails.firmType"]="required|int";
+            $rules["initialBusinessDetails.firmType"]="required|digits_between:1,9223372036854775807";
             if(isset($this->initialBusinessDetails['firmType']) && $this->initialBusinessDetails['firmType']==5)
             {
                 $rules["initialBusinessDetails.otherFirmType"]="required|regex:$mRegex";

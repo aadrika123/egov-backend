@@ -29,7 +29,7 @@ class reqPaybleAmount extends FormRequest
         $rules["firmEstdDate"]      = "required|date";
         $rules["licenseFor"]        = "required|int";
         $rules["natureOfBusiness"]  = "required|array";
-        $rules["natureOfBusiness.*.id"] = "required|int";
+        $rules["natureOfBusiness.*.id"] = "required|digits_between:1,9223372036854775807";
         if(isset($this->noticeDate) && $this->noticeDate)
         {
             $rules["noticeDate"] = "date";

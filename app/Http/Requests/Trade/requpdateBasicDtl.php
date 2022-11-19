@@ -2,9 +2,12 @@
 
 namespace App\Http\Requests\Trade;
 
+use App\Repository\Common\CommonFunction;
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Config;
 
-class reqInbox extends FormRequest
+class requpdateBasicDtl extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,10 +27,7 @@ class reqInbox extends FormRequest
     public function rules()
     {
         return [
-            "key"       =>  "string",
-            "wardNo"    =>  "digits_between:1,9223372036854775807",
-            "formDate"  =>  "date",
-            "toDate"    =>  "date",
+            "id"=>"required|digits_between:1,9223372036854775807"
         ];
     }
 }

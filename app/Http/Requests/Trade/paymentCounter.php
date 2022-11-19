@@ -27,7 +27,7 @@ class paymentCounter extends FormRequest
         $mRegex         = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
         $mNowDate       = Carbon::now()->format('Y-m-d'); 
         $rules["paymentMode"]="required|alpha";
-        $rules["licenceId"]="required|int"; 
+        $rules["licenceId"]="required||digits_between:1,9223372036854775807"; 
         $rules["licenseFor"]="required|int";
         $rules["totalCharge"] = "required|numeric";               
         if(isset($this->paymentMode) && $this->paymentMode!="CASH")
