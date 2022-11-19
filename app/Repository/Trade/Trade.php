@@ -2222,7 +2222,7 @@ class Trade implements ITrade
             $receiver_user_type_id="";
             $sms = "";
             $licence_pending=2;
-            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\\s]+$/';
+            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
