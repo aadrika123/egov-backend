@@ -66,6 +66,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(ConcessionController::class)->group(function () {
         Route::post('concession/UpdateConDetail', 'UpdateConDetail');
         Route::post('concession/UpdateDocuments/{id}', 'UpdateDocuments');
+        Route::post('concession/postHolding', 'postHolding');
     });
 
     //Property Objection

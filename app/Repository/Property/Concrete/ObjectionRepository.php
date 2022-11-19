@@ -39,12 +39,14 @@ class ObjectionRepository implements iObjectionRepository
             $device = new ObjectionOwnerDetail;
             $device->name = $request->name;
             $device->address = $request->address;
-            $device->mobile = $request->mobile;
-            $device->members = $request->members;
+            $device->mobile = $request->mobileNo;
+            $device->members = $request->safMember;
 
             $device->created_at = Carbon::now();
             $device->updated_at = Carbon::now();
             $device->save();
+
+
 
             //name
             if ($file = $request->file('nameDoc')) {
@@ -73,7 +75,7 @@ class ObjectionRepository implements iObjectionRepository
 
             // $objectionNo = $this->objectionNo($propertyId);
 
-            return responseMsg(true, "Successfully Saved", "");
+            return responseMsg(true, "Successfully Saved", $device);
         } catch (Exception $e) {
             return response()->json($e, 400);
         }

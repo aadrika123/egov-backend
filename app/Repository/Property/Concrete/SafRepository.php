@@ -5,7 +5,6 @@ namespace App\Repository\Property\Concrete;
 use App\Repository\Property\Interfaces\iSafRepository;
 use Illuminate\Http\Request;
 use App\Models\UlbWardMaster;
-
 use App\Traits\Auth;
 use App\Traits\Property\WardPermission;
 
@@ -225,7 +224,7 @@ class SafRepository implements iSafRepository
     {
         $userId = auth()->user()->id;
         $ulbId = auth()->user()->ulb_id;
-        $refWorkflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+        $refWorkflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');                                             // (4) For Property New Assessment
         $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
             ->where('ulb_id', $ulbId)
             ->first();
@@ -678,13 +677,15 @@ class SafRepository implements iSafRepository
     /**
      * | Back to Citizen
      * | @param Request $req
+     * | @var redis Establishing Redis Connection
+     * | @var workflowId Workflow id of the SAF 
      * | Status-Closed
      */
     public function backToCitizen($req)
     {
         try {
             $redis = Redis::connection();
-            $workflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            $workflowId = $req->workflowId;
             $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
             if (!$backId) {
                 $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
@@ -723,6 +724,10 @@ class SafRepository implements iSafRepository
     /**
      * | Generate Order ID 
      * | @param req requested Data
+     * | @var auth authenticated users credentials
+     * | @var calculateSafById calculated SAF amounts and details by request SAF ID
+     * | @var totalAmount filtered total amount from the collection
+     * | Status-closed
      */
 
     public function generateOrderId($req)
@@ -732,7 +737,7 @@ class SafRepository implements iSafRepository
             $safRepo = new SafRepository();
             $calculateSafById = $safRepo->calculateSafBySafId($req);
             $totalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
-
+            // Check Requested amount is matching with the generated amount or not
             if ($req->amount == $totalAmount) {
                 $orderDetails = $this->saveGenerateOrderid($req);
                 $orderDetails['name'] = $auth->user_name;
@@ -750,7 +755,8 @@ class SafRepository implements iSafRepository
     /**
      * | SAF Payment
      * | @param req  
-     * | Status-Open
+     * | @var workflowId SAF workflow ID
+     * | Status-Closed
      */
 
     public function paymentSaf($req)
@@ -764,7 +770,7 @@ class SafRepository implements iSafRepository
                 $propTrans->property_id = $req['id'];
             $propTrans->amount = $req['amount'];
             $propTrans->tran_date = Carbon::now()->format('Y-m-d');
-            $propTrans->tran_no = 'TRAN/001';
+            $propTrans->tran_no = $req['transactionNo'];
             $propTrans->payment_mode = $req['paymentMode'];
             $propTrans->save();
         } catch (Exception $e) {
@@ -774,6 +780,11 @@ class SafRepository implements iSafRepository
 
     /**
      * | Get Property Transactions
+     * | @param req requested parameters
+     * | @var userId authenticated user id
+     * | @var propTrans Property Transaction details of the Logged In User
+     * | @return responseMsg
+     * | Status-Closed
      */
     public function getPropTransactions($req)
     {

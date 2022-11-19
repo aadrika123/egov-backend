@@ -16,4 +16,7 @@ interface iConcessionRepository
 
     //documents upload
     public function UpdateDocuments(Request $request, $id);
+
+    //post Holding
+    public function postHolding(Request $request);
 }
