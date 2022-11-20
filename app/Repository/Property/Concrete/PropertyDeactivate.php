@@ -34,6 +34,18 @@ class PropertyDeactivate implements IPropertyDeactivate
         $this->_common = new CommonFunction();
         $this->_modelWard = new ModelWard();
     }
+    /**
+     * | Searching the valide Property With New Holding No
+         query cost(**)
+     * |
+     * |-----------------------------------------------------------------------
+     * | @var refUser    = Auth()->user()       | loging user Data
+     * | @var refUserId  = refUser->id          | loging user Id
+     * | @var refUlbId   = refUser->ulb_id      | loging user Ulb Id
+     * |
+     * | @var mHoldingNo = strtoupper(request->holdingNo) | request data
+     * | @var property   
+     */
     public function readHoldigbyNo(Request $request)
     {
         try{
@@ -81,6 +93,35 @@ class PropertyDeactivate implements IPropertyDeactivate
         }
 
     }
+
+    /**
+     * | Apply The Property Deactivation Request With Proper Comment And Document
+        query(***)
+     * |
+     * |------------------------------------------------------------------------------
+     * | @var refUser    = Auth()->user()           | loging user data
+     * | @var refUserId  = refUser->id              | loging user Id
+     * | @var refUlbId   = refUser->ulb_id          | loging user Ulb Id
+     * | @var mRegex     = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/'  | rejex
+     * | @var mNowDate   = Carbon::now()->format("Y-m-d")       | current date
+     * | @var refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID')  | workflowId
+     * | @var mUserType  = this->_common->userType(refWorkflowId) | loging user short Role Name On Currert Workflow
+     * | @var workflowId  (model)WfWorkflow->id
+     * |
+     * | @var mProperty  = this->getPropertyById(propId)    | property data
+     * | @var mRole      = this->_common->getUserRoll(refUserId, refUlbId, workflowId->wf_master_id)    | current user role Dtl
+     * | @var init_finish = this->_common->iniatorFinisher(refUserId,refUlbId,refWorkflowId)            | determin the Initiator And Finisher Of The Workflow
+     * | @var mOwrners = $this->getPropOwnerByProId(mProperty->id)      | request Property Owners Dtls
+     * | 
+     * | @var PropDeactivationRequest    = PropDeactivationRequest (model)
+     * |
+     * |---------------------fuctions---------------------------------------------------------------
+     * | this->_common->userType(refWorkflowId)
+     * | this->getPropertyById(propId)
+     * | this->_common->getUserRoll(refUserId, refUlbId, workflowId->wf_master_id)
+     * | this->_common->iniatorFinisher(refUserId, refUlbId, refWorkflowId)
+     * | this->getPropOwnerByProId(mProperty->id)
+     */
     public function deactivatProperty($propId,Request $request)
     {
         try{
@@ -144,6 +185,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 }
                 
                 DB::beginTransaction();
+
                 $PropDeactivationRequest    = new PropDeactivationRequest;
                 $PropDeactivationRequest->ulb_id        = $refUlbId;
                 $PropDeactivationRequest->property_id    = $mProperty->id;
@@ -174,6 +216,7 @@ class PropertyDeactivate implements IPropertyDeactivate
         }
 
     }
+    
     public function inbox(Request $request)
     {
         try {
@@ -191,8 +234,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             $mJoins="";
             $mUserType = $this->_common->userType($refWorkflowId);
             $mWardPermission = $this->_common->WardPermission($refUserId);           
-            $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowMstrId->wf_master_id);
-            dd($mUserType);
+            $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowMstrId->wf_master_id);            
             if (!$mRole) 
             {
                 throw new Exception("You Are Not Authorized For This Action");
@@ -222,6 +264,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                 $mWardIds = $inputs['wardNo']; 
             } 
+            
             // DB::enableQueryLog();          
             $mProperty = PropDeactivationRequest::select("prop_deactivation_requests.id",
                                             "properties.holding_no",
@@ -443,6 +486,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             }
             if($role->is_finisher && $request->btn=="forward")
             {
+                $sms="Property Deactivated Successfully";
                 $mRequestPending = 5;
                 $PropProperty  = PropProperty::find($refDeactivationReq->property_id) ;
                 $PropProperty->status=0;

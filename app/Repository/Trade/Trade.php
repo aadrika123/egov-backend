@@ -1177,9 +1177,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
-   /**
-    * 
-    */
+    
     public function readPaymentRecipt($id, $transectionId) # unauthorised  function
     { 
         try{
