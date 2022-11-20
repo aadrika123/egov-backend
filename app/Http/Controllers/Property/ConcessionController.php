@@ -35,4 +35,16 @@ class ConcessionController extends Controller
     {
         return $this->Repository->postHolding($request);
     }
+
+    // Inbox
+    public function inbox()
+    {
+        return $this->Repository->inbox();
+    }
+
+    // Outbox
+    public function outbox()
+    {
+        return $this->Repository->outbox();
+    }
 }

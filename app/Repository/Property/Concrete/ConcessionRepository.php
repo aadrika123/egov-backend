@@ -15,7 +15,7 @@ use App\Models\Property\PropActiveConcession;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use Illuminate\Support\Facades\DB;
 use App\Models\Workflows\WfWorkflow;
-
+use App\Traits\Property\Concession;
 
 class ConcessionRepository implements iConcessionRepository
 {
@@ -23,7 +23,7 @@ class ConcessionRepository implements iConcessionRepository
     //wf_master_id = 35;
     //workflow_id = 106;
     use WorkflowTrait;
-
+    use Concession;
 
     //apply concession
     public function applyConcession(Request $request)
@@ -109,7 +109,7 @@ class ConcessionRepository implements iConcessionRepository
         }
     }
 
-    ////get owner details
+    //get owner details
     public function postHolding(Request $request)
     {
         try {
@@ -124,6 +124,72 @@ class ConcessionRepository implements iConcessionRepository
             }
             return responseMsg(false, "False", "");
             // return $user['0'];
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Property Concession Inbox List
+     * | @var auth autheticated user data
+     */
+    public function inbox()
+    {
+        try {
+            $auth = auth()->user();
+            $userId = $auth->id;
+            $ulbId = $auth->ulb_id;
+            $wardId = $this->getWardByUserId($userId);
+
+            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
+                return $ward->ward_id;
+            });
+
+            $roles = $this->getRoleIdByUserId($userId);
+
+            $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
+                return $role->wf_role_id;
+            });
+
+            $concessions = $this->getConcessionList($ulbId)
+                ->whereIn('prop_active_concessions.current_role', $roleId)
+                ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->get();
+            return responseMsg(true, "Inbox List", remove_null($concessions));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Outbox List
+     * | @var auth authenticated user list
+     * | @var ulbId authenticated user ulb
+     * | @var userid authenticated user id
+     */
+    public function outbox()
+    {
+        try {
+            $auth = auth()->user();
+            $userId = $auth->id;
+            $ulbId = $auth->ulb_id;
+
+            $workflowRoles = $this->getRoleIdByUserId($userId);
+            $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
+                return $value->wf_role_id;
+            });
+
+            $refWard = $this->getWardByUserId($userId);                                     // Get Ward List by user Id
+            $occupiedWards = $refWard->map(function ($value, $key) {
+                return $value->ward_id;
+            });
+
+            $concessions = $this->getConcessionList($ulbId)
+                ->whereNotIn('prop_active_concessions.current_role', $roleId)
+                ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->get();
+
+            return responseMsg(true, "Outbox List", remove_null($concessions));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

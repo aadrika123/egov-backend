@@ -11,9 +11,9 @@ use Illuminate\Http\Request;
 
 interface iConcessionRepository
 {
-    //apply concession
-    public function applyConcession(Request $request);
 
-    //post Holding
-    public function postHolding(Request $request);
+    public function applyConcession(Request $request);                      //apply concession
+    public function postHolding(Request $request);                          //post Holding
+    public function inbox();                                                // Concession Inbox
+    public function outbox();                                               // Concession Outbox List
 }
