@@ -201,7 +201,21 @@ class ConcessionRepository implements iConcessionRepository
     public function getDetailsById($req)
     {
         try {
-            $details = PropActiveConcession::find($req->id);
+            $details = DB::table('prop_active_concessions')
+                ->select(
+                    'prop_active_concessions.*',
+                    'prop_active_concessions.applicant_name as owner_name',
+                    's.holding_no',
+                    's.ward_mstr_id',
+                    'u.ward_name as ward_no',
+                    's.prop_type_mstr_id',
+                    'p.property_type'
+                )
+                ->join('safs as s', 's.id', '=', 'prop_active_concessions.property_id')
+                ->join('ulb_ward_masters as u', 'u.id', '=', 's.ward_mstr_id')
+                ->join('prop_m_property_types as p', 'p.id', '=', 's.prop_type_mstr_id')
+                ->where('prop_active_concessions.id', $req->id)
+                ->first();
             return responseMsg(true, "Concession Details", remove_null($details));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
