@@ -40,7 +40,6 @@ class PropertyDeactivate implements IPropertyDeactivate
             $refUser    = Auth()->user();
             $refUserId  = $refUser->id;
             $refUlbId   = $refUser->ulb_id;
-            $mUserType  = $this->_common->userType();
             $rules["holdingNo"] = "required|string";
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) 
@@ -89,9 +88,9 @@ class PropertyDeactivate implements IPropertyDeactivate
             $refUserId  = $refUser->id;
             $refUlbId   = $refUser->ulb_id;
             $mRegex     = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
-            $mUserType  = $this->_common->userType();
             $mNowDate   = Carbon::now()->format("Y-m-d");
-            $refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
+            $refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');            
+            $mUserType  = $this->_common->userType($refWorkflowId);
             $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
                             ->where('ulb_id', $refUlbId)
                             ->first();
@@ -190,9 +189,10 @@ class PropertyDeactivate implements IPropertyDeactivate
                 throw new Exception("Workflow Not Available");
             }
             $mJoins="";
-            $mUserType = $this->_common->userType();
+            $mUserType = $this->_common->userType($refWorkflowId);
             $mWardPermission = $this->_common->WardPermission($refUserId);           
             $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowMstrId->wf_master_id);
+            dd($mUserType);
             if (!$mRole) 
             {
                 throw new Exception("You Are Not Authorized For This Action");
@@ -234,7 +234,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                                             )
                         ->$mJoins("prop_deactivation_req_inboxes",function($join) use($mRoleId){
                                 $join->on("prop_deactivation_req_inboxes.request_id","prop_deactivation_requests.id")
-                                ->where("prop_deactivation_req_inboxes.reciver_type_id",$mRoleId)
+                                ->where("prop_deactivation_req_inboxes.receiver_type_id",$mRoleId)
                                 ->where("prop_deactivation_req_inboxes.status",1)
                                 ->where("prop_deactivation_req_inboxes.verification_status",0);
                         })
@@ -304,9 +304,9 @@ class PropertyDeactivate implements IPropertyDeactivate
             $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\-, \s]+$/';
             $user = Auth()->user();
             $user_id = $user->id;
-            $ulb_id = $user->ulb_id;            
-            $mUserType = $this->_common->userType(); 
-            $refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
+            $ulb_id = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');                        
+            $mUserType = $this->_common->userType($refWorkflowId); 
             $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
                 ->where('ulb_id', $ulb_id)
                 ->first();
@@ -314,7 +314,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                 throw new Exception("Workflow Not Available");
             }
-            $role = $this->_common->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);  
+            $role = $this->_common->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);   
             $init_finish = $this->_common->iniatorFinisher($user_id,$ulb_id,$refWorkflowId);         
             if (!$role) 
             {
@@ -340,8 +340,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                throw new Exception("Initator Can Not send Back The Application");
             }
             $refDeactivationReq = PropDeactivationRequest::find($request->requestId);            
-            $mLevelData = $this->getLevelData($request->requestId);   
-             
+            $mLevelData = $this->getLevelData($request->requestId);
             if(!$refDeactivationReq)
             {
                 throw new Exception("Data Not Found");
@@ -411,7 +410,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 $sms ="Application Forwarded To ";
                 $receiver_user_type_id = $mLevelData->sender_user_type_id;
 
-            }
+            } 
             if(!$role->is_finisher && !$receiver_user_type_id)  
             {
                 throw new Exception("Next Role Not Found !!!....");
@@ -433,7 +432,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 $level_insert = new PropDeactivationReqInbox;
                 $level_insert->request_id = $refDeactivationReq->id;
                 $level_insert->sender_type_id = $role_id;
-                $level_insert->reciver_type_id = $receiver_user_type_id;
+                $level_insert->receiver_type_id = $receiver_user_type_id;
                 $level_insert->sender_user_id = $user_id;
                 $level_insert->save();
             }

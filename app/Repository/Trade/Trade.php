@@ -152,7 +152,7 @@ class Trade implements ITrade
             $redis              = new Redis;
             $mDenialAmount      = 0; 
             $mUserData          = json_decode($redis::get('user:' . $refUserId), true);
-            $mUserType          = $this->_parent->userType(); 
+            $mUserType          = $this->_parent->userType($refWorkflowId); 
             $mShortUlbName      = "";
             $mApplicationTypeId = null;
             $mNowdate           = Carbon::now()->format('Y-m-d'); 
@@ -688,7 +688,8 @@ class Trade implements ITrade
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id;
-            $mUserType          = $this->_parent->userType();
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $mUserType          = $this->_parent->userType($refWorkflowId);
             if(in_array(strtoupper($mUserType),["SUPER ADMIN","BO"]))
             {
                 $data['wardList'] = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
@@ -742,7 +743,7 @@ class Trade implements ITrade
         $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
         $rollId     =  $mUserData['role_id']??($this->_parent->getUserRoll($refUserId, $refUlbId,$refWorkflowId)->role_id??-1);
         
-        $mUserType = $this->_parent->userType();
+        $mUserType = $this->_parent->userType($refWorkflowId);
         $mProprtyId=null;
         $rules = [];
         $message = [];
@@ -932,7 +933,7 @@ class Trade implements ITrade
      * |-------------------functions-------------------------------------
      * |
      * |  mUserData      = this->_parent->getUserRoll(refUserId, refUlbId,refWorkflowId)
-     * |  mUserType      = $this->_parent->userType()
+     * |  mUserType      = $this->_parent->userType(refWorkflowId)
      * |  refLevelData   = $this->getLevelData(licenceId)
      * |  refNoticeDetails = this->readNotisDtl(refLecenceData->id)
      * |  chargeData    = this->cltCharge(args)
@@ -1012,7 +1013,7 @@ class Trade implements ITrade
             $refUlbName     = explode(' ',$refUlbDtl->ulb_name);
 
             $mUserData      = $this->_parent->getUserRoll($refUserId, $refUlbId,$refWorkflowId);
-            $mUserType      = $this->_parent->userType();
+            $mUserType      = $this->_parent->userType($refWorkflowId);
             $mNowDate       = Carbon::now()->format('Y-m-d'); 
             $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
             $mDenialAmount  = 0;
@@ -1624,7 +1625,7 @@ class Trade implements ITrade
         $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
         $workflows = $this->_parent->iniatorFinisher($user_id,$ulb_id,$workflow_id);   
         $roll_id =  $this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??null;
-        $apply_from = $this->_parent->userType();  
+        $apply_from = $this->_parent->userType($workflow_id);  
         $licenceId = $request->id;
         $rules = [];
         $message = [];
@@ -1766,7 +1767,18 @@ class Trade implements ITrade
     public function readLicenceDtl($id)
     {
         try{
-            $mUserType      = $this->_parent->userType();
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $refUlbId       = $refUser->ulb_id;
+            $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                                    ->where('ulb_id', $refUlbId)
+                                    ->first();
+            if (!$refWorkflowMstrId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $mUserType      = $this->_parent->userType($refWorkflowId);
             $refApplication = $this->getLicenceById($id);
             $mItemName      ="";
             $mCods          = "";
@@ -2207,7 +2219,7 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
-            $mUserType = $this->_parent->userType();
+            $mUserType = $this->_parent->userType($refWorkflowId);
             $mWardPermission = $this->_parent->WardPermission($refUserId);           
             $mRole = $this->_parent->getUserRoll($refUserId,$refUlbId,$refWorkflowMstrId->wf_master_id);
             $mJoins ="";
@@ -2330,7 +2342,7 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
-            $apply_from = $this->_parent->userType();
+            $apply_from = $this->_parent->userType($refWorkflowId);
             $ward_permission = $this->_parent->WardPermission($user_id);
             $role = $this->_parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);           
             if (!$role) 
@@ -2459,7 +2471,7 @@ class Trade implements ITrade
                 throw new Exception("You Are Not Authorized");
             }
             $role_id = $role->role_id;
-            $apply_from = $this->_parent->userType();            
+            $apply_from = $this->_parent->userType($refWorkflowId);            
             $rules = [
                 // "receiverId" => "required|int",
                 "btn" => "required|in:btc,forward,backward",
@@ -2987,7 +2999,7 @@ class Trade implements ITrade
                 throw new Exception("You Are Not Authorized");
             } 
             $role_id = $role->role_id;  
-            $userType = $this->_parent->userType();
+            $userType = $this->_parent->userType($refWorkflowId);
             if(!in_array(strtoupper($userType),["TC","UTC"]))
             {
                 throw new Exception("You Are Not Authorize For Apply Denial");
@@ -3090,7 +3102,7 @@ class Trade implements ITrade
             $ulb_id = $user->ulb_id;
             $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
             $role_id = $this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??-1;
-            $mUserType = $this->_parent->userType();
+            $mUserType = $this->_parent->userType($workflow_id);
             // dd($role_id);
             if(!in_array($role_id,[11]))
             {
@@ -3160,7 +3172,7 @@ class Trade implements ITrade
      * |+ @var ulb_id login user ULBID
      * |+ @var workflow_id owrflow id 19 for trade **Config::get('workflow-constants.TRADE_WORKFLOW_ID')
      * |+ @var role_id login user ROLEID **this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??-1
-     * | @var apply_from login user sort role name **$this->_parent->userType()
+     * | @var apply_from login user sort role name **$this->_parent->userType(workflow_id)
      * |
      * |+ @var denial_details  apply denial detail **this->getDenialDetailsByID($id,$ulb_id)
      * |+ @var denialID =  denial_details->id
@@ -3175,7 +3187,7 @@ class Trade implements ITrade
             $ulb_id = $user->ulb_id;
             $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
             $role_id = $this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??-1;
-            $mUserType = $this->_parent->userType();
+            $mUserType = $this->_parent->userType($workflow_id);
 
             $denial_details  = $this->getDenialDetailsByID($id,$ulb_id);
             $denialID =  $denial_details->id;
@@ -4091,7 +4103,7 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
-            $mUserType = $this->_parent->userType();
+            $mUserType = $this->_parent->userType($refWorkflowId);
             $ward_permission = $this->_modelWard->getAllWard($ulb_id)->map(function($val){
                 $val->ward_no = $val->ward_name;
                 return $val;
@@ -4173,7 +4185,7 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
-            $mUserType = $this->_parent->userType();
+            $mUserType = $this->_parent->userType($refWorkflowId);
             $ward_permission = $this->_modelWard->getAllWard($ulb_id)->map(function($val){
                 $val->ward_no = $val->ward_name;
                 return $val;
