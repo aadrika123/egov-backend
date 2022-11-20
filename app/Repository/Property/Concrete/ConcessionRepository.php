@@ -16,8 +16,10 @@ use App\Models\Property\PropConcessionLevelPending;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use Illuminate\Support\Facades\DB;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Traits\Property\Concession;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Redis;
 
 class ConcessionRepository implements iConcessionRepository
 {
@@ -365,6 +367,31 @@ class ConcessionRepository implements iConcessionRepository
             return responseMsg(true, $msg, "");
         } catch (Exception $e) {
             DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Back to Citizen
+     * | @param req
+     */
+    public function backToCitizen($req)
+    {
+        try {
+            $redis = Redis::connection();
+            $workflowId = $req->workflowId;
+            $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
+            if (!$backId) {
+                $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
+                    ->where('is_initiator', true)
+                    ->first();
+                $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
+            }
+            $saf = PropActiveConcession::find($req->concessionId);
+            $saf->current_role = $backId->wf_role_id;
+            $saf->save();
+            return responseMsg(true, "Successfully Done", "");
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
