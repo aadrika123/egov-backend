@@ -775,11 +775,9 @@ class Trade implements ITrade
             $rules["firmDetails.premisesOwner"]="required|regex:$mRegex";
             $rules["firmDetails.newWardNo"]="required|digits_between:1,9223372036854775807";
             $rules["firmDetails.wardNo"]="required|digits_between:1,9223372036854775807";
-            $rules["firmDetails.pincode"]="required|digits:6|regex:/[0-9]{6}/"; 
-            if(isset($request->firmDetails['landmark']) && trim($request->firmDetails['landmark']))
-            {
-                $rules["firmDetails.landmark"]="regex:$mRegex";
-            }
+            $rules["firmDetails.pincode"]="required|digits:6|regex:/[0-9]{6}/|nullable"; 
+
+            $rules["firmDetails.landmark"]="regex:$mRegex|nullable";            
             $rules["firmDetails.kNo"] = "digits|regex:/[0-9]{10}/";
             $rules["firmDetails.bindBookNo"] = "regex:$mRegex";
             $rules["firmDetails.accountNo"] = "regex:$mRegex";
@@ -795,9 +793,9 @@ class Trade implements ITrade
             $rules["ownerDetails"] = "required|array";
             $rules["ownerDetails.*.id"] = "digits_between:1,9223372036854775807";
             $rules["ownerDetails.*.businessOwnerName"]="required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-            $rules["ownerDetails.*.guardianName"]="regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
+            $rules["ownerDetails.*.guardianName"]="regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/|nullable";
             $rules["ownerDetails.*.mobileNo"]="required|digits:10|regex:/[0-9]{10}/";
-            $rules["ownerDetails.*.email"]="email";
+            $rules["ownerDetails.*.email"]="email|nullable";
 
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) 
