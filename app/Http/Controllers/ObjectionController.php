@@ -13,11 +13,6 @@ class ObjectionController extends Controller
         $this->Repository = $objection;
     }
 
-    //Objection for Clerical Mistake
-    public function ClericalMistake(Request $request)
-    {
-        return $this->Repository->ClericalMistake($request);
-    }
 
     //
     public function getOwnerDetails(Request $request)
@@ -25,7 +20,7 @@ class ObjectionController extends Controller
         return $this->Repository->getOwnerDetails($request);
     }
 
-    //
+    //Objection for Clerical Mistake
     public function rectification(Request $request)
     {
         return $this->Repository->rectification($request);

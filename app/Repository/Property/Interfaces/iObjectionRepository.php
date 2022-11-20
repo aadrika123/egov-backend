@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 
 interface iObjectionRepository
 {
-    public function ClericalMistake(Request $request);
+
     public function getOwnerDetails(Request $request);
     public function rectification(Request $request);
     public function objectionNo($propertyId);

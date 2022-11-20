@@ -12,17 +12,16 @@ use Illuminate\Support\Carbon;
 use  App\Models\Property\ObjectionOwnerDetail;
 use App\Models\ObjectionTypeMstr;
 use Illuminate\Support\Facades\DB;
+use App\Traits\Workflow\Workflow as WorkflowTrait;
+
 
 
 
 class ObjectionRepository implements iObjectionRepository
 {
+    use WorkflowTrait;
     private  $_objectionNo;
 
-    public function ClericalMistake(Request $request)
-    {
-        $data = $this->getOwnerDetails($request->id);
-    }
 
     //get owner details
     public function getOwnerDetails(Request $request)
@@ -115,6 +114,36 @@ class ObjectionRepository implements iObjectionRepository
             return $_objectionNo;
         } catch (Exception $e) {
             echo $e->getMessage();
+        }
+    }
+
+
+    //Inbox 
+    public function inbox()
+    {
+        try {
+            $auth = auth()->user();
+            $userId = $auth->id;
+            $ulbId = $auth->ulb_id;
+            $wardId = $this->getWardByUserId($userId);
+
+            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
+                return $ward->ward_id;
+            });
+
+            $roles = $this->getRoleIdByUserId($userId);
+
+            $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
+                return $role->wf_role_id;
+            });
+
+            $concessions = $this->getConcessionList($ulbId)
+                ->whereIn('prop_active_concessions.current_role', $roleId)
+                ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->get();
+            return responseMsg(true, "Inbox List", remove_null($concessions));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }
