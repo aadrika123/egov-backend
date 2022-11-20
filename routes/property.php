@@ -71,7 +71,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('concession/outbox', 'outbox');                                             // Concession Outbox
         Route::post('concession/details', 'getDetailsById');                                   // Get Concession Details by ID
         Route::post('concession/escalate', 'escalateApplication');                             // escalate application
-        Route::get('concession/special-inbox', 'specialInbox');                                 // escalated application inbox
+        Route::get('concession/special-inbox', 'specialInbox');                                // escalated application inbox
     });
 
     //Property Objection

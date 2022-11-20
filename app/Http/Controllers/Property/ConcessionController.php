@@ -52,8 +52,7 @@ class ConcessionController extends Controller
     public function getDetailsById(Request $req)
     {
         $req->validate([
-            'id' => 'required',
-            'status' => 'required'
+            'id' => 'required'
         ]);
 
         return $this->Repository->getDetailsById($req);
@@ -63,8 +62,15 @@ class ConcessionController extends Controller
     public function escalateApplication(Request $req)
     {
         $req->validate([
-            'id' => 'required'
+            'id' => 'required',
+            'status' => 'required'
         ]);
         return $this->Repository->escalateApplication($req);
+    }
+
+    // special inbox list
+    public function specialInbox()
+    {
+        return $this->Repository->specialInbox();
     }
 }

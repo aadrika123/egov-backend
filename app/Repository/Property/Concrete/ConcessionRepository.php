@@ -250,7 +250,7 @@ class ConcessionRepository implements iConcessionRepository
     }
 
     /**
-     * | Special Inbox
+     * | Special Inbox (Escalated Applications)
      */
     public function specialInbox()
     {
@@ -264,10 +264,11 @@ class ConcessionRepository implements iConcessionRepository
                 return $ward->ward_id;
             });
 
-            $concessions = $this->getConcessionList($ulbId)
-                ->whereIn('prop_active_concessions.is_escalate', true)
+            $concessions = $this->getConcessionList($ulbId)                                         // Get Concessions
+                ->where('prop_active_concessions.is_escalate', true)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->get();
+
             return responseMsg(true, "Inbox List", remove_null($concessions));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

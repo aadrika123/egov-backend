@@ -18,4 +18,5 @@ interface iConcessionRepository
     public function outbox();                                               // Concession Outbox List
     public function getDetailsById($req);                                   // Get Concession Details By ID
     public function escalateApplication($req);                              // Escalate the application
+    public function specialInbox();                                         // Get escalated application inbox
 }
