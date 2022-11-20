@@ -27,7 +27,7 @@ class requpdateBasicDtl extends FormRequest
     public function rules()
     {
         return [
-            "id"=>"required|digits_between:1,9223372036854775807"
+            "initialBusinessDetails.id"=>"required|digits_between:1,9223372036854775807"
         ];
     }
 }

@@ -40,7 +40,8 @@ class PropertyDeactivate implements IPropertyDeactivate
             $mUserType  = $this->_common->userType();
             $rules["holdingNo"] = "required|string";
             $validator = Validator::make($request->all(), $rules,);
-            if ($validator->fails()) {
+            if ($validator->fails()) 
+            {
                 return responseMsg(false, $validator->errors(),$request->all());
             }
             $mHoldingNo = strtoupper($request->holdingNo);
@@ -169,6 +170,7 @@ class PropertyDeactivate implements IPropertyDeactivate
         }
 
     }
+    
 
 
     #---------------------Core Function--------------------------------------------------------

@@ -3878,12 +3878,13 @@ class Trade implements ITrade
             {                
                 $data['wardList'] = $this->_parent->WardPermission($refUserId);
             }
-            $refOldLicece       = $this->getLicenceById($request->id); 
+            $mLicenceId         = $request->initialBusinessDetails['id'];
+            $refOldLicece       = $this->getLicenceById($mLicenceId ); 
             if(!$refOldLicece)
             {
                 throw new Exception("No Licence Found");
             }
-            $refOldOwneres =$this->getOwnereDtlByLId($request->id);
+            $refOldOwneres =$this->getOwnereDtlByLId($mLicenceId);
             $mnaturOfBusiness = $this->getLicenceItemsById($refOldLicece->nature_of_bussiness);
             $natur = array();
             foreach($mnaturOfBusiness as $val)
@@ -3930,8 +3931,8 @@ class Trade implements ITrade
             {
                 throw new Exception("You Are Not Authorized");
             }   
-            $refOldLicece       = ActiveLicence::find($request->id);
-            $mLicenceId         = $request->id;
+            $mLicenceId         = $request->initialBusinessDetails['id'];
+            $refOldLicece       = ActiveLicence::find($mLicenceId);
             if(!$refOldLicece)
             {
                 throw new Exception("No Licence Found");
