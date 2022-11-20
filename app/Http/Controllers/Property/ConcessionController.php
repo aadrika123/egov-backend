@@ -52,9 +52,19 @@ class ConcessionController extends Controller
     public function getDetailsById(Request $req)
     {
         $req->validate([
-            'id' => 'required'
+            'id' => 'required',
+            'status' => 'required'
         ]);
 
         return $this->Repository->getDetailsById($req);
+    }
+
+    // Escalate application by application id
+    public function escalateApplication(Request $req)
+    {
+        $req->validate([
+            'id' => 'required'
+        ]);
+        return $this->Repository->escalateApplication($req);
     }
 }

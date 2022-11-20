@@ -221,4 +221,56 @@ class ConcessionRepository implements iConcessionRepository
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | Escalate application
+     * | @param req request parameters
+     */
+    public function escalateApplication($req)
+    {
+        try {
+            $userId = auth()->user()->id;
+            if ($req->status == 1) {
+                $concession = PropActiveConcession::find($req->id);
+                $concession->is_escalate = 1;
+                $concession->escalated_by = $userId;
+                $concession->save();
+                return responseMsg(true, "Successfully Escalated the application", "");
+            }
+            if ($req->status == 0) {
+                $concession = PropActiveConcession::find($req->id);
+                $concession->is_escalate = 0;
+                $concession->escalated_by = null;
+                $concession->save();
+                return responseMsg(true, "Successfully De-Escalated the application", "");
+            }
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Special Inbox
+     */
+    public function specialInbox()
+    {
+        try {
+            $auth = auth()->user();
+            $userId = $auth->id;
+            $ulbId = $auth->ulb_id;
+            $wardId = $this->getWardByUserId($userId);
+
+            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
+                return $ward->ward_id;
+            });
+
+            $concessions = $this->getConcessionList($ulbId)
+                ->whereIn('prop_active_concessions.is_escalate', true)
+                ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->get();
+            return responseMsg(true, "Inbox List", remove_null($concessions));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 }
