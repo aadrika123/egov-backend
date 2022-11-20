@@ -41,7 +41,8 @@ class addRecorde extends FormRequest
         $mDateFormatYYYMMDD ='/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))+$/i';
         $mDateFormatYYYMM='/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';
         $reftrade = new CommonFunction();
-        $mUserType = $reftrade->userType();
+        $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        $mUserType = $reftrade->userType($refWorkflowId);
         $rules = [];
         if(in_array($mApplicationTypeId,[1]))
         {
