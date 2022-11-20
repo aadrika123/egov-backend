@@ -64,7 +64,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     //Property Concession
     Route::controller(ConcessionController::class)->group(function () {
-        Route::post('concession/UpdateConDetail', 'UpdateConDetail');
         Route::post('concession/applyConcession', 'applyConcession');
         Route::post('concession/postHolding', 'postHolding');
     });

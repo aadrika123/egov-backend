@@ -33,6 +33,9 @@ class ConcessionController extends Controller
     //post Holding
     public function postHolding(Request $request)
     {
+        $request->validate([
+            'holdingNo' => 'required'
+        ]);
         return $this->Repository->postHolding($request);
     }
 }

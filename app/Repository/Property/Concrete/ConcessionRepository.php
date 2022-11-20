@@ -26,7 +26,7 @@ class ConcessionRepository implements iConcessionRepository
 
 
     //apply concession
-    public function applyConcession(Request $request)
+    public function applyConcession($request)
     {
         $user_id = auth()->user()->id;
         $ulb_id = auth()->user()->ulb_id;
@@ -110,13 +110,9 @@ class ConcessionRepository implements iConcessionRepository
     }
 
     ////get owner details
-    public function postHolding(Request $request)
+    public function postHolding($request)
     {
         try {
-
-            $request->validate([
-                'holdingNo' => 'required'
-            ]);
             $user = PropProperty::where('holding_no', $request->holdingNo)
                 ->get();
             if (!empty($user['0'])) {
