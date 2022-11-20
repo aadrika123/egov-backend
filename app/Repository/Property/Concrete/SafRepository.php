@@ -41,6 +41,16 @@ use Illuminate\Support\Facades\Redis;
  * | Created By-Anshu Kumar
  * -----------------------------------------------------------------------------------------
  * | SAF Module all operations 
+ * | --------------------------- Workflow Parameters ---------------------------------------
+ * |                                 # SAF New Assessment
+ * | wf_master id=4 
+ * | wf_workflow_id=4
+ * |                                 # SAF Reassessment 
+ * | wf_mstr_id=5
+ * | wf_workflow_id=3
+ * |                                 # SAF Mutation
+ * | wf_mstr_id=9
+ * | wf_workflow_id=5
  */
 class SafRepository implements iSafRepository
 {
