@@ -11,8 +11,12 @@ use App\Models\Property\PropObjection;
 use Illuminate\Support\Carbon;
 use  App\Models\Property\ObjectionOwnerDetail;
 
+
+
 class ObjectionRepository implements iObjectionRepository
 {
+    private  $_objectionNo;
+
     public function ClericalMistake(Request $request)
     {
         $data = $this->getOwnerDetails($request->id);
@@ -41,10 +45,20 @@ class ObjectionRepository implements iObjectionRepository
             $device->address = $request->address;
             $device->mobile = $request->mobileNo;
             $device->members = $request->safMember;
-
             $device->created_at = Carbon::now();
             $device->updated_at = Carbon::now();
             $device->save();
+
+            $data = new PropObjection;
+            $data->property_id = $request->propertyId;
+            $data->saf_id = $request->safId;
+            $data->objection_no = $this->_objectionNo;
+            $data->objection_form = $request->objectionForm;
+            $data->remark_on_status = $request->remarks;
+            $data->evidence_document = $request->evidenceDocument;
+            $data->user_id = $request->userId;
+            $data->created_at = Carbon::now();
+            $data->updated_at = Carbon::now();
 
 
 
@@ -89,9 +103,9 @@ class ObjectionRepository implements iObjectionRepository
                 // ->where('ulb_id', $ulb_id)
                 ->count() + 1;
             $ward_no = UlbWardMaster::select("ward_name")->where('id', $ward_id)->first()->ward_name;
-            $objectionNo = 'OBJ' . str_pad($ward_no, 3, '0', STR_PAD_LEFT) . "/" . str_pad($count, 5, '0', STR_PAD_LEFT);
+            $_objectionNo = 'OBJ' . str_pad($ward_no, 3, '0', STR_PAD_LEFT) . "/" . str_pad($count, 5, '0', STR_PAD_LEFT);
 
-            return $objectionNo;
+            return $_objectionNo;
         } catch (Exception $e) {
             echo $e->getMessage();
         }

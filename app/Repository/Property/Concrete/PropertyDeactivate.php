@@ -40,7 +40,8 @@ class PropertyDeactivate implements IPropertyDeactivate
             $mUserType  = $this->_common->userType();
             $rules["holdingNo"] = "required|string";
             $validator = Validator::make($request->all(), $rules,);
-            if ($validator->fails()) {
+            if ($validator->fails()) 
+            {
                 return responseMsg(false, $validator->errors(),$request->all());
             }
             $mHoldingNo = strtoupper($request->holdingNo);
@@ -168,6 +169,130 @@ class PropertyDeactivate implements IPropertyDeactivate
             return responseMsg(false,$e->getMessage(),$request->all());
         }
 
+    }
+    public function inbox(Request $request)
+    {
+        try {
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $refUlbId       = $refUser->ulb_id;
+            $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
+            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                                    ->where('ulb_id', $refUlbId)
+                                    ->first();
+            if (!$refWorkflowMstrId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $mUserType = $this->_parent->userType();
+            $mWardPermission = $this->_parent->WardPermission($refUserId);           
+            $mRole = $this->_parent->getUserRoll($refUserId,$refUlbId,$refWorkflowMstrId->wf_master_id);
+            $mJoins ="";
+            if (!$mRole) 
+            {
+                throw new Exception("You Are Not Authorized For This Action");
+            } 
+            if($mRole->is_initiator )    //|| in_array(strtoupper($apply_from),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"])
+            {
+                $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $mWardPermission = objToArray($mWardPermission);
+                $mJoins = "leftjoin";
+            }
+            else
+            {
+                $mJoins = "join";
+            }
+
+            $mWardIds = array_map(function ($val) {
+                return $val['id'];
+            }, $mWardPermission);
+
+            $mRoleId = $mRole->role_id;   
+            $inputs = $request->all();  
+            // DB::enableQueryLog();          
+            $licence = PropDeactivationRequest::select("active_licences.id",
+                                            "active_licences.application_no",
+                                            "active_licences.provisional_license_no",
+                                            "active_licences.license_no",
+                                            "active_licences.document_upload_status",
+                                            "active_licences.payment_status",
+                                            "active_licences.firm_name",
+                                            "active_licences.apply_date",
+                                            "active_licences.apply_from",
+                                            "owner.owner_name",
+                                            "owner.guardian_name",
+                                            "owner.mobile_no",
+                                            "owner.email_id",
+                                            DB::raw("trade_level_pendings.id AS level_id")
+                                            )
+                        ->join("prop_deactivation_req_inboxes",function($join) use($mRoleId){
+                                $join->on("prop_deactivation_req_inboxes.request_id","prop_deactivation_requests.id")
+                                ->where("prop_deactivation_req_inboxes.reciver_type_id",$mRoleId)
+                                ->where("prop_deactivation_req_inboxes.status",1)
+                                ->where("prop_deactivation_req_inboxes.verification_status",0);
+                        })
+                        // ->join()
+                        ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                            STRING_AGG(guardian_name,',') AS guardian_name,
+                                            STRING_AGG(mobile::TEXT,',') AS mobile_no,
+                                            STRING_AGG(emailid,',') AS email_id,
+                                            licence_id
+                                        FROM active_licence_owners 
+                                        WHERE status =1
+                                        GROUP BY licence_id
+                                        )owner"),function($join){
+                                            $join->on("owner.licence_id","active_licences.id");
+                                        })
+                        ->where("active_licences.status",1)                        
+                        ->where("active_licences.ulb_id",$refUlbId);
+            if(isset($inputs['key']) && trim($inputs['key']))
+            {
+                $key = trim($inputs['key']);
+                $licence = $licence->where(function ($query) use ($key) {
+                    $query->orwhere('active_licences.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('active_licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')                                            
+                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
+            {
+                $mWardIds =$inputs['wardNo']; 
+            }
+            if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
+            {
+                $licence = $licence
+                            ->whereBetween('licence_level_pendings.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
+            }
+            if($mRole->is_initiator)
+            {
+                $licence = $licence->whereIn('active_licences.pending_status',[0,3]);
+            }
+            else
+            {
+                $licence = $licence->whereIn('active_licences.pending_status',[2]);
+            }            
+            $licence = $licence
+                    ->whereIn('active_licences.ward_mstr_id', $mWardIds)
+                    ->get();
+            // dd(DB::getQueryLog());
+            $data = [
+                "wardList"=>$mWardPermission,                
+                "licence"=>$licence,
+            ] ;           
+            return responseMsg(true, "", $data);
+            
+        } 
+        catch (Exception $e) 
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
     }
 
 
