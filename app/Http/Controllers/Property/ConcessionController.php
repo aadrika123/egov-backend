@@ -88,4 +88,13 @@ class ConcessionController extends Controller
         ]);
         return $this->Repository->postNextLevel($req);
     }
+
+    public function approvalRejection(Request $req)
+    {
+        $req->validate([
+            "concessionId" => "required",
+            "status" => "required"
+        ]);
+        return $this->Repository->approvalRejection($req);
+    }
 }

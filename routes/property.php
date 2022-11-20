@@ -74,6 +74,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('concession/special-inbox', 'specialInbox');                                // escalated application inbox
 
         Route::post('concession/next-level', 'postNextLevel');                                  // Backward Forward Application
+        Route::post('concession/approvalrejection', 'approvalRejection');                       // Approve Reject Application
     });
 
     //Property Objection

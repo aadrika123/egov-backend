@@ -310,6 +310,59 @@ class ConcessionRepository implements iConcessionRepository
             $commentOnlevel->save();
 
             DB::commit();
+            return responseMsg(true, "Successfully Forwarded The Application!!", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Concession Application Approval or Rejected 
+     * | @param req
+     */
+    public function approvalRejection($req)
+    {
+        try {
+            // Check if the Current User is Finisher or Not
+            $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
+            $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
+            if ($refGetFinisher->role_id != $req->roleId) {
+                return responseMsg(false, "Forbidden Access", "");
+            }
+
+            DB::beginTransaction();
+            // Approval
+            if ($req->status == 1) {
+                // Concession Application replication
+                $activeConcession = PropActiveConcession::query()
+                    ->where('id', $req->concessionId)
+                    ->first();
+
+                $approvedConcession = $activeConcession->replicate();
+                $approvedConcession->setTable('prop_concessions');
+                $approvedConcession->id = $activeConcession->id;
+                $approvedConcession->save();
+                $activeConcession->delete();
+
+                $msg = "Application Successfully Approved !!";
+            }
+            // Rejection
+            if ($req->status == 0) {
+                // Concession Application replication
+                $activeConcession = PropActiveConcession::query()
+                    ->where('id', $req->concessionId)
+                    ->first();
+
+                $approvedConcession = $activeConcession->replicate();
+                $approvedConcession->setTable('prop_rejected_concessions');
+                $approvedConcession->id = $activeConcession->id;
+                $approvedConcession->save();
+                $activeConcession->delete();
+                $msg = "Application Successfully Rejected !!";
+            }
+            DB::commit();
+            return responseMsg(true, $msg, "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
