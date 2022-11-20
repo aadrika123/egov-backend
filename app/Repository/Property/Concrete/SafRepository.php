@@ -237,7 +237,7 @@ class SafRepository implements iSafRepository
                 return $item->wf_role_id;
             });
 
-            $data = $this->getSaf()                                            // Global SAF 
+            $data = $this->getSaf()                                                     // Global SAF 
                 ->where('active_safs.ulb_id', $ulbId)
                 ->where('active_safs.status', 1)
                 ->whereIn('current_role', $roleId)
@@ -331,6 +331,33 @@ class SafRepository implements iSafRepository
 
             $floorDetails = ActiveSafsFloorDtls::where('saf_id', $data['id'])->get();
             $data['floors'] = $floorDetails;
+
+            $levelComments = DB::table('prop_level_pendings')
+                ->select(
+                    'prop_level_pendings.receiver_role_id as commentedByRoleId',
+                    'r.role_name as commentedByRoleName',
+                    'prop_level_pendings.remarks',
+                    'prop_level_pendings.verification_status'
+                )
+                ->where('prop_level_pendings.saf_id', $data['id'])
+                ->where('status', 1)
+                ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_level_pendings.receiver_role_id')
+                ->get();
+            $data['levelComments'] = $levelComments;
+
+            $citizenComment = DB::table('workflow_tracks')
+                ->select(
+                    'workflow_tracks.ref_table_dot_id',
+                    'workflow_tracks.message',
+                    'workflow_tracks.track_date',
+                    'u.email as citizenEmail',
+                    'u.user_name as citizenName'
+                )
+                ->where('ref_table_id_value', $data['id'])
+                ->join('users as u', 'u.id', '=', 'workflow_tracks.commented_by')
+                ->get();
+
+            $data['citizenComment'] = $citizenComment;
 
             return responseMsg(true, 'Data Fetched', remove_null($data));
         } catch (Exception $e) {
@@ -503,6 +530,13 @@ class SafRepository implements iSafRepository
             $saf = ActiveSaf::find($request->safId);
             $saf->current_role = $request->receiverRoleId;
             $saf->save();
+
+            // Add Comment On Prop Level Pending
+            $commentOnlevel = PropLevelPending::where('saf_id', $request->safId)
+                ->where('receiver_role_id', $request->senderRoleId)
+                ->first();
+            $commentOnlevel->remarks = $request->comment;
+            $commentOnlevel->save();
 
             DB::commit();
             return responseMsg(true, "Successfully Forwarded The Application!!", "");
