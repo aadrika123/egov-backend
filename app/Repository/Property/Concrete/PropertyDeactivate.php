@@ -50,7 +50,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             $mHoldingNo = strtoupper($request->holdingNo);
             $property = PropProperty::select("id","new_holding_no","holding_no","prop_address",
                                         DB::raw("owners.owner_name, owners.guardian_name, owners.mobile_no")
-                                    )
+                                    )                                    
                                     ->leftjoin(DB::raw("(SELECT DISTINCT(property_id) AS property_id,
                                                         STRING_AGG(owner_name, ',') AS owner_name,
                                                         STRING_AGG(guardian_name, ',') AS guardian_name,
@@ -99,7 +99,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                 throw new Exception("You Are Not Authorized For Deactivate Property!");
             }
-            $mProperty  = PropProperty::find($propId);
+            $mProperty  = $this->getPropertyById($propId);
             if (!$workflowId) 
             {
                 throw new Exception("Workflow Not Available");
@@ -131,6 +131,12 @@ class PropertyDeactivate implements IPropertyDeactivate
             }
             elseif($request->getMethod()=="POST")
             {
+                
+                $mProperty  = PropProperty::find($propId);
+                if(!$mProperty)
+                {
+                    throw New Exception("Property Not Found");
+                }
                 $rules["comments"] = "required|min:10|regex:$mRegex";
                 $rules["document"]="required|mimes:pdf,jpg,jpeg,png|max:2048";
                 $validator = Validator::make($request->all(), $rules,);
@@ -211,17 +217,21 @@ class PropertyDeactivate implements IPropertyDeactivate
             $mWardIds = array_map(function ($val) {
                 return $val['id'];
             }, $mWardPermission);
-
+            $mWardIds = implode(',',$mWardIds);
             $mRoleId = $mRole->role_id;   
-            $inputs = $request->all();  
+            $inputs = $request->all(); 
+            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
+            {
+                $mWardIds = $inputs['wardNo']; 
+            } 
             // DB::enableQueryLog();          
             $mProperty = PropDeactivationRequest::select("prop_deactivation_requests.id",
                                             "properties.holding_no",
                                             "properties.new_holding_no",
-                                            "owner.owner_name",
-                                            "owner.guardian_name",
-                                            "owner.mobile_no",
-                                            "owner.email_id",
+                                            "properties.owner_name",
+                                            "properties.guardian_name",
+                                            "properties.mobile_no",
+                                            "properties.email_id",
                                             DB::raw("prop_deactivation_req_inboxes.id AS level_id")
                                             )
                         ->join("prop_deactivation_req_inboxes",function($join) use($mRoleId){
@@ -238,26 +248,24 @@ class PropertyDeactivate implements IPropertyDeactivate
                                         FROM prop_properties  
                                         LEFT JOIN prop_owner_dtls ON prop_properties.id = prop_owner_dtls.property_id AND prop_owner_dtls.status=1
                                         WHERE prop_properties.status =1 AND prop_properties.ulb_id=$refUlbId
+                                        AND prop_properties.ward_mstr_id IN ($mWardIds)
                                         GROUP BY prop_properties.id,holding_no,new_holding_no
                                         )properties"),function($join) use($inputs,$mWardIds){
-                                            $local = $join->on("properties.id","prop_deactivation_requests.property_id");
+                                            $join = $join->on("properties.id","prop_deactivation_requests.property_id");
                                             if(isset($inputs['key']) && trim($inputs['key']))
                                             {
                                                 $key = trim($inputs['key']);
-                                                $local = $local->where(function ($query) use ($key) {
+                                                $join = $join->where(function ($query) use ($key) {
                                                     $query->orwhere('properties.holding_no', 'ILIKE', '%' . $key . '%')
                                                         ->orwhere('properties.new_holding_no', 'ILIKE', '%' . $key . '%')                                            
                                                         ->orwhere('properties.owner_name', 'ILIKE', '%' . $key . '%')
                                                         ->orwhere('properties.guardian_name', 'ILIKE', '%' . $key . '%')
                                                         ->orwhere('properties.mobile_no', 'ILIKE', '%' . $key . '%');
                                                 });
-                                            }
-                                            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
-                                            {
-                                                $mWardIds = $inputs['wardNo']; 
-                                            }
-                                            $local = $local->whereIn('prop_properties.ward_mstr_id', $mWardIds);
-                                        })
+                                            }                                            
+                                            // $join = $join->whereIn('properties.ward_mstr_id', $mWardIds);
+                                        }
+                        )
                         ->where("prop_deactivation_requests.status",1)                        
                         ->where("prop_deactivation_requests.ulb_id",$refUlbId);            
             if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
@@ -271,6 +279,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             $data = [
                 "wardList"=>$mWardPermission,                
                 "Property"=>$mProperty,
+                "userType"=>$mUserType,
             ] ;           
             return responseMsg(true, "", $data);
             
@@ -280,6 +289,331 @@ class PropertyDeactivate implements IPropertyDeactivate
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+    // public function postNextLevel(Request $request)
+    // {
+    //     try{
+    //         $receiver_user_type_id="";
+    //         $sms = "";
+    //         $licence_pending=2;
+    //         $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\-, \s]+$/';
+    //         $user = Auth()->user();
+    //         $user_id = $user->id;
+    //         $ulb_id = $user->ulb_id;            
+    //         $mUserType = $this->_common->userType(); 
+    //         $refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
+    //         $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+    //             ->where('ulb_id', $ulb_id)
+    //             ->first();
+    //         if (!$workflowId) 
+    //         {
+    //             throw new Exception("Workflow Not Available");
+    //         }
+    //         $role = $this->_common->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);  
+    //         $init_finish = $this->_common->iniatorFinisher($user_id,$ulb_id,$refWorkflowId);         
+    //         if (!$role) 
+    //         {
+    //             throw new Exception("You Are Not Authorized");
+    //         }
+    //         $role_id = $role->role_id;           
+    //         $rules = [
+    //             "btn" => "required|in:btc,forward,backward",
+    //             "requestId" => "required|int",
+    //             "comment" => "required|min:10|regex:$regex",
+    //         ];
+    //         $message = [
+    //             "btn.in"=>"Button Value must be In BTC,FORWARD,BACKWARD",
+    //             "comment.required" => "Comment Is Required",
+    //             "comment.min" => "Comment Length can't be less than 10 charecters",
+    //         ];
+    //         $validator = Validator::make($request->all(), $rules, $message);
+    //         if ($validator->fails()) {
+    //             return responseMsg(false, $validator->errors(), $request->all());
+    //         }
+    //         if($role->is_initiator && in_array($request->btn,['btc','backward']))
+    //         {
+    //            throw new Exception("Initator Can Not send Back The Application");
+    //         }
+    //         $refDeactivationReq = PropDeactivationRequest::find($request->requestId);            
+    //         $mLevelData = $this->getLevelData($request->licenceId);
+    //         if(!$refDeactivationReq)
+    //         {
+    //             throw new Exception("Data Not Found");
+    //         }
+    //         elseif($refDeactivationReq->pending_status==5)
+    //         {
+    //             throw new Exception("Deactivation Request Is Already Approved");
+    //         }
+    //         elseif(!$role->is_initiator && isset($mLevelData->receiver_user_type_id) && $mLevelData->receiver_user_type_id != $role->role_id)
+    //         {
+    //             throw new Exception("You are not authorised for this action");
+    //         }
+    //         elseif(!$role->is_initiator && ! $mLevelData)
+    //         {
+    //             throw new Exception("Data Not Found On Level. Please Contact Admin!!!...");
+    //         }  
+    //         elseif(isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
+    //         {
+    //             throw new Exception("You Have Already Taken The Action On This Application");
+    //         }           
+    //         if(!$init_finish)
+    //         {
+    //             throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
+    //         }
+    //         elseif(!$init_finish["initiator"])
+    //         {
+    //             throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
+    //         }
+    //         elseif(!$init_finish["finisher"])
+    //         {
+    //             throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
+    //         }
+            
+    //         // dd($role);
+    //         if($request->btn=="forward" && !$role->is_finisher && !$role->is_initiator)
+    //         {
+    //             $sms ="Application Forwarded To ".$role->forword_name;
+    //             $receiver_user_type_id = $role->forward_role_id;
+    //         }
+    //         elseif($request->btn=="backward" && !$role->is_initiator)
+    //         {
+    //             $sms ="Application Forwarded To ".$role->backword_name;
+    //             $receiver_user_type_id = $role->backward_role_id;
+    //             $licence_pending = $init_finish["initiator"]['id']==$role->backward_role_id ? 3 : $licence_pending;
+    //         }
+    //         elseif($request->btn=="btc" && !$role->is_initiator)
+    //         {
+    //             $licence_pending = 3;
+    //             $sms ="Application Forwarded To ".$init_finish["initiator"]['role_name'];
+    //             $receiver_user_type_id = $init_finish["initiator"]['id'];
+    //         } 
+    //         elseif($request->btn=="forward" && !$role->is_initiator && $level_data)
+    //         {
+    //             $sms ="Application Forwarded ";
+    //             $receiver_user_type_id = $level_data->sender_user_type_id;
+    //         }
+    //         elseif($request->btn=="forward" && $role->is_initiator && !$level_data)
+    //         {
+    //             $licence_pending = 2;
+    //             $sms ="Application Forwarded To ".$role->forword_name;
+    //             $receiver_user_type_id = $role->forward_role_id;
+
+    //         } 
+    //         elseif($request->btn=="forward" && $role->is_initiator && $level_data)
+    //         {
+    //             $licence_pending = 2;
+    //             $sms ="Application Forwarded To ";
+    //             $receiver_user_type_id = $level_data->sender_user_type_id;
+
+    //         }
+    //         if($request->btn=="forward" && $role->is_initiator)
+    //         {
+    //             $doc = (array) null;
+    //             $owneres = $this->getOwnereDtlByLId($licenc_data->id);
+    //             $documentsList = $this->getDocumentTypeList($licenc_data);  
+    //             if($licenc_data->payment_status!=1)
+    //             {
+    //                 $doc[]="Payment is Not Clear";
+    //             }               
+    //             foreach($documentsList as $val)
+    //             {   
+    //                 $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$licenc_data->application_type_id,$val->show);
+    //                 $data["documentsList"][$val->doc_for]["is_mandatory"] = $val->is_mandatory;
+    //             }
+    //             if($licenc_data->application_type_id==1)
+    //             {                
+    //                 $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$licenc_data->application_type_id,0);
+    //                 $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
+    //             }               
+    //             foreach($data["documentsList"] as $key => $val)
+    //             {
+    //                 if($key == "Identity Proof")
+    //                 {
+    //                     continue;
+    //                 }
+    //                 $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenc_data->id,$key);
+    //                 if(!isset($data["documentsList"][$key]["doc"]["document_path"]) && $data["documentsList"][$key]["is_mandatory"])
+    //                 {
+    //                     $doc[]=$key." Not Uploaded";
+
+    //                 }
+    //             } 
+    //             if($licenc_data->application_type_id==1)
+    //             {
+    //                 foreach($owneres as $key=>$val)
+    //                 {
+    //                     $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenc_data->id,$val->id);
+    //                     if(!isset($owneres[$key]["Identity Proof"]["document_path"]) && $data["documentsList"]["Identity Proof"]["is_mandatory"])
+    //                     {
+    //                         $doc[]="Identity Proof Of ".$val->owner_name." Not Uploaded";
+        
+    //                     }
+    //                 }         
+
+    //             }
+    //             // if($doc)
+    //             // {   $err = "";
+    //             //     foreach($doc as $val)
+    //             //     {
+    //             //         $err.="<li>$val</li>";
+    //             //     }                
+    //             //     throw new Exception($err);
+    //             // }
+    //         }           
+    //         if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
+    //         {
+    //             $docs = $this->getLicenceDocuments($request->licenceId);
+    //             if(!$docs)
+    //             {
+    //                 throw new Exception("No Anny Document Found");
+    //             }
+    //             $docs = objToArray($docs);
+    //             $test = array_filter($docs,function($val){
+    //                  if($val["verify_status"]!=1)
+    //                  {
+    //                     return True;
+    //                  }
+    //             });
+    //             if($test)
+    //             {
+    //                 throw new Exception("All Document Are Not Verified");
+    //             }
+
+                
+    //         }
+            
+    //         if(!$role->is_finisher && !$receiver_user_type_id)  
+    //         {
+    //             throw new Exception("Next Role Not Found !!!....");
+    //         }
+
+    //         DB::beginTransaction();
+    //         if($level_data)
+    //         {
+                
+    //             $level_data->verification_status = 1;
+    //             $level_data->receiver_user_id =$user_id;
+    //             $level_data->remarks =$request->comment;
+    //             $level_data->forward_date =Carbon::now()->format('Y-m-d');
+    //             $level_data->forward_time =Carbon::now()->format('H:s:i');
+    //             $level_data->save();
+    //         }
+    //         if(!$role->is_finisher || in_array($request->btn,["backward","btc"]))
+    //         {                
+    //             $level_insert = new TradeLevelPending;
+    //             $level_insert->licence_id = $licenc_data->id;
+    //             $level_insert->sender_user_type_id = $role_id;
+    //             $level_insert->receiver_user_type_id = $receiver_user_type_id;
+    //             $level_insert->sender_user_id = $user_id;
+    //             $level_insert->save();
+    //             $licenc_data->current_user_id = $receiver_user_type_id;
+    //         }
+    //         if($role->is_finisher && $request->btn=="forward")
+    //         {
+    //                 $licence_pending = 5;
+    //                 $sms ="Application Approved By ".$role->forword_name;
+    //                 $ulbDtl = UlbMaster::find($ulb_id);
+    //                 $ulb_name = explode(' ',$ulbDtl->ulb_name);
+    //                 $short_ulb_name = "";
+    //                 foreach($ulb_name as $val)
+    //                 {
+    //                     $short_ulb_name.=$val[0];
+    //                 }
+    //                 $ward_no = UlbWardMaster::select("ward_name")
+    //                         ->where("id",$licenc_data->ward_mstr_id)
+    //                         ->first();
+    //                 $ward_no = $ward_no['ward_name'];
+    //                 $license_no = $short_ulb_name.$ward_no.date("mdY").$licenc_data->id;
+    //                 $licence_for_years = $licenc_data->licence_for_years;
+    //                 # 1	NEW LICENSE
+    //                 if($licenc_data->application_type_id == 1)
+    //                 {
+    //                     // update license validity
+    //                     $valid_upto =date("Y-m-d", strtotime("+$licence_for_years years", strtotime($licenc_data->apply_date)));
+                        
+
+    //                 }
+
+    //                 # 2 RENEWAL
+    //                 if($licenc_data->application_type_id == 2)
+    //                 {
+    //                     $prive_licence = ExpireLicence::find($licenc_data->update_status);
+    //                     if(!empty($prive_licence))
+    //                     {                                    
+    //                         $prive_licence_id = $prive_licence->id;
+    //                         $license_no = $prive_licence->license_no;
+    //                         $valid_from = $prive_licence->valid_upto;                        
+    //                         {
+    //                             $datef = date('Y-m-d', strtotime($valid_from));
+    //                             $datefrom = date_create($datef);
+    //                             $datea = date('Y-m-d', strtotime($licenc_data->apply_date));
+    //                             $dateapply = date_create($datea);
+    //                             $year_diff = date_diff($datefrom, $dateapply);
+    //                             $year_diff =  $year_diff->format('%y');
+
+    //                             $priv_m_d = date('m-d', strtotime($valid_from));
+    //                             $date = date('Y',strtotime($valid_from)) . '-' . $priv_m_d;
+    //                             $licence_for_years2 = $licence_for_years + $year_diff; 
+    //                             $valid_upto = date('Y-m-d', strtotime($date . "+" . $licence_for_years2 . " years"));
+    //                             $data['valid_upto'] = $valid_upto; 
+                                
+    //                         }
+                            
+                            
+    //                     }
+    //                     else
+    //                     {
+    //                         throw new Exception('licence','Some Error Occurred Please Contact to Admin!!!');
+                        
+    //                     }
+    //                 }
+
+    //                 # 3	AMENDMENT
+    //                 if($licenc_data->application_type_id == 3)
+    //                 {
+    //                     $prive_licence = ExpireLicence::find($licenc_data->update_status);
+    //                     $license_no = $prive_licence->license_no;
+    //                     $oneYear_validity = date("Y-m-d", strtotime("+1 years", strtotime('now')));
+    //                     $previous_validity = $prive_licence->valid_upto;
+    //                     if($previous_validity > $oneYear_validity)
+    //                         $valid_upto = $previous_validity;
+    //                     else
+    //                         $valid_upto = $oneYear_validity;                   
+    //                     $licenc_data->valid_from = date('Y-m-d');
+    //                 }
+                    
+    //                 # 4 SURRENDER
+    //                 if($licenc_data->application_type_id==4)
+    //                 {
+    //                     // Incase of surrender valid upto is previous license validity
+    //                     $prive_licence = ExpireLicence::find($licenc_data->update_status);
+    //                     $license_no = $prive_licence->license_no;
+    //                     $valid_upto = $prive_licence->valid_upto;
+    //                 }
+    //                 $licenc_data->license_no = $license_no;
+    //                 $licenc_data->current_user_id = $receiver_user_type_id;
+    //                 $sms.=" Licence No ".$license_no;
+    //         }
+    //         if($request->btn=="forward" && $role->is_initiator)
+    //         {
+    //             $licenc_data->document_upload_status = 1;
+    //         }
+    //         if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
+    //         {   
+    //             $nowdate = Carbon::now()->format('Y-m-d');            
+    //             $licenc_data->doc_verify_date = $nowdate;
+    //             $licenc_data->doc_verify_emp_details_id = $user_id;
+    //         }
+    //         $licenc_data->pending_status = $licence_pending;            
+    //         $licenc_data->save();            
+    //         DB::commit();
+    //         return responseMsg(true, $sms, "");
+
+    //     }
+    //     catch(Exception $e)
+    //     { 
+    //         return responseMsg(false, $e->getMessage(), $request->all());
+    //     }
+    // }
 
 
     #---------------------Core Function--------------------------------------------------------
@@ -299,7 +633,31 @@ class PropertyDeactivate implements IPropertyDeactivate
             return null;
         }
     }
-    
+    public function getPropertyById($id)
+    {
+        try{
+            $application = PropProperty::select("prop_properties.*","prop_m_ownership_types.ownership_type",
+                            "prop_m_property_types.property_type",
+                    DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no")
+                    )
+                ->leftjoin("ulb_ward_masters",function($join){
+                    $join->on("ulb_ward_masters.id","=","prop_properties.ward_mstr_id");                                
+                })
+                ->leftjoin("ulb_ward_masters AS new_ward",function($join){
+                    $join->on("new_ward.id","=","prop_properties.new_ward_mstr_id");                                
+                })
+                ->leftjoin("prop_m_ownership_types","prop_m_ownership_types.id","prop_properties.ownership_type_mstr_id")
+                ->leftjoin("prop_m_property_types","prop_m_property_types.id","prop_properties.prop_type_mstr_id")            
+                ->where('prop_properties.id',$id)   
+                ->first();
+            return $application;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+        
+    }
     public function getPropOwnerByProId($propId)
     {
         try{
@@ -319,5 +677,21 @@ class PropertyDeactivate implements IPropertyDeactivate
     {
         $filePath = $file->storeAs('uploads/Property', $custumFileName, 'public');
         return  $filePath;
+    }
+    public function getLevelData(int $requestId)
+    {
+        try{
+            $data = PropDeactivationReqInbox::select("*")
+                    ->where("request_id",$requestId)
+                    ->where("status",1)
+                    ->where("verification_status",0)
+                    ->orderBy("id","DESC")
+                    ->first();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
     }
 }
