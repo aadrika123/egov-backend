@@ -63,7 +63,7 @@ class ConcessionController extends Controller
     {
         $req->validate([
             'id' => 'required',
-            'status' => 'required'
+            'escalateStatus' => 'required'
         ]);
         return $this->Repository->escalateApplication($req);
     }
@@ -72,5 +72,17 @@ class ConcessionController extends Controller
     public function specialInbox()
     {
         return $this->Repository->specialInbox();
+    }
+
+    // Post Next Level Application
+    public function postNextLevel(Request $req)
+    {
+        $req->validate([
+            'concessionId' => 'required',
+            'senderRoleId' => 'required',
+            'receiverRoleId' => 'required',
+            'comment' => 'required'
+        ]);
+        return $this->Repository->postNextLevel($req);
     }
 }
