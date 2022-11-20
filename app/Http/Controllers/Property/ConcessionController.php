@@ -23,16 +23,11 @@ class ConcessionController extends Controller
         $this->Repository = $concession_repository;
     }
 
-    //Concession Details Update
-    public function UpdateConDetail(Request $request)
-    {
-        return $this->Repository->UpdateConDetail($request);
-    }
 
-    //documents upload
-    public function UpdateDocuments(Request $request, $id)
+    //apply concession
+    public function applyConcession(Request $request)
     {
-        return $this->Repository->UpdateDocuments($request, $id);
+        return $this->Repository->applyConcession($request);
     }
 
     //post Holding
