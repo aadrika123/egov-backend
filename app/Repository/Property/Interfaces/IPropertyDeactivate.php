@@ -13,4 +13,6 @@ interface IPropertyDeactivate
 {
    public function readHoldigbyNo(Request $request); 
    public function deactivatProperty($propId,Request $request);
+   public function inbox(Request $request);
+   public function postNextLevel(Request $request);
 }

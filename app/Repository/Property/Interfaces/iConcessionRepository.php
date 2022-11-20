@@ -11,12 +11,12 @@ use Illuminate\Http\Request;
 
 interface iConcessionRepository
 {
-    //Concession Detail Update
-    public function UpdateConDetail(Request $request);
 
-    //documents upload
-    public function UpdateDocuments(Request $request, $id);
-
-    //post Holding
-    public function postHolding(Request $request);
+    public function applyConcession(Request $request);                      //apply concession
+    public function postHolding(Request $request);                          //post Holding
+    public function inbox();                                                // Concession Inbox
+    public function outbox();                                               // Concession Outbox List
+    public function getDetailsById($req);                                   // Get Concession Details By ID
+    public function escalateApplication($req);                              // Escalate the application
+    public function specialInbox();                                         // Get escalated application inbox
 }

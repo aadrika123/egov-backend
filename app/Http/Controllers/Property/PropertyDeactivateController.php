@@ -29,4 +29,12 @@ class PropertyDeactivateController extends Controller
         $propId = $request->id;
         return $this->Repository->deactivatProperty($propId,$request);
     }
+    public function inbox(Request $request)
+    {
+        return $this->Repository->inbox($request);
+    }
+    public function postNextLevel(Request $request)
+    {
+        return $this->Repository->postNextLevel($request);
+    }
 }
