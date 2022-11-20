@@ -33,4 +33,8 @@ class PropertyDeactivateController extends Controller
     {
         return $this->Repository->inbox($request);
     }
+    public function postNextLevel(Request $request)
+    {
+        return $this->Repository->postNextLevel($request);
+    }
 }

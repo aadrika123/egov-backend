@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Repository\Citizen\CitizenRepository;
 use App\Repository\Citizen\iCitizenRepository;
+use App\Repository\Cluster\Concrete\ClusterRepository;
+use App\Repository\Cluster\Interfaces\iCluster;
 use App\Repository\Grievance\Concrete\NewGrievanceRepository;
 use App\Repository\Grievance\Interfaces\iGrievance;
 use App\Repository\MenuPermission\Concrete\EloquentMenuGroups;
@@ -105,6 +107,9 @@ class RepositoryServiceProvider extends ServiceProvider
 
         //Objection
         $this->app->bind(iObjectionRepository::class, ObjectionRepository::class);
+
+        //Cluster
+        $this->app->bind(iCluster::class, ClusterRepository::class);
     }
 
     /**
