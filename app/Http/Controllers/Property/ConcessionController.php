@@ -35,4 +35,42 @@ class ConcessionController extends Controller
     {
         return $this->Repository->postHolding($request);
     }
+
+    // Inbox
+    public function inbox()
+    {
+        return $this->Repository->inbox();
+    }
+
+    // Outbox
+    public function outbox()
+    {
+        return $this->Repository->outbox();
+    }
+
+    // Get Concession Details by ID
+    public function getDetailsById(Request $req)
+    {
+        $req->validate([
+            'id' => 'required'
+        ]);
+
+        return $this->Repository->getDetailsById($req);
+    }
+
+    // Escalate application by application id
+    public function escalateApplication(Request $req)
+    {
+        $req->validate([
+            'id' => 'required',
+            'status' => 'required'
+        ]);
+        return $this->Repository->escalateApplication($req);
+    }
+
+    // special inbox list
+    public function specialInbox()
+    {
+        return $this->Repository->specialInbox();
+    }
 }

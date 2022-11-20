@@ -232,9 +232,9 @@ class SafRepository implements iSafRepository
     #Inbox
     public function inbox()
     {
-        $userId = auth()->user()->id;
-        $ulbId = auth()->user()->ulb_id;
         try {
+            $userId = auth()->user()->id;
+            $ulbId = auth()->user()->ulb_id;
             $wardId = $this->getWardByUserId($userId);                                  // Trait get Occupied Wards of Current User
 
             $occupiedWards = collect($wardId)->map(function ($ward) {
