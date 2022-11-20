@@ -65,6 +65,10 @@ class PropertyDeactivate implements IPropertyDeactivate
                                     ->where("prop_properties.new_holding_no",$mHoldingNo)
                                     ->where("prop_properties.ulb_id",$refUlbId)
                                     ->first();
+            if(!$prperty)
+            {
+                throw new Exception("Holding Not Found");
+            }
             return responseMsg(true,"",remove_null($prperty));
 
         }
@@ -213,7 +217,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             $mRoleId = $mRole->role_id;   
             $inputs = $request->all();  
             // DB::enableQueryLog();          
-            $licence = PropDeactivationRequest::select("active_licences.id",
+            $mProperty = PropDeactivationRequest::select("active_licences.id",
                                             "active_licences.application_no",
                                             "active_licences.provisional_license_no",
                                             "active_licences.license_no",
@@ -234,57 +238,49 @@ class PropertyDeactivate implements IPropertyDeactivate
                                 ->where("prop_deactivation_req_inboxes.status",1)
                                 ->where("prop_deactivation_req_inboxes.verification_status",0);
                         })
-                        // ->join()
                         ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
-                                            STRING_AGG(mobile::TEXT,',') AS mobile_no,
-                                            STRING_AGG(emailid,',') AS email_id,
-                                            licence_id
-                                        FROM active_licence_owners 
-                                        WHERE status =1
-                                        GROUP BY licence_id
-                                        )owner"),function($join){
-                                            $join->on("owner.licence_id","active_licences.id");
+                                            STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                            STRING_AGG(email,',') AS email_id,
+                                            prop_properties.id
+                                        FROM prop_properties  
+                                        LEFT JOIN prop_owner_dtls ON prop_properties.id = prop_owner_dtls.property_id AND prop_owner_dtls.status=1
+                                        WHERE prop_properties.status =1 AND prop_properties.ulb_id=$refUlbId
+                                        GROUP BY prop_properties.id
+                                        )properties"),function($join){
+                                            $local = $join->on("properties.id","prop_deactivation_requests.property_id");
+                                            if(isset($inputs['key']) && trim($inputs['key']))
+                                            {
+                                                $key = trim($inputs['key']);
+                                                $local = $local->where(function ($query) use ($key) {
+                                                    $query->orwhere('active_licences.holding_no', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere('active_licences.application_no', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere("active_licences.license_no", 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere("active_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')                                            
+                                                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                                                });
+                                            }
+                                            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
+                                            {
+                                                $mWardIds =$inputs['wardNo']; 
+                                            }
+                                            $local = $local->whereIn('active_licences.ward_mstr_id', $mWardIds);
                                         })
-                        ->where("active_licences.status",1)                        
-                        ->where("active_licences.ulb_id",$refUlbId);
-            if(isset($inputs['key']) && trim($inputs['key']))
-            {
-                $key = trim($inputs['key']);
-                $licence = $licence->where(function ($query) use ($key) {
-                    $query->orwhere('active_licences.holding_no', 'ILIKE', '%' . $key . '%')
-                        ->orwhere('active_licences.application_no', 'ILIKE', '%' . $key . '%')
-                        ->orwhere("active_licences.license_no", 'ILIKE', '%' . $key . '%')
-                        ->orwhere("active_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')                                            
-                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
-                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
-                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
-                });
-            }
-            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
-            {
-                $mWardIds =$inputs['wardNo']; 
-            }
+                        ->where("prop_deactivation_requests.status",1)                        
+                        ->where("prop_deactivation_requests.ulb_id",$refUlbId);            
             if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
             {
-                $licence = $licence
-                            ->whereBetween('licence_level_pendings.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
-            }
-            if($mRole->is_initiator)
-            {
-                $licence = $licence->whereIn('active_licences.pending_status',[0,3]);
-            }
-            else
-            {
-                $licence = $licence->whereIn('active_licences.pending_status',[2]);
-            }            
-            $licence = $licence
-                    ->whereIn('active_licences.ward_mstr_id', $mWardIds)
+                $mProperty = $mProperty
+                            ->whereBetween('prop_deactivation_req_inboxes.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
+            }           
+            $mProperty = $mProperty
                     ->get();
             // dd(DB::getQueryLog());
             $data = [
                 "wardList"=>$mWardPermission,                
-                "licence"=>$licence,
+                "Property"=>$mProperty,
             ] ;           
             return responseMsg(true, "", $data);
             
