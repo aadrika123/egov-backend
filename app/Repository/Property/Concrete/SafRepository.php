@@ -224,49 +224,11 @@ class SafRepository implements iSafRepository
     {
         $userId = auth()->user()->id;
         $ulbId = auth()->user()->ulb_id;
-        $refWorkflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');                                             // (4) For Property New Assessment
-        $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
-            ->where('ulb_id', $ulbId)
-            ->first();
         try {
-            $query = $this->getWorkflowInitiatorData($userId, $workflowId->id);                 // Trait get Workflow Initiator
-            $workflow = collect(DB::select($query));
+            $wardId = $this->getWardByUserId($userId);                                  // Trait get Occupied Wards of Current User
 
-            $checkDataExisting = $workflow->toArray();
-
-
-            // If the Current Role Is not a Initiator
-            if (!$checkDataExisting) {
-                $roles = $this->getRoleIdByUserId($userId);                                     // Trait get Role By User Id
-
-                $roleId = $roles->map(function ($item, $key) {
-                    return $item->wf_role_id;
-                });
-
-                $data = $this->getSaf()                                                         // Global SAF 
-                    ->where('active_safs.ulb_id', $ulbId)
-                    ->where('active_safs.status', 1)
-                    ->whereIn('current_role', $roleId)
-                    ->orderByDesc('id')
-                    ->groupBy('active_safs.id', 'p.property_type', 'ward.ward_name')
-                    ->get();
-
-                $occupiedWard = $this->getWardByUserId($userId);                                // Get All Occupied Ward By user id
-
-                $wardId = $occupiedWard->map(function ($item, $key) {
-                    return $item->ward_id;
-                });
-                // return $wardId;
-                $safInbox = $data->whereIn('ward_mstr_id', $wardId);
-                return responseMsg(true, "Data Fetched", remove_null($safInbox->values()));
-            }
-
-
-            // If current role Is a Initiator
-
-            // Filteration only Ward id from workflow collection
-            $wardId = $workflow->map(function ($item, $key) {
-                return $item->ward_id;
+            $occupiedWards = collect($wardId)->map(function ($ward) {
+                return $ward->ward_id;
             });
 
             $roles = $this->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
@@ -275,14 +237,15 @@ class SafRepository implements iSafRepository
                 return $item->wf_role_id;
             });
 
-            $safInbox = $this->getSaf()                                            // Global SAF 
+            $data = $this->getSaf()                                            // Global SAF 
                 ->where('active_safs.ulb_id', $ulbId)
                 ->where('active_safs.status', 1)
                 ->whereIn('current_role', $roleId)
-                ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
                 ->groupBy('active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
+
+            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
 
             return responseMsg(true, "Data Fetched", remove_null($safInbox->values()));
         } catch (Exception $e) {
@@ -304,6 +267,7 @@ class SafRepository implements iSafRepository
         try {
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
+
             $workflowRoles = $this->getRoleIdByUserId($userId);
             $roles = $workflowRoles->map(function ($value, $key) {
                 return $value->wf_role_id;
@@ -315,6 +279,7 @@ class SafRepository implements iSafRepository
             });
 
             $safData = $this->getSaf()
+                ->where('active_safs.ulb_id', $ulbId)
                 ->whereNotIn('current_role', $roles)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
