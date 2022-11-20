@@ -65,7 +65,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     //Property Concession
     Route::controller(ConcessionController::class)->group(function () {
         Route::post('concession/UpdateConDetail', 'UpdateConDetail');
-        Route::post('concession/UpdateDocuments/{id}', 'UpdateDocuments');
+        Route::post('concession/applyConcession', 'applyConcession');
         Route::post('concession/postHolding', 'postHolding');
     });
 
@@ -82,7 +82,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(PropertyDeactivateController::class)->group(function () {
         Route::post('searchByHoldingNo', "readHoldigbyNo");
-        Route::match(["POST","GET"],'deactivationRequest/{id}', "deactivatProperty");
-        Route::post('inbox', "inbox");
+        Route::match(["POSt", "GET"], 'deactivationRequest/{id}', "deactivatProperty");
     });
 });

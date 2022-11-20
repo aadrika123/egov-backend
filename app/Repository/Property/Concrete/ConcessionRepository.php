@@ -11,43 +11,32 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use App\Models\Property\PropConcession;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropActiveConcession;
+use App\Traits\Workflow\Workflow as WorkflowTrait;
+use Illuminate\Support\Facades\DB;
+use App\Models\Workflows\WfWorkflow;
+
 
 class ConcessionRepository implements iConcessionRepository
 {
-    //updation of concession detail
-    public function UpdateConDetail(Request $request)
-    {
-        try {
-            $device = new PropConcession;
-            $device->property_id = $request->propertyId;
-            $device->saf_id = $request->safId;
-            $device->application_no = $request->applicationNo;
-            $device->applicant_name = $request->applicantName;
-            $device->gender = $request->gender;
-            $device->dob = $request->dob;
-            $device->is_armed_force = $request->armedForce;
-            $device->is_specially_abled = $request->speciallyAbled;
-            $device->remarks = $request->remarks;
-            $device->user_id = $request->userId;
-            $device->doc_type = $request->docType;
-            $device->status = $request->status;
-            $device->created_at = Carbon::now();
-            $device->date = Carbon::now();
-            $device->save();
-            return responseMsg(true, "Successfully Updated", "");
-        } catch (Exception $e) {
-            return response()->json($e, 400);
-        }
-    }
 
-    //document upload
-    public function UpdateDocuments(Request $request, $id)
+    //wf_master_id = 35;
+    //workflow_id = 106;
+    use WorkflowTrait;
+
+
+    //apply concession
+    public function applyConcession(Request $request)
     {
         $user_id = auth()->user()->id;
+        $ulb_id = auth()->user()->ulb_id;
+        // workflows
+
 
         try {
 
-            $device = new PropConcession;
+            $workflow_id = 35;
+            $device = new PropActiveConcession;
             $device->property_id = $request->propertyId;
             $device->saf_id = $request->safId;
             $device->application_no = $request->applicationNo;
@@ -56,12 +45,29 @@ class ConcessionRepository implements iConcessionRepository
             $device->dob = $request->dob;
             $device->is_armed_force = $request->armedForce;
             $device->is_specially_abled = $request->speciallyAbled;
-            $device->remarks = $request->remarks;
-            $device->user_id = $user_id;
             $device->doc_type = $request->docType;
+            $device->remarks = $request->remarks;
             $device->status = $request->status;
+            $device->user_id = $user_id;
+            $device->ulb_id = $ulb_id;
+
+
+
+            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+
+
+
+
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
+            $initiatorRoleId = DB::select($refInitiatorRoleId);
+
+            $device->workflow_id = $ulbWorkflowId->id;
+            $device->current_role = $initiatorRoleId[0]->role_id;
             $device->created_at = Carbon::now();
             $device->date = Carbon::now();
+
             $device->save();
 
 
@@ -97,7 +103,7 @@ class ConcessionRepository implements iConcessionRepository
                 $file->move($path, $name);
             }
 
-            return responseMsg('200', 'Successfully Uploaded', $device);
+            return responseMsg('200', 'Successfully Applied', $device);
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
