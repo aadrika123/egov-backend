@@ -194,4 +194,17 @@ class ConcessionRepository implements iConcessionRepository
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | Get Concession Details by Concession ID
+     */
+    public function getDetailsById($req)
+    {
+        try {
+            $details = PropActiveConcession::find($req->id);
+            return responseMsg(true, "Concession Details", remove_null($details));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 }

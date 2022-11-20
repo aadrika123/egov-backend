@@ -16,4 +16,5 @@ interface iConcessionRepository
     public function postHolding(Request $request);                          //post Holding
     public function inbox();                                                // Concession Inbox
     public function outbox();                                               // Concession Outbox List
+    public function getDetailsById($req);                                   // Get Concession Details By ID
 }

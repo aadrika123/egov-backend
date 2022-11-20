@@ -15,8 +15,17 @@ trait Concession
     public function getConcessionList($ulbId)
     {
         return DB::table('prop_active_concessions')
-            ->select('prop_active_concessions.*', 'a.ward_mstr_id')
+            ->select(
+                'prop_active_concessions.applicant_name as owner_name',
+                'a.ward_mstr_id',
+                'u.ward_name as ward_no',
+                'a.holding_no',
+                'a.prop_type_mstr_id',
+                'p.property_type'
+            )
             ->leftJoin('safs as a', 'a.id', '=', 'prop_active_concessions.property_id')
+            ->join('prop_m_property_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
+            ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
             ->where('prop_active_concessions.status', 1)
             ->where('prop_active_concessions.ulb_id', $ulbId);
     }

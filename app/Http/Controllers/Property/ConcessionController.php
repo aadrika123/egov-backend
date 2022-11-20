@@ -47,4 +47,14 @@ class ConcessionController extends Controller
     {
         return $this->Repository->outbox();
     }
+
+    // Get Concession Details by ID
+    public function getDetailsById(Request $req)
+    {
+        $req->validate([
+            'id' => 'required'
+        ]);
+
+        return $this->Repository->getDetailsById($req);
+    }
 }

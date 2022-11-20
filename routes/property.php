@@ -68,6 +68,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('concession/postHolding', 'postHolding');
         Route::get('concession/inbox', 'inbox');                                               // Concession Inbox 
         Route::get('concession/outbox', 'outbox');                                             // Concession Outbox
+        Route::post('concession/details', 'getDetailsById');                                   // Get Concession Details by ID
     });
 
     //Property Objection
