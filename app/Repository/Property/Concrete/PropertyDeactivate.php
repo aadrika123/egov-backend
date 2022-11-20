@@ -640,13 +640,13 @@ class PropertyDeactivate implements IPropertyDeactivate
                             "prop_m_property_types.property_type",
                     DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no")
                     )
-                ->join("ulb_ward_masters",function($join){
+                ->leftjoin("ulb_ward_masters",function($join){
                     $join->on("ulb_ward_masters.id","=","prop_properties.ward_mstr_id");                                
                 })
-                ->join("ulb_ward_masters AS new_ward",function($join){
+                ->leftjoin("ulb_ward_masters AS new_ward",function($join){
                     $join->on("new_ward.id","=","prop_properties.new_ward_mstr_id");                                
                 })
-                ->join("prop_m_ownership_types","prop_m_ownership_types.id","prop_properties.ownership_type_mstr_id")
+                ->leftjoin("prop_m_ownership_types","prop_m_ownership_types.id","prop_properties.ownership_type_mstr_id")
                 ->leftjoin("prop_m_property_types","prop_m_property_types.id","prop_properties.prop_type_mstr_id")            
                 ->where('prop_properties.id',$id)   
                 ->first();
