@@ -22,7 +22,9 @@ trait Concession
                 'u.ward_name as ward_no',
                 'a.holding_no',
                 'a.prop_type_mstr_id',
-                'p.property_type'
+                'p.property_type',
+                'prop_active_concessions.workflow_id',
+                'prop_active_concessions.current_role as role_id'
             )
             ->leftJoin('safs as a', 'a.id', '=', 'prop_active_concessions.property_id')
             ->join('prop_m_property_types as p', 'p.id', '=', 'a.prop_type_mstr_id')

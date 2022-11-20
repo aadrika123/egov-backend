@@ -20,4 +20,6 @@ interface iConcessionRepository
     public function escalateApplication($req);                              // Escalate the application
     public function specialInbox();                                         // Get escalated application inbox
     public function postNextLevel($req);                                    // post next level application
+    public function approvalRejection($req);                                // Approve Reject Application
+    public function backTocitizen($req);                                    // Back to citizen of the applications
 }

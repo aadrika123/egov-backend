@@ -16,8 +16,10 @@ use App\Models\Property\PropConcessionLevelPending;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use Illuminate\Support\Facades\DB;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Traits\Property\Concession;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Redis;
 
 class ConcessionRepository implements iConcessionRepository
 {
@@ -310,8 +312,86 @@ class ConcessionRepository implements iConcessionRepository
             $commentOnlevel->save();
 
             DB::commit();
+            return responseMsg(true, "Successfully Forwarded The Application!!", "");
         } catch (Exception $e) {
             DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Concession Application Approval or Rejected 
+     * | @param req
+     */
+    public function approvalRejection($req)
+    {
+        try {
+            // Check if the Current User is Finisher or Not
+            $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
+            $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
+            if ($refGetFinisher->role_id != $req->roleId) {
+                return responseMsg(false, "Forbidden Access", "");
+            }
+
+            DB::beginTransaction();
+            // Approval
+            if ($req->status == 1) {
+                // Concession Application replication
+                $activeConcession = PropActiveConcession::query()
+                    ->where('id', $req->concessionId)
+                    ->first();
+
+                $approvedConcession = $activeConcession->replicate();
+                $approvedConcession->setTable('prop_concessions');
+                $approvedConcession->id = $activeConcession->id;
+                $approvedConcession->save();
+                $activeConcession->delete();
+
+                $msg = "Application Successfully Approved !!";
+            }
+            // Rejection
+            if ($req->status == 0) {
+                // Concession Application replication
+                $activeConcession = PropActiveConcession::query()
+                    ->where('id', $req->concessionId)
+                    ->first();
+
+                $approvedConcession = $activeConcession->replicate();
+                $approvedConcession->setTable('prop_rejected_concessions');
+                $approvedConcession->id = $activeConcession->id;
+                $approvedConcession->save();
+                $activeConcession->delete();
+                $msg = "Application Successfully Rejected !!";
+            }
+            DB::commit();
+            return responseMsg(true, $msg, "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Back to Citizen
+     * | @param req
+     */
+    public function backToCitizen($req)
+    {
+        try {
+            $redis = Redis::connection();
+            $workflowId = $req->workflowId;
+            $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
+            if (!$backId) {
+                $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
+                    ->where('is_initiator', true)
+                    ->first();
+                $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
+            }
+            $saf = PropActiveConcession::find($req->concessionId);
+            $saf->current_role = $backId->wf_role_id;
+            $saf->save();
+            return responseMsg(true, "Successfully Done", "");
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
