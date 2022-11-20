@@ -48,7 +48,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 return responseMsg(false, $validator->errors(),$request->all());
             }
             $mHoldingNo = strtoupper($request->holdingNo);
-            $prperty = PropProperty::select("id","new_holding_no","holding_no",
+            $property = PropProperty::select("id","new_holding_no","holding_no","prop_address",
                                         DB::raw("owners.owner_name, owners.guardian_name, owners.mobile_no")
                                     )
                                     ->leftjoin(DB::raw("(SELECT DISTINCT(property_id) AS property_id,
@@ -68,11 +68,11 @@ class PropertyDeactivate implements IPropertyDeactivate
                                     ->where("prop_properties.new_holding_no",$mHoldingNo)
                                     ->where("prop_properties.ulb_id",$refUlbId)
                                     ->get();
-            if(!$prperty)
+            if(!$property)
             {
                 throw new Exception("Holding Not Found");
             }
-            $data['prperty'] = $prperty;
+            $data['property'] = $property;
             return responseMsg(true,"",remove_null($data));
 
         }
