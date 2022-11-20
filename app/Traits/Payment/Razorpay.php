@@ -10,6 +10,7 @@ use Razorpay\Api\Api;
 use Illuminate\Support\Str;
 use Razorpay\Api\Errors\SignatureVerificationError;
 use App\Http\Controllers\NewPdfController; //<----------traits
+use App\Models\Payment;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\WebhookPaymentData;
 use App\Repository\Property\Concrete\SafRepository;
@@ -345,4 +346,18 @@ trait Razorpay
             return response()->json([$error->getMessage()]);
         }
     }
+
+    /**
+     * | ----------------- Payment Reconciliation ------------------------------- |
+     * | @param request
+     * | @param error
+     * | @var mid
+     * | Operation :  Payment Reconciliation / search for the specific data
+     * | this -> naming
+     * | here -> variable
+     */
+    // public function getReconcillationDetails($request)
+    // {
+    //     return ("operation");
+    // }
 }

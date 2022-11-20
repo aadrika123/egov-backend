@@ -41,6 +41,16 @@ use Illuminate\Support\Facades\Redis;
  * | Created By-Anshu Kumar
  * -----------------------------------------------------------------------------------------
  * | SAF Module all operations 
+ * | --------------------------- Workflow Parameters ---------------------------------------
+ * |                                 # SAF New Assessment
+ * | wf_master id=4 
+ * | wf_workflow_id=4
+ * |                                 # SAF Reassessment 
+ * | wf_mstr_id=5
+ * | wf_workflow_id=3
+ * |                                 # SAF Mutation
+ * | wf_mstr_id=9
+ * | wf_workflow_id=5
  */
 class SafRepository implements iSafRepository
 {
@@ -222,9 +232,9 @@ class SafRepository implements iSafRepository
     #Inbox
     public function inbox()
     {
-        $userId = auth()->user()->id;
-        $ulbId = auth()->user()->ulb_id;
         try {
+            $userId = auth()->user()->id;
+            $ulbId = auth()->user()->ulb_id;
             $wardId = $this->getWardByUserId($userId);                                  // Trait get Occupied Wards of Current User
 
             $occupiedWards = collect($wardId)->map(function ($ward) {

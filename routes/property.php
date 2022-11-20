@@ -8,6 +8,7 @@ use App\Http\Controllers\Property\SafCalculatorController;
 use App\Http\Controllers\ObjectionController as NewObjectionController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\SafReassessmentController;
+use Symfony\Component\Routing\DependencyInjection\RoutingResolverPass;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -66,6 +67,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(ConcessionController::class)->group(function () {
         Route::post('concession/applyConcession', 'applyConcession');
         Route::post('concession/postHolding', 'postHolding');
+        Route::get('concession/inbox', 'inbox');                                               // Concession Inbox 
+        Route::get('concession/outbox', 'outbox');                                             // Concession Outbox
+        Route::post('concession/details', 'getDetailsById');                                   // Get Concession Details by ID
+        Route::post('concession/escalate', 'escalateApplication');                             // escalate application
+        Route::get('concession/special-inbox', 'specialInbox');                                // escalated application inbox
     });
 
     //Property Objection
@@ -81,6 +87,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(PropertyDeactivateController::class)->group(function () {
         Route::post('searchByHoldingNo', "readHoldigbyNo");
-        Route::match(["POSt", "GET"], 'deactivationRequest/{id}', "deactivatProperty");
+        Route::match(["POST", "GET"], 'deactivationRequest/{id}', "deactivatProperty");
+        Route::post('inboxDeactivation', "inbox");
+        Route::post('postNextDeactivation', "postNextLevel");
     });
 });
