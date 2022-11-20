@@ -22,8 +22,10 @@ use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\Property\Concrete\ConcessionRepository;
 use App\Repository\Property\Concrete\SafReassessRepo;
 use App\Repository\Property\Concrete\ObjectionRepository;
+use App\Repository\Property\Concrete\PropertyDeactivate;
 use App\Repository\Property\Interfaces\iConcessionRepository;
 use App\Repository\Property\Interfaces\iObjectionRepository;
+use App\Repository\Property\Interfaces\IPropertyDeactivate;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Repository\Property\Interfaces\iSafReassessRepo;
 use App\Repository\Trade\ITrade;
@@ -72,6 +74,7 @@ class RepositoryServiceProvider extends ServiceProvider
         // Property
         $this->app->bind(iSafRepository::class, SafRepository::class);
         $this->app->bind(iSafReassessRepo::class, SafReassessRepo::class);
+        $this->app->bind(IPropertyDeactivate::class, PropertyDeactivate::class);
 
         //menu permission
         $this->app->bind(IMenuGroupsRepository::class, EloquentMenuGroups::class);

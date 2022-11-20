@@ -6,6 +6,7 @@ use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\SafCalculatorController;
 use App\Http\Controllers\ObjectionController as NewObjectionController;
+use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\SafReassessmentController;
 
 /**
@@ -65,6 +66,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(ConcessionController::class)->group(function () {
         Route::post('concession/UpdateConDetail', 'UpdateConDetail');
         Route::post('concession/UpdateDocuments/{id}', 'UpdateDocuments');
+        Route::post('concession/postHolding', 'postHolding');
     });
 
     //Property Objection
@@ -72,5 +74,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('objection/ClericalMistake/{id}', 'ClericalMistake');
         Route::post('objection/ownerDetails', 'getOwnerDetails');
         Route::post('objection/rectification', 'rectification');
+    });
+    //Property Deactivation
+    /**
+     * Crated By - Sandeep Bara
+     * Created On- 19-11-2022 
+     */
+    Route::controller(PropertyDeactivateController::class)->group(function () {
+        // Route::post('searchByHoldingNo', 'readHoldigbyNo');
+        Route::post('searchByHoldingNo', "readHoldigbyNo");
+        Route::match(["POSt","GET"],'deactivationRequest/{id}', "deactivatProperty");
     });
 });

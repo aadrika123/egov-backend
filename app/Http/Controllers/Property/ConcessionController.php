@@ -34,4 +34,10 @@ class ConcessionController extends Controller
     {
         return $this->Repository->UpdateDocuments($request, $id);
     }
+
+    //post Holding
+    public function postHolding(Request $request)
+    {
+        return $this->Repository->postHolding($request);
+    }
 }

@@ -9,8 +9,8 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
-
-
+use App\Models\Property\PropConcession;
+use App\Models\Property\PropProperty;
 
 class ConcessionRepository implements iConcessionRepository
 {
@@ -18,12 +18,21 @@ class ConcessionRepository implements iConcessionRepository
     public function UpdateConDetail(Request $request)
     {
         try {
-            $device = PropOwnerDtl::find($request->propDtlId);
+            $device = new PropConcession;
+            $device->property_id = $request->propertyId;
+            $device->saf_id = $request->safId;
+            $device->application_no = $request->applicationNo;
+            $device->applicant_name = $request->applicantName;
             $device->gender = $request->gender;
             $device->dob = $request->dob;
             $device->is_armed_force = $request->armedForce;
             $device->is_specially_abled = $request->speciallyAbled;
-            $device->updated_at = Carbon::now();
+            $device->remarks = $request->remarks;
+            $device->user_id = $request->userId;
+            $device->doc_type = $request->docType;
+            $device->status = $request->status;
+            $device->created_at = Carbon::now();
+            $device->date = Carbon::now();
             $device->save();
             return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
@@ -34,17 +43,27 @@ class ConcessionRepository implements iConcessionRepository
     //document upload
     public function UpdateDocuments(Request $request, $id)
     {
+        $user_id = auth()->user()->id;
 
         try {
 
-            $device = PropOwnerDtl::find($id);
+            $device = new PropConcession;
+            $device->property_id = $request->propertyId;
+            $device->saf_id = $request->safId;
+            $device->application_no = $request->applicationNo;
+            $device->applicant_name = $request->applicantName;
             $device->gender = $request->gender;
             $device->dob = $request->dob;
             $device->is_armed_force = $request->armedForce;
             $device->is_specially_abled = $request->speciallyAbled;
+            $device->remarks = $request->remarks;
+            $device->user_id = $user_id;
+            $device->doc_type = $request->docType;
+            $device->status = $request->status;
             $device->created_at = Carbon::now();
-            $device->updated_at = Carbon::now();
+            $device->date = Carbon::now();
             $device->save();
+
 
             //gender Doc
             if ($file = $request->file('genderDoc')) {
@@ -78,9 +97,29 @@ class ConcessionRepository implements iConcessionRepository
                 $file->move($path, $name);
             }
 
-            return responseMsg('200', 'Successfully Uploaded', $name);
+            return responseMsg('200', 'Successfully Uploaded', $device);
         } catch (Exception $e) {
             return response()->json($e, 400);
+        }
+    }
+
+    ////get owner details
+    public function postHolding(Request $request)
+    {
+        try {
+
+            $request->validate([
+                'holdingNo' => 'required'
+            ]);
+            $user = PropProperty::where('holding_no', $request->holdingNo)
+                ->get();
+            if (!empty($user['0'])) {
+                return responseMsg(true, 'True', $user);
+            }
+            return responseMsg(false, "False", "");
+            // return $user['0'];
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }

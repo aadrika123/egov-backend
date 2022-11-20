@@ -12,4 +12,5 @@ return [
     "SAF_MUTATION_ID" => "9",
     "PROPPERTY_OBJECTION_ID" => "7",
     "TRADE_WORKFLOW_ID" => "19",
+    "PROPERTY_DEACTIVATION_WORKFLOW_ID" => "24",
 ];
