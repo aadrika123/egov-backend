@@ -18,6 +18,7 @@ use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropLevelPending;
+use App\Models\Property\PropProperty;
 use App\Models\Property\PropTransaction;
 use App\Models\Property\RefPropConstructionType;
 use App\Models\Property\RefPropFloor;
@@ -603,16 +604,16 @@ class SafRepository implements iSafRepository
                     ->where('saf_id', $req->safId)
                     ->get();
 
-                // $approvedSaf = $activeSaf->replicate();
-                // $approvedSaf->setTable('prop_safs');
-                // $approvedSaf->id = $activeSaf->id;
-                // $approvedSaf->save();
+                $approvedSaf = $activeSaf->replicate();
+                $approvedSaf->setTable('prop_safs');
+                $approvedSaf->id = $activeSaf->id;
+                $approvedSaf->save();
 
-                $propProperties = $activeSaf->replicate();
-                $propProperties->setTable('prop_properties');
-                $propProperties->id = $activeSaf->id;
-
-                $activeSaf->delete();
+                // $propProperties = $activeSaf->replicate();
+                // $propProperties->setTable('prop_properties');
+                // $propProperties->saf_id = $activeSaf->id;
+                // $propProperties->save();
+                // $activeSaf->delete();
 
                 // SAF Owners replication
                 foreach ($ownerDetails as $ownerDetail) {
@@ -821,5 +822,20 @@ class SafRepository implements iSafRepository
             ->where('prop_transactions.status', 1)
             ->get();
         return responseMsg(true, "Transactions History", remove_null($propTrans));
+    }
+
+    /**
+     * | Get Property Details by Property Holding No
+     */
+    public function getPropByHoldingNo($req)
+    {
+        try {
+            $properties = PropProperty::where('ward_mstr_id', $req->wardId)
+                ->where('holding_no', $req->holdingNo)
+                ->first();
+            return responseMsg(true, "Fetched Data", remove_null($properties));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }
