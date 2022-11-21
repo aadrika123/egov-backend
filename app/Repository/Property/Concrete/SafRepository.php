@@ -246,11 +246,11 @@ class SafRepository implements iSafRepository
             });
 
             $data = $this->getSaf()                                                     // Global SAF 
-                ->where('active_safs.ulb_id', $ulbId)
-                ->where('active_safs.status', 1)
+                ->where('prop_active_safs.ulb_id', $ulbId)
+                ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleId)
                 ->orderByDesc('id')
-                ->groupBy('active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
 
             $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
@@ -287,11 +287,11 @@ class SafRepository implements iSafRepository
             });
 
             $safData = $this->getSaf()
-                ->where('active_safs.ulb_id', $ulbId)
+                ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereNotIn('current_role', $roles)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
-                ->groupBy('active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
             return responseMsg(true, "Data Fetched", remove_null($safData->values()));
         } catch (Exception $e) {
@@ -326,12 +326,12 @@ class SafRepository implements iSafRepository
         try {
             // Saf Details
             $data = [];
-            $data = DB::table('active_safs')
-                ->select('active_safs.*', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
-                ->join('ulb_ward_masters as w', 'w.id', '=', 'active_safs.ward_mstr_id')
-                ->join('prop_m_ownership_types as o', 'o.id', '=', 'active_safs.ownership_type_mstr_id')
-                ->leftJoin('prop_m_property_types as p', 'p.id', '=', 'active_safs.property_assessment_id')
-                ->where('active_safs.id', $req->id)
+            $data = DB::table('prop_active_safs')
+                ->select('prop_active_safs.*', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
+                ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+                ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
+                ->where('prop_active_safs.id', $req->id)
                 ->first();
             $data = json_decode(json_encode($data), true);
             $ownerDetails = PropActiveSafsOwner::where('saf_id', $data['id'])->get();
@@ -442,9 +442,9 @@ class SafRepository implements iSafRepository
             });
             $safData = $this->getSaf()
                 ->where('is_escalate', 1)
-                ->where('active_safs.ulb_id', $ulbId)
+                ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereIn('ward_mstr_id', $wardId)
-                ->groupBy('active_safs.id', 'active_safs.saf_no', 'ward.ward_name', 'p.property_type')
+                ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type')
                 ->get();
             return responseMsg(true, "Data Fetched", remove_null($safData));
         } catch (Exception $e) {
@@ -604,7 +604,7 @@ class SafRepository implements iSafRepository
                     ->get();
 
                 $approvedSaf = $activeSaf->replicate();
-                $approvedSaf->setTable('safs');
+                $approvedSaf->setTable('prop_safs');
                 $approvedSaf->id = $activeSaf->id;
                 $approvedSaf->save();
                 $activeSaf->delete();
@@ -613,7 +613,7 @@ class SafRepository implements iSafRepository
 
                 foreach ($ownerDetails as $ownerDetail) {
                     $approvedOwner = $ownerDetail->replicate();
-                    $approvedOwner->setTable('safs_owner_dtls');
+                    $approvedOwner->setTable('prop_safs_owners');
                     $approvedOwner->id = $ownerDetail->id;
                     $approvedOwner->save();
                     $ownerDetail->delete();
@@ -623,7 +623,7 @@ class SafRepository implements iSafRepository
 
                 foreach ($floorDetails as $floorDetail) {
                     $approvedFloor = $floorDetail->replicate();
-                    $approvedFloor->setTable('safs_floor_dtls');
+                    $approvedFloor->setTable('prop_safs_floors');
                     $approvedFloor->id = $floorDetail->id;
                     $approvedFloor->save();
                     $floorDetail->delete();
@@ -647,7 +647,7 @@ class SafRepository implements iSafRepository
 
                 // Rejected SAF Application replication
                 $rejectedSaf = $activeSaf->replicate();
-                $rejectedSaf->setTable('rejected_safs');
+                $rejectedSaf->setTable('prop_rejected_safs');
                 $rejectedSaf->id = $activeSaf->id;
                 $rejectedSaf->push();
                 $activeSaf->delete();
@@ -655,7 +655,7 @@ class SafRepository implements iSafRepository
                 // SAF Owners replication
                 foreach ($ownerDetails as $ownerDetail) {
                     $approvedOwner = $ownerDetail->replicate();
-                    $approvedOwner->setTable('rejected_safs_owner_dtls');
+                    $approvedOwner->setTable('prop_rejected_safs_owners');
                     $approvedOwner->id = $ownerDetail->id;
                     $approvedOwner->save();
                     $ownerDetail->delete();
@@ -664,7 +664,7 @@ class SafRepository implements iSafRepository
                 // SAF Floors Replication
                 foreach ($floorDetails as $floorDetail) {
                     $approvedFloor = $floorDetail->replicate();
-                    $approvedFloor->setTable('rejected_safs_floor_dtls');
+                    $approvedFloor->setTable('prop_rejected_safs_floors');
                     $approvedFloor->id = $floorDetail->id;
                     $approvedFloor->save();
                     $floorDetail->delete();
@@ -780,6 +780,7 @@ class SafRepository implements iSafRepository
             $propTrans->tran_no = $req['transactionNo'];
             $propTrans->payment_mode = $req['paymentMode'];
             $propTrans->save();
+            return responseMsg(true, "Payment Successfully Done", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -799,7 +800,7 @@ class SafRepository implements iSafRepository
 
         $propTrans = DB::table('prop_transactions')
             ->select('prop_transactions.*', 'a.saf_no', 'p.holding_no')
-            ->leftJoin('active_safs as a', 'a.id', '=', 'prop_transactions.saf_id')
+            ->leftJoin('prop_active_safs as a', 'a.id', '=', 'prop_transactions.saf_id')
             ->leftJoin('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
             ->where('prop_transactions.user_id', $userId)
             ->where('prop_transactions.status', 1)

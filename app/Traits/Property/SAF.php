@@ -3,6 +3,7 @@
 namespace App\Traits\Property;
 
 use App\Models\Property\ActiveSaf;
+use App\Models\Property\PropActiveSaf;
 use App\Models\UlbWardMaster;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -121,21 +122,21 @@ trait SAF
     // SAF Inbox 
     public function getSaf()
     {
-        $data = DB::table('active_safs')
-            ->join('active_safs_owner_dtls as o', 'o.saf_id', '=', 'active_safs.id')
-            ->join('prop_m_property_types as p', 'p.id', '=', 'active_safs.prop_type_mstr_id')
-            ->join('ulb_ward_masters as ward', 'ward.id', '=', 'active_safs.ward_mstr_id')
+        $data = DB::table('prop_active_safs')
+            ->join('prop_active_safs_owners as o', 'o.saf_id', '=', 'prop_active_safs.id')
+            ->join('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
+            ->join('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
             ->select(
-                'active_safs.saf_no',
-                'active_safs.id',
-                'active_safs.ward_mstr_id',
+                'prop_active_safs.saf_no',
+                'prop_active_safs.id',
+                'prop_active_safs.ward_mstr_id',
                 'ward.ward_name as ward_no',
-                'active_safs.prop_type_mstr_id',
-                'active_safs.appartment_name',
+                'prop_active_safs.prop_type_mstr_id',
+                'prop_active_safs.appartment_name',
                 DB::raw("string_agg(o.id::VARCHAR,',') as owner_id"),
                 DB::raw("string_agg(o.owner_name,',') as owner_name"),
                 'p.property_type',
-                'active_safs.assessment_type'
+                'prop_active_safs.assessment_type'
             );
         return $data;
     }
@@ -160,7 +161,7 @@ trait SAF
      */
     public function safNo($ward_id, $assessment_type, $ulb_id)
     {
-        $count = ActiveSaf::where('ward_mstr_id', $ward_id)
+        $count = PropActiveSaf::where('ward_mstr_id', $ward_id)
             ->where('ulb_id', $ulb_id)
             ->count() + 1;
         $ward_no = UlbWardMaster::select("ward_name")->where('id', $ward_id)->first()->ward_name;
