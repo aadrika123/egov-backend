@@ -203,7 +203,7 @@ class CitizenRepository implements iCitizenRepository
     public function appliedSafApplications($userId)
     {
         $applications = array();
-        $propertyApplications = DB::table('active_safs')
+        $propertyApplications = DB::table('prop_active_safs')
             ->select('id as application_id', 'saf_no', 'holding_no', 'assessment_type', 'application_date', 'payment_status', 'saf_pending_status', 'workflow_id',  'created_at', 'updated_at')
             ->where('user_id', $userId)
             ->where('status', 1)

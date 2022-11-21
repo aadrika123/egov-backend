@@ -2,8 +2,6 @@
 
 namespace App\Repository\Property\Concrete;
 
-use App\Models\Property\ActiveSafsOwnerDtl;
-use App\Models\Property\PropOwnerDtl;
 use App\Repository\Property\Interfaces\iConcessionRepository;
 use Carbon\Carbon;
 use Exception;
