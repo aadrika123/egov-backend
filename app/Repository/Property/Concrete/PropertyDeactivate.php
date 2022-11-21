@@ -507,6 +507,8 @@ class PropertyDeactivate implements IPropertyDeactivate
     public function readDeactivationReq(Request $request)
     {
         try{
+            $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
+            $mUserType = $this->_common->userType($refWorkflowId);
             $rules = [
                 "requestId" => "required|int",
             ];
@@ -527,7 +529,8 @@ class PropertyDeactivate implements IPropertyDeactivate
             $data=[
                 "requestData"=> $refRequestData,
                 "property"   => $refProperty,
-                "owners"     => $refOwners
+                "owners"     => $refOwners,
+                "userType"   => $mUserType,
             ];
 
             return responseMsg(true,"",remove_null($data));
