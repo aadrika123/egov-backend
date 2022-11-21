@@ -61,7 +61,7 @@ class ClusterRepository implements iCluster
 
 
     /**
-     * | ----------------- updating the cluster data ------------------------------- |
+     * | ------------------------- updating the cluster data ------------------------------- |
      * | @param request
      * | @var userId
      * | @var ulbId

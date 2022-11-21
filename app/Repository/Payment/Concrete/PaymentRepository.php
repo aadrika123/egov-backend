@@ -6,6 +6,7 @@ use App\Models\Payment;
 use App\Models\Payment\DepartmentMaster;
 use App\Models\Payment\PaymentGatewayDetail;
 use App\Models\Payment\PaymentGatewayMaster;
+use App\Models\Payment\PaymentReconciliation;
 use App\Models\Payment\PaymentReject;
 use App\Models\Payment\PaymentSuccess;
 use App\Models\Payment\WebhookPaymentData;
@@ -258,6 +259,7 @@ class PaymentRepository implements iPayment
 
 
     /**
+     * |--------------------------------------- Payment Gateway --------------------------------------
      * | calling trait for the generation of order id
      * | @param request request from the frontend
      * | @param 
@@ -313,6 +315,7 @@ class PaymentRepository implements iPayment
 
 
     /**
+     * | ----------------------------------- payment Gateway ENDS -------------------------------
      * | verifiying the payment success and the signature key
      * | @param requet request from the frontend
      * | @param error collecting the operation error
@@ -397,5 +400,40 @@ class PaymentRepository implements iPayment
         } catch (Exception $error) {
             return responseMsg(false, "Error listed below!", $error->getMessage());
         }
+    }
+
+
+    /**
+     * | --------------------------- Payment Reconciliation ------------------------------- |
+     * | @param request
+     * | @param error
+     * | @var mid
+     * | Operation :  Payment Reconciliation / search for the specific data
+     * | this -> naming
+     * | here -> variable
+     */
+    public function getReconcillationDetails($request)
+    {
+        try {
+            $reconciliation = PaymentReconciliation::select(
+                'ulb_id AS ulbId',
+                'department_id AS dpartmentId',
+                'transaction_no AS transactionNo',
+                'payment_mode AS paymentMode',
+                'transaction_date AS transactionDate',
+                'status',
+                'cheque_no AS chequeNo',
+                'cheque_date AS chequeDate',
+                'branch_name AS branchName',
+                'bank_name AS bankName',
+                'transaction_amount AS amount',
+                'clearance_date AS clearanceDate'       
+            )
+            ->get();
+            return responseMsg(true, "Payment Reconciliation data!", $reconciliation);
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+        return ("working");
     }
 }

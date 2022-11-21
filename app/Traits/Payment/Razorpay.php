@@ -347,17 +347,5 @@ trait Razorpay
         }
     }
 
-    /**
-     * | ----------------- Payment Reconciliation ------------------------------- |
-     * | @param request
-     * | @param error
-     * | @var mid
-     * | Operation :  Payment Reconciliation / search for the specific data
-     * | this -> naming
-     * | here -> variable
-     */
-    // public function getReconcillationDetails($request)
-    // {
-    //     return ("operation");
-    // }
+    
 }
