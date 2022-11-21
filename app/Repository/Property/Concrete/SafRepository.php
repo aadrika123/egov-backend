@@ -14,18 +14,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
-use App\Models\Property\ActiveSaf;
-use App\Models\Property\ActiveSafsFloorDtls;
-use App\Models\Property\ActiveSafsOwnerDtl;
-use App\Models\Property\MPropTransferModeMaster;
+use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsFloor;
+use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropLevelPending;
-use App\Models\Property\PropMConstructionType;
-use App\Models\Property\PropMFloor;
-use App\Models\Property\PropMOccupancyType;
-use App\Models\Property\PropMOwnershipType as PropertyPropMOwnershipType;
-use App\Models\Property\PropMPropertyType;
-use App\Models\Property\PropMUsageType;
 use App\Models\Property\PropTransaction;
+use App\Models\Property\RefPropConstructionType;
+use App\Models\Property\RefPropFloor;
+use App\Models\Property\RefPropOccupancyType;
+use App\Models\Property\RefPropOwnershipType;
+use App\Models\Property\RefPropTransferMode;
+use App\Models\Property\RefPropType;
+use App\Models\Property\RefPropUsageType;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
@@ -81,32 +81,32 @@ class SafRepository implements iSafRepository
             ->get();
         $data = [];
         $data['ward_master'] = $wardMaster;
-        $ownershipTypes = PropertyPropMOwnershipType::select('id', 'ownership_type')
+        $ownershipTypes = RefPropOwnershipType::select('id', 'ownership_type')
             ->where('status', 1)
             ->get();
         $data['ownership_types'] = $ownershipTypes;
-        $propertyType = PropMPropertyType::select('id', 'property_type')
+        $propertyType = RefPropType::select('id', 'property_type')
             ->where('status', 1)
             ->get();
         $data['property_type'] = $propertyType;
-        $floorType = PropMFloor::select('id', 'floor_name')
+        $floorType = RefPropFloor::select('id', 'floor_name')
             ->where('status', 1)
             ->get();
         $data['floor_type'] = $floorType;
-        $usageType = PropMUsageType::select('id', 'usage_type', 'usage_code')
+        $usageType = RefPropUsageType::select('id', 'usage_type', 'usage_code')
             ->where('status', 1)
             ->get();
         $data['usage_type'] = $usageType;
-        $occupancyType = PropMOccupancyType::select('id', 'occupancy_type')
+        $occupancyType = RefPropOccupancyType::select('id', 'occupancy_type')
             ->where('status', 1)
             ->get();
         $data['occupancy_type'] = $occupancyType;
-        $constructionType = PropMConstructionType::select('id', "construction_type")
+        $constructionType = RefPropConstructionType::select('id', "construction_type")
             ->where('status', 1)
             ->get();
         $data['construction_type'] = $constructionType;
 
-        $transferModuleType = MPropTransferModeMaster::select('id', 'transfer_mode')
+        $transferModuleType = RefPropTransferMode::select('id', 'transfer_mode')
             ->where('status', 1)
             ->get();
         $data['transfer_mode'] = $transferModuleType;
@@ -160,7 +160,7 @@ class SafRepository implements iSafRepository
             DB::beginTransaction();
             // dd($request->ward);
             $safNo = $this->safNo($request->ward, $assessmentTypeId, $ulb_id);
-            $saf = new ActiveSaf();
+            $saf = new PropActiveSaf();
             $this->tApplySaf($saf, $request, $safNo, $assessmentTypeId);                    // Trait SAF Apply
             // workflows
             $saf->user_id = $user_id;
@@ -173,7 +173,7 @@ class SafRepository implements iSafRepository
             if ($request['owner']) {
                 $owner_detail = $request['owner'];
                 foreach ($owner_detail as $owner_details) {
-                    $owner = new ActiveSafsOwnerDtl();
+                    $owner = new PropActiveSafsOwner();
                     $this->tApplySafOwner($owner, $saf, $owner_details);                    // Trait Owner Details
                     $owner->save();
                 }
@@ -183,7 +183,7 @@ class SafRepository implements iSafRepository
             if ($request['floor']) {
                 $floor_detail = $request['floor'];
                 foreach ($floor_detail as $floor_details) {
-                    $floor = new ActiveSafsFloorDtls();
+                    $floor = new PropActiveSafsFloor();
                     $this->tApplySafFloor($floor, $saf, $floor_details);
                     $floor->save();
                 }
@@ -334,10 +334,10 @@ class SafRepository implements iSafRepository
                 ->where('active_safs.id', $req->id)
                 ->first();
             $data = json_decode(json_encode($data), true);
-            $ownerDetails = ActiveSafsOwnerDtl::where('saf_id', $data['id'])->get();
+            $ownerDetails = PropActiveSafsOwner::where('saf_id', $data['id'])->get();
             $data['owners'] = $ownerDetails;
 
-            $floorDetails = ActiveSafsFloorDtls::where('saf_id', $data['id'])->get();
+            $floorDetails = PropActiveSafsFloor::where('saf_id', $data['id'])->get();
             $data['floors'] = $floorDetails;
 
             $levelComments = DB::table('prop_level_pendings')
@@ -408,7 +408,7 @@ class SafRepository implements iSafRepository
             }
 
             $saf_id = $request->safId;
-            $data = ActiveSaf::find($saf_id);
+            $data = PropActiveSaf::find($saf_id);
             $data->is_escalate = $request->escalateStatus;
             $data->escalate_by = $userId;
             $data->save();
@@ -487,7 +487,7 @@ class SafRepository implements iSafRepository
             $levelPending->save();
 
             // SAF Details
-            $saf = ActiveSaf::find($request->safId);
+            $saf = PropActiveSaf::find($request->safId);
 
             // Save On Workflow Track
             $workflowTrack = new WorkflowTrack();
@@ -535,7 +535,7 @@ class SafRepository implements iSafRepository
             $levelPending->save();
 
             // SAF Application Update Current Role Updation
-            $saf = ActiveSaf::find($request->safId);
+            $saf = PropActiveSaf::find($request->safId);
             $saf->current_role = $request->receiverRoleId;
             $saf->save();
 
@@ -581,7 +581,7 @@ class SafRepository implements iSafRepository
             DB::beginTransaction();
             // Approval
             if ($req->status == 1) {
-                $safDetails = ActiveSaf::find($req->safId);
+                $safDetails = PropActiveSaf::find($req->safId);
                 if ($req->assessmentType == 2)
                     $safDetails->holding_no = $safDetails->previous_holding_id;
                 if ($req->assessmentType != 2) {
@@ -593,13 +593,13 @@ class SafRepository implements iSafRepository
                 $safDetails->save();
 
                 // SAF Application replication
-                $activeSaf = ActiveSaf::query()
+                $activeSaf = PropActiveSaf::query()
                     ->where('id', $req->safId)
                     ->first();
-                $ownerDetails = ActiveSafsOwnerDtl::query()
+                $ownerDetails = PropActiveSafsOwner::query()
                     ->where('saf_id', $req->safId)
                     ->get();
-                $floorDetails = ActiveSafsFloorDtls::query()
+                $floorDetails = PropActiveSafsFloor::query()
                     ->where('saf_id', $req->safId)
                     ->get();
 
@@ -633,15 +633,15 @@ class SafRepository implements iSafRepository
             }
             // Rejection
             if ($req->status == 0) {
-                $activeSaf = ActiveSaf::query()
+                $activeSaf = PropActiveSaf::query()
                     ->where('id', $req->safId)
                     ->first();
 
-                $ownerDetails = ActiveSafsOwnerDtl::query()
+                $ownerDetails = PropActiveSafsOwner::query()
                     ->where('saf_id', $req->safId)
                     ->get();
 
-                $floorDetails = ActiveSafsFloorDtls::query()
+                $floorDetails = PropActiveSafsFloor::query()
                     ->where('saf_id', $req->safId)
                     ->get();
 
@@ -700,7 +700,7 @@ class SafRepository implements iSafRepository
                     ->first();
                 $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
             }
-            $saf = ActiveSaf::find($req->safId);
+            $saf = PropActiveSaf::find($req->safId);
             $saf->current_role = $backId->wf_role_id;
             $saf->save();
             return responseMsg(true, "Successfully Done", "");

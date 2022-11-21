@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models\Property;
+namespace App\Models\Payment;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PropMVacantRentalRate extends Model
+class PaymentReconciliation extends Model
 {
     use HasFactory;
 }

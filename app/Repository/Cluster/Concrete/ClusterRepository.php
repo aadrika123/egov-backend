@@ -49,7 +49,7 @@ class ClusterRepository implements iCluster
                 ->where('id', $id)
                 ->get()
                 ->first();
-        
+
             if (!empty($mdetails) && $mdetails->status == "1") {
                 return $this->success($mdetails);
             }
@@ -61,7 +61,7 @@ class ClusterRepository implements iCluster
 
 
     /**
-     * | ----------------- updating the cluster data ------------------------------- |
+     * | ------------------------- updating the cluster data ------------------------------- |
      * | @param request
      * | @var userId
      * | @var ulbId

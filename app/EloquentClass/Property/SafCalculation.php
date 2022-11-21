@@ -2,6 +2,12 @@
 
 namespace App\EloquentClass\Property;
 
+use App\Models\Property\MPropBuildingRentalconst;
+use App\Models\Property\MPropBuildingRentalrate;
+use App\Models\Property\MPropCvRate;
+use App\Models\Property\MPropMultiFactor;
+use App\Models\Property\MPropRentalValue;
+use App\Models\Property\MPropVacantRentalrate;
 use App\Models\Property\PropMBuildingRentalConst;
 use App\Models\Property\PropMBuildingRentalRate;
 use App\Models\Property\PropMCapitalValueRateRaw;
@@ -137,7 +143,7 @@ class SafCalculation
         $refParamRentalRate = json_decode(Redis::get('propMBuildingRentalConst:' . $this->_ulbId));         // Get Building Rental Constant From Redis
 
         if (!$refParamRentalRate) {                                                                         // Get Building Rental Constant From Database
-            $refParamRentalRate = PropMBuildingRentalConst::where('ulb_id', $this->_ulbId)->first();
+            $refParamRentalRate = MPropBuildingRentalconst::where('ulb_id', $this->_ulbId)->first();
             $this->_redis->set('propMBuildingRentalConst:' . $this->_ulbId, json_encode($refParamRentalRate));
         }
 
@@ -186,7 +192,7 @@ class SafCalculation
         $readZoneId = $this->_propertyDetails['zone'];
         $refRentalValue = json_decode(Redis::get('propMRentalValue-z-' . $readZoneId . '-u-' . $this->_ulbId));         // Get Rental Value from Redis
         if (!$refRentalValue) {
-            $refRentalValue = PropMRentalValue::select('usage_types_id', 'zone_id', 'construction_types_id', 'rate')    // Get Rental value from DB
+            $refRentalValue = MPropRentalValue::select('usage_types_id', 'zone_id', 'construction_types_id', 'rate')    // Get Rental value from DB
                 ->where('zone_id', $readZoneId)
                 ->where('ulb_id', $this->_ulbId)
                 ->where('status', 1)
@@ -203,7 +209,7 @@ class SafCalculation
     {
         $refMultiFactor = json_decode(Redis::get('propMUsageTypeMultiFactor'));                                      // Get Usage Type Multi Factor From Redis
         if (!$refMultiFactor) {
-            $refMultiFactor = PropMUsageTypeMultiFactor::select('usage_type_id', 'multi_factor', 'effective_date')   // Get Usage Type Multi Factor From DB
+            $refMultiFactor = MPropMultiFactor::select('usage_type_id', 'multi_factor', 'effective_date')   // Get Usage Type Multi Factor From DB
                 ->where('status', 1)
                 ->get();
             $this->_redis->set('propMUsageTypeMultiFactor', json_encode($refMultiFactor));
@@ -222,7 +228,7 @@ class SafCalculation
 
         $refRoadType = json_decode(Redis::get('roadType-effective-' . $effectiveDate . 'roadWidth-' . $readRoadWidth));
         if (!$refRoadType) {
-            $queryRoadType = "SELECT * FROM prop_m_road_types
+            $queryRoadType = "SELECT * FROM m_prop_road_types
                                 WHERE range_from_sqft<=ROUND($readRoadWidth)
                                 AND effective_date = '$effectiveDate'
                                 ORDER BY range_from_sqft DESC LIMIT 1";
@@ -244,7 +250,7 @@ class SafCalculation
     {
         $refParamRentalRate = json_decode(Redis::get('propMBuildingRentalRate'));
         if (!$refParamRentalRate) {
-            $refParamRentalRate = PropMBuildingRentalRate::select('id', 'prop_road_type_id', 'construction_types_id', 'rate', 'effective_date', 'status')
+            $refParamRentalRate = MPropBuildingRentalrate::select('id', 'prop_road_type_id', 'construction_types_id', 'rate', 'effective_date', 'status')
                 ->where('status', 1)
                 ->get();
             $this->_redis->set('propMBuildingRentalRate', json_encode($refParamRentalRate));
@@ -274,7 +280,7 @@ class SafCalculation
 
                 $capitalValueRate = json_decode(Redis::get('propMCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-col-' . $column));
                 if (!$capitalValueRate) {
-                    $capitalValueRate = PropMCapitalValueRateRaw::select($column)
+                    $capitalValueRate = MPropCvRate::select($column)
                         ->where('ulb_id', $this->_ulbId)
                         ->where('ward_no', $this->_wardNo)
                         ->first();
@@ -301,7 +307,7 @@ class SafCalculation
         $column = $col1 . $col2 . $col3;
         $capitalValueRate = json_decode(Redis::get('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-' . $column));         // Check Capital Value on Redis
         if (!$capitalValueRate) {
-            $capitalValueRate = PropMCapitalValueRateRaw::select($column)
+            $capitalValueRate = MPropCvRate::select($column)
                 ->where('ulb_id', $this->_ulbId)
                 ->where('ward_no', $this->_wardNo)                                                                                                  // Ward No Fixed temprory
                 ->first();
@@ -317,7 +323,7 @@ class SafCalculation
     {
         $rentalRate = json_decode(Redis::get('propMVacantRentalRate'));
         if (!$rentalRate) {
-            $rentalRate = PropMVacantRentalRate::select('id', 'prop_road_type_id', 'rate', 'ulb_type_id', 'effective_date')
+            $rentalRate = MPropVacantRentalrate::select('id', 'prop_road_type_id', 'rate', 'ulb_type_id', 'effective_date')
                 ->where('status', 1)
                 ->get();
             $this->_redis->set('propMVacantRentalRate', json_encode($rentalRate));

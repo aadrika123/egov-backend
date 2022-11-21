@@ -5,7 +5,7 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ActiveSafsOwnerDtl extends Model
+class MPropMultiFactor extends Model
 {
     use HasFactory;
 }
