@@ -45,6 +45,10 @@ class ActiveSafController extends Controller
     }
     public function details(Request $request)
     {
+        $request->validate([
+            'id' => 'required|integer'
+        ]);
+
         $data = $this->Repository->details($request);
         return $data;
     }
@@ -122,5 +126,15 @@ class ActiveSafController extends Controller
     public function getPropTransactions(Request $req)
     {
         return $this->Repository->getPropTransactions($req);
+    }
+
+    // Get Property by Holding No
+    public function getPropByHoldingNo(Request $req)
+    {
+        $req->validate([
+            'wardId' => 'required|integer',
+            'holdingNo' => 'required'
+        ]);
+        return $this->Repository->getPropByHoldingNo($req);
     }
 }

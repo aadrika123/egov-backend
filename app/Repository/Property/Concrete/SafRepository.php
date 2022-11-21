@@ -18,6 +18,7 @@ use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropLevelPending;
+use App\Models\Property\PropProperty;
 use App\Models\Property\PropTransaction;
 use App\Models\Property\RefPropConstructionType;
 use App\Models\Property\RefPropFloor;
@@ -68,6 +69,11 @@ class SafRepository implements iSafRepository
      * | @param response
      */
     protected $user_id;
+    protected $_redis;
+    public function __construct()
+    {
+        $this->_redis = Redis::connection();
+    }
     /**
      * | Master data in Saf Apply
      * | @var ulbId Logged In User Ulb 
@@ -76,40 +82,87 @@ class SafRepository implements iSafRepository
     public function masterSaf()
     {
         $ulbId = auth()->user()->ulb_id;
-        $wardMaster = UlbWardMaster::select('id', 'ward_name')
-            ->where('ulb_id', $ulbId)
-            ->get();
+        // Ward Masters
+        $wardMaster = json_decode(Redis::get('wards-ulb-' . $ulbId));
+        if (!$wardMaster) {
+            $wardMaster = UlbWardMaster::select('id', 'ward_name')
+                ->where('ulb_id', $ulbId)
+                ->get();
+            $this->_redis->set('wards-ulb-' . $ulbId, json_encode($wardMaster));            // Caching
+        }
         $data = [];
         $data['ward_master'] = $wardMaster;
-        $ownershipTypes = RefPropOwnershipType::select('id', 'ownership_type')
-            ->where('status', 1)
-            ->get();
+
+        // Ownership Types
+        $ownershipTypes = json_decode(Redis::get('prop-ownership-types'));
+        if (!$ownershipTypes) {
+            $ownershipTypes = RefPropOwnershipType::select('id', 'ownership_type')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('prop-ownership-types', json_encode($ownershipTypes));
+        }
         $data['ownership_types'] = $ownershipTypes;
-        $propertyType = RefPropType::select('id', 'property_type')
-            ->where('status', 1)
-            ->get();
+
+        // Property Types
+        $propertyType = json_decode(Redis::get('property-types'));
+        if (!$propertyType) {
+            $propertyType = RefPropType::select('id', 'property_type')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('property-types', json_encode($propertyType));
+        }
         $data['property_type'] = $propertyType;
-        $floorType = RefPropFloor::select('id', 'floor_name')
-            ->where('status', 1)
-            ->get();
+
+        // Property Floors
+        $floorType = json_decode(Redis::get('property-floors'));
+        if (!$floorType) {
+            $floorType = RefPropFloor::select('id', 'floor_name')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('propery-floors', json_encode($floorType));
+        }
         $data['floor_type'] = $floorType;
-        $usageType = RefPropUsageType::select('id', 'usage_type', 'usage_code')
-            ->where('status', 1)
-            ->get();
+
+        // Property Usage Types
+        $usageType = json_decode(Redis::get('property-usage-types'));
+        if (!$usageType) {
+            $usageType = RefPropUsageType::select('id', 'usage_type', 'usage_code')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('property-usage-types', json_encode($usageType));
+        }
         $data['usage_type'] = $usageType;
-        $occupancyType = RefPropOccupancyType::select('id', 'occupancy_type')
-            ->where('status', 1)
-            ->get();
+
+        // Property Occupancy Types
+        $occupancyType = json_decode(Redis::get('property-occupancy-types'));
+        if (!$occupancyType) {
+            $occupancyType = RefPropOccupancyType::select('id', 'occupancy_type')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('property-occupancy-types', json_encode($occupancyType));
+        }
         $data['occupancy_type'] = $occupancyType;
-        $constructionType = RefPropConstructionType::select('id', "construction_type")
-            ->where('status', 1)
-            ->get();
+
+        // property construction types
+        $constructionType = json_decode(Redis::get('property-construction-types'));
+        if (!$constructionType) {
+            $constructionType = RefPropConstructionType::select('id', "construction_type")
+                ->where('status', 1)
+                ->get();
+        }
+        $this->_redis->set('property-construction-types', json_encode($constructionType));
         $data['construction_type'] = $constructionType;
 
-        $transferModuleType = RefPropTransferMode::select('id', 'transfer_mode')
-            ->where('status', 1)
-            ->get();
+        // property transfer modes
+        $transferModuleType = json_decode(Redis::get('property-transfer-modes'));
+        if (!$transferModuleType) {
+            $transferModuleType = RefPropTransferMode::select('id', 'transfer_mode')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('property-transfer-modes', json_encode($transferModuleType));
+        }
         $data['transfer_mode'] = $transferModuleType;
+
         return  responseMsg(true, '', $data);
     }
 
@@ -118,7 +171,7 @@ class SafRepository implements iSafRepository
      * | Status-Closed
      */
 
-    public function applySaf(Request $request)
+    public function applySaf($request)
     {
         $user_id = auth()->user()->id;
         $ulb_id = auth()->user()->ulb_id;
@@ -318,11 +371,8 @@ class SafRepository implements iSafRepository
      * | Status-Closed
      */
     #Saf Details
-    public function details(Request $req)
+    public function details($req)
     {
-        $req->validate([
-            'id' => 'required|integer'
-        ]);
         try {
             // Saf Details
             $data = [];
@@ -603,16 +653,16 @@ class SafRepository implements iSafRepository
                     ->where('saf_id', $req->safId)
                     ->get();
 
-                // $approvedSaf = $activeSaf->replicate();
-                // $approvedSaf->setTable('prop_safs');
-                // $approvedSaf->id = $activeSaf->id;
-                // $approvedSaf->save();
+                $approvedSaf = $activeSaf->replicate();
+                $approvedSaf->setTable('prop_safs');
+                $approvedSaf->id = $activeSaf->id;
+                $approvedSaf->save();
 
-                $propProperties = $activeSaf->replicate();
-                $propProperties->setTable('prop_properties');
-                $propProperties->id = $activeSaf->id;
-
-                $activeSaf->delete();
+                // $propProperties = $activeSaf->replicate();
+                // $propProperties->setTable('prop_properties');
+                // $propProperties->saf_id = $activeSaf->id;
+                // $propProperties->save();
+                // $activeSaf->delete();
 
                 // SAF Owners replication
                 foreach ($ownerDetails as $ownerDetail) {
@@ -821,5 +871,36 @@ class SafRepository implements iSafRepository
             ->where('prop_transactions.status', 1)
             ->get();
         return responseMsg(true, "Transactions History", remove_null($propTrans));
+    }
+
+    /**
+     * | Get Property Details by Property Holding No
+     */
+    public function getPropByHoldingNo($req)
+    {
+        try {
+            $properties = PropProperty::where('ward_mstr_id', $req->wardId)
+                ->where('holding_no', $req->holdingNo)
+                ->first();
+
+            $data = [];
+            $data = DB::table('prop_active_safs')
+                ->select('prop_active_safs.*', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
+                ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+                ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
+                ->where('prop_active_safs.id', $req->id)
+                ->first();
+            $data = json_decode(json_encode($data), true);
+            $ownerDetails = PropActiveSafsOwner::where('saf_id', $data['id'])->get();
+            $data['owners'] = $ownerDetails;
+
+            $floorDetails = PropActiveSafsFloor::where('saf_id', $data['id'])->get();
+            $data['floors'] = $floorDetails;
+
+            return responseMsg(true, "Fetched Data", remove_null($properties));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }

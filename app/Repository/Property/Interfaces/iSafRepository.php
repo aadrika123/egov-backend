@@ -2,8 +2,6 @@
 
 namespace App\Repository\Property\Interfaces;
 
-use Illuminate\Http\Request;
-
 /**
  * | Created On-10-08-2022 
  * | Created By-Anshu Kumar
@@ -13,10 +11,10 @@ use Illuminate\Http\Request;
 interface iSafRepository
 {
     public function masterSaf();                            // Get all master data while applying Saf
-    public function applySaf(Request $request);             // Apply For SAF
+    public function applySaf($request);                     // Apply For SAF
     public function inbox();                                // Saf Inbox
     public function outbox();                               // Saf Outbox
-    public function details(Request $request);              // Get SAF By ID
+    public function details($request);                      // Get SAF By ID
     public function postEscalate($request);                 // Adding SAF application to special Category 
     public function specialInbox();                         // Special Inbox applications
     public function commentIndependent($request);           // Comment For the SAF Application
@@ -27,4 +25,5 @@ interface iSafRepository
     public function generateOrderId($req);                  // Generate Payment Order ID
     public function paymentSaf($req);                       // SAF Payment
     public function getPropTransactions($req);              // Get Property Transactions
+    public function getPropByHoldingNo($req);               // Get Property Details by Holding no
 }
