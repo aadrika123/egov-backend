@@ -13,6 +13,9 @@ use  App\Models\Property\ObjectionOwnerDetail;
 use App\Models\ObjectionTypeMstr;
 use Illuminate\Support\Facades\DB;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
+use Illuminate\Support\Facades\Config;
+use App\Models\Property\PropActiveObjection;
+use App\Models\Property\RefPropObjectionType;
 
 
 
@@ -40,30 +43,39 @@ class ObjectionRepository implements iObjectionRepository
     //apply objection
     public function rectification(Request $request)
     {
-        if ($request->objectionType == 10) {
+        $user_id = auth()->user()->id;
+        $ulb_id = auth()->user()->ulb_id;
+
+        if ($request->id == 10) {
             DB::beginTransaction();
             try {
-                $device = new ObjectionOwnerDetail;
-                $device->name = $request->name;
-                $device->address = $request->address;
-                $device->mobile = $request->mobileNo;
-                $device->members = $request->safMember;
-                $device->created_at = Carbon::now();
-                $device->updated_at = Carbon::now();
-                $device->save();
 
-                $data = new PropObjection;
-                $data->property_id = $request->propertyId;
-                $data->objection_no = $this->_objectionNo;
-                $data->objection_form = $request->objectionForm;
-                $data->remark_on_status = $request->remarks;
-                $data->evidence_document = $request->evidenceDoc;
-                $data->user_id = $request->userId;
-                $data->objection_type_id = 10;
-                $data->objection_owner_id = $device->id;
-                $data->created_at = Carbon::now();
-                $data->updated_at = Carbon::now();
-                $data->save();
+                $workflow_id = Config::get('workflow-constants.PROPERTY_OBJECTION_ID');
+                $objectionOwner = new ObjectionOwnerDetail;
+                $objectionOwner->name = $request->name;
+                $objectionOwner->address = $request->address;
+                $objectionOwner->mobile = $request->mobileNo;
+                $objectionOwner->members = $request->safMember;
+                $objectionOwner->created_at = Carbon::now();
+                $objectionOwner->updated_at = Carbon::now();
+                $objectionOwner->save();
+
+                $objection = new PropActiveObjection;
+                $objection->property_id = $request->propertyId;
+                $objection->objection_type_id = $request->id;
+                $objection->objection_owner_id = $objectionOwner->id;
+                $objection->objection_no = $this->_objectionNo;
+                $objection->objection_form = $request->objectionForm;
+                $objection->evidence_doc = $request->evidenceDoc;
+                $objection->ulb_id = $ulb_id;
+                $objection->user_id = $user_id;
+                $objection->workflow_id = $workflow_id;
+                $objection->current_role = $request->currentRole;
+                $objection->status = $request->status;
+                $objection->remarks = $request->remarks;
+                $objection->created_at = Carbon::now();
+                $objection->updated_at = Carbon::now();
+                $objection->save();
 
 
 
@@ -117,6 +129,15 @@ class ObjectionRepository implements iObjectionRepository
         }
     }
 
+
+    //objection type list
+    public function objectionType()
+    {
+        $objectionType = RefPropObjectionType::where('status', 1)
+            ->select('id', 'type')
+            ->get();
+        return $objectionType;
+    }
 
     //Inbox 
     public function inbox()

@@ -15,4 +15,5 @@ interface iObjectionRepository
     public function getOwnerDetails(Request $request);
     public function rectification(Request $request);
     public function objectionNo($propertyId);
+    public function objectionType();
 }
