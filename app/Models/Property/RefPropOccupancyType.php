@@ -5,7 +5,7 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PropMFloor extends Model
+class RefPropOccupancyType extends Model
 {
     use HasFactory;
 }

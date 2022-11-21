@@ -5,7 +5,7 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ActiveSafsFloorDtls extends Model
+class PropActiveSafsOwner extends Model
 {
     use HasFactory;
 }

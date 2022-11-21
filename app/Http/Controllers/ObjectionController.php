@@ -25,4 +25,10 @@ class ObjectionController extends Controller
     {
         return $this->Repository->rectification($request);
     }
+
+    //objection type list
+    public function objectionType(Request $request)
+    {
+        return $this->Repository->objectionType($request);
+    }
 }
