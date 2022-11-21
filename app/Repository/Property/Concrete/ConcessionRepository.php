@@ -8,8 +8,6 @@ use App\Repository\Property\Interfaces\iConcessionRepository;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
-use App\Models\Property\PropConcession;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropConcessionLevelPending;
