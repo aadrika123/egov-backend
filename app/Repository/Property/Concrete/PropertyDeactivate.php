@@ -216,7 +216,7 @@ class PropertyDeactivate implements IPropertyDeactivate
         }
 
     }
-    
+
     public function inbox(Request $request)
     {
         try {
@@ -504,6 +504,39 @@ class PropertyDeactivate implements IPropertyDeactivate
         }
     }
 
+    public function readDeactivationReq(Request $request)
+    {
+        try{
+            $rules = [
+                "requestId" => "required|int",
+            ];
+            $message = [
+                "comment.required" => "Comment Is Required",
+            ];
+            $validator = Validator::make($request->all(), $rules, $message);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), $request->all());
+            }
+            $refRequestData =  PropDeactivationRequest::find($request->requestId);
+            if(!$refRequestData)
+            {
+                throw new Exception("Data Not Found!");
+            }
+            $refProperty = $this->getPropertyById($refRequestData->property_id);
+            $refOwners   = $this->getPropOwnerByProId($refRequestData->property_id);
+            $data=[
+                "requestData"=> $refRequestData,
+                "property"   => $refProperty,
+                "owners"     => $refOwners
+            ];
+
+            return responseMsg(true,"",remove_null($data));
+        }
+        catch(Exception $e)
+        { 
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }        
+    }
 
     #---------------------Core Function--------------------------------------------------------
     public function getPropDtlByHoldingNo(string $holdingNo,$ulbId)
