@@ -603,29 +603,44 @@ class SafRepository implements iSafRepository
                     ->where('saf_id', $req->safId)
                     ->get();
 
-                $approvedSaf = $activeSaf->replicate();
-                $approvedSaf->setTable('prop_safs');
-                $approvedSaf->id = $activeSaf->id;
-                $approvedSaf->save();
+                // $approvedSaf = $activeSaf->replicate();
+                // $approvedSaf->setTable('prop_safs');
+                // $approvedSaf->id = $activeSaf->id;
+                // $approvedSaf->save();
+
+                $propProperties = $activeSaf->replicate();
+                $propProperties->setTable('prop_properties');
+                $propProperties->id = $activeSaf->id;
+
                 $activeSaf->delete();
 
                 // SAF Owners replication
-
                 foreach ($ownerDetails as $ownerDetail) {
                     $approvedOwner = $ownerDetail->replicate();
                     $approvedOwner->setTable('prop_safs_owners');
                     $approvedOwner->id = $ownerDetail->id;
                     $approvedOwner->save();
+
+                    // $propOwners = $ownerDetail->replicate();
+                    // $propOwners->setTable('prop_owners');
+                    // $propOwners->id = $propOwners->id;
+                    // $propOwners->save();
+
                     $ownerDetail->delete();
                 }
 
                 // SAF Floors Replication
-
                 foreach ($floorDetails as $floorDetail) {
                     $approvedFloor = $floorDetail->replicate();
                     $approvedFloor->setTable('prop_safs_floors');
                     $approvedFloor->id = $floorDetail->id;
                     $approvedFloor->save();
+
+                    // $propFloor = $floorDetail->replicate();
+                    // $propFloor->setTable('prop_floors');
+                    // $propFloor->id = $approvedFloor->id;
+                    // $propFloor->save();
+
                     $floorDetail->delete();
                 }
 
