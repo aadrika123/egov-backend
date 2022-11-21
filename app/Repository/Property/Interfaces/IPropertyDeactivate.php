@@ -15,4 +15,5 @@ interface IPropertyDeactivate
    public function deactivatProperty($propId,Request $request);
    public function inbox(Request $request);
    public function postNextLevel(Request $request);
+   public function readDeactivationReq(Request $request);
 }

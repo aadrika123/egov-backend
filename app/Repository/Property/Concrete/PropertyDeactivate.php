@@ -216,7 +216,7 @@ class PropertyDeactivate implements IPropertyDeactivate
         }
 
     }
-    
+
     public function inbox(Request $request)
     {
         try {
@@ -327,7 +327,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             // dd(DB::getQueryLog());
             $data = [
                 "wardList"=>$mWardPermission,                
-                "Property"=>$mProperty,
+                "property"=>$mProperty,
                 "userType"=>$mUserType,
             ] ;           
             return responseMsg(true, "", $data);
@@ -504,6 +504,39 @@ class PropertyDeactivate implements IPropertyDeactivate
         }
     }
 
+    public function readDeactivationReq(Request $request)
+    {
+        try{
+            $rules = [
+                "requestId" => "required|int",
+            ];
+            $message = [
+                "comment.required" => "Comment Is Required",
+            ];
+            $validator = Validator::make($request->all(), $rules, $message);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), $request->all());
+            }
+            $refRequestData =  PropDeactivationRequest::find($request->requestId);
+            if(!$refRequestData)
+            {
+                throw new Exception("Data Not Found!");
+            }
+            $refProperty = $this->getPropertyById($refRequestData->property_id);
+            $refOwners   = $this->getPropOwnerByProId($refRequestData->property_id);
+            $data=[
+                "requestData"=> $refRequestData,
+                "property"   => $refProperty,
+                "owners"     => $refOwners
+            ];
+
+            return responseMsg(true,"",remove_null($data));
+        }
+        catch(Exception $e)
+        { 
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }        
+    }
 
     #---------------------Core Function--------------------------------------------------------
     public function getPropDtlByHoldingNo(string $holdingNo,$ulbId)
@@ -525,8 +558,8 @@ class PropertyDeactivate implements IPropertyDeactivate
     public function getPropertyById($id)
     {
         try{
-            $application = PropProperty::select("prop_properties.*","prop_m_ownership_types.ownership_type",
-                            "prop_m_property_types.property_type",
+            $application = PropProperty::select("prop_properties.*","ref_prop_ownership_types.ownership_type",
+                            "ref_prop_types.property_type",
                     DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no")
                     )
                 ->leftjoin("ulb_ward_masters",function($join){
@@ -535,8 +568,8 @@ class PropertyDeactivate implements IPropertyDeactivate
                 ->leftjoin("ulb_ward_masters AS new_ward",function($join){
                     $join->on("new_ward.id","=","prop_properties.new_ward_mstr_id");                                
                 })
-                ->leftjoin("prop_m_ownership_types","prop_m_ownership_types.id","prop_properties.ownership_type_mstr_id")
-                ->leftjoin("prop_m_property_types","prop_m_property_types.id","prop_properties.prop_type_mstr_id")            
+                ->leftjoin("ref_prop_ownership_types","ref_prop_ownership_types.id","prop_properties.ownership_type_mstr_id")
+                ->leftjoin("ref_prop_types","ref_prop_types.id","prop_properties.prop_type_mstr_id")            
                 ->where('prop_properties.id',$id)   
                 ->first();
             return $application;
