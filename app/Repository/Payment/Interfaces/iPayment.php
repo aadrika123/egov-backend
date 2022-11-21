@@ -30,4 +30,6 @@ interface iPayment
 
     # Payment Reconciliation
     public function getReconcillationDetails($request);
+    public function searchReconciliationDetails($request);
+    public function updateReconciliationDetails($request);
 }

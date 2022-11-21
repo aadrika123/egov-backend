@@ -90,4 +90,16 @@ class RazorpayPaymentController extends Controller
      {
          return $this->Prepository->getReconcillationDetails($request);
      }
+
+     // serch the specific details according to the request
+     public function searchReconciliationDetails(Request $request)
+     {
+        return $this->Prepository->searchReconciliationDetails($request);
+     }
+
+      // serch the specific details according to the request
+      public function updateReconciliationDetails(Request $request)
+      {
+         return $this->Prepository->updateReconciliationDetails($request);
+      }
 }
