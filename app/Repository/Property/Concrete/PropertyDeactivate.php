@@ -287,7 +287,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                                             STRING_AGG(email,',') AS email_id,
                                             prop_properties.id,holding_no,new_holding_no
                                         FROM prop_properties  
-                                        LEFT JOIN prop_owner_dtls ON prop_properties.id = prop_owner_dtls.property_id AND prop_owner_dtls.status=1
+                                        LEFT JOIN prop_owners ON prop_properties.id = prop_owners.property_id AND prop_owners.status=1
                                         WHERE prop_properties.status =1 AND prop_properties.ulb_id=$refUlbId
                                         AND prop_properties.ward_mstr_id IN ($mWardIds)
                                         GROUP BY prop_properties.id,holding_no,new_holding_no
@@ -330,7 +330,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 "property"=>$mProperty,
                 "userType"=>$mUserType,
             ] ;           
-            return responseMsg(true, "", $data);
+            return responseMsg(true, "", remove_null($data));
             
         } 
         catch (Exception $e) 
@@ -507,6 +507,8 @@ class PropertyDeactivate implements IPropertyDeactivate
     public function readDeactivationReq(Request $request)
     {
         try{
+            $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
+            $mUserType = $this->_common->userType($refWorkflowId);
             $rules = [
                 "requestId" => "required|int",
             ];
@@ -524,10 +526,13 @@ class PropertyDeactivate implements IPropertyDeactivate
             }
             $refProperty = $this->getPropertyById($refRequestData->property_id);
             $refOwners   = $this->getPropOwnerByProId($refRequestData->property_id);
+            $refTimeLine = $this->getTimelin($request->requestId);
             $data=[
                 "requestData"=> $refRequestData,
                 "property"   => $refProperty,
-                "owners"     => $refOwners
+                "owners"     => $refOwners,
+                'remarks'    => $refTimeLine,
+                "userType"   => $mUserType,
             ];
 
             return responseMsg(true,"",remove_null($data));
@@ -610,6 +615,45 @@ class PropertyDeactivate implements IPropertyDeactivate
                     ->orderBy("id","DESC")
                     ->first();
             return $data;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+    public function getTimelin($id)
+    {
+        try{
+           
+            $time_line =  PropDeactivationReqInbox::select(
+                        "prop_deactivation_req_inboxes.remarks",
+                        "prop_deactivation_req_inboxes.forward_date",
+                        "prop_deactivation_req_inboxes.forward_time",
+                        "prop_deactivation_req_inboxes.receiver_type_id",
+                        "role_name",
+                        DB::raw("prop_deactivation_req_inboxes.created_at as receiving_date")
+                    )
+                    ->leftjoin(DB::raw("(SELECT receiver_type_id::bigint, request_id::bigint, remarks
+                                        FROM prop_deactivation_req_inboxes 
+                                        WHERE request_id = $id
+                                    )remaks_for"
+                                ),function($join){
+                                $join->on("remaks_for.receiver_type_id","prop_deactivation_req_inboxes.sender_type_id");
+                                // ->where("remaks_for.licence_id","trade_level_pendings.licence_id");
+                                }
+                    )
+                    ->leftjoin('wf_roles', "wf_roles.id", "prop_deactivation_req_inboxes.receiver_type_id")
+                    ->where('prop_deactivation_req_inboxes.request_id', $id)     
+                    ->whereIn('prop_deactivation_req_inboxes.status',[1,2])                 
+                    ->groupBy('prop_deactivation_req_inboxes.receiver_type_id',
+                            'prop_deactivation_req_inboxes.remarks',
+                            'prop_deactivation_req_inboxes.forward_date',
+                            'prop_deactivation_req_inboxes.forward_time','wf_roles.role_name',
+                            'prop_deactivation_req_inboxes.created_at'
+                    )
+                    ->orderBy('prop_deactivation_req_inboxes.created_at', 'desc')
+                    ->get();
+            return $time_line;
         }
         catch(Exception $e)
         {
