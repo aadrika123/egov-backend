@@ -23,6 +23,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
 use Exception;
+use PhpParser\Node\Expr\Empty_;
 
 /**
  * | Created On-14-11-2022 
@@ -407,8 +408,8 @@ class PaymentRepository implements iPayment
      * | --------------------------- Payment Reconciliation ------------------------------- |
      * | @param request
      * | @param error
-     * | @var mid
-     * | Operation :  Payment Reconciliation / search for the specific data
+     * | @var reconciliation
+     * | Operation :  Payment Reconciliation / viewing all data
      * | this -> naming
      * | here -> variable
      */
@@ -427,13 +428,75 @@ class PaymentRepository implements iPayment
                 'branch_name AS branchName',
                 'bank_name AS bankName',
                 'transaction_amount AS amount',
-                'clearance_date AS clearanceDate'       
+                'clearance_date AS clearanceDate'
             )
-            ->get();
+                ->get();
             return responseMsg(true, "Payment Reconciliation data!", $reconciliation);
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
-        return ("working");
+    }
+
+
+
+    /**
+     * | --------------------------- Payment Reconciliation details acoording to request details ------------------------------- |
+     * | @param request
+     * | @param error
+     * | @var reconciliation
+     * | Operation :  Payment Reconciliation / searching for the specific data
+     * | this -> naming
+     * | here -> variable
+     */
+    public function searchReconciliationDetails($request)
+    {
+        try {
+            $reconciliationDetails = PaymentReconciliation::select(
+                'date',
+                'ulb_id AS ulbId',
+                'department_id AS dpartmentId',
+                'transaction_no AS transactionNo',
+                'payment_mode AS paymentMode',
+                'transaction_date AS transactionDate',
+                'status',
+            )
+                ->whereBetween('date', [$request->fromDate, $request->toDate])
+                ->where('payment_mode', $request->paymentMode)
+                ->where('verification_type', $request->verificationType)
+                ->where('dd_cheque_no', $request->tranNo)
+                ->get();
+            return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * | --------------------------- UPDATING Payment Reconciliation details ------------------------------- |
+     * | @param request
+     * | @param error
+     * | @var reconciliation
+     * | Operation :  Payment Reconciliation / searching for the specific data
+     * | this -> naming
+     * | here -> variable
+     */
+    public function updateReconciliationDetails($request)
+    {
+        try {
+            if (!empty($request['0'])) {
+                PaymentReconciliation::where('transaction_no', $request->transactionNo)
+                    ->update([
+                        'status' => $request->status,
+                        'date' => $request->date,
+                        'remark' => $request->reason,
+                        'cancellation_charges' => $request->cancellationCharges
+                    ]);
+                return responseMsg(true, "Data Saved!", "");
+            }
+            return responseMsg(false, "NO Data!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
     }
 }

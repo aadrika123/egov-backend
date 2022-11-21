@@ -34,6 +34,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         
         # Payment Reconciliation
         Route::get('get-reconcillation-details', 'getReconcillationDetails'); 
+        Route::post('search-reconciliation-details', 'searchReconciliationDetails');
+        Route::post('update-reconciliation-details', 'updateReconciliationDetails');
     });
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {
