@@ -23,6 +23,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
 use Exception;
+use Illuminate\Support\Facades\Config;
 use PhpParser\Node\Expr\Empty_;
 
 /**
@@ -317,7 +318,7 @@ class PaymentRepository implements iPayment
 
     /**
      * | ----------------------------------- payment Gateway ENDS -------------------------------
-     * | verifiying the payment success and the signature key
+     * | collecting the data provided by the webhook in database
      * | @param requet request from the frontend
      * | @param error collecting the operation error
      * | @var mAttributes
@@ -413,8 +414,8 @@ class PaymentRepository implements iPayment
      * | this -> naming
      * | here -> variable
      */
-    public function getReconcillationDetails($request)
-    {
+    public function getReconcillationDetails()
+    { 
         try {
             $reconciliation = PaymentReconciliation::select(
                 'ulb_id AS ulbId',
@@ -477,7 +478,7 @@ class PaymentRepository implements iPayment
      * | @param request
      * | @param error
      * | @var reconciliation
-     * | Operation :  Payment Reconciliation / searching for the specific data
+     * | Operation :  Payment Reconciliation / updating the data of the payment Recou..
      * | this -> naming
      * | here -> variable
      */

@@ -55,10 +55,10 @@ trait Razorpay
             $mUlbID = auth()->user()->ulb_id;
 
             # generating ref values ie. (GENERATED)
-            $mReciptId = Str::random(10);                                       //<--------- here (STATIC)
+            $mReciptId = Str::random(10);                                           //<--------- here (STATIC)
 
             # order id generation
-            $mApi = new Api($this->refRazorpayId, $this->refRazorpayKey);       //<--------- here (CAUTION)
+            $mApi = new Api($this->refRazorpayId, $this->refRazorpayKey);           //<--------- here (CAUTION)
             $mOrder = $mApi->order->create(array(
                 'receipt' => $mReciptId,
                 'amount' => $request->all()['amount'] * 100,
