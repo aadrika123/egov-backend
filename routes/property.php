@@ -79,9 +79,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     //Property Objection
     Route::controller(ObjectionController::class)->group(function () {
-        Route::post('objection/ClericalMistake/{id}', 'ClericalMistake');
         Route::post('objection/ownerDetails', 'getOwnerDetails');
         Route::post('objection/rectification', 'rectification');
+        Route::get('objection/objection-type', 'objectionType');
         Route::get('objection/inbox', 'inbox');
         Route::get('objection/outbox', 'outbox');
     });
