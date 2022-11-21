@@ -69,6 +69,11 @@ class SafRepository implements iSafRepository
      * | @param response
      */
     protected $user_id;
+    protected $_redis;
+    public function __construct()
+    {
+        $this->_redis = Redis::connection();
+    }
     /**
      * | Master data in Saf Apply
      * | @var ulbId Logged In User Ulb 
@@ -77,40 +82,87 @@ class SafRepository implements iSafRepository
     public function masterSaf()
     {
         $ulbId = auth()->user()->ulb_id;
-        $wardMaster = UlbWardMaster::select('id', 'ward_name')
-            ->where('ulb_id', $ulbId)
-            ->get();
+
+        $wardMaster = json_decode(Redis::get('wards-ulb-' . $ulbId));
+        if (!$wardMaster) {
+            $wardMaster = UlbWardMaster::select('id', 'ward_name')
+                ->where('ulb_id', $ulbId)
+                ->get();
+            $this->_redis->set('wards-ulb-' . $ulbId, json_encode($wardMaster));            // Caching
+        }
         $data = [];
         $data['ward_master'] = $wardMaster;
-        $ownershipTypes = RefPropOwnershipType::select('id', 'ownership_type')
-            ->where('status', 1)
-            ->get();
+
+
+        $ownershipTypes = json_decode(Redis::get('prop-ownership-types'));
+        if (!$ownershipTypes) {
+            $ownershipTypes = RefPropOwnershipType::select('id', 'ownership_type')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('prop-ownership-types', json_encode($ownershipTypes));
+        }
         $data['ownership_types'] = $ownershipTypes;
-        $propertyType = RefPropType::select('id', 'property_type')
-            ->where('status', 1)
-            ->get();
+
+
+        $propertyType = json_decode(Redis::get('property-types'));
+        if (!$propertyType) {
+            $propertyType = RefPropType::select('id', 'property_type')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('property-types', json_encode($propertyType));
+        }
         $data['property_type'] = $propertyType;
-        $floorType = RefPropFloor::select('id', 'floor_name')
-            ->where('status', 1)
-            ->get();
+
+
+        $floorType = json_decode(Redis::get('property-floors'));
+        if (!$floorType) {
+            $floorType = RefPropFloor::select('id', 'floor_name')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('propery-floors', json_encode($floorType));
+        }
         $data['floor_type'] = $floorType;
-        $usageType = RefPropUsageType::select('id', 'usage_type', 'usage_code')
-            ->where('status', 1)
-            ->get();
+
+
+        $usageType = json_decode(Redis::get('property-usage-types'));
+        if (!$usageType) {
+            $usageType = RefPropUsageType::select('id', 'usage_type', 'usage_code')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('property-usage-types', json_encode($usageType));
+        }
         $data['usage_type'] = $usageType;
-        $occupancyType = RefPropOccupancyType::select('id', 'occupancy_type')
-            ->where('status', 1)
-            ->get();
+
+
+        $occupancyType = json_decode(Redis::get('property-occupancy-types'));
+        if (!$occupancyType) {
+            $occupancyType = RefPropOccupancyType::select('id', 'occupancy_type')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('property-occupancy-types', json_encode($occupancyType));
+        }
         $data['occupancy_type'] = $occupancyType;
-        $constructionType = RefPropConstructionType::select('id', "construction_type")
-            ->where('status', 1)
-            ->get();
+
+
+        $constructionType = json_decode(Redis::get('property-construction-types'));
+        if (!$constructionType) {
+            $constructionType = RefPropConstructionType::select('id', "construction_type")
+                ->where('status', 1)
+                ->get();
+        }
+        $this->_redis->set('property-construction-types', json_encode($constructionType));
         $data['construction_type'] = $constructionType;
 
-        $transferModuleType = RefPropTransferMode::select('id', 'transfer_mode')
-            ->where('status', 1)
-            ->get();
+
+        $transferModuleType = json_decode(Redis::get('property-transfer-modes'));
+        if (!$transferModuleType) {
+            $transferModuleType = RefPropTransferMode::select('id', 'transfer_mode')
+                ->where('status', 1)
+                ->get();
+            $this->_redis->set('property-transfer-modes', json_encode($transferModuleType));
+        }
         $data['transfer_mode'] = $transferModuleType;
+
         return  responseMsg(true, '', $data);
     }
 
