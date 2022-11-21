@@ -415,7 +415,7 @@ class PaymentRepository implements iPayment
      * | here -> variable
      */
     public function getReconcillationDetails()
-    { 
+    {
         try {
             $reconciliation = PaymentReconciliation::select(
                 'ulb_id AS ulbId',
@@ -451,25 +451,31 @@ class PaymentRepository implements iPayment
      */
     public function searchReconciliationDetails($request)
     {
-        try {
-            $reconciliationDetails = PaymentReconciliation::select(
-                'date',
-                'ulb_id AS ulbId',
-                'department_id AS dpartmentId',
-                'transaction_no AS transactionNo',
-                'payment_mode AS paymentMode',
-                'transaction_date AS transactionDate',
-                'status',
-            )
-                ->whereBetween('date', [$request->fromDate, $request->toDate])
-                ->where('payment_mode', $request->paymentMode)
-                ->where('verification_type', $request->verificationType)
-                ->where('dd_cheque_no', $request->tranNo)
-                ->get();
-            return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
-        } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
+        switch ($request) {
+            case (null == ($request->tranNo) && !null == ($request->verificationType) && !null == ($request->paymentMode)): {
+                    $reconciliationTypeWise = $this->reconciliationTypeWise($request);
+                    return "reconciliationTypeWise";
+                }
+            case (null == ($request->tranNo) && null == ($request->verificationType) && !null == ($request->paymentMode)): {
+                    $reconciliationModeWise = $this->reconciliationModeWise($request);
+                    return "reconciliationModeWise";
+                }
+            case (null == ($request->paymentMode) && null == ($request->tranNo) && null == ($request->verificationType)): {
+                    $reconciliationDateWise = $this->reconciliationDateWise($request);
+                    return "reconciliationDateWise";
+                }
+            case (!null == ($request->tranNo) && null == ($request->paymentMode) && null == ($request->verificationType)): {
+                    $reconciliationOnlyTranWise = $this->reconciliationOnlyTranWise($request);
+                    return "reconciliationOnlyTranWise";
+                }
+            case (!null == ($request->tranNo) && !null == ($request->verificationType) && !null == ($request->paymentMode) && !null == ($request->fromDate)): {
+                    $reconciliationWithAll = $this->reconciliationWithAll($request);
+                    return "reconciliationWithAll";
+                }
+            default:
+                return ("some error");
         }
+    
     }
 
 
@@ -506,6 +512,153 @@ class PaymentRepository implements iPayment
                     'cancellation_charges' => $request->cancellationCharges
                 ]);
             return responseMsg(true, "Data Saved!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * |--------- reconciliationDateWise----------
+     * |@param request
+     */
+    public function reconciliationDateWise($request)
+    {
+        try {
+            $reconciliationDetails = PaymentReconciliation::select(
+                'date',
+                'ulb_id AS ulbId',
+                'department_id AS dpartmentId',
+                'transaction_no AS transactionNo',
+                'payment_mode AS paymentMode',
+                'transaction_date AS transactionDate',
+                'status',
+            )
+                ->whereBetween('date', [$request->fromDate, $request->toDate])
+                ->get();
+
+            if (!empty($reconciliationDetails['0'])) {
+                return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
+            }
+            return responseMsg(false, "data not found!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+    /**
+     * |--------- reconciliationModeWise----------
+     * |@param request
+     */
+    public function reconciliationModeWise($request)
+    {
+        try {
+            $reconciliationDetails = PaymentReconciliation::select(
+                'date',
+                'ulb_id AS ulbId',
+                'department_id AS dpartmentId',
+                'transaction_no AS transactionNo',
+                'payment_mode AS paymentMode',
+                'transaction_date AS transactionDate',
+                'status',
+            )
+                ->whereBetween('date', [$request->fromDate, $request->toDate])
+                ->where('payment_mode', $request->paymentMode)
+                ->get();
+
+            if (!empty($reconciliationDetails['0'])) {
+                return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
+            }
+            return responseMsg(false, "data not found!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+    /**
+     * |--------- reconciliationTypeWise----------
+     * |@param request
+     */
+    public function reconciliationTypeWise($request)
+    {
+        try {
+            $reconciliationDetails = PaymentReconciliation::select(
+                'date',
+                'ulb_id AS ulbId',
+                'department_id AS dpartmentId',
+                'transaction_no AS transactionNo',
+                'payment_mode AS paymentMode',
+                'transaction_date AS transactionDate',
+                'status',
+            )
+                ->whereBetween('date', [$request->fromDate, $request->toDate])
+                ->where('payment_mode', $request->paymentMode)
+                ->where('status', $request->verificationType)
+                ->get();
+
+            if (!empty($reconciliationDetails['0'])) {
+                return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
+            }
+            return responseMsg(false, "data not found!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+    /**
+     * |--------- reconciliationOnlyTranWise----------
+     * |@param request
+     */
+    public function reconciliationOnlyTranWise($request)
+    {
+        try {
+            $reconciliationDetails = PaymentReconciliation::select(
+                'date',
+                'ulb_id AS ulbId',
+                'department_id AS dpartmentId',
+                'transaction_no AS transactionNo',
+                'payment_mode AS paymentMode',
+                'transaction_date AS transactionDate',
+                'status',
+            )
+                ->where('cheque_no', $request->tranNo)
+                ->get();
+
+            if (!empty($reconciliationDetails['0'])) {
+                return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
+            }
+            return responseMsg(false, "data not found!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+    /**
+     * |--------- reconciliationOnlyTranWise----------
+     * |@param request
+     */
+    public function reconciliationWithAll($request)
+    {
+        try {
+            $reconciliationDetails = PaymentReconciliation::select(
+                'date',
+                'ulb_id AS ulbId',
+                'department_id AS dpartmentId',
+                'transaction_no AS transactionNo',
+                'payment_mode AS paymentMode',
+                'transaction_date AS transactionDate',
+                'status',
+            )
+                ->whereBetween('date', [$request->fromDate, $request->toDate])
+                ->where('payment_mode', $request->paymentMode)
+                ->where('status', $request->verificationType)
+                ->where('cheque_no', $request->tranNo)
+                ->get();
+
+            if (!empty($reconciliationDetails['0'])) {
+                return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
+            }
+            return responseMsg(false, "data not found!", "");
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
