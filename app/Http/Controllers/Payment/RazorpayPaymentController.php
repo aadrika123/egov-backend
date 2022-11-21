@@ -86,9 +86,9 @@ class RazorpayPaymentController extends Controller
 
 
      //get all the details of Payment Reconciliation 
-     public function getReconcillationDetails(Request $request)
+     public function getReconcillationDetails()
      {
-         return $this->Prepository->getReconcillationDetails($request);
+         return $this->Prepository->getReconcillationDetails();
      }
 
      // serch the specific details according to the request
