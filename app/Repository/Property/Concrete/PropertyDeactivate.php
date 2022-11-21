@@ -327,7 +327,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             // dd(DB::getQueryLog());
             $data = [
                 "wardList"=>$mWardPermission,                
-                "Property"=>$mProperty,
+                "property"=>$mProperty,
                 "userType"=>$mUserType,
             ] ;           
             return responseMsg(true, "", $data);
