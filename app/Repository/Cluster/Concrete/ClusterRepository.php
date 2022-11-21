@@ -49,7 +49,7 @@ class ClusterRepository implements iCluster
                 ->where('id', $id)
                 ->get()
                 ->first();
-        
+
             if (!empty($mdetails) && $mdetails->status == "1") {
                 return $this->success($mdetails);
             }
