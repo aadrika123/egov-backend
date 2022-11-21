@@ -330,7 +330,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 "property"=>$mProperty,
                 "userType"=>$mUserType,
             ] ;           
-            return responseMsg(true, "", $data);
+            return responseMsg(true, "", remove_null($data));
             
         } 
         catch (Exception $e) 
