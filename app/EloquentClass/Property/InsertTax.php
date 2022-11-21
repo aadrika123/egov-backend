@@ -2,7 +2,7 @@
 
 namespace App\EloquentClass\Property;
 
-use App\Models\Property\SafsDemand;
+use App\Models\Property\PropSafsDemand;
 
 class InsertTax
 {
@@ -11,7 +11,7 @@ class InsertTax
         $details = collect($demand->original['data']['details'])->toArray();
 
         foreach ($details as $detail) {
-            $safDemand = new SafsDemand();
+            $safDemand = new PropSafsDemand();
             $safDemand->saf_id = $safId;
             $safDemand->qtr = $detail['qtr'];
             $safDemand->holding_tax = $detail['holdingTax'];

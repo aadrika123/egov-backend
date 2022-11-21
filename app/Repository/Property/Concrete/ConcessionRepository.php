@@ -2,8 +2,6 @@
 
 namespace App\Repository\Property\Concrete;
 
-use App\Models\Property\ActiveSafsOwnerDtl;
-use App\Models\Property\PropOwnerDtl;
 use App\Repository\Property\Interfaces\iConcessionRepository;
 use Carbon\Carbon;
 use Exception;
@@ -98,7 +96,7 @@ class ConcessionRepository implements iConcessionRepository
             }
 
             // Property SAF Label Pendings
-            $labelPending = new PropConcessionLevelPending();
+            $labelPending = new PropConcessionLevelpending();
             $labelPending->concession_id = $concession->id;
             $labelPending->receiver_role_id = $initiatorRoleId[0]->role_id;
             $labelPending->save();
@@ -209,9 +207,9 @@ class ConcessionRepository implements iConcessionRepository
                     's.prop_type_mstr_id',
                     'p.property_type'
                 )
-                ->join('safs as s', 's.id', '=', 'prop_active_concessions.property_id')
+                ->join('prop_safs as s', 's.id', '=', 'prop_active_concessions.property_id')
                 ->join('ulb_ward_masters as u', 'u.id', '=', 's.ward_mstr_id')
-                ->join('prop_m_property_types as p', 'p.id', '=', 's.prop_type_mstr_id')
+                ->join('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
                 ->where('prop_active_concessions.id', $req->id)
                 ->first();
             return responseMsg(true, "Concession Details", remove_null($details));
@@ -296,10 +294,10 @@ class ConcessionRepository implements iConcessionRepository
             $levelPending->sender_user_id = auth()->user()->id;
             $levelPending->save();
 
-            // SAF Application Update Current Role Updation
-            $saf = PropActiveConcession::find($req->concessionId);
-            $saf->current_role = $req->receiverRoleId;
-            $saf->save();
+            // Concession Application Update Current Role Updation
+            $concession = PropActiveConcession::find($req->concessionId);
+            $concession->current_role = $req->receiverRoleId;
+            $concession->save();
 
             // Add Comment On Prop Level Pending
             $commentOnlevel = PropConcessionLevelPending::where('concession_id', $req->concessionId)
