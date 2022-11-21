@@ -119,7 +119,7 @@ class SafRepository implements iSafRepository
      * | Status-Closed
      */
 
-    public function applySaf(Request $request)
+    public function applySaf($request)
     {
         $user_id = auth()->user()->id;
         $ulb_id = auth()->user()->ulb_id;
@@ -319,11 +319,8 @@ class SafRepository implements iSafRepository
      * | Status-Closed
      */
     #Saf Details
-    public function details(Request $req)
+    public function details($req)
     {
-        $req->validate([
-            'id' => 'required|integer'
-        ]);
         try {
             // Saf Details
             $data = [];
@@ -833,6 +830,22 @@ class SafRepository implements iSafRepository
             $properties = PropProperty::where('ward_mstr_id', $req->wardId)
                 ->where('holding_no', $req->holdingNo)
                 ->first();
+
+            $data = [];
+            $data = DB::table('prop_active_safs')
+                ->select('prop_active_safs.*', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
+                ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+                ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
+                ->where('prop_active_safs.id', $req->id)
+                ->first();
+            $data = json_decode(json_encode($data), true);
+            $ownerDetails = PropActiveSafsOwner::where('saf_id', $data['id'])->get();
+            $data['owners'] = $ownerDetails;
+
+            $floorDetails = PropActiveSafsFloor::where('saf_id', $data['id'])->get();
+            $data['floors'] = $floorDetails;
+
             return responseMsg(true, "Fetched Data", remove_null($properties));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
