@@ -287,7 +287,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                                             STRING_AGG(email,',') AS email_id,
                                             prop_properties.id,holding_no,new_holding_no
                                         FROM prop_properties  
-                                        LEFT JOIN prop_owner_dtls ON prop_properties.id = prop_owner_dtls.property_id AND prop_owner_dtls.status=1
+                                        LEFT JOIN prop_owners ON prop_properties.id = prop_owners.property_id AND prop_owners.status=1
                                         WHERE prop_properties.status =1 AND prop_properties.ulb_id=$refUlbId
                                         AND prop_properties.ward_mstr_id IN ($mWardIds)
                                         GROUP BY prop_properties.id,holding_no,new_holding_no
@@ -330,7 +330,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 "property"=>$mProperty,
                 "userType"=>$mUserType,
             ] ;           
-            return responseMsg(true, "", $data);
+            return responseMsg(true, "", remove_null($data));
             
         } 
         catch (Exception $e) 
