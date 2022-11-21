@@ -82,7 +82,7 @@ class SafRepository implements iSafRepository
     public function masterSaf()
     {
         $ulbId = auth()->user()->ulb_id;
-
+        // Ward Masters
         $wardMaster = json_decode(Redis::get('wards-ulb-' . $ulbId));
         if (!$wardMaster) {
             $wardMaster = UlbWardMaster::select('id', 'ward_name')
@@ -93,7 +93,7 @@ class SafRepository implements iSafRepository
         $data = [];
         $data['ward_master'] = $wardMaster;
 
-
+        // Ownership Types
         $ownershipTypes = json_decode(Redis::get('prop-ownership-types'));
         if (!$ownershipTypes) {
             $ownershipTypes = RefPropOwnershipType::select('id', 'ownership_type')
@@ -103,7 +103,7 @@ class SafRepository implements iSafRepository
         }
         $data['ownership_types'] = $ownershipTypes;
 
-
+        // Property Types
         $propertyType = json_decode(Redis::get('property-types'));
         if (!$propertyType) {
             $propertyType = RefPropType::select('id', 'property_type')
@@ -113,7 +113,7 @@ class SafRepository implements iSafRepository
         }
         $data['property_type'] = $propertyType;
 
-
+        // Property Floors
         $floorType = json_decode(Redis::get('property-floors'));
         if (!$floorType) {
             $floorType = RefPropFloor::select('id', 'floor_name')
@@ -123,7 +123,7 @@ class SafRepository implements iSafRepository
         }
         $data['floor_type'] = $floorType;
 
-
+        // Property Usage Types
         $usageType = json_decode(Redis::get('property-usage-types'));
         if (!$usageType) {
             $usageType = RefPropUsageType::select('id', 'usage_type', 'usage_code')
@@ -133,7 +133,7 @@ class SafRepository implements iSafRepository
         }
         $data['usage_type'] = $usageType;
 
-
+        // Property Occupancy Types
         $occupancyType = json_decode(Redis::get('property-occupancy-types'));
         if (!$occupancyType) {
             $occupancyType = RefPropOccupancyType::select('id', 'occupancy_type')
@@ -143,7 +143,7 @@ class SafRepository implements iSafRepository
         }
         $data['occupancy_type'] = $occupancyType;
 
-
+        // property construction types
         $constructionType = json_decode(Redis::get('property-construction-types'));
         if (!$constructionType) {
             $constructionType = RefPropConstructionType::select('id', "construction_type")
@@ -153,7 +153,7 @@ class SafRepository implements iSafRepository
         $this->_redis->set('property-construction-types', json_encode($constructionType));
         $data['construction_type'] = $constructionType;
 
-
+        // property transfer modes
         $transferModuleType = json_decode(Redis::get('property-transfer-modes'));
         if (!$transferModuleType) {
             $transferModuleType = RefPropTransferMode::select('id', 'transfer_mode')
