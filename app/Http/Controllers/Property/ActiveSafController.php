@@ -45,6 +45,10 @@ class ActiveSafController extends Controller
     }
     public function details(Request $request)
     {
+        $request->validate([
+            'id' => 'required|integer'
+        ]);
+
         $data = $this->Repository->details($request);
         return $data;
     }
