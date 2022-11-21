@@ -5,7 +5,7 @@ namespace App\Repository\Property\Concrete;
 use App\EloquentModels\Common\ModelWard;
 use App\Models\Property\PropDeactivationReqInbox;
 use App\Models\Property\PropDeactivationRequest;
-use App\Models\Property\PropOwnerDtl;
+use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Workflows\WfWorkflow;
 use App\Repository\Common\CommonFunction;
@@ -583,7 +583,7 @@ class PropertyDeactivate implements IPropertyDeactivate
     public function getPropOwnerByProId($propId)
     {
         try{
-            $mOwrners = PropOwnerDtl::select("*")
+            $mOwrners = PropOwner::select("*")
                         ->where("property_id",$propId)
                         ->where("status",1)
                         ->get();
