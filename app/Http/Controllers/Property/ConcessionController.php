@@ -33,6 +33,9 @@ class ConcessionController extends Controller
     //post Holding
     public function postHolding(Request $request)
     {
+        $request->validate([
+            'holdingNo' => 'required'
+        ]);
         return $this->Repository->postHolding($request);
     }
 
@@ -63,7 +66,7 @@ class ConcessionController extends Controller
     {
         $req->validate([
             'id' => 'required',
-            'status' => 'required'
+            'escalateStatus' => 'required'
         ]);
         return $this->Repository->escalateApplication($req);
     }
@@ -72,5 +75,37 @@ class ConcessionController extends Controller
     public function specialInbox()
     {
         return $this->Repository->specialInbox();
+    }
+
+    // Post Next Level Application
+    public function postNextLevel(Request $req)
+    {
+        $req->validate([
+            'concessionId' => 'required',
+            'senderRoleId' => 'required',
+            'receiverRoleId' => 'required',
+            'comment' => 'required'
+        ]);
+        return $this->Repository->postNextLevel($req);
+    }
+
+    // Application Approval Rejection
+    public function approvalRejection(Request $req)
+    {
+        $req->validate([
+            "concessionId" => "required",
+            "status" => "required"
+        ]);
+        return $this->Repository->approvalRejection($req);
+    }
+
+    // Application back To citizen
+    public function backToCitizen(Request $req)
+    {
+        $req->validate([
+            'concessionId' => "required",
+            "workflowId" => "required"
+        ]);
+        return $this->Repository->backToCitizen($req);
     }
 }

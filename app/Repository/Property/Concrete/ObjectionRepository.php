@@ -10,17 +10,18 @@ use App\Models\UlbWardMaster;
 use App\Models\Property\PropObjection;
 use Illuminate\Support\Carbon;
 use  App\Models\Property\ObjectionOwnerDetail;
+use App\Models\ObjectionTypeMstr;
+use Illuminate\Support\Facades\DB;
+use App\Traits\Workflow\Workflow as WorkflowTrait;
+
 
 
 
 class ObjectionRepository implements iObjectionRepository
 {
+    use WorkflowTrait;
     private  $_objectionNo;
 
-    public function ClericalMistake(Request $request)
-    {
-        $data = $this->getOwnerDetails($request->id);
-    }
 
     //get owner details
     public function getOwnerDetails(Request $request)
@@ -36,62 +37,67 @@ class ObjectionRepository implements iObjectionRepository
         }
     }
 
-    //
+    //apply objection
     public function rectification(Request $request)
     {
-        try {
-            $device = new ObjectionOwnerDetail;
-            $device->name = $request->name;
-            $device->address = $request->address;
-            $device->mobile = $request->mobileNo;
-            $device->members = $request->safMember;
-            $device->created_at = Carbon::now();
-            $device->updated_at = Carbon::now();
-            $device->save();
+        if ($request->objectionType == 10) {
+            DB::beginTransaction();
+            try {
+                $device = new ObjectionOwnerDetail;
+                $device->name = $request->name;
+                $device->address = $request->address;
+                $device->mobile = $request->mobileNo;
+                $device->members = $request->safMember;
+                $device->created_at = Carbon::now();
+                $device->updated_at = Carbon::now();
+                $device->save();
 
-            $data = new PropObjection;
-            $data->property_id = $request->propertyId;
-            $data->saf_id = $request->safId;
-            $data->objection_no = $this->_objectionNo;
-            $data->objection_form = $request->objectionForm;
-            $data->remark_on_status = $request->remarks;
-            $data->evidence_document = $request->evidenceDocument;
-            $data->user_id = $request->userId;
-            $data->created_at = Carbon::now();
-            $data->updated_at = Carbon::now();
+                $data = new PropObjection;
+                $data->property_id = $request->propertyId;
+                $data->objection_no = $this->_objectionNo;
+                $data->objection_form = $request->objectionForm;
+                $data->remark_on_status = $request->remarks;
+                $data->evidence_document = $request->evidenceDoc;
+                $data->user_id = $request->userId;
+                $data->objection_type_id = 10;
+                $data->objection_owner_id = $device->id;
+                $data->created_at = Carbon::now();
+                $data->updated_at = Carbon::now();
+                $data->save();
 
 
 
-            //name
-            if ($file = $request->file('nameDoc')) {
+                //name
+                if ($file = $request->file('nameDoc')) {
 
-                $name = time() . $file . '.' . $file->getClientOriginalExtension();
-                $path = public_path('objection/name');
-                $file->move($path, $name);
+                    $name = time() . $file . '.' . $file->getClientOriginalExtension();
+                    $path = public_path('objection/name');
+                    $file->move($path, $name);
+                }
+
+
+                //address
+                if ($file = $request->file('addressDoc')) {
+
+                    $name = time() . $file . '.' . $file->getClientOriginalExtension();
+                    $path = public_path('objection/address');
+                    $file->move($path, $name);
+                }
+
+                //saf doc
+                if ($file = $request->file('safMemberDoc')) {
+
+                    $name = time() . $file . '.' . $file->getClientOriginalExtension();
+                    $path = public_path('objection/safMembers');
+                    $file->move($path, $name);
+                }
+
+                // $objectionNo = $this->objectionNo($propertyId);
+                DB::commit();
+                return responseMsg(true, "Successfully Saved", "");
+            } catch (Exception $e) {
+                return response()->json($e, 400);
             }
-
-
-            //address
-            if ($file = $request->file('addressDoc')) {
-
-                $name = time() . $file . '.' . $file->getClientOriginalExtension();
-                $path = public_path('objection/address');
-                $file->move($path, $name);
-            }
-
-            //saf doc
-            if ($file = $request->file('safMemberDoc')) {
-
-                $name = time() . $file . '.' . $file->getClientOriginalExtension();
-                $path = public_path('objection/safMembers');
-                $file->move($path, $name);
-            }
-
-            // $objectionNo = $this->objectionNo($propertyId);
-
-            return responseMsg(true, "Successfully Saved", $device);
-        } catch (Exception $e) {
-            return response()->json($e, 400);
         }
     }
 
@@ -108,6 +114,36 @@ class ObjectionRepository implements iObjectionRepository
             return $_objectionNo;
         } catch (Exception $e) {
             echo $e->getMessage();
+        }
+    }
+
+
+    //Inbox 
+    public function inbox()
+    {
+        try {
+            $auth = auth()->user();
+            $userId = $auth->id;
+            $ulbId = $auth->ulb_id;
+            $wardId = $this->getWardByUserId($userId);
+
+            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
+                return $ward->ward_id;
+            });
+
+            $roles = $this->getRoleIdByUserId($userId);
+
+            $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
+                return $role->wf_role_id;
+            });
+
+            $concessions = $this->getConcessionList($ulbId)
+                ->whereIn('prop_active_concessions.current_role', $roleId)
+                ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->get();
+            return responseMsg(true, "Inbox List", remove_null($concessions));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }

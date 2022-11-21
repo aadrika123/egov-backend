@@ -3,9 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
-use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\SafCalculatorController;
-use App\Http\Controllers\ObjectionController as NewObjectionController;
+use App\Http\Controllers\ObjectionController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\SafReassessmentController;
 use Symfony\Component\Routing\DependencyInjection\RoutingResolverPass;
@@ -72,13 +71,19 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('concession/details', 'getDetailsById');                                   // Get Concession Details by ID
         Route::post('concession/escalate', 'escalateApplication');                             // escalate application
         Route::get('concession/special-inbox', 'specialInbox');                                // escalated application inbox
+
+        Route::post('concession/next-level', 'postNextLevel');                                  // Backward Forward Application
+        Route::post('concession/approvalrejection', 'approvalRejection');                       // Approve Reject Application
+        Route::post('concession/backtocitizen', 'backToCitizen');                                // Back To Citizen 
     });
 
     //Property Objection
-    Route::controller(NewObjectionController::class)->group(function () {
+    Route::controller(ObjectionController::class)->group(function () {
         Route::post('objection/ClericalMistake/{id}', 'ClericalMistake');
         Route::post('objection/ownerDetails', 'getOwnerDetails');
         Route::post('objection/rectification', 'rectification');
+        Route::get('objection/inbox', 'inbox');
+        Route::get('objection/outbox', 'outbox');
     });
     //Property Deactivation
     /**
