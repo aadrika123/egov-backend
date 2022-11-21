@@ -483,18 +483,28 @@ class PaymentRepository implements iPayment
      */
     public function updateReconciliationDetails($request)
     {
+        # validation 
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'transactionNo' => 'required',
+                'status' => 'required',
+                'date' => 'required'
+            ]
+        );
+        if ($validated->fails()) {
+            return responseMsg(false, "validation error", $validated->errors(), 401);
+        }
+        // return $request;
         try {
-            if (!empty($request['0'])) {
-                PaymentReconciliation::where('transaction_no', $request->transactionNo)
-                    ->update([
-                        'status' => $request->status,
-                        'date' => $request->date,
-                        'remark' => $request->reason,
-                        'cancellation_charges' => $request->cancellationCharges
-                    ]);
-                return responseMsg(true, "Data Saved!", "");
-            }
-            return responseMsg(false, "NO Data!", "");
+            PaymentReconciliation::where('transaction_no', $request->transactionNo)
+                ->update([
+                    'status' => $request->status,
+                    'date' => $request->date,
+                    'remark' => $request->reason,
+                    'cancellation_charges' => $request->cancellationCharges
+                ]);
+            return responseMsg(true, "Data Saved!", "");
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
