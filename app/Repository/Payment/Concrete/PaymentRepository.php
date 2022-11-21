@@ -489,7 +489,7 @@ class PaymentRepository implements iPayment
             [
                 'transactionNo' => 'required',
                 'status' => 'required',
-                'date' => 'required'
+                'date' => 'required|date'
             ]
         );
         if ($validated->fails()) {
