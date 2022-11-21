@@ -21,9 +21,9 @@ class ObjectionController extends Controller
     }
 
     //Objection for Clerical Mistake
-    public function rectification(Request $request)
+    public function applyObjection(Request $request)
     {
-        return $this->Repository->rectification($request);
+        return $this->Repository->applyObjection($request);
     }
 
     //objection type list

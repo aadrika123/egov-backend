@@ -61,10 +61,11 @@ class ConcessionRepository implements iConcessionRepository
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
             $concession->workflow_id = $ulbWorkflowId->id;
-            $concession->current_role = $initiatorRoleId[0]->role_id;
+            $concession->current_role = collect($initiatorRoleId)->first()->role_id;
             $concession->created_at = Carbon::now();
             $concession->date = Carbon::now();
             $concession->save();
+
             //gender Doc
             if ($file = $request->file('genderDoc')) {
 

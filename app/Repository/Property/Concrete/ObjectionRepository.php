@@ -2,7 +2,7 @@
 
 namespace App\Repository\Property\Concrete;
 
-use App\Models\Property\PropOwnerDtl;
+use App\Models\Property\PropOwner;
 use Exception;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iObjectionRepository;
@@ -16,12 +16,16 @@ use App\Traits\Workflow\Workflow as WorkflowTrait;
 use Illuminate\Support\Facades\Config;
 use App\Models\Property\PropActiveObjection;
 use App\Models\Property\RefPropObjectionType;
+use App\Models\Property\PropObjectionOwnerDtl;
+use App\Traits\Property\Objection;
+use App\Models\Workflows\WfWorkflow;
 
 
 
 
 class ObjectionRepository implements iObjectionRepository
 {
+    use Objection;
     use WorkflowTrait;
     private  $_objectionNo;
 
@@ -30,7 +34,7 @@ class ObjectionRepository implements iObjectionRepository
     public function getOwnerDetails(Request $request)
     {
         try {
-            $ownerDetails = PropOwnerDtl::select('owner_name as name', 'mobile_no as mobileNo', 'prop_address as address')
+            $ownerDetails = PropOwner::select('owner_name as name', 'mobile_no as mobileNo', 'prop_address as address')
                 ->where('prop_properties.holding_no', $request->holdingNo)
                 ->join('prop_properties', 'prop_properties.id', '=', 'prop_owner_dtls.property_id')
                 ->get();
@@ -41,17 +45,20 @@ class ObjectionRepository implements iObjectionRepository
     }
 
     //apply objection
-    public function rectification(Request $request)
+    public function applyObjection($request)
     {
         $user_id = auth()->user()->id;
         $ulb_id = auth()->user()->ulb_id;
+        $workflow_id = Config::get('workflow-constants.PROPERTY_OBJECTION_ID');
 
-        if ($request->id == 10) {
+        //objection type from request
+        $objectionType = $request->id;
+
+        if ($objectionType == 10) {
             DB::beginTransaction();
             try {
 
-                $workflow_id = Config::get('workflow-constants.PROPERTY_OBJECTION_ID');
-                $objectionOwner = new ObjectionOwnerDetail;
+                $objectionOwner = new PropObjectionOwnerDtl;
                 $objectionOwner->name = $request->name;
                 $objectionOwner->address = $request->address;
                 $objectionOwner->mobile = $request->mobileNo;
@@ -61,28 +68,17 @@ class ObjectionRepository implements iObjectionRepository
                 $objectionOwner->save();
 
                 $objection = new PropActiveObjection;
-                $objection->property_id = $request->propertyId;
-                $objection->objection_type_id = $request->id;
                 $objection->objection_owner_id = $objectionOwner->id;
-                $objection->objection_no = $this->_objectionNo;
-                $objection->objection_form = $request->objectionForm;
-                $objection->evidence_doc = $request->evidenceDoc;
                 $objection->ulb_id = $ulb_id;
                 $objection->user_id = $user_id;
-                $objection->workflow_id = $workflow_id;
-                $objection->current_role = $request->currentRole;
-                $objection->status = $request->status;
-                $objection->remarks = $request->remarks;
-                $objection->created_at = Carbon::now();
-                $objection->updated_at = Carbon::now();
-                $objection->save();
 
+                $objection = $this->commonFunction($request, $objection);
 
 
                 //name
                 if ($file = $request->file('nameDoc')) {
 
-                    $name = time() . $file . '.' . $file->getClientOriginalExtension();
+                    $name = time() . '.' . $file->getClientOriginalExtension();
                     $path = public_path('objection/name');
                     $file->move($path, $name);
                 }
@@ -91,7 +87,7 @@ class ObjectionRepository implements iObjectionRepository
                 //address
                 if ($file = $request->file('addressDoc')) {
 
-                    $name = time() . $file . '.' . $file->getClientOriginalExtension();
+                    $name = time() . '.' . $file->getClientOriginalExtension();
                     $path = public_path('objection/address');
                     $file->move($path, $name);
                 }
@@ -99,25 +95,61 @@ class ObjectionRepository implements iObjectionRepository
                 //saf doc
                 if ($file = $request->file('safMemberDoc')) {
 
-                    $name = time() . $file . '.' . $file->getClientOriginalExtension();
+                    $name = time() . '.' . $file->getClientOriginalExtension();
                     $path = public_path('objection/safMembers');
                     $file->move($path, $name);
                 }
 
                 // $objectionNo = $this->objectionNo($propertyId);
                 DB::commit();
-                return responseMsg(true, "Successfully Saved", "");
+                return responseMsg(true, "Successfully Saved", '');
             } catch (Exception $e) {
                 return response()->json($e, 400);
             }
         }
+
+        //objection for forgery
+        if ($objectionType == 11) {
+            $objection = new PropActiveObjection;
+            $objection->ulb_id = $ulb_id;
+            $objection->user_id = $user_id;
+
+            $this->commonFunction($request, $objection);
+            $objection->save();
+
+            //objection_form
+            if ($file = $request->file('objectionForm')) {
+
+                $name = time() . '.' . $file->getClientOriginalExtension();
+                $path = public_path('objection/objectionForm');
+                $file->move($path, $name);
+            }
+
+
+            //Evidence Doc
+            if ($file = $request->file('evidenceDoc')) {
+
+                $name = time() . '.' . $file->getClientOriginalExtension();
+                $path = public_path('objection/evidenceDoc');
+                $file->move($path, $name);
+            }
+            return responseMsg(true, "Successfully Saved", $name);
+        }
+
+        // objection against assesment
+        if ($objectionType !== 11  && $objectionType !== 10) {
+
+            return response('assessment error');
+        }
     }
 
+
     //objection number generation
-    public function objectionNo($propertyId)
+    public function objectionNo($id)
     {
+
         try {
-            $count = PropObjection::where('property_id', $propertyId)
+            $count = PropActiveObjection::where('id', $id)
                 // ->where('ulb_id', $ulb_id)
                 ->count() + 1;
             $ward_no = UlbWardMaster::select("ward_name")->where('id', $ward_id)->first()->ward_name;
@@ -166,5 +198,23 @@ class ObjectionRepository implements iObjectionRepository
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    //common function
+    public function commonFunction($request, $objection)
+    {
+        $ulb_id = auth()->user()->ulb_id;
+        $workflow_id = Config::get('workflow-constants.PROPERTY_OBJECTION_ID');
+
+        $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
+            ->where('ulb_id', $ulb_id)
+            ->first();
+
+        $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
+        $initiatorRoleId = DB::select($refInitiatorRoleId);
+
+        $objection->workflow_id = $ulbWorkflowId->id;
+        $objection->current_role = $initiatorRoleId[0]->role_id;
+        $this->postObjection($objection, $request);
     }
 }
