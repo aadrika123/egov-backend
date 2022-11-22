@@ -66,6 +66,18 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(CalculatorController::class)->group(function () {
         Route::post('get-dashboard', 'dashboardDate');
     });
+    //Property Deactivation
+    /**
+     * Crated By - Sandeep Bara
+     * Created On- 19-11-2022 
+     */
+    Route::controller(PropertyDeactivateController::class)->group(function () {
+        Route::post('searchByHoldingNo', "readHoldigbyNo");
+        Route::match(["POST", "GET"], 'deactivationRequest/{id}', "deactivatProperty");
+        Route::post('inboxDeactivation', "inbox");
+        Route::post('postNextDeactivation', "postNextLevel");
+        Route::post('getDeactivationDtls', "readDeactivationReq");
+    });
     
     
     
@@ -94,17 +106,5 @@ Route::controller(CalculatorController::class)->group(function () {
         Route::get('objection/objection-type', 'objectionType');
         Route::get('objection/inbox', 'inbox');
         Route::get('objection/outbox', 'outbox');
-    });
-    //Property Deactivation
-    /**
-     * Crated By - Sandeep Bara
-     * Created On- 19-11-2022 
-     */
-    Route::controller(PropertyDeactivateController::class)->group(function () {
-        Route::post('searchByHoldingNo', "readHoldigbyNo");
-        Route::match(["POST", "GET"], 'deactivationRequest/{id}', "deactivatProperty");
-        Route::post('inboxDeactivation', "inbox");
-        Route::post('postNextDeactivation', "postNextLevel");
-        Route::post('getDeactivationDtls', "readDeactivationReq");
-    });
+    });    
 });

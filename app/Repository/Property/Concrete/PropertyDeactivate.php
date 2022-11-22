@@ -49,7 +49,7 @@ class PropertyDeactivate implements IPropertyDeactivate
     public function readHoldigbyNo(Request $request)
     {
         try{
-            $refUser    = auth()->user();dd($refUser);
+            $refUser    = Auth()->user();
             $refUserId  = $refUser->id; 
             $refUlbId   = $refUser->ulb_id;
             $rules["holdingNo"] = "required|string";
@@ -88,7 +88,7 @@ class PropertyDeactivate implements IPropertyDeactivate
 
         }
         catch(Exception $e)
-        { dd($e->getLine());
+        { 
             return responseMsg(false,$e->getMessage(),$request->all());
         }
 
