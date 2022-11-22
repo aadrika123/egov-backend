@@ -9,7 +9,6 @@ use App\Models\Payment\PaymentRequest;
 use App\Models\Trade\ActiveLicence;
 use App\Models\User;
 use App\Models\Water\WaterApplication;
-use App\Models\Workflows\WfMaster;
 use App\Models\WorkflowTrack;
 use App\Traits\Auth;
 use App\Traits\Workflow\Workflow;
@@ -75,7 +74,7 @@ class CitizenRepository implements iCitizenRepository
         }
 
         try {
-            $citizen = new ActiveCitizen;
+            $citizen = new User;
             $citizen->user_name = $request->name;
             $citizen->mobile = $request->mobile;
             $citizen->email = $request->email;

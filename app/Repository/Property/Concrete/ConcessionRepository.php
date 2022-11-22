@@ -208,7 +208,7 @@ class ConcessionRepository implements iConcessionRepository
                     's.prop_type_mstr_id',
                     'p.property_type'
                 )
-                ->join('prop_safs as s', 's.id', '=', 'prop_active_concessions.property_id')
+                ->join('prop_properties as s', 's.id', '=', 'prop_active_concessions.property_id')
                 ->join('ulb_ward_masters as u', 'u.id', '=', 's.ward_mstr_id')
                 ->join('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
                 ->where('prop_active_concessions.id', $req->id)
