@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
-use App\Models\Property\ActiveSaf;
+use App\Models\Property\PropActiveSaf;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Redis;
 
@@ -97,9 +97,9 @@ class CalculatorRepository implements iCalculatorRepository
                 $response = array();
                 $applicationList = array();
 
-                $pendingApplication = ActiveSaf::where('ulb_id', $ulb_id)->whereBetween('application_date', [$fromDate, $toDate])->count();
-                $approvedApplication = ActiveSaf::where('ulb_id', $ulb_id)->whereBetween('application_date', [$fromDate, $toDate])->count();
-                $rejectedApplication = ActiveSaf::where('ulb_id', $ulb_id)->whereBetween('application_date', [$fromDate, $toDate])->count();
+                $pendingApplication = PropActiveSaf::where('ulb_id', $ulb_id)->whereBetween('application_date', [$fromDate, $toDate])->count();
+                $approvedApplication = PropActiveSaf::where('ulb_id', $ulb_id)->whereBetween('application_date', [$fromDate, $toDate])->count();
+                $rejectedApplication = PropActiveSaf::where('ulb_id', $ulb_id)->whereBetween('application_date', [$fromDate, $toDate])->count();
 
 
                 $val['type'] = 'New Assessment' ;
