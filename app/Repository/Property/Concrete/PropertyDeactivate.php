@@ -88,7 +88,7 @@ class PropertyDeactivate implements IPropertyDeactivate
 
         }
         catch(Exception $e)
-        {
+        { dd($e->getLine());
             return responseMsg(false,$e->getMessage(),$request->all());
         }
 
