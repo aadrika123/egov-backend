@@ -120,4 +120,14 @@ Route::controller(CalculatorController::class)->group(function () {
         Route::post('postNextDeactivation', "postNextLevel");
         Route::post('getDeactivationDtls', "readDeactivationReq");
     });
+
+      //Rain water Harvesting
+    /**
+     * Crated By - Sam kerketta
+     * Created On- 22-11-2022 
+     */
+    Route::controller(RainWaterHarvestingController::class)->group(function () {
+        Route::get('get-wardmaster-data','getWardMasterData');
+        Route::post('water_harvesting_application','waterHarvestingApplication');
+    });
 });
