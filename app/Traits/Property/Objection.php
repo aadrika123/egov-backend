@@ -36,8 +36,6 @@ trait Objection
         $objection->property_id = $request->propertyId;
         $objection->objection_type_id = $objectionType;
         $objection->objection_no = $this->_objectionNo;
-        $objection->objection_form = $request->objectionForm;
-        $objection->evidence_doc = $request->evidenceDoc;
         $objection->status = $request->status;
         $objection->remarks = $request->remarks;
         $objection->created_at = Carbon::now();
