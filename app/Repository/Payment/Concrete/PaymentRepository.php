@@ -459,7 +459,7 @@ class PaymentRepository implements iPayment
         if (empty($request->fromDate) && empty($request->toDate) && null == ($request->chequeDdNo)) {
             return $this->getReconcillationDetails();
         }
-
+// return $request;
         switch ($request) {
             case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && null == ($request->paymentMode)): {
                     $reconciliationTypeWise = $this->reconciliationTypeWise($request);
@@ -469,17 +469,21 @@ class PaymentRepository implements iPayment
                     $reconciliationModeWise = $this->reconciliationModeWise($request);
                     return $reconciliationModeWise;
                 }
-            case (null == ($request->chequeDdNo) && null == ($request->verificationType && null == ($request->paymentMode))): {
+            case (null == ($request->chequeDdNo) && null == ($request->verificationType) && null == ($request->paymentMode)): {
                     $reconciliationDateWise = $this->reconciliationDateWise($request);
                     return $reconciliationDateWise;
                 }
-            case (!null == ($request->chequeDdNo) && null == ($request->verificationType && null == ($request->paymentMode))): {
+            case (!null == ($request->chequeDdNo) && null == ($request->verificationType) && null == ($request->paymentMode)): {
                     $reconciliationOnlyTranWise = $this->reconciliationOnlyTranWise($request);
                     return $reconciliationOnlyTranWise;
                 }
             case (!null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode) && !null == ($request->fromDate)): {
                     $reconciliationWithAll = $this->reconciliationWithAll($request);
                     return $reconciliationWithAll;
+                }
+            case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode)): {
+                $reconciliationModeType = $this->reconciliationModeType($request);    
+                return $reconciliationModeType;
                 }
             default:
                 return ("some error renter the details!");
@@ -696,6 +700,41 @@ class PaymentRepository implements iPayment
                 ->where('payment_mode', $request->paymentMode)
                 ->where('status', $request->verificationType)
                 ->where('cheque_no', $request->chequeDdNo)
+                ->get();
+
+            if (!empty($reconciliationDetails['0'])) {
+                return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
+            }
+            return responseMsg(false, "data not found!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+       /**
+     * |--------- reconciliationDateWise 1.1----------
+     * |@param request
+     */
+    public function reconciliationModeType($request)
+    {
+        try {
+            $reconciliationDetails = PaymentReconciliation::select(
+                'ulb_id AS ulbId',
+                'department_id AS dpartmentId',
+                'transaction_no AS transactionNo',
+                'payment_mode AS paymentMode',
+                'date AS transactionDate',
+                'status',
+                'cheque_no AS chequeNo',
+                'cheque_date AS chequeDate',
+                'branch_name AS branchName',
+                'bank_name AS bankName',
+                'transaction_amount AS amount',
+                'clearance_date AS clearanceDate'
+            )
+                ->whereBetween('date', [$request->fromDate, $request->toDate])
+                ->where('payment_mode', $request->paymentMode)
+                ->where('status', $request->verificationType)
                 ->get();
 
             if (!empty($reconciliationDetails['0'])) {
