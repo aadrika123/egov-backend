@@ -30,6 +30,9 @@ class WorkflowRoleController extends Controller
     // create new role
     public function create(Request $request)
     {
+        $request->validate([
+            'roleName' => 'required',
+        ]);
         return $this->EloquentRole->create($request);
     }
 
@@ -43,6 +46,9 @@ class WorkflowRoleController extends Controller
     //update role
     public function editRole(Request $request)
     {
+        $request->validate([
+            'roleName' => 'required',
+        ]);
         return $this->EloquentRole->editRole($request);
     }
 

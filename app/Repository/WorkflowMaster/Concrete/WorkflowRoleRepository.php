@@ -26,23 +26,9 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
 
     public function create(Request $request)
     {
-        $createdBy = Auth()->user()->id;
-        //validating
-        $validateUser = Validator::make(
-            $request->all(),
-            [
-                'roleName' => 'required',
-            ]
-        );
-
-        if ($validateUser->fails()) {
-            return response()->json([
-                'status' => false,
-                'errors' => $validateUser->errors()
-            ], 401);
-        }
         try {
-            // create
+
+            $createdBy = Auth()->user()->id;
             $role = new WfRole;
             $role->role_name = $request->roleName;
             $role->created_by = $createdBy;
@@ -60,9 +46,13 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
      */
     public function getAllRoles()
     {
-        $data = WfRole::where('is_suspended', false)
-            ->orderByDesc('id')->get();
-        return $data;
+        try {
+            $data = WfRole::where('is_suspended', false)
+                ->orderByDesc('id')->get();
+            return responseMsg(true, "Successfully Saved", $data);
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
     }
 
 
@@ -71,10 +61,14 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
      */
     public function deleteRole($request)
     {
-        $data = WfRole::find($request->id);
-        $data->is_suspended = true;
-        $data->save();
-        return responseMsg(true, 'Successfully Deleted', "");
+        try {
+            $data = WfRole::find($request->id);
+            $data->is_suspended = true;
+            $data->save();
+            return responseMsg(true, 'Successfully Deleted', "");
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
     }
 
 
@@ -83,22 +77,8 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
      */
     public function editRole(Request $request)
     {
-        $createdBy = Auth()->user()->id;
-        //validating
-        $validateUser = Validator::make(
-            $request->all(),
-            [
-                'roleName' => 'required',
-                'isSuspended' => 'required',
-            ]
-        );
-        if ($validateUser->fails()) {
-            return response()->json([
-                'status' => false,
-                'errors' => $validateUser->errors()
-            ], 401);
-        }
         try {
+            $createdBy = Auth()->user()->id;
             $role = WfRole::find($request->id);
             $role->role_name = $request->roleName;
             $role->is_suspended = $request->isSuspended;
@@ -117,13 +97,17 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
 
     public function getRole($request)
     {
-        $data = WfRole::where('id', $request->id)
-            ->where('is_suspended', false)
-            ->get();
-        if ($data) {
-            return responseMsg(true, 'Succesfully Retrieved', $data);
-        } else {
-            return response()->json(['Message' => 'Data not found'], 404);
+        try {
+            $data = WfRole::where('id', $request->id)
+                ->where('is_suspended', false)
+                ->get();
+            if ($data) {
+                return responseMsg(true, 'Succesfully Retrieved', $data);
+            } else {
+                return response()->json(['Message' => 'Data not found'], 404);
+            }
+        } catch (Exception $e) {
+            return response()->json($e, 400);
         }
     }
 }
