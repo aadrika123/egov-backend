@@ -58,17 +58,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(SafReassessmentController::class)->group(function () {
     });
 
+    Route::controller(CalculatorController::class)->group(function () {
+        Route::post('get-dashboard', 'dashboardDate');
+    });
+
     // Property Calculator
     Route::controller(SafCalculatorController::class)->group(function () {
         Route::post('saf-calculation', 'calculateSaf');
     });
-
-    Route::controller(CalculatorController::class)->group(function () {
-        Route::post('get-dashboard', 'dashboardDate');
-    });
-    
-    
-    
 });
 Route::controller(CalculatorController::class)->group(function () {
     Route::post('calculatePropertyTax', 'calculator');

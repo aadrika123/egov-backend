@@ -26,6 +26,11 @@ class ConcessionRepository implements iConcessionRepository
     use Concession;
 
     //apply concession
+    /**
+     * | Query Costing-382ms 
+     * | Rating-3
+     * | Status-Closed
+     */
     public function applyConcession($request)
     {
         try {
@@ -104,7 +109,7 @@ class ConcessionRepository implements iConcessionRepository
             $labelPending->save();
 
             DB::commit();
-            return responseMsg(true, 'Successfully Applied The Application', $concession);
+            return responseMsg(true, 'Successfully Applied The Application', remove_null($concession));
         } catch (Exception $e) {
             DB::rollBack();
             return response()->responseMsg(false, $e->getMessage(), "");
@@ -130,6 +135,9 @@ class ConcessionRepository implements iConcessionRepository
     /**
      * | Property Concession Inbox List
      * | @var auth autheticated user data
+     * | Query Costing-293ms 
+     * | Rating-3
+     * | Status-Closed
      */
     public function inbox()
     {
@@ -164,6 +172,9 @@ class ConcessionRepository implements iConcessionRepository
      * | @var auth authenticated user list
      * | @var ulbId authenticated user ulb
      * | @var userid authenticated user id
+     * | Query Costing-309 
+     * | Rating-3
+     * | Status-Closed
      */
     public function outbox()
     {
@@ -195,6 +206,9 @@ class ConcessionRepository implements iConcessionRepository
 
     /**
      * | Get Concession Details by Concession ID
+     * | Query Costing-320 ms 
+     * | Rating-3
+     * | Status-Closed
      */
     public function getDetailsById($req)
     {
@@ -223,6 +237,9 @@ class ConcessionRepository implements iConcessionRepository
     /**
      * | Escalate application
      * | @param req request parameters
+     * | Query Costing-400ms 
+     * | Rating-2
+     * | Status-Closed
      */
     public function escalateApplication($req)
     {
@@ -249,6 +266,9 @@ class ConcessionRepository implements iConcessionRepository
 
     /**
      * | Special Inbox (Escalated Applications)
+     * | Query Costing-303 ms 
+     * | Rating-2
+     * | Status-Closed
      */
     public function specialInbox()
     {
@@ -275,6 +295,9 @@ class ConcessionRepository implements iConcessionRepository
 
     /**
      * | Post Next Level Application i.e. forward or backward application
+     * | Query Costing-355ms 
+     * | Rating-2
+     * | Status-Closed
      */
     public function postNextLevel($req)
     {
@@ -320,6 +343,10 @@ class ConcessionRepository implements iConcessionRepository
     /**
      * | Concession Application Approval or Rejected 
      * | @param req
+     * | Status-closed
+     * | Query Costing-376 ms
+     * | Rating-2
+     * | Status-Closed
      */
     public function approvalRejection($req)
     {
@@ -372,6 +399,10 @@ class ConcessionRepository implements iConcessionRepository
     /**
      * | Back to Citizen
      * | @param req
+     * | Status-Closed
+     * | Query Costing-358 ms 
+     * | Rating-2
+     * | Status-Closed
      */
     public function backToCitizen($req)
     {

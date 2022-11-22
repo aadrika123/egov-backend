@@ -80,6 +80,8 @@ class SafRepository implements iSafRepository
      * | Master data in Saf Apply
      * | @var ulbId Logged In User Ulb 
      * | Status-Closed
+     * | Query Costing-369ms 
+     * | Rating-3
      */
     public function masterSaf()
     {
@@ -171,6 +173,8 @@ class SafRepository implements iSafRepository
     /**
      * | Apply for New Application
      * | Status-Closed
+     * | Query Costing-500 ms
+     * | Rating-5
      */
 
     public function applySaf($request)
@@ -280,6 +284,8 @@ class SafRepository implements iSafRepository
      * | @var safInbox > Final returned Data
      * | @return response #safInbox
      * | Status-Closed
+     * | Query Cost-327ms 
+     * | Rating-3
      * ---------------------------------------------------------------
      */
     #Inbox
@@ -323,6 +329,8 @@ class SafRepository implements iSafRepository
      * | @var workflowRoles get All Roles of the user id
      * | @var roles filteration of roleid from collections
      * | Status-Closed
+     * | Query Cost-369ms 
+     * | Rating-4
      */
     #OutBox
     public function outbox()
@@ -371,6 +379,8 @@ class SafRepository implements iSafRepository
      * =======================================
      * helpers : Helpers/utility_helper.php   ->remove_null() -> for remove  null values
      * | Status-Closed
+     * | Query Cost-378ms 
+     * | Rating-4 
      */
     #Saf Details
     public function details($req)
@@ -437,6 +447,8 @@ class SafRepository implements iSafRepository
      * ============================================
      * #message -> return response 
      * Status-Closed
+     * | Query Cost-353ms 
+     * | Rating-1
      */
     #Add Inbox  special category
     public function postEscalate($request)
@@ -481,6 +493,8 @@ class SafRepository implements iSafRepository
      * | @return
      * | @var \Illuminate\Support\Collection $safData
      * | Status-Closed
+     * | Query Costing-336ms 
+     * | Rating-2 
      */
     #Inbox  special category
     public function specialInbox()
@@ -511,6 +525,8 @@ class SafRepository implements iSafRepository
      * | @var levelPending The Level Pending Data of the Saf Id
      * | @return responseMsg
      * | Status-Closed
+     * | Query Costing-427ms 
+     * | Rating-2
      */
     public function commentIndependent($request)
     {
@@ -565,6 +581,8 @@ class SafRepository implements iSafRepository
      * | @var preLevelPending Get the Previous level pending data for the saf id
      * | @var levelPending new Level Pending to be add
      * | Status-Closed
+     * | Query Costing-348ms 
+     * | Rating-3 
      */
     # postNextLevel
     public function postNextLevel($request)
@@ -619,6 +637,8 @@ class SafRepository implements iSafRepository
      * ------------------- Dump --------------------------
      * | @return msg
      * | Status-Closed
+     * | Query Cost-430ms 
+     * | Rating-3
      */
     public function approvalRejectionSaf($req)
     {
@@ -813,6 +833,8 @@ class SafRepository implements iSafRepository
      * | @var redis Establishing Redis Connection
      * | @var workflowId Workflow id of the SAF 
      * | Status-Closed
+     * | Query Costing-401ms
+     * | Rating-1 
      */
     public function backToCitizen($req)
     {
@@ -842,12 +864,14 @@ class SafRepository implements iSafRepository
      * | @var data contains the details of the saf id by the current object function
      * | @return safTaxes returns all the calculated demand
      * | Status-Closed
+     * | Query Costing-417ms
+     * | Rating-3 
      */
     public function calculateSafBySafId($req)
     {
         $safDetails = $this->details($req);
         $req = $safDetails->original['data'];
-        $array = $this->generateSafRequest($req);                                                       // Generate SAF Request Using Trait
+        $array = $this->generateSafRequest($req);                                                                       // Generate SAF Request by SAF Id Using Trait
         $safCalculation = new SafCalculation();
         $request = new Request($array);
         $safTaxes = $safCalculation->calculateTax($request);
@@ -861,6 +885,8 @@ class SafRepository implements iSafRepository
      * | @var calculateSafById calculated SAF amounts and details by request SAF ID
      * | @var totalAmount filtered total amount from the collection
      * | Status-closed
+     * | Query Costing-1.41s
+     * | Rating - 5
      */
 
     public function generateOrderId($req)
@@ -890,11 +916,14 @@ class SafRepository implements iSafRepository
      * | @param req  
      * | @var workflowId SAF workflow ID
      * | Status-Closed
+     * | Query Consting-374ms
+     * | Rating-1
      */
 
     public function paymentSaf($req)
     {
         try {
+            $userId = auth()->user()->id;
             $propTrans = new PropTransaction();
             $workflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             if ($req['workflowId'] == $workflowId)
@@ -906,6 +935,7 @@ class SafRepository implements iSafRepository
             $propTrans->tran_no = $req['transactionNo'];
             $propTrans->payment_mode = $req['paymentMode'];
             $propTrans->save();
+            Redis::del('property-transactions-user-' . $userId);
             return responseMsg(true, "Payment Successfully Done", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -919,23 +949,31 @@ class SafRepository implements iSafRepository
      * | @var propTrans Property Transaction details of the Logged In User
      * | @return responseMsg
      * | Status-Closed
+     * | Run time Complexity-346ms
+     * | Rating - 3
      */
     public function getPropTransactions($req)
     {
         $userId = auth()->user()->id;
 
-        $propTrans = DB::table('prop_transactions')
-            ->select('prop_transactions.*', 'a.saf_no', 'p.holding_no')
-            ->leftJoin('prop_active_safs as a', 'a.id', '=', 'prop_transactions.saf_id')
-            ->leftJoin('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
-            ->where('prop_transactions.user_id', $userId)
-            ->where('prop_transactions.status', 1)
-            ->get();
+        $propTrans = json_decode(Redis::get('property-transactions-user-' . $userId));                      // Should Be Deleted SAF Payment
+        if (!$propTrans) {
+            $propTrans = DB::table('prop_transactions')
+                ->select('prop_transactions.*', 'a.saf_no', 'p.holding_no')
+                ->leftJoin('prop_active_safs as a', 'a.id', '=', 'prop_transactions.saf_id')
+                ->leftJoin('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
+                ->where('prop_transactions.user_id', $userId)
+                ->where('prop_transactions.status', 1)
+                ->get();
+            $this->_redis->set('property-transactions-user-' . $userId, json_encode($propTrans));
+        }
         return responseMsg(true, "Transactions History", remove_null($propTrans));
     }
 
     /**
      * | Get Property Details by Property Holding No
+     * | Rating - 2
+     * | Run Time Complexity-500 ms
      */
     public function getPropByHoldingNo($req)
     {
