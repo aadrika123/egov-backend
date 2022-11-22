@@ -16,8 +16,8 @@ use Illuminate\Http\Request;
 interface iWorkflowRoleRepository
 {
     public function create(Request $request);
-    public function list();
-    public function delete($id);
-    public function update(Request $request, $id);
-    public function view($id);
+    public function getAllRoles();
+    public function deleteRole($request);
+    public function editRole(Request $request);
+    public function getRole($request);
 }
