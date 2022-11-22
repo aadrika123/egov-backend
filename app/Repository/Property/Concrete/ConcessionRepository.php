@@ -28,10 +28,11 @@ class ConcessionRepository implements iConcessionRepository
     //apply concession
     public function applyConcession($request)
     {
-        $user_id = auth()->user()->id;
-        $ulb_id = auth()->user()->ulb_id;
-        // workflows
         try {
+            $userId = auth()->user()->id;
+            $ulbId = auth()->user()->ulb_id;
+            // workflows
+
 
             DB::beginTransaction();
             $workflow_id = Config::get('workflow-constants.PROPERTY_CONCESSION_ID');
@@ -47,12 +48,12 @@ class ConcessionRepository implements iConcessionRepository
             $concession->doc_type = $request->docType;
             $concession->remarks = $request->remarks;
             $concession->status = $request->status;
-            $concession->user_id = $user_id;
-            $concession->ulb_id = $ulb_id;
+            $concession->user_id = $userId;
+            $concession->ulb_id = $ulbId;
 
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
-                ->where('ulb_id', $ulb_id)
+                ->where('ulb_id', $ulbId)
                 ->first();
 
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID

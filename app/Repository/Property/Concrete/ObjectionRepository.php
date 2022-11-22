@@ -47,16 +47,19 @@ class ObjectionRepository implements iObjectionRepository
     //apply objection
     public function applyObjection($request)
     {
-        $user_id = auth()->user()->id;
-        $ulb_id = auth()->user()->ulb_id;
-        $workflow_id = Config::get('workflow-constants.PROPERTY_OBJECTION_ID');
+        try {
 
-        //objection type from request
-        $objectionType = $request->id;
+            $userId = auth()->user()->id;
+            $ulbId = auth()->user()->ulb_id;
+            $objectionType = $request->id;
+            $workflow_id = Config::get('workflow-constants.PROPERTY_OBJECTION_ID');
+            $clericalMistake = Config::get('workflow-constants.CLERICAL_MISTAKE_ID');
+            $forgery = Config::get('workflow-constants.FORGERY_ID');
 
-        if ($objectionType == 10) {
-            DB::beginTransaction();
-            try {
+
+            if ($objectionType == $clericalMistake) {
+                DB::beginTransaction();
+
 
                 $objectionOwner = new PropObjectionOwnerDtl;
                 $objectionOwner->name = $request->name;
@@ -69,11 +72,11 @@ class ObjectionRepository implements iObjectionRepository
 
                 $objection = new PropActiveObjection;
                 $objection->objection_owner_id = $objectionOwner->id;
-                $objection->ulb_id = $ulb_id;
-                $objection->user_id = $user_id;
+                $objection->ulb_id = $ulbId;
+                $objection->user_id = $userId;
 
-                $objection = $this->commonFunction($request, $objection);
-
+                $this->commonFunction($request, $objection);
+                $objection->save();
 
                 //name
                 if ($file = $request->file('nameDoc')) {
@@ -102,44 +105,46 @@ class ObjectionRepository implements iObjectionRepository
 
                 // $objectionNo = $this->objectionNo($propertyId);
                 DB::commit();
-                return responseMsg(true, "Successfully Saved", '');
-            } catch (Exception $e) {
-                return response()->json($e, 400);
-            }
-        }
-
-        //objection for forgery
-        if ($objectionType == 11) {
-            $objection = new PropActiveObjection;
-            $objection->ulb_id = $ulb_id;
-            $objection->user_id = $user_id;
-
-            $this->commonFunction($request, $objection);
-            $objection->save();
-
-            //objection_form
-            if ($file = $request->file('objectionForm')) {
-
-                $name = time() . '.' . $file->getClientOriginalExtension();
-                $path = public_path('objection/objectionForm');
-                $file->move($path, $name);
             }
 
+            //objection for forgery 
+            if ($objectionType == $forgery) {
 
-            //Evidence Doc
-            if ($file = $request->file('evidenceDoc')) {
+                $objection = new PropActiveObjection;
+                $objection->ulb_id = $ulbId;
+                $objection->user_id = $userId;
 
-                $name = time() . '.' . $file->getClientOriginalExtension();
-                $path = public_path('objection/evidenceDoc');
-                $file->move($path, $name);
+                $this->commonFunction($request, $objection);
+                $objection->save();
+
+                //objection_form
+                if ($file = $request->file('objectionForm')) {
+
+                    $name = time() . '.' . $file->getClientOriginalExtension();
+                    $path = public_path('objection/objectionForm');
+                    $file->move($path, $name);
+                }
+
+
+                //Evidence Doc
+                if ($file = $request->file('evidenceDoc')) {
+
+                    $name = time() . '.' . $file->getClientOriginalExtension();
+                    $path = public_path('objection/evidenceDoc');
+                    $file->move($path, $name);
+                }
+                return responseMsg(true, "Successfully Saved", $name);
             }
-            return responseMsg(true, "Successfully Saved", $name);
-        }
 
-        // objection against assesment
-        if ($objectionType !== 11  && $objectionType !== 10) {
+            // objection against assesment
+            if ($objectionType !== $clericalMistake  && $objectionType !== $forgery) {
 
-            return response('assessment error');
+                return response('assessment error');
+            }
+
+            return responseMsg(true, "Successfully Saved", '');
+        } catch (Exception $e) {
+            return response()->json($e, 400);
         }
     }
 
@@ -150,7 +155,7 @@ class ObjectionRepository implements iObjectionRepository
 
         try {
             $count = PropActiveObjection::where('id', $id)
-                // ->where('ulb_id', $ulb_id)
+                // ->where('ulb_id', $ulbId)
                 ->count() + 1;
             $ward_no = UlbWardMaster::select("ward_name")->where('id', $ward_id)->first()->ward_name;
             $_objectionNo = 'OBJ' . str_pad($ward_no, 3, '0', STR_PAD_LEFT) . "/" . str_pad($count, 5, '0', STR_PAD_LEFT);
@@ -203,11 +208,11 @@ class ObjectionRepository implements iObjectionRepository
     //common function
     public function commonFunction($request, $objection)
     {
-        $ulb_id = auth()->user()->ulb_id;
+        $ulbId = auth()->user()->ulb_id;
         $workflow_id = Config::get('workflow-constants.PROPERTY_OBJECTION_ID');
 
         $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
-            ->where('ulb_id', $ulb_id)
+            ->where('ulb_id', $ulbId)
             ->first();
 
         $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID

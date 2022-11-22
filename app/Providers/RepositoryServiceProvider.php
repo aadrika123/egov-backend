@@ -56,7 +56,15 @@ use App\Repository\WorkflowMaster\Interface\iWorkflowRoleUserMapRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowWardUserRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowWardUserRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
+<<<<<<< HEAD
+
+
+use App\Repository\Property\Concrete\CalculatorRepository;
+use App\Repository\Property\Interfaces\iCalculatorRepository;
+
+=======
 use App\Repository\WorkflowMaster\Interface\iWorkflowMapRepository;
+>>>>>>> 7d0a888348f0c68b8d782215118896c2faec46dc
 
 
 
@@ -105,6 +113,11 @@ class RepositoryServiceProvider extends ServiceProvider
 
         //payment gatewway
         $this->app->bind(iPayment::class, PaymentRepository::class);
+<<<<<<< HEAD
+		
+		//Property Calculator
+        $this->app->bind(iCalculatorRepository::class, CalculatorRepository::class);
+=======
 
         //citizen 
         $this->app->bind(iCitizenRepository::class, CitizenRepository::class);
@@ -117,6 +130,7 @@ class RepositoryServiceProvider extends ServiceProvider
 
         //Cluster
         $this->app->bind(iCluster::class, ClusterRepository::class);
+>>>>>>> 7d0a888348f0c68b8d782215118896c2faec46dc
     }
 
     /**

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\SafCalculatorController;
+use App\Http\Controllers\Property\CalculatorController;
 use App\Http\Controllers\ObjectionController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\SafReassessmentController;
@@ -62,6 +63,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('saf-calculation', 'calculateSaf');
     });
 
+    Route::controller(CalculatorController::class)->group(function () {
+        Route::post('get-dashboard', 'dashboardDate');
+    });
+    
+    
+    
+});
+Route::controller(CalculatorController::class)->group(function () {
+    Route::post('calculatePropertyTax', 'calculator');
     //Property Concession
     Route::controller(ConcessionController::class)->group(function () {
         Route::post('concession/applyConcession', 'applyConcession');
