@@ -171,7 +171,7 @@ class Trade implements ITrade
             #---------------validation-------------------------------------
             if(!in_array(strtoupper($mUserType),["ONLINE","JSK","UTC","TC","SUPER ADMIN","TL"]))
             {
-                throw new Exception("You Are Not Authorized For Apply Appliocation");
+                throw new Exception("You Are Not Authorized For This Action !");
             }
             $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);            
             if(!$mApplicationTypeId)
