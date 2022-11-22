@@ -406,13 +406,14 @@ class PaymentRepository implements iPayment
 
 
     /**
-     * | --------------------------- Payment Reconciliation ------------------------------- |
+     * | --------------------------- Payment Reconciliation (/1.6) ------------------------------- |
      * | @param request
      * | @param error
      * | @var reconciliation
      * | Operation :  Payment Reconciliation / viewing all data
      * | this -> naming
      * | here -> variable
+     * | (/) -> the api also calls this function
      */
     public function getReconcillationDetails()
     {
@@ -444,15 +445,18 @@ class PaymentRepository implements iPayment
      * | -------------------- Payment Reconciliation details acoording to request details (1)------------------------------- |
      * | @param request
      * | @param error
-     * | @var reconciliation
+     * | @var reconciliationTypeWise
+     * | @var reconciliationModeWise
+     * | @var reconciliationDateWise
+     * | @var reconciliationOnlyTranWise
+     * | @var reconciliationWithAll
      * | Operation :  Payment Reconciliation / searching for the specific data
      * | this -> naming
      * | here -> variable
      */
     public function searchReconciliationDetails($request)
     {
-        // return $request->chequeDdNo;
-        if (empty($request->fromDate) && empty($request->toDate) && null ==($request->chequeDdNo)) {
+        if (empty($request->fromDate) && empty($request->toDate) && null == ($request->chequeDdNo)) {
             return $this->getReconcillationDetails();
         }
 
@@ -465,11 +469,11 @@ class PaymentRepository implements iPayment
                     $reconciliationModeWise = $this->reconciliationModeWise($request);
                     return $reconciliationModeWise;
                 }
-            case (null == ($request->paymentMode) && null == ($request->chequeDdNo) && null == ($request->verificationType)): {
+            case (null == ($request->chequeDdNo) && null == ($request->verificationType && null == ($request->paymentMode))): {
                     $reconciliationDateWise = $this->reconciliationDateWise($request);
                     return $reconciliationDateWise;
                 }
-            case (!null == ($request->chequeDdNo) && null == ($request->paymentMode) && null == ($request->verificationType)): {
+            case (!null == ($request->chequeDdNo) && null == ($request->verificationType && null == ($request->paymentMode))): {
                     $reconciliationOnlyTranWise = $this->reconciliationOnlyTranWise($request);
                     return $reconciliationOnlyTranWise;
                 }
@@ -522,6 +526,17 @@ class PaymentRepository implements iPayment
     }
 
 
+
+
+
+
+
+
+
+
+
+
+
     /**
      * |--------- reconciliationDateWise 1.1----------
      * |@param request
@@ -530,13 +545,18 @@ class PaymentRepository implements iPayment
     {
         try {
             $reconciliationDetails = PaymentReconciliation::select(
-                'date',
                 'ulb_id AS ulbId',
                 'department_id AS dpartmentId',
                 'transaction_no AS transactionNo',
                 'payment_mode AS paymentMode',
                 'transaction_date AS transactionDate',
                 'status',
+                'cheque_no AS chequeNo',
+                'cheque_date AS chequeDate',
+                'branch_name AS branchName',
+                'bank_name AS bankName',
+                'transaction_amount AS amount',
+                'clearance_date AS clearanceDate'
             )
                 ->whereBetween('date', [$request->fromDate, $request->toDate])
                 ->get();
@@ -558,13 +578,18 @@ class PaymentRepository implements iPayment
     {
         try {
             $reconciliationDetails = PaymentReconciliation::select(
-                'date',
                 'ulb_id AS ulbId',
                 'department_id AS dpartmentId',
                 'transaction_no AS transactionNo',
                 'payment_mode AS paymentMode',
                 'transaction_date AS transactionDate',
                 'status',
+                'cheque_no AS chequeNo',
+                'cheque_date AS chequeDate',
+                'branch_name AS branchName',
+                'bank_name AS bankName',
+                'transaction_amount AS amount',
+                'clearance_date AS clearanceDate'
             )
                 ->whereBetween('date', [$request->fromDate, $request->toDate])
                 ->where('payment_mode', $request->paymentMode)
@@ -587,13 +612,18 @@ class PaymentRepository implements iPayment
     {
         try {
             $reconciliationDetails = PaymentReconciliation::select(
-                'date',
                 'ulb_id AS ulbId',
                 'department_id AS dpartmentId',
                 'transaction_no AS transactionNo',
                 'payment_mode AS paymentMode',
                 'transaction_date AS transactionDate',
                 'status',
+                'cheque_no AS chequeNo',
+                'cheque_date AS chequeDate',
+                'branch_name AS branchName',
+                'bank_name AS bankName',
+                'transaction_amount AS amount',
+                'clearance_date AS clearanceDate'
             )
                 ->whereBetween('date', [$request->fromDate, $request->toDate])
                 ->where('payment_mode', $request->paymentMode)
@@ -617,13 +647,18 @@ class PaymentRepository implements iPayment
     {
         try {
             $reconciliationDetails = PaymentReconciliation::select(
-                'date',
                 'ulb_id AS ulbId',
                 'department_id AS dpartmentId',
                 'transaction_no AS transactionNo',
                 'payment_mode AS paymentMode',
                 'transaction_date AS transactionDate',
                 'status',
+                'cheque_no AS chequeNo',
+                'cheque_date AS chequeDate',
+                'branch_name AS branchName',
+                'bank_name AS bankName',
+                'transaction_amount AS amount',
+                'clearance_date AS clearanceDate'
             )
                 ->where('cheque_no', $request->chequeDdNo)
                 ->get();
@@ -645,13 +680,18 @@ class PaymentRepository implements iPayment
     {
         try {
             $reconciliationDetails = PaymentReconciliation::select(
-                'date',
                 'ulb_id AS ulbId',
                 'department_id AS dpartmentId',
                 'transaction_no AS transactionNo',
                 'payment_mode AS paymentMode',
                 'transaction_date AS transactionDate',
                 'status',
+                'cheque_no AS chequeNo',
+                'cheque_date AS chequeDate',
+                'branch_name AS branchName',
+                'bank_name AS bankName',
+                'transaction_amount AS amount',
+                'clearance_date AS clearanceDate'
             )
                 ->whereBetween('date', [$request->fromDate, $request->toDate])
                 ->where('payment_mode', $request->paymentMode)
