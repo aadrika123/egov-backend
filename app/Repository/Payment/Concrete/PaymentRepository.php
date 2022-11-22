@@ -441,7 +441,7 @@ class PaymentRepository implements iPayment
 
 
     /**
-     * | --------------------------- Payment Reconciliation details acoording to request details ------------------------------- |
+     * | -------------------- Payment Reconciliation details acoording to request details (1)------------------------------- |
      * | @param request
      * | @param error
      * | @var reconciliation
@@ -451,31 +451,33 @@ class PaymentRepository implements iPayment
      */
     public function searchReconciliationDetails($request)
     {
-        switch ($request) {
-            case (null == ($request->tranNo) && !null == ($request->verificationType) && !null == ($request->paymentMode)): {
-                    $reconciliationTypeWise = $this->reconciliationTypeWise($request);
-                    return "reconciliationTypeWise";
-                }
-            case (null == ($request->tranNo) && null == ($request->verificationType) && !null == ($request->paymentMode)): {
-                    $reconciliationModeWise = $this->reconciliationModeWise($request);
-                    return "reconciliationModeWise";
-                }
-            case (null == ($request->paymentMode) && null == ($request->tranNo) && null == ($request->verificationType)): {
-                    $reconciliationDateWise = $this->reconciliationDateWise($request);
-                    return "reconciliationDateWise";
-                }
-            case (!null == ($request->tranNo) && null == ($request->paymentMode) && null == ($request->verificationType)): {
-                    $reconciliationOnlyTranWise = $this->reconciliationOnlyTranWise($request);
-                    return "reconciliationOnlyTranWise";
-                }
-            case (!null == ($request->tranNo) && !null == ($request->verificationType) && !null == ($request->paymentMode) && !null == ($request->fromDate)): {
-                    $reconciliationWithAll = $this->reconciliationWithAll($request);
-                    return "reconciliationWithAll";
-                }
-            default:
-                return ("some error");
+        if (!empty($request['0'])) {
+            switch ($request) {
+                case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode)): {
+                        $reconciliationTypeWise = $this->reconciliationTypeWise($request);
+                        return $reconciliationTypeWise;
+                    }
+                case (null == ($request->chequeDdNo) && null == ($request->verificationType) && !null == ($request->paymentMode)): {
+                        $reconciliationModeWise = $this->reconciliationModeWise($request);
+                        return $reconciliationModeWise;
+                    }
+                case (null == ($request->paymentMode) && null == ($request->chequeDdNo) && null == ($request->verificationType)): {
+                        $reconciliationDateWise = $this->reconciliationDateWise($request);
+                        return $reconciliationDateWise;
+                    }
+                case (!null == ($request->chequeDdNo) && null == ($request->paymentMode) && null == ($request->verificationType)): {
+                        $reconciliationOnlyTranWise = $this->reconciliationOnlyTranWise($request);
+                        return $reconciliationOnlyTranWise;
+                    }
+                case (!null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode) && !null == ($request->fromDate)): {
+                        $reconciliationWithAll = $this->reconciliationWithAll($request);
+                        return $reconciliationWithAll;
+                    }
+                default:
+                    return ("some error renter the details!");
+            }
         }
-    
+        return $this->getReconcillationDetails();
     }
 
 
@@ -519,7 +521,7 @@ class PaymentRepository implements iPayment
 
 
     /**
-     * |--------- reconciliationDateWise----------
+     * |--------- reconciliationDateWise 1.1----------
      * |@param request
      */
     public function reconciliationDateWise($request)
@@ -547,7 +549,7 @@ class PaymentRepository implements iPayment
     }
 
     /**
-     * |--------- reconciliationModeWise----------
+     * |--------- reconciliationModeWise 1.2----------
      * |@param request
      */
     public function reconciliationModeWise($request)
@@ -576,7 +578,7 @@ class PaymentRepository implements iPayment
     }
 
     /**
-     * |--------- reconciliationTypeWise----------
+     * |--------- reconciliationTypeWise 1.3----------
      * |@param request
      */
     public function reconciliationTypeWise($request)
@@ -606,7 +608,7 @@ class PaymentRepository implements iPayment
     }
 
     /**
-     * |--------- reconciliationOnlyTranWise----------
+     * |--------- reconciliationOnlyTranWise 1.4-------
      * |@param request
      */
     public function reconciliationOnlyTranWise($request)
@@ -621,7 +623,7 @@ class PaymentRepository implements iPayment
                 'transaction_date AS transactionDate',
                 'status',
             )
-                ->where('cheque_no', $request->tranNo)
+                ->where('cheque_no', $request->chequeDdNo)
                 ->get();
 
             if (!empty($reconciliationDetails['0'])) {
@@ -634,7 +636,7 @@ class PaymentRepository implements iPayment
     }
 
     /**
-     * |--------- reconciliationOnlyTranWise----------
+     * |--------- reconciliationOnlyTranWise 1.5--------
      * |@param request
      */
     public function reconciliationWithAll($request)
@@ -652,7 +654,7 @@ class PaymentRepository implements iPayment
                 ->whereBetween('date', [$request->fromDate, $request->toDate])
                 ->where('payment_mode', $request->paymentMode)
                 ->where('status', $request->verificationType)
-                ->where('cheque_no', $request->tranNo)
+                ->where('cheque_no', $request->chequeDdNo)
                 ->get();
 
             if (!empty($reconciliationDetails['0'])) {
