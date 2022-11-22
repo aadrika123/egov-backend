@@ -461,7 +461,7 @@ class PaymentRepository implements iPayment
         }
 
         switch ($request) {
-            case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode)): {
+            case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && null == ($request->paymentMode)): {
                     $reconciliationTypeWise = $this->reconciliationTypeWise($request);
                     return $reconciliationTypeWise;
                 }
@@ -626,7 +626,6 @@ class PaymentRepository implements iPayment
                 'clearance_date AS clearanceDate'
             )
                 ->whereBetween('date', [$request->fromDate, $request->toDate])
-                ->where('payment_mode', $request->paymentMode)
                 ->where('status', $request->verificationType)
                 ->get();
 
