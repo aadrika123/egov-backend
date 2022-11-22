@@ -451,33 +451,35 @@ class PaymentRepository implements iPayment
      */
     public function searchReconciliationDetails($request)
     {
-        if (!empty($request['0'])) {
-            switch ($request) {
-                case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode)): {
-                        $reconciliationTypeWise = $this->reconciliationTypeWise($request);
-                        return $reconciliationTypeWise;
-                    }
-                case (null == ($request->chequeDdNo) && null == ($request->verificationType) && !null == ($request->paymentMode)): {
-                        $reconciliationModeWise = $this->reconciliationModeWise($request);
-                        return $reconciliationModeWise;
-                    }
-                case (null == ($request->paymentMode) && null == ($request->chequeDdNo) && null == ($request->verificationType)): {
-                        $reconciliationDateWise = $this->reconciliationDateWise($request);
-                        return $reconciliationDateWise;
-                    }
-                case (!null == ($request->chequeDdNo) && null == ($request->paymentMode) && null == ($request->verificationType)): {
-                        $reconciliationOnlyTranWise = $this->reconciliationOnlyTranWise($request);
-                        return $reconciliationOnlyTranWise;
-                    }
-                case (!null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode) && !null == ($request->fromDate)): {
-                        $reconciliationWithAll = $this->reconciliationWithAll($request);
-                        return $reconciliationWithAll;
-                    }
-                default:
-                    return ("some error renter the details!");
-            }
+        // return $request->chequeDdNo;
+        if (empty($request->fromDate) && empty($request->toDate) && null ==($request->chequeDdNo)) {
+            return $this->getReconcillationDetails();
         }
-        return $this->getReconcillationDetails();
+
+        switch ($request) {
+            case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode)): {
+                    $reconciliationTypeWise = $this->reconciliationTypeWise($request);
+                    return $reconciliationTypeWise;
+                }
+            case (null == ($request->chequeDdNo) && null == ($request->verificationType) && !null == ($request->paymentMode)): {
+                    $reconciliationModeWise = $this->reconciliationModeWise($request);
+                    return $reconciliationModeWise;
+                }
+            case (null == ($request->paymentMode) && null == ($request->chequeDdNo) && null == ($request->verificationType)): {
+                    $reconciliationDateWise = $this->reconciliationDateWise($request);
+                    return $reconciliationDateWise;
+                }
+            case (!null == ($request->chequeDdNo) && null == ($request->paymentMode) && null == ($request->verificationType)): {
+                    $reconciliationOnlyTranWise = $this->reconciliationOnlyTranWise($request);
+                    return $reconciliationOnlyTranWise;
+                }
+            case (!null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode) && !null == ($request->fromDate)): {
+                    $reconciliationWithAll = $this->reconciliationWithAll($request);
+                    return $reconciliationWithAll;
+                }
+            default:
+                return ("some error renter the details!");
+        }
     }
 
 
