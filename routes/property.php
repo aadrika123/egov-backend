@@ -6,6 +6,7 @@ use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\SafCalculatorController;
 use App\Http\Controllers\ObjectionController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
+use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Http\Controllers\Property\SafReassessmentController;
 use Symfony\Component\Routing\DependencyInjection\RoutingResolverPass;
 
@@ -96,5 +97,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('inboxDeactivation', "inbox");
         Route::post('postNextDeactivation', "postNextLevel");
         Route::post('getDeactivationDtls', "readDeactivationReq");
+    });
+
+
+    //Rain water Harvesting
+    /**
+     * Crated By - Sam kerketta
+     * Created On- 22-11-2022 
+     */
+    Route::controller(RainWaterHarvestingController::class)->group(function () {
+        Route::get('get-wardmaster-data','getWardMasterData');
+        Route::post('water_harvesting_application','waterHarvestingApplication');
     });
 });

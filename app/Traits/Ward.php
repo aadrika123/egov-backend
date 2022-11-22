@@ -45,4 +45,15 @@ trait Ward
             ->where('ulb_ward_id', $request->ulbWardID)
             ->first();
     }
+
+    // get all ward master data
+    public function getAllWard($ulbId)
+    {
+        return UlbWardMaster::select(
+            'id',
+            'ward_name AS ward'
+        )
+            ->where('ulb_id', $ulbId)
+            ->get();
+    }
 }

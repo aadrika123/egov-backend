@@ -35,8 +35,8 @@ use App\Repository\Property\Concrete\ObjectionRepository;
 use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Repository\Property\Concrete\PropertyDeactivate;
 use App\Repository\Property\Interfaces\IPropertyDeactivate;
-
-
+use App\Repository\Property\Concrete\RainWaterHarvestingRepo;
+use App\Repository\Property\Interfaces\iRainWaterHarvesting;
 use App\Repository\Trade\ITrade;
 use App\Repository\Trade\Trade;
 
@@ -83,6 +83,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(iSafRepository::class, SafRepository::class);
         $this->app->bind(iSafReassessRepo::class, SafReassessRepo::class);
         $this->app->bind(IPropertyDeactivate::class, PropertyDeactivate::class);
+        $this->app->bind(iRainWaterHarvesting::class, RainWaterHarvestingRepo::class);
 
         //menu permission
         $this->app->bind(IMenuGroupsRepository::class, EloquentMenuGroups::class);
