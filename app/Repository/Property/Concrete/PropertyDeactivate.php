@@ -49,8 +49,8 @@ class PropertyDeactivate implements IPropertyDeactivate
     public function readHoldigbyNo(Request $request)
     {
         try{
-            $refUser    = Auth()->user();
-            $refUserId  = $refUser->id; dd($refUser);
+            $refUser    = Auth()->user();dd($refUser);
+            $refUserId  = $refUser->id; 
             $refUlbId   = $refUser->ulb_id;
             $rules["holdingNo"] = "required|string";
             $validator = Validator::make($request->all(), $rules,);
