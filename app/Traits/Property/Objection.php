@@ -32,9 +32,9 @@ trait Objection
 
     public function postObjection($objection, $request)
     {
-        $objectionType = $request->id;
+        $objectionTypeId = $request->id;
         $objection->property_id = $request->propertyId;
-        $objection->objection_type_id = $objectionType;
+        $objection->objection_type_id = $objectionTypeId;
         $objection->objection_no = $this->_objectionNo;
         $objection->status = $request->status;
         $objection->remarks = $request->remarks;

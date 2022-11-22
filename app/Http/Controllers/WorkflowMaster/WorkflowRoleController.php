@@ -22,43 +22,33 @@ class WorkflowRoleController extends Controller
     }
 
     //list all roles
-    public function index()
+    public function getAllRoles()
     {
-        return $this->EloquentRole->list();
-    }
-
-    //
-    public function create()
-    {
+        return $this->EloquentRole->getAllRoles();
     }
 
     // create new role
-    public function store(Request $request)
+    public function create(Request $request)
     {
         return $this->EloquentRole->create($request);
     }
 
     // list role by id
-    public function show($id)
+    public function getRole(Request $request)
     {
-        return $this->EloquentRole->view($id);
+        return $this->EloquentRole->getRole($request);
     }
 
-
-    public function edit($id)
-    {
-        //
-    }
 
     //update role
-    public function update(Request $request, $id)
+    public function editRole(Request $request)
     {
-        return $this->EloquentRole->update($request, $id);
+        return $this->EloquentRole->editRole($request);
     }
 
     //delete role
-    public function destroy($id)
+    public function deleteRole(Request $request)
     {
-        return $this->EloquentRole->delete($id);
+        return $this->EloquentRole->deleteRole($request);
     }
 }

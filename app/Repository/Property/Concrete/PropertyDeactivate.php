@@ -50,7 +50,7 @@ class PropertyDeactivate implements IPropertyDeactivate
     {
         try{
             $refUser    = Auth()->user();
-            $refUserId  = $refUser->id;
+            $refUserId  = $refUser->id; 
             $refUlbId   = $refUser->ulb_id;
             $rules["holdingNo"] = "required|string";
             $validator = Validator::make($request->all(), $rules,);
@@ -88,7 +88,7 @@ class PropertyDeactivate implements IPropertyDeactivate
 
         }
         catch(Exception $e)
-        {
+        { 
             return responseMsg(false,$e->getMessage(),$request->all());
         }
 

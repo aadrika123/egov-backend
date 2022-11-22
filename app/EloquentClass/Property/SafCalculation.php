@@ -8,12 +8,6 @@ use App\Models\Property\MPropCvRate;
 use App\Models\Property\MPropMultiFactor;
 use App\Models\Property\MPropRentalValue;
 use App\Models\Property\MPropVacantRentalrate;
-use App\Models\Property\PropMBuildingRentalConst;
-use App\Models\Property\PropMBuildingRentalRate;
-use App\Models\Property\PropMCapitalValueRateRaw;
-use App\Models\Property\PropMRentalValue;
-use App\Models\Property\PropMUsageTypeMultiFactor;
-use App\Models\Property\PropMVacantRentalRate;
 use App\Models\UlbWardMaster;
 use Carbon\Carbon;
 use Exception;
@@ -77,14 +71,6 @@ class SafCalculation
     public function calculateTax(Request $req)
     {
         try {
-            $apiId = [
-                "status" => true,
-                "uniqueId" => 'SAF/01',
-                "version" => "1",
-                "ts" => "",
-                "action" => "POST",
-                "did" => ""
-            ];
 
             $this->_propertyDetails = $req->all();
 
@@ -100,6 +86,7 @@ class SafCalculation
 
             $this->calculateFinalPayableAmount();                                                   // Adding Total Final Tax with fine and Penalties(1.6)
 
+            $collection = collect($this->_GRID)->reverse();                                                             // Final Collection of the Contained Grid
             $collection = collect($this->_GRID)->reverse();                                         // Final Collection of the Contained Grid
             return responseMsg(true, $this->summarySafCalculation(), remove_null($collection));
         } catch (Exception $e) {
@@ -123,7 +110,7 @@ class SafCalculation
         $todayDate = Carbon::now();
         $this->_virtualDate = $todayDate->subYears(12)->format('Y-m-d');
         $this->_floors = $propertyDetails['floor'];
-        $this->_ulbId = auth()->user()->ulb_id;
+        $this->_ulbId = ($propertyDetails['ulb_id'])?$propertyDetails['ulb_id']:auth()->user()->ulb_id;
 
         $this->_vacantPropertyTypeId = Config::get("PropertyConstaint.VACANT_PROPERTY_TYPE");               // Vacant Property Type Id
 
@@ -181,7 +168,7 @@ class SafCalculation
         $this->_currentQuarterDueDate = $currentQuarterDueDate;                                                     // Quarter Due Date
         $currentQuarterDate = Carbon::parse($current)->floorMonth();
         $this->_currentQuarterDate = $currentQuarterDate;                                                           // Quarter Current Date
-        $this->_loggedInUserType = auth()->user()->user_type;                                                       // User Type of current Logged In User
+        $this->_loggedInUserType = auth()->user()->user_type??'Citizen';                                            // User Type of current Logged In User
     }
 
     /**
@@ -305,12 +292,14 @@ class SafCalculation
         $readRoadType = $this->_readRoadType[$this->_effectiveDateRule3];
         $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$readRoadType");
         $column = $col1 . $col2 . $col3;
+        $capitalValueRate = json_decode(Redis::get('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo.'-'.$column));         // Check Capital Value on Redis
         $capitalValueRate = json_decode(Redis::get('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-' . $column));         // Check Capital Value on Redis
         if (!$capitalValueRate) {
             $capitalValueRate = MPropCvRate::select($column)
                 ->where('ulb_id', $this->_ulbId)
                 ->where('ward_no', $this->_wardNo)                                                                                                  // Ward No Fixed temprory
                 ->first();
+            $this->_redis->set('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo.'-'.$column, json_encode($capitalValueRate));
             $this->_redis->set('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-' . $column, json_encode($capitalValueRate));
         }
         return $capitalValueRate->$column;
@@ -1000,6 +989,10 @@ class SafCalculation
     {
         $ownerDetails = collect($this->_propertyDetails['owner'])->first();
         $rebate = 0;
+        $currentDate = Carbon::now()->toDateTimeString();
+        $days = dateDiff($ownerDetails['dob'], $currentDate)+1;
+        $seniorCitizen = 60; // Define for year of senior citizen
+
         if ($this->_loggedInUserType == 'Citizen') {                                                // In Case of Citizen
             $rebate += 5;
         }
@@ -1010,6 +1003,11 @@ class SafCalculation
         if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  > 1) {
             $rebate += 5;
         }
+
+        if ($days >= $seniorCitizen ) {
+            $rebate += 5;
+        }
+
         return $rebate;
     }
 

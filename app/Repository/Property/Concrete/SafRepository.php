@@ -17,7 +17,9 @@ use App\EloquentClass\Property\SafCalculation;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropFloor;
 use App\Models\Property\PropLevelPending;
+use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropTransaction;
 use App\Models\Property\RefPropConstructionType;
@@ -653,16 +655,75 @@ class SafRepository implements iSafRepository
                     ->where('saf_id', $req->safId)
                     ->get();
 
+                $toBeProperties = PropActiveSaf::query()
+                    ->where('id', $req->safId)
+                    ->select(
+                        'ulb_id',
+                        'cluster_id',
+                        'holding_no',
+                        'applicant_name',
+                        'ward_mstr_id',
+                        'ownership_type_mstr_id',
+                        'prop_type_mstr_id',
+                        'appartment_name',
+                        'no_electric_connection',
+                        'elect_consumer_no',
+                        'elect_acc_no',
+                        'elect_bind_book_no',
+                        'elect_cons_category',
+                        'building_plan_approval_no',
+                        'building_plan_approval_date',
+                        'water_conn_no',
+                        'water_conn_date',
+                        'khata_no',
+                        'plot_no',
+                        'village_mauja_name',
+                        'road_type_mstr_id',
+                        'area_of_plot',
+                        'prop_address',
+                        'prop_city',
+                        'prop_dist',
+                        'prop_pin_code',
+                        'prop_state',
+                        'corr_address',
+                        'corr_city',
+                        'corr_dist',
+                        'corr_pin_code',
+                        'corr_state',
+                        'is_mobile_tower',
+                        'tower_area',
+                        'tower_installation_date',
+                        'is_hoarding_board',
+                        'hoarding_area',
+                        'hoarding_installation_date',
+                        'is_petrol_pump',
+                        'under_ground_area',
+                        'petrol_pump_completion_date',
+                        'is_water_harvesting',
+                        'land_occupation_date',
+                        'new_ward_mstr_id',
+                        'zone_mstr_id',
+                        'flat_registry_date',
+                        'assessment_type',
+                        'holding_type',
+                        'apartment_details_id',
+                        'ip_address',
+                        'status',
+                        'user_id'
+                    )->first();
+
+                $propProperties = $toBeProperties->replicate();
+                $propProperties->setTable('prop_properties');
+                $propProperties->saf_id = $activeSaf->id;
+                $propProperties->save();
+
                 $approvedSaf = $activeSaf->replicate();
                 $approvedSaf->setTable('prop_safs');
                 $approvedSaf->id = $activeSaf->id;
+                $approvedSaf->property_id = $propProperties->id;
                 $approvedSaf->save();
 
-                // $propProperties = $activeSaf->replicate();
-                // $propProperties->setTable('prop_properties');
-                // $propProperties->saf_id = $activeSaf->id;
-                // $propProperties->save();
-                // $activeSaf->delete();
+                $activeSaf->delete();
 
                 // SAF Owners replication
                 foreach ($ownerDetails as $ownerDetail) {
@@ -671,10 +732,10 @@ class SafRepository implements iSafRepository
                     $approvedOwner->id = $ownerDetail->id;
                     $approvedOwner->save();
 
-                    // $propOwners = $ownerDetail->replicate();
-                    // $propOwners->setTable('prop_owners');
-                    // $propOwners->id = $propOwners->id;
-                    // $propOwners->save();
+                    $approvedOwners = $ownerDetail->replicate();
+                    $approvedOwners->setTable('prop_owners');
+                    $approvedOwners->property_id = $propProperties->id;
+                    $approvedOwners->save();
 
                     $ownerDetail->delete();
                 }
@@ -686,10 +747,10 @@ class SafRepository implements iSafRepository
                     $approvedFloor->id = $floorDetail->id;
                     $approvedFloor->save();
 
-                    // $propFloor = $floorDetail->replicate();
-                    // $propFloor->setTable('prop_floors');
-                    // $propFloor->id = $approvedFloor->id;
-                    // $propFloor->save();
+                    $propFloor = $floorDetail->replicate();
+                    $propFloor->setTable('prop_floors');
+                    $propFloor->property_id = $propProperties->id;
+                    $propFloor->save();
 
                     $floorDetail->delete();
                 }
@@ -879,26 +940,22 @@ class SafRepository implements iSafRepository
     public function getPropByHoldingNo($req)
     {
         try {
+            $propertyDtl = [];
             $properties = PropProperty::where('ward_mstr_id', $req->wardId)
                 ->where('holding_no', $req->holdingNo)
                 ->first();
 
-            $data = [];
-            $data = DB::table('prop_active_safs')
-                ->select('prop_active_safs.*', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
-                ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
-                ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
-                ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
-                ->where('prop_active_safs.id', $req->id)
-                ->first();
-            $data = json_decode(json_encode($data), true);
-            $ownerDetails = PropActiveSafsOwner::where('saf_id', $data['id'])->get();
-            $data['owners'] = $ownerDetails;
+            $floors = PropFloor::where('property_id', $properties->id)
+                ->get();
 
-            $floorDetails = PropActiveSafsFloor::where('saf_id', $data['id'])->get();
-            $data['floors'] = $floorDetails;
+            $owners = PropOwner::where('property_id', $properties->id)
+                ->get();
 
-            return responseMsg(true, "Fetched Data", remove_null($properties));
+            $propertyDtl = $properties;
+            $propertyDtl['floors'] = $floors;
+            $propertyDtl['owners'] = $owners;
+
+            return responseMsg(true, "Property Details", remove_null($propertyDtl));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
