@@ -65,12 +65,12 @@ class PropertyDeactivate implements IPropertyDeactivate
                                     ->leftjoin(DB::raw("(SELECT DISTINCT(property_id) AS property_id,
                                                         STRING_AGG(owner_name, ',') AS owner_name,
                                                         STRING_AGG(guardian_name, ',') AS guardian_name,
-                                                        STRING_AGG(mobile_no, ',') AS mobile_no
-                                                    FROM prop_owner_dtls 
-                                                    JOIN prop_properties ON prop_properties.id = prop_owner_dtls.property_id
+                                                        STRING_AGG(mobile_no::text, ',') AS mobile_no
+                                                    FROM prop_owners 
+                                                    JOIN prop_properties ON prop_properties.id = prop_owners.property_id
                                                         AND  prop_properties.status =1 and upper(prop_properties.new_holding_no) = '$mHoldingNo'
                                                         AND prop_properties.ulb_id = $refUlbId
-                                                    WHERE prop_owner_dtls.status =1 
+                                                    WHERE prop_owners.status =1 
                                                     GROUP BY property_id 
                                                     )owners"), function($join){
                                                         $join->on("owners.property_id","prop_properties.id");
