@@ -83,7 +83,7 @@ class CitizenRepository implements iCitizenRepository
             $citizen->user_type = $request->userType;
             $citizen->ulb_id = $request->ulb;
             $citizen->save();
-            return response()->json('Successfully Registered', 200);
+            return responseMsg(true, "Succesfully Registered", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -152,7 +152,7 @@ class CitizenRepository implements iCitizenRepository
                 $user->remember_token = $token;
                 $user->save();
             }
-            return response()->json('Successful', 200);
+            return responseMsg(true, 'Successful', "");
         } catch (Exception $e) {
             return response()->json('Something Went Wrong', 400);
         }
