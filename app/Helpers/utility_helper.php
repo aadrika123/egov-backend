@@ -347,3 +347,16 @@ if (!function_exists('decimalToAcre')) {
         return $num;
     }
 }
+
+// get days from two dates
+if (!function_exists('dateDiff')) {
+    function dateDiff(string $date1, string $date2)
+    {
+        $date1 = Carbon::parse($date1);
+        $date2 = Carbon::parse($date2);
+
+        return $date1->diffInDays($date2);
+    }
+}
+
+

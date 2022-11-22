@@ -13,8 +13,6 @@ use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\EloquentClass\Property\dSafCalculation;
-use App\EloquentClass\Property\dPropertyTax;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
 use App\Models\Property\ActiveSaf;
@@ -62,8 +60,6 @@ class SafRepository implements iSafRepository
     public function __construct()
     {
         $this->property = new EloquentProperty;
-        $this->saf = new dSafCalculation();
-        $this->propertyTax = new dPropertyTax();
     }
 
     /**

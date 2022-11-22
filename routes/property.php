@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\SafCalculatorController;
+use App\Http\Controllers\Property\CalculatorController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -58,4 +59,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(SafCalculatorController::class)->group(function () {
         Route::post('saf-calculation', 'calculateSaf');
     });
+
+    Route::controller(CalculatorController::class)->group(function () {
+        Route::post('get-dashboard', 'dashboardDate');
+    });
+    
+    
+    
+});
+Route::controller(CalculatorController::class)->group(function () {
+    Route::post('calculatePropertyTax', 'calculator');
 });
