@@ -32,11 +32,6 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
             $request->all(),
             [
                 'roleName' => 'required',
-                'forwardRoleId' => 'required',
-                'backwardRoleId' => 'required',
-                'isInitiator' => 'required',
-                'isFinisher' => 'required',
-
             ]
         );
 
@@ -48,16 +43,12 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
         }
         try {
             // create
-            $device = new WfRole;
-            $device->role_name = $request->roleName;
-            $device->forward_role_id = $request->forwardRoleId;
-            $device->backward_role_id = $request->backwardRoleId;
-            $device->is_initiator = $request->isInitiator;
-            $device->is_finisher = $request->isFinisher;
-            $device->created_by = $createdBy;
-            $device->stamp_date_time = Carbon::now();
-            $device->created_at = Carbon::now();
-            $device->save();
+            $role = new WfRole;
+            $role->role_name = $request->roleName;
+            $role->created_by = $createdBy;
+            $role->stamp_date_time = Carbon::now();
+            $role->created_at = Carbon::now();
+            $role->save();
             return responseMsg(true, "Successfully Saved", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -67,7 +58,7 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
     /**
      * GetAll data
      */
-    public function list()
+    public function getAllRoles()
     {
         $data = WfRole::where('is_suspended', false)
             ->orderByDesc('id')->get();
@@ -78,18 +69,19 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
     /**
      * Delete data
      */
-    public function delete($id)
+    public function deleteRole($request)
     {
-        $data = WfRole::find($id);
-        $data->delete();
-        return response()->json('Successfully Deleted', 200);
+        $data = WfRole::find($request->id);
+        $data->is_suspended = true;
+        $data->save();
+        return responseMsg(true, 'Successfully Deleted', "");
     }
 
 
     /**
      * Update data
      */
-    public function update(Request $request, $id)
+    public function editRole(Request $request)
     {
         $createdBy = Auth()->user()->id;
         //validating
@@ -97,10 +89,6 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
             $request->all(),
             [
                 'roleName' => 'required',
-                'forwardRoleId' => 'required',
-                'backwardRoleId' => 'required',
-                'isInitiator' => 'required',
-                'isFinisher' => 'required',
                 'isSuspended' => 'required',
             ]
         );
@@ -111,16 +99,12 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
             ], 401);
         }
         try {
-            $device = WfRole::find($id);
-            $device->role_name = $request->roleName;
-            $device->forward_role_id = $request->forwardRoleId;
-            $device->backward_role_id = $request->backwardRoleId;
-            $device->is_initiator = $request->isInitiator;
-            $device->is_finisher = $request->isFinisher;
-            $device->is_suspended = $request->isSuspended;
-            $device->created_by = $createdBy;
-            $device->updated_at = Carbon::now();
-            $device->save();
+            $role = WfRole::find($request->id);
+            $role->role_name = $request->roleName;
+            $role->is_suspended = $request->isSuspended;
+            $role->created_by = $createdBy;
+            $role->updated_at = Carbon::now();
+            $role->save();
             return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -131,13 +115,13 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
      * list view by IDs
      */
 
-    public function view($id)
+    public function getRole($request)
     {
-        $data = WfRole::where('id', $id)
+        $data = WfRole::where('id', $request->id)
             ->where('is_suspended', false)
             ->get();
         if ($data) {
-            return response()->json($data, 200);
+            return responseMsg(true, 'Succesfully Retrieved', $data);
         } else {
             return response()->json(['Message' => 'Data not found'], 404);
         }
