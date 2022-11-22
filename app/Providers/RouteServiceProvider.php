@@ -43,6 +43,13 @@ class RouteServiceProvider extends ServiceProvider
                 ->namespace($this->namespace)
                 ->group(base_path('routes/api.php'));
 
+            // // Workflow Api
+            // Route::prefix('api/workflow')
+            //     ->middleware('api')
+            //     ->namespace($this->namespace)
+            //     ->group(base_path('routes/workflow.php'));
+
+
             Route::prefix('api/water')
                 ->middleware('api')
                 ->namespace($this->namespace)
@@ -63,8 +70,8 @@ class RouteServiceProvider extends ServiceProvider
                 ->namespace($this->namespace)
                 ->group(base_path('routes/web.php'));
 
-                //Grievance
-                Route::prefix('api/grievance')
+            //Grievance
+            Route::prefix('api/grievance')
                 ->middleware('api')
                 ->namespace($this->namespace)
                 ->group(base_path('routes/grievance.php'));
@@ -74,6 +81,12 @@ class RouteServiceProvider extends ServiceProvider
                 ->middleware('api')
                 ->namespace($this->namespace)
                 ->group(base_path('routes/payment.php'));
+
+                 //Cluster
+                 Route::prefix('api/cluster')
+                 ->middleware('api')
+                 ->namespace($this->namespace)
+                 ->group(base_path('routes/cluster.php'));
         });
     }
 

@@ -47,4 +47,59 @@ class RazorpayPaymentController extends Controller
     {
         return $this->Prepository->getPaymentgatewayByrequests($req);
     }
+
+    //get specific PaymentGateway Details according request
+    public function getPgDetails(Request $req)
+    {
+        return $this->Prepository->getPgDetails($req);
+    }
+
+    //get finla payment details of the webhook
+    public function getWebhookDetails()
+    {
+        return $this->Prepository->getWebhookDetails();
+    }
+
+    //get order Id of the transaction
+    public function getTraitOrderId(Request $req) //<------------------ here (INVALID)
+    {
+        return $this->Prepository->getTraitOrderId($req);
+    }
+
+    //verify the payment status
+    public function verifyPaymentStatus(Request $req)
+    {
+        return $this->Prepository->verifyPaymentStatus($req);
+    }
+
+    //verify the payment status
+    public function gettingWebhookDetails(Request $req)
+    {
+        return $this->Prepository->gettingWebhookDetails($req);
+    }
+
+     //get the details of webhook according to transactionNo
+     public function getTransactionNoDetails(Request $req)
+     {
+         return $this->Prepository->getTransactionNoDetails($req);
+     }
+
+
+     //get all the details of Payment Reconciliation 
+     public function getReconcillationDetails()
+     {
+         return $this->Prepository->getReconcillationDetails();
+     }
+
+     // serch the specific details according to the request
+     public function searchReconciliationDetails(Request $request)
+     {
+        return $this->Prepository->searchReconciliationDetails($request);
+     }
+
+      // serch the specific details according to the request
+      public function updateReconciliationDetails(Request $request)
+      {
+         return $this->Prepository->updateReconciliationDetails($request);
+      }
 }

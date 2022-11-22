@@ -45,6 +45,10 @@ class ActiveSafController extends Controller
     }
     public function details(Request $request)
     {
+        $request->validate([
+            'id' => 'required|integer'
+        ]);
+
         $data = $this->Repository->details($request);
         return $data;
     }
@@ -78,6 +82,13 @@ class ActiveSafController extends Controller
     // Saf Application Approval Or Reject
     public function approvalRejectionSaf(Request $req)
     {
+        $req->validate([
+            'workflowId' => 'required|integer',
+            'roleId' => 'required|integer',
+            'safId' => 'required|integer',
+            'status' => 'required|integer'
+        ]);
+
         return $this->Repository->approvalRejectionSaf($req);
     }
 
@@ -87,9 +98,43 @@ class ActiveSafController extends Controller
         return $this->Repository->backToCitizen($req);
     }
 
+    // Calculate SAF by saf ID
+    public function calculateSafBySafId(Request $req)
+    {
+        return $this->Repository->calculateSafBySafId($req);
+    }
+
+    // Generate Payment Order ID
+    public function generateOrderId(Request $req)
+    {
+        $req->validate([
+            'id' => 'required|integer',
+            'amount' => 'required|numeric',
+            'departmentId' => 'required|integer'
+        ]);
+
+        return $this->Repository->generateOrderId($req);
+    }
+
     // SAF Payment 
     public function paymentSaf(Request $req)
     {
         return $this->Repository->paymentSaf($req);
+    }
+
+    // Get Property Transactions
+    public function getPropTransactions(Request $req)
+    {
+        return $this->Repository->getPropTransactions($req);
+    }
+
+    // Get Property by Holding No
+    public function getPropByHoldingNo(Request $req)
+    {
+        $req->validate([
+            'wardId' => 'required|integer',
+            'holdingNo' => 'required'
+        ]);
+        return $this->Repository->getPropByHoldingNo($req);
     }
 }

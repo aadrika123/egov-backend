@@ -30,19 +30,10 @@ class WorkflowMasterRepository implements iWorkflowMasterRepository
         $createdBy = Auth()->user()->id;
 
         //validation 
-        $validateUser = Validator::make(
-            $request->all(),
-            [
-                'workflowName' => 'required'
-            ]
-        );
+        $request->validate([
+            'workflowName' => 'required|int'
+        ]);
 
-        if ($validateUser->fails()) {
-            return response()->json([
-                'status' => false,
-                'errors' => $validateUser->errors()
-            ], 401);
-        }
         try {
             // create
             $device = new WfMaster;

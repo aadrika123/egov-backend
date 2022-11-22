@@ -109,22 +109,6 @@ class EloquentMenuItems implements iMenuItemsRepository
             ->get('menu_name');
         return response()->json(["data" => $menuItem]);
     }
-    ///////////////////////////////////////
-    //show allmenuItems
-    ///////////////////////////////////////
-    // public function allmenuitems()
-    // {
-    //     $menuItem = MenuItems::get();
-    //     return response()->json(["data" => $menuItem]);
-    // }
-    ////////////////////////////////////////
-    //listin of all menu groups
-    ////////////////////////////////////////
-    // public function listmenugroups()
-    // {
-    //     $menuGroups = MenuGroups::count('all');
-    //     return response()->json(["list" => $menuGroups]);
-    // }
 
     ///////////////////////////////
     //show menuGroups wis Items request(ulb_id)
@@ -196,41 +180,10 @@ class EloquentMenuItems implements iMenuItemsRepository
         }
         try {
 
-            /*
-            *--------------------------------------------------------------------------------------------
-            //join operation
-            $groups = MenuUlbroles::join('menu_maps', 'menu_maps.ulb_menuroleid', '=', 'menu_ulbroles.id')
-                ->join('menu_items', 'menu_items.id', '=', 'menu_maps.menu_itemid')
-                ->join('menu_groups', 'menu_groups.id', '=', 'menu_items.menu_groupid')
-                ->where('menu_groups.id',$request->menuGroup)
-                ->where('ulb_id', $request->ulbid)
-                ->where('menu_roleid', $request->menuroles);
-            if (isset($request->roleId))
-                $groups = $groups->where('menu_roleid', $request->roleId);
-            $groups = $groups->get('menu_groups.*', 'menu_items.*');
-
-            //data of the menu_items           
-            //foreach loop for the roles wise items    
-            $items = array();
-            foreach ($groups as $group) {
-                $items['groupName'] = $group->group_name;
-                $item =  MenuItems::select('menu_items.id','menu_items.menu_name', 'menu_items.display_string', 'menu_items.icon_name', 'menu_maps.general_permission', 'menu_maps.admin_permission')
-                    ->join('menu_maps', 'menu_maps.menu_itemid', '=', 'menu_items.id')
-                    ->where('menu_groupid', $group->id)
-                    ->get();
-                $items['items'] = $item;                                 // $collectItems=$items->first();
-            }
-            //assigning keys to the to $items and $groups                                                         
-            // $roles['menuGroup'] = $items;                               // $groups['groupWiseItems'] = $items;
-            *-------------------------------------------------------------------------------------------------
-            */
-
             //data of item
             $items = MenuItems::select('menu_items.id', 'menu_items.menu_name', 'menu_items.display_string', 'menu_items.icon_name', 'menu_maps.general_permission', 'menu_maps.admin_permission')
                 ->join('menu_maps', 'menu_maps.menu_itemid', '=', 'menu_items.id')
                 ->join('menu_ulbroles', 'menu_ulbroles.id', '=', 'menu_maps.ulb_menuroleid')
-                // ->join('menu_groups', 'menu_groups.id', '=', 'menu_items.menu_groupid')
-                // ->join('menu_roles', 'menu_roles.id', '=', 'menu_ulbroles.menu_roleid')
                 ->where('menu_items.menu_groupid', $request->menuGroup)
                 ->where('menu_ulbroles.ulb_id', $request->ulbid)
                 ->where('menu_ulbroles.menu_roleid', $request->menuroles)

@@ -5,6 +5,7 @@ namespace App\Traits\Workflow;
 use App\Models\WorkflowCandidate;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -131,19 +132,19 @@ trait Workflow
     public function getWorkflowInitiatorData($userId, $workflowId)
     {
         $query = "SELECT 
-                    wf.id,
-                    wf.workflow_id,
-                    wf.wf_role_id,
-                    r.role_name,
-                    r.is_initiator,
-                    r.is_finisher,
-                    rum.user_id,
-                    wu.ward_id
-            FROM wf_workflowrolemaps  wf
-            INNER JOIN (SELECT * FROM wf_roleusermaps WHERE user_id=$userId) rum ON rum.wf_role_id=wf.wf_role_id
-            INNER JOIN (SELECT * FROM wf_roles WHERE is_initiator=TRUE) r ON r.id=rum.wf_role_id
-            INNER JOIN (SELECT * FROM wf_ward_users WHERE user_id=$userId) wu ON wu.user_id=rum.user_id
-            WHERE wf.workflow_id=$workflowId->id";
+                        wf.id,
+                        wf.workflow_id,
+                        wf.wf_role_id,
+                        r.role_name,
+                        wf.is_initiator,
+                        wf.is_finisher,
+                        rum.user_id,
+                        wu.ward_id
+                FROM wf_workflowrolemaps  wf
+                INNER JOIN (SELECT * FROM wf_roleusermaps WHERE user_id=$userId) rum ON rum.wf_role_id=wf.wf_role_id
+                INNER JOIN (SELECT * FROM wf_roles) r ON r.id=rum.wf_role_id
+                INNER JOIN (SELECT * FROM wf_ward_users WHERE user_id=$userId) wu ON wu.user_id=rum.user_id
+                WHERE wf.workflow_id=$workflowId AND wf.is_initiator=true";
         return $query;
     }
 
@@ -185,8 +186,41 @@ trait Workflow
                     r.role_name AS role_name 
                     FROM wf_roles r
                     INNER JOIN (SELECT * FROM wf_workflowrolemaps WHERE workflow_id=$wfWorkflowId) w ON w.wf_role_id=r.id
-                    WHERE r.is_initiator=TRUE 
+                    WHERE w.is_initiator=TRUE 
                     ";
         return $query;
+    }
+
+
+    /**
+     * | Get Finisher Id while approve or reject application
+     * | @param wfWorkflowId ulb workflow id 
+     */
+    public function getFinisherId(int $wfWorkflowId)
+    {
+        $query = "SELECT 
+                    r.id AS role_id,
+                    r.role_name AS role_name 
+                    FROM wf_roles r
+                    INNER JOIN (SELECT * FROM wf_workflowrolemaps WHERE workflow_id=$wfWorkflowId) w ON w.wf_role_id=r.id
+                    WHERE w.is_finisher=TRUE ";
+        return $query;
+    }
+
+    /**
+     * | Workflow Track Trait
+     * | @param workflowTrack new model object
+     * | @param req requested parameters to be saved in workflow track
+     */
+    public function workflowTrack($workflowTrack, $req)
+    {
+        $workflowTrack->workflow_id = $req['workflowId'];
+        $workflowTrack->citizen_id = $req['citizenId'];
+        $workflowTrack->ref_table_dot_id = $req['refTableId'];
+        $workflowTrack->ref_table_id_value = $req['applicationId'];
+        $workflowTrack->message = $req['message'];
+        $workflowTrack->commented_by = $req['citizenId'];
+        $workflowTrack->track_date = Carbon::now()->format('Y-m-d H:i:s');
+        $workflowTrack->forwarded_to = $req['forwardedTo'] ?? null;
     }
 }

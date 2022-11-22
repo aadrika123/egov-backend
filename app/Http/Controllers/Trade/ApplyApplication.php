@@ -8,6 +8,10 @@ use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use App\Http\Requests\Trade\addRecorde;
+use App\Http\Requests\Trade\paymentCounter;
+use App\Http\Requests\Trade\reqPaybleAmount;
+use App\Http\Requests\Trade\reqInbox;
+use App\Http\Requests\Trade\requpdateBasicDtl;
 
 class ApplyApplication extends Controller
 {
@@ -32,11 +36,11 @@ class ApplyApplication extends Controller
         // });
         $this->Repository = $TradeRepository ;
     }
-    public function applyApplication(Request $request)
+    public function applyApplication(addRecorde $request)
     {        
-        return $this->Repository->addRecorde($request);
+        return $this->Repository->addRecord($request);
     }
-    public function paybleAmount(Request $request)
+    public function paybleAmount(reqPaybleAmount $request)
     {      
         return $this->Repository->getPaybleAmount($request);
     }
@@ -50,7 +54,11 @@ class ApplyApplication extends Controller
         $transectionId =  $request->transectionId;
         return $this->Repository->readPaymentRecipt($id,$transectionId);
     }
-    public function updateBasicDtl(Request $request)
+    public function updateLicenseBo(requpdateBasicDtl $request)
+    {
+        return $this->Repository->updateLicenseBo($request);
+    }
+    public function updateBasicDtl(requpdateBasicDtl $request)
     {
         return $this->Repository->updateBasicDtl($request);
     }
@@ -78,7 +86,7 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->readApplication($request);
     }
-    public function inbox(Request $request)
+    public function inbox(reqInbox $request)
     {
         return $this->Repository->inbox($request);
     }
@@ -90,7 +98,7 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->postNextLevel($request);
     }
-    public function paymentCounter(Request $request)
+    public function paymentCounter(paymentCounter $request)
     {
         return $this->Repository->paymentCounter($request);
     }

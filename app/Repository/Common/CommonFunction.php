@@ -8,6 +8,7 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfRole;
 use App\Traits\Auth;
 use Exception;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
@@ -29,7 +30,7 @@ class CommonFunction implements ICommonFunction
                 ->where('user_id', $user_id)
                 ->orderBy('ward_id')
                 ->get();
-            $ward_permission = adjToArray($ward_permission);
+            $ward_permission = objToArray($ward_permission);
             $this->WardPermissionSet($redis, $user_id, $ward_permission);
         }
         return $ward_permission;
@@ -57,10 +58,10 @@ class CommonFunction implements ICommonFunction
                 })
                 ->join(
                     DB::raw("(SELECT distinct(wf_role_id) as wf_role_id ,
-                                                workflow_id , forward_role_id , backward_role_id
+                                                workflow_id , forward_role_id , backward_role_id,is_initiator,is_finisher
                                             FROM wf_workflowrolemaps 
                                             WHERE  wf_workflowrolemaps.is_suspended = false 
-                                            GROUP BY workflow_id,wf_role_id , forward_role_id , backward_role_id
+                                            GROUP BY workflow_id,wf_role_id , forward_role_id , backward_role_id, is_initiator, is_finisher
                                             ) wf_workflowrolemaps "),
                     function ($join) use ($ulb_id) {
                         $join->on("wf_workflowrolemaps.workflow_id", "wf_workflows.id");
@@ -73,7 +74,7 @@ class CommonFunction implements ICommonFunction
                 ->orderBy("wf_roles.id")
                 ->get();
             //dd(DB::getQueryLog());
-            $workflow_rolse = adjToArray($workflow_rolse);
+            $workflow_rolse = objToArray($workflow_rolse);
             $this->WorkFlowRolesSet($redis, $user_id, $workflow_rolse, $work_flow_id);
         }
         return $workflow_rolse;
@@ -150,14 +151,15 @@ class CommonFunction implements ICommonFunction
         try{
             // DB::enableQueryLog();
             $data = WfRole::select(
-                DB::raw("wf_roles.id as role_id,wf_roles.role_name,
-                                            wf_roles.is_initiator, wf_roles.is_finisher,
+                                    DB::raw("wf_roles.id as role_id,wf_roles.role_name,
+                                            wf_workflowrolemaps.is_initiator, wf_workflowrolemaps.is_finisher,
                                             wf_workflowrolemaps.forward_role_id,forword.role_name as forword_name,
                                             wf_workflowrolemaps.backward_role_id,backword.role_name as backword_name,
                                             wf_masters.id as workflow_id,wf_masters.workflow_name,
                                             ulb_masters.id as ulb_id, ulb_masters.ulb_name,
-                                            ulb_masters.ulb_type")
-            )
+                                            ulb_masters.ulb_type"
+                                            )
+                )
                 ->join("wf_roleusermaps", function ($join) {
                     $join->on("wf_roleusermaps.wf_role_id", "=", "wf_roles.id")
                         ->where("wf_roleusermaps.is_suspended", "=", FALSE);
@@ -206,5 +208,24 @@ class CommonFunction implements ICommonFunction
         } catch (Exception $e) {
             echo $e->getMessage();
         }
+    }
+    public function userType($refWorkflowId):string
+    {
+        $user = Auth()->user();
+        $user_id = $user->id;
+        $ulb_id = $user->ulb_id;
+        $user_data = $this->getUserRoll($user_id, $ulb_id,$refWorkflowId); 
+        $roll_id =  $user_data->role_id??-1;      
+        if($roll_id != -1)
+        {
+            $user_type_sort = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.'.strtoupper($user_data->role_name));
+            if(!$user_type_sort)
+            {
+                return "Online";
+            }
+            return $user_type_sort;
+        }
+        else
+            return "Online";
     }
 }
