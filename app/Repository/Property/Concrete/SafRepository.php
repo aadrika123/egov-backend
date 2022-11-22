@@ -179,10 +179,9 @@ class SafRepository implements iSafRepository
 
     public function applySaf($request)
     {
-        $user_id = auth()->user()->id;
-        $ulb_id = auth()->user()->ulb_id;
-
         try {
+            $user_id = auth()->user()->id;
+            $ulb_id = auth()->user()->ulb_id;
             if ($request->assessmentType == 1) {                                                    // New Assessment 
                 $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.NewAssessment");
                 $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
