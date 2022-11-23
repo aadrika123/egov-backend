@@ -5,11 +5,12 @@ use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\SafCalculatorController;
 use App\Http\Controllers\Property\CalculatorController;
-use App\Http\Controllers\ObjectionController;
+use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Http\Controllers\Property\SafReassessmentController;
 use Symfony\Component\Routing\DependencyInjection\RoutingResolverPass;
+use App\Http\Controllers\Property\PropertyBifurcationController;
 
 /**
  * | ---------------------------------------------------------------------------
