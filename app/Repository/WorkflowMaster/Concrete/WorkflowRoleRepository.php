@@ -47,7 +47,8 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
     {
         try {
             $data = WfRole::where('is_suspended', false)
-                ->orderByDesc('id')->get();
+                ->orderByDesc('id')
+                ->get();
             return responseMsg(true, "Successfully Saved", $data);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

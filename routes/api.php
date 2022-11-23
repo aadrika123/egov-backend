@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
 use App\Http\Controllers\CitizenController;
-use App\Http\Controllers\MapController;
 use App\Http\Controllers\Menupermission\MenuGroupsController;
 use App\Http\Controllers\Menupermission\MenuItemsController;
 use App\Http\Controllers\Menupermission\MenuMapController;
@@ -16,8 +15,6 @@ use App\Http\Controllers\UlbController;
 use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\Workflows\WorkflowController;
 use App\Http\Controllers\Workflows\WorkflowTrackController;
-use App\Http\Controllers\PaymentMasterController;
-use App\Http\Controllers\Trade\ApplyApplication;
 use App\Http\Controllers\Ward\WardController;
 use App\Http\Controllers\Ward\WardUserController;
 use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
@@ -269,12 +266,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * workflow roles CRUD operation
      */
     Route::controller(WorkflowRoleController::class)->group(function () {
-
-        Route::post('save-role', 'create');                      // Save Role
-        Route::put('edit-role', 'editRole');                     // edit Role 
-        Route::post('get-role', 'getRole');                      // Get Role By Id
-        Route::get('get-all-roles', 'getAllRoles');              // Get All Roles
-        Route::delete('delete-role', 'deleteRole');              // Delete Role
+        Route::post('crud/roles/save-role', 'create');                      // Save Role
+        Route::put('crud/roles/edit-role', 'editRole');                     // edit Role 
+        Route::post('crud/roles/get-role', 'getRole');                      // Get Role By Id
+        Route::get('crud/roles/get-all-roles', 'getAllRoles');              // Get All Roles
+        Route::delete('crud/roles/delete-role', 'deleteRole');              // Delete Role
     });
 
 
@@ -333,23 +329,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::post('workflow/getWorkflownameByWorkflow', 'getWorkflownameByWorkflow');
     });
-
-
-
-
-    /**
-     * Workflow Track CRUD operation
-     */
-
-    // Route::controller(WorkflowTrackControllers::class)->group(function () {
-
-    //     Route::post('workflow/track-create', 'create');                            // create data
-    //     Route::get('workflow/track-list', 'list');                                 // list all data 
-    //     Route::delete('workflow/track-delete/{id}', 'delete');                     // Delete data
-    //     Route::put('workflow/track-update/{id}', 'update');                        // update data 
-    //     Route::get('workflow/track-view/{id}', 'view');                            // Get data By Id
-
-    // });
 });
 
 
