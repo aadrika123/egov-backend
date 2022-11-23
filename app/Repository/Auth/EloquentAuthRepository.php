@@ -263,7 +263,6 @@ class EloquentAuthRepository implements AuthRepository
      */
     public function getAllUsers()
     {
-        $redis = Redis::connection();
         $uUlbID = auth()->user()->ulb_id;
         $query = "SELECT 
                     u.id,
@@ -274,16 +273,15 @@ class EloquentAuthRepository implements AuthRepository
                     u.suspended,
                     u.super_user,
                     u.workflow_participant,
-                    string_agg(ru.role_id::VARCHAR,',') AS role_id,
+                    string_agg(ru.wf_role_id::VARCHAR,',') AS role_id,
                     string_agg(rm.role_name::VARCHAR,',') AS role_name
                     
                     FROM users u
-                    LEFT JOIN role_users ru ON ru.user_id=u.id
-                    LEFT JOIN role_masters rm ON rm.id=ru.role_id
+                    LEFT JOIN wf_roleusermaps ru ON ru.user_id=u.id
+                    LEFT JOIN wf_roles rm ON rm.id=ru.wf_role_id
                     WHERE u.user_type!='Citizen' AND u.ulb_id=$uUlbID
                     GROUP BY u.id
-                    ORDER BY u.id ASC
-                    ";
+                    ORDER BY u.id ASC";
         $users = DB::select($query);
         return responseMsg(true, "Data Fetched", remove_null($users));
     }
