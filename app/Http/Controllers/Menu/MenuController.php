@@ -30,4 +30,15 @@ class MenuController extends Controller
     {
         return $this->_repo->getMenuByRoles($req);
     }
+
+    // Enable or Disable Menu By Role
+    public function updateMenuByRole(Request $req)
+    {
+        $req->validate([
+            'roleId' => 'required|integer',
+            'menuId' => 'required|integer',
+            'status' => 'required|bool'
+        ]);
+        return $this->updateMenuByRole($req);
+    }
 }
