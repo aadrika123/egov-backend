@@ -6,6 +6,7 @@ use App\Models\Property\ActiveSaf;
 use App\Models\Property\PropActiveSaf;
 use App\Models\UlbWardMaster;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -221,5 +222,25 @@ trait SAF
         }
 
         return $array;
+    }
+
+    // Assessment Type 
+    public function readAssessmentType($safInbox)
+    {
+        $GRID = collect($safInbox)->map(function ($value) {
+            switch ($value->assessment_type) {
+                case 1;
+                    $value->assessment_type = Config::get('PropertyConstaint.ASSESSMENT-TYPE.1');
+                    break;
+                case 2;
+                    $value->assessment_type = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
+                    break;
+                case 3;
+                    $value->assessment_type = Config::get('PropertyConstaint.ASSESSMENT-TYPE.3');
+                    break;
+            }
+            return $value;
+        });
+        return $GRID;
     }
 }

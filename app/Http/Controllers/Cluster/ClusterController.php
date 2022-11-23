@@ -75,6 +75,54 @@ class ClusterController extends Controller
         return $this->cluster->deleteClusterData($request);
     }
 
+    // selecting details according to holding no
+    public function detailsByHolding(Request $request)
+    {
+        return $this->cluster->detailsByHolding($request);
+    }
+
+    // selecting details according to clusterID
+    public function holdingByCluster(Request $request)
+    {
+        # validation
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'clusterId'   => 'required|integer',
+            ]
+        );
+        if ($validateUser->fails()) {
+            return $this->failure($validateUser->errors());
+        }
+        return $this->cluster->holdingByCluster($request);
+    }
+
+
+    // selecting details according to clusterID
+    public function saveHoldingInCluster(Request $request)
+    {
+        # validation
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'clusterId'   => 'required|integer',
+            ]
+        );
+        if ($validateUser->fails()) {
+            return $this->failure($validateUser->errors());
+        }
+        return $this->cluster->saveHoldingInCluster($request);
+    }
+
+
+
+
+
+
+
+
+
+
     /**
      * | ----------------- Common funtion for the return component in failer ------------------------------- |
      * | @param req
