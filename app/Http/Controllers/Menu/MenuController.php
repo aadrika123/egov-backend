@@ -39,6 +39,6 @@ class MenuController extends Controller
             'menuId' => 'required|integer',
             'status' => 'required|bool'
         ]);
-        return $this->updateMenuByRole($req);
+        return $this->_repo->updateMenuByRole($req);
     }
 }

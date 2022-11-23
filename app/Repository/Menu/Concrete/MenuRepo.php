@@ -3,6 +3,7 @@
 namespace App\Repository\Menu\Concrete;
 
 use App\Models\Menu\MenuMaster;
+use App\Models\Menu\WfRolemenu;
 use App\Repository\Menu\Interface\iMenuRepo;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +62,7 @@ class MenuRepo implements iMenuRepo
                             END) AS permission_status
                             FROM menu_masters AS m
                     
-                    LEFT JOIN (SELECT * FROM wf_rolemenus WHERE role_id=$req->roleId) AS r ON r.menu_id=m.id";
+                    LEFT JOIN (SELECT * FROM wf_rolemenus WHERE role_id=$req->roleId AND status=1) AS r ON r.menu_id=m.id";
                 $menues = DB::select($query);
                 $this->_redis->set('menu-by-role-' . $req->roleId, json_encode($menues));               // Caching the data should be flush while adding new menu to the role
             }
@@ -74,8 +75,43 @@ class MenuRepo implements iMenuRepo
 
     /**
      * | update role menues
+     * | @param request $req
+     * | Query Run Time=366 ms 
+     * | Status-Closed 
+     * | Rating-2
      */
     public function updateMenuByRole($req)
     {
+        try {
+            Redis::del('menu-by-role-' . $req->roleId);                                 // Flush Key of the User Role Permission
+
+            $roleMenus = WfRolemenu::where('role_id', $req->roleId)
+                ->where('menu_id', $req->menuId)
+                ->first();
+
+            if ($roleMenus) {                                                           // If Data Already Existing
+                switch ($req->status) {
+                    case 1;
+                        $roleMenus->status = 1;
+                        $roleMenus->save();
+                        return responseMsg(true, "Successfully Enabled the Menu Permission for the Role", "");
+                        break;
+                    case 0;
+                        $roleMenus->status = 0;
+                        $roleMenus->save();
+                        return responseMsg(true, "Successfully Disabled the Menu Permission for the Role", "");
+                        break;
+                }
+            }
+
+            $roleMenus = new WfRolemenu();
+            $roleMenus->role_id = $req->roleId;
+            $roleMenus->menu_id = $req->menuId;
+            $roleMenus->save();
+
+            return responseMsg(true, "Successfully Enabled the Menu Permission for the Role", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }
