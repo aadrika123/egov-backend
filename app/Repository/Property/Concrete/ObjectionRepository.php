@@ -36,11 +36,11 @@ class ObjectionRepository implements iObjectionRepository
         try {
 
 
-            // $userType = auth()->user()->user_type;
-            // // if ($userType == "JSK")
-            // $obj  = new SafRepository();
-            // $data = $obj->getPropByHoldingNo($request);
-            // // return $data;
+            $userType = auth()->user()->user_type;
+            if ($userType == "JSK")
+                $obj  = new SafRepository();
+            $data = $obj->getPropByHoldingNo($request);
+            return $data;
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
@@ -116,7 +116,6 @@ class ObjectionRepository implements iObjectionRepository
                     $path = public_path('objection/objectionForm');
                     $file->move($path, $name);
                 }
-
 
                 //Evidence Doc
                 if ($file = $request->file('evidenceDoc')) {

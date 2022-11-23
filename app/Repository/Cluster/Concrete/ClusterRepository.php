@@ -252,16 +252,14 @@ class ClusterRepository implements iCluster
         // return $request;
 
         $checkCluster = Cluster::select('id')
-        ->where('id', $request)
+            ->where('id', $request)
             ->where('status', 1)
             ->get();
-            // return $checkCluster['0'];
-
-        if(empty($checkCluster['0']))
-        {
-            return("empty");
+        // return $checkCluster['0'];
+        if (empty($checkCluster['0'])) {
+            return ("0");
         }
-        return ("not empty");
+        return ("1");
     }
 
 

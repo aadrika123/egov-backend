@@ -101,9 +101,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-wardmaster-data', 'getWardMasterData');
         Route::post('water_harvesting_application', 'waterHarvestingApplication');
     });
-});
-Route::controller(CalculatorController::class)->group(function () {
-    Route::post('calculatePropertyTax', 'calculator');
+
     //Property Concession
     Route::controller(ConcessionController::class)->group(function () {
         Route::post('concession/applyConcession', 'applyConcession');
@@ -159,6 +157,9 @@ Route::controller(CalculatorController::class)->group(function () {
         Route::get('get-wardmaster-data', 'getWardMasterData');
         Route::post('water_harvesting_application', 'waterHarvestingApplication');
     });
+});
+Route::controller(CalculatorController::class)->group(function () {
+    Route::post('calculatePropertyTax', 'calculator');
 });
 Route::controller(CalculatorController::class)->group(function () {
     Route::post('calculatePropertyTax', 'calculator');
