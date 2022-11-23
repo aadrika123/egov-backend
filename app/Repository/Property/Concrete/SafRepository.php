@@ -310,7 +310,7 @@ class SafRepository implements iSafRepository
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleId)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name', 'at.assessment_type')
                 ->get();
 
             $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
@@ -353,7 +353,7 @@ class SafRepository implements iSafRepository
                 ->whereNotIn('current_role', $roles)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name', 'at.assessment_type')
                 ->get();
             return responseMsg(true, "Data Fetched", remove_null($safData->values()));
         } catch (Exception $e) {
@@ -388,9 +388,10 @@ class SafRepository implements iSafRepository
             // Saf Details
             $data = [];
             $data = DB::table('prop_active_safs')
-                ->select('prop_active_safs.*', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
                 ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
                 ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+                ->join('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
                 ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
                 ->where('prop_active_safs.id', $req->id)
                 ->first();
@@ -509,7 +510,7 @@ class SafRepository implements iSafRepository
                 ->where('is_escalate', 1)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereIn('ward_mstr_id', $wardId)
-                ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type')
+                ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type', 'at.assessment_type')
                 ->get();
             return responseMsg(true, "Data Fetched", remove_null($safData));
         } catch (Exception $e) {

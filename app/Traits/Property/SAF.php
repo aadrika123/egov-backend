@@ -127,6 +127,7 @@ trait SAF
             ->join('prop_active_safs_owners as o', 'o.saf_id', '=', 'prop_active_safs.id')
             ->join('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
             ->join('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
+            ->join('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
             ->select(
                 'prop_active_safs.saf_no',
                 'prop_active_safs.id',
@@ -137,7 +138,8 @@ trait SAF
                 DB::raw("string_agg(o.id::VARCHAR,',') as owner_id"),
                 DB::raw("string_agg(o.owner_name,',') as owner_name"),
                 'p.property_type',
-                'prop_active_safs.assessment_type'
+                'prop_active_safs.assessment_type',
+                'at.assessment_type as assessment'
             );
         return $data;
     }
