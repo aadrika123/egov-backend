@@ -90,7 +90,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * Created On- 23-11-2022 
      */
     Route::controller(PropertyBifurcationController::class)->group(function () {
-        Route::post('searchByHoldingNoBi', "readHoldigbyNo");        
+        Route::post('searchByHoldingNoBi', "readHoldigbyNo"); 
+        Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");       
     });
     //Rain water Harvesting
     /**
