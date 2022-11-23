@@ -315,7 +315,22 @@ class SafRepository implements iSafRepository
 
             $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
 
-            return responseMsg(true, "Data Fetched", remove_null($safInbox->values()));
+            $GRID = collect($safInbox)->map(function ($value) {
+                switch ($value->assessment_type) {
+                    case 1;
+                        $value->assessment_type = Config::get('PropertyConstaint.ASSESSMENT-TYPE.1');
+                        break;
+                    case 2;
+                        $value->assessment_type = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
+                        break;
+                    case 3;
+                        $value->assessment_type = Config::get('PropertyConstaint.ASSESSMENT-TYPE.3');
+                        break;
+                }
+                return $value;
+            });
+
+            return responseMsg(true, "Data Fetched", remove_null($GRID->values()));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -980,6 +995,7 @@ class SafRepository implements iSafRepository
             $propertyDtl = [];
             $properties = PropProperty::where('ward_mstr_id', $req->wardId)
                 ->where('holding_no', $req->holdingNo)
+                ->where('status', 1)
                 ->first();
 
             $floors = PropFloor::where('property_id', $properties->id)
