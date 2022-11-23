@@ -287,6 +287,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     Route::controller(WorkflowRoleUserMapController::class)->group(function () {
         Route::post('workflows/role-user-maps/get-roles-by-id', 'getRolesByUserId');                        // Get Permitted Roles By User ID
+        Route::post('workflows/role-user-maps/update-user-roles', 'updateUserRoles');                       // Enable or Disable User Role
     });
 
 
