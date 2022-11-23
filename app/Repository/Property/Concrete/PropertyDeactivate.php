@@ -549,7 +549,6 @@ class PropertyDeactivate implements IPropertyDeactivate
                 "roles"      => $mileSton,
                 "pendingAt"  => $pendingAt
             ];
-
             return responseMsg(true,"",remove_null($data));
         }
         catch(Exception $e)
