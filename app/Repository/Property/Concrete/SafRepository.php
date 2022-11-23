@@ -315,22 +315,7 @@ class SafRepository implements iSafRepository
 
             $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
 
-            $GRID = collect($safInbox)->map(function ($value) {
-                switch ($value->assessment_type) {
-                    case 1;
-                        $value->assessment_type = Config::get('PropertyConstaint.ASSESSMENT-TYPE.1');
-                        break;
-                    case 2;
-                        $value->assessment_type = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
-                        break;
-                    case 3;
-                        $value->assessment_type = Config::get('PropertyConstaint.ASSESSMENT-TYPE.3');
-                        break;
-                }
-                return $value;
-            });
-
-            return responseMsg(true, "Data Fetched", remove_null($GRID->values()));
+            return responseMsg(true, "Data Fetched", remove_null($safInbox->values()));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
