@@ -99,6 +99,7 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
             $device->user_id = $request->userId;
             $device->created_by = $createdBy;
             $device->save();
+            Redis::del('roles-user-u-' . $request->userId);                                 // Flush Key of the User Role Permission
             return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -136,15 +137,15 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
             $roles = json_decode(Redis::get('roles-user-u-' . $req->userId));
             if (!$roles) {
                 $query = "SELECT 
-                        r.id AS role_id,
-                        r.role_name,
-                        rum.wf_role_id,
-                        (CASE 
-                        WHEN rum.wf_role_id IS NOT NULL THEN TRUE 
-                        ELSE 
-                        FALSE END) AS permission_status
+                                r.id AS role_id,
+                                r.role_name,
+                                rum.wf_role_id,
+                                (CASE 
+                                WHEN rum.wf_role_id IS NOT NULL THEN TRUE 
+                                ELSE 
+                                FALSE END) AS permission_status
 
-                FROM wf_roles r
+                        FROM wf_roles r
 
                 LEFT JOIN (SELECT * FROM wf_roleusermaps WHERE user_id=$req->userId AND is_suspended=false) rum ON rum.wf_role_id=r.id";
 
