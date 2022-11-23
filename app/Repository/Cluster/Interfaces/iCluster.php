@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 interface iCluster
 {
     public function getAllClusters();
-    public function getClusterById($id);
+    public function getClusterById($request);
     public function editClusterDetails($request);
     public function saveClusterDetails($request);
-    public function deleteClusterData($id);
+    public function deleteClusterData($request);
 }

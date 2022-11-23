@@ -20,4 +20,7 @@ interface iWorkflowRoleUserMapRepository
     public function delete($id);
     public function update(Request $request, $id);
     public function view($id);
+
+    public function getRolesByUserId($req);             // Get Permitted Roles By User ID
+    public function updateUserRoles($req);              // Enable or Disable the User Roles
 }

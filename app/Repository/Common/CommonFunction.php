@@ -134,18 +134,22 @@ class CommonFunction implements ICommonFunction
             $curentUser = array_filter($data, function ($val) use ($role_id) {
                 return $val['id'] == $role_id;
             });
-            $curentUser = array_values($curentUser)[0]; //dd($curentUser);
-            $data = array_filter($data, function ($val) use ($curentUser, $all) { //dd();
-                if ($all) {
-                    return (!in_array($val['id'], [$curentUser['forward_id'], $curentUser['backward_id']]) && $val['id'] != $curentUser['id'] && ($val['forward_id'] || $val['backward_id']));
-                }
-                return (!in_array($val['id'], [$curentUser['forward_id'], $curentUser['backward_id']]) && $val['id'] != $curentUser['id']);
-            });
-            return ($data);
+            $curentUser = array_values($curentUser)[0]??[]; //dd($curentUser);
+            if($curentUser)
+            {
+                $data = array_filter($data, function ($val) use ($curentUser, $all) { //dd();
+                    if ($all) {
+                        return (!in_array($val['id'], [$curentUser['forward_id'], $curentUser['backward_id']]) && $val['id'] != $curentUser['id'] && ($val['forward_id'] || $val['backward_id']));
+                    }
+                    return (!in_array($val['id'], [$curentUser['forward_id'], $curentUser['backward_id']]) && $val['id'] != $curentUser['id']);
+                });
+            }
+            return (array_values($data));
         } catch (Exception $e) {
             echo $e->getMessage();
         }
     }
+    
     public function getUserRoll($user_id,$ulb_id,$workflow_id)
     { 
         try{
@@ -227,5 +231,75 @@ class CommonFunction implements ICommonFunction
         }
         else
             return "Online";
+    }
+
+    public function getWorkFlowAllRoles($user_id, int $ulb_id, int $work_flow_id, $all = false)
+    {
+        try {
+            $data = $this->getWorkFlowRoles($user_id, $ulb_id, $work_flow_id);
+            if($all)
+            {
+                $data = array_filter($data, function ($val){ 
+                         if (($val['forward_id']) || $val['backward_id']) 
+                         {
+                             return true;
+                         }
+                     });
+                $data= array_values($data);
+            } 
+            return ($data);
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+    public function sortsWorkflowRols($roles)
+    {
+        $is_initiator = array_filter($roles,function($val){
+            return $val['is_initiator'];
+        });
+        $is_initiator = array_values($is_initiator)[0];
+        $forword = $is_initiator['forward_id'];
+        $maps = $this->maps($roles,$forword);
+        while($maps[sizeof($maps)-1]["forward_id"])
+        { 
+            $temp = $this->maps($roles,$maps[sizeof($maps)-1]["forward_id"]);
+            array_push($maps,$temp[0]);
+        }
+        array_unshift($maps,$is_initiator);
+        return($maps);
+    }
+
+    public function maps(array $roles,$forward_id,$ids=array())
+    {
+        
+        $rr = array_map(function($val)use($forward_id,$ids){                    
+                    if($val['id']==$forward_id && (!in_array($val['id'],$ids)))
+                    { 
+                        $forward_id = $val['forward_id'];                        
+                        return $val;
+                    }
+            },$roles); 
+        $rr = array_filter($rr, function ($val) {
+            return $val;
+        });
+        $rr = array_values($rr)??[];
+        if($rr)
+        {
+            array_push($ids,$rr[0]['id']);
+            $temp = $this->maps($roles,$forward_id,$ids);
+            if($temp){
+                $temp = array_filter($temp, function ($val) {
+                    return $val;
+                });
+                $temp = array_values($temp);
+                if($temp)
+                {
+                    array_push($rr,$temp);
+                }
+            }
+        }
+        else
+            return;                
+        return $rr;
     }
 }

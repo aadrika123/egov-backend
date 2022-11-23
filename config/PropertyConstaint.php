@@ -267,9 +267,12 @@ return [
     ],
     "ASSESSMENT-TYPE" =>
     [
-        "NewAssessment" => "1",
-        "ReAssessment" => "2",
-        "Mutation" => "3"
+        // "NewAssessment" => "1",
+        // "ReAssessment" => "2",
+        // "Mutation" => "3"
+        "1" => "New Assessment",
+        "2" => "Re Assessment",
+        "3" => "Mutation"
     ],
     "ULB-TYPE-ID" => [
         "Municipal Carporation" => 1,

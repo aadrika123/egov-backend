@@ -23,9 +23,9 @@ class ClusterController extends Controller
     }
 
     //get all details of the cluster accordin to the id
-    public function getClusterById($id)
+    public function getClusterById(Request $request)
     {
-        return $this->cluster->getClusterById($id);
+        return $this->cluster->getClusterById($request);
     }
 
     //updating the cluster details to the respective id
@@ -35,11 +35,12 @@ class ClusterController extends Controller
         $validateUser = Validator::make(
             $request->all(),
             [
-                'ulbId'   => 'required|integer',
-                'userId'   => 'required|integer',
                 'clusterName'   => 'required',
-                'clusterType' => 'requred',
-                'id' => 'required'
+                'clusterType' => 'required',
+                'id' => 'required',
+                'address' => 'required',
+                'mobileNo' => 'required',
+                'authorizedPersonName' => 'required'
             ]
         );
         if ($validateUser->fails()) {
@@ -69,9 +70,9 @@ class ClusterController extends Controller
     }
 
     //soft deletion of the cluster details 
-    public function deleteClusterData($id)
+    public function deleteClusterData(Request $request)
     {
-        return $this->cluster->deleteClusterData($id);
+        return $this->cluster->deleteClusterData($request);
     }
 
     /**
