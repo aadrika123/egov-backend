@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Property;
+
 
 use App\Repository\Property\Interfaces\iObjectionRepository;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class ObjectionController extends Controller
@@ -11,13 +13,6 @@ class ObjectionController extends Controller
     public function __construct(iObjectionRepository $objection)
     {
         $this->Repository = $objection;
-    }
-
-
-    //
-    public function getOwnerDetails(Request $request)
-    {
-        return $this->Repository->getOwnerDetails($request);
     }
 
     //Objection for Clerical Mistake

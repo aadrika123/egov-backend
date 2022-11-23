@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use App\Models\Workflows\WfRole;
 use Exception;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Validator;
 
 /**
  * Repository for Save Edit and View 
@@ -37,7 +36,7 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
             $role->save();
             return responseMsg(true, "Successfully Saved", "");
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -48,10 +47,11 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
     {
         try {
             $data = WfRole::where('is_suspended', false)
-                ->orderByDesc('id')->get();
+                ->orderByDesc('id')
+                ->get();
             return responseMsg(true, "Successfully Saved", $data);
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -67,7 +67,7 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
             $data->save();
             return responseMsg(true, 'Successfully Deleted', "");
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -87,7 +87,7 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
             $role->save();
             return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -107,7 +107,7 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
                 return response()->json(['Message' => 'Data not found'], 404);
             }
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }
