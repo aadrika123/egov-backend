@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
 use App\Http\Controllers\CitizenController;
+use App\Http\Controllers\Menu\MenuController;
 use App\Http\Controllers\Menupermission\MenuGroupsController;
 use App\Http\Controllers\Menupermission\MenuItemsController;
 use App\Http\Controllers\Menupermission\MenuMapController;
@@ -336,89 +337,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 });
 
 
-
-/**
- * ----------------------------------------------------------------------------------------
- * |                    Menu Permission Module Routes
- * ----------------------------------------------------------------------------------------
- * Created on- 14-10-2022
- * Created By- sam Kerketta
- *  
- */
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
 
     /**
-     * Track CRUD operation for the Menu_Ulbroles
+     * | Created On-23-11-2022 
+     * | Created By-Anshu Kumar
+     * | Menu Permissions
      */
-    Route::controller(MenuUlbrolesController::class)->group(function () {
-        Route::get('menuPermission/getMenuUlbroles', 'getMenuUlbroles');                    // get all data
-        Route::post('menuPermission/addMenuUlbroles', 'addMenuUlbroles');                   // create data
-        Route::put('menuPermission/updateMenuUlbroles/{id}', 'updateMenuUlbroles');         // update data by Id
-        Route::delete('menuPermission/deleteMenuUlbroles/{id}', 'deleteMenuUlbroles');      // delete data by Id
-    });
-
-    /**
-     * Track CRUD operation for the Menu_Roles
-     */
-    Route::controller(MenuRolesController::class)->group(function () {
-        Route::get('menuPermission/getMenuRoles', 'getMenuRoles');                          // get all data
-        Route::post('menuPermission/addMenuRoles', 'addMenuRoles');                         // create data
-        Route::put('menuPermission/updateMenuRoles/{id}', 'updateMenuRoles');               // update data by Id
-        Route::delete('menuPermission/deleteMenuRoles/{id}', 'deleteMenuRoles');            // delete data by Id
-    });
-
-    /**
-     * Track CRUD operation for the Menu_Maps
-     */
-    Route::controller(MenuMapController::class)->group(function () {
-        Route::get('menuPermission/getMenuMap/{id}', 'getMenuMap');                         // get all data by Id
-        Route::post('menuPermission/addMenuMap', 'addMenuMap');                             // create data
-        Route::put('menuPermission/updateMenuMap/{id}', 'updateMenuMap');                   // update data by Id
-        Route::delete('menuPermission/deleteMenuMap/{id}', 'deleteMenuMap');                // delete data by Id
-    });
-
-    /**
-     * Track CRUD operation for the Menu_Items
-     */
-    Route::controller(MenuItemsController::class)->group(function () {
-        Route::get('menuPermission/getMenuItems', 'getMenuItems');                          // get all data
-        Route::post('menuPermission/addMenuItems', 'addMenuItems');                         // create data
-        Route::put('menuPermission/updateMenuItems/{id}', 'updateMenuItems');               // update data by Id
-        Route::delete('menuPermission/deleteMenuItems/{id}', 'deleteMenuItems');            // delete data by Id
-        /*
-        * ----------------------------------------------------------------------------------------
-        * Route::post('MenuPermission/MenuRoles', 'MenuRoles');                             // test Api
-        * Route::post('MenuPermission/MenuGroups', 'MenuGroup');                            // test Api
-        * ----------------------------------------------------------------------------------------
-        */
-    });
-
-    /**
-     * Track CRUD operation for the Menu_Groups
-     * using Autherization for Psudo
-     */
-    Route::controller(MenuGroupsController::class)->group(function () {
-        Route::group(['middleware' => 'can:isAdmin'], function () {
-            Route::get('menuPermission/getAllMenuGroups', 'getAllMenuGroups');              // get all data
-            Route::post('menuPermission/addMenuGroups', 'addMenuGroups');                   // create data
-            Route::put('menuPermission/updateMenuGroups/{id}', 'updateMenuGroups');         // update data by Id
-            Route::delete('menuPermission/deleteMenuGroups/{id}', 'deleteMenuGroups');      // delete data by Id
-        });
+    Route::controller(MenuController::class)->group(function () {
+        Route::get('crud/menu/get-all-menues', 'getAllMenues');             // Get All the Menu List
+        Route::post('menu-roles/get-menu-by-roles', 'getMenuByroles');        // Get all the menu by roles
+        Route::post('menu-roles/update-menu-by-role', 'updateMenuByRole');      // Update Menu Permission By Role
     });
 });
-
-/**
- * Track the GET DATA operation for the Menu_Group,Menu_roles
- * using Autherization for Employ as 
- */
-// Route::group(['middleware' => ['auth:sanctum',]], function () {
-// secure routes for the Admin
-Route::controller(MenuItemsController::class)->group(function () {
-    // Route::group(['middleware' => 'can:isAdmin'], function () {
-    Route::post('menu-Permission/get-Menu-Groups', 'menuGroupWiseItems');                       // get all MenuGroups                  
-    Route::post('menu-Permission/get-Roles', 'ulbWiseMenuRole');                                // get all MenuRoles
-    Route::post('menu-Permission/get-Menu-Roles-Items', 'menuGroupAndRoleWiseItems');
-    Route::put('menu-Permission/put-Menu-Maps-Items', 'uplodeDataInMenuMaps');           // get role wise items
-    // });
-});
-// });

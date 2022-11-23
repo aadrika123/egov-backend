@@ -90,7 +90,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * Created On- 23-11-2022 
      */
     Route::controller(PropertyBifurcationController::class)->group(function () {
-        Route::post('searchByHoldingNoBi', "readHoldigbyNo");
+        Route::post('searchByHoldingNoBi', "readHoldigbyNo"); 
+        Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");       
     });
     //Rain water Harvesting
     /**
@@ -101,9 +102,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-wardmaster-data', 'getWardMasterData');
         Route::post('water_harvesting_application', 'waterHarvestingApplication');
     });
-});
-Route::controller(CalculatorController::class)->group(function () {
-    Route::post('calculatePropertyTax', 'calculator');
+
     //Property Concession
     Route::controller(ConcessionController::class)->group(function () {
         Route::post('concession/applyConcession', 'applyConcession');
@@ -130,26 +129,6 @@ Route::controller(CalculatorController::class)->group(function () {
     Route::controller(CalculatorController::class)->group(function () {
         Route::post('get-dashboard', 'dashboardDate');
     });
-    //Property Deactivation
-    /**
-     * Crated By - Sandeep Bara
-     * Created On- 19-11-2022 
-     */
-    Route::controller(PropertyDeactivateController::class)->group(function () {
-        Route::post('searchByHoldingNo', "readHoldigbyNo");
-        Route::match(["POST", "GET"], 'deactivationRequest/{id}', "deactivatProperty");
-        Route::post('inboxDeactivation', "inbox");
-        Route::post('postNextDeactivation', "postNextLevel");
-        Route::post('getDeactivationDtls', "readDeactivationReq");
-    });
-    //PropertyBifurcation Process
-    /**
-     * Crated By - Sandeep Bara
-     * Created On- 23-11-2022 
-     */
-    Route::controller(PropertyBifurcationController::class)->group(function () {
-        Route::post('searchByHoldingNoBi', "readHoldigbyNo");
-    });
     //Rain water Harvesting
     /**
      * Crated By - Sam kerketta
@@ -159,6 +138,9 @@ Route::controller(CalculatorController::class)->group(function () {
         Route::get('get-wardmaster-data', 'getWardMasterData');
         Route::post('water_harvesting_application', 'waterHarvestingApplication');
     });
+});
+Route::controller(CalculatorController::class)->group(function () {
+    Route::post('calculatePropertyTax', 'calculator');
 });
 Route::controller(CalculatorController::class)->group(function () {
     Route::post('calculatePropertyTax', 'calculator');

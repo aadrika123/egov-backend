@@ -18,13 +18,17 @@ class PropertyBifurcationController extends Controller
 
     private $Repository;
     private $Property;
-    public function __construct(IPropertyBifurcation $PropertyDeactivate)
+    public function __construct(IPropertyBifurcation $Repository)
     {
-        $this->Repository = $PropertyDeactivate ;
+        $this->Repository = $Repository ;
         $this->Property = new PropertyDeactivate();
     }
     public function readHoldigbyNo(Request $request)
     {
         return $this->Property->readHoldigbyNo($request);
+    }
+    public function addRecord(Request $request)
+    {
+        return $this->Repository->addRecord($request);
     }
 }
