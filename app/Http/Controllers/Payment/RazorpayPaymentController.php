@@ -106,18 +106,8 @@ class RazorpayPaymentController extends Controller
     }
 
     // get all details of the payments of all modules
-    public function allModuleTransaction(Request $request)
+    public function allModuleTransaction()
     {
-        # validation
-        $validateUser = Validator::make(
-            $request->all(),
-            [
-                'userId' => 'required|integer'
-            ]
-        );
-        if ($validateUser->fails()) {
-            return responseMsg(false,"validation errror!",$validateUser->getMessageBag());
-        }
-        return $this->Prepository->allModuleTransaction($request);
+        return $this->Prepository->allModuleTransaction();
     }
 }

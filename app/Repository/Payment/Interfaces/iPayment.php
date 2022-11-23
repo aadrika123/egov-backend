@@ -34,5 +34,5 @@ interface iPayment
     public function updateReconciliationDetails($request);
 
     # Common Payments details
-    public function allModuleTransaction($request);
+    public function allModuleTransaction();
 }

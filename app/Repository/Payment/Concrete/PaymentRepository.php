@@ -741,14 +741,15 @@ class PaymentRepository implements iPayment
     /**
      * |--------- all the transaction details regardless of module ----------
      * |@param request
-     * |@object webhookModel
+     * |@var object webhookModel
      * |@var transaction
      */
-    public function allModuleTransaction($request)
+    public function allModuleTransaction()
     {
         try {
+            $userId = auth()->user()->id;
             $webhookModel = new WebhookPaymentData();
-            $transaction = $webhookModel->getNotesDetails($request->userId);
+            $transaction = $webhookModel->getNotesDetails($userId);
             return responseMsg(true, "All transaction for the respective id", $transaction);
         } catch (Exception $error) {
             return responseMsg(false, "", $error->getMessage());

@@ -30,7 +30,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-webhook-details', 'getWebhookDetails');                                     // returning all the webhook details 
         Route::post('get-order-id', 'getTraitOrderId'); //<----------------- here (INVALID)
         Route::post('verify-payment-status', 'verifyPaymentStatus');                                // verifiying the payment status and saving both success, fails, suspeciousdata  
-        Route::post('get-transaction-no-details', 'getTransactionNoDetails');    
+        Route::post('get-transaction-no-details', 'getTransactionNoDetails');  
+        Route::get('all-module-transaction','allModuleTransaction'); //<------- all details  
         
         # Payment Reconciliation
         Route::get('get-reconcillation-details', 'getReconcillationDetails'); 
@@ -40,5 +41,5 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {
 Route::post('razerpay-webhook', 'gettingWebhookDetails');                                           // collecting the all data provided by the webhook and updating the related database
-Route::post('all-module-transaction','allModuleTransaction');
+
 });
