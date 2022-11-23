@@ -9,7 +9,6 @@ use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Models\UlbWardMaster;
 use App\Models\Property\PropObjection;
 use Illuminate\Support\Carbon;
-use  App\Models\Property\ObjectionOwnerDetail;
 use App\Models\ObjectionTypeMstr;
 use Illuminate\Support\Facades\DB;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
@@ -20,7 +19,7 @@ use App\Models\Property\PropObjectionOwnerDtl;
 use App\Traits\Property\Objection;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Property\PropObjectionDtlsCopy;
-
+use App\Repository\Property\Concrete\SafRepository;
 
 
 
@@ -31,24 +30,17 @@ class ObjectionRepository implements iObjectionRepository
     private  $_objectionNo;
 
 
-    //get owner details
-    public function getOwnerDetails(Request $request)
-    {
-        try {
-            $ownerDetails = PropOwner::select('owner_name as name', 'mobile_no as mobileNo', 'prop_address as address')
-                ->where('prop_properties.holding_no', $request->holdingNo)
-                ->join('prop_properties', 'prop_properties.id', '=', 'prop_owner_dtls.property_id')
-                ->get();
-            return $ownerDetails;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
     //apply objection
     public function applyObjection($request)
     {
         try {
+
+
+            // $userType = auth()->user()->user_type;
+            // // if ($userType == "JSK")
+            // $obj  = new SafRepository();
+            // $data = $obj->getPropByHoldingNo($request);
+            // // return $data;
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
@@ -198,10 +190,14 @@ class ObjectionRepository implements iObjectionRepository
     //objection type list
     public function objectionType()
     {
-        $objectionType = RefPropObjectionType::where('status', 1)
-            ->select('id', 'type')
-            ->get();
-        return $objectionType;
+        try {
+            $objectionType = RefPropObjectionType::where('status', 1)
+                ->select('id', 'type')
+                ->get();
+            return $objectionType;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
     }
 
     //Inbox 
@@ -243,7 +239,7 @@ class ObjectionRepository implements iObjectionRepository
             ->where('ulb_id', $ulbId)
             ->first();
 
-        $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
+        $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
         $initiatorRoleId = DB::select($refInitiatorRoleId);
 
         $objection->workflow_id = $ulbWorkflowId->id;

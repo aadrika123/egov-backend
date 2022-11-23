@@ -36,8 +36,6 @@ class ConcessionRepository implements iConcessionRepository
         try {
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
-            // workflows
-
 
             DB::beginTransaction();
             $workflow_id = Config::get('workflow-constants.PROPERTY_CONCESSION_ID');
@@ -112,7 +110,7 @@ class ConcessionRepository implements iConcessionRepository
             return responseMsg(true, 'Successfully Applied The Application', remove_null($concession));
         } catch (Exception $e) {
             DB::rollBack();
-            return response()->responseMsg(false, $e->getMessage(), "");
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 

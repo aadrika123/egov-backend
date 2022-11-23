@@ -11,8 +11,6 @@ use Illuminate\Http\Request;
 
 interface iObjectionRepository
 {
-
-    public function getOwnerDetails(Request $request);
     public function applyObjection($request);
     public function objectionNo($propertyId);
     public function objectionType();
