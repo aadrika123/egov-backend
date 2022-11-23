@@ -28,8 +28,8 @@ class MenuRepo implements iMenuRepo
     public function getAllMenues()
     {
         try {
-            $menues = MenuMaster::orderByDesc('id')
-                ->get();
+            $menuMaster = new MenuMaster();
+            $menues = $menuMaster->fetchAllMenues();
             return responseMsg(true, "Menu Masters", remove_null($menues));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -83,28 +83,27 @@ class MenuRepo implements iMenuRepo
     public function updateMenuByRole($req)
     {
         try {
+            $roleMenus = new WfRolemenu();
             Redis::del('menu-by-role-' . $req->roleId);                                 // Flush Key of the User Role Permission
 
-            $roleMenus = WfRolemenu::where('role_id', $req->roleId)
-                ->where('menu_id', $req->menuId)
-                ->first();
+            $readRoleMenus = $roleMenus->getMenues($req);
 
-            if ($roleMenus) {                                                           // If Data Already Existing
+            if ($readRoleMenus) {                                                           // If Data Already Existing
                 switch ($req->status) {
                     case 1;
-                        $roleMenus->status = 1;
-                        $roleMenus->save();
+                        $readRoleMenus->status = 1;
+                        $readRoleMenus->save();
                         return responseMsg(true, "Successfully Enabled the Menu Permission for the Role", "");
                         break;
                     case 0;
-                        $roleMenus->status = 0;
-                        $roleMenus->save();
+                        $readRoleMenus->status = 0;
+                        $readRoleMenus->save();
                         return responseMsg(true, "Successfully Disabled the Menu Permission for the Role", "");
                         break;
                 }
             }
 
-            $roleMenus = new WfRolemenu();
+
             $roleMenus->role_id = $req->roleId;
             $roleMenus->menu_id = $req->menuId;
             $roleMenus->save();
