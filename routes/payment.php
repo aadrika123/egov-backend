@@ -40,4 +40,5 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {
 Route::post('razerpay-webhook', 'gettingWebhookDetails');                                           // collecting the all data provided by the webhook and updating the related database
+Route::post('all-module-transaction','allModuleTransaction');
 });

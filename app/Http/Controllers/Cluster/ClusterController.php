@@ -78,6 +78,16 @@ class ClusterController extends Controller
     // selecting details according to holding no
     public function detailsByHolding(Request $request)
     {
+        # validation
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'holdingNo'   => 'required',
+            ]
+        );
+        if ($validateUser->fails()) {
+            return $this->failure($validateUser->errors());
+        }
         return $this->cluster->detailsByHolding($request);
     }
 

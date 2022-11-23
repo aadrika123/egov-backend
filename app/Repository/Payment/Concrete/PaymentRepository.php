@@ -99,7 +99,7 @@ class PaymentRepository implements iPayment
      * | @var mReadDepartment collecting data from the table DepartmentMaster
      * | 
      */
-    public function getDepartmentByulb(Request $req)
+    public function getDepartmentByulb(Request $req) //<-------- validatiom (SHIFT)
     {
         #   validation
         $validateUser = Validator::make(
@@ -139,7 +139,7 @@ class PaymentRepository implements iPayment
      * | @var mReadPg collecting data from the table PaymentGatewayMaster
      * | 
      */
-    public function getPaymentgatewayByrequests(Request $req)
+    public function getPaymentgatewayByrequests(Request $req) //<-------- validatiom (SHIFT)
     {
         #   validation
         $validateUser = Validator::make(
@@ -182,7 +182,7 @@ class PaymentRepository implements iPayment
      * | @var mReadRazorpay collecting data from the table RazorpayPgMaster
      * | 
      */
-    public function getPgDetails(Request $req)
+    public function getPgDetails(Request $req) //<-------- validatiom (SHIFT)
     {
         # validation
         $validateUser = Validator::make(
@@ -293,7 +293,7 @@ class PaymentRepository implements iPayment
      * | @var mAttributes
      * | @var mVerification
      */
-    public function verifyPaymentStatus(Request $request)
+    public function verifyPaymentStatus(Request $request) //<-------- validatiom (SHIFT)
     {
         # validation 
         $validated = Validator::make(
@@ -333,7 +333,6 @@ class PaymentRepository implements iPayment
 
             if (!empty($request)) {
                 $mWebhookDetails = $this->collectWebhookDetails($request);
-                // return responseMsg(true, "OPERATION SUCCESS", $mWebhookDetails);
                 return $mWebhookDetails;
             }
             return responseMsg(false, "WEBHOOK DATA NOT ACCUIRED!", "");
@@ -343,13 +342,13 @@ class PaymentRepository implements iPayment
     }
 
     /**
-     * | geting details of the transaction according to the orderId, paymentId and payment status
+     * | ------------- geting details of the transaction according to the orderId, paymentId and payment status --------------|
      * | @param requet request from the frontend
      * | @param error collecting the operation error
      * | @var mReadTransactions
      * | @var mCollection
      */
-    public function getTransactionNoDetails(Request $request)
+    public function getTransactionNoDetails(Request $request) //<-------- validatiom (SHIFT)
     {
         # validation 
         $validated = Validator::make(
@@ -482,11 +481,11 @@ class PaymentRepository implements iPayment
                     return $reconciliationWithAll;
                 }
             case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode)): {
-                $reconciliationModeType = $this->reconciliationModeType($request);    
-                return $reconciliationModeType;
+                    $reconciliationModeType = $this->reconciliationModeType($request);
+                    return $reconciliationModeType;
                 }
             default:
-                return ("some error renter the details!");
+                return ("Some error RENETR the details!");
         }
     }
 
@@ -500,7 +499,7 @@ class PaymentRepository implements iPayment
      * | this -> naming
      * | here -> variable
      */
-    public function updateReconciliationDetails($request)
+    public function updateReconciliationDetails($request) //<-------- validatiom (SHIFT)
     {
         # validation 
         $validated = Validator::make(
@@ -529,9 +528,7 @@ class PaymentRepository implements iPayment
         }
     }
 
-
-    
-#____________________________________________________________________________________________________________________________________________________________________#
+    #____________________________________(START)___________________________________________#
 
     /**
      * |--------- reconciliationDateWise 1.1----------
@@ -703,7 +700,7 @@ class PaymentRepository implements iPayment
         }
     }
 
-       /**
+    /**
      * |--------- reconciliationDateWise 1.1----------
      * |@param request
      */
@@ -735,6 +732,26 @@ class PaymentRepository implements iPayment
             return responseMsg(false, "data not found!", "");
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+    #________________________________________(END)_________________________________________#
+
+
+    /**
+     * |--------- all the transaction details regardless of module ----------
+     * |@param request
+     * |@object webhookModel
+     * |@var transaction
+     */
+    public function allModuleTransaction($request)
+    {
+        try {
+            $webhookModel = new WebhookPaymentData();
+            $transaction = $webhookModel->getNotesDetails($request->userId);
+            return responseMsg(true, "All transaction for the respective id", $transaction);
+        } catch (Exception $error) {
+            return responseMsg(false, "", $error->getMessage());
         }
     }
 }

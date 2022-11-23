@@ -5,6 +5,7 @@ namespace App\Repository\Cluster\Concrete;
 use App\Models\Cluster\Cluster;
 use App\Models\Property\PropProperty;
 use App\Repository\Cluster\Interfaces\iCluster;
+use Error;
 use Exception;
 
 
@@ -14,7 +15,9 @@ class ClusterRepository implements iCluster
     /**
      * | ----------------- Collecting all data of the cluster/returning/master ------------------------------- |
      * | @var mdetails
-     * | Operation : read table cluster and returning the data 
+     * | Operation : read table cluster and returning all active data
+     * | rating - 1
+     * | operation time - 320 ms 
      */
     public function getAllClusters()
     {
@@ -27,7 +30,6 @@ class ClusterRepository implements iCluster
                 'mobile_no AS mobileNo',
                 'authorized_person_name AS authPersonName'
             )
-                ->where('status', '1')
                 ->get();
             return $this->success($mdetails);
         } catch (Exception $error) {
@@ -36,15 +38,17 @@ class ClusterRepository implements iCluster
     }
 
     /**
-     * | ----------------- Collecting all data of the cluster according to id /returning/master ------------------------------- |
+     * | ----------------- Collecting all data of the cluster according to cluster id /returning/master ------------------------------- |
      * | @var mdetails
      * | Operation : read table cluster and returning the data according to id  
+     * | rating - 1
+     * | time - 385 ms
      */
     public function getClusterById($request)
     {
 
         try {
-            $mdetails = Cluster::select(
+            $mdetailsById = Cluster::select(
                 'cluster_name AS name',
                 'cluster_type AS type',
                 'address',
@@ -56,8 +60,8 @@ class ClusterRepository implements iCluster
                 ->get()
                 ->first();
 
-            if (!null == ($mdetails) && $mdetails->status == 1) {
-                return $this->success($mdetails);
+            if (!null == ($mdetailsById) && $mdetailsById->status == 1) {
+                return $this->success($mdetailsById);
             }
             return  $this->noData();
         } catch (Exception $error) {
@@ -67,12 +71,14 @@ class ClusterRepository implements iCluster
 
 
     /**
-     * | ------------------------- updating the cluster data/master ------------------------------- |
-     * | @param requestuest
+     * | ------------------------- updating the cluster data according to cluster id/master ------------------------------- |
+     * | @param request
      * | @var userId
      * | @var ulbId
      * | @param error
      * | Operation : updating the cluster data whith new data
+     * | rating - 1
+     * | time - 428 ms
      */
     public function editClusterDetails($request)
     {
@@ -97,13 +103,15 @@ class ClusterRepository implements iCluster
 
 
     /**
-     * | ----------------- saving the data of the cluster/master ------------------------------- |
-     * | @param requestuest
+     * | ----------------- saving new data in the cluster/master ------------------------------- |
+     * | @param request
      * | @param error
      * | @var userId
      * | @var ulbId
      * | @var newCluster
-     * | Operation : saving the data of cluster 
+     * | Operation : saving the data of cluster   
+     * | rating - 1
+     * | time - 477
      */
     public function saveClusterDetails($request)
     {
@@ -132,12 +140,11 @@ class ClusterRepository implements iCluster
 
     /**
      * | ----------------- deleting the data of the cluster/master ------------------------------- |
-     * | @param requestuest
+     * | @param request
      * | @param error
-     * | @var userId
-     * | @var ulbId
-     * | @var newCluster
      * | Operation : soft delete of the respective detail 
+     * | rating - 1
+     * | time - 420
      */
     public function deleteClusterData($request)
     {
@@ -161,7 +168,7 @@ class ClusterRepository implements iCluster
     {
         try {
             $holdingCheck = PropProperty::join('prop_owners', 'prop_owners.saf_id', '=', 'prop_properties.saf_id')
-                ->join('prop_properties', 'prop_properties.prop_type_mstr_id', '=', 'ref_prop_types.id')
+                ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
                 ->select(
                     'prop_properties.new_ward_mstr_id AS wardId',
                     'prop_owners.owner_name AS ownerName',
@@ -224,9 +231,7 @@ class ClusterRepository implements iCluster
             $notActive = "Not a valid cluter ID";
             $checkActiveCluster =  $this->checkActiveCluster($request->clusterId);
 
-            return $checkActiveCluster;
-
-            if ($checkActiveCluster == false) {
+            if ($checkActiveCluster == "1") {
                 PropProperty::where('new_holding_no', $request->holdingNo)
                     ->update([
                         'cluster_id' => $request->clusterId
@@ -243,23 +248,24 @@ class ClusterRepository implements iCluster
     /**
      * | ----------------- calling function for the cheking of active cluster ------------------------------- |
      * | @param request
-     * | @var clusterDetails
-     * | Operation : 385ms
-     * | rating - 2
+     * | @var checkCluster
+     * | Operation : finding cluster Active
+     * | rating - 1
      */
     public function checkActiveCluster($request)
     {
-        // return $request;
-
-        $checkCluster = Cluster::select('id')
-            ->where('id', $request)
-            ->where('status', 1)
-            ->get();
-        // return $checkCluster['0'];
-        if (empty($checkCluster['0'])) {
+        try {
+            $checkCluster = Cluster::select('id')
+                ->where('id', $request)
+                ->where('status', 1)
+                ->get();
+            if (empty($checkCluster['0'])) {
+                return ("0");
+            }
+            return ("1");
+        } catch (Exception) {
             return ("0");
         }
-        return ("1");
     }
 
 
