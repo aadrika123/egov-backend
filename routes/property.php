@@ -5,7 +5,7 @@ use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\SafCalculatorController;
 use App\Http\Controllers\Property\CalculatorController;
-use App\Http\Controllers\ObjectionController;
+use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Http\Controllers\Property\SafReassessmentController;
@@ -112,7 +112,6 @@ Route::controller(CalculatorController::class)->group(function () {
 
     //Property Objection
     Route::controller(ObjectionController::class)->group(function () {
-        Route::post('objection/ownerDetails', 'getOwnerDetails');
         Route::post('objection/apply-objection', 'applyObjection');
         Route::get('objection/objection-type', 'objectionType');
         Route::get('objection/inbox', 'inbox');
