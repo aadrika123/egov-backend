@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models\MenuPermission;
+namespace App\Models\Menu;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MenuGroups extends Model
+class MenuMaster extends Model
 {
     use HasFactory;
 }
