@@ -203,12 +203,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     // Self Advertisement
     Route::controller(SelfAdvertisementController::class)->group(function () {
-        Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');      // Save Self Advertisement
-        Route::get('crud/get-all-selfadvertisements-inbox', 'getAllSelfAdvertisementsInbox');         // Get All Self Advertisement Datas in Inbox
+        Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');                          // Save Self Advertisement
+        Route::get('crud/get-all-selfadvertisements-inbox', 'getAllSelfAdvertisementsInbox');           // Get All Self Advertisement Datas in Inbox
         Route::get('crud/get-all-selfadvertisements-outbox', 'getAllSelfAdvertisementsOutbox');         // Get All Self Advertisement Datas in Outbox
-        Route::get('crud/get-selfadvertisement-by-id/{id}', 'getSelfAdvertisementByID');   // Get Self Advertisement By Id
-        Route::put('crud/update-selfadvertisement/{id}', 'updateSelfAdvertisement');       // Update Self Advertisement
-        Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');       // Delete Self Advertisement By ID
+        Route::get('crud/get-selfadvertisement-by-id/{id}', 'getSelfAdvertisementByID');                // Get Self Advertisement By Id
+        Route::put('crud/update-selfadvertisement/{id}', 'updateSelfAdvertisement');                    // Update Self Advertisement
+        Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');                    // Delete Self Advertisement By ID
     });
 
 
@@ -279,12 +279,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::apiResource("warduser", WorkflowWardUserController::class);
 
-
     /**
      * Role User Map CRUD operation
      */
 
     Route::apiResource("roleusermap", WorkflowRoleUserMapController::class);
+
+    Route::controller(WorkflowRoleUserMapController::class)->group(function () {
+        Route::post('workflows/role-user-maps/get-roles-by-id', 'getRolesByUserId');                        // Get Permitted Roles By User ID
+    });
 
 
 
