@@ -23,6 +23,8 @@ class ClusterRepository implements iCluster
                 'cluster_name AS name',
                 'cluster_type AS type',
                 'address',
+                'mobile_no AS mobileNo',
+                'authorized_person_name AS authPersonName'
             )
                 ->where('status', '1')
                 ->get();
@@ -37,20 +39,23 @@ class ClusterRepository implements iCluster
      * | @var mdetails
      * | Operation : read table cluster and returning the data according to id  
      */
-    public function getClusterById($id)
+    public function getClusterById($request)
     {
+
         try {
             $mdetails = Cluster::select(
                 'cluster_name AS name',
                 'cluster_type AS type',
                 'address',
+                'mobile_no AS mobileNo',
+                'authorized_person_name AS authorizedPersonName',
                 'status'
             )
-                ->where('id', $id)
+                ->where('id', $request->id)
                 ->get()
                 ->first();
 
-            if (!empty($mdetails) && $mdetails->status == "1") {
+            if (!null == ($mdetails) && $mdetails->status == 1) {
                 return $this->success($mdetails);
             }
             return  $this->noData();
@@ -73,15 +78,15 @@ class ClusterRepository implements iCluster
         try {
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
-
             Cluster::where('id', $request->id)
                 ->update([
                     'ulb_id' => $ulbId,
+                    'user_id' => $userId,
                     'cluster_name' => $request->clusterName,
                     'cluster_type' => $request->clusterType,
                     'address' => $request->address,
-                    'user_id' => $userId,
-                    'status' => $request->status->default("1"),
+                    'mobile_no' => $request->mobileNo,
+                    'authorized_person_name' => $request->authorizedPersonName
                 ]);
             return $this->success($request->id);
         } catch (Exception $error) {
@@ -91,7 +96,7 @@ class ClusterRepository implements iCluster
 
 
     /**
-     * | ----------------- saving the data of the cluster ------------------------------- |
+     * | ----------------- saving the data of the cluster/ ------------------------------- |
      * | @param request
      * | @param error
      * | @var userId
@@ -111,8 +116,11 @@ class ClusterRepository implements iCluster
             $newCluster->cluster_type  = $request->clusterType;
             $newCluster->address  = $request->address;
             $newCluster->user_id  = $userId;
+            $newCluster->mobile_no = $request->mobileNo;
+            $newCluster->authorized_person_name = $request->authorizedPersonName;
+            $saved = $newCluster->save();
 
-            if ($newCluster) {
+            if ($saved) {
                 return $this->success($request->userId);
             }
             return  $this->failure($request->userId);
@@ -130,18 +138,28 @@ class ClusterRepository implements iCluster
      * | @var newCluster
      * | Operation : soft delete of the respective detail 
      */
-    public function deleteClusterData($id)
+    public function deleteClusterData($request)
     {
         try {
-            Cluster::where('id', $id)
+            Cluster::where('id', $request->id)
                 ->update(['status' => "0"]);
-            return $this->success($id);
+            return $this->success($request->id);
         } catch (Exception $error) {
             return  $this->failure($error->getMessage());
         }
     }
 
 
+    /**
+     * | ----------------- Common funtion for the return components in success ------------------------------- |
+     * | @param req
+     * | @var mreturn
+     * | Operation : returning the messge using (responseMsg)
+     */
+    // public function holdingDetailsById($request)
+    // {
+
+    // }
 
 
 

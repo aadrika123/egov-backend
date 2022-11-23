@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class RoleUserLog extends Model
+class PropObjectionDtlsCopy extends Model
 {
     use HasFactory;
 }

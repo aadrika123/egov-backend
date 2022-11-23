@@ -4,21 +4,17 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
 use App\Http\Controllers\CitizenController;
-use App\Http\Controllers\MapController;
 use App\Http\Controllers\Menupermission\MenuGroupsController;
 use App\Http\Controllers\Menupermission\MenuItemsController;
 use App\Http\Controllers\Menupermission\MenuMapController;
 use App\Http\Controllers\Menupermission\MenuRolesController;
 use App\Http\Controllers\Menupermission\MenuUlbrolesController;
 use App\Http\Controllers\ModuleController;
-use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SelfAdvertisementController;
 use App\Http\Controllers\UlbController;
 use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\Workflows\WorkflowController;
 use App\Http\Controllers\Workflows\WorkflowTrackController;
-use App\Http\Controllers\PaymentMasterController;
-use App\Http\Controllers\Trade\ApplyApplication;
 use App\Http\Controllers\Ward\WardController;
 use App\Http\Controllers\Ward\WardUserController;
 use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
@@ -121,43 +117,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         });
     });
 
-    /**
-     * Route for Roles
-     * Created By-Anshu Kumar
-     * Created Date-27-06-2022
-     */
-    Route::controller(RoleController::class)->group(function () {
-        // Route are authorized for super admin only using Middleware 
-        // Route::group(['middleware' => ['can:isSuperAdmin']], function () {
-        Route::post('save-role', 'storeRole');                      // Save Role
-        Route::put('edit-role/{id}', 'editRole');                   // edit Role 
-        Route::get('get-role/{id}', 'getRole');                     // Get Role By Id
-        Route::get('get-all-roles', 'getAllRoles');                 // Get All Roles
-        Route::delete('delete-role/{id}', 'deleteRole');            // Delete Role
-        Route::get('master/roles/ulb-roles', 'getRoleListByUlb');   // Get All Roles by UlbID
-
-        Route::post('role-menu', 'roleMenu');
-        Route::put('edit-role-menu/{id}', 'editRoleMenu');
-        Route::get('get-role-menu/{id}', 'getRoleMenu');
-        Route::get('get-all-role-menus', 'getAllRoleMenus');
-
-        Route::post('role-user', 'roleUser');                                   // Save user roles
-        Route::put('edit-role-user', 'editRoleUser');                           // edit user roles 
-        Route::get('get-role-user/{id}', 'getRoleUser');                        // get role user by id   
-        Route::get('get-all-role-users', 'getAllRoleUsers');                    // get all role users
-        Route::get('master/users/user-by-role-id/{id}', 'getUserByRoleID');     // Get Users List By Role ID
-
-        Route::post('role-menu-logs', 'roleMenuLogs');
-        Route::put('edit-role-menu-logs/{id}', 'editRoleMenuLogs');
-        Route::get('get-role-menu-logs/{id}', 'getRoleMenuLogs');
-        Route::get('get-all-role-menu-logs', 'getAllRoleMenuLogs');
-
-        Route::post('role-user-logs', 'roleUserLogs');
-        Route::put('edit-role-user-logs/{id}', 'editRoleUserLogs');
-        Route::get('get-role-user-logs/{id}', 'getRoleUserLogs');
-        Route::get('get-all-role-user-logs', 'getAllRoleUserLogs');
-        // });
-    });
 
     /**
      * Routes for Ulbs
@@ -244,12 +203,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     // Self Advertisement
     Route::controller(SelfAdvertisementController::class)->group(function () {
-        Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');      // Save Self Advertisement
-        Route::get('crud/get-all-selfadvertisements-inbox', 'getAllSelfAdvertisementsInbox');         // Get All Self Advertisement Datas in Inbox
+        Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');                          // Save Self Advertisement
+        Route::get('crud/get-all-selfadvertisements-inbox', 'getAllSelfAdvertisementsInbox');           // Get All Self Advertisement Datas in Inbox
         Route::get('crud/get-all-selfadvertisements-outbox', 'getAllSelfAdvertisementsOutbox');         // Get All Self Advertisement Datas in Outbox
-        Route::get('crud/get-selfadvertisement-by-id/{id}', 'getSelfAdvertisementByID');   // Get Self Advertisement By Id
-        Route::put('crud/update-selfadvertisement/{id}', 'updateSelfAdvertisement');       // Update Self Advertisement
-        Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');       // Delete Self Advertisement By ID
+        Route::get('crud/get-selfadvertisement-by-id/{id}', 'getSelfAdvertisementByID');                // Get Self Advertisement By Id
+        Route::put('crud/update-selfadvertisement/{id}', 'updateSelfAdvertisement');                    // Update Self Advertisement
+        Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');                    // Delete Self Advertisement By ID
     });
 
 
@@ -306,19 +265,29 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     /**
      * workflow roles CRUD operation
      */
-    Route::apiResource("role", WorkflowRoleController::class);
+    Route::controller(WorkflowRoleController::class)->group(function () {
+        Route::post('crud/roles/save-role', 'create');                      // Save Role
+        Route::put('crud/roles/edit-role', 'editRole');                     // edit Role 
+        Route::post('crud/roles/get-role', 'getRole');                      // Get Role By Id
+        Route::get('crud/roles/get-all-roles', 'getAllRoles');              // Get All Roles
+        Route::delete('crud/roles/delete-role', 'deleteRole');              // Delete Role
+    });
+
 
     /**
      * Ward User CRUD operation
      */
     Route::apiResource("warduser", WorkflowWardUserController::class);
 
-
     /**
      * Role User Map CRUD operation
      */
 
     Route::apiResource("roleusermap", WorkflowRoleUserMapController::class);
+
+    Route::controller(WorkflowRoleUserMapController::class)->group(function () {
+        Route::post('workflows/role-user-maps/get-roles-by-id', 'getRolesByUserId');                        // Get Permitted Roles By User ID
+    });
 
 
 
@@ -363,23 +332,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::post('workflow/getWorkflownameByWorkflow', 'getWorkflownameByWorkflow');
     });
-
-
-
-
-    /**
-     * Workflow Track CRUD operation
-     */
-
-    // Route::controller(WorkflowTrackControllers::class)->group(function () {
-
-    //     Route::post('workflow/track-create', 'create');                            // create data
-    //     Route::get('workflow/track-list', 'list');                                 // list all data 
-    //     Route::delete('workflow/track-delete/{id}', 'delete');                     // Delete data
-    //     Route::put('workflow/track-update/{id}', 'update');                        // update data 
-    //     Route::get('workflow/track-view/{id}', 'view');                            // Get data By Id
-
-    // });
 });
 
 

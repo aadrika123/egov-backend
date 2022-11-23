@@ -459,7 +459,7 @@ class PaymentRepository implements iPayment
         if (empty($request->fromDate) && empty($request->toDate) && null == ($request->chequeDdNo)) {
             return $this->getReconcillationDetails();
         }
-// return $request;
+
         switch ($request) {
             case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && null == ($request->paymentMode)): {
                     $reconciliationTypeWise = $this->reconciliationTypeWise($request);
@@ -530,16 +530,8 @@ class PaymentRepository implements iPayment
     }
 
 
-
-
-
-
-
-
-
-
-
-
+    
+#____________________________________________________________________________________________________________________________________________________________________#
 
     /**
      * |--------- reconciliationDateWise 1.1----------

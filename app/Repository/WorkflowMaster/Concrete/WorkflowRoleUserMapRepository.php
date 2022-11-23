@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Workflows\WfRoleusermap;
 use Exception;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -24,6 +26,11 @@ use Illuminate\Support\Facades\Validator;
 
 class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
 {
+    private $_redis;
+    public function __construct()
+    {
+        $this->_redis = Redis::connection();
+    }
 
     public function create(Request $request)
     {
@@ -108,6 +115,39 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
             return response()->json($data, 200);
         } else {
             return response()->json(['Message' => 'Data not found'], 404);
+        }
+    }
+
+    /**
+     * | Get All Permitted Roles By User ID
+     * | @param Request req
+     * | @var query 
+     * 
+     */
+    public function getRolesByUserId($req)
+    {
+        try {
+            $roles = json_decode(Redis::get('roles-user-u-' . $req->userId));
+            if (!$roles) {
+                $query = "SELECT 
+                        r.id AS role_id,
+                        r.role_name,
+                        rum.wf_role_id,
+                        (CASE 
+                        WHEN rum.wf_role_id IS NOT NULL THEN TRUE 
+                        ELSE 
+                        FALSE END) AS permission_status
+
+                FROM wf_roles r
+
+                LEFT JOIN (SELECT * FROM wf_roleusermaps WHERE user_id=$req->userId AND is_suspended=false) rum ON rum.wf_role_id=r.id";
+
+                $roles = DB::select($query);
+                $this->_redis->set('roles-user-u-' . $req->userId, json_encode($roles));               // Caching Should Be flush on New role Permission to the user
+            }
+            return responseMsg(true, "Role Permissions", remove_null($roles));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }

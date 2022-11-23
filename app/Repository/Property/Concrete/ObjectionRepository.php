@@ -19,6 +19,7 @@ use App\Models\Property\RefPropObjectionType;
 use App\Models\Property\PropObjectionOwnerDtl;
 use App\Traits\Property\Objection;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Property\PropObjectionDtlsCopy;
 
 
 
@@ -59,7 +60,6 @@ class ObjectionRepository implements iObjectionRepository
 
             if ($objectionType == $clericalMistake) {
                 DB::beginTransaction();
-
 
                 $objectionOwner = new PropObjectionOwnerDtl;
                 $objectionOwner->name = $request->name;
@@ -138,8 +138,36 @@ class ObjectionRepository implements iObjectionRepository
 
             // objection against assesment
             if ($objectionType !== $clericalMistake  && $objectionType !== $forgery) {
+                $objection = new PropActiveObjection;
+                $objection->ulb_id = $ulbId;
+                $objection->user_id = $userId;
 
-                return response('assessment error');
+                $this->commonFunction($request, $objection);
+                $objection->save();
+
+                $assement_error = new PropObjectionDtlsCopy;
+                $assement_error->objection_id = $objection->id;
+                $assement_error->objection_type = $request->objectionType;
+                $assement_error->previous = $request->previous;
+                $assement_error->current =  $request->current;
+                $assement_error->save();
+
+                //objection_form
+                if ($file = $request->file('objectionForm')) {
+
+                    $name = time() . '.' . $file->getClientOriginalExtension();
+                    $path = public_path('objection/objectionForm');
+                    $file->move($path, $name);
+                }
+
+
+                //Evidence Doc
+                if ($file = $request->file('evidenceDoc')) {
+
+                    $name = time() . '.' . $file->getClientOriginalExtension();
+                    $path = public_path('objection/evidenceDoc');
+                    $file->move($path, $name);
+                }
             }
 
             return responseMsg(true, "Successfully Saved", '');

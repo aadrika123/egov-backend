@@ -7,6 +7,7 @@ use App\Http\Controllers\Property\SafCalculatorController;
 use App\Http\Controllers\Property\CalculatorController;
 use App\Http\Controllers\ObjectionController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
+use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Http\Controllers\Property\SafReassessmentController;
 use Symfony\Component\Routing\DependencyInjection\RoutingResolverPass;
 
@@ -58,6 +59,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(SafReassessmentController::class)->group(function () {
     });
 
+    Route::controller(CalculatorController::class)->group(function () {
+        Route::post('get-dashboard', 'dashboardDate');
+    });
+
     // Property Calculator
     Route::controller(SafCalculatorController::class)->group(function () {
         Route::post('saf-calculation', 'calculateSaf');
@@ -78,9 +83,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('postNextDeactivation', "postNextLevel");
         Route::post('getDeactivationDtls', "readDeactivationReq");
     });
-    
-    
-    
+    //Rain water Harvesting
+    /**
+     * Crated By - Sam kerketta
+     * Created On- 22-11-2022 
+     */
+    Route::controller(RainWaterHarvestingController::class)->group(function () {
+        Route::get('get-wardmaster-data', 'getWardMasterData');
+        Route::post('water_harvesting_application', 'waterHarvestingApplication');
+    });
 });
 Route::controller(CalculatorController::class)->group(function () {
     Route::post('calculatePropertyTax', 'calculator');
@@ -106,5 +117,11 @@ Route::controller(CalculatorController::class)->group(function () {
         Route::get('objection/objection-type', 'objectionType');
         Route::get('objection/inbox', 'inbox');
         Route::get('objection/outbox', 'outbox');
-    });    
+    });
+});
+
+
+
+Route::controller(CalculatorController::class)->group(function () {
+    Route::post('calculatePropertyTax', 'calculator');
 });
