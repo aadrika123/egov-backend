@@ -5,12 +5,12 @@ use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\SafCalculatorController;
 use App\Http\Controllers\Property\CalculatorController;
-use App\Http\Controllers\ObjectionController;
-use App\Http\Controllers\Property\PropertyBifurcationController;
+use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Http\Controllers\Property\SafReassessmentController;
 use Symfony\Component\Routing\DependencyInjection\RoutingResolverPass;
+use App\Http\Controllers\Property\PropertyBifurcationController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -122,16 +122,27 @@ Route::controller(CalculatorController::class)->group(function () {
 
     //Property Objection
     Route::controller(ObjectionController::class)->group(function () {
-        Route::post('objection/ownerDetails', 'getOwnerDetails');
         Route::post('objection/apply-objection', 'applyObjection');
         Route::get('objection/objection-type', 'objectionType');
         Route::get('objection/inbox', 'inbox');
         Route::get('objection/outbox', 'outbox');
     });
+
+    Route::controller(CalculatorController::class)->group(function () {
+        Route::post('get-dashboard', 'dashboardDate');
+    });
+    //Rain water Harvesting
+    /**
+     * Crated By - Sam kerketta
+     * Created On- 22-11-2022 
+     */
+    Route::controller(RainWaterHarvestingController::class)->group(function () {
+        Route::get('get-wardmaster-data', 'getWardMasterData');
+        Route::post('water_harvesting_application', 'waterHarvestingApplication');
+    });
 });
-
-
-
 Route::controller(CalculatorController::class)->group(function () {
     Route::post('calculatePropertyTax', 'calculator');
+    //Property Concession
+
 });
