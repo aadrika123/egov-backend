@@ -11,16 +11,8 @@ use App\Repository\Cluster\Interfaces\iCluster;
 use App\Repository\Grievance\Concrete\NewGrievanceRepository;
 use App\Repository\Grievance\Interfaces\iGrievance;
 
-use App\Repository\MenuPermission\Concrete\EloquentMenuGroups;
-use App\Repository\MenuPermission\Concrete\EloquentMenuItems;
-use App\Repository\MenuPermission\Concrete\EloquentMenuMap;
-use App\Repository\MenuPermission\Concrete\EloquentMenuRoles;
-use App\Repository\MenuPermission\Concrete\EloquentMenuUlbroles;
-use App\Repository\MenuPermission\Interface\iMenuGroupsRepository;
-use App\Repository\MenuPermission\Interface\iMenuItemsRepository;
-use App\Repository\MenuPermission\Interface\iMenuMapRepository;
-use App\Repository\MenuPermission\Interface\iMenuRolesRepository;
-use App\Repository\MenuPermission\Interface\iMenuUlbrolesRepository;
+use App\Repository\Menu\Interface\iMenuRepo;
+use App\Repository\Menu\Concrete\MenuRepo;
 
 use App\Repository\Payment\Concrete\PaymentRepository;
 use App\Repository\Payment\Interfaces\iPayment;
@@ -93,11 +85,6 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(IPropertyBifurcation::class, PropertyBifurcation::class);
 
         //menu permission
-        $this->app->bind(IMenuGroupsRepository::class, EloquentMenuGroups::class);
-        $this->app->bind(IMenuItemsRepository::class, EloquentMenuItems::class);
-        $this->app->bind(IMenuMapRepository::class, EloquentMenuMap::class);
-        $this->app->bind(IMenuRolesRepository::class, EloquentMenuRoles::class);
-        $this->app->bind(IMenuUlbrolesRepository::class, EloquentMenuUlbroles::class);
 
         // Workflow Master
         $this->app->bind(iWorkflowMasterRepository::class, WorkflowMasterRepository::class);
@@ -128,6 +115,9 @@ class RepositoryServiceProvider extends ServiceProvider
 
         //Cluster
         $this->app->bind(iCluster::class, ClusterRepository::class);
+
+        // Menues
+        $this->app->bind(iMenuRepo::class, MenuRepo::class);
     }
 
     /**
