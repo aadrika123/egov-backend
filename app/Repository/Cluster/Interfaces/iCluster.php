@@ -12,4 +12,7 @@ interface iCluster
     public function editClusterDetails($request);
     public function saveClusterDetails($request);
     public function deleteClusterData($request);
+    public function detailsByHolding($request); //<---------- remark
+    public function holdingByCluster($request);
+    public function saveHoldingInCluster($request);
 }
