@@ -70,4 +70,15 @@ class WorkflowRoleUserMapController extends Controller
         ]);
         return $this->EloquentRoleUserMap->getRolesByUserId($req);
     }
+
+    // Enable or Disable User Roles
+    public function updateUserRoles(Request $req)
+    {
+        $req->validate([
+            'roleId' => 'required|int',
+            'status' => 'required|bool',
+            'userId' => 'required|int'
+        ]);
+        return $this->EloquentRoleUserMap->updateUserRoles($req);
+    }
 }

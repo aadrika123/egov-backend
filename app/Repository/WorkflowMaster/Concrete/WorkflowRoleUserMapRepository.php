@@ -44,6 +44,8 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
                 $checkExisting->wf_role_id = $request->wfRoleId;
                 $checkExisting->user_id = $request->userId;
                 $checkExisting->save();
+
+                Redis::del('roles-user-u-' . $request->userId);
                 return responseMsg(true, "User Exist", "");
             }
             // create
@@ -54,6 +56,8 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
             $device->stamp_date_time = Carbon::now();
             $device->created_at = Carbon::now();
             $device->save();
+
+            Redis::del('roles-user-u-' . $request->userId);
             return responseMsg(true, "Successfully Saved", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -94,8 +98,8 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
             $device->wf_role_id = $request->wfRoleId;
             $device->user_id = $request->userId;
             $device->created_by = $createdBy;
-            $device->updated_at = Carbon::now();
             $device->save();
+            Redis::del('roles-user-u-' . $request->userId);                                 // Flush Key of the User Role Permission
             return responseMsg(true, "Successfully Updated", "");
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -122,6 +126,9 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
      * | Get All Permitted Roles By User ID
      * | @param Request req
      * | @var query 
+     * | Status-Closed
+     * | Query Run Time-400 ms
+     * | Rating-2
      * 
      */
     public function getRolesByUserId($req)
@@ -130,15 +137,15 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
             $roles = json_decode(Redis::get('roles-user-u-' . $req->userId));
             if (!$roles) {
                 $query = "SELECT 
-                        r.id AS role_id,
-                        r.role_name,
-                        rum.wf_role_id,
-                        (CASE 
-                        WHEN rum.wf_role_id IS NOT NULL THEN TRUE 
-                        ELSE 
-                        FALSE END) AS permission_status
+                                r.id AS role_id,
+                                r.role_name,
+                                rum.wf_role_id,
+                                (CASE 
+                                WHEN rum.wf_role_id IS NOT NULL THEN TRUE 
+                                ELSE 
+                                FALSE END) AS permission_status
 
-                FROM wf_roles r
+                        FROM wf_roles r
 
                 LEFT JOIN (SELECT * FROM wf_roleusermaps WHERE user_id=$req->userId AND is_suspended=false) rum ON rum.wf_role_id=r.id";
 
@@ -146,6 +153,49 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
                 $this->_redis->set('roles-user-u-' . $req->userId, json_encode($roles));               // Caching Should Be flush on New role Permission to the user
             }
             return responseMsg(true, "Role Permissions", remove_null($roles));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Enable or Disable the User Role Permission
+     * | @param req
+     * | Status-closed
+     * | RunTime Complexity-353 ms
+     * | Rating-2
+     */
+    public function updateUserRoles($req)
+    {
+        try {
+            Redis::del('roles-user-u-' . $req->userId);                                 // Flush Key of the User Role Permission
+
+            $userRoles = WfRoleusermap::where('wf_role_id', $req->roleId)
+                ->where('user_id', $req->userId)
+                ->first();
+
+            if ($userRoles) {                                                           // If Data Already Existing
+                switch ($req->status) {
+                    case 1;
+                        $userRoles->is_suspended = 0;
+                        $userRoles->save();
+                        return responseMsg(true, "Successfully Enabled the Role Permission for User", "");
+                        break;
+                    case 0;
+                        $userRoles->is_suspended = 1;
+                        $userRoles->save();
+                        return responseMsg(true, "Successfully Disabled the Role Permission", "");
+                        break;
+                }
+            }
+
+            $userRoles = new WfRoleusermap();
+            $userRoles->wf_role_id = $req->roleId;
+            $userRoles->user_id = $req->userId;
+            $userRoles->created_by = authUser()->id;
+            $userRoles->save();
+
+            return responseMsg(true, "Successfully Enabled the Role Permission for the User", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
