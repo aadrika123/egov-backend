@@ -657,7 +657,7 @@ class SafRepository implements iSafRepository
                 if ($req->assessmentType == 2)
                     $safDetails->holding_no = $safDetails->previous_holding_id;
                 if ($req->assessmentType != 2) {
-                    $safDetails->holding_no = 'Hol/Ward/001';
+                    $safDetails->holding_no = 'HOL-SAF-' . $req->safId;
                 }
 
                 $safDetails->fam_no = 'FAM/002/00001';
@@ -979,18 +979,25 @@ class SafRepository implements iSafRepository
     {
         try {
             $propertyDtl = [];
-            $properties = PropProperty::where('ward_mstr_id', $req->wardId)
-                ->where('holding_no', $req->holdingNo)
-                ->where('status', 1)
+            $properties = DB::table('prop_properties')
+                ->select('s.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                ->join('prop_safs as s', 's.id', '=', 'prop_properties.saf_id')
+                ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
+                ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
+                ->join('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
+                ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
+                ->where('prop_properties.ward_mstr_id', $req->wardId)
+                ->where('prop_properties.holding_no', $req->holdingNo)
+                ->where('prop_properties.status', 1)
                 ->first();
 
-            $floors = PropFloor::where('property_id', $properties->id)
+            $floors = PropFloor::where('property_id', $properties->property_id)
                 ->get();
 
-            $owners = PropOwner::where('property_id', $properties->id)
+            $owners = PropOwner::where('property_id', $properties->property_id)
                 ->get();
 
-            $propertyDtl = $properties;
+            $propertyDtl = collect($properties);
             $propertyDtl['floors'] = $floors;
             $propertyDtl['owners'] = $owners;
 
