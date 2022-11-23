@@ -6,6 +6,7 @@ use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\SafCalculatorController;
 use App\Http\Controllers\Property\CalculatorController;
 use App\Http\Controllers\ObjectionController;
+use App\Http\Controllers\Property\PropertyBifurcationController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Http\Controllers\Property\SafReassessmentController;
@@ -82,6 +83,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('inboxDeactivation', "inbox");
         Route::post('postNextDeactivation', "postNextLevel");
         Route::post('getDeactivationDtls', "readDeactivationReq");
+    });
+    //PropertyBifurcation Process
+    /**
+     * Crated By - Sandeep Bara
+     * Created On- 23-11-2022 
+     */
+    Route::controller(PropertyBifurcationController::class)->group(function () {
+        Route::post('searchByHoldingNoBi', "readHoldigbyNo");        
     });
     //Rain water Harvesting
     /**

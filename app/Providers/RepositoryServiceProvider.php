@@ -59,8 +59,9 @@ use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 
 
 use App\Repository\Property\Concrete\CalculatorRepository;
+use App\Repository\Property\Concrete\PropertyBifurcation;
 use App\Repository\Property\Interfaces\iCalculatorRepository;
-
+use App\Repository\Property\Interfaces\IPropertyBifurcation;
 use App\Repository\WorkflowMaster\Interface\iWorkflowMapRepository;
 
 
@@ -89,6 +90,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(iSafReassessRepo::class, SafReassessRepo::class);
         $this->app->bind(IPropertyDeactivate::class, PropertyDeactivate::class);
         $this->app->bind(iRainWaterHarvesting::class, RainWaterHarvestingRepo::class);
+        $this->app->bind(IPropertyBifurcation::class, PropertyBifurcation::class);
 
         //menu permission
         $this->app->bind(IMenuGroupsRepository::class, EloquentMenuGroups::class);
