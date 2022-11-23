@@ -55,6 +55,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             $refUlbId   = $refUser->ulb_id;
             $mProperty  = $this->_property->getPropertyById($request->id);
             $mNowDate   = Carbon::now()->format("Y-m-d");
+            $mNowDateYm   = Carbon::now()->format("Y-m");
             $refWorkflowId = Config::get('workflow-constants.SAF_BIFURCATION_ID');            
             $mUserType  = $this->_common->userType($refWorkflowId);
             $init_finish = $this->_common->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId); 
@@ -83,90 +84,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             }
             elseif($request->getMethod()=="POST")
             {
-                $rules['assessmentType'] = "required|int|in:1,2,3";
-                if(isset($request->assessmentType) && $request->assessmentType ==3)
-                {
-                    $rules['transferModeId'] = "required";
-                    $rules['dateOfPurchase'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
-                    $rules["isOwnerChanged"] = "required|bool";
-                }                
-                $rules['ward']          = "required|digits_between:1,9223372036854775807";
-                $rules['propertyType']  = "required|int";
-                $rules['ownershipType'] = "required|int";
-                $rules['roadType']      = "required|numeric";
-                $rules['areaOfPlot']    = "required|numeric";
-                $rules['isMobileTower'] = "required|bool";
-                if(isset($request->isMobileTower) && $request->isMobileTower)
-                {
-                    $rules['mobileTower.area'] = "required|numeric";
-                    $rules['mobileTower.dateFrom'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
-                }
-                $rules['isHoardingBoard'] = "required|bool";
-                if(isset($request->isHoardingBoard) && $request->isHoardingBoard)
-                {
-                    $rules['hoardingBoard.area'] = "required|numeric";
-                    $rules['hoardingBoard.dateFrom'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
-                }
-                $rules['isPetrolPump'] = "required|bool";
-                if(isset($request->isPetrolPump) && $request->isPetrolPump)
-                {
-                    $rules['petrolPump.area'] = "required|numeric";
-                    $rules['petrolPump.dateFrom'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
-                }
-                if(isset($request->propertyType) && $request->propertyType==4)
-                {
-                    $rules['landOccupationDate'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
-                }
-                else
-                {
-                    $rules['floor']        = "required|array";
-                    if(isset($request->floor) && $request->floor)
-                    {
-                        $rules["floor.*.floorNo"]           =   "required|int";
-                        $rules["floor.*.useType"]           =   "required|int";
-                        $rules["floor.*.constructionType"]  =   "required|int|in:1,2,3";
-                        $rules["floor.*.occupancyType"]     =   "required|int";
-
-                        $rules["floor.*.buildupArea"]       =   "required|numeric";
-                        $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m|before_or_equal:$mNowDate";
-                        $rules["floor.*.occupancyType"]     =   "required|int";
-                    }
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                    $rules['assessmentType'] = "required|int|in:1,2,3";
-                }
-                $rules['isWaterHarvesting'] = "required|bool";
-                if(isset($request->assessmentType) && $request->assessmentType !=1)
-                {
-                    $rules['previousHoldingId'] = "required|digits_between:1,9223372036854775807";
-                    $rules['holdingNo']         = "required|string";
-                }
-                $rules['zone']           = "required|int|in:1,2";
-
-                
-                $rules['assessmentType'] = "required|int|in:1,2,3";
-                $rules['assessmentType'] = "required|int|in:1,2,3";
-                $rules['assessmentType'] = "required|int|in:1,2,3";
-                $rules['assessmentType'] = "required|int|in:1,2,3";
-
-                $validator = Validator::make($request->all(), $rules, );
-                if ($validator->fails()) 
-                {
-                    return responseMsg(false, $validator->errors(),$request->all());
-                }
-                
+               
                 $assessmentTypeId = $request->assessmentType ;
                 // $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.3");                
                 $ulbWorkflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
