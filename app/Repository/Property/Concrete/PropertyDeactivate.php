@@ -160,6 +160,15 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                 throw New Exception("Property Not Found");
             }
+            $PropDeactivationRequest    = PropDeactivationRequest::select("*")
+                                          ->where("property_id",$mProperty->id)
+                                          ->where("status",1)
+                                          ->orderBy("id","DESC")
+                                          ->first();
+            if($PropDeactivationRequest)
+            {
+                throw new Exception("Request is already submited. Please check request status...!");
+            }
             $mOwrners = $this->getPropOwnerByProId($mProperty->id);
             if($request->getMethod()=="GET")
             {
