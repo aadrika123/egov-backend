@@ -507,8 +507,12 @@ class PropertyDeactivate implements IPropertyDeactivate
     public function readDeactivationReq(Request $request)
     {
         try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
             $mUserType = $this->_common->userType($refWorkflowId);
+            $init_finish = $this->_common->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
             $rules = [
                 "requestId" => "required|int",
             ];
@@ -524,6 +528,14 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                 throw new Exception("Data Not Found!");
             }
+            $mlevelData = $this->getLevelData($request->requestId);
+            $pendingAt  = $init_finish['initiator']['id'];                   
+            $mworkflowRoles = $this->_common->getWorkFlowAllRoles($refUserId,$refUlbId,$refWorkflowId,true);
+            $mileSton = $this->_common->sortsWorkflowRols($mworkflowRoles);
+            if($mlevelData)
+            {
+                $pendingAt = $mlevelData->receiver_type_id;                
+            } 
             $refProperty = $this->getPropertyById($refRequestData->property_id);
             $refOwners   = $this->getPropOwnerByProId($refRequestData->property_id);
             $refTimeLine = $this->getTimelin($request->requestId);
@@ -533,6 +545,9 @@ class PropertyDeactivate implements IPropertyDeactivate
                 "owners"     => $refOwners,
                 'remarks'    => $refTimeLine,
                 "userType"   => $mUserType,
+                "levelData"  => $mlevelData,
+                "roles"      => $mileSton,
+                "pendingAt"  => $pendingAt
             ];
 
             return responseMsg(true,"",remove_null($data));
@@ -659,5 +674,5 @@ class PropertyDeactivate implements IPropertyDeactivate
         {
             echo $e->getMessage();
         }
-    }
+    }    
 }
