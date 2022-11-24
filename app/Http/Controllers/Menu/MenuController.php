@@ -53,4 +53,11 @@ class MenuController extends Controller
         $menuMaster = new MenuMaster();
         return $menuMaster->addNewMenues($request);
     }
+
+    // Getting userRole wise menus
+    public function getRoleWiseMenu(Request $request)
+    {
+        return $this->_repo->getRoleWiseMenu();
+    }
+
 }

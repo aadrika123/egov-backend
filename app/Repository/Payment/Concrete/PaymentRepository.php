@@ -746,11 +746,11 @@ class PaymentRepository implements iPayment
             #-----------
             $transaction = WebhookPaymentData::join('department_masters','department_masters.id','=','webhook_payment_data.department_id')
             ->select(
-                'payment_transaction_id AS transactionNo',
-                'created_at AS dateOfTransaction',
-                'payment_method AS paymentMethod',
-                'payment_amount AS amount',
-                'payment_status AS paymentStatus',
+                'webhook_payment_data.payment_transaction_id AS transactionNo',
+                'webhook_payment_data.created_at AS dateOfTransaction',
+                'webhook_payment_data.payment_method AS paymentMethod',
+                'webhook_payment_data.payment_amount AS amount',
+                'webhook_payment_data.payment_status AS paymentStatus',
                 'department_masters.department_name AS modueName'
             )
                 ->where('user_id', $userId)
