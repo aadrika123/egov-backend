@@ -260,7 +260,7 @@ class SafRepository implements iSafRepository
             $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
 
             DB::commit();
-            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo]);
+            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo, "safId" => $saf->id]);
         } catch (Exception $e) {
             DB::rollBack();
             return $e;
