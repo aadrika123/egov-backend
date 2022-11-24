@@ -48,12 +48,7 @@ class MenuController extends Controller
     {
         $request->validate([
             'menuName' => 'required',
-            'topLevel' => 'required|integer',
-            'subLevel' => 'required|integer',
-            'parentSerial' => 'required|integer',
-            'serial' => 'required|integer',
             'route' => 'required|unique:menu_masters,route',
-            'icon' => 'required|integer',
         ]);
         $menuMaster = new MenuMaster();
         return $menuMaster->addNewMenues($request);
