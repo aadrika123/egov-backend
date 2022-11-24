@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Cluster\ClusterController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
@@ -138,6 +139,21 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(RainWaterHarvestingController::class)->group(function () {
         Route::get('get-wardmaster-data', 'getWardMasterData');
         Route::post('water_harvesting_application', 'waterHarvestingApplication');
+    });
+
+    // Cluster
+    Route::controller(ClusterController::class)->group(function () {
+        #cluster data entry
+        Route::get('cluster/get-all-clusters', 'getAllClusters');
+        Route::post('cluster/get-cluster-by-id', 'getClusterById');
+        Route::post('cluster/edit-cluster-details', 'editClusterDetails');
+        Route::post('cluster/save-cluster-details', 'saveClusterDetails');
+        Route::delete('cluster/delete-cluster-data', 'deleteClusterData');
+
+        # cluster maping
+        Route::post('cluster/details-by-holding', 'detailsByHolding');
+        Route::post('cluster/holding-by-cluster', 'holdingByCluster');
+        Route::post('cluster/save-holding-in-cluster', 'saveHoldingInCluster');
     });
 });
 Route::controller(CalculatorController::class)->group(function () {

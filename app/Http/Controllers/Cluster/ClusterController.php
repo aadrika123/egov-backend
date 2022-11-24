@@ -131,8 +131,6 @@ class ClusterController extends Controller
 
 
 
-
-
     /**
      * | ----------------- Common funtion for the return component in failer ------------------------------- |
      * | @param req

@@ -113,4 +113,16 @@ class MenuRepo implements iMenuRepo
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | user->roles->menu getting userRole wise menues
+     * | @param request 
+     * | Query Run Time = ms 
+     * | Status- Open
+     * | Rating-3
+     */
+    public function getRoleWiseMenu()
+    {
+        return "working";
+    }
 }
