@@ -27,6 +27,8 @@ class MenuMaster extends Model
             $newMenues->parent_serial  =  $request->parentSerial;
             $newMenues->description  =  $request->description;
             $newMenues->serial = $request->serial;
+            $newMenues->route = $request->route;
+            $newMenues->icon = $request->icon;
             $newMenues->save();
             return responseMsg(true, "Data Saved!", "");
         } catch (Exception $error) {
