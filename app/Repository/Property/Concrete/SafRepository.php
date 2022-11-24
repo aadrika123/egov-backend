@@ -21,6 +21,7 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
 use App\Models\Property\PropTransaction;
@@ -184,18 +185,16 @@ class SafRepository implements iSafRepository
         try {
             $user_id = auth()->user()->id;
             $ulb_id = auth()->user()->ulb_id;
+            $assessmentTypeId = $request->assessmentType;
             if ($request->assessmentType == 1) {                                                    // New Assessment 
-                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.NewAssessment");
                 $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             }
 
             if ($request->assessmentType == 2) {                                                    // Reassessment
-                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.ReAssessment");
                 $workflow_id = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
             }
 
             if ($request->assessmentType == 3) {                                                    // Mutation
-                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.Mutation");
                 $workflow_id = Config::get('workflow-constants.SAF_MUTATION_ID');
             }
 
@@ -260,7 +259,7 @@ class SafRepository implements iSafRepository
             $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
 
             DB::commit();
-            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo, "safId" => $saf->id]);
+            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo, "safId" => $saf->id, "Demand" => $safTaxes->original]);
         } catch (Exception $e) {
             DB::rollBack();
             return $e;
@@ -1091,6 +1090,29 @@ class SafRepository implements iSafRepository
             return responseMsg(true, $msg, "");
         } catch (Exception $e) {
             DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Geo Tagging Photo Uploads
+     */
+    public function geoTagging($req)
+    {
+        try {
+            // dd($req->all());
+            foreach ($req->uploads as $upload) {
+                $geoTagging = new PropSafGeotagUpload();
+                $geoTagging->saf_id = $req->safId;
+                $geoTagging->latitude = $upload['latitude'];
+                $geoTagging->longitude = $upload['longitude'];
+                $geoTagging->direction_type = $upload['directionType'];
+                $geoTagging->image_path = $upload['imagePath'];
+                $geoTagging->user_id = authUser()->id;
+                $geoTagging->save();
+            }
+            return responseMsg(true, "Geo Tagging Done Successfully", "");
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }

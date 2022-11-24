@@ -75,7 +75,7 @@ trait SAF
 
         $saf->application_date =  Carbon::now()->format('Y-m-d');
         $saf->saf_pending_status = $req->safPendingStatus;
-        $saf->assessment_type = $assessmentTypeId;
+        $saf->assessment_type = $req->assessmentType;
         $saf->doc_upload_status = $req->docUploadStatus;
         $saf->saf_distributed_dtl_id = $req->safDistributedDtl;
         $saf->prop_dtl_id = $req->propDtl;
@@ -83,7 +83,7 @@ trait SAF
         $saf->corr_state = $req->corrState;
         $saf->holding_type = $req->holdingType;
         $saf->ip_address = $req->ipAddress;
-        $saf->property_assessment_id = $assessmentTypeId;
+        $saf->property_assessment_id = $req->assessmentType;
         $saf->new_ward_mstr_id = $req->newWard;
         $saf->percentage_of_property_transfer = $req->percOfPropertyTransfer;
         $saf->apartment_details_id = $req->apartmentDetail;

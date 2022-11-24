@@ -56,6 +56,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions
 
         Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification
+        Route::post('saf/geotagging', 'geoTagging');                                                         // Geo Tagging
     });
 
     // SAF Reassessment
