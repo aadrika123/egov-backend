@@ -147,4 +147,13 @@ class ActiveSafController extends Controller
         ]);
         return $this->Repository->siteVerification($req);
     }
+
+    // Geo Tagging
+    public function geoTagging(Request $req)
+    {
+        $req->validate([
+            "safId" => "required|integer"
+        ]);
+        return $this->Repository->geoTagging($req);
+    }
 }

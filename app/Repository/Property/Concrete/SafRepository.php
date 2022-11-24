@@ -21,6 +21,7 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
 use App\Models\Property\PropTransaction;
@@ -184,18 +185,16 @@ class SafRepository implements iSafRepository
         try {
             $user_id = auth()->user()->id;
             $ulb_id = auth()->user()->ulb_id;
+            $assessmentTypeId = $request->assessmentType;
             if ($request->assessmentType == 1) {                                                    // New Assessment 
-                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.NewAssessment");
                 $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             }
 
             if ($request->assessmentType == 2) {                                                    // Reassessment
-                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.ReAssessment");
                 $workflow_id = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
             }
 
             if ($request->assessmentType == 3) {                                                    // Mutation
-                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.Mutation");
                 $workflow_id = Config::get('workflow-constants.SAF_MUTATION_ID');
             }
 
@@ -260,7 +259,7 @@ class SafRepository implements iSafRepository
             $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
 
             DB::commit();
-            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo, "safId" => $saf->id]);
+            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo, "safId" => $saf->id, "Demand" => $safTaxes->original]);
         } catch (Exception $e) {
             DB::rollBack();
             return $e;
@@ -390,8 +389,9 @@ class SafRepository implements iSafRepository
             // Saf Details
             $data = [];
             $data = DB::table('prop_active_safs')
-                ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'w.ward_name as new_ward_no', 'o.ownership_type', 'p.property_type')
                 ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
+                ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
                 ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
                 ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
                 ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
@@ -401,7 +401,14 @@ class SafRepository implements iSafRepository
             $ownerDetails = PropActiveSafsOwner::where('saf_id', $data['id'])->get();
             $data['owners'] = $ownerDetails;
 
-            $floorDetails = PropActiveSafsFloor::where('saf_id', $data['id'])->get();
+            $floorDetails = DB::table('prop_active_safs_floors')
+                ->select('prop_active_safs_floors.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')
+                ->join('ref_prop_floors as f', 'f.id', '=', 'prop_active_safs_floors.floor_mstr_id')
+                ->join('ref_prop_usage_types as u', 'u.id', '=', 'prop_active_safs_floors.usage_type_mstr_id')
+                ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_active_safs_floors.occupancy_type_mstr_id')
+                ->join('ref_prop_construction_types as c', 'c.id', '=', 'prop_active_safs_floors.const_type_mstr_id')
+                ->where('saf_id', $data['id'])
+                ->get();
             $data['floors'] = $floorDetails;
 
             $levelComments = DB::table('prop_level_pendings')
@@ -1091,6 +1098,36 @@ class SafRepository implements iSafRepository
             return responseMsg(true, $msg, "");
         } catch (Exception $e) {
             DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Geo Tagging Photo Uploads
+     * | @param request req
+     */
+    public function geoTagging($req)
+    {
+        try {
+            foreach ($req->uploads as $upload) {
+                $geoTagging = new PropSafGeotagUpload();
+                $geoTagging->saf_id = $req->safId;
+                $geoTagging->latitude = $upload['latitude'];
+                $geoTagging->longitude = $upload['longitude'];
+                $geoTagging->direction_type = $upload['directionType'];
+                $geoTagging->user_id = authUser()->id;
+
+                // Upload Image
+                $base64Encode = base64_encode($upload['imagePath']->getClientOriginalName());
+                $extention = $upload['imagePath']->getClientOriginalExtension();
+                $imageName = time() . '-' . $base64Encode . '.' . $extention;
+                $upload['imagePath']->storeAs('public/Property/GeoTagging', $imageName);
+
+                $geoTagging->image_path = $imageName;
+                $geoTagging->save();
+            }
+            return responseMsg(true, "Geo Tagging Done Successfully", "");
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
