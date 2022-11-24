@@ -41,7 +41,7 @@ class EloquentAuthRepository implements AuthRepository
      * @param App\Http\Requests\AuthUserRequest $request
      */
 
-    public function store(AuthUserRequest $request)
+    public function store($request)
     {
         try {
             // Validation---@source-App\Http\Requests\AuthUserRequest

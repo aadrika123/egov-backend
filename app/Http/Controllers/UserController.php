@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Auth\AuthorizeRequestUser;
 use App\Http\Requests\Auth\AuthUserRequest;
 use App\Http\Requests\Auth\LoginUserRequest;
 use App\Http\Requests\Auth\ChangePassRequest;
 use App\Repository\Auth\EloquentAuthRepository;
+use App\Traits\Auth;
 use Illuminate\Http\Request;
 
 /**
@@ -34,6 +36,15 @@ class UserController extends Controller
     {
         return $this->EloquentAuth->store($request);
     }
+
+    //
+    public function authorizeStore(AuthorizeRequestUser $request)
+    {
+        $request['ulb'] = auth()->user()->ulb_id;
+        return $this->EloquentAuth->store($request);
+    }
+
+
 
     // Update User Details
     public function update(Request $request, $id)
