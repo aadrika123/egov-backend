@@ -26,4 +26,5 @@ interface iSafRepository
     public function paymentSaf($req);                       // SAF Payment
     public function getPropTransactions($req);              // Get Property Transactions
     public function getPropByHoldingNo($req);               // Get Property Details by Holding no
+    public function siteVerification($req);                 // Site Verification for Agency TC and Ulb TC
 }

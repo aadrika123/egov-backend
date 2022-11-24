@@ -75,8 +75,8 @@ class reqApplySaf extends FormRequest
                 $rules["floor.*.occupancyType"]     =   "required|int";
 
                 $rules["floor.*.buildupArea"]       =   "required|numeric";
-                $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m|before_or_equal:$mNowDateYm";
-                $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m|before_or_equal:$mNowDateYm";
+                $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
+                $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate";
             }
         }
         $rules['isWaterHarvesting'] = "required|bool";
@@ -86,7 +86,7 @@ class reqApplySaf extends FormRequest
             $rules['holdingNo']         = "required|string";
         }
         $rules['zone']           = "required|int|in:1,2";
-        if(isset($this->assessmentType) && $this->assessmentType !=1 || ($this->assessmentType ==3 && $this->isOwnerChanged))
+        if(isset($this->assessmentType) && $this->assessmentType ==1 || ($this->assessmentType ==3 && $this->isOwnerChanged))
         {
             $rules['owner']        = "required|array";
             if(isset($this->owner) && $this->owner)

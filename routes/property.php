@@ -10,7 +10,6 @@ use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Http\Controllers\Property\SafReassessmentController;
-use Symfony\Component\Routing\DependencyInjection\RoutingResolverPass;
 use App\Http\Controllers\Property\PropertyBifurcationController;
 
 /**
@@ -55,6 +54,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('saf/generate-order-id', 'generateOrderId');                                            // Generate Order ID
         Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment
         Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions
+
+        Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification
     });
 
     // SAF Reassessment

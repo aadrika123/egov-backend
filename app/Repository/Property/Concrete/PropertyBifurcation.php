@@ -84,7 +84,6 @@ class PropertyBifurcation implements IPropertyBifurcation
             }
             elseif($request->getMethod()=="POST")
             {
-               
                 $assessmentTypeId = $request->assessmentType ;
                 // $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.3");                
                 $ulbWorkflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
@@ -141,7 +140,6 @@ class PropertyBifurcation implements IPropertyBifurcation
                         $floor->save();
                     }
                 }
-    
                 // Property SAF Label Pendings
                 $labelPending = new PropLevelPending();
                 $labelPending->saf_id = $saf->id;
