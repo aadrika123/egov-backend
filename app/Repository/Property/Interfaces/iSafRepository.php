@@ -12,6 +12,7 @@ interface iSafRepository
 {
     public function masterSaf();                            // Get all master data while applying Saf
     public function applySaf($request);                     // Apply For SAF
+    public function documentUpload($req);                   // Document Upload By Citizen or JSK
     public function inbox();                                // Saf Inbox
     public function outbox();                               // Saf Outbox
     public function details($request);                      // Get SAF By ID

@@ -33,6 +33,17 @@ class ActiveSafController extends Controller
     {
         return $this->Repository->applySaf($request);
     }
+
+    // Document Upload By Citizen Or JSK
+    public function documentUpload(Request $req)
+    {
+        $req->validate([
+            'safId' => 'required|integer'
+        ]);
+        return $this->Repository->documentUpload($req);
+    }
+
+    // Inbox list
     public function inbox()
     {
         $data = $this->Repository->inbox();

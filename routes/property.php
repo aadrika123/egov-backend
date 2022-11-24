@@ -37,6 +37,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     // SAF 
     Route::controller(ActiveSafController::class)->group(function () {
         Route::post('saf/apply', 'applySaf');                                                               // Applying Saf Route
+        Route::post('saf/doc-upload', 'documentUpload');                                                     // Document Upload by Citizen or JSK
         Route::get('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf
         Route::get('saf/inbox', 'inbox');                                                                   // Saf Inbox
         Route::get('saf/outbox', 'outbox');                                                                 // Saf Workflow Outbox and Outbox By search key
