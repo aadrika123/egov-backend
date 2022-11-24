@@ -52,7 +52,7 @@ class MenuController extends Controller
             'subLevel' => 'required|integer',
             'parentSerial' => 'required|integer',
             'serial' => 'required|integer',
-            'route' => 'required|integer',
+            'route' => 'required|integer|unique:menu_masters,route',
             'icon' => 'required|integer',
         ]);
         $menuMaster = new MenuMaster();

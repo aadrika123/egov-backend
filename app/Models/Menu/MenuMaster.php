@@ -16,7 +16,13 @@ class MenuMaster extends Model
             ->get();
     }
 
-    // adding new menue in the table
+    /**
+     * | Add Data of Menu in Menu Master
+     * | @param request
+     * | Query Run Time - 332ms 
+     * | status- open
+     * | rating-1
+     */
     public function addNewMenues($request)
     {
         try {
