@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Menu;
 
 use App\Http\Controllers\Controller;
+use App\Models\Menu\MenuMaster;
 use App\Repository\Menu\Interface\iMenuRepo;
 use Illuminate\Http\Request;
 
@@ -40,5 +41,19 @@ class MenuController extends Controller
             'status' => 'required|bool'
         ]);
         return $this->_repo->updateMenuByRole($req);
+    }
+
+    // adding new menu in menu master
+    public function addNewMenues(Request $request)
+    {
+        $request->validate([
+            'menuName' => 'required',
+            'topLevel' => 'required|integer',
+            'subLevel' => 'required|integer',
+            'parentSerial' => 'required|integer',
+            'serial' => 'required|integer',
+        ]);
+        $menuMaster = new MenuMaster();
+        return $menuMaster->addNewMenues($request);
     }
 }
