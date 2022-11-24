@@ -117,12 +117,25 @@ class MenuRepo implements iMenuRepo
     /**
      * | user->roles->menu getting userRole wise menues
      * | @param request 
-     * | Query Run Time = ms 
-     * | Status- Open
+     * | Query Run Time = 328ms 
+     * | Status- open
      * | Rating-3
      */
     public function getRoleWiseMenu()
     {
-        return "working";
+        try {
+            $userId=auth()->user()->id;
+            $menuDetails = WfRolemenu::join('wf_roleusermaps','wf_roleusermaps.wf_role_id','=','wf_rolemenus.role_id')
+            ->join('menu_masters','menu_masters.id','=','wf_rolemenus.menu_id')
+            ->where('wf_roleusermaps.user_id',$userId)
+            ->select(
+                'menu_masters.menu_string AS menuName',
+                'menu_masters.route',
+            )
+            ->get();
+            return responseMsg(true,"Data according to roles",$menuDetails);
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!",$error->getMessage());
+        }
     }
 }

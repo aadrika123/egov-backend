@@ -59,5 +59,4 @@ class MenuController extends Controller
     {
         return $this->_repo->getRoleWiseMenu();
     }
-
 }

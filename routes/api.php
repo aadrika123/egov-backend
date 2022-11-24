@@ -349,6 +349,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('menu-roles/get-menu-by-roles', 'getMenuByroles');        // Get all the menu by roles
         Route::post('menu-roles/update-menu-by-role', 'updateMenuByRole');      // Update Menu Permission By Role
         # Diff
-        Route::post('crud/menu/add-new-menues','addNewMenues');       // adding the details of the menues in the menue table
+        Route::post('crud/menu/add-new-menues', 'addNewMenues');       // adding the details of the menues in the menue table
+        Route::get('role-menu/get-role-by-menu', 'getRoleWiseMenu');     // get menu according to the user role
     });
 });
