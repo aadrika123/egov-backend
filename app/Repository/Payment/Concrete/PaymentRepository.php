@@ -743,8 +743,22 @@ class PaymentRepository implements iPayment
     {
         try {
             $userId = auth()->user()->id;
-            $webhookModel = new WebhookPaymentData();
-            $transaction = $webhookModel->getNotesDetails($userId);
+            #-----------
+            $transaction = WebhookPaymentData::join('department_masters','department_masters.id','=','webhook_payment_data.department_id')
+            ->select(
+                'payment_transaction_id AS transactionNo',
+                'created_at AS dateOfTransaction',
+                'payment_method AS paymentMethod',
+                'payment_amount AS amount',
+                'payment_status AS paymentStatus',
+                'department_masters.department_name AS modueName'
+            )
+                ->where('user_id', $userId)
+                ->get();
+            if (!empty($transaction['0'])) {
+                return $transaction;
+            }
+            return ("No Dsata!");
             return responseMsg(true, "All transaction for the respective id", $transaction);
         } catch (Exception $error) {
             return responseMsg(false, "", $error->getMessage());
