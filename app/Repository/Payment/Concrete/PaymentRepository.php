@@ -732,7 +732,6 @@ class PaymentRepository implements iPayment
 
     #________________________________________(END)_________________________________________#
 
-
     /**
      * |--------- all the transaction details regardless of module ----------
      * |@param request
@@ -744,15 +743,15 @@ class PaymentRepository implements iPayment
         try {
             $userId = auth()->user()->id;
             #-----------
-            $transaction = WebhookPaymentData::join('department_masters','department_masters.id','=','webhook_payment_data.department_id')
-            ->select(
-                'webhook_payment_data.payment_transaction_id AS transactionNo',
-                'webhook_payment_data.created_at AS dateOfTransaction',
-                'webhook_payment_data.payment_method AS paymentMethod',
-                'webhook_payment_data.payment_amount AS amount',
-                'webhook_payment_data.payment_status AS paymentStatus',
-                'department_masters.department_name AS modueName'
-            )
+            $transaction = WebhookPaymentData::join('department_masters', 'department_masters.id', '=', 'webhook_payment_data.department_id')
+                ->select(
+                    'webhook_payment_data.payment_transaction_id AS transactionNo',
+                    'webhook_payment_data.created_at AS dateOfTransaction',
+                    'webhook_payment_data.payment_method AS paymentMethod',
+                    'webhook_payment_data.payment_amount AS amount',
+                    'webhook_payment_data.payment_status AS paymentStatus',
+                    'department_masters.department_name AS modueName'
+                )
                 ->where('user_id', $userId)
                 ->get();
             if (!empty($transaction['0'])) {

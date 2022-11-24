@@ -95,15 +95,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('searchByHoldingNoBi', "readHoldigbyNo");
         Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");
     });
-    //Rain water Harvesting
-    /**
-     * Crated By - Sam kerketta
-     * Created On- 22-11-2022 
-     */
-    Route::controller(RainWaterHarvestingController::class)->group(function () {
-        Route::get('get-wardmaster-data', 'getWardMasterData');
-        Route::post('water_harvesting_application', 'waterHarvestingApplication');
-    });
 
     //Property Concession
     Route::controller(ConcessionController::class)->group(function () {
@@ -143,7 +134,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     // Cluster
     Route::controller(ClusterController::class)->group(function () {
-        #cluster data entry
+        #cluster data entry / Master
         Route::get('cluster/get-all-clusters', 'getAllClusters');
         Route::post('cluster/get-cluster-by-id', 'getClusterById');
         Route::post('cluster/edit-cluster-details', 'editClusterDetails');
