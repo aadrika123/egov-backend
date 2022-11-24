@@ -133,7 +133,10 @@ class MenuRepo implements iMenuRepo
                 'menu_masters.route',
             )
             ->get();
+            if(!empty($menuDetails['0'])){
             return responseMsg(true,"Data according to roles",$menuDetails);
+            }
+            return responseMsg(false,"Data not Found!","");
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!",$error->getMessage());
         }
