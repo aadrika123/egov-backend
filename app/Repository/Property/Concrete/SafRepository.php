@@ -389,8 +389,9 @@ class SafRepository implements iSafRepository
             // Saf Details
             $data = [];
             $data = DB::table('prop_active_safs')
-                ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'w.ward_name as new_ward_no', 'o.ownership_type', 'p.property_type')
                 ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
+                ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
                 ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
                 ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
                 ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
@@ -400,7 +401,13 @@ class SafRepository implements iSafRepository
             $ownerDetails = PropActiveSafsOwner::where('saf_id', $data['id'])->get();
             $data['owners'] = $ownerDetails;
 
-            $floorDetails = PropActiveSafsFloor::where('saf_id', $data['id'])->get();
+            $floorDetails = DB::table('prop_active_safs_floors')
+                ->select('prop_active_safs_floors.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type')
+                ->join('ref_prop_floors as f', 'f.id', '=', 'prop_active_safs_floors.floor_mstr_id')
+                ->join('ref_prop_usage_types as u', 'u.id', '=', 'prop_active_safs_floors.usage_type_mstr_id')
+                ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_active_safs_floors.occupancy_type_mstr_id')
+                ->where('saf_id', $data['id'])
+                ->get();
             $data['floors'] = $floorDetails;
 
             $levelComments = DB::table('prop_level_pendings')
@@ -1096,19 +1103,26 @@ class SafRepository implements iSafRepository
 
     /**
      * | Geo Tagging Photo Uploads
+     * | @param request req
      */
     public function geoTagging($req)
     {
         try {
-            // dd($req->all());
             foreach ($req->uploads as $upload) {
                 $geoTagging = new PropSafGeotagUpload();
                 $geoTagging->saf_id = $req->safId;
                 $geoTagging->latitude = $upload['latitude'];
                 $geoTagging->longitude = $upload['longitude'];
                 $geoTagging->direction_type = $upload['directionType'];
-                $geoTagging->image_path = $upload['imagePath'];
                 $geoTagging->user_id = authUser()->id;
+
+                // Upload Image
+                $base64Encode = base64_encode($upload['imagePath']->getClientOriginalName());
+                $extention = $upload['imagePath']->getClientOriginalExtension();
+                $imageName = time() . '-' . $base64Encode . '.' . $extention;
+                $upload['imagePath']->storeAs('public/Property/GeoTagging', $imageName);
+
+                $geoTagging->image_path = $imageName;
                 $geoTagging->save();
             }
             return responseMsg(true, "Geo Tagging Done Successfully", "");
