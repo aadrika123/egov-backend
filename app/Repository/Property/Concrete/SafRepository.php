@@ -21,6 +21,8 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSafVerification;
+use App\Models\Property\PropSafVerificationDtl;
 use App\Models\Property\PropTransaction;
 use App\Models\Property\RefPropConstructionType;
 use App\Models\Property\RefPropFloor;
@@ -1003,6 +1005,92 @@ class SafRepository implements iSafRepository
 
             return responseMsg(true, "Property Details", remove_null($propertyDtl));
         } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Site Verification
+     * | @param req requested parameter
+     */
+    public function siteVerification($req)
+    {
+        try {
+            $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
+            $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
+            $verificationStatus = $req->verificationStatus;                                             // Verification Status true or false
+
+            $verification = new PropSafVerification();
+
+            switch ($req->currentRoleId) {
+                case $taxCollectorRole;                                                                  // In Case of Agency TAX Collector
+                    if ($verificationStatus == 1) {
+                        $verification->agency_verification = true;
+                        $msg = "Site Successfully Verified";
+                    }
+                    if ($verificationStatus == 0) {
+                        $verification->agency_verification = false;
+                        $msg = "Site Successfully rebuted";
+                    }
+                    break;
+
+                case $ulbTaxCollectorRole;                                                                // In Case of Ulb Tax Collector
+                    if ($verificationStatus == 1) {
+                        $verification->ulb_verification = true;
+                        $msg = "Site Successfully Verified";
+                    }
+                    if ($verificationStatus == 0) {
+                        $verification->ulb_verification = false;
+                        $msg = "Site Successfully rebuted";
+                    }
+                    break;
+
+                default:
+                    return responseMsg(false, "Forbidden Access", "");
+            }
+
+            // Verification Store
+            DB::beginTransaction();
+            $verification->saf_id = $req->safId;
+            $verification->prop_type_id = $req->propertyType;
+            $verification->road_type_id = $req->roadTypeId;
+            $verification->area_of_plot = $req->areaOfPlot;
+            $verification->ward_id = $req->wardId;
+            $verification->has_mobile_tower = $req->isMobileTower;
+            $verification->tower_area = $req->mobileTowerArea;
+            $verification->tower_installation_date = $req->mobileTowerDate;
+            $verification->has_hoarding = $req->isHoardingBoard;
+            $verification->hoarding_area = $req->hoardingArea;
+            $verification->hoarding_installation_date = $req->hoardingDate;
+            $verification->is_petrol_pump = $req->isPetrolPump;
+            $verification->underground_area = $req->petrolPumpUndergroundArea;
+            $verification->petrol_pump_completion_date = $req->petrolPumpDate;
+            $verification->has_water_harvesting = $req->isHarvesting;
+            $verification->zone_id = $req->zone;
+            $verification->user_id = $req->userId;
+            $verification->save();
+
+            // Verification Dtl Table Update                                         // For Tax Collector
+            foreach ($req->floorDetails as $floorDetail) {
+                $verificationDtl = new PropSafVerificationDtl();
+                $verificationDtl->verification_id = $verification->id;
+                $verificationDtl->saf_id = $req->safId;
+                $verificationDtl->saf_floor_id = $floorDetail['floorId'];
+                $verificationDtl->floor_mstr_id = $floorDetail['floorMstrId'];
+                $verificationDtl->usage_type_id = $floorDetail['usageType'];
+                $verificationDtl->construction_type_id = $floorDetail['constructionType'];
+                $verificationDtl->occupancy_type_id = $floorDetail['occupancyType'];
+                $verificationDtl->builtup_area = $floorDetail['builtupArea'];
+                $verificationDtl->date_from = $floorDetail['fromDate'];
+                $verificationDtl->date_to = $floorDetail['toDate'];
+                $verificationDtl->carpet_area = $floorDetail['carpetArea'];
+                $verificationDtl->save();
+            }
+
+            DB::commit();
+            return responseMsg(true, $msg, "");
+        } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }

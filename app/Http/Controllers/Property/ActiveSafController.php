@@ -137,4 +137,14 @@ class ActiveSafController extends Controller
         ]);
         return $this->Repository->getPropByHoldingNo($req);
     }
+
+    // Site Verification
+    public function siteVerification(Request $req)
+    {
+        $req->validate([
+            'safId' => 'required|integer',
+            'verificationStatus' => 'required|bool'
+        ]);
+        return $this->Repository->siteVerification($req);
+    }
 }
