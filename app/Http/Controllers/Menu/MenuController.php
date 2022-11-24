@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Menu;
 
 use App\Http\Controllers\Controller;
+use App\Models\Menu\MenuMaster;
 use App\Repository\Menu\Interface\iMenuRepo;
 use Illuminate\Http\Request;
 
@@ -41,4 +42,22 @@ class MenuController extends Controller
         ]);
         return $this->_repo->updateMenuByRole($req);
     }
+
+    // adding new menu in menu master
+    public function addNewMenues(Request $request)
+    {
+        $request->validate([
+            'menuName' => 'required',
+            'route' => 'required|unique:menu_masters,route',
+        ]);
+        $menuMaster = new MenuMaster();
+        return $menuMaster->addNewMenues($request);
+    }
+
+    // Getting userRole wise menus
+    public function getRoleWiseMenu(Request $request)
+    {
+        return $this->_repo->getRoleWiseMenu();
+    }
+
 }

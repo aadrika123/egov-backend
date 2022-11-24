@@ -16,19 +16,14 @@ use App\Repository\Payment\Interfaces\iPayment;
 use App\Repository\Property\Concrete\SafRepository;
 use Illuminate\Support\Facades\Validator;
 use App\Traits\Payment\Razorpay;
-use Carbon\Carbon;
-use Razorpay\Api\Api;
-use Razorpay\Api\Errors\SignatureVerificationError;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
 use Exception;
-use Illuminate\Support\Facades\Config;
-use PhpParser\Node\Expr\Empty_;
+
 
 /**
  * | Created On-14-11-2022 
- * | Created By- sam kerketta
+ * | Created By- Sam kerketta
  * | Payment Regarding Crud Operations
  */
 class PaymentRepository implements iPayment
@@ -528,7 +523,7 @@ class PaymentRepository implements iPayment
         }
     }
 
-    #____________________________________(START)___________________________________________#
+    #____________________________________( Reconciliation - START)___________________________________________#
 
     /**
      * |--------- reconciliationDateWise 1.1----------
@@ -741,14 +736,29 @@ class PaymentRepository implements iPayment
     /**
      * |--------- all the transaction details regardless of module ----------
      * |@param request
-     * |@object webhookModel
+     * |@var object webhookModel
      * |@var transaction
      */
-    public function allModuleTransaction($request)
+    public function allModuleTransaction()
     {
         try {
-            $webhookModel = new WebhookPaymentData();
-            $transaction = $webhookModel->getNotesDetails($request->userId);
+            $userId = auth()->user()->id;
+            #-----------
+            $transaction = WebhookPaymentData::join('department_masters','department_masters.id','=','webhook_payment_data.department_id')
+            ->select(
+                'webhook_payment_data.payment_transaction_id AS transactionNo',
+                'webhook_payment_data.created_at AS dateOfTransaction',
+                'webhook_payment_data.payment_method AS paymentMethod',
+                'webhook_payment_data.payment_amount AS amount',
+                'webhook_payment_data.payment_status AS paymentStatus',
+                'department_masters.department_name AS modueName'
+            )
+                ->where('user_id', $userId)
+                ->get();
+            if (!empty($transaction['0'])) {
+                return $transaction;
+            }
+            return ("No Dsata!");
             return responseMsg(true, "All transaction for the respective id", $transaction);
         } catch (Exception $error) {
             return responseMsg(false, "", $error->getMessage());
