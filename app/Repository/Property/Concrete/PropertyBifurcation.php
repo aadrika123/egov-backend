@@ -140,7 +140,6 @@ class PropertyBifurcation implements IPropertyBifurcation
                         $floor->save();
                     }
                 }
-                dd($safTaxes->original);
                 // Property SAF Label Pendings
                 $labelPending = new PropLevelPending();
                 $labelPending->saf_id = $saf->id;
