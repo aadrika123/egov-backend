@@ -15,7 +15,8 @@ class UlbWardMaster extends Model
         $ulbId = auth()->user()->ulb_id;
         try {
             $wards = UlbWardMaster::where('ulb_id', $ulbId)
-                ->orderByDesc('id')->get();
+                ->select('id', 'ward_name as wardName')
+                ->get();
             return responseMsg(true, "Successfully Retrieved", $wards);
         } catch (Exception $e) {
             return response()->json($e, 400);
