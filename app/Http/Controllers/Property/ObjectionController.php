@@ -26,4 +26,28 @@ class ObjectionController extends Controller
     {
         return $this->Repository->objectionType($request);
     }
+
+    //ownerDetails
+    public function ownerDetails(Request $request)
+    {
+        return $this->Repository->ownerDetails($request);
+    }
+
+    //assesment details
+    public function assesmentDetails(Request $request)
+    {
+        return $this->Repository->assesmentDetails($request);
+    }
+
+    //inbox
+    public function inbox(Request $request)
+    {
+        return $this->Repository->inbox($request);
+    }
+
+    //inbox
+    public function outbox(Request $request)
+    {
+        return $this->Repository->outbox($request);
+    }
 }

@@ -17,15 +17,23 @@ trait Objection
     // Get Concession List
     public function getObjectionList($ulbId)
     {
-        return DB::table('prop_objections')
+        return DB::table('prop_active_objections')
             ->select(
-                '*'
+                'prop_active_objections.id',
+                'prop_active_objections.applicant_name as owner_name',
+                'a.ward_mstr_id',
+                'u.ward_name as ward_no',
+                'a.holding_no',
+                'a.prop_type_mstr_id',
+                'p.property_type',
+                'prop_active_objections.workflow_id',
+                'prop_active_objections.current_role as role_id'
             )
-            ->leftJoin('safs as a', 'a.id', '=', 'prop_active_concessions.property_id')
-            ->join('prop_m_property_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
+            ->leftJoin('prop_properties as a', 'a.id', '=', 'prop_active_objections.property_id')
+            ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
-            ->where('prop_active_concessions.status', 1)
-            ->where('prop_active_concessions.ulb_id', $ulbId);
+            ->where('prop_active_objections.status', 1)
+            ->where('prop_active_objections.ulb_id', $ulbId);
     }
 
     //insert data in Prop Active Objection
