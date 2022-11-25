@@ -267,6 +267,35 @@ class SafRepository implements iSafRepository
         }
     }
 
+    /**
+     * | Verify Document by Dealing Assistant
+     * | @param req
+     * | Verification Status (0 is for pending, 1 is for Approval, 2 for Rejection)
+     */
+    public function verifyDoc($req)
+    {
+        try {
+            $verifications = $req->verifications;
+            DB::beginTransaction();
+            foreach ($verifications as $verification) {
+                $activeSafDoc = new PropActiveSafsDoc();
+                $document = $activeSafDoc->getSafDocument($verification['documentId']);             // Get Saf Document By id
+                if ($verification['verifyStatus'] == 1) {
+                    $document->verify_status = 1;
+                    $document->save();
+                }
+                if ($verification['verifyStatus'] == 0) {
+                    $document->verify_status = 2;
+                    $document->save();
+                }
+            }
+            DB::commit();
+            return responseMsg(true, "Document Verification Successfully Done", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 
     /**
      * | Citizen or JSK Document Upload
