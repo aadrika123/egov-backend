@@ -37,14 +37,12 @@ class UserController extends Controller
         return $this->EloquentAuth->store($request);
     }
 
-    //
+    // Store the user in database from Authority
     public function authorizeStore(AuthorizeRequestUser $request)
     {
         $request['ulb'] = auth()->user()->ulb_id;
         return $this->EloquentAuth->store($request);
     }
-
-
 
     // Update User Details
     public function update(Request $request, $id)

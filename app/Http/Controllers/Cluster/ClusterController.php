@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Cluster;
 
 use App\Http\Controllers\Controller;
+use App\Models\Cluster\Cluster;
 use App\Repository\Cluster\Interfaces\iCluster;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class ClusterController extends Controller
 {
-    //
+    //constructer 
     private iCluster $cluster;
     public function __construct(iCluster $cluster)
     {
@@ -38,15 +39,16 @@ class ClusterController extends Controller
                 'clusterName'   => 'required',
                 'clusterType' => 'required',
                 'id' => 'required',
-                'address' => 'required',
-                'mobileNo' => 'required',
-                'authorizedPersonName' => 'required'
+                'clusterAddress' => 'required',
+                'clusterMobileNo' => ['required', 'min:10', 'max:10'],
+                'clusterAuthPersonName' => 'required'
             ]
         );
         if ($validateUser->fails()) {
             return $this->failure($validateUser->errors());
         }
-        return $this->cluster->editClusterDetails($request);
+        $cluster = new Cluster();
+        return $cluster->editClusterDetails($request);
     }
 
 
@@ -57,16 +59,18 @@ class ClusterController extends Controller
         $validateUser = Validator::make(
             $request->all(),
             [
-                'ulbId'   => 'required|integer',
-                'userId'   => 'required|integer',
                 'clusterName'   => 'required',
-                'clusterType' => 'requred',
+                'clusterType' => 'required',
+                'clusterAddress' => 'required',
+                'clusterAuthPersonName' => 'required',
+                'clusterMobileNo' => ['required', 'min:10', 'max:10']
             ]
         );
         if ($validateUser->fails()) {
             return $this->failure($validateUser->errors());
         }
-        return $this->cluster->editClusterDetails($request);
+        $cluster = new Cluster();
+        return $cluster->saveClusterDetails($request);
     }
 
     //soft deletion of the cluster details 
