@@ -786,7 +786,7 @@ class SafCalculation
             "rentalRate" => roundFigure($rentalRate),
             "occupancyFactor" => $paramOccupancyFactor,
 
-            "holdingTax" => 0,
+            "holdingTax" => roundFigure($totalTax / 4),
             "latrineTax" => 0,
             "waterTax" => 0,
             "healthTax" => 0,
@@ -909,7 +909,7 @@ class SafCalculation
             "calculationFactor" => $readCalculationFactor,
             "matrixFactor" => $readMatrixFactor,
 
-            "holdingTax" => 0,
+            "holdingTax" => roundFigure($totalTax / 4),
             "latrineTax" => 0,
             "waterTax" => 0,
             "healthTax" => 0,

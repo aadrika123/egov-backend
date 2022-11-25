@@ -125,7 +125,7 @@ class EloquentAuthRepository implements AuthRepository
         try {
             // Validation
             $validator = $request->validated();
-
+            $email = $request->email;
             // checking user is existing or not
             $emailInfo = User::where('email', $request->email)->first();
             if (!$emailInfo) {
@@ -153,7 +153,7 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);         // EXPIRE KEY AFTER 5 HOURS
-                    $message = $this->tResponseSuccess($token);               // Response Message Using Trait
+                    $message = $this->tResponseSuccess($token,$email);               // Response Message Using Trait
                     return response()->json($message, 200);
                 }
                 // AUTHENTICATING PASSWORD IN HASH
@@ -179,7 +179,7 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
-                    $message = $this->tResponseSuccess($token);           // Response Message Using Trait
+                    $message = $this->tResponseSuccess($token,$email);           // Response Message Using Trait
                     return response()->json($message, 200);
                 } else {
                     $msg = "Incorrect Password";

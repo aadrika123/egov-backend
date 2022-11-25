@@ -18,9 +18,7 @@ use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
-use App\Models\Property\PropFloor;
 use App\Models\Property\PropLevelPending;
-use App\Models\Property\PropOwner;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
@@ -185,6 +183,7 @@ class SafRepository implements iSafRepository
         try {
             $user_id = auth()->user()->id;
             $ulb_id = auth()->user()->ulb_id;
+            $demand = array();
             $assessmentTypeId = $request->assessmentType;
             if ($request->assessmentType == 1) {                                                    // New Assessment 
                 $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
@@ -255,11 +254,13 @@ class SafRepository implements iSafRepository
             $labelPending->save();
 
             // Insert Tax
+            $demand['amounts'] = $safTaxes->original['data']['demand'];
+            $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
             $tax = new InsertTax();
             $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
 
             DB::commit();
-            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo, "safId" => $saf->id, "Demand" => $safTaxes->original]);
+            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo, "safId" => $saf->id, "demand" => $demand]);
         } catch (Exception $e) {
             DB::rollBack();
             return $e;
@@ -457,6 +458,7 @@ class SafRepository implements iSafRepository
                 ->where('prop_active_safs.id', $req->id)
                 ->first();
             $data = json_decode(json_encode($data), true);
+
             $ownerDetails = PropActiveSafsOwner::where('saf_id', $data['id'])->get();
             $data['owners'] = $ownerDetails;
 
@@ -478,7 +480,7 @@ class SafRepository implements iSafRepository
                     'prop_level_pendings.verification_status'
                 )
                 ->where('prop_level_pendings.saf_id', $data['id'])
-                ->where('status', 1)
+                ->where('prop_level_pendings.status', 1)
                 ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_level_pendings.receiver_role_id')
                 ->get();
             $data['levelComments'] = $levelComments;
@@ -1172,7 +1174,6 @@ class SafRepository implements iSafRepository
                 $verificationDtl->builtup_area = $floorDetail['builtupArea'];
                 $verificationDtl->date_from = $floorDetail['fromDate'];
                 $verificationDtl->date_to = $floorDetail['toDate'];
-                $verificationDtl->carpet_area = $floorDetail['carpetArea'];
                 $verificationDtl->save();
             }
 
