@@ -43,7 +43,6 @@ class RazorpayPaymentController extends Controller
         return $this->Prepository->getDepartmentByulb($req);
     }
 
-
     //get PaymentGateway by request
     public function getPaymentgatewayByrequests(Request $req)
     {
@@ -85,7 +84,6 @@ class RazorpayPaymentController extends Controller
     {
         return $this->Prepository->getTransactionNoDetails($req);
     }
-
 
     //get all the details of Payment Reconciliation 
     public function getReconcillationDetails()

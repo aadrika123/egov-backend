@@ -33,6 +33,26 @@ class ActiveSafController extends Controller
     {
         return $this->Repository->applySaf($request);
     }
+
+    // Document Upload By Citizen Or JSK
+    public function documentUpload(Request $req)
+    {
+        $req->validate([
+            'safId' => 'required|integer'
+        ]);
+        return $this->Repository->documentUpload($req);
+    }
+
+    // Verify Document By Dealing Assistant
+    public function verifyDoc(Request $req)
+    {
+        $req->validate([
+            "verifications" => "required"
+        ]);
+        return $this->Repository->verifyDoc($req);
+    }
+
+    // Inbox list
     public function inbox()
     {
         $data = $this->Repository->inbox();
@@ -95,6 +115,12 @@ class ActiveSafController extends Controller
     // Back to Citizen
     public function backToCitizen(Request $req)
     {
+        $req->validate([
+            'safId' => 'required|integer',
+            'workflowId' => 'required|integer',
+            'currentRoleId' => 'required|integer',
+            'comment' => 'required|string'
+        ]);
         return $this->Repository->backToCitizen($req);
     }
 
@@ -136,5 +162,24 @@ class ActiveSafController extends Controller
             'holdingNo' => 'required'
         ]);
         return $this->Repository->getPropByHoldingNo($req);
+    }
+
+    // Site Verification
+    public function siteVerification(Request $req)
+    {
+        $req->validate([
+            'safId' => 'required|integer',
+            'verificationStatus' => 'required|bool'
+        ]);
+        return $this->Repository->siteVerification($req);
+    }
+
+    // Geo Tagging
+    public function geoTagging(Request $req)
+    {
+        $req->validate([
+            "safId" => "required|integer"
+        ]);
+        return $this->Repository->geoTagging($req);
     }
 }

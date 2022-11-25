@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
  * | payment Module Routes |
  * |-----------------------------------------------------------------------------------
  * | Created On-14-11-2022 
- * | Created For-The Routes defined for the payment gateway through razorpay
+ * | Created For-The Routes defined for the payment gateway
  * | Created By-sam kerketa
  */
 
@@ -30,16 +30,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-webhook-details', 'getWebhookDetails');                                     // returning all the webhook details 
         Route::post('get-order-id', 'getTraitOrderId'); //<----------------- here (INVALID)
         Route::post('verify-payment-status', 'verifyPaymentStatus');                                // verifiying the payment status and saving both success, fails, suspeciousdata  
-        Route::post('get-transaction-no-details', 'getTransactionNoDetails');  
-        Route::get('all-module-transaction','allModuleTransaction'); //<------- all details  
-        
+        Route::post('get-transaction-no-details', 'getTransactionNoDetails');                       // geting details of the transaction according to the orderId, paymentId and payment status
+        Route::get('all-module-transaction', 'allModuleTransaction');                                // all details of payments according to user Id 
+
         # Payment Reconciliation
-        Route::get('get-reconcillation-details', 'getReconcillationDetails'); 
+        Route::get('get-reconcillation-details', 'getReconcillationDetails');
         Route::post('search-reconciliation-details', 'searchReconciliationDetails');
         Route::post('update-reconciliation-details', 'updateReconciliationDetails');
     });
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {
-Route::post('razerpay-webhook', 'gettingWebhookDetails');                                           // collecting the all data provided by the webhook and updating the related database
-
+    Route::post('razerpay-webhook', 'gettingWebhookDetails');                                           // collecting the all data provided by the webhook and updating the related database
 });

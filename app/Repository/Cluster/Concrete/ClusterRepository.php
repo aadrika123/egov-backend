@@ -69,75 +69,6 @@ class ClusterRepository implements iCluster
         }
     }
 
-
-    /**
-     * | ------------------------- updating the cluster data according to cluster id/master ------------------------------- |
-     * | @param request
-     * | @var userId
-     * | @var ulbId
-     * | @param error
-     * | Operation : updating the cluster data whith new data
-     * | rating - 1
-     * | time - 428 ms
-     */
-    public function editClusterDetails($request)
-    {
-        try {
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
-            Cluster::where('id', $request->id)
-                ->update([
-                    'ulb_id' => $ulbId,
-                    'user_id' => $userId,
-                    'cluster_name' => $request->clusterName,
-                    'cluster_type' => $request->clusterType,
-                    'address' => $request->address,
-                    'mobile_no' => $request->mobileNo,
-                    'authorized_person_name' => $request->authorizedPersonName
-                ]);
-            return $this->success($request->id);
-        } catch (Exception $error) {
-            return $this->failure($error->getMessage());
-        }
-    }
-
-
-    /**
-     * | ----------------- saving new data in the cluster/master ------------------------------- |
-     * | @param request
-     * | @param error
-     * | @var userId
-     * | @var ulbId
-     * | @var newCluster
-     * | Operation : saving the data of cluster   
-     * | rating - 1
-     * | time - 477
-     */
-    public function saveClusterDetails($request)
-    {
-        try {
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
-
-            $newCluster = new Cluster();
-            $newCluster->ulb_id  = $ulbId;
-            $newCluster->cluster_name  = $request->clusterName;
-            $newCluster->cluster_type  = $request->clusterType;
-            $newCluster->address  = $request->address;
-            $newCluster->user_id  = $userId;
-            $newCluster->mobile_no = $request->mobileNo;
-            $newCluster->authorized_person_name = $request->authorizedPersonName;
-            $saved = $newCluster->save();
-
-            if ($saved) {
-                return $this->success($request->userId);
-            }
-            return  $this->failure($request->userId);
-        } catch (Exception $error) {
-            return $this->failure($error->getMessage());
-        }
-    }
-
     /**
      * | ----------------- deleting the data of the cluster/master ------------------------------- |
      * | @param request
@@ -157,6 +88,17 @@ class ClusterRepository implements iCluster
         }
     }
 
+
+
+
+
+
+
+
+
+
+
+    
 
     /**
      * | ----------------- details of the respective holding NO ------------------------------- |
@@ -184,7 +126,6 @@ class ClusterRepository implements iCluster
             return $this->failure($error->getMessage());
         }
     }
-
 
     /**
      * | ----------------- respective holding according to cluster ID ------------------------------- |

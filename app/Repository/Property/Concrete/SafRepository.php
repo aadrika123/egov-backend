@@ -15,12 +15,15 @@ use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropOwner;
-use App\Models\Property\PropProperty;
+use App\Models\Property\PropSafGeotagUpload;
+use App\Models\Property\PropSafVerification;
+use App\Models\Property\PropSafVerificationDtl;
 use App\Models\Property\PropTransaction;
 use App\Models\Property\RefPropConstructionType;
 use App\Models\Property\RefPropFloor;
@@ -182,18 +185,16 @@ class SafRepository implements iSafRepository
         try {
             $user_id = auth()->user()->id;
             $ulb_id = auth()->user()->ulb_id;
+            $assessmentTypeId = $request->assessmentType;
             if ($request->assessmentType == 1) {                                                    // New Assessment 
-                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.NewAssessment");
                 $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             }
 
             if ($request->assessmentType == 2) {                                                    // Reassessment
-                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.ReAssessment");
                 $workflow_id = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
             }
 
             if ($request->assessmentType == 3) {                                                    // Mutation
-                $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.Mutation");
                 $workflow_id = Config::get('workflow-constants.SAF_MUTATION_ID');
             }
 
@@ -258,10 +259,69 @@ class SafRepository implements iSafRepository
             $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
 
             DB::commit();
-            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo]);
+            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo, "safId" => $saf->id, "Demand" => $safTaxes->original]);
         } catch (Exception $e) {
             DB::rollBack();
             return $e;
+        }
+    }
+
+    /**
+     * | Verify Document by Dealing Assistant
+     * | @param req
+     * | Verification Status (0 is for pending, 1 is for Approval, 2 for Rejection)
+     */
+    public function verifyDoc($req)
+    {
+        try {
+            $verifications = $req->verifications;
+            DB::beginTransaction();
+            foreach ($verifications as $verification) {
+                $activeSafDoc = new PropActiveSafsDoc();
+                $document = $activeSafDoc->getSafDocument($verification['documentId']);             // Get Saf Document By id
+                if ($verification['verifyStatus'] == 1) {
+                    $document->verify_status = 1;
+                    $document->save();
+                }
+                if ($verification['verifyStatus'] == 0) {
+                    $document->verify_status = 2;
+                    $document->save();
+                }
+            }
+            DB::commit();
+            return responseMsg(true, "Document Verification Successfully Done", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Citizen or JSK Document Upload
+     * | @param request $req
+     */
+    public function documentUpload($req)
+    {
+        try {
+            $images = $req->uploads;
+            foreach ($images as $image) {
+                $document = new PropActiveSafsDoc();
+                $document->saf_id = $req->safId;
+                // Upload Image
+                $base64Encode = base64_encode($image['docPath']->getClientOriginalName());
+                $extention = $image['docPath']->getClientOriginalExtension();
+                $imageName = time() . '-' . $base64Encode . '.' . $extention;
+                $image['docPath']->storeAs('public/Property/SafOwnerDetails', $imageName);
+
+                $document->doc_mstr_id = $image['docMastId'];
+                $document->doc_path = $imageName;
+                $document->saf_owner_dtl_id = $image['ownerDtlId'];
+                $document->user_id = authUser()->id;
+                $document->save();
+            }
+            return responseMsg(true, "Successfully Uploaded the Images", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -388,10 +448,11 @@ class SafRepository implements iSafRepository
             // Saf Details
             $data = [];
             $data = DB::table('prop_active_safs')
-                ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'w.ward_name as new_ward_no', 'o.ownership_type', 'p.property_type')
                 ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
+                ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
                 ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
-                ->join('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
+                ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
                 ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
                 ->where('prop_active_safs.id', $req->id)
                 ->first();
@@ -399,7 +460,14 @@ class SafRepository implements iSafRepository
             $ownerDetails = PropActiveSafsOwner::where('saf_id', $data['id'])->get();
             $data['owners'] = $ownerDetails;
 
-            $floorDetails = PropActiveSafsFloor::where('saf_id', $data['id'])->get();
+            $floorDetails = DB::table('prop_active_safs_floors')
+                ->select('prop_active_safs_floors.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')
+                ->join('ref_prop_floors as f', 'f.id', '=', 'prop_active_safs_floors.floor_mstr_id')
+                ->join('ref_prop_usage_types as u', 'u.id', '=', 'prop_active_safs_floors.usage_type_mstr_id')
+                ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_active_safs_floors.occupancy_type_mstr_id')
+                ->join('ref_prop_construction_types as c', 'c.id', '=', 'prop_active_safs_floors.const_type_mstr_id')
+                ->where('saf_id', $data['id'])
+                ->get();
             $data['floors'] = $floorDetails;
 
             $levelComments = DB::table('prop_level_pendings')
@@ -590,10 +658,8 @@ class SafRepository implements iSafRepository
         DB::beginTransaction();
         try {
             // previous level pending verification enabling
-            $preLevelPending = PropLevelPending::where('saf_id', $request->safId)
-                ->orderByDesc('id')
-                ->limit(1)
-                ->first();
+            $propLevelPending = new PropLevelPending();
+            $preLevelPending = $propLevelPending->getLevelBySafReceiver($request->safId, $request->receiverRoleId);
             $preLevelPending->verification_status = '1';
             $preLevelPending->save();
 
@@ -848,11 +914,28 @@ class SafRepository implements iSafRepository
                     ->first();
                 $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
             }
+            DB::beginTransaction();
             $saf = PropActiveSaf::find($req->safId);
             $saf->current_role = $backId->wf_role_id;
             $saf->save();
+
+            $propLevelPending = new PropLevelPending();
+            $preLevelPending = $propLevelPending->getLevelBySafReceiver($req->safId, $req->currentRoleId);
+            $preLevelPending->remarks = $req->comment;
+            $preLevelPending->save();
+
+            $levelPending = new PropLevelPending();
+            $levelPending->saf_id = $req->safId;
+            $levelPending->sender_role_id = $req->currentRoleId;
+            $levelPending->receiver_role_id = $backId->wf_role_id;
+            $levelPending->user_id = authUser()->id;
+            $levelPending->sender_user_id = authUser()->id;
+            $levelPending->save();
+
+            DB::commit();
             return responseMsg(true, "Successfully Done", "");
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -983,18 +1066,26 @@ class SafRepository implements iSafRepository
                 ->select('s.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
                 ->join('prop_safs as s', 's.id', '=', 'prop_properties.saf_id')
                 ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
+                ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
                 ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
-                ->join('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
+                ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
                 ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
                 ->where('prop_properties.ward_mstr_id', $req->wardId)
                 ->where('prop_properties.holding_no', $req->holdingNo)
                 ->where('prop_properties.status', 1)
                 ->first();
 
-            $floors = PropFloor::where('property_id', $properties->property_id)
+            $floors = DB::table('prop_floors')
+                ->select('prop_floors.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')
+                ->join('ref_prop_floors as f', 'f.id', '=', 'prop_floors.floor_mstr_id')
+                ->join('ref_prop_usage_types as u', 'u.id', '=', 'prop_floors.usage_type_mstr_id')
+                ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_floors.occupancy_type_mstr_id')
+                ->join('ref_prop_construction_types as c', 'c.id', '=', 'prop_floors.const_type_mstr_id')
+                ->where('property_id', $properties->property_id)
                 ->get();
 
-            $owners = PropOwner::where('property_id', $properties->property_id)
+            $owners = DB::table('prop_owners')
+                ->where('property_id', $properties->property_id)
                 ->get();
 
             $propertyDtl = collect($properties);
@@ -1002,6 +1093,122 @@ class SafRepository implements iSafRepository
             $propertyDtl['owners'] = $owners;
 
             return responseMsg(true, "Property Details", remove_null($propertyDtl));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Site Verification
+     * | @param req requested parameter
+     */
+    public function siteVerification($req)
+    {
+        try {
+            $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
+            $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
+            $verificationStatus = $req->verificationStatus;                                             // Verification Status true or false
+
+            $verification = new PropSafVerification();
+
+            switch ($req->currentRoleId) {
+                case $taxCollectorRole;                                                                  // In Case of Agency TAX Collector
+                    if ($verificationStatus == 1) {
+                        $verification->agency_verification = true;
+                        $msg = "Site Successfully Verified";
+                    }
+                    if ($verificationStatus == 0) {
+                        $verification->agency_verification = false;
+                        $msg = "Site Successfully rebuted";
+                    }
+                    break;
+
+                case $ulbTaxCollectorRole;                                                                // In Case of Ulb Tax Collector
+                    if ($verificationStatus == 1) {
+                        $verification->ulb_verification = true;
+                        $msg = "Site Successfully Verified";
+                    }
+                    if ($verificationStatus == 0) {
+                        $verification->ulb_verification = false;
+                        $msg = "Site Successfully rebuted";
+                    }
+                    break;
+
+                default:
+                    return responseMsg(false, "Forbidden Access", "");
+            }
+
+            // Verification Store
+            DB::beginTransaction();
+            $verification->saf_id = $req->safId;
+            $verification->prop_type_id = $req->propertyType;
+            $verification->road_type_id = $req->roadTypeId;
+            $verification->area_of_plot = $req->areaOfPlot;
+            $verification->ward_id = $req->wardId;
+            $verification->has_mobile_tower = $req->isMobileTower;
+            $verification->tower_area = $req->mobileTowerArea;
+            $verification->tower_installation_date = $req->mobileTowerDate;
+            $verification->has_hoarding = $req->isHoardingBoard;
+            $verification->hoarding_area = $req->hoardingArea;
+            $verification->hoarding_installation_date = $req->hoardingDate;
+            $verification->is_petrol_pump = $req->isPetrolPump;
+            $verification->underground_area = $req->petrolPumpUndergroundArea;
+            $verification->petrol_pump_completion_date = $req->petrolPumpDate;
+            $verification->has_water_harvesting = $req->isHarvesting;
+            $verification->zone_id = $req->zone;
+            $verification->user_id = $req->userId;
+            $verification->save();
+
+            // Verification Dtl Table Update                                         // For Tax Collector
+            foreach ($req->floorDetails as $floorDetail) {
+                $verificationDtl = new PropSafVerificationDtl();
+                $verificationDtl->verification_id = $verification->id;
+                $verificationDtl->saf_id = $req->safId;
+                $verificationDtl->saf_floor_id = $floorDetail['floorId'];
+                $verificationDtl->floor_mstr_id = $floorDetail['floorMstrId'];
+                $verificationDtl->usage_type_id = $floorDetail['usageType'];
+                $verificationDtl->construction_type_id = $floorDetail['constructionType'];
+                $verificationDtl->occupancy_type_id = $floorDetail['occupancyType'];
+                $verificationDtl->builtup_area = $floorDetail['builtupArea'];
+                $verificationDtl->date_from = $floorDetail['fromDate'];
+                $verificationDtl->date_to = $floorDetail['toDate'];
+                $verificationDtl->carpet_area = $floorDetail['carpetArea'];
+                $verificationDtl->save();
+            }
+
+            DB::commit();
+            return responseMsg(true, $msg, "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Geo Tagging Photo Uploads
+     * | @param request req
+     */
+    public function geoTagging($req)
+    {
+        try {
+            foreach ($req->uploads as $upload) {
+                $geoTagging = new PropSafGeotagUpload();
+                $geoTagging->saf_id = $req->safId;
+                $geoTagging->latitude = $upload['latitude'];
+                $geoTagging->longitude = $upload['longitude'];
+                $geoTagging->direction_type = $upload['directionType'];
+                $geoTagging->user_id = authUser()->id;
+
+                // Upload Image
+                $base64Encode = base64_encode($upload['imagePath']->getClientOriginalName());
+                $extention = $upload['imagePath']->getClientOriginalExtension();
+                $imageName = time() . '-' . $base64Encode . '.' . $extention;
+                $upload['imagePath']->storeAs('public/Property/GeoTagging', $imageName);
+
+                $geoTagging->image_path = $imageName;
+                $geoTagging->save();
+            }
+            return responseMsg(true, "Geo Tagging Done Successfully", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
