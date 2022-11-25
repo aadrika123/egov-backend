@@ -96,7 +96,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * Modified On-27-06-2022 
      */
     Route::controller(UserController::class)->group(function () {
-        Route::post('authorised-register', 'authorizeStore');             // authorised user adding user
+        Route::post('authorised-register', 'authorizeStore');             // authorised user adding user // Sam
         Route::get('test', 'testing');
         Route::post('logout', 'logOut');
         Route::post('change-password', 'changePass');
