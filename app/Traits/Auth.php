@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use App\Models\Menu\WfRolemenu;
 use App\Models\User;
+use App\Models\Workflows\WfRoleusermap;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -219,27 +220,31 @@ trait Auth
 
         $userId = $userInfo['0']->id;
 
-        $menuDetails = WfRolemenu::join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_rolemenus.role_id')
-            ->join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
-            ->join('wf_roles', 'wf_roles.id', '=', 'wf_rolemenus.role_id')
+        $menuRoleDetails = WfRoleusermap::join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_role_id')
             ->where('wf_roleusermaps.user_id', $userId)
             ->select(
                 'wf_roles.role_name AS roles',
+            )
+            ->get();
+
+        $menuPermissionDetails = WfRolemenu::join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_rolemenus.role_id')
+            ->join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
+            ->where('wf_roleusermaps.user_id', $userId)
+            ->select(
                 'menu_masters.route AS menuPermission',
             )
             ->get();
 
-        $collection['role'] = collect($menuDetails)->map(function ($value, $key) {
+        $collection['role'] = collect($menuRoleDetails)->map(function ($value, $key) {
             $values = $value['roles'];
             return $values;
         });
 
-        $collection['menuPermission'] = collect($menuDetails)->map(function ($value, $key) {
+        $collection['menuPermission'] = collect($menuPermissionDetails)->map(function ($value, $key) {
             $values = $value['menuPermission'];
             return $values;
         });
-        $collection['name'] = $userInfo['0']->name;
+        $collection['userName'] = $userInfo['0']->name; 
         return $collection;
     }
-
 }
