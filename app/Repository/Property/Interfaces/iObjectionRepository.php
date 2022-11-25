@@ -20,4 +20,7 @@ interface iObjectionRepository
 
     public function inbox();
     public function outbox();
+    public function postNextLevel($req);
+    public function approvalRejection($req);
+    public function backTocitizen($req);
 }
