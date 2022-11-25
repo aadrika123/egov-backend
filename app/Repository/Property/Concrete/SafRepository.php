@@ -183,6 +183,7 @@ class SafRepository implements iSafRepository
         try {
             $user_id = auth()->user()->id;
             $ulb_id = auth()->user()->ulb_id;
+            $demand = array();
             $assessmentTypeId = $request->assessmentType;
             if ($request->assessmentType == 1) {                                                    // New Assessment 
                 $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
@@ -253,32 +254,13 @@ class SafRepository implements iSafRepository
             $labelPending->save();
 
             // Insert Tax
-            $collection = collect($safTaxes->original['data']['details']);
-            $filtered = $collection->map(function ($value) {
-                return collect($value)->only([
-                    'qtr', 'holdingTax', 'waterTax', 'educationTax',
-                    'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax'
-                ]);
-            });
-
-            $groupBy = $filtered->groupBy(['quarterYear', 'qtr']);
-            // $a = $groupBy->map(function ($values, $key) {
-            //     return $values->map(function ($collection) {
-            //         return [
-            //             "totalTax"=> $collection->sum(function ($b) {
-            //                 return $b['totalTax'];
-            //             });
-            //         ]
-            //     });
-            // });
-
-            // return $a;
-
+            $demand['amounts'] = $safTaxes->original['data']['demand'];
+            $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
             $tax = new InsertTax();
             $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
 
             DB::commit();
-            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo, "safId" => $saf->id, "Demand" => $safTaxes->original]);
+            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo, "safId" => $saf->id, "demand" => $demand]);
         } catch (Exception $e) {
             DB::rollBack();
             return $e;
