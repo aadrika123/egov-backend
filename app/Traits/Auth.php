@@ -231,6 +231,7 @@ trait Auth
             ->join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
             ->where('wf_roleusermaps.user_id', $userId)
             ->select(
+                'menu_masters.menu_string AS menuName',
                 'menu_masters.route AS menuPermission',
             )
             ->get();
@@ -241,7 +242,7 @@ trait Auth
         });
 
         $collection['menuPermission'] = collect($menuPermissionDetails)->map(function ($value, $key) {
-            $values = $value['menuPermission'];
+            $values = [$value['menuName']=>$value['menuPermission']];
             return $values;
         });
         $collection['userName'] = $userInfo['0']->name; 
