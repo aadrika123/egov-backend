@@ -247,7 +247,10 @@ trait SAF
         return $GRID;
     }
 
-    // Generate Property SAF Demand
+    /**
+     * | Generated SAF Demand to push the value in propSafsDemand Table 
+     * | @param collection
+     */
     public function generateSafDemand($collection)
     {
         $filtered = $collection->map(function ($value) {
@@ -257,9 +260,9 @@ trait SAF
             ]);
         });
 
-        // return $safTaxes;
         $groupBy = $filtered->groupBy(['quarterYear', 'qtr']);
-        $a = $groupBy->map(function ($values) {
+
+        $taxes = $groupBy->map(function ($values) {
             return $values->map(function ($collection) {
                 return collect([
                     'quarterYear' => $collection->first()['quarterYear'],
@@ -278,6 +281,6 @@ trait SAF
             });
         });
 
-        return $a->values()->collapse();
+        return $taxes->values()->collapse();
     }
 }

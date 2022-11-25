@@ -8,6 +8,13 @@ use App\Traits\Property\SAF;
 class InsertTax
 {
     use SAF;
+
+    /**
+     * | Save Generated Demand Tax
+     * | @param safId
+     * | @param userId 
+     * | @param safTaxes
+     */
     public function insertTax($safId, $userId, $safTaxes)
     {
         $safDemand = collect($safTaxes->original['data']['details']);
