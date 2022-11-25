@@ -66,11 +66,20 @@ class PropertyBifurcation implements IPropertyBifurcation
             elseif(!$init_finish["initiator"])
             {
                 throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
-            }       
+            }
             if(!$mProperty)
             {
                 throw new Exception("Property Not Found");
             }
+              
+            $priv_data = PropActiveSaf::select("*")
+                        ->where("previous_holding_id",$mProperty->id)
+                        ->orderBy("id","desc")
+                        ->first(); 
+            if($priv_data)
+            {
+                throw new Exception("Assesment already apply");
+            } 
             $mOwrners  = $this->_property->getPropOwnerByProId($mProperty->id);
             $mFloors    = $this->getFlooreDtl($mProperty->id);
             if($request->getMethod()=="GET")
@@ -84,71 +93,30 @@ class PropertyBifurcation implements IPropertyBifurcation
             }
             elseif($request->getMethod()=="POST")
             {
-                $assessmentTypeId = $request->assessmentType ;
-                // $assessmentTypeId = Config::get("PropertyConstaint.ASSESSMENT-TYPE.3");                
+                $assessmentTypeId = $request->assessmentType ;                
                 $ulbWorkflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
                     ->where('ulb_id', $refUlbId)
-                    ->first();
-    
-                if ($request->roadType <= 0)
-                    $request->roadType = 4;
-                elseif ($request->roadType > 0 && $request->roadType < 20)
-                    $request->roadType = 3;
-                elseif ($request->roadType >= 20 && $request->roadType <= 39)
-                    $request->roadType = 2;
-                elseif ($request->roadType > 40)
-                    $request->roadType = 1;
-    
-                $safCalculation = new SafCalculation();
-                $safTaxes = $safCalculation->calculateTax($request);
-    
-                $refInitiatorRoleId = $init_finish["initiator"]['id'];                // Get Current Initiator ID
-                $initiatorRoleId = $refInitiatorRoleId;
-
+                    ->first(); 
                 DB::beginTransaction();
-                // dd($request->ward);
-                $safNo = $this->safNo($request->ward, $assessmentTypeId, $refUlbId);
-                $saf = new PropActiveSaf();
-                $this->tApplySaf($saf, $request, $safNo, $assessmentTypeId);                    // Trait SAF Apply
-                // workflows
-                $saf->user_id = $refUserId;
-                $saf->workflow_id = $ulbWorkflowId->id;
-                $saf->ulb_id = $refUlbId;
-                $saf->current_role = $initiatorRoleId;
-                $saf->save();
-    
-                // SAF Owner Details
-                if ($request['owner']) 
+                $safNo = [];
+                $parentSaf="";
+                foreach($request->container as $key=>$val)
                 {
-                    $owner_detail = $request['owner'];
-                    foreach ($owner_detail as $owner_details) 
+                    $myRequest = new \Illuminate\Http\Request();
+                    $myRequest->setMethod('POST');
+                    $myRequest->request->add(['assessmentType' => $assessmentTypeId]);
+                    foreach($val as $key2 =>$val2)
                     {
-                        $owner = new PropActiveSafsOwner();
-                        $this->tApplySafOwner($owner, $saf, $owner_details);                    // Trait Owner Details
-                        $owner->save();
+                        $myRequest->request->add([$key2 => $val2]);
                     }
-                }
-    
-                // Floor Details
-                if ($request['floor']) 
-                {
-                    $floor_detail = $request['floor'];
-                    foreach ($floor_detail as $floor_details) 
+                    $safNo[$key] = $this->insertData($myRequest);
+                    if($myRequest->isAcquired)
                     {
-                        $floor = new PropActiveSafsFloor();
-                        $this->tApplySafFloor($floor, $saf, $floor_details);
-                        $floor->save();
+                        $parentSaf = $safNo[$key];
                     }
+                    
                 }
-                // Property SAF Label Pendings
-                $labelPending = new PropLevelPending();
-                $labelPending->saf_id = $saf->id;
-                $labelPending->receiver_role_id = $initiatorRoleId;
-                $labelPending->save();
-                // Insert Tax
-                $tax = new InsertTax();
-                $tax->insertTax($saf->id, $refUserId, $safTaxes);                                         // Insert SAF Tax
-    
+                dd($safNo,$parentSaf);
                 DB::commit();
                 return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo]);
             }
@@ -173,6 +141,88 @@ class PropertyBifurcation implements IPropertyBifurcation
         catch(Exception $e)
         {
             return [];
+        }
+    }
+
+    public function insertData(Request $req)
+    {
+        try{
+            $refUser    = Auth()->user();
+            $refUserId  = $refUser->id;
+            $refUlbId   = $refUser->ulb_id;
+            $mNowDate   = Carbon::now()->format("Y-m-d");
+            $mNowDateYm   = Carbon::now()->format("Y-m");
+            $refWorkflowId = Config::get('workflow-constants.SAF_BIFURCATION_ID');            
+            $mUserType  = $this->_common->userType($refWorkflowId);
+            $init_finish = $this->_common->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
+
+            $assessmentTypeId = $req->assessmentType ;                
+            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $refUlbId)
+                ->first();
+            if ($req->roadType <= 0)
+                $req->roadType = 4;
+            elseif ($req->roadType > 0 && $req->roadType < 20)
+                $req->roadType = 3;
+            elseif ($req->roadType >= 20 && $req->roadType <= 39)
+                $req->roadType = 2;
+            elseif ($req->roadType > 40)
+                $req->roadType = 1;
+
+            $safCalculation = new SafCalculation();
+            $safTaxes = $safCalculation->calculateTax($req);
+
+            $refInitiatorRoleId = $init_finish["initiator"]['id'];                // Get Current Initiator ID
+            $initiatorRoleId = $refInitiatorRoleId;
+            // dd($request->ward);
+            $safNo = $this->safNo($req->ward, $assessmentTypeId, $refUlbId);
+            $saf = new PropActiveSaf();
+            
+            // workflows
+            $saf->user_id = $refUserId;
+            $saf->workflow_id = $ulbWorkflowId->id;
+            $saf->ulb_id = $refUlbId;
+            $saf->current_role = $initiatorRoleId;
+            $saf->save();
+            $safNo = $safNo."/".$saf->id;
+            $this->tApplySaf($saf, $req, $safNo, $assessmentTypeId);                    // Trait SAF Apply
+            $saf->update();
+            // SAF Owner Details
+            if ($req['owner']) 
+            {
+                $owner_detail = $req['owner'];
+                foreach ($owner_detail as $owner_details) 
+                {
+                    $owner = new PropActiveSafsOwner();
+                    $this->tApplySafOwner($owner, $saf, $owner_details);                    // Trait Owner Details
+                    $owner->save();
+                }
+            }
+
+            // Floor Details
+            if ($req['floor']) 
+            {
+                $floor_detail = $req['floor'];
+                foreach ($floor_detail as $floor_details) 
+                {
+                    $floor = new PropActiveSafsFloor();
+                    $this->tApplySafFloor($floor, $saf, $floor_details);
+                    $floor->save();
+                }
+            }
+            // Property SAF Label Pendings
+            $labelPending = new PropLevelPending();
+            $labelPending->saf_id = $saf->id;
+            $labelPending->receiver_role_id = $initiatorRoleId;
+            $labelPending->save();
+            // Insert Tax
+            $tax = new InsertTax();
+            $tax->insertTax($saf->id, $refUserId, $safTaxes);                                         // Insert SAF Tax
+            return $safNo;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
         }
     }
 }

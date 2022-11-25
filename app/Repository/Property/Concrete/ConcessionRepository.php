@@ -16,6 +16,7 @@ use App\Models\Workflows\WfWorkflowrolemap;
 use App\Traits\Property\Concession;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Redis;
+use App\Models\Property\PropConcessionDocDtl;
 
 class ConcessionRepository implements iConcessionRepository
 {
@@ -36,21 +37,24 @@ class ConcessionRepository implements iConcessionRepository
         try {
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
+            $userType = auth()->user()->user_type;
+            // if ($userType == "JSK") {
+            //     $obj  = new SafRepository();
+            //     $data = $obj->getPropByHoldingNo($request);
+            // }
 
             DB::beginTransaction();
             $workflow_id = Config::get('workflow-constants.PROPERTY_CONCESSION_ID');
             $concession = new PropActiveConcession;
-            $concession->property_id = $request->propertyId;
-            $concession->saf_id = $request->safId;
+            $concession->property_id = $request->propId;
             $concession->application_no = $request->applicationNo;
             $concession->applicant_name = $request->applicantName;
             $concession->gender = $request->gender;
             $concession->dob = $request->dob;
             $concession->is_armed_force = $request->armedForce;
             $concession->is_specially_abled = $request->speciallyAbled;
-            $concession->doc_type = $request->docType;
             $concession->remarks = $request->remarks;
-            $concession->status = $request->status;
+            $concession->status = 1;
             $concession->user_id = $userId;
             $concession->ulb_id = $ulbId;
 
@@ -69,6 +73,7 @@ class ConcessionRepository implements iConcessionRepository
             $concession->save();
 
             //gender Doc
+            //$concession->doc_type = $request->docType;
             if ($file = $request->file('genderDoc')) {
 
                 $name = time() . $file . '.' . $file->getClientOriginalExtension();
@@ -100,6 +105,17 @@ class ConcessionRepository implements iConcessionRepository
                 $file->move($path, $name);
             }
 
+            //saving document in concession doc table
+            $concessionDoc = new PropConcessionDocDtl();
+            $concessionDoc->concession_id = $concession->id;
+            // $concessionDoc->doc_type = $file->dobDoc;
+            // $concessionDoc->doc_name = $name;
+            $concessionDoc->status = 1;
+            $concessionDoc->date = Carbon::now();
+            $concessionDoc->created_at = Carbon::now();
+            $concessionDoc->save();
+
+
             // Property SAF Label Pendings
             $labelPending = new PropConcessionLevelpending();
             $labelPending->concession_id = $concession->id;
@@ -107,7 +123,7 @@ class ConcessionRepository implements iConcessionRepository
             $labelPending->save();
 
             DB::commit();
-            return responseMsg(true, 'Successfully Applied The Application', remove_null($concession));
+            return responseMsg(true, 'Successfully Applied The Application', remove_null($concession->status));
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -420,6 +436,29 @@ class ConcessionRepository implements iConcessionRepository
             return responseMsg(true, "Successfully Done", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    // get owner details by propId
+    public function getOwnerDetails($request)
+    {
+        try {
+            $ownerDetails = PropProperty::select('applicant_name as ownerName',  'id as ownerId')
+                ->where('prop_properties.id', $request->propId)
+                ->first();
+
+            $checkExisting = PropActiveConcession::where('property_id', $request->propId)
+                ->where('status', 1)
+                ->first();
+            if ($checkExisting) {
+                $checkExisting->property_id = $request->propId;
+                $checkExisting->save();
+                return responseMsg(1, "User Already Applied", $ownerDetails);
+            } else return responseMsg(0, "User Not Exist", $ownerDetails);
+            // return responseMsg(true, '', remove_null($ownerDetails));
+        } catch (Exception $e) {
+            echo $e->getMessage();
         }
     }
 }

@@ -51,7 +51,6 @@ class ClusterController extends Controller
         return $cluster->editClusterDetails($request);
     }
 
-
     //saving the cluster details 
     public function saveClusterDetails(Request $request)
     {
@@ -95,6 +94,11 @@ class ClusterController extends Controller
         return $this->cluster->detailsByHolding($request);
     }
 
+    /**
+     * |----------------------------------- Cluster Maping ----------------------------------------|
+     * |date : 24-11-22
+     */
+
     // selecting details according to clusterID
     public function holdingByCluster(Request $request)
     {
@@ -134,6 +138,10 @@ class ClusterController extends Controller
 
 
 
+    /**
+     * |----------------------------------- Common functions ----------------------------------------|
+     * |date : 21-11-22
+     */
 
     /**
      * | ----------------- Common funtion for the return component in failer ------------------------------- |
