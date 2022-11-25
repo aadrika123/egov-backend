@@ -98,13 +98,13 @@ class ClusterRepository implements iCluster
 
 
 
-    
+
 
     /**
      * | ----------------- details of the respective holding NO ------------------------------- |
      * | @param request
      * | @var holdingCheck
-     * | Operation : returning the messge using (responseMsg)
+     * | Operation : returning details according to the holdin no 
      */
     public function detailsByHolding($request)
     {
@@ -131,7 +131,8 @@ class ClusterRepository implements iCluster
      * | ----------------- respective holding according to cluster ID ------------------------------- |
      * | @param request
      * | @var clusterDetails
-     * | Operation : 385ms
+     * | Operation : returning the details according to the cluster Id
+     * | time: 385ms
      * | rating - 2
      */
     public function holdingByCluster($request)
@@ -225,22 +226,6 @@ class ClusterRepository implements iCluster
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
     /**
@@ -252,7 +237,7 @@ class ClusterRepository implements iCluster
     public function success($req)
     {
         $mreturn = responseMsg(true, "Operation Success!", $req);
-        return (object)$mreturn;
+        return $mreturn;
     }
 
     /**

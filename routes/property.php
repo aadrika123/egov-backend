@@ -135,14 +135,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('water_harvesting_application', 'waterHarvestingApplication');
     });
 
-    // Cluster
+    // Property Cluster
     Route::controller(ClusterController::class)->group(function () {
         #cluster data entry / Master
         Route::get('cluster/get-all-clusters', 'getAllClusters');
         Route::post('cluster/get-cluster-by-id', 'getClusterById');
         Route::post('cluster/edit-cluster-details', 'editClusterDetails');
         Route::post('cluster/save-cluster-details', 'saveClusterDetails');
-        Route::delete('cluster/delete-cluster-data', 'deleteClusterData');
+        Route::post('cluster/delete-cluster-data', 'deleteClusterData');
         # cluster maping
         Route::post('cluster/details-by-holding', 'detailsByHolding');
         Route::post('cluster/holding-by-cluster', 'holdingByCluster');
