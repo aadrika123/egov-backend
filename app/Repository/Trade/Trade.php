@@ -1800,13 +1800,15 @@ class Trade implements ITrade
                                                 $val->document_path = !empty(trim($val->document_path))? Storage::url("1.pdf"):"";
                                                 return $val;
                                             });
-
+            $mworkflowRoles = $this->_parent->getWorkFlowAllRoles($refUserId,$refUlbId,$refWorkflowId,true);
+            $mileSton = $this->_parent->sortsWorkflowRols($mworkflowRoles);
             $data['licenceDtl']     = $refApplication;
             $data['ownerDtl']       = $refOwnerDtl;
             $data['transactionDtl'] = $refTransactionDtl;
             $data['remarks']        = $refTimeLine;
             $data['documents']      = $refUploadDocuments;            
             $data["userType"]       = $mUserType;
+            $data["roles"]          = $mileSton;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
             
