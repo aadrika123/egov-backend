@@ -3,12 +3,22 @@
 namespace App\EloquentClass\Property;
 
 use App\Models\Property\PropSafsDemand;
+use App\Traits\Property\SAF;
 
 class InsertTax
 {
-    public function insertTax($safId, $userId, $demand)
+    use SAF;
+
+    /**
+     * | Save Generated Demand Tax
+     * | @param safId
+     * | @param userId 
+     * | @param safTaxes
+     */
+    public function insertTax($safId, $userId, $safTaxes)
     {
-        $details = collect($demand->original['data']['details'])->toArray();
+        $safDemand = collect($safTaxes->original['data']['details']);
+        $details = $this->generateSafDemand($safDemand);
 
         foreach ($details as $detail) {
             $safDemand = new PropSafsDemand();
@@ -17,14 +27,13 @@ class InsertTax
             $safDemand->holding_tax = $detail['holdingTax'];
             $safDemand->water_tax = $detail['waterTax'];
             $safDemand->education_cess = $detail['educationTax'];
-            $safDemand->health_cess = $detail['healthTax'];
+            $safDemand->health_cess = $detail['healthCess'];
             $safDemand->latrine_tax = $detail['latrineTax'];
             $safDemand->additional_tax = 0;
             $safDemand->amount = $detail['totalTax'];
             $safDemand->balance = $detail['totalTax'];
             $safDemand->paid_status = 0;
             $safDemand->arv = $detail['arv'];
-            $safDemand->rwh_penalty = $detail['rwhPenalty'];
             $safDemand->fyear = $detail['quarterYear'];
             $safDemand->due_date = $detail['dueDate'];
             $safDemand->status = 1;

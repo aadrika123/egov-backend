@@ -246,4 +246,41 @@ trait SAF
         });
         return $GRID;
     }
+
+    /**
+     * | Generated SAF Demand to push the value in propSafsDemand Table 
+     * | @param collection
+     */
+    public function generateSafDemand($collection)
+    {
+        $filtered = $collection->map(function ($value) {
+            return collect($value)->only([
+                'qtr', 'holdingTax', 'waterTax', 'educationTax',
+                'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv'
+            ]);
+        });
+
+        $groupBy = $filtered->groupBy(['quarterYear', 'qtr']);
+
+        $taxes = $groupBy->map(function ($values) {
+            return $values->map(function ($collection) {
+                return collect([
+                    'quarterYear' => $collection->first()['quarterYear'],
+                    'qtr' => $collection->first()['qtr'],
+                    'dueDate' => $collection->first()['dueDate'],
+                    'arv' => $collection->first()['arv'],
+                    'holdingTax' => $collection->sum('holdingTax'),
+                    'waterTax' => $collection->sum('waterTax'),
+                    'educationTax' => $collection->sum('educationTax'),
+                    'healthCess' => $collection->sum('healthTax'),
+                    'latrineTax' => $collection->sum('latrineTax'),
+                    'additionTax' => $collection->sum('additionalTax'),
+                    'latrineTax' => $collection->sum('latrineTax'),
+                    'totalTax' => $collection->sum('totalTax')
+                ]);
+            });
+        });
+
+        return $taxes->values()->collapse();
+    }
 }

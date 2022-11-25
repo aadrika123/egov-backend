@@ -30,6 +30,7 @@ class ClusterRepository implements iCluster
                 'mobile_no AS mobileNo',
                 'authorized_person_name AS authPersonName'
             )
+                ->where('status', 1)
                 ->get();
             return $this->success($mdetails);
         } catch (Exception $error) {
@@ -57,6 +58,7 @@ class ClusterRepository implements iCluster
                 'status'
             )
                 ->where('id', $request->id)
+                ->where('status',1)
                 ->get()
                 ->first();
 
@@ -263,4 +265,6 @@ class ClusterRepository implements iCluster
         $mreturn = responseMsg(false, "Operation Failer!", $mreq);
         return (object)$mreturn;
     }
+
+
 }
