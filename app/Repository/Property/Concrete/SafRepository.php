@@ -262,15 +262,17 @@ class SafRepository implements iSafRepository
             });
 
             $groupBy = $filtered->groupBy(['quarterYear', 'qtr']);
-            $a = $groupBy->map(function ($values, $key) {
-                return $values->map(function ($collection) {
-                    return $collection->sum(function ($b) {
-                        return $b['totalTax'];
-                    });
-                });
-            });
+            // $a = $groupBy->map(function ($values, $key) {
+            //     return $values->map(function ($collection) {
+            //         return [
+            //             "totalTax"=> $collection->sum(function ($b) {
+            //                 return $b['totalTax'];
+            //             });
+            //         ]
+            //     });
+            // });
 
-            return $a;
+            // return $a;
 
             $tax = new InsertTax();
             $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
@@ -1190,7 +1192,6 @@ class SafRepository implements iSafRepository
                 $verificationDtl->builtup_area = $floorDetail['builtupArea'];
                 $verificationDtl->date_from = $floorDetail['fromDate'];
                 $verificationDtl->date_to = $floorDetail['toDate'];
-                $verificationDtl->carpet_area = $floorDetail['carpetArea'];
                 $verificationDtl->save();
             }
 
