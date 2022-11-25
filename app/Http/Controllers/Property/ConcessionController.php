@@ -27,6 +27,9 @@ class ConcessionController extends Controller
     //apply concession
     public function applyConcession(Request $request)
     {
+        $request->validate([
+            'propId' => "required"
+        ]);
         return $this->Repository->applyConcession($request);
     }
 
@@ -107,5 +110,14 @@ class ConcessionController extends Controller
             "workflowId" => "required"
         ]);
         return $this->Repository->backToCitizen($req);
+    }
+
+    // get owner details by propId
+    public function getOwnerDetails(Request $request)
+    {
+        $request->validate([
+            'propId' => "required"
+        ]);
+        return $this->Repository->getOwnerDetails($request);
     }
 }

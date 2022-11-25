@@ -46,7 +46,7 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
     public function getAllRoles()
     {
         try {
-            $data = WfRole::where('is_suspended', false)
+            $data = WfRole::where('status', 1)
                 ->orderByDesc('id')
                 ->get();
             return responseMsg(true, "Successfully Saved", $data);
@@ -63,7 +63,7 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
     {
         try {
             $data = WfRole::find($request->id);
-            $data->is_suspended = true;
+            $data->status = 0;
             $data->save();
             return responseMsg(true, 'Successfully Deleted', "");
         } catch (Exception $e) {
@@ -99,7 +99,7 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
     {
         try {
             $data = WfRole::where('id', $request->id)
-                ->where('is_suspended', false)
+                ->where('status', 1)
                 ->get();
             if ($data) {
                 return responseMsg(true, 'Succesfully Retrieved', $data);

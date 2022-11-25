@@ -13,6 +13,7 @@ use App\Http\Controllers\Menupermission\MenuUlbrolesController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\SelfAdvertisementController;
 use App\Http\Controllers\UlbController;
+use App\Http\Controllers\UlbMaster;
 use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\Workflows\WorkflowController;
 use App\Http\Controllers\Workflows\WorkflowTrackController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\WorkflowMaster\WorkflowRoleController;
 use App\Http\Controllers\WorkflowMaster\WorkflowWardUserController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleUserMapController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleMapController;
+
 
 
 /*
@@ -334,6 +336,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('workflow/getRoleByWardUlbId', 'getRoleByWardUlbId');
 
         Route::post('workflow/getWorkflownameByWorkflow', 'getWorkflownameByWorkflow');
+    });
+
+
+    //
+    Route::controller(UlbMaster::class)->group(function () {
+        Route::get('get-all-wards', 'getAllWards');
     });
 });
 
