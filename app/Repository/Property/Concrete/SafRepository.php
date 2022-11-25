@@ -21,7 +21,6 @@ use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropOwner;
-use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
@@ -659,10 +658,8 @@ class SafRepository implements iSafRepository
         DB::beginTransaction();
         try {
             // previous level pending verification enabling
-            $preLevelPending = PropLevelPending::where('saf_id', $request->safId)
-                ->orderByDesc('id')
-                ->limit(1)
-                ->first();
+            $propLevelPending = new PropLevelPending();
+            $preLevelPending = $propLevelPending->getLevelBySafReceiver($request->safId, $request->receiverRoleId);
             $preLevelPending->verification_status = '1';
             $preLevelPending->save();
 
@@ -917,11 +914,28 @@ class SafRepository implements iSafRepository
                     ->first();
                 $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
             }
+            DB::beginTransaction();
             $saf = PropActiveSaf::find($req->safId);
             $saf->current_role = $backId->wf_role_id;
             $saf->save();
+
+            $propLevelPending = new PropLevelPending();
+            $preLevelPending = $propLevelPending->getLevelBySafReceiver($req->safId, $req->currentRoleId);
+            $preLevelPending->remarks = $req->comment;
+            $preLevelPending->save();
+
+            $levelPending = new PropLevelPending();
+            $levelPending->saf_id = $req->safId;
+            $levelPending->sender_role_id = $req->currentRoleId;
+            $levelPending->receiver_role_id = $backId->wf_role_id;
+            $levelPending->user_id = authUser()->id;
+            $levelPending->sender_user_id = authUser()->id;
+            $levelPending->save();
+
+            DB::commit();
             return responseMsg(true, "Successfully Done", "");
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -1052,18 +1066,26 @@ class SafRepository implements iSafRepository
                 ->select('s.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
                 ->join('prop_safs as s', 's.id', '=', 'prop_properties.saf_id')
                 ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
+                ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
                 ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
-                ->join('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
+                ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
                 ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
                 ->where('prop_properties.ward_mstr_id', $req->wardId)
                 ->where('prop_properties.holding_no', $req->holdingNo)
                 ->where('prop_properties.status', 1)
                 ->first();
 
-            $floors = PropFloor::where('property_id', $properties->property_id)
+            $floors = DB::table('prop_floors')
+                ->select('prop_floors.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')
+                ->join('ref_prop_floors as f', 'f.id', '=', 'prop_floors.floor_mstr_id')
+                ->join('ref_prop_usage_types as u', 'u.id', '=', 'prop_floors.usage_type_mstr_id')
+                ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_floors.occupancy_type_mstr_id')
+                ->join('ref_prop_construction_types as c', 'c.id', '=', 'prop_floors.const_type_mstr_id')
+                ->where('property_id', $properties->property_id)
                 ->get();
 
-            $owners = PropOwner::where('property_id', $properties->property_id)
+            $owners = DB::table('prop_owners')
+                ->where('property_id', $properties->property_id)
                 ->get();
 
             $propertyDtl = collect($properties);

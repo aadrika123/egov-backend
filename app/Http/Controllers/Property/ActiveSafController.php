@@ -115,6 +115,12 @@ class ActiveSafController extends Controller
     // Back to Citizen
     public function backToCitizen(Request $req)
     {
+        $req->validate([
+            'safId' => 'required|integer',
+            'workflowId' => 'required|integer',
+            'currentRoleId' => 'required|integer',
+            'comment' => 'required|string'
+        ]);
         return $this->Repository->backToCitizen($req);
     }
 
