@@ -32,11 +32,13 @@ interface ITrade
     public function getCategoryList();
     public function getFirmTypeList();
     public function getOwnershipTypeList();
-    public function geItemsList();
+    public function getItemsList();
     public function getAllApplicationType();
     public function inbox(Request $request);
     public function outbox(Request $request);
     public function postNextLevel(Request $request);
+    public function addIndependentComment(Request $request);
+    public function readIndipendentComment(Request $request);
     public function provisionalCertificate($id);
     public function licenceCertificate($id);
     public function addDenail(Request $request);
