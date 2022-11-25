@@ -59,6 +59,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 return responseMsg(false, $validator->errors(),$request->all());
             }
             $mHoldingNo = strtoupper($request->holdingNo);
+            // DB::enableQueryLog();
             $property = PropProperty::select("id","new_holding_no","holding_no","prop_address",
                                         DB::raw("owners.owner_name, owners.guardian_name, owners.mobile_no")
                                     )                                    
@@ -76,9 +77,10 @@ class PropertyDeactivate implements IPropertyDeactivate
                                                         $join->on("owners.property_id","prop_properties.id");
                                                     }
                                     )
-                                    ->where("prop_properties.new_holding_no",$mHoldingNo)
+                                    ->whereRaw("UPPER(prop_properties.new_holding_no) = ?",[$mHoldingNo])
                                     ->where("prop_properties.ulb_id",$refUlbId)
                                     ->get();
+            // dd(DB::getQueryLog());
             if(sizeOf($property)<1)
             {
                 throw new Exception("Holding Not Found");

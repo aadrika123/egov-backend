@@ -1776,6 +1776,7 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
+            $init_finish = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
             $mUserType      = $this->_parent->userType($refWorkflowId);
             $refApplication = $this->getLicenceById($id);
             $mItemName      ="";
@@ -1800,8 +1801,15 @@ class Trade implements ITrade
                                                 $val->document_path = !empty(trim($val->document_path))? Storage::url("1.pdf"):"";
                                                 return $val;
                                             });
+            $pendingAt  = $init_finish['initiator']['id'];
+            $mlevelData = $this->getLevelData($id);
+            if($mlevelData)
+            {
+                $pendingAt = $mlevelData->receiver_user_type_id;                
+            }
             $mworkflowRoles = $this->_parent->getWorkFlowAllRoles($refUserId,$refUlbId,$refWorkflowId,true);
             $mileSton = $this->_parent->sortsWorkflowRols($mworkflowRoles);
+            
             $data['licenceDtl']     = $refApplication;
             $data['ownerDtl']       = $refOwnerDtl;
             $data['transactionDtl'] = $refTransactionDtl;
@@ -1809,6 +1817,8 @@ class Trade implements ITrade
             $data['documents']      = $refUploadDocuments;            
             $data["userType"]       = $mUserType;
             $data["roles"]          = $mileSton;
+            $data["pendingAt"]      = $pendingAt;
+            $data["levelData"]      = $mlevelData;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
             
