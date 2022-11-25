@@ -262,7 +262,6 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                 $mJoins = "join";
             }
-
             $mWardIds = array_map(function ($val) {
                 return $val['id'];
             }, $mWardPermission);
@@ -325,7 +324,7 @@ class PropertyDeactivate implements IPropertyDeactivate
 
             if($mRole->is_initiator)
             {
-                $mProperty = $mProperty->whereIn('prop_deactivation_requests.status',[1,2]);
+                $mProperty = $mProperty->whereIn('prop_deactivation_requests.status',[1]);
             }
             else
             {
@@ -344,6 +343,117 @@ class PropertyDeactivate implements IPropertyDeactivate
         } 
         catch (Exception $e) 
         {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    public function outbox(Request $request)
+    {
+        try {
+            $user = Auth()->user();
+            $refUserId = $user->id;
+            $refUlbId = $user->ulb_id;
+            $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
+            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                                    ->where('ulb_id', $refUlbId)
+                                    ->first();
+            if (!$refWorkflowMstrId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $mJoins="";
+            $mUserType = $this->_common->userType($refWorkflowId);
+            $mWardPermission = $this->_common->WardPermission($refUserId);           
+            $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowMstrId->wf_master_id);           
+            if (!$mRole) 
+            {
+                throw new Exception("You Are Not Authorized");
+            }
+            if($mRole->is_initiator || in_array(strtoupper($mUserType),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
+            {
+                $mJoins = "leftjoin";
+                $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $mWardPermission = objToArray($mWardPermission);
+            }
+            else
+            {
+                $mJoins = "join";
+            }
+            $mWardIds = array_map(function ($val) {
+                return $val['id'];
+            }, $mWardPermission);
+            $mWardIds = implode(',',$mWardIds);
+            $mRoleId = $mRole->role_id;
+            $inputs = $request->all();
+            // DB::enableQueryLog();
+            $mProperty = PropDeactivationRequest::select("prop_deactivation_requests.id",
+                                                    "properties.holding_no",
+                                                    "properties.new_holding_no",
+                                                    "properties.owner_name",
+                                                    "properties.guardian_name",
+                                                    "properties.mobile_no",
+                                                    "properties.email_id",
+                                                    DB::raw("prop_deactivation_req_inboxes.id AS level_id")
+                        )
+                        ->$mJoins("prop_deactivation_req_inboxes",function($join) use($mRoleId){
+                                $join->on("prop_deactivation_req_inboxes.request_id","prop_deactivation_requests.id")
+                                ->where("prop_deactivation_req_inboxes.receiver_type_id",$mRoleId)
+                                ->where("prop_deactivation_req_inboxes.status",1)
+                                ->where("prop_deactivation_req_inboxes.verification_status",0);
+                        })
+                        ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                            STRING_AGG(guardian_name,',') AS guardian_name,
+                                            STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                            STRING_AGG(email,',') AS email_id,
+                                            prop_properties.id,holding_no,new_holding_no
+                                        FROM prop_properties  
+                                        LEFT JOIN prop_owners ON prop_properties.id = prop_owners.property_id AND prop_owners.status=1
+                                        WHERE prop_properties.status =1 AND prop_properties.ulb_id=$refUlbId
+                                        AND prop_properties.ward_mstr_id IN ($mWardIds)
+                                        GROUP BY prop_properties.id,holding_no,new_holding_no
+                                        )properties"),function($join) use($inputs,$mWardIds){
+                                            $join = $join->on("properties.id","prop_deactivation_requests.property_id");
+                                            if(isset($inputs['key']) && trim($inputs['key']))
+                                            {
+                                                $key = trim($inputs['key']);
+                                                $join = $join->where(function ($query) use ($key) {
+                                                    $query->orwhere('properties.holding_no', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere('properties.new_holding_no', 'ILIKE', '%' . $key . '%')                                            
+                                                        ->orwhere('properties.owner_name', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere('properties.guardian_name', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere('properties.mobile_no', 'ILIKE', '%' . $key . '%');
+                                                });
+                                            } 
+                                        }
+                        ) 
+                        ->where("prop_deactivation_requests.ulb_id",$refUlbId);
+            
+            if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
+            {
+                $mProperty = $mProperty
+                            ->whereBetween('prop_deactivation_req_inboxes.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
+            }
+            if(!$mRole->is_initiator)
+            {
+                $mProperty = $mProperty->whereIn('prop_deactivation_requests.status',[1]);
+            }
+            else
+            {
+                $mProperty = $mProperty->whereIn('prop_deactivation_requests.status',[2]);
+            }
+            $mProperty = $mProperty
+                        ->get();
+                        // dd(DB::getQueryLog());
+            $data = [
+                "wardList"=>$mWardPermission,                
+                "property"=>$mProperty,
+                "userType"=>$mUserType,
+            ] ; 
+            return responseMsg(true, "", remove_null($data));
+            
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }

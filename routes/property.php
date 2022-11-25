@@ -86,6 +86,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('searchByHoldingNo', "readHoldigbyNo");
         Route::match(["POST", "GET"], 'deactivationRequest/{id}', "deactivatProperty");
         Route::post('inboxDeactivation', "inbox");
+        Route::post('outboxDeactivation', "outbox");
         Route::post('postNextDeactivation', "postNextLevel");
         Route::post('getDeactivationDtls', "readDeactivationReq");
     });
