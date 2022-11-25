@@ -102,25 +102,32 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('water_harvesting_application', 'waterHarvestingApplication');
     });
 
+
     //Property Concession
     Route::controller(ConcessionController::class)->group(function () {
-        Route::post('concession/applyConcession', 'applyConcession');
+        Route::post('concession/apply-concession', 'applyConcession');
         Route::post('concession/postHolding', 'postHolding');
         Route::get('concession/inbox', 'inbox');                                               // Concession Inbox 
         Route::get('concession/outbox', 'outbox');                                             // Concession Outbox
         Route::post('concession/details', 'getDetailsById');                                   // Get Concession Details by ID
         Route::post('concession/escalate', 'escalateApplication');                             // escalate application
         Route::get('concession/special-inbox', 'specialInbox');                                // escalated application inbox
+        Route::post('concession/owner-details', 'getOwnerDetails');
 
         Route::post('concession/next-level', 'postNextLevel');                                  // Backward Forward Application
         Route::post('concession/approvalrejection', 'approvalRejection');                       // Approve Reject Application
         Route::post('concession/backtocitizen', 'backToCitizen');                                // Back To Citizen 
     });
 
+
     //Property Objection
     Route::controller(ObjectionController::class)->group(function () {
         Route::post('objection/apply-objection', 'applyObjection');
         Route::get('objection/objection-type', 'objectionType');
+        Route::get('objection/owner-details', 'ownerDetails');
+        Route::get('objection/assesment-details', 'assesmentDetails');
+
+
         Route::get('objection/inbox', 'inbox');
         Route::get('objection/outbox', 'outbox');
     });
@@ -128,6 +135,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(CalculatorController::class)->group(function () {
         Route::post('get-dashboard', 'dashboardDate');
     });
+
+
     //Property Deactivation
     /**
      * Crated By - Sandeep Bara
@@ -140,6 +149,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('postNextDeactivation', "postNextLevel");
         Route::post('getDeactivationDtls', "readDeactivationReq");
     });
+
+
     //PropertyBifurcation Process
     /**
      * Crated By - Sandeep Bara
@@ -148,6 +159,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(PropertyBifurcationController::class)->group(function () {
         Route::post('searchByHoldingNoBi', "readHoldigbyNo");
     });
+
+
     //Rain water Harvesting
     /**
      * Crated By - Sam kerketta

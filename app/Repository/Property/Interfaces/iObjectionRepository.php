@@ -14,4 +14,10 @@ interface iObjectionRepository
     public function applyObjection($request);
     public function objectionNo($propertyId);
     public function objectionType();
+    public function ownerDetails($request);
+
+    public function assesmentDetails($request);
+
+    public function inbox();
+    public function outbox();
 }
