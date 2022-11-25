@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropFloor;
@@ -263,6 +264,65 @@ class SafRepository implements iSafRepository
         } catch (Exception $e) {
             DB::rollBack();
             return $e;
+        }
+    }
+
+    /**
+     * | Verify Document by Dealing Assistant
+     * | @param req
+     * | Verification Status (0 is for pending, 1 is for Approval, 2 for Rejection)
+     */
+    public function verifyDoc($req)
+    {
+        try {
+            $verifications = $req->verifications;
+            DB::beginTransaction();
+            foreach ($verifications as $verification) {
+                $activeSafDoc = new PropActiveSafsDoc();
+                $document = $activeSafDoc->getSafDocument($verification['documentId']);             // Get Saf Document By id
+                if ($verification['verifyStatus'] == 1) {
+                    $document->verify_status = 1;
+                    $document->save();
+                }
+                if ($verification['verifyStatus'] == 0) {
+                    $document->verify_status = 2;
+                    $document->save();
+                }
+            }
+            DB::commit();
+            return responseMsg(true, "Document Verification Successfully Done", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Citizen or JSK Document Upload
+     * | @param request $req
+     */
+    public function documentUpload($req)
+    {
+        try {
+            $images = $req->uploads;
+            foreach ($images as $image) {
+                $document = new PropActiveSafsDoc();
+                $document->saf_id = $req->safId;
+                // Upload Image
+                $base64Encode = base64_encode($image['docPath']->getClientOriginalName());
+                $extention = $image['docPath']->getClientOriginalExtension();
+                $imageName = time() . '-' . $base64Encode . '.' . $extention;
+                $image['docPath']->storeAs('public/Property/SafOwnerDetails', $imageName);
+
+                $document->doc_mstr_id = $image['docMastId'];
+                $document->doc_path = $imageName;
+                $document->saf_owner_dtl_id = $image['ownerDtlId'];
+                $document->user_id = authUser()->id;
+                $document->save();
+            }
+            return responseMsg(true, "Successfully Uploaded the Images", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
