@@ -125,7 +125,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('objection/owner-details', 'ownerDetails');
         Route::get('objection/assesment-details', 'assesmentDetails');
 
-
         Route::get('objection/inbox', 'inbox');
         Route::get('objection/outbox', 'outbox');
     });
