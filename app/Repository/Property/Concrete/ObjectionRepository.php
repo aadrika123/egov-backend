@@ -22,6 +22,10 @@ use App\Models\Property\PropObjectionDtl;
 use App\Repository\Property\Concrete\SafRepository;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropObjectionFloor;
+use App\Models\Property\PropObjectionLevelpending;
+use Illuminate\Support\Facades\Redis;
+use App\Models\Workflows\WfWorkflowrolemap;
+
 
 
 
@@ -53,6 +57,7 @@ class ObjectionRepository implements iObjectionRepository
             $ulbId = auth()->user()->ulb_id;
             $userType = auth()->user()->user_type;
 
+
             if ($userType == "JSK") {
                 $obj  = new SafRepository();
                 $data = $obj->getPropByHoldingNo($request);
@@ -62,6 +67,7 @@ class ObjectionRepository implements iObjectionRepository
             $workflow_id = Config::get('workflow-constants.PROPERTY_OBJECTION_ID');
             $clericalMistake = Config::get('workflow-constants.CLERICAL_MISTAKE_ID');
             $forgery = Config::get('workflow-constants.FORGERY_ID');
+
 
 
             if ($objectionType == $clericalMistake) {
@@ -111,7 +117,7 @@ class ObjectionRepository implements iObjectionRepository
                     $file->move($path, $name);
                 }
 
-                $objectionNo = $this->objectionNo($id, $ulbId);
+                // $objectionNo = $this->objectionNo($id, $ulbId);
                 DB::commit();
             }
 
@@ -153,42 +159,53 @@ class ObjectionRepository implements iObjectionRepository
                 $this->commonFunction($request, $objection);
                 $objection->save();
 
-                $assement_error = new PropObjectionDtl;
-                $assement_error->objection_id = $objection->id;
-                $assement_error->objection_type_id = $objectionTypeId;
 
-                //RWH
-                if ($objectionTypeId == 2) {
-                    $assement_error->data_ref_type = 'boolean';
-                }
-                //road width
-                if ($objectionTypeId == 3) {
-                    $assement_error->data_ref_type = 'ref_prop_road_types.id';
-                }
-                //property_types
-                if ($objectionTypeId == 4) {
-                    $assement_error->data_ref_type = 'ref_prop_types.id';
-                }
-                //area off plot
-                if ($objectionTypeId == 5) {
-                    $assement_error->data_ref_type = 'area';
-                }
-                //mobile tower
-                if ($objectionTypeId == 6) {
-                    $assement_error->data_ref_type = 'boolean';
-                }
-                //hoarding board
-                if ($objectionTypeId == 7) {
-                    $assement_error->data_ref_type = 'boolean';
-                }
-                $assement_error->assesment_data =  $request->assesmentData;
-                $assement_error->applicant_data =  $request->applicantData;
-                $assement_error->save();
+                foreach ($objectionTypeId as $otid) {
+                    $assement_error = new PropObjectionDtl;
+                    $assement_error->objection_id = $objection->id;
+                    $assement_error->objection_type_id = $otid;
 
+                    //RWH
+                    if ($otid == 2) {
+                        $assement_error->data_ref_type = 'boolean';
+                    }
+                    //road width
+                    if ($otid == 3) {
+                        $assement_error->data_ref_type = 'ref_prop_road_types.id';
+                    }
+                    //property_types
+                    if ($otid == 4) {
+                        $assement_error->data_ref_type = 'ref_prop_types.id';
+                    }
+                    //area off plot
+                    if ($otid == 5) {
+                        $assement_error->data_ref_type = 'area';
+                    }
+                    //mobile tower
+                    if ($otid == 6) {
+                        $assement_error->data_ref_type = 'boolean';
+                    }
+                    //hoarding board
+                    if ($otid == 7) {
+                        $assement_error->data_ref_type = 'boolean';
+                    }
+                    $assement_error->assesment_data =  $request->assesmentData;
+                    $assement_error->applicant_data =  $request->applicantData;
+                    $assement_error->save();
+                }
 
                 //floor entry
                 $assement_floor = new PropObjectionFloor;
-                // $assement_floor = ;
+                $assement_floor->property_id = $request->propId;
+                $assement_floor->objection_id = $request->objectionId;
+                $assement_floor->prop_floor_id = $request->propFloorId;
+                $assement_floor->floor_mstr_id = $request->floorMstrId;
+                $assement_floor->usage_type_mstr_id = $request->usageTypeMstrId;
+                $assement_floor->occupancy_type_mstr_id = $request->occupancyTypeMstrId;
+                $assement_floor->const_type_mstr_id = $request->constTypeMstrId;
+                $assement_floor->builtup_area = $request->builtUpArea;
+                $assement_floor->carpet_area = $request->carpetArea;
+                $assement_floor->save();
 
 
                 //objection_form
@@ -207,6 +224,21 @@ class ObjectionRepository implements iObjectionRepository
                     $file->move($path, $name);
                 }
             }
+
+            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
+                ->where('ulb_id', $ulbId)
+                ->first();
+
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
+            $initiatorRoleId = DB::select($refInitiatorRoleId);
+
+            $objection->workflow_id = $ulbWorkflowId->id;
+            $objection->current_role = $initiatorRoleId[0]->role_id;
+            //level pending
+            $labelPending = new PropObjectionLevelpending();
+            $labelPending->objection_id = $objection->id;
+            $labelPending->receiver_role_id = $initiatorRoleId[0]->role_id;
+            $labelPending->save();
 
             return responseMsg(true, "Successfully Saved", '');
         } catch (Exception $e) {
@@ -251,16 +283,16 @@ class ObjectionRepository implements iObjectionRepository
     {
         try {
             $assesmentDetails = PropProperty::select(
-                'is_hoarding_board',
+                'is_hoarding_board as isHoarding',
                 // 'hoarding_area',
                 // 'hoarding_installation_date',
-                'is_water_harvesting',
-                'is_mobile_tower',
+                'is_water_harvesting as isWaterHarvesting',
+                'is_mobile_tower as isMobileTower',
                 // 'tower_area',
                 // 'tower_installation_date',
-                'area_of_plot',
-                'prop_type_mstr_id',
-                'road_type_mstr_id',
+                'area_of_plot as areaOfPlot',
+                'prop_type_mstr_id as propertyType',
+                'road_type_mstr_id as roadType',
                 // 'prop_floors.*'
             )
                 ->where('prop_properties.id', $request->propId)
@@ -268,13 +300,19 @@ class ObjectionRepository implements iObjectionRepository
                 ->get();
             foreach ($assesmentDetails as $assesmentDetailss) {
                 $assesmentDetailss['floor'] = PropProperty::select(
-                    'prop_floors.*'
+                    'prop_floors.floor_mstr_id as floorNo',
+                    'prop_floors.usage_type_mstr_id as usageType',
+                    'prop_floors.occupancy_type_mstr_id as occupancyType',
+                    'prop_floors.const_type_mstr_id as constructionType',
+                    'prop_floors.builtup_area as buildupArea',
+                    'prop_floors.date_from as dateFrom',
+                    'prop_floors.date_upto as dateUpto',
                 )
                     ->where('prop_properties.id', $request->propId)
                     ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
                     ->get();
             }
-            return responseMsg(true, "Successfully Retrieved", $assesmentDetails);
+            return responseMsg(true, "Successfully Retrieved", $assesmentDetailss);
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -327,12 +365,125 @@ class ObjectionRepository implements iObjectionRepository
                 return $value->ward_id;
             });
 
-            $concessions = $this->getObjectionList($ulbId)
+            $objections = $this->getObjectionList($ulbId)
                 ->whereNotIn('prop_active_objections.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->get();
 
-            return responseMsg(true, "Outbox List", remove_null($concessions));
+            return responseMsg(true, "Outbox List", remove_null($objections));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    //post next level
+    public function postNextLevel($req)
+    {
+        try {
+            DB::beginTransaction();
+
+            // previous level pending verification enabling
+            $preLevelPending = PropObjectionLevelpending::where('objection_id', $req->objectionId)
+                ->orderByDesc('id')
+                ->limit(1)
+                ->first();
+            $preLevelPending->verification_status = '1';
+            $preLevelPending->save();
+
+            $levelPending = new PropObjectionLevelpending();
+            $levelPending->objection_id = $req->objectionId;
+            $levelPending->sender_role_id = $req->senderRoleId;
+            $levelPending->receiver_role_id = $req->receiverRoleId;
+            $levelPending->sender_user_id = auth()->user()->id;
+            $levelPending->save();
+
+            // objection Application Update Current Role Updation
+            $objection = PropObjectionLevelpending::find($req->objectionId);
+            $objection->current_role = $req->receiverRoleId;
+            $objection->save();
+
+            // Add Comment On Prop Level Pending
+            $commentOnlevel = PropObjectionLevelpending::where('objection_id', $req->objectionId)
+                ->where('receiver_role_id', $req->senderRoleId)
+                ->first();
+
+            $commentOnlevel->remarks = $req->comment;
+            $commentOnlevel->save();
+
+            DB::commit();
+            return responseMsg(true, "Successfully Forwarded The Application!!", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    //approval & rejection
+    public function approvalRejection($req)
+    {
+        try {
+            // Check if the Current User is Finisher or Not
+            $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
+            $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
+            if ($refGetFinisher->role_id != $req->roleId) {
+                return responseMsg(false, "Forbidden Access", "");
+            }
+
+            DB::beginTransaction();
+            // Approval
+            if ($req->status == 1) {
+                // Objection Application replication
+                $activeObjection = PropActiveObjection::query()
+                    ->where('id', $req->objectionId)
+                    ->first();
+
+                $approvedObjection = $activeObjection->replicate();
+                $approvedObjection->setTable('prop_objections');
+                $approvedObjection->id = $activeObjection->id;
+                $approvedObjection->save();
+                $activeObjection->delete();
+
+                $msg = "Application Successfully Approved !!";
+            }
+            // Rejection
+            if ($req->status == 0) {
+                // Objection Application replication
+                $activeObjection = PropActiveObjection::query()
+                    ->where('id', $req->objectionId)
+                    ->first();
+
+                $approvedObjection = $activeObjection->replicate();
+                $approvedObjection->setTable('prop_rejected_objections');
+                $approvedObjection->id = $activeObjection->id;
+                $approvedObjection->save();
+                $activeObjection->delete();
+                $msg = "Application Successfully Rejected !!";
+            }
+            DB::commit();
+            return responseMsg(true, $msg, "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    //back to citizen
+    public function backToCitizen($req)
+    {
+        try {
+            $redis = Redis::connection();
+            $workflowId = $req->workflowId;
+            $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
+            if (!$backId) {
+                $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
+                    ->where('is_initiator', true)
+                    ->first();
+                $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
+            }
+            $saf = PropActiveObjection::find($req->objectionId);
+            $saf->current_role = $backId->wf_role_id;
+            $saf->save();
+            return responseMsg(true, "Successfully Done", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

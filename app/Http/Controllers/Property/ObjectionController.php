@@ -50,4 +50,36 @@ class ObjectionController extends Controller
     {
         return $this->Repository->outbox($request);
     }
+
+    // Post Next Level Application
+    public function postNextLevel(Request $req)
+    {
+        $req->validate([
+            'objectionId' => 'required',
+            'senderRoleId' => 'required',
+            'receiverRoleId' => 'required',
+            'comment' => 'required'
+        ]);
+        return $this->Repository->postNextLevel($req);
+    }
+
+    // Application Approval Rejection
+    public function approvalRejection(Request $req)
+    {
+        $req->validate([
+            "objectionId" => "required",
+            "status" => "required"
+        ]);
+        return $this->Repository->approvalRejection($req);
+    }
+
+    // Application back To citizen
+    public function backToCitizen(Request $req)
+    {
+        $req->validate([
+            'objectionId' => "required",
+            "workflowId" => "required"
+        ]);
+        return $this->Repository->backToCitizen($req);
+    }
 }
