@@ -339,8 +339,8 @@ class ObjectionRepository implements iObjectionRepository
 
             $objection = $this->getObjectionList($ulbId)
                 ->whereIn('prop_active_objections.current_role', $roleId)
-                ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->get();
+
             return responseMsg(true, "Inbox List", remove_null($objection));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
