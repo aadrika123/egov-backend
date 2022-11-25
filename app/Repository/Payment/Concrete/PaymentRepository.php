@@ -16,19 +16,14 @@ use App\Repository\Payment\Interfaces\iPayment;
 use App\Repository\Property\Concrete\SafRepository;
 use Illuminate\Support\Facades\Validator;
 use App\Traits\Payment\Razorpay;
-use Carbon\Carbon;
-use Razorpay\Api\Api;
-use Razorpay\Api\Errors\SignatureVerificationError;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
 use Exception;
-use Illuminate\Support\Facades\Config;
-use PhpParser\Node\Expr\Empty_;
+
 
 /**
  * | Created On-14-11-2022 
- * | Created By- sam kerketta
+ * | Created By- Sam kerketta
  * | Payment Regarding Crud Operations
  */
 class PaymentRepository implements iPayment
@@ -99,7 +94,7 @@ class PaymentRepository implements iPayment
      * | @var mReadDepartment collecting data from the table DepartmentMaster
      * | 
      */
-    public function getDepartmentByulb(Request $req)
+    public function getDepartmentByulb(Request $req) //<-------- validatiom (SHIFT)
     {
         #   validation
         $validateUser = Validator::make(
@@ -139,7 +134,7 @@ class PaymentRepository implements iPayment
      * | @var mReadPg collecting data from the table PaymentGatewayMaster
      * | 
      */
-    public function getPaymentgatewayByrequests(Request $req)
+    public function getPaymentgatewayByrequests(Request $req) //<-------- validatiom (SHIFT)
     {
         #   validation
         $validateUser = Validator::make(
@@ -182,7 +177,7 @@ class PaymentRepository implements iPayment
      * | @var mReadRazorpay collecting data from the table RazorpayPgMaster
      * | 
      */
-    public function getPgDetails(Request $req)
+    public function getPgDetails(Request $req) //<-------- validatiom (SHIFT)
     {
         # validation
         $validateUser = Validator::make(
@@ -293,7 +288,7 @@ class PaymentRepository implements iPayment
      * | @var mAttributes
      * | @var mVerification
      */
-    public function verifyPaymentStatus(Request $request)
+    public function verifyPaymentStatus(Request $request) //<-------- validatiom (SHIFT)
     {
         # validation 
         $validated = Validator::make(
@@ -333,7 +328,6 @@ class PaymentRepository implements iPayment
 
             if (!empty($request)) {
                 $mWebhookDetails = $this->collectWebhookDetails($request);
-                // return responseMsg(true, "OPERATION SUCCESS", $mWebhookDetails);
                 return $mWebhookDetails;
             }
             return responseMsg(false, "WEBHOOK DATA NOT ACCUIRED!", "");
@@ -343,13 +337,13 @@ class PaymentRepository implements iPayment
     }
 
     /**
-     * | geting details of the transaction according to the orderId, paymentId and payment status
+     * | ------------- geting details of the transaction according to the orderId, paymentId and payment status --------------|
      * | @param requet request from the frontend
      * | @param error collecting the operation error
      * | @var mReadTransactions
      * | @var mCollection
      */
-    public function getTransactionNoDetails(Request $request)
+    public function getTransactionNoDetails(Request $request) //<-------- validatiom (SHIFT)
     {
         # validation 
         $validated = Validator::make(
@@ -482,11 +476,11 @@ class PaymentRepository implements iPayment
                     return $reconciliationWithAll;
                 }
             case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode)): {
-                $reconciliationModeType = $this->reconciliationModeType($request);    
-                return $reconciliationModeType;
+                    $reconciliationModeType = $this->reconciliationModeType($request);
+                    return $reconciliationModeType;
                 }
             default:
-                return ("some error renter the details!");
+                return ("Some error RENETR the details!");
         }
     }
 
@@ -500,7 +494,7 @@ class PaymentRepository implements iPayment
      * | this -> naming
      * | here -> variable
      */
-    public function updateReconciliationDetails($request)
+    public function updateReconciliationDetails($request) //<-------- validatiom (SHIFT)
     {
         # validation 
         $validated = Validator::make(
@@ -529,9 +523,7 @@ class PaymentRepository implements iPayment
         }
     }
 
-
-    
-#____________________________________________________________________________________________________________________________________________________________________#
+    #____________________________________( Reconciliation - START)___________________________________________#
 
     /**
      * |--------- reconciliationDateWise 1.1----------
@@ -703,7 +695,7 @@ class PaymentRepository implements iPayment
         }
     }
 
-       /**
+    /**
      * |--------- reconciliationDateWise 1.1----------
      * |@param request
      */
@@ -735,6 +727,40 @@ class PaymentRepository implements iPayment
             return responseMsg(false, "data not found!", "");
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+    #________________________________________(END)_________________________________________#
+
+    /**
+     * |--------- all the transaction details regardless of module ----------
+     * |@param request
+     * |@var object webhookModel
+     * |@var transaction
+     */
+    public function allModuleTransaction()
+    {
+        try {
+            $userId = auth()->user()->id;
+            #-----------
+            $transaction = WebhookPaymentData::join('department_masters', 'department_masters.id', '=', 'webhook_payment_data.department_id')
+                ->select(
+                    'webhook_payment_data.payment_transaction_id AS transactionNo',
+                    'webhook_payment_data.created_at AS dateOfTransaction',
+                    'webhook_payment_data.payment_method AS paymentMethod',
+                    'webhook_payment_data.payment_amount AS amount',
+                    'webhook_payment_data.payment_status AS paymentStatus',
+                    'department_masters.department_name AS modueName'
+                )
+                ->where('user_id', $userId)
+                ->get();
+            if (!empty($transaction['0'])) {
+                return $transaction;
+            }
+            return ("No Dsata!");
+            return responseMsg(true, "All transaction for the respective id", $transaction);
+        } catch (Exception $error) {
+            return responseMsg(false, "", $error->getMessage());
         }
     }
 }

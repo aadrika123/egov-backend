@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Cluster\ClusterController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
@@ -9,7 +10,6 @@ use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Http\Controllers\Property\SafReassessmentController;
-use Symfony\Component\Routing\DependencyInjection\RoutingResolverPass;
 use App\Http\Controllers\Property\PropertyBifurcationController;
 
 /**
@@ -37,6 +37,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     // SAF 
     Route::controller(ActiveSafController::class)->group(function () {
         Route::post('saf/apply', 'applySaf');                                                               // Applying Saf Route
+        Route::post('saf/doc-upload', 'documentUpload');                                                    // Document Upload by Citizen or JSK
+        Route::post('saf/verifydoc', 'verifyDoc');                                                         // Verify Uploaded Document by DA
         Route::get('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf
         Route::get('saf/inbox', 'inbox');                                                                   // Saf Inbox
         Route::get('saf/outbox', 'outbox');                                                                 // Saf Workflow Outbox and Outbox By search key
@@ -54,6 +56,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('saf/generate-order-id', 'generateOrderId');                                            // Generate Order ID
         Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment
         Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions
+
+        Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification
+        Route::post('saf/geotagging', 'geoTagging');                                                         // Geo Tagging
     });
 
     // SAF Reassessment
@@ -81,6 +86,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('searchByHoldingNo', "readHoldigbyNo");
         Route::match(["POST", "GET"], 'deactivationRequest/{id}', "deactivatProperty");
         Route::post('inboxDeactivation', "inbox");
+        Route::post('outboxDeactivation', "outbox");
         Route::post('postNextDeactivation', "postNextLevel");
         Route::post('getDeactivationDtls', "readDeactivationReq");
     });
@@ -91,15 +97,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(PropertyBifurcationController::class)->group(function () {
         Route::post('searchByHoldingNoBi', "readHoldigbyNo");
-    });
-    //Rain water Harvesting
-    /**
-     * Crated By - Sam kerketta
-     * Created On- 22-11-2022 
-     */
-    Route::controller(RainWaterHarvestingController::class)->group(function () {
-        Route::get('get-wardmaster-data', 'getWardMasterData');
-        Route::post('water_harvesting_application', 'waterHarvestingApplication');
+        Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");
     });
 
 
@@ -169,6 +167,20 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(RainWaterHarvestingController::class)->group(function () {
         Route::get('get-wardmaster-data', 'getWardMasterData');
         Route::post('water_harvesting_application', 'waterHarvestingApplication');
+    });
+
+    // Property Cluster
+    Route::controller(ClusterController::class)->group(function () {
+        #cluster data entry / Master
+        Route::get('cluster/get-all-clusters', 'getAllClusters');
+        Route::post('cluster/get-cluster-by-id', 'getClusterById');
+        Route::post('cluster/edit-cluster-details', 'editClusterDetails');
+        Route::post('cluster/save-cluster-details', 'saveClusterDetails');
+        Route::post('cluster/delete-cluster-data', 'deleteClusterData');
+        # cluster maping
+        Route::post('cluster/details-by-holding', 'detailsByHolding');
+        Route::post('cluster/holding-by-cluster', 'holdingByCluster');
+        Route::post('cluster/save-holding-in-cluster', 'saveHoldingInCluster');
     });
 });
 Route::controller(CalculatorController::class)->group(function () {

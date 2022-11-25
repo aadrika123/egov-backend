@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Payment;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
+use Illuminate\Support\Facades\Validator;
+
 
 class RazorpayPaymentController extends Controller
 {
@@ -40,7 +42,6 @@ class RazorpayPaymentController extends Controller
     {
         return $this->Prepository->getDepartmentByulb($req);
     }
-
 
     //get PaymentGateway by request
     public function getPaymentgatewayByrequests(Request $req)
@@ -78,28 +79,33 @@ class RazorpayPaymentController extends Controller
         return $this->Prepository->gettingWebhookDetails($req);
     }
 
-     //get the details of webhook according to transactionNo
-     public function getTransactionNoDetails(Request $req)
-     {
-         return $this->Prepository->getTransactionNoDetails($req);
-     }
+    //get the details of webhook according to transactionNo
+    public function getTransactionNoDetails(Request $req)
+    {
+        return $this->Prepository->getTransactionNoDetails($req);
+    }
 
+    //get all the details of Payment Reconciliation 
+    public function getReconcillationDetails()
+    {
+        return $this->Prepository->getReconcillationDetails();
+    }
 
-     //get all the details of Payment Reconciliation 
-     public function getReconcillationDetails()
-     {
-         return $this->Prepository->getReconcillationDetails();
-     }
-
-     // serch the specific details according to the request
-     public function searchReconciliationDetails(Request $request)
-     {
+    // serch the specific details according to the request
+    public function searchReconciliationDetails(Request $request)
+    {
         return $this->Prepository->searchReconciliationDetails($request);
-     }
+    }
 
-      // serch the specific details according to the request
-      public function updateReconciliationDetails(Request $request)
-      {
-         return $this->Prepository->updateReconciliationDetails($request);
-      }
+    // serch the specific details according to the request
+    public function updateReconciliationDetails(Request $request)
+    {
+        return $this->Prepository->updateReconciliationDetails($request);
+    }
+
+    // get all details of the payments of all modules
+    public function allModuleTransaction()
+    {
+        return $this->Prepository->allModuleTransaction();
+    }
 }

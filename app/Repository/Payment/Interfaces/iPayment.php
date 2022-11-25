@@ -32,4 +32,7 @@ interface iPayment
     public function getReconcillationDetails();
     public function searchReconciliationDetails($request);
     public function updateReconciliationDetails($request);
+
+    # Common Payments details
+    public function allModuleTransaction();
 }

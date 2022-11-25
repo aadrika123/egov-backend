@@ -10,6 +10,6 @@ use Illuminate\Http\Request;
  **/
 
 interface IPropertyBifurcation
-{
-  
+{  
+    public function addRecord(Request $request);
 }

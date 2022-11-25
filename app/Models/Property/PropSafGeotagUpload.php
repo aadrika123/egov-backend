@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MenuMaster extends Model
+class PropSafGeotagUpload extends Model
 {
     use HasFactory;
 }

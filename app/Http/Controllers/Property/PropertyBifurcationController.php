@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Property\reqApplySaf;
+use App\Http\Requests\Property\reqBifurcation;
 use App\Repository\Property\Concrete\PropertyDeactivate;
 use App\Repository\Property\Interfaces\IPropertyBifurcation;
 use Illuminate\Http\Request;
@@ -18,13 +20,17 @@ class PropertyBifurcationController extends Controller
 
     private $Repository;
     private $Property;
-    public function __construct(IPropertyBifurcation $PropertyDeactivate)
+    public function __construct(IPropertyBifurcation $Repository)
     {
-        $this->Repository = $PropertyDeactivate ;
+        $this->Repository = $Repository ;
         $this->Property = new PropertyDeactivate();
     }
     public function readHoldigbyNo(Request $request)
     {
         return $this->Property->readHoldigbyNo($request);
+    }
+    public function addRecord(reqBifurcation $request)
+    {
+        return $this->Repository->addRecord($request);
     }
 }

@@ -12,6 +12,8 @@ interface iSafRepository
 {
     public function masterSaf();                            // Get all master data while applying Saf
     public function applySaf($request);                     // Apply For SAF
+    public function documentUpload($req);                   // Document Upload By Citizen or JSK
+    public function verifyDoc($req);                        // Verify Document By Dealing Assistant
     public function inbox();                                // Saf Inbox
     public function outbox();                               // Saf Outbox
     public function details($request);                      // Get SAF By ID
@@ -26,4 +28,6 @@ interface iSafRepository
     public function paymentSaf($req);                       // SAF Payment
     public function getPropTransactions($req);              // Get Property Transactions
     public function getPropByHoldingNo($req);               // Get Property Details by Holding no
+    public function siteVerification($req);                 // Site Verification for Agency TC and Ulb TC
+    public function geoTagging($req);                       // Geo Tagging By Level
 }

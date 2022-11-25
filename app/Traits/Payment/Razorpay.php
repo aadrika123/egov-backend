@@ -208,7 +208,7 @@ trait Razorpay
         # data of notes from request
         $notes = json_encode($request->payload['payment']['entity']['notes']);
         $depatmentId = $request->payload['payment']['entity']['notes']['departmentId'];
-
+       
         # manuplation of amount data
         $amount = $request->payload['payment']['entity']['amount'];
         $actulaAmount = $amount / 100;
@@ -285,6 +285,10 @@ trait Razorpay
         $data->payment_acquirer_data_value  = $request->payload['payment']['entity']['acquirer_data'][$firstKey];
         $data->payment_created_at           = $request->payload['payment']['entity']['created_at'];
         $data->webhook_created_at           = $request->created_at;
+        $data->user_id                      = $request->payload['payment']['entity']['notes']['userId'];
+        $data->department_id                = $request->payload['payment']['entity']['notes']['departmentId'];
+        $data->workflow_id                  = $request->payload['payment']['entity']['notes']['workflowId'];
+        $data->ulb_id                       = $request->payload['payment']['entity']['notes']['ulbId'];
         $data->save();
 
         # transaction id generation and saving
