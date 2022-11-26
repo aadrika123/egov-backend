@@ -72,7 +72,7 @@ class ClusterController extends Controller
         }
         $cluster = new Cluster();
         return $cluster->saveClusterDetails($request);
-    }
+    } 
 
     //soft deletion of the cluster details 
     public function deleteClusterData(Request $request)
