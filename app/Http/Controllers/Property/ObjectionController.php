@@ -51,6 +51,33 @@ class ObjectionController extends Controller
         return $this->Repository->outbox($request);
     }
 
+    // Get Details by id
+    public function getDetailsById(Request $req)
+    {
+        $req->validate([
+            'id' => 'required|integer'
+        ]);
+
+        return $this->Repository->getDetailsById($req);
+    }
+
+    // Escalate application 
+    public function postEscalate(Request $req)
+    {
+        $req->validate([
+            'escalateStatus' => 'required|bool',
+            'objectionId' => 'required|integer'
+        ]);
+
+        return $this->Repository->postEscalate($req);
+    }
+
+    // List of the Escalated Application
+    public function specialInbox()
+    {
+        return $this->Repository->specialInbox();
+    }
+
     // Post Next Level Application
     public function postNextLevel(Request $req)
     {
@@ -60,6 +87,7 @@ class ObjectionController extends Controller
             'receiverRoleId' => 'required',
             'comment' => 'required'
         ]);
+
         return $this->Repository->postNextLevel($req);
     }
 

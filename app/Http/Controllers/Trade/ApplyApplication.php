@@ -86,6 +86,10 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->readApplication($request);
     }
+    public function postEscalate(Request $request)
+    {
+        return $this->Repository->postEscalate($request);
+    }
     public function inbox(reqInbox $request)
     {
         return $this->Repository->inbox($request);

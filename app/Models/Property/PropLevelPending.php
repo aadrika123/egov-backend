@@ -15,7 +15,6 @@ class PropLevelPending extends Model
         return PropLevelPending::where('saf_id', $safId)
             ->where('receiver_role_id', $currentRoleId)
             ->orderByDesc('id')
-            ->limit(1)
             ->first();
     }
 }

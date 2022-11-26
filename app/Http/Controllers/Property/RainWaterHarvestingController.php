@@ -31,7 +31,7 @@ class RainWaterHarvestingController extends Controller
             [
                 'isWaterHarvestingBefore' => 'required',
                 'wardNo' => 'required|integer',
-                'mobileNo' => 'required|integer',
+                'mobileNo' => ['required', 'min:10', 'max:10'],
                 'holdingNo' => 'required',
                 'dateOfCompletion' => 'required|date',
 

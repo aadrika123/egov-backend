@@ -46,9 +46,7 @@ class MenuRepo implements iMenuRepo
     public function getMenuByRoles($req)
     {
         try {
-            $menues = json_decode(Redis::get('menu-by-role-' . $req->roleId));
-            if (!$menues) {
-                $query = "SELECT 
+            $query = "SELECT 
                             m.id AS menu_id,
                             m.serial,
                             m.description, 
@@ -63,9 +61,9 @@ class MenuRepo implements iMenuRepo
                             FROM menu_masters AS m
                     
                     LEFT JOIN (SELECT * FROM wf_rolemenus WHERE role_id=$req->roleId AND status=1) AS r ON r.menu_id=m.id";
-                $menues = DB::select($query);
-                $this->_redis->set('menu-by-role-' . $req->roleId, json_encode($menues));               // Caching the data should be flush while adding new menu to the role
-            }
+            $menues = DB::select($query);
+            $this->_redis->set('menu-by-role-' . $req->roleId, json_encode($menues));               // Caching the data should be flush while adding new menu to the role
+
             return responseMsg(true, "Permission Menues", remove_null($menues));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -83,8 +81,7 @@ class MenuRepo implements iMenuRepo
     public function updateMenuByRole($req)
     {
         try {
-            $roleMenus = new WfRolemenu();
-            Redis::del('menu-by-role-' . $req->roleId);                                 // Flush Key of the User Role Permission
+            $roleMenus = new WfRolemenu();                               // Flush Key of the User Role Permission
 
             $readRoleMenus = $roleMenus->getMenues($req);
 
@@ -102,7 +99,6 @@ class MenuRepo implements iMenuRepo
                         break;
                 }
             }
-
 
             $roleMenus->role_id = $req->roleId;
             $roleMenus->menu_id = $req->menuId;
@@ -124,21 +120,21 @@ class MenuRepo implements iMenuRepo
     public function getRoleWiseMenu()
     {
         try {
-            $userId=auth()->user()->id;
-            $menuDetails = WfRolemenu::join('wf_roleusermaps','wf_roleusermaps.wf_role_id','=','wf_rolemenus.role_id')
-            ->join('menu_masters','menu_masters.id','=','wf_rolemenus.menu_id')
-            ->where('wf_roleusermaps.user_id',$userId)
-            ->select(
-                'menu_masters.menu_string AS menuName',
-                'menu_masters.route',
-            )
-            ->get();
-            if(!empty($menuDetails['0'])){
-            return responseMsg(true,"Data according to roles",$menuDetails);
+            $userId = auth()->user()->id;
+            $menuDetails = WfRolemenu::join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_rolemenus.role_id')
+                ->join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
+                ->where('wf_roleusermaps.user_id', $userId)
+                ->select(
+                    'menu_masters.menu_string AS menuName',
+                    'menu_masters.route',
+                )
+                ->get();
+            if (!empty($menuDetails['0'])) {
+                return responseMsg(true, "Data according to roles", $menuDetails);
             }
-            return responseMsg(false,"Data not Found!","");
+            return responseMsg(false, "Data not Found!", "");
         } catch (Exception $error) {
-            return responseMsg(false, "ERROR!",$error->getMessage());
+            return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
 }

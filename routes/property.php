@@ -12,6 +12,7 @@ use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Http\Controllers\Property\SafReassessmentController;
 use App\Http\Controllers\Property\PropertyBifurcationController;
 use App\Http\Controllers\Property\PropMaster;
+use App\Http\Controllers\Property\PropertyDetailsController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -128,6 +129,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::get('objection/inbox', 'inbox');
         Route::get('objection/outbox', 'outbox');
+        Route::post('objection/details', 'getDetailsById');
+        Route::post('objection/post-escalate', 'postEscalate');                                 // Escalate the application and send to special category
+        Route::get('objection/special-inbox', 'specialInbox');                                   // Special Inbox 
         Route::post('objection/next-level', 'postNextLevel');
         Route::post('objection/approvalrejection', 'approvalRejection');
         Route::post('objection/backtocitizen', 'backToCitizen');
@@ -193,6 +197,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('prop-occupancy-type', 'propOccupancyType');
         Route::get('prop-property-type', 'propPropertyType');
         Route::get('prop-road-type', 'propRoadType');
+    // Property Details
+    Route::controller(PropertyDetailsController::class)->group(function () {
+        Route::post('get-filter-property-details', 'getFilterProperty');
     });
 });
 

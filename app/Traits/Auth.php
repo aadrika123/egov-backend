@@ -217,22 +217,15 @@ trait Auth
                 'user_name AS name'
             )
             ->get();
-
+        $collection['userName'] = $userInfo['0']->name;
         $userId = $userInfo['0']->id;
 
-        $menuRoleDetails = WfRoleusermap::join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_role_id')
+        # may call another function for below database serch
+        $menuRoleDetails = WfRoleusermap::leftJoin('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_role_id')
             ->where('wf_roleusermaps.user_id', $userId)
             ->select(
                 'wf_roles.role_name AS roles',
-            )
-            ->get();
-
-        $menuPermissionDetails = WfRolemenu::join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_rolemenus.role_id')
-            ->join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
-            ->where('wf_roleusermaps.user_id', $userId)
-            ->select(
-                'menu_masters.menu_string AS menuName',
-                'menu_masters.route AS menuPermission',
+                'wf_roles.id AS roleId'
             )
             ->get();
 
@@ -241,11 +234,23 @@ trait Auth
             return $values;
         });
 
-        $collection['menuPermission'] = collect($menuPermissionDetails)->map(function ($value, $key) {
-            $values = [$value['menuName']=>$value['menuPermission']];
+        $roleId = $menuRoleDetails['roleId'] = collect($menuRoleDetails)->map(function ($value, $key) {
+            $values = $value['roleId'];
             return $values;
         });
-        $collection['userName'] = $userInfo['0']->name; 
+
+        # may call another function for below database serch
+        foreach ($roleId as $roleIds) {
+            $roleBasedMenu[] = WfRolemenu::join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
+                ->where('wf_rolemenus.role_id', $roleIds)
+                ->where('wf_rolemenus.status',1)
+                ->select(
+                    'menu_masters.menu_string AS menuName',
+                    'menu_masters.route AS menuPath',
+                )
+                ->get();
+        }
+        $collection['menuPermission'] = collect($roleBasedMenu)->collapse();
         return $collection;
     }
 }

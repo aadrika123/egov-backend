@@ -369,3 +369,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('role-menu/get-role-by-menu', 'getRoleWiseMenu');     // get menu according to the user role
     });
 });
+
+#---------------------------- document read ------------------------------
+Route::get('/getImageLink', function () {
+    return view('getImageLink');
+});
