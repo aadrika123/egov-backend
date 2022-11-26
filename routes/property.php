@@ -11,6 +11,7 @@ use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Http\Controllers\Property\SafReassessmentController;
 use App\Http\Controllers\Property\PropertyBifurcationController;
+use App\Http\Controllers\Property\PropertyDetailsController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -127,6 +128,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::get('objection/inbox', 'inbox');
         Route::get('objection/outbox', 'outbox');
+        Route::post('objection/details', 'getDetailsById');
         Route::post('objection/next-level', 'postNextLevel');
         Route::post('objection/approvalrejection', 'approvalRejection');
         Route::post('objection/backtocitizen', 'backToCitizen');
@@ -183,6 +185,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('cluster/details-by-holding', 'detailsByHolding');
         Route::post('cluster/holding-by-cluster', 'holdingByCluster');
         Route::post('cluster/save-holding-in-cluster', 'saveHoldingInCluster');
+    });
+
+    // Property Details
+    Route::controller(PropertyDetailsController::class)->group(function () {
+        Route::post('get-filter-property-details', 'getFilterProperty');
     });
 });
 
