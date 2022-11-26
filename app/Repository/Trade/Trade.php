@@ -1356,7 +1356,9 @@ class Trade implements ITrade
                 $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenceId,$key);
                 if(isset($data["documentsList"][$key]["doc"]["document_path"]))
                 {
-                    $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"][$key]["doc"]["document_path"]):null;
+                    $path = (config('app.url').'/api/getImageLink?path='.$data["documentsList"][$key]["doc"]["document_path"]);
+                    // $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"][$key]["doc"]["document_path"]):null;
+                    $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?$path :null;
 
                 }
             } 
@@ -1368,14 +1370,17 @@ class Trade implements ITrade
                     $refOwneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
                     if(isset($refOwneres[$key]["Identity Proof"]["document_path"]))
                     {
-                        // dd($url = readfile(Storage::path($refOwneres[$key]["Identity Proof"]["document_path"])));
-                        $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["Identity Proof"]["document_path"]):null;
+                        $path = (config('app.url').'/api/getImageLink?path='.$refOwneres[$key]["Identity Proof"]["document_path"]);
+                        // $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["Identity Proof"]["document_path"]):null;
+                        $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?$path:null;
     
                     }
                     $refOwneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
                     if(isset( $refOwneres[$key]["image"]["document_path"]))
                     {
+                        $path = (config('app.url').'/api/getImageLink?path='.$refOwneres[$key]["image"]["document_path"]);
                         $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["image"]["document_path"]):null;
+                        $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?$path:null;
     
                     }
                 }         
@@ -1613,6 +1618,8 @@ class Trade implements ITrade
         }
         catch(Exception $e)
         {
+
+            dd($e->getLine(),$e->getFile(),$e->getMessage());
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
@@ -4214,6 +4221,11 @@ class Trade implements ITrade
         {
             return $e->getMessage();   
         }
+    }
+
+    public function readDocument()
+    {
+
     }
    
     #-------------------- End core function of core function --------------
