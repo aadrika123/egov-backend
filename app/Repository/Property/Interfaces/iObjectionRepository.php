@@ -18,6 +18,7 @@ interface iObjectionRepository
     public function inbox();
     public function outbox();
     public function getDetailsById($req);                       // Get Objection Details By ID
+    public function postEscalate($req);                         // Escalate the application and send to special category
     public function postNextLevel($req);
     public function approvalRejection($req);
     public function backTocitizen($req);

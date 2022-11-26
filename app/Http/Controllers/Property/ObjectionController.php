@@ -61,6 +61,23 @@ class ObjectionController extends Controller
         return $this->Repository->getDetailsById($req);
     }
 
+    // Escalate application 
+    public function postEscalate(Request $req)
+    {
+        $req->validate([
+            'escalateStatus' => 'required|bool',
+            'objectionId' => 'required|integer'
+        ]);
+
+        return $this->Repository->postEscalate($req);
+    }
+
+    // List of the Escalated Application
+    public function specialInbox()
+    {
+        return $this->Repository->spceialInbox();
+    }
+
     // Post Next Level Application
     public function postNextLevel(Request $req)
     {

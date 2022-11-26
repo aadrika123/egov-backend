@@ -421,6 +421,52 @@ class ObjectionRepository implements iObjectionRepository
     }
 
     /**
+     * | Post Escalate the Applications
+     * | @param req $req
+     */
+    public function postEscalate($req)
+    {
+        try {
+            DB::beginTransaction();
+            $userId = authUser()->id;
+            $objId = $req->objectionId;
+            $data = PropActiveObjection::find($objId);
+            $data->is_escalated = $req->escalateStatus;
+            $data->escalated_by = $userId;
+            $data->save();
+            DB::commit();
+            return responseMsg(true, $req->escalateStatus == 1 ? 'Objection is Escalated' : "Objection is removed from Escalated", '');
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Special Inbox
+     */
+    public function specialInbox()
+    {
+        try {
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+            $occupiedWard = $this->getWardByUserId($userId);                        // Get All Occupied Ward By user id using trait
+            $wardId = $occupiedWard->map(function ($item, $key) {                   // Filter All ward_id in an array using laravel collections
+                return $item->ward_id;
+            });
+            $safData = $this->getObjectionList($ulbId)
+                ->where('is_escalate', 1)
+                ->where('prop_active_safs.ulb_id', $ulbId)
+                ->whereIn('ward_mstr_id', $wardId)
+                ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type', 'at.assessment_type')
+                ->get();
+            return responseMsg(true, "Data Fetched", remove_null($safData));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
      * | Forward Or BackWard Application
      * | @param $req
      */
