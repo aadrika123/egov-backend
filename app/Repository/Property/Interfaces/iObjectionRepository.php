@@ -17,6 +17,7 @@ interface iObjectionRepository
     public function assesmentDetails($request);
     public function inbox();
     public function outbox();
+    public function getDetailsById($req);                       // Get Objection Details By ID
     public function postNextLevel($req);
     public function approvalRejection($req);
     public function backTocitizen($req);

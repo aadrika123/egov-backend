@@ -386,6 +386,26 @@ class ObjectionRepository implements iObjectionRepository
     }
 
     /**
+     * | Get Objection Details by Id
+     */
+    public function getDetailsById($req)
+    {
+        $details = DB::table('prop_active_objections')
+            ->select(
+                'prop_active_objections.id as objection_id',
+                'prop_active_objections.objection_type_id',
+                'prop_active_objections.objection_no',
+                'prop_active_objections.workflow_id',
+                'prop_active_objections.current_role',
+                'p.*'
+            )
+            ->join('prop_properties as p', 'p.id', '=', 'prop_active_objections.property_id')
+            ->where('prop_active_objections.id', $req->id)
+            ->first();
+        return responseMsg(true, "Objection Details", remove_null($details));
+    }
+
+    /**
      * | Forward Or BackWard Application
      * | @param $req
      */
