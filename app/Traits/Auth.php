@@ -243,6 +243,7 @@ trait Auth
         foreach ($roleId as $roleIds) {
             $roleBasedMenu[] = WfRolemenu::join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
                 ->where('wf_rolemenus.role_id', $roleIds)
+                ->where('wf_rolemenus.status',1)
                 ->select(
                     'menu_masters.menu_string AS menuName',
                     'menu_masters.route AS menuPath',
