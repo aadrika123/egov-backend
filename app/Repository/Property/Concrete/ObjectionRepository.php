@@ -36,8 +36,8 @@ class ObjectionRepository implements iObjectionRepository
     private  $_objectionNo;
 
     /**
-     * | Workflow ID=36
-     * | Ulb WorkflowID=169
+     * | CLERICAL Workflow ID=36                            | ALL Workflow ID=56
+     * | CLERICAL Ulb WorkflowID=169                        | All Ulb Workflow ID=183          
      */
 
     //get owner details
@@ -53,6 +53,7 @@ class ObjectionRepository implements iObjectionRepository
             echo $e->getMessage();
         }
     }
+
     //apply objection
     public function applyObjection($request)
     {
@@ -254,7 +255,6 @@ class ObjectionRepository implements iObjectionRepository
     //objection number generation
     public function objectionNo($id)
     {
-
         try {
             $count = PropActiveObjection::where('id', $id)
                 ->count() + 1;
@@ -395,6 +395,7 @@ class ObjectionRepository implements iObjectionRepository
             ->select(
                 'prop_active_objections.id as objection_id',
                 'prop_active_objections.objection_type_id',
+                'ot.type as objection_type',
                 'prop_active_objections.objection_no',
                 'prop_active_objections.workflow_id',
                 'prop_active_objections.current_role',
@@ -412,6 +413,7 @@ class ObjectionRepository implements iObjectionRepository
             ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
             ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
             ->leftJoin('ref_prop_types as pt', 'pt.id', '=', 's.property_assessment_id')
+            ->join('ref_prop_objection_types as ot', 'ot.id', '=', 'prop_active_objections.objection_type_id')
             ->where('p.status', 1)
             ->where('prop_active_objections.id', $req->id)
             ->first();
@@ -467,6 +469,7 @@ class ObjectionRepository implements iObjectionRepository
             }
 
             DB::beginTransaction();
+
             // Approval
             if ($req->status == 1) {
                 // Objection Application replication
@@ -483,6 +486,7 @@ class ObjectionRepository implements iObjectionRepository
                 $msg = "Application Successfully Approved !!";
             }
             // Rejection
+
             if ($req->status == 0) {
                 // Objection Application replication
                 $activeObjection = PropActiveObjection::query()
