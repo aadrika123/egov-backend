@@ -75,7 +75,7 @@ class ObjectionController extends Controller
     // List of the Escalated Application
     public function specialInbox()
     {
-        return $this->Repository->spceialInbox();
+        return $this->Repository->specialInbox();
     }
 
     // Post Next Level Application
