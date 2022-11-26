@@ -2,9 +2,8 @@
 
 namespace App\Repository\Property\Interfaces;
 
-use Illuminate\Http\Request;
 
 interface iPropertyDetailsRepo
 {
-
+    public function getFilterProperty($request);
 }
