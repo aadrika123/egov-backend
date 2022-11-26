@@ -60,6 +60,7 @@ class ObjectionController extends Controller
             'receiverRoleId' => 'required',
             'comment' => 'required'
         ]);
+
         return $this->Repository->postNextLevel($req);
     }
 
