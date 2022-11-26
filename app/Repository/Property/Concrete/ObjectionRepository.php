@@ -582,7 +582,7 @@ class ObjectionRepository implements iObjectionRepository
             $preLevelPending->save();
 
             $levelPending = new PropObjectionLevelpending();
-            $levelPending->objectionId = $req->objectionId;
+            $levelPending->objection_id = $req->objectionId;
             $levelPending->sender_role_id = $req->currentRoleId;
             $levelPending->receiver_role_id = $backId->wf_role_id;
             $levelPending->user_id = authUser()->id;
