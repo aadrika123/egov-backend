@@ -121,7 +121,7 @@ class ObjectionRepository implements iObjectionRepository
                     $file->move($path, $name);
                 }
 
-                // $objectionNo = $this->objectionNo($id, $ulbId);
+                $objectionNo = $this->objectionNo($id);
                 DB::commit();
             }
 
@@ -252,15 +252,14 @@ class ObjectionRepository implements iObjectionRepository
 
 
     //objection number generation
-    public function objectionNo($property_id)
+    public function objectionNo($id)
     {
 
         try {
             $count = PropActiveObjection::where('id', $id)
-                ->where('ulb_id', $ulbId)
                 ->count() + 1;
-            $ward_no = UlbWardMaster::select("ward_name")->where('id', $ward_id)->first()->ward_name;
-            $_objectionNo = 'OBJ' . str_pad($ward_no, 3, '0', STR_PAD_LEFT) . "/" . str_pad($count, 5, '0', STR_PAD_LEFT);
+
+            $_objectionNo = 'OBJ' . "/" . str_pad($count, 5, '0', STR_PAD_LEFT);
 
             return $_objectionNo;
         } catch (Exception $e) {

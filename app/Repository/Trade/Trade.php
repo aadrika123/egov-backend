@@ -2192,6 +2192,37 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+    public function postEscalate(Request $request)
+    {
+        try {
+            $userId = auth()->user()->id;
+            // Validation Rule
+            $rules = [
+                "escalateStatus" => "required|int",
+                "licenceId" => "required",
+            ];
+            // Validation Message
+            $message = [
+                "escalateStatus.required" => "Escalate Status Is Required",
+                "licenceId.required" => "Application Id Is Required",
+            ];
+            $validator = Validator::make($request->all(), $rules, $message);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), $request->all());
+            }
+            DB::beginTransaction();
+            $licenceId = $request->licenceId;
+            $data = ActiveLicence::find($licenceId);
+            $data->is_escalate = $request->escalateStatus;
+            $data->escalate_by = $userId;
+            $data->save();
+            DB::commit();
+            return responseMsg(true, $request->escalateStatus == 1 ? 'Application is Escalated' : "Application is removed from Escalated", '');
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
 
     /**
      * | Trade module WorkFlow Inbox 
@@ -3755,6 +3786,7 @@ class Trade implements ITrade
                 $expireLicence->deleted_at              = $licence->deleted_at ;
                 $expireLicence->user_id                 = $licence->user_id ;
                 $expireLicence->is_escalate             = $licence->is_escalate ;
+                $expireLicence->escalate_by             = $licence->escalate_by ;
 
                 $expireLicence->save();
                 $expireLicenceId = $expireLicence->id;

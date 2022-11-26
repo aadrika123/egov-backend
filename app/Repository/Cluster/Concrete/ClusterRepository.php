@@ -58,7 +58,7 @@ class ClusterRepository implements iCluster
                 'status'
             )
                 ->where('id', $request->id)
-                ->where('status',1)
+                ->where('status', 1)
                 ->get()
                 ->first();
 
@@ -265,6 +265,4 @@ class ClusterRepository implements iCluster
         $mreturn = responseMsg(false, "Operation Failer!", $mreq);
         return (object)$mreturn;
     }
-
-
 }
