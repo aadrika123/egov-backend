@@ -65,6 +65,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
     public function searchByHolding($request)
     {
         return PropProperty::select(
+            'prop_properties.id AS id',
             'prop_properties.new_holding_no AS holdingNo',
             'prop_properties.prop_address AS address',
             'corr_address AS correspondingAddress',
@@ -85,6 +86,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
     {
         if (($request->wardId) == 0) {
             return PropProperty::select(
+                'prop_properties.id AS id',
                 'prop_properties.new_holding_no AS holdingNo',
                 'prop_properties.prop_address AS address',
                 'corr_address AS correspondingAddress',
@@ -99,6 +101,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                 ->get();
         }
         return PropProperty::select(
+            'prop_properties.id AS id',
             'prop_properties.new_holding_no AS holdingNo',
             'prop_properties.prop_address AS address',
             'corr_address AS correspondingAddress',
@@ -125,6 +128,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
         if (($request->wardId) == 0) {
             return ("this");
             return PropProperty::select(
+                'prop_properties.id AS id',
                 'prop_properties.new_holding_no AS holdingNo',
                 'prop_properties.prop_address AS address',
                 'corr_address AS correspondingAddress',
@@ -136,6 +140,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                 ->get();
         }
         return PropProperty::select(
+            'prop_properties.id AS id',
             'prop_properties.new_holding_no AS holdingNo',
             'prop_properties.prop_address AS address',
             'corr_address AS correspondingAddress',
