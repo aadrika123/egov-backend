@@ -1356,7 +1356,9 @@ class Trade implements ITrade
                 $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenceId,$key);
                 if(isset($data["documentsList"][$key]["doc"]["document_path"]))
                 {
-                    $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"][$key]["doc"]["document_path"]):null;
+                    $path = $this->readDocumentPath($data["documentsList"][$key]["doc"]["document_path"]);
+                    // $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"][$key]["doc"]["document_path"]):null;
+                    $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?$path :null;
 
                 }
             } 
@@ -1368,14 +1370,17 @@ class Trade implements ITrade
                     $refOwneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
                     if(isset($refOwneres[$key]["Identity Proof"]["document_path"]))
                     {
-                        // dd($url = readfile(Storage::path($refOwneres[$key]["Identity Proof"]["document_path"])));
-                        $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["Identity Proof"]["document_path"]):null;
+                        $path = $this->readDocumentPath($refOwneres[$key]["Identity Proof"]["document_path"]);
+                        // $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["Identity Proof"]["document_path"]):null;
+                        $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?$path:null;
     
                     }
                     $refOwneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
                     if(isset( $refOwneres[$key]["image"]["document_path"]))
                     {
+                        $path = $this->readDocumentPath($refOwneres[$key]["image"]["document_path"]);
                         $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["image"]["document_path"]):null;
+                        $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?$path:null;
     
                     }
                 }         
@@ -1613,6 +1618,8 @@ class Trade implements ITrade
         }
         catch(Exception $e)
         {
+
+            dd($e->getLine(),$e->getFile(),$e->getMessage());
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
@@ -1801,7 +1808,7 @@ class Trade implements ITrade
             $refTransactionDtl          = $this->readTranDtl($id);
             $refTimeLine                = $this->getTimelin($id);
             $refUploadDocuments         = $this->getLicenceDocuments($id)->map(function($val){
-                                                $val->document_path = !empty(trim($val->document_path))? Storage::url("1.pdf"):"";
+                                                $val->document_path = !empty(trim($val->document_path))? $this->readDocumentPath($val->document_path):"";
                                                 return $val;
                                             });
             $pendingAt  = $init_finish['initiator']['id'];
@@ -4214,6 +4221,12 @@ class Trade implements ITrade
         {
             return $e->getMessage();   
         }
+    }
+
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url').'/api/getImageLink?path='.$path);
+        return $path;
     }
    
     #-------------------- End core function of core function --------------
