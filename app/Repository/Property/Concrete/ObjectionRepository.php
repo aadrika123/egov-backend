@@ -577,7 +577,7 @@ class ObjectionRepository implements iObjectionRepository
             $objection->save();
 
             $propLevelPending = new PropObjectionLevelpending();
-            $preLevelPending = $propLevelPending->getLevelByObjectionReceiver($req->objectionId, $req->currentRoleId);
+            $preLevelPending = $propLevelPending->getCurrentObjByReceiver($req->objectionId, $req->currentRoleId);
             $preLevelPending->remarks = $req->comment;
             $preLevelPending->save();
 
