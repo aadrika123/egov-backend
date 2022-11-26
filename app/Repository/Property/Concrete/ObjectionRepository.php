@@ -122,7 +122,7 @@ class ObjectionRepository implements iObjectionRepository
                     $file->move($path, $name);
                 }
 
-                $objectionNo = $this->objectionNo($id);
+                // $objectionNo = $this->objectionNo($id);
                 DB::commit();
             }
 
@@ -421,6 +421,50 @@ class ObjectionRepository implements iObjectionRepository
     }
 
     /**
+     * | Post Escalate the Applications
+     * | @param req $req
+     */
+    public function postEscalate($req)
+    {
+        try {
+            DB::beginTransaction();
+            $userId = authUser()->id;
+            $objId = $req->objectionId;
+            $data = PropActiveObjection::find($objId);
+            $data->is_escalated = $req->escalateStatus;
+            $data->escalated_by = $userId;
+            $data->save();
+            DB::commit();
+            return responseMsg(true, $req->escalateStatus == 1 ? 'Objection is Escalated' : "Objection is removed from Escalated", '');
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Special Inbox
+     */
+    public function specialInbox()
+    {
+        try {
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+            $occupiedWard = $this->getWardByUserId($userId);                        // Get All Occupied Ward By user id using trait
+            $wardId = $occupiedWard->map(function ($item, $key) {                   // Filter All ward_id in an array using laravel collections
+                return $item->ward_id;
+            });
+            $safData = $this->getObjectionList($ulbId)
+                ->where('prop_active_objections.is_escalated', true)
+                ->whereIn('p.ward_mstr_id', $wardId)
+                ->get();
+            return responseMsg(true, "Data Fetched", remove_null($safData));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
      * | Forward Or BackWard Application
      * | @param $req
      */
@@ -457,7 +501,10 @@ class ObjectionRepository implements iObjectionRepository
         }
     }
 
-    //approval & rejection
+    /**
+     * | Objection Application approval Rejection
+     * | @param request $req
+     */
     public function approvalRejection($req)
     {
         try {
@@ -508,7 +555,10 @@ class ObjectionRepository implements iObjectionRepository
         }
     }
 
-    //back to citizen
+    /**
+     * | Back to Citizen the Application
+     * | @param request $req
+     */
     public function backToCitizen($req)
     {
         try {
@@ -521,11 +571,28 @@ class ObjectionRepository implements iObjectionRepository
                     ->first();
                 $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
             }
-            $saf = PropActiveObjection::find($req->objectionId);
-            $saf->current_role = $backId->wf_role_id;
-            $saf->save();
+            DB::beginTransaction();
+            $objection = PropActiveObjection::find($req->objectionId);
+            $objection->current_role = $backId->wf_role_id;
+            $objection->save();
+
+            $propLevelPending = new PropObjectionLevelpending();
+            $preLevelPending = $propLevelPending->getLevelByObjectionReceiver($req->objectionId, $req->currentRoleId);
+            $preLevelPending->remarks = $req->comment;
+            $preLevelPending->save();
+
+            $levelPending = new PropObjectionLevelpending();
+            $levelPending->objectionId = $req->objectionId;
+            $levelPending->sender_role_id = $req->currentRoleId;
+            $levelPending->receiver_role_id = $backId->wf_role_id;
+            $levelPending->user_id = authUser()->id;
+            $levelPending->sender_user_id = authUser()->id;
+            $levelPending->save();
+
+            DB::commit();
             return responseMsg(true, "Successfully Done", "");
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
