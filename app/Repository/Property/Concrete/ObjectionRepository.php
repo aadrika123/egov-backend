@@ -35,6 +35,10 @@ class ObjectionRepository implements iObjectionRepository
     use WorkflowTrait;
     private  $_objectionNo;
 
+    /**
+     * | Workflow ID=36
+     * | Ulb WorkflowID=169
+     */
 
     //get owner details
     public function ownerDetails($request)
@@ -317,7 +321,9 @@ class ObjectionRepository implements iObjectionRepository
         }
     }
 
-    //Inbox 
+    /**
+     * | Get Inbox List of Objection Workflow
+     */
     public function inbox()
     {
         try {
@@ -336,8 +342,9 @@ class ObjectionRepository implements iObjectionRepository
                 return $role->wf_role_id;
             });
 
-            $objection = $this->getObjectionList($ulbId)
+            $objection = $this->getObjectionList($ulbId)                                            // Objection List
                 ->whereIn('prop_active_objections.current_role', $roleId)
+                ->whereIn('p.ward_mstr_id', $occupiedWards)
                 ->get();
 
             return responseMsg(true, "Inbox List", remove_null($objection));
@@ -346,7 +353,9 @@ class ObjectionRepository implements iObjectionRepository
         }
     }
 
-    //outbox
+    /**
+     * | Get the Objection Outbox
+     */
     public function outbox()
     {
         try {
@@ -354,19 +363,20 @@ class ObjectionRepository implements iObjectionRepository
             $userId = $auth->id;
             $ulbId = $auth->ulb_id;
 
-            $workflowRoles = $this->getRoleIdByUserId($userId);
-            $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
+            $workflowRoles = $this->getRoleIdByUserId($userId);                             // Get all The roles of the Users
+
+            $roleId = $workflowRoles->map(function ($value) {                               // Get user Workflow Roles
                 return $value->wf_role_id;
             });
 
             $refWard = $this->getWardByUserId($userId);                                     // Get Ward List by user Id
-            $occupiedWards = $refWard->map(function ($value, $key) {
+            $occupiedWards = $refWard->map(function ($value) {
                 return $value->ward_id;
             });
 
-            $objections = $this->getObjectionList($ulbId)
+            $objections = $this->getObjectionList($ulbId)                                   // Get Outbox Objection List
                 ->whereNotIn('prop_active_objections.current_role', $roleId)
-                ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->whereIn('p.ward_mstr_id', $occupiedWards)
                 ->get();
 
             return responseMsg(true, "Outbox List", remove_null($objections));
@@ -375,19 +385,47 @@ class ObjectionRepository implements iObjectionRepository
         }
     }
 
-    //post next level
+    /**
+     * | Get Objection Details by Id
+     * | @param request $req
+     */
+    public function getDetailsById($req)
+    {
+        $details = DB::table('prop_active_objections')
+            ->select(
+                'prop_active_objections.id as objection_id',
+                'prop_active_objections.objection_type_id',
+                'prop_active_objections.objection_no',
+                'prop_active_objections.workflow_id',
+                'prop_active_objections.current_role',
+                'p.*',
+                'at.assessment_type as assessment',
+                'w.ward_name as old_ward_no',
+                'o.ownership_type',
+                'pt.property_type'
+            )
+
+            ->join('prop_properties as p', 'p.id', '=', 'prop_active_objections.property_id')
+            ->join('prop_safs as s', 's.id', '=', 'p.saf_id')
+            ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
+            ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
+            ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
+            ->leftJoin('ref_prop_types as pt', 'pt.id', '=', 's.property_assessment_id')
+            ->where('p.status', 1)
+            ->where('prop_active_objections.id', $req->id)
+            ->first();
+        return responseMsg(true, "Objection Details", remove_null($details));
+    }
+
+    /**
+     * | Forward Or BackWard Application
+     * | @param $req
+     */
     public function postNextLevel($req)
     {
         try {
             DB::beginTransaction();
-
-            // previous level pending verification enabling
-            $preLevelPending = PropObjectionLevelpending::where('objection_id', $req->objectionId)
-                ->orderByDesc('id')
-                ->limit(1)
-                ->first();
-            $preLevelPending->verification_status = '1';
-            $preLevelPending->save();
 
             $levelPending = new PropObjectionLevelpending();
             $levelPending->objection_id = $req->objectionId;
@@ -397,16 +435,16 @@ class ObjectionRepository implements iObjectionRepository
             $levelPending->save();
 
             // objection Application Update Current Role Updation
-            $objection = PropObjectionLevelpending::find($req->objectionId);
+            $objection = PropActiveObjection::find($req->objectionId);
             $objection->current_role = $req->receiverRoleId;
             $objection->save();
 
-            // Add Comment On Prop Level Pending
-            $commentOnlevel = PropObjectionLevelpending::where('objection_id', $req->objectionId)
-                ->where('receiver_role_id', $req->senderRoleId)
-                ->first();
+            // Add Comment On Prop Level Pending  and Verification Status true
+            $ObjLevelPending = new PropObjectionLevelpending();
+            $commentOnlevel = $ObjLevelPending->getCurrentObjByReceiver($req->objectionId, $req->senderRoleId);
 
             $commentOnlevel->remarks = $req->comment;
+            $commentOnlevel->verification_status = 1;
             $commentOnlevel->save();
 
             DB::commit();
