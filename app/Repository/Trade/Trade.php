@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Storage;
 use App\EloquentModels\Common\ModelWard;
 use App\Models\Property\ActiveSafsOwnerDtl;
 use App\Models\Property\ActiveSaf ;
+use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Trade\ActiveLicence;
@@ -31,7 +33,7 @@ use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
 use App\Models\UlbWorkflowMaster;
 use App\Models\Workflows\WfWorkflow;
-// use App\Models\WorkflowTrack;
+use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use Illuminate\Http\Request;
 
@@ -115,7 +117,7 @@ class Trade implements ITrade
      * |    this->getFirmTypeList()                               |   read FirmType
      * |    this->getOwnershipTypeList()                          |   read OwnerShipType
      * |    this->getCategoryList()                               |   read Category Type                   
-     * |    this->geItemsList(true)                               |    read Trade Item List without tomacco item
+     * |    this->getItemsList(true)                               |    read Trade Item List without tomacco item
      * |    this->getLicenceById(request->id)                           |    only for applicationType(2,3,4)  |  read Old Licence Dtl
      * |    this->getOwnereDtlByLId($request->id)                       |    only for applicationType(2,3,4)  |  read Old Licence Owner Dtl
      * |    this->getLicenceItemsById(refOldLicece->nature_of_bussiness)|    only for applicationType(2,3,4)  |  read Old Licence Trade Items
@@ -216,7 +218,7 @@ class Trade implements ITrade
                 $data["firmTypeList"]       = $this->getFirmTypeList();
                 $data["ownershipTypeList"]  = $this->getOwnershipTypeList();
                 $data["categoryTypeList"]   = $this->getCategoryList();
-                $data["natureOfBusiness"]   = $this->geItemsList(true);
+                $data["natureOfBusiness"]   = $this->getItemsList(true);
                 if(isset($request->id) && $request->id  && $mApplicationTypeId !=1)
                 {
                     $refOldLicece = $this->getLicenceById($request->id); // recieving olde lisense id from url
@@ -725,7 +727,7 @@ class Trade implements ITrade
             $data["firmTypeList"]       = $this->getFirmTypeList();
             $data["ownershipTypeList"]  = $this->getOwnershipTypeList();
             $data["categoryTypeList"]   = $this->getCategoryList();
-            $data["natureOfBusiness"]   = $this->geItemsList(true);
+            $data["natureOfBusiness"]   = $this->getItemsList(true);
             return responseMsg(true,"",remove_null($data));
         }   
         catch(Exception $e)
@@ -2485,7 +2487,7 @@ class Trade implements ITrade
             $rules = [
                 // "receiverId" => "required|int",
                 "btn" => "required|in:btc,forward,backward",
-                "licenceId" => "required|int",
+                "licenceId" => "required|digits_between:1,9223372036854775807",
                 "comment" => "required|min:10|regex:$regex",
             ];
             $message = [
@@ -3098,6 +3100,68 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+    public function addIndependentComment(Request $request)
+    {
+        try {    
+            $mRegex     = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';        
+            $userId = auth()->user()->id;
+            $ulbId  = auth()->user()->ulb_id;
+            $role_id = 0;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $role = $this->_parent->getUserRoll($userId,$ulbId, $refWorkflowId);
+            if($role)
+            {
+                $role_id = $role->role_id;                
+            }
+            $rules["comments"] = "required|min:10|regex:$mRegex";
+            $rules["licenceId"]="required||digits_between:1,9223372036854775807";
+            $validator = Validator::make($request->all(), $rules,);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(),$request->all());
+            }
+            // SAF Details
+            $refLicense = ActiveLicence::find($request->licenceId);
+            if(!$refLicense)
+            {
+                throw new Exception("Comments for invalide application !....");
+            }
+
+            // Save On Workflow Track
+            DB::beginTransaction();
+            $workflowTrack = new WorkflowTrack;
+            $workflowTrack->workflow_id     =   Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $workflowTrack->citizen_id      =   $userId;
+            $workflowTrack->module_id       =   Config::get('TradeConstant.MODULE-ID');
+            $workflowTrack->ref_table_dot_id = "active_licences";
+            $workflowTrack->ref_table_id_value = $refLicense->id;
+            $workflowTrack->message         =   $request->comments;
+            $workflowTrack->commented_by    =   $role_id;
+            $workflowTrack->track_date      =   Carbon::now()->format('Y-m-d H:i:s');    
+            $workflowTrack->save();
+
+            DB::commit();
+            return responseMsg(true, "You Have Commented Successfully!!", ['Comment' => $request->comments]);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    public function readIndipendentComment(Request $request)
+    {
+        try { 
+            $rules["licenceId"]="required||digits_between:1,9223372036854775807";
+            $validator = Validator::make($request->all(), $rules,);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(),$request->all());
+            }
+            $comments = $this->getIndipendentComment($request->licenceId);
+            return $comments;
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 
     /**
      * Only for EO (Exicutive Officer)
@@ -3532,7 +3596,7 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-    public function geItemsList($all=false)
+    public function getItemsList($all=false)
     {
         try{
             if($all)
@@ -3553,6 +3617,26 @@ class Trade implements ITrade
         catch (Exception $e)
         {
             echo $e->getMessage();
+        }
+    }
+    public function getIndipendentComment($licenceId)
+    {
+        try{
+            $data = WorkflowTrack::select("workflow_tracks.*","users.user_name",
+                        DB::raw("CASE WHEN wf_roles.id ISNULL THEN 'Citizen' ELSE wf_roles.role_name END AS role_name")
+                    )
+                    ->join("users","users.id","workflow_tracks.citizen_id")
+                    ->leftjoin("wf_roles","wf_roles.id","workflow_tracks.commented_by")
+                    ->where("workflow_tracks.ref_table_dot_id","active_licences")
+                    ->where("workflow_tracks.ref_table_id_value",$licenceId)
+                    ->where("workflow_tracks.module_id",Config::get('TradeConstant.MODULE-ID'))
+                    ->orderBy("workflow_tracks.track_date")
+                    ->get();
+            return $data;
+        }
+        catch (Exception $e){
+            echo $e->getMessage();die;
+            return[];
         }
     }
     public function getAllApplicationType()
@@ -3669,6 +3753,8 @@ class Trade implements ITrade
                 $expireLicence->updated_at              = $licence->updated_at ;
                 $expireLicence->created_at              = $licence->created_at ;
                 $expireLicence->deleted_at              = $licence->deleted_at ;
+                $expireLicence->user_id                 = $licence->user_id ;
+                $expireLicence->is_escalate             = $licence->is_escalate ;
 
                 $expireLicence->save();
                 $expireLicenceId = $expireLicence->id;
@@ -3723,14 +3809,14 @@ class Trade implements ITrade
     }
     public function getSafDtlBySafno(string $safNo,int $ulb_id):array
     {
-        $saf = ActiveSaf::select("*")
+        $saf = PropActiveSaf::select("*")
                 ->where('status',1)
                 ->where('saf_no',$safNo)
                 ->where('ulb_id',$ulb_id)
                 ->first();
         if($saf->id)
         {
-            $owneres = ActiveSafsOwnerDtl::select("*")
+            $owneres = PropActiveSafsOwner::select("*")
                         ->where("saf_dtl_id",$saf->id)
                         ->where('status',1)
                         ->get();

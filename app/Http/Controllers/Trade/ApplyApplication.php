@@ -98,6 +98,14 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->postNextLevel($request);
     }
+    public function addIndependentComment(Request $request)
+    {
+        return $this->Repository->addIndependentComment($request);
+    }
+    public function readIndipendentComment(Request $request)
+    {
+        return $this->Repository->readIndipendentComment($request);
+    }
     public function paymentCounter(paymentCounter $request)
     {
         return $this->Repository->paymentCounter($request);
