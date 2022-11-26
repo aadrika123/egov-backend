@@ -15,9 +15,7 @@ interface iObjectionRepository
     public function objectionNo($propertyId);
     public function objectionType();
     public function ownerDetails($request);
-
     public function assesmentDetails($request);
-
     public function inbox();
     public function outbox();
     public function postNextLevel($req);

@@ -660,11 +660,6 @@ class SafRepository implements iSafRepository
         DB::beginTransaction();
         try {
             // previous level pending verification enabling
-            $propLevelPending = new PropLevelPending();
-            $preLevelPending = $propLevelPending->getLevelBySafReceiver($request->safId, $request->receiverRoleId);
-            $preLevelPending->verification_status = '1';
-            $preLevelPending->save();
-
             $levelPending = new PropLevelPending();
             $levelPending->saf_id = $request->safId;
             $levelPending->sender_role_id = $request->senderRoleId;
@@ -678,10 +673,10 @@ class SafRepository implements iSafRepository
             $saf->save();
 
             // Add Comment On Prop Level Pending
-            $commentOnlevel = PropLevelPending::where('saf_id', $request->safId)
-                ->where('receiver_role_id', $request->senderRoleId)
-                ->first();
+            $propLevelPending = new PropLevelPending();
+            $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->receiverRoleId);
             $commentOnlevel->remarks = $request->comment;
+            $commentOnlevel->verification_status = 1;
             $commentOnlevel->save();
 
             DB::commit();
