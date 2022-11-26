@@ -127,9 +127,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::get('objection/inbox', 'inbox');
         Route::get('objection/outbox', 'outbox');
-        Route::post('concession/next-level', 'postNextLevel');
-        Route::post('concession/approvalrejection', 'approvalRejection');
-        Route::post('concession/backtocitizen', 'backToCitizen');
+        Route::post('objection/next-level', 'postNextLevel');
+        Route::post('objection/approvalrejection', 'approvalRejection');
+        Route::post('objection/backtocitizen', 'backToCitizen');
     });
 
     Route::controller(CalculatorController::class)->group(function () {
