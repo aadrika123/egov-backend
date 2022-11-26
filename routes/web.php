@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
-
+#---------------------------- document read ------------------------------
+Route::get('/getImageLink', function () {
+    return view('getImageLink');
+});
 // Laravel Logging
 Route::get('logs', [\Rap2hpoutre\LaravelLogViewer\LogViewerController::class, 'index']);

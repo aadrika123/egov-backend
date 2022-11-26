@@ -129,6 +129,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('objection/inbox', 'inbox');
         Route::get('objection/outbox', 'outbox');
         Route::post('objection/details', 'getDetailsById');
+        Route::post('objection/post-escalate', 'postEscalate');                                 // Escalate the application and send to special category
+        Route::get('objection/special-inbox', 'specialInbox');                                   // Special Inbox 
         Route::post('objection/next-level', 'postNextLevel');
         Route::post('objection/approvalrejection', 'approvalRejection');
         Route::post('objection/backtocitizen', 'backToCitizen');
