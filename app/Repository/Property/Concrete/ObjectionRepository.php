@@ -402,7 +402,7 @@ class ObjectionRepository implements iObjectionRepository
             $levelPending->save();
 
             // objection Application Update Current Role Updation
-            $objection = PropObjectionLevelpending::find($req->objectionId);
+            $objection = PropActiveObjection::find($req->objectionId);
             $objection->current_role = $req->receiverRoleId;
             $objection->save();
 
