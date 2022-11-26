@@ -387,6 +387,7 @@ class ObjectionRepository implements iObjectionRepository
 
     /**
      * | Get Objection Details by Id
+     * | @param request $req
      */
     public function getDetailsById($req)
     {
@@ -397,9 +398,21 @@ class ObjectionRepository implements iObjectionRepository
                 'prop_active_objections.objection_no',
                 'prop_active_objections.workflow_id',
                 'prop_active_objections.current_role',
-                'p.*'
+                'p.*',
+                'at.assessment_type as assessment',
+                'w.ward_name as old_ward_no',
+                'o.ownership_type',
+                'pt.property_type'
             )
+
             ->join('prop_properties as p', 'p.id', '=', 'prop_active_objections.property_id')
+            ->join('prop_safs as s', 's.id', '=', 'p.saf_id')
+            ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
+            ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
+            ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
+            ->leftJoin('ref_prop_types as pt', 'pt.id', '=', 's.property_assessment_id')
+            ->where('p.status', 1)
             ->where('prop_active_objections.id', $req->id)
             ->first();
         return responseMsg(true, "Objection Details", remove_null($details));
