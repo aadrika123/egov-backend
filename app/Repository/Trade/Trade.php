@@ -1368,6 +1368,7 @@ class Trade implements ITrade
                     $refOwneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
                     if(isset($refOwneres[$key]["Identity Proof"]["document_path"]))
                     {
+                        // dd($url = Storage::path($refOwneres[$key]["Identity Proof"]["document_path"]));
                         $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["Identity Proof"]["document_path"]):null;
     
                     }
