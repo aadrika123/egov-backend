@@ -109,6 +109,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");
         Route::post('bifurcationInbox', "inbox");
         Route::post('bifurcationOutbox', "outbox");
+        Route::post('bifurcationPostNext', "postNextLevel");
     });
 
 

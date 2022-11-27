@@ -6,10 +6,13 @@ use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
 use App\EloquentModels\Common\ModelWard;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropLevelPending;
+use App\Models\Property\PropTransaction;
+use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfWorkflow;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IPropertyBifurcation;
@@ -240,7 +243,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             }            
             $application = $application
                     ->where("prop_active_safs.workflow_id",$refWorkflowMstrId->id)
-                    ->where("prop_active_safs.isAcquired",true)
+                    ->where("prop_active_safs.is_aquired",true)
                     ->whereIn('prop_active_safs.ward_mstr_id', $mWardIds)
                     ->get();
             // dd(DB::getQueryLog());
@@ -263,7 +266,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $refWorkflowId = Config::get('workflow-constants.SAF_BIFURCATION_ID');
             $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
                 ->where('ulb_id', $ulb_id)
                 ->first();
@@ -271,9 +274,9 @@ class PropertyBifurcation implements IPropertyBifurcation
             {
                 throw new Exception("Workflow Not Available");
             }
-            $mUserType = $this->_parent->userType($refWorkflowId);
-            $ward_permission = $this->_parent->WardPermission($user_id);
-            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);           
+            $mUserType = $this->_common->userType($refWorkflowId);
+            $ward_permission = $this->_common->WardPermission($user_id);
+            $role = $this->_common->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);           
             if (!$role) 
             {
                 throw new Exception("You Are Not Authorized");
@@ -360,15 +363,15 @@ class PropertyBifurcation implements IPropertyBifurcation
             }
             if(!$role->is_initiator)
             {
-                $application = $application->whereIn('prop_active_safs.pending_status',[3]);
+                $application = $application->whereIn('prop_active_safs.saf_pending_status',[2,3]);
             }
             else
             {
-                $application = $application->whereIn('prop_active_safs.pending_status',[2,3]);
+                $application = $application->whereIn('prop_active_safs.saf_pending_status',[3]);
             }
             $application = $application
                         ->where("prop_active_safs.workflow_id",$workflowId->id)
-                        ->where("prop_active_safs.isAcquired",true)
+                        ->where("prop_active_safs.is_aquired",true)
                         ->whereIn('prop_active_safs.ward_mstr_id', $ward_ids)
                         ->get();
             // dd(DB::getQueryLog());
@@ -381,6 +384,388 @@ class PropertyBifurcation implements IPropertyBifurcation
             
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    public function postNextLevel(Request $request)
+    {
+        try{
+            $receiver_user_type_id="";
+            $sms = "";
+            $licence_pending=3;
+            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\-, \s]+$/';
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.SAF_BIFURCATION_ID'); 
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+            if (!$workflowId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $role = $this->_common->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);  
+            $init_finish = $this->_common->iniatorFinisher($user_id,$ulb_id,$refWorkflowId);         
+            if (!$role) 
+            {
+                throw new Exception("You Are Not Authorized");
+            }
+            $role_id = $role->role_id;
+            $apply_from = $this->_common->userType($refWorkflowId);            
+            $rules = [
+                "btn" => "required|in:btc,forward,backward",
+                "safId" => "required|digits_between:1,9223372036854775807",
+                "comment" => "required|min:10|regex:$regex",
+            ];
+            $message = [
+                "btn.in"=>"Button Value must be In BTC,FORWARD,BACKWARD",
+                "comment.required" => "Comment Is Required",
+                "comment.min" => "Comment Length can't be less than 10 charecters",
+            ];
+            $validator = Validator::make($request->all(), $rules, $message);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), $request->all());
+            }
+            if($role->is_initiator && in_array($request->btn,['btc','backward']))
+            {
+               throw new Exception("Initator Can Not send Back The Application");
+            }
+            $saf_data = PropActiveSaf::find($request->safId);            
+            $level_data = $this->getLevelData($request->safId);
+           
+            if(!$saf_data)
+            {
+                throw new Exception("Data Not Found");
+            }
+            elseif($saf_data->saf_pending_status==1)
+            {
+                throw new Exception("Saf Is Already Approved");
+            }
+            elseif(!$role->is_initiator && isset($level_data->receiver_role_id) && $level_data->receiver_role_id != $role->role_id)
+            {
+                throw new Exception("You are not authorised for this action");
+            }
+            elseif(!$role->is_initiator && ! $level_data)
+            {
+                throw new Exception("Data Not Found On Level. Please Contact Admin!!!...");
+            }  
+            elseif(isset($level_data->receiver_role_id) && $level_data->receiver_role_id != $role->role_id)
+            {
+                throw new Exception("You Have Already Taken The Action On This Application");
+            }           
+            if(!$init_finish)
+            {
+                throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
+            }
+            elseif(!$init_finish["initiator"])
+            {
+                throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
+            }
+            elseif(!$init_finish["finisher"])
+            {
+                throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
+            }
+            
+            // dd($role);
+            if($request->btn=="forward" && !$role->is_finisher && !$role->is_initiator)
+            {
+                $sms ="Application Forwarded To ".$role->forword_name;
+                $receiver_user_type_id = $role->forward_role_id;
+            }
+            elseif($request->btn=="backward" && !$role->is_initiator)
+            {
+                $sms ="Application Forwarded To ".$role->backword_name;
+                $receiver_user_type_id = $role->backward_role_id;
+                $licence_pending = $init_finish["initiator"]['id']==$role->backward_role_id ? 3 : $licence_pending;
+            }
+            elseif($request->btn=="btc" && !$role->is_initiator)
+            {
+                $licence_pending = 2;
+                $sms ="Application Forwarded To ".$init_finish["initiator"]['role_name'];
+                $receiver_user_type_id = $init_finish["initiator"]['id'];
+            } 
+            elseif($request->btn=="forward" && !$role->is_initiator && $level_data)
+            {
+                $sms ="Application Forwarded ";
+                $receiver_user_type_id = $level_data->sender_role_id;
+            }
+            elseif($request->btn=="forward" && $role->is_initiator && !$level_data)
+            {
+                $licence_pending = 3;
+                $sms ="Application Forwarded To ".$role->forword_name;
+                $receiver_user_type_id = $role->forward_role_id;
+
+            } 
+            elseif($request->btn=="forward" && $role->is_initiator && $level_data)
+            {
+                $licence_pending = 3;
+                $sms ="Application Forwarded To ";
+                $receiver_user_type_id = $level_data->sender_role_id;
+
+            }
+            if($request->btn=="forward" && $role->is_initiator)
+            {
+                $doc = (array) null;
+                $safs_temp = $this->getAllReletedSaf($saf_data->previous_holding_id);
+                if(sizeOf($safs_temp)<1)
+                {
+                    throw new Exception("Opps some errors occur!....");
+                }
+                foreach($safs_temp as $key=>$val)
+                {
+                    $documentsList =[];
+                    $owneres = $this->getOwnereDtlBySId($val->id);
+                    $documentsList = $this->getDocumentTypeList($val);
+                    foreach($owneres as $key2=>$val2)
+                    { 
+                        $data["documentsList"]["gender_document"] = $this->getDocumentList("gender_document");
+                        $data["documentsList"]["dob_document"] = $this->getDocumentList("dob_document");
+                        if($val2->is_armed_force)
+                        {                
+                            $data["documentsList"]["armed_force_document"] = $this->getDocumentList("armed_force_document");
+                        } 
+                        if($val2->is_specially_abled)
+                        {                
+                            $data["documentsList"]["handicaped_document"] = $this->getDocumentList("handicaped_document");
+                        }
+                    }
+                    
+                    if($saf_data->payment_status!=1)
+                    {
+                        throw new Exception("Payment is Not Clear");
+                    }               
+                    foreach($documentsList as $val)
+                    {   
+                        $data["documentsList"][$val->doc_type] = $this->getDocumentList($val->doc_type);
+                        $data["documentsList"][$val->doc_type]["is_mandatory"] = 1;
+                        if(in_array($val->doc_type,["additional_doc","no_elect_connection","other"]))
+                        {                           
+                            $data["documentsList"][$val->doc_type]["is_mandatory"] = 0;
+                            
+                        }
+                    }         
+                    foreach($data["documentsList"] as $key3 => $val3)
+                    {
+                        if(in_array($key3,["Identity Proof","gender_document","dob_document","armed_force_document","handicaped_document"]))
+                        {
+                            continue;
+                        }
+                        $data["documentsList"][$key3]["doc"] = $this->check_doc_exist($saf_data->id,$key3);
+                        if(!isset($data["documentsList"][$key3]["doc"]["document_path"]) && $data["documentsList"][$key3]["is_mandatory"])
+                        {
+                            $doc[]=$key3." Not Uploaded";
+                        }
+                        
+                    } 
+                    foreach($owneres as $key2=>$val2)
+                    { 
+                        $owneres[$key2]["Identity Proof"] = $this->check_doc_exist_owner($saf_data->id,$val2->id);                        
+                        if(!isset($owneres[$key2]["Identity Proof"]["doc_path"]))
+                        {
+                            $doc[]="Identity Proof Of ".$val2->owner_name." Not Uploaded";
+        
+                        }
+                        $owneres[$key2]["gender_document"]  = $this->check_doc_exist_owner($saf_data->id,$val2->id,$data["documentsList"]["gender_document"][0]->id);
+                        if(!isset($owneres[$key2]["gender_document"]["doc_path"]))
+                        {
+                            $doc[]= $val2->owner_name." Gender Document Not Uploaded";
+                        }
+                        $owneres[$key2]["dob_document"]     = $this->check_doc_exist_owner($saf_data->id,$val2->id,$data["documentsList"]["dob_document"][0]->id);;
+                        if(!isset($owneres[$key2]["dob_document"]["doc_path"]))
+                        {
+                            $doc[]=$val2->owner_name." DOB Document Not Uploaded";
+                        }
+                        if($val2->is_armed_force)
+                        {   
+                            $owneres[$key2]["armed_force_document"] = $this->check_doc_exist_owner($saf_data->id,$val2->id,$data["documentsList"]["armed_force_document"][0]->id);
+                            if(!isset($owneres[$key2]["armed_force_document"]["doc_path"]))
+                            {
+                                $doc[]="Identity Proof Of ".$val2->owner_name." Armed Force Document Not Uploaded";
+                            } 
+                        } 
+                        if($val2->is_specially_abled)
+                        {                
+                            $data["documentsList"]["handicaped_document"] = $this->getDocumentList("handicaped_document");
+                            $owneres[$key2]["handicaped_document"] = $this->check_doc_exist_owner($saf_data->id,$val2->id,$data["documentsList"]["handicaped_document"][0]->id);
+                            if(!isset($owneres[$key2]["handicaped_document"]["doc_path"]))
+                            {
+                                $doc[]=$val2->owner_name." Handicaped Document Not Uploaded";
+                            }
+                        }
+                    }
+                }  
+                // if($doc)
+                // {   $err = "";
+                //     foreach($doc as $val)
+                //     {
+                //         $err.="<li>$val</li>";
+                //     }                
+                //     throw new Exception($err);
+                // }
+            }           
+            if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
+            {
+                $safs_temp = $this->getAllReletedSaf($saf_data->previous_holding_id);
+                $docs=[];
+                if(sizeOf($safs_temp)<1)
+                {
+                    throw new Exception("Opps some errors occur!....");
+                }
+                foreach($safs_temp as $key=>$val)
+                {
+                   array_push($docs,$this->getLicenceDocuments($request->licenceId));
+                }
+                if(!$docs)
+                {
+                    throw new Exception("No Anny Document Found");
+                }
+                $docs = objToArray(collect($docs));
+                $test = array_filter($docs,function($val){
+                     if($val["verify_status"]!=1)
+                     {
+                        return True;
+                     }
+                });
+                if($test)
+                {
+                    throw new Exception("All Document Are Not Verified");
+                }
+
+                
+            }
+            
+            if(!$role->is_finisher && !$receiver_user_type_id)  
+            {
+                throw new Exception("Next Role Not Found !!!....");
+            }
+            $data="";
+            DB::beginTransaction();
+            if($level_data)
+            {
+                
+                $level_data->verification_status = 1;
+                $level_data->receiver_user_id =$user_id;
+                $level_data->remarks =$request->comment;
+                $level_data->forward_date =Carbon::now()->format('Y-m-d');
+                $level_data->forward_time =Carbon::now()->format('H:s:i');
+                $level_data->save();
+            }
+            if(!$role->is_finisher || in_array($request->btn,["backward","btc"]))
+            {                
+                $level_insert = new PropLevelPending;
+                $level_insert->saf_id = $saf_data->id;
+                $level_insert->sender_role_id = $role_id;
+                $level_insert->receiver_role_id = $receiver_user_type_id;
+                $level_insert->sender_user_id = $user_id;
+                $level_insert->save();
+                $saf_data->current_role = $receiver_user_type_id;
+            }
+            if($role->is_finisher && $request->btn=="forward")
+            {
+                $licence_pending = 1;
+                $sms ="Application Approved By ".$role->forword_name;
+                $safs_temp = $this->getAllReletedSaf($saf_data->previous_holding_id);
+                $holding=[];
+                foreach($safs_temp as $val)
+                { 
+                    $myRequest = new \Illuminate\Http\Request();
+                    $myRequest->setMethod('POST');
+                    $myRequest->request->add(['workflowId' => $workflowId->id]);
+                    $myRequest->request->add(['roleId' => 10]);
+                    $myRequest->request->add(['safId'   =>$val->id]);
+                    $myRequest->request->add(['status'   =>1]);
+                    $temholding = $this->_Saf->approvalRejectionSaf($myRequest);
+                    $holding[$val->saf_no]=($temholding->original['message']);
+                    if($val->is_aquired)
+                    {
+                        $sms=$temholding->original['message'];
+                    }                    
+                }
+                $data=$holding;
+            }
+           
+            if($request->btn=="forward" && $role->is_initiator)
+            {
+                foreach($safs_temp as $val)
+                {
+                    $saf = PropActiveSaf::find($val->id);
+                    $val->doc_upload_status = 1;
+                }
+            }
+            if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
+            {   
+                $nowdate = Carbon::now()->format('Y-m-d'); 
+                foreach($safs_temp as $val)
+                {
+                    $saf = PropActiveSaf::find($val->id);
+                    $saf->doc_verify_status = 1;
+                }  
+            }
+            $saf_data->saf_pending_status = $licence_pending;            
+            $saf_data->update();            
+            DB::commit();
+            return responseMsg(true, $sms, $data);
+
+        }
+        catch(Exception $e)
+        { 
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    public function readSafDtls($id)
+    {
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $refUlbId       = $refUser->ulb_id;
+            $refWorkflowId  = Config::get('workflow-constants.SAF_BIFURCATION_ID');
+            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                                    ->where('ulb_id', $refUlbId)
+                                    ->first();
+            if (!$refWorkflowMstrId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $init_finish = $this->_common->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
+            $mUserType      = $this->_common->userType($refWorkflowId);
+            $saf_data = PropActiveSaf::find($id);
+            if(!$saf_data)
+            {
+                throw new Exception("Data not found!....");
+            }
+            $pendingAt  = $init_finish['initiator']['id'];
+            $mlevelData = $this->getLevelData($id);
+            if($mlevelData)
+            {
+                $pendingAt = $mlevelData->receiver_role_id;                
+            }
+            $refTimeLine                = $this->getTimelin($id);
+            $refApplication = $this->getAllReletedSafId($saf_data->previous_holding_id);
+            $mworkflowRoles = $this->_common->getWorkFlowAllRoles($refUserId,$refUlbId,$refWorkflowId,true);
+            $mileSton = $this->_common->sortsWorkflowRols($mworkflowRoles);
+            $data["userType"]       = $mUserType;
+            $data["roles"]          = $mileSton;
+            $data["pendingAt"]      = $pendingAt;
+            $data['remarks']        = $refTimeLine;            
+            $data["levelData"]      = $mlevelData;
+            foreach($refApplication as $key => $val)
+            {
+                $data[$key]['licenceDtl']     = $val;
+                $data[$key]['ownerDtl']       = $this->getOwnereDtlBySId($val->id);
+                $data[$key]['transactionDtl'] = $this->readTranDtl($val->id);
+                $data[$key]['documents']      = $this->getLicenceDocuments($val->id)->map(function($val2){
+                                                    $val2->doc_path = !empty(trim($val2->doc_path))? $this->readDocumentPath($val2->document_path):"";
+                                                    return $val2;
+                                                }); 
+            }
+            
+            $data = remove_null($data);
+            return responseMsg(true,"",$data);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),'');
         }
     }
 
@@ -438,7 +823,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             $saf->user_id       = $refUserId;
             $saf->workflow_id   = $ulbWorkflowId->id;
             $saf->ulb_id        = $refUlbId;
-            $saf->isAcquired    = $req->isAcquired;
+            $saf->is_aquired    = $req->isAcquired;
             $saf->current_role = $initiatorRoleId;
             $saf->save();
             $safNo = $safNo."/".$saf->id;
@@ -481,5 +866,269 @@ class PropertyBifurcation implements IPropertyBifurcation
         {
             echo $e->getMessage();
         }
+    }
+    public function getLevelData(int $safId)
+    {
+        try{
+            $data = PropLevelPending::select("*")
+                    ->where("saf_id",$safId)
+                    ->where("status",1)
+                    ->where("verification_status",0)
+                    ->orderBy("id","DESC")
+                    ->first();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+    public function getAllReletedSaf($propertyId)
+    {
+        try{
+            $safs = PropActiveSaf::select("*")
+                    ->where("previous_holding_id",$propertyId)
+                    ->orderBy("is_aquired","desc")
+                    ->get();
+            return $safs;
+        }
+        catch(Exception $e)
+        {
+            return[];
+        }
+    }
+    public function getDocumentTypeList(PropActiveSaf $application)
+    {
+        try
+        {
+            $docType =["additional_doc","property_type","other"];
+            if($application->prop_type_mstr_id==1)
+            {
+                $docType[]="super_structure_doc";
+            }
+            if($application->property_assessment_id==3)
+            {
+                $docType[]="transfer_mode";
+            }
+            if($application->is_water_harvestin)
+            {
+                $docType[]="water_harvesting";
+            }
+            $data = DB::table("ref_prop_docs_required")
+                    ->select("doc_id","doc_type")
+                    ->where("status",1)
+                    ->whereIn("doc_type",$docType)
+                    ->groupBy("doc_type","doc_id")
+                    ->get();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            $e->getMessage();
+            return [];   
+        }
+    }
+    public function getDocumentList($doc_type)
+    {
+        try{
+            $data =DB::table("ref_prop_docs_required")
+                                ->select("id","doc_name")
+                                ->where("status",1)
+                                ->where("doc_type",$doc_type)
+                                ->get();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            return $e->getMessage();   
+        }
+    }
+    public function check_doc_exist($saf_id,$doc_for,$doc_mstr_id=null,$woner_id=null)
+    {
+        try{
+            
+            $doc = PropActiveSafsDoc::select("prop_active_safs_docs.id",
+                                            "doc_type",
+                                            "prop_active_safs_docs.verify_status",
+                                            "prop_active_safs_docs.doc_path",
+                                            "doc_mstr_id"
+                                            )
+                       ->join("ref_prop_docs_required","ref_prop_docs_required.id","prop_active_safs_docs.doc_mstr_id")
+                       ->where('saf_id',$saf_id)
+                       ->where('ref_prop_docs_required.doc_type',"$doc_for");
+                       if($doc_mstr_id)
+                       {
+                            $doc =$doc->where('doc_mstr_id',$doc_mstr_id);
+                       }                       
+                       if($woner_id)
+                       {
+                            $doc =$doc->where('saf_owner_dtl_id', $woner_id);
+                       }                       
+                $doc =$doc->where('prop_active_safs_docs.status',1)
+                       ->orderBy('prop_active_safs_docs.id','DESC')
+                       ->first();                     
+            return $doc;
+          
+       }
+       catch(Exception $e)
+       {
+          echo $e->getMessage();   
+       }
+    }
+    public function check_doc_exist_owner($saf_id,$owner_id,$document_id=null)
+    {
+        try{
+            // DB::enableQueryLog();
+            $doc = PropActiveSafsDoc::select("prop_active_safs_docs.id",
+                                            "doc_type",
+                                            "prop_active_safs_docs.verify_status",
+                                            "prop_active_safs_docs.doc_path",
+                                            "doc_mstr_id")
+                            ->leftjoin("ref_prop_docs_required","ref_prop_docs_required.id","prop_active_safs_docs.doc_mstr_id")
+                           ->where('saf_id',$saf_id)
+                           ->where('saf_owner_dtl_id',$owner_id);
+                           if($document_id!==null)
+                            { 
+                                $document_id = (int)$document_id;
+                                $doc = $doc->where('doc_mstr_id',$document_id);
+                            }
+                            else
+                            {
+                                $doc = $doc->where("doc_mstr_id","<>",0);                     
+
+                            }
+                $doc =$doc->where('prop_active_safs_docs.status',1)
+                        ->orderBy('prop_active_safs_docs.id','DESC')
+                        ->first();                        
+        //    print_var(DB::getQueryLog());                    
+            return $doc;
+        }
+        catch(Exception $e)
+        {
+            return $e->getMessage();   
+        }
+    }
+    public function getOwnereDtlBySId($id)
+    {
+        try{
+            $ownerDtl   = PropActiveSafsOwner::select("*")
+                            ->where("saf_id",$id)
+                            ->where("status",1)
+                            ->get();
+            return $ownerDtl;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+        
+    }
+    public function getLicenceDocuments($id)
+    {
+        try{
+           
+            $time_line =  PropActiveSafsDoc::select(
+                        "prop_active_safs_docs.id",
+                        "doc_type",
+                        "doc_path",
+                        "remarks",
+                        "verify_status"
+                    )
+                    ->leftjoin("ref_prop_docs_required","ref_prop_docs_required.id","prop_active_safs_docs.doc_mstr_id")
+                    ->where('prop_active_safs_docs.saf_id', $id)
+                    ->where('prop_active_safs_docs.status', 1)                    
+                    ->orderBy('prop_active_safs_docs.id', 'desc')
+                    ->get();
+            return $time_line;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+    public function getAllReletedSafId($propertyId)
+    {
+        try{
+            $safs = PropActiveSaf::select("prop_active_safs.*",
+                                            "ref_prop_ownership_types.ownership_type",
+                                            "ref_prop_types.property_type",
+                                            DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no")
+                                    )
+                    ->leftjoin("ulb_ward_masters",function($join){
+                        $join->on("ulb_ward_masters.id","=","prop_active_safs.ward_mstr_id");                                
+                    })
+                    ->leftjoin("ulb_ward_masters AS new_ward",function($join){
+                        $join->on("new_ward.id","=","prop_active_safs.new_ward_mstr_id");                                
+                    })
+                    ->leftjoin("ref_prop_ownership_types","ref_prop_ownership_types.id","prop_active_safs.ownership_type_mstr_id")
+                    ->leftjoin("ref_prop_types","ref_prop_types.id","prop_active_safs.prop_type_mstr_id") 
+                    ->where("prop_active_safs.previous_holding_id",$propertyId)
+                    ->orderBy("prop_active_safs.is_aquired","desc")
+                    ->get();
+            return $safs;
+        }
+        catch(Exception $e)
+        {
+            return[];
+        }
+    }
+    public function readTranDtl($id)
+    {
+        try{
+            $transection   = PropTransaction::select("*")
+                            ->where("saf_id",$id)
+                            ->whereIn("status",[1,2])
+                            ->get();
+            return $transection;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+        
+    }
+    public function getTimelin($id)
+    {
+        try{
+           
+            $time_line =  PropLevelPending::select(
+                        "prop_level_pendings.remarks",
+                        "prop_level_pendings.forward_date",
+                        "prop_level_pendings.forward_time",
+                        "prop_level_pendings.receiver_role_id",
+                        "role_name",
+                        DB::raw("prop_level_pendings.created_at as receiving_date")
+                    )
+                    ->leftjoin(DB::raw("(SELECT receiver_user_type_id::bigint, licence_id::bigint, remarks
+                                        FROM prop_level_pendings 
+                                        WHERE saf_id = $id
+                                    )remaks_for"
+                                ),function($join){
+                                $join->on("remaks_for.receiver_role_id","prop_level_pendings.sender_role_id");
+                                // ->where("remaks_for.licence_id","trade_level_pendings.licence_id");
+                                }
+                    )
+                    ->leftjoin('wf_roles', "wf_roles.id", "prop_level_pendings.receiver_role_id")
+                    ->where('prop_level_pendings.saf_id', $id)     
+                    ->whereIn('prop_level_pendings.status',[1,2])                 
+                    ->groupBy('prop_level_pendings.receiver_role_id',
+                            'prop_level_pendings.remarks',
+                            'prop_level_pendings.forward_date',
+                            'prop_level_pendings.forward_time','wf_roles.role_name',
+                            'prop_level_pendings.created_at'
+                    )
+                    ->orderBy('prop_level_pendings.created_at', 'desc')
+                    ->get();
+            return $time_line;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url').'/api/getImageLink?path='.$path);
+        return $path;
     }
 }

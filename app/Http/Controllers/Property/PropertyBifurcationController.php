@@ -41,4 +41,8 @@ class PropertyBifurcationController extends Controller
     {
         return $this->Repository->outbox($request);
     }
+    public function postNextLevel(Request $request)
+    {
+        return $this->Repository->postNextLevel($request);
+    }
 }
