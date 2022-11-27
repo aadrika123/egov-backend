@@ -61,6 +61,7 @@ class SafCalculatorController extends Controller
             $array['owner'][$key]['aadhar'] = $refFloor['aadhar_no'];
             $array['owner'][$key]['isArmedForce'] = $refFloor['is_armed_force'];
             $array['owner'][$key]['isSpeciallyAbled'] = $refFloor['is_specially_abled'];
+            $array['owner'][$key]['dob'] = $refFloor['dob'];
         }
 
         $safCalculation = new SafCalculation();

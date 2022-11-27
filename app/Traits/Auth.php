@@ -258,7 +258,7 @@ trait Auth
         }
         
         $menuDetails = collect($roleBasedMenu)->collapse();
-        $collection['menuPermission'] = $menuDetails->unique();
+        $collection['menuPermission'] = $menuDetails->unique()->values();
         return $collection;
     }
 }

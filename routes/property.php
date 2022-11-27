@@ -6,6 +6,7 @@ use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\SafCalculatorController;
 use App\Http\Controllers\Property\CalculatorController;
+use App\Http\Controllers\Property\DocumentOperationController;
 use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\RainWaterHarvestingController;
@@ -60,7 +61,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions
 
         Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification
-        Route::post('saf/geotagging', 'geoTagging');                                                         // Geo Tagging
+        Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging
     });
 
     // SAF Reassessment
@@ -191,6 +192,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('cluster/save-holding-in-cluster', 'saveHoldingInCluster');
     });
 
+     // Property Document Operation
+     Route::controller(DocumentOperationController::class)->group(function () {
+        
+     });
 
     Route::controller(PropMaster::class)->group(function () {
         Route::get('prop-usage-type', 'propUsageType');

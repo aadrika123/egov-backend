@@ -256,7 +256,7 @@ trait SAF
         $filtered = $collection->map(function ($value) {
             return collect($value)->only([
                 'qtr', 'holdingTax', 'waterTax', 'educationTax',
-                'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv'
+                'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv', 'rwhPenalty'
             ]);
         });
 
@@ -268,7 +268,8 @@ trait SAF
                     'quarterYear' => $collection->first()['quarterYear'],
                     'qtr' => $collection->first()['qtr'],
                     'dueDate' => $collection->first()['dueDate'],
-                    'arv' => $collection->first()['arv'],
+                    'rwhPenalty' => $collection->sum('rwhPenalty'),
+                    'arv' => $collection->sum('arv'),
                     'holdingTax' => $collection->sum('holdingTax'),
                     'waterTax' => $collection->sum('waterTax'),
                     'educationTax' => $collection->sum('educationTax'),

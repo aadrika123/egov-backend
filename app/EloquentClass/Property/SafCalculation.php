@@ -974,6 +974,7 @@ class SafCalculation
 
         $taxes = collect($this->_GRID['demand'])->only(['totalTax', 'totalOnePercPenalty', 'lateAssessmentPenalty']);
         $totalDemandAmount = $taxes->sum();                                                                             // Total Demand with Penalty
+        $this->_GRID['demand']['adjustAmount'] = 0;
         $this->_GRID['demand']['totalDemand'] = roundFigure($totalDemandAmount);
         $this->_GRID['demand']['rebatePerc'] = $this->readRebate();
         $this->_GRID['demand']['payableAmount'] = $this->calculatePayableAmount();
