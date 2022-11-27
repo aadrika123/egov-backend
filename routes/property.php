@@ -193,7 +193,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
      // Property Document Operation
      Route::controller(DocumentOperationController::class)->group(function () {
-        
+        Route::post('get-all-documents','getAllDocuments');
      });
 
     Route::controller(PropMaster::class)->group(function () {
