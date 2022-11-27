@@ -9,13 +9,12 @@ use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Models\UlbWardMaster;
 use App\Models\Property\PropObjection;
 use Illuminate\Support\Carbon;
-use App\Models\ObjectionTypeMstr;
 use Illuminate\Support\Facades\DB;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use Illuminate\Support\Facades\Config;
 use App\Models\Property\PropActiveObjection;
+use App\Models\Property\PropActiveObjectionOwner;
 use App\Models\Property\RefPropObjectionType;
-use App\Models\Property\PropObjectionOwnerDtl;
 use App\Traits\Property\Objection;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Property\PropObjectionDtl;
@@ -36,8 +35,8 @@ class ObjectionRepository implements iObjectionRepository
     private  $_objectionNo;
 
     /**
-     * | CLERICAL Workflow ID=36                            | ALL Workflow ID=56
-     * | CLERICAL Ulb WorkflowID=169                        | All Ulb Workflow ID=183          
+     * | CLERICAL Workflow ID=36                            | Assesment Workflow ID=56
+     * | CLERICAL Ulb WorkflowID=169                        | Assesment Ulb Workflow ID=183          
      */
 
     //get owner details
@@ -68,33 +67,31 @@ class ObjectionRepository implements iObjectionRepository
                 $data = $obj->getPropByHoldingNo($request);
             }
 
+            $objectionFor = $request->objectionFor;
             $objectionType = $request->id;
             $workflow_id_clerical = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
-            $workflow_id_all_objection = Config::get('workflow-constants.PROPERTY-OBJECTION-ALL');
-            $clericalMistake = Config::get('workflow-constants.CLERICAL_ID');
-            $forgery = Config::get('workflow-constants.FORGERY_ID');
+            $workflow_id_assesment = Config::get('workflow-constants.PROPERTY_OBJECTION_ASSESSMENT');
 
 
-
-            if ($objectionType == $clericalMistake) {
+            if ($objectionFor == 'CLERICAL MISTAKE') {
                 DB::beginTransaction();
 
                 $objection = new PropActiveObjection;
                 $objection->ulb_id = $ulbId;
                 $objection->user_id = $userId;
+                $objection->objection_for =  $objectionFor;
 
                 $this->commonFunction($request, $objection);
                 $objection->save();
 
                 foreach ($request->safMember as $safMembers) {
-                    $objectionOwner = new PropObjectionOwnerDtl;
+                    $objectionOwner = new PropActiveObjectionOwner;
                     $objectionOwner->name = $request->name;
                     $objectionOwner->address = $request->address;
                     $objectionOwner->mobile = $request->mobileNo;
                     $objectionOwner->members = $safMembers;
                     $objectionOwner->objection_id = $objection->id;
                     $objectionOwner->created_at = Carbon::now();
-                    $objectionOwner->updated_at = Carbon::now();
                     $objectionOwner->save();
                 }
 
@@ -128,11 +125,12 @@ class ObjectionRepository implements iObjectionRepository
             }
 
             //objection for forgery 
-            if ($objectionType == $forgery) {
+            if ($objectionFor == 'Forgery') {
 
                 $objection = new PropActiveObjection;
                 $objection->ulb_id = $ulbId;
                 $objection->user_id = $userId;
+                $objection->objection_for =  $objectionFor;
 
                 $this->commonFunction($request, $objection);
                 $objection->save();
@@ -156,13 +154,25 @@ class ObjectionRepository implements iObjectionRepository
             }
 
             // objection against assesment
-            if ($objectionType !== $clericalMistake  && $objectionType !== $forgery) {
-                $objectionTypeId = $request->objectionTypeId;
+            if ($objectionFor == 'Assessment Error') {
+                $objectionTypeId = $request->id;
+
                 $objection = new PropActiveObjection;
+                $objection->objection_for =  $objectionFor;
                 $objection->ulb_id = $ulbId;
                 $objection->user_id = $userId;
 
-                $this->commonFunction($request, $objection);
+                // $this->commonFunction($request, $objection);
+
+                $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id_assesment)
+                    ->where('ulb_id', $ulbId)
+                    ->first();
+
+                $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
+                $initiatorRoleId = DB::select($refInitiatorRoleId);
+
+                $objection->workflow_id = $ulbWorkflowId->id;
+                $objection->current_role = $initiatorRoleId[0]->role_id;
                 $objection->save();
 
 
@@ -233,15 +243,15 @@ class ObjectionRepository implements iObjectionRepository
 
             $objectionNo = $this->objectionNo($objection->id);
 
-            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id_clerical)
-                ->where('ulb_id', $ulbId)
-                ->first();
+            // $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id_clerical)
+            //     ->where('ulb_id', $ulbId)
+            //     ->first();
 
-            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
-            $initiatorRoleId = DB::select($refInitiatorRoleId);
+            // $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
+            // $initiatorRoleId = DB::select($refInitiatorRoleId);
 
-            $objection->workflow_id = $ulbWorkflowId->id;
-            $objection->current_role = $initiatorRoleId[0]->role_id;
+            // $objection->workflow_id = $ulbWorkflowId->id;
+            // $objection->current_role = $initiatorRoleId[0]->role_id;
             //level pending
             $labelPending = new PropObjectionLevelpending();
             $labelPending->objection_id = $objection->id;
@@ -611,17 +621,17 @@ class ObjectionRepository implements iObjectionRepository
     public function commonFunction($request, $objection)
     {
         $ulbId = auth()->user()->ulb_id;
-        $workflow_id_clerical = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
+        // $workflow_id_clerical = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
 
-        $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id_clerical)
-            ->where('ulb_id', $ulbId)
-            ->first();
+        // $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id_clerical)
+        //     ->where('ulb_id', $ulbId)
+        //     ->first();
 
-        $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
-        $initiatorRoleId = DB::select($refInitiatorRoleId);
+        // $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
+        // $initiatorRoleId = DB::select($refInitiatorRoleId);
 
-        $objection->workflow_id = $ulbWorkflowId->id;
-        $objection->current_role = $initiatorRoleId[0]->role_id;
+        // $objection->workflow_id = $ulbWorkflowId->id;
+        // $objection->current_role = $initiatorRoleId[0]->role_id;
         $this->postObjection($objection, $request);
     }
 }
