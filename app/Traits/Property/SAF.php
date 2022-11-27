@@ -69,14 +69,14 @@ trait SAF
         $saf->petrol_pump_completion_date = $req->petrolPumpCompletionDate;
         $saf->is_water_harvesting = $req->isWaterHarvesting;
         $saf->land_occupation_date = $req->landOccupationDate;
-        $saf->payment_status = $req->paymentStatus;
-        $saf->doc_verify_status = $req->docVerifyStatus;
+        // $saf->payment_status = $req->paymentStatus;
+        // $saf->doc_verify_status = $req->docVerifyStatus;
         $saf->doc_verify_cancel_remarks = $req->docVerifyCancelRemark;
 
         $saf->application_date =  Carbon::now()->format('Y-m-d');
-        $saf->saf_pending_status = $req->safPendingStatus;
+        // $saf->saf_pending_status = $req->safPendingStatus;
         $saf->assessment_type = $req->assessmentType;
-        $saf->doc_upload_status = $req->docUploadStatus;
+        // $saf->doc_upload_status = $req->docUploadStatus;
         $saf->saf_distributed_dtl_id = $req->safDistributedDtl;
         $saf->prop_dtl_id = $req->propDtl;
         $saf->prop_state = $req->propState;

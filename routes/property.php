@@ -100,6 +100,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(PropertyBifurcationController::class)->group(function () {
         Route::post('searchByHoldingNoBi', "readHoldigbyNo");
         Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");
+        Route::post('bifurcationInbox', "inbox");
     });
 
 
