@@ -6,6 +6,7 @@ use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\SafCalculatorController;
 use App\Http\Controllers\Property\CalculatorController;
+use App\Http\Controllers\Property\DocumentOperationController;
 use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\RainWaterHarvestingController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Property\SafReassessmentController;
 use App\Http\Controllers\Property\PropertyBifurcationController;
 use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
+use App\Http\Controllers\Property\SafDemandController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -60,7 +62,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions
 
         Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification
-        Route::post('saf/geotagging', 'geoTagging');                                                         // Geo Tagging
+        Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging
+    });
+
+    // SAF Demand and Property contollers
+    Route::controller(SafDemandController::class)->group(function () {
+        Route::post('saf/get-demand-by-id', 'getDemandBySafId');
     });
 
     // SAF Reassessment
@@ -100,6 +107,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(PropertyBifurcationController::class)->group(function () {
         Route::post('searchByHoldingNoBi', "readHoldigbyNo");
         Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");
+        Route::post('bifurcationInbox', "inbox");
+        Route::post('bifurcationOutbox', "outbox");
     });
 
 
@@ -190,6 +199,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('cluster/save-holding-in-cluster', 'saveHoldingInCluster');
     });
 
+    // Property Document Operation
+    Route::controller(DocumentOperationController::class)->group(function () {
+        Route::post('get-all-documents', 'getAllDocuments');
+    });
 
     Route::controller(PropMaster::class)->group(function () {
         Route::get('prop-usage-type', 'propUsageType');
@@ -204,8 +217,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
             Route::post('get-filter-property-details', 'getFilterProperty');
         });
     });
-});
 
-Route::controller(CalculatorController::class)->group(function () {
-    Route::post('calculatePropertyTax', 'calculator');
+    Route::controller(CalculatorController::class)->group(function () {
+        Route::post('calculatePropertyTax', 'calculator');
+    });
 });

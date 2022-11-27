@@ -54,6 +54,7 @@ trait Ward
             'ward_name AS ward'
         )
             ->where('ulb_id', $ulbId)
+            ->where('deleted_at',false)
             ->get();
     }
 }

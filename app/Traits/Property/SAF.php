@@ -69,14 +69,14 @@ trait SAF
         $saf->petrol_pump_completion_date = $req->petrolPumpCompletionDate;
         $saf->is_water_harvesting = $req->isWaterHarvesting;
         $saf->land_occupation_date = $req->landOccupationDate;
-        $saf->payment_status = $req->paymentStatus;
-        $saf->doc_verify_status = $req->docVerifyStatus;
+        // $saf->payment_status = $req->paymentStatus;
+        // $saf->doc_verify_status = $req->docVerifyStatus;
         $saf->doc_verify_cancel_remarks = $req->docVerifyCancelRemark;
 
         $saf->application_date =  Carbon::now()->format('Y-m-d');
-        $saf->saf_pending_status = $req->safPendingStatus;
+        // $saf->saf_pending_status = $req->safPendingStatus;
         $saf->assessment_type = $req->assessmentType;
-        $saf->doc_upload_status = $req->docUploadStatus;
+        // $saf->doc_upload_status = $req->docUploadStatus;
         $saf->saf_distributed_dtl_id = $req->safDistributedDtl;
         $saf->prop_dtl_id = $req->propDtl;
         $saf->prop_state = $req->propState;
@@ -256,7 +256,7 @@ trait SAF
         $filtered = $collection->map(function ($value) {
             return collect($value)->only([
                 'qtr', 'holdingTax', 'waterTax', 'educationTax',
-                'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv'
+                'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv', 'rwhPenalty'
             ]);
         });
 
@@ -268,7 +268,8 @@ trait SAF
                     'quarterYear' => $collection->first()['quarterYear'],
                     'qtr' => $collection->first()['qtr'],
                     'dueDate' => $collection->first()['dueDate'],
-                    'arv' => $collection->first()['arv'],
+                    'rwhPenalty' => $collection->sum('rwhPenalty'),
+                    'arv' => $collection->sum('arv'),
                     'holdingTax' => $collection->sum('holdingTax'),
                     'waterTax' => $collection->sum('waterTax'),
                     'educationTax' => $collection->sum('educationTax'),

@@ -123,7 +123,10 @@ class MenuRepo implements iMenuRepo
             $userId = auth()->user()->id;
             $menuDetails = WfRolemenu::join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_rolemenus.role_id')
                 ->join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
+                ->join('wf_roles','wf_roles','=','wf_rolemenus.role_id')
                 ->where('wf_roleusermaps.user_id', $userId)
+                ->where('wf_rolemenus.is_suspended',false)
+                ->where('wf_roleusermaps.is_suspended',false)
                 ->select(
                     'menu_masters.menu_string AS menuName',
                     'menu_masters.route',

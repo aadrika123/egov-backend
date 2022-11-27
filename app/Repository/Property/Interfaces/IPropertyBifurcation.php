@@ -12,4 +12,6 @@ use Illuminate\Http\Request;
 interface IPropertyBifurcation
 {  
     public function addRecord(Request $request);
+    public function inbox(Request $request);
+    public function outbox(Request $request);
 }

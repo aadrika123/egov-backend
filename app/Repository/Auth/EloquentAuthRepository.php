@@ -153,7 +153,7 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);         // EXPIRE KEY AFTER 5 HOURS
-                    $message = $this->tResponseSuccess($token,$email);               // Response Message Using Trait
+                    $message = $this->tResponseSuccess($token, $email);               // Response Message Using Trait
                     return response()->json($message, 200);
                 }
                 // AUTHENTICATING PASSWORD IN HASH
@@ -179,7 +179,7 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
-                    $message = $this->tResponseSuccess($token,$email);           // Response Message Using Trait
+                    $message = $this->tResponseSuccess($token, $email);           // Response Message Using Trait
                     return response()->json($message, 200);
                 } else {
                     $msg = "Incorrect Password";
@@ -277,7 +277,7 @@ class EloquentAuthRepository implements AuthRepository
                     string_agg(rm.role_name::VARCHAR,',') AS role_name
                     
                     FROM users u
-                    LEFT JOIN wf_roleusermaps ru ON ru.user_id=u.id
+                    LEFT JOIN wf_roleusermaps ru ON ru.user_id=u.id AND ru.is_suspended=FALSE
                     LEFT JOIN wf_roles rm ON rm.id=ru.wf_role_id
                     WHERE u.user_type!='Citizen' AND u.ulb_id=$uUlbID
                     GROUP BY u.id
