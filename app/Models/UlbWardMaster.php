@@ -22,4 +22,13 @@ class UlbWardMaster extends Model
             return response()->json($e, 400);
         }
     }
+
+    /**
+     * | Get the Ward No by ward id
+     * | @param id $id
+     */
+    public function getWardById($id)
+    {
+        return UlbWardMaster::find($id);
+    }
 }
