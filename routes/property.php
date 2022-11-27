@@ -11,6 +11,7 @@ use App\Http\Controllers\Property\PropertyDeactivateController;
 use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Http\Controllers\Property\SafReassessmentController;
 use App\Http\Controllers\Property\PropertyBifurcationController;
+use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
 
 /**
@@ -189,12 +190,20 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('cluster/save-holding-in-cluster', 'saveHoldingInCluster');
     });
 
-    // Property Details
-    Route::controller(PropertyDetailsController::class)->group(function () {
-        Route::post('get-filter-property-details', 'getFilterProperty');
-    });
-});
 
-Route::controller(CalculatorController::class)->group(function () {
-    Route::post('calculatePropertyTax', 'calculator');
+    Route::controller(PropMaster::class)->group(function () {
+        Route::get('prop-usage-type', 'propUsageType');
+        Route::get('prop-const-type', 'propConstructionType');
+        Route::get('prop-occupancy-type', 'propOccupancyType');
+        Route::get('prop-property-type', 'propPropertyType');
+        Route::get('prop-road-type', 'propRoadType');
+        // Property Details
+        Route::controller(PropertyDetailsController::class)->group(function () {
+            Route::post('get-filter-property-details', 'getFilterProperty');
+        });
+    });
+
+    Route::controller(CalculatorController::class)->group(function () {
+        Route::post('calculatePropertyTax', 'calculator');
+    });
 });
