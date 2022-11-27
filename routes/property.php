@@ -197,12 +197,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('prop-occupancy-type', 'propOccupancyType');
         Route::get('prop-property-type', 'propPropertyType');
         Route::get('prop-road-type', 'propRoadType');
-    // Property Details
-    Route::controller(PropertyDetailsController::class)->group(function () {
-        Route::post('get-filter-property-details', 'getFilterProperty');
+        // Property Details
+        Route::controller(PropertyDetailsController::class)->group(function () {
+            Route::post('get-filter-property-details', 'getFilterProperty');
+        });
     });
-});
 
-Route::controller(CalculatorController::class)->group(function () {
-    Route::post('calculatePropertyTax', 'calculator');
+    Route::controller(CalculatorController::class)->group(function () {
+        Route::post('calculatePropertyTax', 'calculator');
+    });
 });
