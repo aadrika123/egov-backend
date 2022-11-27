@@ -202,13 +202,13 @@ class SafRepository implements iSafRepository
                 ->first();
 
             if ($request->roadType <= 0)
-                $request->roadType = 4;
+                $roadWidthType = 4;
             elseif ($request->roadType > 0 && $request->roadType < 20)
-                $request->roadType = 3;
+                $roadWidthType = 3;
             elseif ($request->roadType >= 20 && $request->roadType <= 39)
-                $request->roadType = 2;
+                $roadWidthType = 2;
             elseif ($request->roadType > 40)
-                $request->roadType = 1;
+                $roadWidthType = 1;
 
             $safCalculation = new SafCalculation();
             $safTaxes = $safCalculation->calculateTax($request);
@@ -219,7 +219,7 @@ class SafRepository implements iSafRepository
             // dd($request->ward);
             $safNo = $this->safNo($request->ward, $assessmentTypeId, $ulb_id);
             $saf = new PropActiveSaf();
-            $this->tApplySaf($saf, $request, $safNo, $assessmentTypeId);                    // Trait SAF Apply
+            $this->tApplySaf($saf, $request, $safNo, $assessmentTypeId, $roadWidthType);                    // Trait SAF Apply
             // workflows
             $saf->user_id = $user_id;
             $saf->workflow_id = $ulbWorkflowId->id;
@@ -254,7 +254,6 @@ class SafRepository implements iSafRepository
             $labelPending->save();
 
             // Insert Tax
-            $safTaxes->original['data']['details'];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
 
@@ -680,7 +679,7 @@ class SafRepository implements iSafRepository
 
             // Add Comment On Prop Level Pending
             $propLevelPending = new PropLevelPending();
-            $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->receiverRoleId);
+            $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->senderRoleId);
             $commentOnlevel->remarks = $request->comment;
             $commentOnlevel->verification_status = 1;
             $commentOnlevel->save();
@@ -1065,18 +1064,34 @@ class SafRepository implements iSafRepository
     {
         try {
             $propertyDtl = [];
-            $properties = DB::table('prop_properties')
-                ->select('s.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
-                ->join('prop_safs as s', 's.id', '=', 'prop_properties.saf_id')
-                ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
-                ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
-                ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
-                ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
-                ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
-                ->where('prop_properties.ward_mstr_id', $req->wardId)
-                ->where('prop_properties.holding_no', $req->holdingNo)
-                ->where('prop_properties.status', 1)
-                ->first();
+            if ($req->holdingNo) {
+                $properties = DB::table('prop_properties')
+                    ->select('s.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                    ->join('prop_safs as s', 's.id', '=', 'prop_properties.saf_id')
+                    ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
+                    ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
+                    ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
+                    ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
+                    ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
+                    ->where('prop_properties.ward_mstr_id', $req->wardId)
+                    ->where('prop_properties.holding_no', $req->holdingNo)
+                    ->where('prop_properties.status', 1)
+                    ->first();
+            }
+
+            if ($req->propertyId) {
+                $properties = DB::table('prop_properties')
+                    ->select('s.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                    ->join('prop_safs as s', 's.id', '=', 'prop_properties.saf_id')
+                    ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
+                    ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
+                    ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
+                    ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
+                    ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
+                    ->where('prop_properties.id', $req->propertyId)
+                    ->where('prop_properties.status', 1)
+                    ->first();
+            }
 
             $floors = DB::table('prop_floors')
                 ->select('prop_floors.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')

@@ -15,15 +15,21 @@ class PropertyDetailsController extends Controller
      * | Controller regarding with Propery Module (Property Details)
      */
     // Construction 
-    private $PropertyDetails;
-    public function __construct(iPropertyDetailsRepo $PropertyDetails)
+    private $propertyDetails;
+    public function __construct(iPropertyDetailsRepo $propertyDetails)
     {
-        $this->PropertyDetails = $PropertyDetails ;
+        $this->propertyDetails = $propertyDetails;
     }
 
     // get details of the property filtering with the provided details
     public function getFilterProperty(Request $request)
     {
-        return $this->PropertyDetails->getFilterProperty($request);
+        return $this->propertyDetails->getFilterProperty($request);
+    }
+
+    // get details of the diff operation in property
+    public function getFilterSafs(Request $request)
+    {
+        return $this->propertyDetails->getFilterSafs($request);
     }
 }

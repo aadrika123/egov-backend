@@ -186,6 +186,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 
     // Property Cluster
+    /**
+     * Crated By - Sam kerketta
+     * Created On- 23-11-2022 
+     */
     Route::controller(ClusterController::class)->group(function () {
         #cluster data entry / Master
         Route::get('cluster/get-all-clusters', 'getAllClusters');
@@ -215,10 +219,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         // Property Details
         Route::controller(PropertyDetailsController::class)->group(function () {
             Route::post('get-filter-property-details', 'getFilterProperty');
+            Route::post('get-filter-safs-details', 'getFilterSafs');
         });
     });
-
-    Route::controller(CalculatorController::class)->group(function () {
-        Route::post('calculatePropertyTax', 'calculator');
-    });
+});
+Route::controller(CalculatorController::class)->group(function () {
+    Route::post('calculatePropertyTax', 'calculator');
 });
