@@ -51,10 +51,12 @@ use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 
 
 use App\Repository\Property\Concrete\CalculatorRepository;
+use App\Repository\Property\Concrete\DocumentOperationRepo;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use App\Repository\Property\Concrete\PropertyDetailsRepo;
 use App\Repository\Property\Concrete\SafDemandRepo;
 use App\Repository\Property\Interfaces\iCalculatorRepository;
+use App\Repository\Property\Interfaces\iDocumentOperationRepo;
 use App\Repository\Property\Interfaces\IPropertyBifurcation;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use App\Repository\Property\Interfaces\iSafDemandRepo;
@@ -88,6 +90,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(iRainWaterHarvesting::class, RainWaterHarvestingRepo::class);
         $this->app->bind(IPropertyBifurcation::class, PropertyBifurcation::class);
         $this->app->bind(iPropertyDetailsRepo::class, PropertyDetailsRepo::class);
+        $this->app->bind(iDocumentOperationRepo::class, DocumentOperationRepo::class);
         $this->app->bind(iSafDemandRepo::class, SafDemandRepo::class);
 
         //menu permission

@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class DocumentOperationController extends Controller
 {
-     /**
+    /**
      * | Created On-27-11-2022 
      * | Created By-Sam kerketta
      * --------------------------------------------------------------------------------------
@@ -24,10 +24,10 @@ class DocumentOperationController extends Controller
 
     public function getAllDocuments(Request $request)
     {
-        $request->validate([
-            'workflowId' => 'required|intreger',
-            'applicationId' => 'required|integer'
-        ]);
+        // $request->validate([
+        //     'workflowId' => 'required',
+        //     'applicationId' => 'required'
+        // ]);
         return $this->DocumentOperationRepo->getAllDocuments($request);
     }
 }

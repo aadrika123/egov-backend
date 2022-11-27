@@ -14,8 +14,8 @@ class CustomDetail extends Model
     public function getCustomDetails()
     {
         try {
-            $customDetails = CustomDetail::select('id', 'document', 'remarks', 'type')
-
+            $customDetails = CustomDetail::select('id', 'document', 'remarks', 'type', 'created_at as date')
+                ->orderBy("id", 'desc')
                 ->get();
             return responseMsg(true, "Successfully Retrieved", $customDetails);
         } catch (Exception $e) {
@@ -32,23 +32,28 @@ class CustomDetail extends Model
 
 
             if ($file = $request->file('document')) {
-
-                $name = time() . '.' . 'pdf';
-
-                $path = Storage::put('public' . '/' . $name, $file);
-                $url = asset("/storage/$name");
-                return response()->json(["status" => true, "data" => $url]);
+                $filename = time() .  '.' . $file->getClientOriginalExtension();
+                $path = public_path('custom');
+                $file->move($path, $filename);
+                $filepath = public_path('custom' . '/' . $filename);
             }
-            $customDetails->document = $request->document;
-            $customDetails->remarks = $request->remarks;
+
+            $customDetails = new CustomDetail;
+            if ($request->remarks && $request->document) {
+
+                $customDetails->document = $filepath;
+                $customDetails->remarks = $request->remarks;
+                $customDetails->type = "both";
+            } elseif ($request->document) {
+
+                $customDetails->document = $filepath;
+                $customDetails->type = "file";
+            } elseif ($request->remarks) {
+
+                $customDetails->remarks = $request->remarks;
+                $customDetails->type = "text";
+            }
             $customDetails->save();
-
-
-            // if($request->document){
-            //     $customDetails = new CustomDetail;
-            // $customDetails->document = $request->document;
-            // }
-
             return responseMsg(true, "Successfully Saved", $customDetails);
         } catch (Exception $e) {
             return response()->json($e, 400);

@@ -141,6 +141,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             {
                 throw new Exception("Workflow Not Available");
             }
+            
             $mUserType = $this->_common->userType($refWorkflowId);
             $mWardPermission = $this->_common->WardPermission($refUserId);           
             $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowMstrId->wf_master_id);
@@ -169,8 +170,8 @@ class PropertyBifurcation implements IPropertyBifurcation
 
             $mRoleId = $mRole->role_id;   
             $inputs = $request->all();
-            DB::enableQueryLog();          
-            $licence = PropActiveSaf::select('prop_active_safs.saf_no',
+            // DB::enableQueryLog();          
+            $application = PropActiveSaf::select('prop_active_safs.saf_no',
                                             'prop_active_safs.id',
                                             'prop_active_safs.ward_mstr_id',
                                             'prop_active_safs.prop_type_mstr_id',
@@ -211,7 +212,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             if(isset($inputs['key']) && trim($inputs['key']))
             {
                 $key = trim($inputs['key']);
-                $licence = $licence->where(function ($query) use ($key) {
+                $application = $application->where(function ($query) use ($key) {
                     $query->orwhere('prop_active_safs.holding_no', 'ILIKE', '%' . $key . '%')
                         ->orwhere('prop_active_safs.saf_no', 'ILIKE', '%' . $key . '%')
                         ->orwhere("prop_active_safs.provisional_license_no", 'ILIKE', '%' . $key . '%')                                            
@@ -226,26 +227,27 @@ class PropertyBifurcation implements IPropertyBifurcation
             }
             if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
             {
-                $licence = $licence
+                $application = $application
                             ->whereBetween('prop_level_pendings.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
             }
             if($mRole->is_initiator)
             {
-                $licence = $licence->whereIn('prop_active_safs.saf_pending_status',[0,3]);
+                $application = $application->whereIn('prop_active_safs.saf_pending_status',[0,2]);
             }
             else
             {
-                $licence = $licence->whereIn('prop_active_safs.saf_pending_status',[2]);
+                $application = $application->whereIn('prop_active_safs.saf_pending_status',[3]);
             }            
-            $licence = $licence
-                    ->where("prop_active_safs.workflow_id",$refWorkflowMstrId->wf_master_id)
+            $application = $application
+                    ->where("prop_active_safs.workflow_id",$refWorkflowMstrId->id)
                     ->where("prop_active_safs.isAcquired",true)
                     ->whereIn('prop_active_safs.ward_mstr_id', $mWardIds)
                     ->get();
-            dd(DB::getQueryLog());
+            // dd(DB::getQueryLog());
             $data = [
-                "wardList"=>$mWardPermission,                
-                "applications"=>$licence,
+                "userType"      => $mUserType,
+                "wardList"      =>  $mWardPermission,                
+                "applications"  =>  $application,
             ] ;           
             return responseMsg(true, "", $data);
         }
@@ -254,6 +256,132 @@ class PropertyBifurcation implements IPropertyBifurcation
             return responseMsg(false, $e->getMessage(), $request->all());
         }
 
+    }
+    public function outbox(Request $request)
+    {
+        try {
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+            if (!$workflowId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $mUserType = $this->_parent->userType($refWorkflowId);
+            $ward_permission = $this->_parent->WardPermission($user_id);
+            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);           
+            if (!$role) 
+            {
+                throw new Exception("You Are Not Authorized");
+            }
+            if($role->is_initiator || in_array(strtoupper($mUserType),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
+            {
+                $joins = "leftjoin";
+                $ward_permission = $this->_modelWard->getAllWard($ulb_id)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $ward_permission = objToArray($ward_permission);
+            }
+            else
+            {
+                $joins = "join";
+            }
+            $role_id = $role->role_id;
+
+            $ward_ids = array_map(function ($val) {
+                return $val['id'];
+            }, $ward_permission);
+            $inputs = $request->all();
+            // DB::enableQueryLog();
+            $application = PropActiveSaf::select('prop_active_safs.saf_no',
+                                            'prop_active_safs.id',
+                                            'prop_active_safs.ward_mstr_id',
+                                            'prop_active_safs.prop_type_mstr_id',
+                                            'prop_active_safs.appartment_name',
+                                            'ref_prop_types.property_type',
+                                            'prop_active_safs.assessment_type',
+                                            "owner.owner_name",
+                                            "owner.guardian_name",
+                                            "owner.mobile_no",
+                                            "owner.email_id",
+                                            DB::raw("ward.ward_name as ward_no,
+                                                at.assessment_type as assessment"
+                                                )
+                                            )
+                        ->join("ref_prop_types","ref_prop_types.id","prop_active_safs.prop_type_mstr_id")
+                        ->join('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
+                        ->join('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
+                        ->$joins("prop_level_pendings",function($join) use($role_id){
+                            $join->on("prop_level_pendings.saf_id","prop_active_safs.id")
+                            ->where("prop_level_pendings.sender_role_id",$role_id)
+                            ->where("prop_level_pendings.status",1)
+                            ->where("prop_level_pendings.verification_status",0);
+                        })
+                        ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                            STRING_AGG(guardian_name,',') AS guardian_name,
+                                            STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                            STRING_AGG(email,',') AS email_id,
+                                            saf_id
+                                        FROM prop_active_safs_owners 
+                                        WHERE status =1
+                                        GROUP BY saf_id
+                                        )owner"),function($join){
+                                            $join->on("owner.saf_id","prop_active_safs.id");
+                                        })
+                        ->where("prop_active_safs.status",1)                        
+                        ->where("prop_active_safs.ulb_id",$ulb_id);
+            
+            if(isset($inputs['key']) && trim($inputs['key']))
+            {
+                $key = trim($inputs['key']);
+                $application = $application->where(function ($query) use ($key) {
+                    $query->orwhere('prop_active_safs.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('prop_active_safs.saf_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("prop_active_safs.provisional_license_no", 'ILIKE', '%' . $key . '%')                                            
+                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            
+            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
+            {
+                $ward_ids =$inputs['wardNo']; 
+            }
+            if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
+            {
+                $application = $application
+                            ->whereBetween('prop_level_pendings.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
+            }
+            if(!$role->is_initiator)
+            {
+                $application = $application->whereIn('prop_active_safs.pending_status',[3]);
+            }
+            else
+            {
+                $application = $application->whereIn('prop_active_safs.pending_status',[2,3]);
+            }
+            $application = $application
+                        ->where("prop_active_safs.workflow_id",$workflowId->id)
+                        ->where("prop_active_safs.isAcquired",true)
+                        ->whereIn('prop_active_safs.ward_mstr_id', $ward_ids)
+                        ->get();
+            // dd(DB::getQueryLog());
+            $data = [
+                "userType"      => $mUserType,
+                "wardList"=>$ward_permission,                
+                "application"=>$application,
+            ] ; 
+            return responseMsg(true, "", $data);
+            
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
     }
 
     #------------------------------CORE Function ---------------------------------------------

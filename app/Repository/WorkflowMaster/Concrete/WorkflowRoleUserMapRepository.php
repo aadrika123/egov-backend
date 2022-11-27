@@ -134,9 +134,9 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
     public function getRolesByUserId($req)
     {
         try {
-            $roles = json_decode(Redis::get('roles-user-u-' . $req->userId));
-            if (!$roles) {
-                $query = "SELECT 
+            // $roles = json_decode(Redis::get('roles-user-u-' . $req->userId));
+            // if (!$roles) {
+            $query = "SELECT 
                                 r.id AS role_id,
                                 r.role_name,
                                 rum.wf_role_id,
@@ -149,9 +149,9 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
 
                 LEFT JOIN (SELECT * FROM wf_roleusermaps WHERE user_id=$req->userId AND is_suspended=false) rum ON rum.wf_role_id=r.id";
 
-                $roles = DB::select($query);
-                $this->_redis->set('roles-user-u-' . $req->userId, json_encode($roles));               // Caching Should Be flush on New role Permission to the user
-            }
+            $roles = DB::select($query);
+            $this->_redis->set('roles-user-u-' . $req->userId, json_encode($roles));               // Caching Should Be flush on New role Permission to the user
+            // }
             return responseMsg(true, "Role Permissions", remove_null($roles));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
