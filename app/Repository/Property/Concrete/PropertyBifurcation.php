@@ -186,7 +186,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             $saf->save();
             $safNo = $safNo."/".$saf->id;
             $this->tApplySaf($saf, $req, $safNo, $assessmentTypeId);                    // Trait SAF Apply
-            $saf->update();
+            $saf->update(); 
             // SAF Owner Details
             if ($req['owner']) 
             {
