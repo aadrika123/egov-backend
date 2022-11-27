@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
 use App\Http\Controllers\CitizenController;
+use App\Http\Controllers\CustomController;
 use App\Http\Controllers\Menu\MenuController;
 use App\Http\Controllers\Menupermission\MenuGroupsController;
 use App\Http\Controllers\Menupermission\MenuItemsController;
@@ -342,6 +343,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     //
     Route::controller(UlbMaster::class)->group(function () {
         Route::get('get-all-wards', 'getAllWards');
+    });
+
+    // for custom details
+    Route::controller(CustomController::class)->group(function () {
+        Route::get('get-all-custom-tab-data', 'getCustomDetails');
+        Route::post('post-custom-data', 'postCustomDetails');
     });
 });
 

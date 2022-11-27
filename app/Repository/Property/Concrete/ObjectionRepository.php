@@ -69,8 +69,9 @@ class ObjectionRepository implements iObjectionRepository
             }
 
             $objectionType = $request->id;
-            $workflow_id = Config::get('workflow-constants.PROPERTY_OBJECTION_ID');
-            $clericalMistake = Config::get('workflow-constants.CLERICAL_MISTAKE_ID');
+            $workflow_id_clerical = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
+            $workflow_id_all_objection = Config::get('workflow-constants.PROPERTY-OBJECTION-ALL');
+            $clericalMistake = Config::get('workflow-constants.CLERICAL_ID');
             $forgery = Config::get('workflow-constants.FORGERY_ID');
 
 
@@ -230,7 +231,9 @@ class ObjectionRepository implements iObjectionRepository
                 }
             }
 
-            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
+            $objectionNo = $this->objectionNo($objection->id);
+
+            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id_clerical)
                 ->where('ulb_id', $ulbId)
                 ->first();
 
@@ -245,7 +248,8 @@ class ObjectionRepository implements iObjectionRepository
             $labelPending->receiver_role_id = $initiatorRoleId[0]->role_id;
             $labelPending->save();
 
-            return responseMsg(true, "Successfully Saved", '');
+
+            return responseMsg(true, "Successfully Saved", $objectionNo);
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
@@ -287,32 +291,38 @@ class ObjectionRepository implements iObjectionRepository
         try {
             $assesmentDetails = PropProperty::select(
                 'is_hoarding_board as isHoarding',
-                // 'hoarding_area',
-                // 'hoarding_installation_date',
+                'hoarding_area',
+                'hoarding_installation_date',
                 'is_water_harvesting as isWaterHarvesting',
                 'is_mobile_tower as isMobileTower',
-                // 'tower_area',
-                // 'tower_installation_date',
+                'tower_area',
+                'tower_installation_date',
                 'area_of_plot as areaOfPlot',
-                'prop_type_mstr_id as propertyType',
-                'road_type_mstr_id as roadType',
+                'property_type as propertyType',
+                'road_type as roadType',
                 // 'prop_floors.*'
             )
                 ->where('prop_properties.id', $request->propId)
                 ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
+                ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
+                ->join('ref_prop_road_types', 'ref_prop_road_types.id', '=', 'prop_properties.road_type_mstr_id')
                 ->get();
             foreach ($assesmentDetails as $assesmentDetailss) {
                 $assesmentDetailss['floor'] = PropProperty::select(
-                    'prop_floors.floor_mstr_id as floorNo',
-                    'prop_floors.usage_type_mstr_id as usageType',
-                    'prop_floors.occupancy_type_mstr_id as occupancyType',
-                    'prop_floors.const_type_mstr_id as constructionType',
+                    'ref_prop_floors.floor_name as floorNo',
+                    'ref_prop_usage_types.usage_type as usageType',
+                    'ref_prop_occupancy_types.occupancy_type as occupancyType',
+                    'ref_prop_construction_types.construction_type as constructionType',
                     'prop_floors.builtup_area as buildupArea',
                     'prop_floors.date_from as dateFrom',
                     'prop_floors.date_upto as dateUpto',
                 )
                     ->where('prop_properties.id', $request->propId)
                     ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
+                    ->join('ref_prop_floors', 'ref_prop_floors.id', '=', 'prop_floors.floor_mstr_id')
+                    ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', '=', 'prop_floors.usage_type_mstr_id')
+                    ->join('ref_prop_occupancy_types', 'ref_prop_occupancy_types.id', '=', 'prop_floors.occupancy_type_mstr_id')
+                    ->join('ref_prop_construction_types', 'ref_prop_construction_types.id', '=', 'prop_floors.const_type_mstr_id')
                     ->get();
             }
             return responseMsg(true, "Successfully Retrieved", $assesmentDetailss);
@@ -577,12 +587,12 @@ class ObjectionRepository implements iObjectionRepository
             $objection->save();
 
             $propLevelPending = new PropObjectionLevelpending();
-            $preLevelPending = $propLevelPending->getLevelByObjectionReceiver($req->objectionId, $req->currentRoleId);
+            $preLevelPending = $propLevelPending->getCurrentObjByReceiver($req->objectionId, $req->currentRoleId);
             $preLevelPending->remarks = $req->comment;
             $preLevelPending->save();
 
             $levelPending = new PropObjectionLevelpending();
-            $levelPending->objectionId = $req->objectionId;
+            $levelPending->objection_id = $req->objectionId;
             $levelPending->sender_role_id = $req->currentRoleId;
             $levelPending->receiver_role_id = $backId->wf_role_id;
             $levelPending->user_id = authUser()->id;
@@ -601,9 +611,9 @@ class ObjectionRepository implements iObjectionRepository
     public function commonFunction($request, $objection)
     {
         $ulbId = auth()->user()->ulb_id;
-        $workflow_id = Config::get('workflow-constants.PROPERTY_OBJECTION_ID');
+        $workflow_id_clerical = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
 
-        $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
+        $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id_clerical)
             ->where('ulb_id', $ulbId)
             ->first();
 

@@ -6,17 +6,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Exception;
 
-class RefPropUsageType extends Model
+
+class RefPropRoadType extends Model
 {
     use HasFactory;
 
-    public function propUsageType()
+    public function propRoadType()
     {
         try {
-            $usageType = RefPropUsageType::select('id', 'usage_type as usageType')
+            $constType = RefPropRoadType::select('id', 'road_type as roadType')
                 ->where('status', '1')
                 ->get();
-            return responseMsg(true, "Successfully Retrieved", $usageType);
+            return responseMsg(true, "Successfully Retrieved", $constType);
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
