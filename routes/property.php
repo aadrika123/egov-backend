@@ -133,7 +133,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(ObjectionController::class)->group(function () {
         Route::post('objection/apply-objection', 'applyObjection');
         Route::get('objection/objection-type', 'objectionType');
-        Route::get('objection/owner-details', 'ownerDetails');
+        Route::post('objection/owner-details', 'ownerDetails');
         Route::post('objection/assesment-details', 'assesmentDetails');
 
         Route::get('objection/inbox', 'inbox');
