@@ -13,6 +13,7 @@ use App\Http\Controllers\Property\SafReassessmentController;
 use App\Http\Controllers\Property\PropertyBifurcationController;
 use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
+use App\Http\Controllers\Property\SafDemandController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -61,6 +62,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification
         Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging
+    });
+
+    // SAF Demand and Property contollers
+    Route::controller(SafDemandController::class)->group(function () {
+        Route::post('saf/get-demand-by-id', 'getDemandBySafId');
     });
 
     // SAF Reassessment
