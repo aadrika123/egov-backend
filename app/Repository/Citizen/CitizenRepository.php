@@ -185,6 +185,10 @@ class CitizenRepository implements iCitizenRepository
             if ($req->module == 'Trade') {
                 $applications['Trade'] = $this->appliedTradeApplications($userId);
             }
+
+            if ($req->module == 'Holding') {
+                $applications['Holding'] = $this->getCitizenProperty($userId);
+            }
         }
 
         $totalApplications = collect($applications)->map(function ($application) {              // collection total applications sum of all modules
