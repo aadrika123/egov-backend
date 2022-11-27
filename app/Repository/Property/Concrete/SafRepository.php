@@ -679,7 +679,7 @@ class SafRepository implements iSafRepository
 
             // Add Comment On Prop Level Pending
             $propLevelPending = new PropLevelPending();
-            $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->receiverRoleId);
+            $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->senderRoleId);
             $commentOnlevel->remarks = $request->comment;
             $commentOnlevel->verification_status = 1;
             $commentOnlevel->save();
