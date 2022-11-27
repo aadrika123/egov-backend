@@ -254,13 +254,19 @@ class SafRepository implements iSafRepository
             $labelPending->save();
 
             // Insert Tax
+            $safTaxes->original['data']['details'];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
+
             $tax = new InsertTax();
             $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
 
             DB::commit();
-            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo, "safId" => $saf->id, "demand" => $demand]);
+            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
+                "safNo" => $safNo,
+                "applyDate" => $saf->application_date,
+                "safId" => $saf->id, "demand" => $demand
+            ]);
         } catch (Exception $e) {
             DB::rollBack();
             return $e;
