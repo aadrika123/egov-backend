@@ -14,6 +14,7 @@ use App\Http\Controllers\Property\SafReassessmentController;
 use App\Http\Controllers\Property\PropertyBifurcationController;
 use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
+use App\Http\Controllers\Property\SafDemandController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -64,6 +65,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging
     });
 
+    // SAF Demand and Property contollers
+    Route::controller(SafDemandController::class)->group(function () {
+        Route::post('saf/get-demand-by-id', 'getDemandBySafId');
+    });
+
     // SAF Reassessment
     Route::controller(SafReassessmentController::class)->group(function () {
     });
@@ -101,6 +107,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(PropertyBifurcationController::class)->group(function () {
         Route::post('searchByHoldingNoBi', "readHoldigbyNo");
         Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");
+        Route::post('bifurcationInbox', "inbox");
+        Route::post('bifurcationOutbox', "outbox");
     });
 
 

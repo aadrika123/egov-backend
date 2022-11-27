@@ -33,4 +33,12 @@ class PropertyBifurcationController extends Controller
     {
         return $this->Repository->addRecord($request);
     }
+    public function inbox(Request $request)
+    {
+        return $this->Repository->inbox($request);
+    }
+    public function outbox(Request $request)
+    {
+        return $this->Repository->outbox($request);
+    }
 }
