@@ -203,10 +203,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('cluster/save-holding-in-cluster', 'saveHoldingInCluster');
     });
 
-     // Property Document Operation
-     Route::controller(DocumentOperationController::class)->group(function () {
-        Route::post('get-all-documents','getAllDocuments');
-     });
+    // Property Document Operation
+    Route::controller(DocumentOperationController::class)->group(function () {
+        Route::post('get-all-documents', 'getAllDocuments');
+    });
 
     Route::controller(PropMaster::class)->group(function () {
         Route::get('prop-usage-type', 'propUsageType');
@@ -219,11 +219,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         // Property Details
         Route::controller(PropertyDetailsController::class)->group(function () {
             Route::post('get-filter-property-details', 'getFilterProperty');
-            Route::post('get-filter-safs-details','getFilterSafs');
+            Route::post('get-filter-safs-details', 'getFilterSafs');
         });
     });
-
-    Route::controller(CalculatorController::class)->group(function () {
-        Route::post('calculatePropertyTax', 'calculator');
-    });
+});
+Route::controller(CalculatorController::class)->group(function () {
+    Route::post('calculatePropertyTax', 'calculator');
 });
