@@ -13,10 +13,7 @@ return [
     "PROPERTY_CONCESSION_ID"    => "35",
     "TRADE_WORKFLOW_ID"         => "19",
     "PROPERTY_DEACTIVATION_WORKFLOW_ID" => "24",
-    "PROPERTY_OBJECTION_CLERICAL"     => "36",
-    "PROPERTY-OBJECTION-ALL"       => "56",
-    "CLERICAL_ID"                => "10",
-    "CLERICAL_MISTAKE_ID"       => "10",
-    "FORGERY_ID"                => "11",
+    "PROPERTY_OBJECTION_CLERICAL"       => "36",
+    "PROPERTY_OBJECTION_ASSESSMENT"     => "56",
     "SAF_BIFURCATION_ID"        => "25",
 ];

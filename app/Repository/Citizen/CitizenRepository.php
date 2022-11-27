@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use App\Models\ActiveCitizen;
 use App\Models\Payment\PaymentRequest;
+use App\Models\Property\PropProperty;
 use App\Models\Trade\ActiveLicence;
 use App\Models\User;
 use App\Models\Water\WaterApplication;
@@ -163,12 +164,13 @@ class CitizenRepository implements iCitizenRepository
     public function getAllAppliedApplications($req)
     {
         $userId = auth()->user()->id;
-        $applications = [];
+        $applications = array();
 
         if ($req->getMethod() == 'GET') {                                                       // For All Applications
             $applications['Property'] = $this->appliedSafApplications($userId);
             $applications['Water'] = $this->appliedWaterApplications($userId);
             $applications['Trade'] = $this->appliedTradeApplications($userId);
+            $applications['Holding'] = $this->getCitizenProperty($userId);
         }
 
         if ($req->getMethod() == 'POST') {                                                      // Get Applications By Module
@@ -182,6 +184,10 @@ class CitizenRepository implements iCitizenRepository
 
             if ($req->module == 'Trade') {
                 $applications['Trade'] = $this->appliedTradeApplications($userId);
+            }
+
+            if ($req->module == 'Holding') {
+                $applications['Holding'] = $this->getCitizenProperty($userId);
             }
         }
 
@@ -246,6 +252,30 @@ class CitizenRepository implements iCitizenRepository
         $applications['applications'] = $tradeApplications;
         $applications['totalApplications'] = $tradeApplications->count();
         return collect($applications)->reverse();
+    }
+
+    /**
+     * | Get User Property List by UserID
+     */
+    public function getCitizenProperty($userId)
+    {
+        try {
+            $application = array();
+            $properties = PropProperty::select(
+                'prop_properties.id as properyId',
+                'prop_properties.holding_no',
+                'prop_properties.balance',
+                'prop_properties.elect_consumer_no',
+                'prop_properties.elect_acc_no'
+            )
+                ->where('prop_properties.user_id', $userId)
+                ->get();
+            $application['applications'] = $properties;
+            $application['totalApplications'] = $properties->count();
+            return collect($application);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     /**

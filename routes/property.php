@@ -203,14 +203,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('cluster/save-holding-in-cluster', 'saveHoldingInCluster');
     });
 
-    // Property Document Operation
-    /**
-     * Crated By - Sam kerketta
-     * Created On- 26-11-2022 
-     */
-    Route::controller(DocumentOperationController::class)->group(function () {
-        Route::post('get-all-documents', 'getAllDocuments');
-    });
+     // Property Document Operation
+     Route::controller(DocumentOperationController::class)->group(function () {
+        Route::post('get-all-documents','getAllDocuments');
+     });
 
     Route::controller(PropMaster::class)->group(function () {
         Route::get('prop-usage-type', 'propUsageType');
@@ -218,6 +214,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('prop-occupancy-type', 'propOccupancyType');
         Route::get('prop-property-type', 'propPropertyType');
         Route::get('prop-road-type', 'propRoadType');
+
+
         // Property Details
         Route::controller(PropertyDetailsController::class)->group(function () {
             Route::post('get-filter-property-details', 'getFilterProperty');
