@@ -3,6 +3,7 @@
 namespace App\Repository\Property\Concrete;
 
 use App\Models\Property\PropSafsDemand;
+use App\Models\Property\PropTransaction;
 use App\Repository\Property\Interfaces\iSafDemandRepo;
 use Exception;
 
@@ -23,8 +24,13 @@ class SafDemandRepo implements iSafDemandRepo
     public function getDemandBySafId($req)
     {
         try {
+            $demand = array();
+            $transaction = new PropTransaction();
+            $demand['amounts'] = $transaction->getPropTransactions($req->id, "saf_id");
+
             $propSafDemand = new PropSafsDemand();
-            $demand = $propSafDemand->getDemandBySafId($req->id);
+            $demand['details'] = $propSafDemand->getDemandBySafId($req->id);
+
             return responseMsg(true, "All Demands", remove_null($demand));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

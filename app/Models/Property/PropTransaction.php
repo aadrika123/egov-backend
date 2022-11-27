@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class PropTransaction extends Model
 {
     use HasFactory;
+
+    public function getPropTransactions($id, $key)
+    {
+        return PropTransaction::where("$key", $id)
+            ->get();
+    }
 }
