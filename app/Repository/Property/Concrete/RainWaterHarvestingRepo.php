@@ -2,15 +2,12 @@
 
 namespace App\Repository\Property\Concrete;
 
-use App\Models\Property\PropRainWaterHarvesting;
-use App\Models\Water\WaterApplicant;
+use App\Models\Property\PropActiveHarvesting;
 use App\Repository\Property\Interfaces\iRainWaterHarvesting;
 use App\Traits\Property\SAF;
 use App\Traits\Ward;
 use App\Traits\Workflow\Workflow;
 use Exception;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 
 /**
  * | Created On - 22-11-2022
@@ -44,7 +41,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
 
 
     /**
-     * |----------------------- postWaterHarvestingApplication --------------------------
+     * |----------------------- postWaterHarvestingApplication 1 --------------------------
      * |  Query cost => 350 - 490 ms 
      * |@param request
      * |@var ulbId
@@ -55,7 +52,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
         try {
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
-            $waterHaravesting = new PropRainWaterHarvesting();
+            $waterHaravesting = new PropActiveHarvesting();
             return  $this->waterApplicationSave($waterHaravesting, $request, $ulbId, $userId);
         } catch (Exception $error) {
             return responseMsg(false, "Error!", $error->getMessage());
@@ -63,7 +60,14 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     }
 
 
-    // function to save the application for the waterharvesting
+    /**
+     * |----------------------- function for the savindg the application details 1.1 --------------------------
+     * |@param waterHaravesting
+     * |@param request
+     * |@param ulbId
+     * |@param userId
+     * |@var applicationNo
+     */
     public function waterApplicationSave($waterHaravesting, $request, $ulbId, $userId)
     {
         try {
@@ -78,11 +82,26 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             $waterHaravesting->date_of_completion  =  $request->dateOfCompletion;
             $waterHaravesting->user_id = $userId;
             $waterHaravesting->ulb_id = $ulbId;
+
+            $applicationNo = $this->generateApplicationNo($ulbId, $userId);
+            $waterHaravesting->application_no = $applicationNo;
             $waterHaravesting->save();
 
-            return responseMsg(true, "Application applied!", "");
+            return responseMsg(true, "Application applied!", $applicationNo);
         } catch (Exception $error) {
             return responseMsg(false, "Data not saved", $error->getMessage());
         }
+    }
+
+    /**
+     * |----------------------- function for generating application no 1.1.1 --------------------------
+     * |@param ulbId
+     * |@param userId
+     * |@var applicationId
+     */
+    public function generateApplicationNo($ulbId, $userId)
+    {
+        $applicationId = "RWH/" . $ulbId . $userId . rand(0, 99999999999999);
+        return $applicationId;
     }
 }

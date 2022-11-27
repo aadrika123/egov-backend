@@ -2,6 +2,7 @@
 
 namespace App\Repository\Property\Concrete;
 
+use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropProperty;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use Exception;
@@ -50,7 +51,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         return responseMsg(true, "Data According to Address!", $filterByAddress);
                     }
                 default:
-                    return responseMsg(false,"Not a Valid Entry for Filtration Error Retry!","");
+                    return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", "");
             }
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
@@ -151,5 +152,55 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             ->where('prop_properties.ward_mstr_id', $request->wardId)
             ->where('prop_properties.prop_address', $request->search)
             ->get();
+    }
+
+
+
+
+
+
+
+    /**
+     * |-------------------------- filtring the details of Applicants / returning / 2 -----------------------------------------------
+     * | @param request
+     * | @var requestDetails
+     */
+    public function getFilterSafs($request)
+    {
+        try {
+            $requestDetails = $request->filteredBy;
+            switch ($requestDetails) {
+                case ("rainWaterHarvesting"): {
+                    $waterHarvesting = new PropActiveHarvesting();
+                    return $waterHarvesting->allRwhDetails($request);
+                        return ("rain water");
+                    }
+                case ("concession"): {
+                        return ("concession");
+                    }
+                case ("objection"): {
+                        return ("objection");
+                    }
+                case ("mutation"): {
+                        return ("mutation");
+                    }
+                case ("assisment"): {
+                        return ("assisment");
+                    }
+                default:
+                    return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", "");
+            }
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+    /**
+     * |-------------------------- Calling function for the search 2.1 -----------------------------------------------
+     * | @param request
+     */
+    public function searchByRwh($request)
+    {
+
     }
 }
