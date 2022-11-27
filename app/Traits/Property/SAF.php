@@ -20,7 +20,7 @@ trait SAF
     /**
      * | Apply SAF Trait
      */
-    public function tApplySaf($saf, $req, $safNo, $assessmentTypeId)
+    public function tApplySaf($saf, $req, $safNo, $assessmentTypeId, $roadWidthType)
     {
         $saf->has_previous_holding_no = $req->hasPreviousHoldingNo;
         $saf->previous_holding_id = $req->previousHoldingId;
@@ -47,7 +47,7 @@ trait SAF
         $saf->khata_no = $req->khataNo;
         $saf->plot_no = $req->plotNo;
         $saf->village_mauja_name = $req->villageMaujaName;
-        $saf->road_type_mstr_id = $req->roadType;
+        $saf->road_type_mstr_id = $roadWidthType;
         $saf->area_of_plot = $req->areaOfPlot;
         $saf->prop_address = $req->propAddress;
         $saf->prop_city = $req->propCity;
@@ -181,10 +181,10 @@ trait SAF
         $array = array();
 
         $array['ward'] = $req['ward_mstr_id'];
-        $array['propertyType'] = $req['property_type'];
+        $array['propertyType'] = $req['prop_type_mstr_id'];
         $array['dateOfPurchase'] = $req['ward_mstr_id'];
         $array['ownershipType'] = $req['ownership_type_mstr_id'];
-        $array['roadType'] = $req['road_type_mstr_id'];
+        $array['roadType'] = $req['road_width'];
         $array['areaOfPlot'] = $req['area_of_plot'];
         $array['isMobileTower'] = $req['is_mobile_tower'];
         $array['mobileTower']['area'] = $req['tower_area'];

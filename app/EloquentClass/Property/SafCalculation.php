@@ -440,11 +440,11 @@ class SafCalculation
                 $readDateUpto = Carbon::now()->format('Y-m-d');
             }
 
-            if ($readDateFrom > $this->_virtualDate) {
+            if ($readDateFrom >= $this->_virtualDate) {
                 $dateFrom = $readDateFrom;
             }
 
-            if ($dateFrom < $this->_virtualDate) {
+            if ($readDateFrom < $this->_virtualDate) {
                 $dateFrom = $this->_virtualDate;
             }
         }

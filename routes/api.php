@@ -6,11 +6,6 @@ use App\Http\Controllers\ApiMasterController;
 use App\Http\Controllers\CitizenController;
 use App\Http\Controllers\CustomController;
 use App\Http\Controllers\Menu\MenuController;
-use App\Http\Controllers\Menupermission\MenuGroupsController;
-use App\Http\Controllers\Menupermission\MenuItemsController;
-use App\Http\Controllers\Menupermission\MenuMapController;
-use App\Http\Controllers\Menupermission\MenuRolesController;
-use App\Http\Controllers\Menupermission\MenuUlbrolesController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\SelfAdvertisementController;
 use App\Http\Controllers\UlbController;
@@ -181,8 +176,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     // Workflow Track
     Route::controller(WorkflowTrackController::class)->group(function () {
-        Route::post('save-workflow-track', 'store');                                       // Save Workflow Track Messages
-        Route::get('get-workflow-track/{id}', 'getWorkflowTrackByID');                     // Get Workflow Track Message By TrackID
+        Route::post('save-workflow-track', 'store');                                                                         // Save Workflow Track Messages
+        Route::get('get-workflow-track/{id}', 'getWorkflowTrackByID');                                                       // Get Workflow Track Message By TrackID
         Route::get('gen/workflow-track/{RefTableID}/{RefTableValue}', 'getWorkflowTrackByTableIDValue');                     // Get WorkflowTrack By TableRefID and RefTableValue
 
         //changes by mrinal

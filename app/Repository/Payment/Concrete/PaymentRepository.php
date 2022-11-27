@@ -96,17 +96,6 @@ class PaymentRepository implements iPayment
      */
     public function getDepartmentByulb(Request $req) //<-------- validatiom (SHIFT)
     {
-        #   validation
-        $validateUser = Validator::make(
-            $req->all(),
-            [
-                'ulbId'   => 'required|integer',
-            ]
-        );
-
-        if ($validateUser->fails()) {
-            return responseMsg(false, 'validation error', $validateUser->errors(), 401);
-        }
         # operation
         try {
             $mReadDepartment = DepartmentMaster::select(
@@ -136,19 +125,6 @@ class PaymentRepository implements iPayment
      */
     public function getPaymentgatewayByrequests(Request $req) //<-------- validatiom (SHIFT)
     {
-        #   validation
-        $validateUser = Validator::make(
-            $req->all(),
-            [
-                'departmentId'   => 'required|integer',
-                'ulbId'   => 'required|integer',
-            ]
-        );
-
-        if ($validateUser->fails()) {
-            return responseMsg(false, 'validation error', $validateUser->errors(), 401);
-        }
-
         try {
             $mReadPg = PaymentGatewayMaster::select(
                 'payment_gateway_masters.id',
@@ -179,19 +155,6 @@ class PaymentRepository implements iPayment
      */
     public function getPgDetails(Request $req) //<-------- validatiom (SHIFT)
     {
-        # validation
-        $validateUser = Validator::make(
-            $req->all(),
-            [
-                'departmentId'   => 'required|integer',
-                'ulbId'   => 'required|integer',
-                'paymentGatewayId'   => 'required|integer',
-            ]
-        );
-
-        if ($validateUser->fails()) {
-            return responseMsg(false, 'validation error', $validateUser->errors(), 401);
-        }
         try {
             $mReadRazorpay = PaymentGatewayDetail::select(
                 'payment_gateway_details.pg_name AS paymentGatewayName',
@@ -288,19 +251,8 @@ class PaymentRepository implements iPayment
      * | @var mAttributes
      * | @var mVerification
      */
-    public function verifyPaymentStatus(Request $request) //<-------- validatiom (SHIFT)
+    public function verifyPaymentStatus(Request $request)
     {
-        # validation 
-        $validated = Validator::make(
-            $request->all(),
-            [
-                'razorpayOrderId' => 'required',
-                'razorpayPaymentId' => 'required'
-            ]
-        );
-        if ($validated->fails()) {
-            return responseMsg(false, "validation error", $validated->errors(), 401);
-        }
         try {
             $mAttributes = null;
             $mVerification = $this->paymentVerify($request, $mAttributes);
@@ -343,18 +295,8 @@ class PaymentRepository implements iPayment
      * | @var mReadTransactions
      * | @var mCollection
      */
-    public function getTransactionNoDetails(Request $request) //<-------- validatiom (SHIFT)
+    public function getTransactionNoDetails(Request $request)
     {
-        # validation 
-        $validated = Validator::make(
-            $request->all(),
-            [
-                'transactionNo' => 'required|integer',
-            ]
-        );
-        if ($validated->fails()) {
-            return responseMsg(false, "validation error", $validated->errors(), 401);
-        }
         try {
             $mReadTransactions =  WebhookPaymentData::select(
                 'payment_order_id AS orderId',
@@ -494,21 +436,8 @@ class PaymentRepository implements iPayment
      * | this -> naming
      * | here -> variable
      */
-    public function updateReconciliationDetails($request) //<-------- validatiom (SHIFT)
+    public function updateReconciliationDetails($request)
     {
-        # validation 
-        $validated = Validator::make(
-            $request->all(),
-            [
-                'transactionNo' => 'required',
-                'status' => 'required',
-                'date' => 'required|date'
-            ]
-        );
-        if ($validated->fails()) {
-            return responseMsg(false, "validation error", $validated->errors(), 401);
-        }
-        // return $request;
         try {
             PaymentReconciliation::where('transaction_no', $request->transactionNo)
                 ->update([

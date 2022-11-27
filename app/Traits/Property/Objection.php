@@ -46,12 +46,10 @@ trait Objection
 
     public function postObjection($objection, $request)
     {
-        $objectionTypeId = $request->id;
-        $objection->property_id = $request->propertyId;
-        $objection->objection_type_id = $objectionTypeId;
-        $objection->objection_no = $this->_objectionNo;
-        $objection->status = $request->status;
-        $objection->remarks = $request->remarks;
-        $objection->created_at = Carbon::now();
+        // $objectionTypeId = $request->id;
+        // $objection->property_id = $request->propId;
+        // $objection->objection_type_id = $objectionTypeId;
+        // $objection->remarks = $request->remarks;
+        // $objection->created_at = Carbon::now();
     }
 }

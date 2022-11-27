@@ -157,10 +157,6 @@ class ActiveSafController extends Controller
     // Get Property by Holding No
     public function getPropByHoldingNo(Request $req)
     {
-        $req->validate([
-            'wardId' => 'required|integer',
-            'holdingNo' => 'required'
-        ]);
         return $this->Repository->getPropByHoldingNo($req);
     }
 

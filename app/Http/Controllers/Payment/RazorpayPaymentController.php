@@ -40,18 +40,54 @@ class RazorpayPaymentController extends Controller
     //get department by ulbid
     public function getDepartmentByulb(Request $req)
     {
+        #   validation
+        $validateUser = Validator::make(
+            $req->all(),
+            [
+                'ulbId'   => 'required|integer',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return responseMsg(false, 'validation error', $validateUser->errors(), 401);
+        }
         return $this->Prepository->getDepartmentByulb($req);
     }
 
     //get PaymentGateway by request
     public function getPaymentgatewayByrequests(Request $req)
     {
+        #   validation
+        $validateUser = Validator::make(
+            $req->all(),
+            [
+                'departmentId'   => 'required|integer',
+                'ulbId'   => 'required|integer',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return responseMsg(false, 'validation error', $validateUser->errors(), 401);
+        }
         return $this->Prepository->getPaymentgatewayByrequests($req);
     }
 
     //get specific PaymentGateway Details according request
     public function getPgDetails(Request $req)
     {
+        # validation
+        $validateUser = Validator::make(
+            $req->all(),
+            [
+                'departmentId'   => 'required|integer',
+                'ulbId'   => 'required|integer',
+                'paymentGatewayId'   => 'required|integer',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return responseMsg(false, 'validation error', $validateUser->errors(), 401);
+        }
         return $this->Prepository->getPgDetails($req);
     }
 
@@ -70,6 +106,17 @@ class RazorpayPaymentController extends Controller
     //verify the payment status
     public function verifyPaymentStatus(Request $req)
     {
+        # validation 
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'razorpayOrderId' => 'required',
+                'razorpayPaymentId' => 'required'
+            ]
+        );
+        if ($validated->fails()) {
+            return responseMsg(false, "validation error", $validated->errors(), 401);
+        }
         return $this->Prepository->verifyPaymentStatus($req);
     }
 
@@ -82,6 +129,16 @@ class RazorpayPaymentController extends Controller
     //get the details of webhook according to transactionNo
     public function getTransactionNoDetails(Request $req)
     {
+        # validation 
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'transactionNo' => 'required|integer',
+            ]
+        );
+        if ($validated->fails()) {
+            return responseMsg(false, "validation error", $validated->errors(), 401);
+        }
         return $this->Prepository->getTransactionNoDetails($req);
     }
 
@@ -100,6 +157,18 @@ class RazorpayPaymentController extends Controller
     // serch the specific details according to the request
     public function updateReconciliationDetails(Request $request)
     {
+        # validation 
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'transactionNo' => 'required',
+                'status' => 'required',
+                'date' => 'required|date'
+            ]
+        );
+        if ($validated->fails()) {
+            return responseMsg(false, "validation error", $validated->errors(), 401);
+        }
         return $this->Prepository->updateReconciliationDetails($request);
     }
 
