@@ -192,7 +192,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::match(['get', 'post'], 'citizens/applied-applications', 'getAllAppliedApplications');           // Get Applied Applications
         Route::post('citizens/independent-comment', 'commentIndependent');                                     // Independent Comment for the Citizen to be Tracked
         Route::get('citizens/get-transactions', 'getTransactionHistory');                                      // Get User Transaction History
-        Route::get('citizens/properties', 'getCitizenProperty');
     });
 
     /**

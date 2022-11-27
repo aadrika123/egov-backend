@@ -164,12 +164,13 @@ class CitizenRepository implements iCitizenRepository
     public function getAllAppliedApplications($req)
     {
         $userId = auth()->user()->id;
-        $applications = [];
+        $applications = array();
 
         if ($req->getMethod() == 'GET') {                                                       // For All Applications
             $applications['Property'] = $this->appliedSafApplications($userId);
             $applications['Water'] = $this->appliedWaterApplications($userId);
             $applications['Trade'] = $this->appliedTradeApplications($userId);
+            $applications['Holding'] = $this->getCitizenProperty($userId);
         }
 
         if ($req->getMethod() == 'POST') {                                                      // Get Applications By Module
@@ -250,6 +251,30 @@ class CitizenRepository implements iCitizenRepository
     }
 
     /**
+     * | Get User Property List by UserID
+     */
+    public function getCitizenProperty($userId)
+    {
+        try {
+            $application = array();
+            $properties = PropProperty::select(
+                'prop_properties.id as properyId',
+                'prop_properties.holding_no',
+                'prop_properties.balance',
+                'prop_properties.elect_consumer_no',
+                'prop_properties.elect_acc_no'
+            )
+                ->where('prop_properties.user_id', $userId)
+                ->get();
+            $application['applications'] = $properties;
+            $application['totalApplications'] = $properties->count();
+            return collect($application);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
      * | Independent Comment for the Citizen on their applications
      * | @param req requested parameters
      * | Status-Closed
@@ -284,30 +309,6 @@ class CitizenRepository implements iCitizenRepository
             $trans = PaymentRequest::where('user_id', $userId)
                 ->get();
             return responseMsg(true, "Data Fetched", remove_null($trans));
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-
-    /**
-     * | Get User Property List by UserID
-     */
-    public function getCitizenProperty()
-    {
-        try {
-            $userId = authUser()->id;
-            $properties = DB::table('prop_properties')
-                ->select(
-                    'prop_properties.id as properyId',
-                    'prop_properties.holding_no',
-                    'prop_properties.balance',
-                    'prop_properties.elect_consumer_no',
-                    'prop_properties.elect_acc_no'
-                )
-                ->where('prop_properties.user_id', $userId)
-                ->get();
-            return responseMsg(true, "Holdings", remove_null($properties));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
