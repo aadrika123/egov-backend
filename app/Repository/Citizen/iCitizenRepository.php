@@ -25,4 +25,5 @@ interface iCitizenRepository
     public function commentIndependent($req);
 
     public function getTransactionHistory();                                                                // Get Payment Transaction History of the User
+    public function getCitizenProperty();
 }

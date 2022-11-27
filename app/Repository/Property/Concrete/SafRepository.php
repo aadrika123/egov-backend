@@ -254,8 +254,6 @@ class SafRepository implements iSafRepository
             $labelPending->save();
 
             // Insert Tax
-            // return $safTaxes->original;
-            $safTaxes->original['data']['details'];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
 
@@ -456,7 +454,7 @@ class SafRepository implements iSafRepository
             // Saf Details
             $data = [];
             $data = DB::table('prop_active_safs')
-                ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'w.ward_name as new_ward_no', 'o.ownership_type', 'p.property_type as mPropertyType')
+                ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'w.ward_name as new_ward_no', 'o.ownership_type', 'p.property_type')
                 ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
                 ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
                 ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
@@ -1066,18 +1064,34 @@ class SafRepository implements iSafRepository
     {
         try {
             $propertyDtl = [];
-            $properties = DB::table('prop_properties')
-                ->select('s.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
-                ->join('prop_safs as s', 's.id', '=', 'prop_properties.saf_id')
-                ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
-                ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
-                ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
-                ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
-                ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
-                ->where('prop_properties.ward_mstr_id', $req->wardId)
-                ->where('prop_properties.holding_no', $req->holdingNo)
-                ->where('prop_properties.status', 1)
-                ->first();
+            if ($req->holdingNo) {
+                $properties = DB::table('prop_properties')
+                    ->select('s.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                    ->join('prop_safs as s', 's.id', '=', 'prop_properties.saf_id')
+                    ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
+                    ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
+                    ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
+                    ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
+                    ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
+                    ->where('prop_properties.ward_mstr_id', $req->wardId)
+                    ->where('prop_properties.holding_no', $req->holdingNo)
+                    ->where('prop_properties.status', 1)
+                    ->first();
+            }
+
+            if ($req->propertyId) {
+                $properties = DB::table('prop_properties')
+                    ->select('s.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                    ->join('prop_safs as s', 's.id', '=', 'prop_properties.saf_id')
+                    ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
+                    ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
+                    ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
+                    ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
+                    ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
+                    ->where('prop_properties.id', $req->propertyId)
+                    ->where('prop_properties.status', 1)
+                    ->first();
+            }
 
             $floors = DB::table('prop_floors')
                 ->select('prop_floors.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')

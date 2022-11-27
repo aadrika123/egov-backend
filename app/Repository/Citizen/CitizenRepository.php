@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use App\Models\ActiveCitizen;
 use App\Models\Payment\PaymentRequest;
+use App\Models\Property\PropProperty;
 use App\Models\Trade\ActiveLicence;
 use App\Models\User;
 use App\Models\Water\WaterApplication;
@@ -283,6 +284,30 @@ class CitizenRepository implements iCitizenRepository
             $trans = PaymentRequest::where('user_id', $userId)
                 ->get();
             return responseMsg(true, "Data Fetched", remove_null($trans));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    /**
+     * | Get User Property List by UserID
+     */
+    public function getCitizenProperty()
+    {
+        try {
+            $userId = authUser()->id;
+            $properties = DB::table('prop_properties')
+                ->select(
+                    'prop_properties.id as properyId',
+                    'prop_properties.holding_no',
+                    'prop_properties.balance',
+                    'prop_properties.elect_consumer_no',
+                    'prop_properties.elect_acc_no'
+                )
+                ->where('prop_properties.user_id', $userId)
+                ->get();
+            return responseMsg(true, "Holdings", remove_null($properties));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

@@ -66,4 +66,10 @@ class CitizenController extends Controller
     {
         return $this->Repository->getTransactionHistory();
     }
+
+    // Get Property of the Citizen
+    public function getCitizenProperty()
+    {
+        return $this->Repository->getCitizenProperty();
+    }
 }
