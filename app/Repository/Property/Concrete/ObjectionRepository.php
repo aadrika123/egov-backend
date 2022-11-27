@@ -68,7 +68,6 @@ class ObjectionRepository implements iObjectionRepository
             }
 
             $objectionFor = $request->objectionFor;
-            $objectionType = $request->id;
             $workflow_id_clerical = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
             $workflow_id_assesment = Config::get('workflow-constants.PROPERTY_OBJECTION_ASSESSMENT');
 
