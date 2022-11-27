@@ -102,6 +102,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('searchByHoldingNoBi', "readHoldigbyNo");
         Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");
         Route::post('bifurcationInbox', "inbox");
+        Route::post('bifurcationOutbox', "outbox");
     });
 
 
