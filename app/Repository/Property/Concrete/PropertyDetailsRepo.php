@@ -276,7 +276,6 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                 'prop_owners.owner_name AS name',
                 'prop_owners.mobile_no AS mobileNo',
             )
-                ->join('ref_prop_objection_types', 'ref_prop_objection_types.id', '=', 'prop_active_objections.objection_type_id')
                 ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_active_objections.property_id')
                 ->where('prop_active_objections.objection_no', $request->search)
                 ->get();
@@ -287,7 +286,6 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             'prop_owners.owner_name AS name',
             'prop_owners.mobile_no AS mobileNo',
         )
-            ->join('ref_prop_objection_types', 'ref_prop_objection_types.id', '=', 'prop_active_objections.objection_type_id')
             ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_active_objections.property_id')
             ->join('prop_properties', 'prop_properties.id', '=', 'prop_active_objections.property_id')
             ->where('prop_properties.ward_mstr_id', $request->wardId)
@@ -382,5 +380,60 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             ->where('prop_active_safs.ward_mstr_id', $request->wardId)
             ->where('property_assessment_id', 1)
             ->get();
+    }
+
+
+    /**
+     * |-------------------------- details of Active New Assisment 2.5-----------------------------------------------
+     * | @param request
+     * | (WORKING) //<----------------(REMINDER)
+     */
+    public function getUserDetails($request)
+    {
+        try {
+            $requestDetails = $request->filterBy;
+            switch ($requestDetails) {
+                case ("rainWaterHarvesting"): {
+                        $waterHarvesting = new PropActiveHarvesting();  //<---------- May change
+                        $waterHarvesting = $waterHarvesting->allDetails($request);
+                        if (empty($waterHarvesting['0'])) {
+                            return responseMsg(false, "Data Not Found!", $request->search);
+                        }
+                        return responseMsg(true, "Data According to Concession!", remove_null($waterHarvesting));
+                    }
+                case ("concession"): {
+                        $concession = new PropActiveConcession();
+                        $concession = $concession->allConcession($request);
+                        if (empty($concession['0'])) {
+                            return responseMsg(false, "Data Not Found!", $request->search);
+                        }
+                        return responseMsg(true, "Data According to Concession!", remove_null($concession));
+                    }
+                case ("objection"): {
+                        $objection = new PropActiveObjection();
+                        $objection = $objection->allObjection($request);
+                        if (empty($objection['0'])) {
+                            return responseMsg(false, "Data Not Found!", $request->search);
+                        }
+                        return responseMsg(true, "Data According to Concession!", remove_null($objection));
+                    }
+                case ("mutation"): {
+                        $mutation = new PropActiveSaf();
+                        $mutation = $mutation->allMutation($request);
+                        if (empty($mutation['0'])) {
+                            return responseMsg(false, "Data Not Found!", $request->search);
+                        }
+                        return responseMsg(true, "Data According to Concession!", remove_null($mutation));
+                    }
+                case ("reAssisment"): {
+                    }
+                case ("newAssisment"): {
+                    }
+                default:
+                    return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", $request->filteredBy);
+            }
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
     }
 }
