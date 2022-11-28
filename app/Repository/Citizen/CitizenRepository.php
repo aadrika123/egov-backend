@@ -270,6 +270,7 @@ class CitizenRepository implements iCitizenRepository
                 'prop_properties.elect_acc_no'
             )
                 ->where('prop_properties.user_id', $userId)
+                ->orderByDesc('prop_properties.id')
                 ->get();
             $application['applications'] = $properties;
             $application['totalApplications'] = $properties->count();
