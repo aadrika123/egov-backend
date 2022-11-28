@@ -479,6 +479,7 @@ class SafRepository implements iSafRepository
 
             $levelComments = DB::table('prop_level_pendings')
                 ->select(
+                    'prop_level_pendings.id',
                     'prop_level_pendings.receiver_role_id as commentedByRoleId',
                     'r.role_name as commentedByRoleName',
                     'prop_level_pendings.remarks',
@@ -487,6 +488,7 @@ class SafRepository implements iSafRepository
                 ->where('prop_level_pendings.saf_id', $data['id'])
                 ->where('prop_level_pendings.status', 1)
                 ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_level_pendings.receiver_role_id')
+                ->orderByDesc('prop_level_pendings.id')
                 ->get();
             $data['levelComments'] = $levelComments;
 
@@ -888,7 +890,7 @@ class SafRepository implements iSafRepository
             }
 
             DB::commit();
-            return responseMsg(true, $msg, "");
+            return responseMsg(true, $msg, ['holdingNo' => $safDetails->holding_no]);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
