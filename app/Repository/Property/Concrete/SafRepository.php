@@ -1026,7 +1026,7 @@ class SafRepository implements iSafRepository
     public function paymentSaf($req)
     {
         try {
-            $userId = auth()->user()->id;
+            $userId = authUser()->id;
             $propTrans = new PropTransaction();
             $workflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             if ($req['workflowId'] == $workflowId)
@@ -1037,6 +1037,7 @@ class SafRepository implements iSafRepository
             $propTrans->tran_date = Carbon::now()->format('Y-m-d');
             $propTrans->tran_no = $req['transactionNo'];
             $propTrans->payment_mode = $req['paymentMode'];
+            $propTrans->user_id = $userId;
             $propTrans->save();
             Redis::del('property-transactions-user-' . $userId);
             return responseMsg(true, "Payment Successfully Done", "");
@@ -1067,6 +1068,7 @@ class SafRepository implements iSafRepository
                 ->leftJoin('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
                 ->where('prop_transactions.user_id', $userId)
                 ->where('prop_transactions.status', 1)
+                ->orderByDesc('prop_transactions.id')
                 ->get();
             $this->_redis->set('property-transactions-user-' . $userId, json_encode($propTrans));
         }

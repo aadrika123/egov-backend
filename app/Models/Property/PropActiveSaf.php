@@ -26,4 +26,16 @@ class PropActiveSaf extends Model
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
+
+
+     /**
+     * |-------------------------- safs list whose Holding are not craeted -----------------------------------------------|
+     * | @var safDetails
+     */
+    public function allMutation($request)
+    {
+        $mutation=PropActiveSaf::where('id',$request->id)
+        ->get();
+        return responseMsg(true, "Dat According to Mutation!", $mutation);
+    }
 }

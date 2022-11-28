@@ -4,10 +4,7 @@ namespace App\Repository\Property\Concrete;
 
 use App\Models\Property\PropOwner;
 use Exception;
-use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iObjectionRepository;
-use App\Models\UlbWardMaster;
-use App\Models\Property\PropObjection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
@@ -31,7 +28,7 @@ class ObjectionRepository implements iObjectionRepository
 {
     use Objection;
     use WorkflowTrait;
-    private  $_objectionNo;
+    private $_objectionNo;
 
     /**
      * | CLERICAL Workflow ID=36                            | Assesment Workflow ID=56
@@ -412,6 +409,7 @@ class ObjectionRepository implements iObjectionRepository
             $objection = $this->getObjectionList($ulbId)                                            // Objection List
                 ->whereIn('prop_active_objections.current_role', $roleId)
                 ->whereIn('p.ward_mstr_id', $occupiedWards)
+                ->orderByDesc('prop_active_objections.id')
                 ->get();
 
             return responseMsg(true, "Inbox List", remove_null($objection));
@@ -444,6 +442,7 @@ class ObjectionRepository implements iObjectionRepository
             $objections = $this->getObjectionList($ulbId)                                   // Get Outbox Objection List
                 ->whereNotIn('prop_active_objections.current_role', $roleId)
                 ->whereIn('p.ward_mstr_id', $occupiedWards)
+                ->orderByDesc('prop_active_objections.id')
                 ->get();
 
             return responseMsg(true, "Outbox List", remove_null($objections));

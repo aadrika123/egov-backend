@@ -22,8 +22,22 @@ class PropActiveHarvesting extends Model
             'application_no AS applicationNo'
         )
             ->where('harvesting_status', false)
+            ->where("application_no", $request->search)
             ->get();
-        return responseMsg(true,"Dat According to Water Harvesting!",$details);
-        
+        return responseMsg(true, "Dat According to Water Harvesting!", $details);
+    }
+
+    /**
+     * |-------------------------- All details of rainWaterHarvesting  -----------------------------------------------
+     * | @param request
+     */
+    public function allDetails($request)
+    {
+        $allRwhData = PropActiveHarvesting::select(
+                'prop_active_harvestings.*'
+            )
+            ->where('id', $request->id)
+            ->get();
+        return responseMsg(true, "Dat According to Water Harvesting!", $allRwhData);
     }
 }
