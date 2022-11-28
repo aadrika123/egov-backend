@@ -20,6 +20,7 @@ use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropSafGeotagUpload;
+use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
 use App\Models\Property\PropTransaction;
@@ -82,6 +83,7 @@ class SafRepository implements iSafRepository
         $this->_todayDate = Carbon::now();
         $this->_workflowIds = [3, 4, 5];
     }
+
     /**
      * | Master data in Saf Apply
      * | @var ulbId Logged In User Ulb 
@@ -817,6 +819,7 @@ class SafRepository implements iSafRepository
                 $propProperties = $toBeProperties->replicate();
                 $propProperties->setTable('prop_properties');
                 $propProperties->saf_id = $activeSaf->id;
+                $propProperties->new_holding_no = $activeSaf->holding_no;
                 $propProperties->save();
 
                 $approvedSaf = $activeSaf->replicate();
@@ -999,12 +1002,49 @@ class SafRepository implements iSafRepository
             $safRepo = new SafRepository();
             $calculateSafById = $safRepo->calculateSafBySafId($req);
             $totalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
+            $safDemandDetails = $this->generateSafDemand($calculateSafById->original['data']['details']);
             // Check Requested amount is matching with the generated amount or not
             if ($req->amount == $totalAmount) {
                 $orderDetails = $this->saveGenerateOrderid($req);
                 $orderDetails['name'] = $auth->user_name;
                 $orderDetails['mobile'] = $auth->mobile;
                 $orderDetails['email'] = $auth->email;
+
+                // update the data in saf prop demands
+                foreach ($safDemandDetails as $safDemandDetail) {
+                    $checkExisting = PropSafsDemand::where('fyear', $safDemandDetail['quarterYear'])
+                        ->where('qtr', $safDemandDetail['qtr'])
+                        ->where('saf_id', $req->id)
+                        ->first();
+                    if ($checkExisting) {
+                        $checkExisting->holding_tax = $safDemandDetail['quarterYear'];
+                        $checkExisting->water_tax = $safDemandDetail['waterTax'];
+                        $checkExisting->education_cess = $safDemandDetail['educationTax'];
+                        $checkExisting->health_cess = $safDemandDetail['healthCess'];
+                        $checkExisting->latrine_tax = $safDemandDetail['latrineTax'];
+                        $checkExisting->additional_tax = $safDemandDetail['additionTax'];
+                        $checkExisting->holding_tax = $safDemandDetail['holdingTax'];
+                        $checkExisting->amount = $safDemandDetail['totalTax'];
+                        $checkExisting->balance = $safDemandDetail['totalTax'];
+                        $checkExisting->arv = $safDemandDetail['arv'];
+                        $checkExisting->save();
+                    }
+                    if (!$checkExisting) {
+                        $checkExisting = new PropSafsDemand();
+                        $checkExisting->holding_tax = $safDemandDetail['quarterYear'];
+                        $checkExisting->water_tax = $safDemandDetail['waterTax'];
+                        $checkExisting->education_cess = $safDemandDetail['educationTax'];
+                        $checkExisting->health_cess = $safDemandDetail['healthCess'];
+                        $checkExisting->latrine_tax = $safDemandDetail['latrineTax'];
+                        $checkExisting->additional_tax = $safDemandDetail['additionTax'];
+                        $checkExisting->holding_tax = $safDemandDetail['holdingTax'];
+                        $checkExisting->amount = $safDemandDetail['totalTax'];
+                        $checkExisting->balance = $safDemandDetail['totalTax'];
+                        $checkExisting->arv = $safDemandDetail['arv'];
+                        $checkExisting->save();
+                    }
+                }
+
                 return responseMsg(true, "Order ID Generated", remove_null($orderDetails));
             }
 

@@ -13,6 +13,13 @@ class PropSafsDemand extends Model
     public function getDemandBySafId($safId)
     {
         return PropSafsDemand::where('saf_id', $safId)
+            ->where('status', 1)
             ->get();
+    }
+
+    // Get Demand By ID
+    public function getDemandById($id)
+    {
+        return PropSafsDemand::find($id);
     }
 }
