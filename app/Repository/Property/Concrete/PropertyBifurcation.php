@@ -11,6 +11,7 @@ use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropLevelPending;
+use App\Models\Property\PropProperty;
 use App\Models\Property\PropTransaction;
 use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfWorkflow;
@@ -687,6 +688,13 @@ class PropertyBifurcation implements IPropertyBifurcation
                     }                    
                 }
                 $data=$holding;
+                $property = PropProperty::find($saf_data->previous_holding_id)->where("status",1);
+                if(!$property)
+                {
+                    throw new Exception("Somthig went worng!........");
+                }
+                $property->status=0;
+                $property->update();
             }
            
             if($request->btn=="forward" && $role->is_initiator)

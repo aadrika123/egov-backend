@@ -2,7 +2,10 @@
 
 namespace App\Repository\Property\Concrete;
 
+use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropActiveHarvesting;
+use App\Models\Property\PropActiveObjection;
+use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use Exception;
@@ -127,7 +130,6 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
     {
         // return $request->wardId;
         if (($request->wardId) == 0) {
-            return ("this");
             return PropProperty::select(
                 'prop_properties.id AS id',
                 'prop_properties.new_holding_no AS holdingNo',
@@ -171,36 +173,207 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             $requestDetails = $request->filteredBy;
             switch ($requestDetails) {
                 case ("rainWaterHarvesting"): {
-                    $waterHarvesting = new PropActiveHarvesting();
-                    return $waterHarvesting->allRwhDetails($request);
-                        return ("rain water");
+                        $waterHarvesting = new PropActiveHarvesting();  //<---------- May change
+                        return $waterHarvesting->allRwhDetails($request);
                     }
                 case ("concession"): {
-                        return ("concession");
+                        $filterByConcession = $this->searchByConcession($request);
+                        if (empty($filterByConcession['0'])) {
+                            return responseMsg(false, "Data Not Found!", $request->search);
+                        }
+                        return responseMsg(true, "Data According to Concession!",remove_null($filterByConcession));
                     }
                 case ("objection"): {
-                        return ("objection");
+                        $filterByObjestion = $this->searchByObjection($request);
+                        if (empty($filterByObjestion['0'])) {
+                            return responseMsg(false, "Data Not Found!", $request->search);
+                        }
+                        return responseMsg(true, "Data According to Objection!",  remove_null($filterByObjestion));
                     }
                 case ("mutation"): {
-                        return ("mutation");
+                        $filterByMutation = $this->searchByMutation($request);
+                        if (empty($filterByMutation['0'])) {
+                            return responseMsg(false, "Data Not Found!", $request->search);
+                        }
+                        return responseMsg(true, "Data According to Mutation!",  remove_null($filterByMutation));
                     }
-                case ("assisment"): {
-                        return ("assisment");
+                case ("reAssisment"): {
+                        $filterByReAssisment = $this->searchByReAssisment($request);
+                        if (empty($filterByReAssisment['0'])) {
+                            return responseMsg(false, "Data Not Found!", $request->search);
+                        }
+                        return responseMsg(true, "Data According to ReAssisment!",  remove_null($filterByReAssisment));
+                    }
+                case ("newAssisment"): {
+                        $filterByNewAssisment = $this->searchByReAssisment($request);
+                        if (empty($filterByNewAssisment['0'])) {
+                            return responseMsg(false, "Data Not Found!", $request->search);
+                        }
+                        return responseMsg(true, "Data According to NewAssisment!",  remove_null($filterByNewAssisment));
                     }
                 default:
-                    return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", "");
+                    return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", $request->filteredBy);
             }
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
 
+
     /**
-     * |-------------------------- Calling function for the search 2.1 -----------------------------------------------
+     * |-------------------------- details of Active Concillation  2.1 -----------------------------------------------
      * | @param request
      */
-    public function searchByRwh($request)
+    public function searchByConcession($request)
     {
+        if (($request->wardId) == 0) {
+            return  PropActiveConcession::select(
+                'prop_active_concessions.id AS id',
+                'prop_active_concessions.application_no AS applicationNo',
+                'prop_active_concessions.applicant_name AS name',
+                'prop_owners.mobile_no AS mobileNo',
+            )
+                ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_active_concessions.property_id')
+                ->join('prop_properties', 'prop_properties.id', '=', 'prop_active_concessions.property_id')
+                ->where('prop_active_concessions.application_no', $request->search) //<-----here
+                ->get();
+        }
+        return  PropActiveConcession::select(
+            'prop_active_concessions.id AS id',
+            'prop_active_concessions.application_no AS applicationNo',
+            'prop_active_concessions.applicant_name AS name',
+            'prop_owners.mobile_no AS mobileNo',
+        )
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_active_concessions.property_id')
+            ->join('prop_properties', 'prop_properties.id', '=', 'prop_active_concessions.property_id')
+            ->where('prop_active_concessions.application_no', $request->search) //<-----here
+            ->where('prop_properties.ward_mstr_id', $request->wardId)
+            ->get();
+    }
 
+    /**
+     * |-------------------------- details of Active Objection  2.2 -----------------------------------------------
+     * | @param request
+     */
+    public function searchByObjection($request)
+    {
+        if (($request->wardId) == 0) {
+            return PropActiveObjection::select(
+                'prop_active_objections.id AS id',
+                'objection_no AS applicationNo',
+                'prop_owners.owner_name AS name',
+                'prop_owners.mobile_no AS mobileNo',
+            )
+                ->join('ref_prop_objection_types', 'ref_prop_objection_types.id', '=', 'prop_active_objections.objection_type_id')
+                ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_active_objections.property_id')
+                ->join('prop_properties', 'prop_properties.id', '=', 'prop_active_objections.property_id')
+                ->where('prop_active_objections.objection_no', $request->search)
+                ->get();
+        }
+        return PropActiveObjection::select(
+            'prop_active_objections.id AS id',
+            'objection_no AS applicationNo',
+            'prop_owners.owner_name AS name',
+            'prop_owners.mobile_no AS mobileNo',
+        )
+            ->join('ref_prop_objection_types', 'ref_prop_objection_types.id', '=', 'prop_active_objections.objection_type_id')
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_active_objections.property_id')
+            ->join('prop_properties', 'prop_properties.id', '=', 'prop_active_objections.property_id')
+            ->where('prop_active_objections.objection_no', $request->search)
+            ->where('prop_properties.ward_mstr_id', $request->wardId)
+            ->get();
+    }
+
+    /**
+     * |-------------------------- details of Active Mutation 2.3 -----------------------------------------------
+     * | @param request
+     */
+    public function searchByMutation($request)
+    {
+        if (($request->wardId) == 0) {
+            PropActiveSaf::select(
+                'prop_active_safs.id AS id',
+                'saf_no AS applicationNo',
+                'users.user_name AS name',
+                'users.mobile AS mobile'
+            )
+                ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
+                ->where('prop_active_safs.saf_no', $request->search)
+                ->where('property_assessment_id', 3)
+                ->get();
+        }
+        PropActiveSaf::select(
+            'prop_active_safs.id AS id',
+            'saf_no AS applicationNo',
+            'users.user_name AS name',
+            'users.mobile AS mobile'
+        )
+            ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
+            ->where('prop_active_safs.saf_no', $request->search)
+            ->where('prop_active_safs.ward_mstr_id', $request->wardId)
+            ->where('property_assessment_id', 3)
+            ->get();
+    }
+
+    /**
+     * |-------------------------- details of Active Re Assisment 2.4-----------------------------------------------
+     * | @param request
+     */
+    public function searchByReAssisment($request)
+    {
+        if (($request->wardId) == 0) {
+            PropActiveSaf::select(
+                'prop_active_safs.id AS id',
+                'saf_no AS applicationNo',
+                'users.user_name AS name',
+                'users.mobile AS mobile'
+            )
+                ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
+                ->where('prop_active_safs.saf_no', $request->search)
+                ->where('property_assessment_id', 2)
+                ->get();
+        }
+        PropActiveSaf::select(
+            'prop_active_safs.id AS id',
+            'saf_no AS applicationNo',
+            'users.user_name AS name',
+            'users.mobile AS mobile'
+        )
+            ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
+            ->where('prop_active_safs.saf_no', $request->search)
+            ->where('prop_active_safs.ward_mstr_id', $request->wardId)
+            ->where('property_assessment_id', 2)
+            ->get();
+    }
+
+    /**
+     * |-------------------------- details of Active New Assisment 2.5-----------------------------------------------
+     * | @param request
+     */
+    public function searchByNewAssisment($request)
+    {
+        if (($request->wardId) == 0) {
+            PropActiveSaf::select(
+                'prop_active_safs.id AS id',
+                'saf_no AS applicationNo',
+                'users.user_name AS name',
+                'users.mobile AS mobile'
+            )
+                ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
+                ->where('prop_active_safs.saf_no', $request->search)
+                ->where('property_assessment_id', 1)
+                ->get();
+        }
+        PropActiveSaf::select(
+            'prop_active_safs.id AS id',
+            'saf_no AS applicationNo',
+            'users.user_name AS name',
+            'users.mobile AS mobile'
+        )
+            ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
+            ->where('prop_active_safs.saf_no', $request->search)
+            ->where('prop_active_safs.ward_mstr_id', $request->wardId)
+            ->where('property_assessment_id', 1)
+            ->get();
     }
 }
