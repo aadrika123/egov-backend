@@ -28,7 +28,6 @@ trait SAF
         $saf->is_owner_changed = $req->isOwnerChanged;
         $saf->transfer_mode_mstr_id = $req->transferModeId;
         $saf->saf_no = $safNo;
-        $saf->holding_no = $req->holdingNo;
         $saf->ward_mstr_id = $req->ward;
         $saf->ownership_type_mstr_id = $req->ownershipType;
         $saf->prop_type_mstr_id = $req->propertyType;
@@ -69,14 +68,10 @@ trait SAF
         $saf->petrol_pump_completion_date = $req->petrolPumpCompletionDate;
         $saf->is_water_harvesting = $req->isWaterHarvesting;
         $saf->land_occupation_date = $req->landOccupationDate;
-        // $saf->payment_status = $req->paymentStatus;
-        // $saf->doc_verify_status = $req->docVerifyStatus;
         $saf->doc_verify_cancel_remarks = $req->docVerifyCancelRemark;
 
         $saf->application_date =  Carbon::now()->format('Y-m-d');
-        // $saf->saf_pending_status = $req->safPendingStatus;
         $saf->assessment_type = $req->assessmentType;
-        // $saf->doc_upload_status = $req->docUploadStatus;
         $saf->saf_distributed_dtl_id = $req->safDistributedDtl;
         $saf->prop_dtl_id = $req->propDtl;
         $saf->prop_state = $req->propState;
