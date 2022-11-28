@@ -305,7 +305,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                 'prop_active_safs.id AS id',
                 'saf_no AS applicationNo',
                 'users.user_name AS name',
-                'users.mobile AS mobile'
+                'users.mobile AS mobileNo'
             )
                 ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
                 ->where('prop_active_safs.saf_no', $request->search)
@@ -316,7 +316,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             'prop_active_safs.id AS id',
             'saf_no AS applicationNo',
             'users.user_name AS name',
-            'users.mobile AS mobile'
+            'users.mobile AS mobileNo'
         )
             ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
             ->where('prop_active_safs.ward_mstr_id', $request->wardId)
@@ -335,7 +335,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                 'prop_active_safs.id AS id',
                 'saf_no AS applicationNo',
                 'users.user_name AS name',
-                'users.mobile AS mobile'
+                'users.mobile AS mobileNo'
             )
                 ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
                 ->where('prop_active_safs.saf_no', $request->search)
@@ -346,7 +346,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             'prop_active_safs.id AS id',
             'saf_no AS applicationNo',
             'users.user_name AS name',
-            'users.mobile AS mobile'
+            'users.mobile AS mobileNo'
         )
             ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
             ->where('prop_active_safs.ward_mstr_id', $request->wardId)
@@ -365,7 +365,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                 'prop_active_safs.id AS id',
                 'saf_no AS applicationNo',
                 'users.user_name AS name',
-                'users.mobile AS mobile'
+                'users.mobile AS mobileNo'
             )
                 ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
                 ->where('prop_active_safs.saf_no', $request->search)
@@ -376,7 +376,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             'prop_active_safs.id AS id',
             'saf_no AS applicationNo',
             'users.user_name AS name',
-            'users.mobile AS mobile'
+            'users.mobile AS mobileNo'
         )
             ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
             ->where('prop_active_safs.ward_mstr_id', $request->wardId)
