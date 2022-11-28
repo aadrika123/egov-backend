@@ -73,9 +73,11 @@ class SafRepository implements iSafRepository
      */
     protected $user_id;
     protected $_redis;
+    protected $_todayDate;
     public function __construct()
     {
         $this->_redis = Redis::connection();
+        $this->_todayDate = Carbon::now();
     }
     /**
      * | Master data in Saf Apply
@@ -213,7 +215,7 @@ class SafRepository implements iSafRepository
             $safCalculation = new SafCalculation();
             $safTaxes = $safCalculation->calculateTax($request);
 
-            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
             DB::beginTransaction();
             // dd($request->ward);
@@ -264,7 +266,8 @@ class SafRepository implements iSafRepository
             return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
                 "applyDate" => $saf->application_date,
-                "safId" => $saf->id, "demand" => $demand
+                "safId" => $saf->id,
+                "demand" => $demand
             ]);
         } catch (Exception $e) {
             DB::rollBack();
@@ -483,7 +486,10 @@ class SafRepository implements iSafRepository
                     'prop_level_pendings.receiver_role_id as commentedByRoleId',
                     'r.role_name as commentedByRoleName',
                     'prop_level_pendings.remarks',
-                    'prop_level_pendings.verification_status'
+                    'prop_level_pendings.forward_date',
+                    'prop_level_pendings.forward_time',
+                    'prop_level_pendings.verification_status',
+                    'prop_level_pendings.created_at as received_at'
                 )
                 ->where('prop_level_pendings.saf_id', $data['id'])
                 ->where('prop_level_pendings.status', 1)
@@ -683,6 +689,9 @@ class SafRepository implements iSafRepository
             $propLevelPending = new PropLevelPending();
             $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->senderRoleId);
             $commentOnlevel->remarks = $request->comment;
+            $commentOnlevel->verification_status = 1;
+            $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
+            $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
             $commentOnlevel->verification_status = 1;
             $commentOnlevel->save();
 
@@ -911,6 +920,7 @@ class SafRepository implements iSafRepository
         try {
             $redis = Redis::connection();
             $workflowId = $req->workflowId;
+
             $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
             if (!$backId) {
                 $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
@@ -918,6 +928,7 @@ class SafRepository implements iSafRepository
                     ->first();
                 $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
             }
+
             DB::beginTransaction();
             $saf = PropActiveSaf::find($req->safId);
             $saf->current_role = $backId->wf_role_id;
@@ -926,6 +937,8 @@ class SafRepository implements iSafRepository
             $propLevelPending = new PropLevelPending();
             $preLevelPending = $propLevelPending->getLevelBySafReceiver($req->safId, $req->currentRoleId);
             $preLevelPending->remarks = $req->comment;
+            $preLevelPending->forward_date = $this->_todayDate->format('Y-m-d');
+            $preLevelPending->forward_time = $this->_todayDate->format('H:i:m');
             $preLevelPending->save();
 
             $levelPending = new PropLevelPending();
