@@ -488,7 +488,8 @@ class SafRepository implements iSafRepository
                     'prop_level_pendings.remarks',
                     'prop_level_pendings.forward_date',
                     'prop_level_pendings.forward_time',
-                    'prop_level_pendings.verification_status'
+                    'prop_level_pendings.verification_status',
+                    'prop_level_pendings.created_at as received_at'
                 )
                 ->where('prop_level_pendings.saf_id', $data['id'])
                 ->where('prop_level_pendings.status', 1)
