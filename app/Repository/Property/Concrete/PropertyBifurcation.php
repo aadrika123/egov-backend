@@ -764,10 +764,10 @@ class PropertyBifurcation implements IPropertyBifurcation
             $data["levelData"]      = $mlevelData;
             foreach($refApplication as $key => $val)
             {
-                $data[$key]['property']     = $val;
-                $data[$key]['ownerDtl']       = $this->getOwnereDtlBySId($val->id);
-                $data[$key]['transactionDtl'] = $this->readTranDtl($val->id);
-                $data[$key]['documents']      = $this->getLicenceDocuments($val->id)->map(function($val2){
+                $data['propertis'][$key]['property']     = $val;
+                $data['propertis'][$key]['ownerDtl']       = $this->getOwnereDtlBySId($val->id);
+                $data['propertis'][$key]['transactionDtl'] = $this->readTranDtl($val->id);
+                $data['propertis'][$key]['documents']      = $this->getLicenceDocuments($val->id)->map(function($val2){
                                                     $val2->doc_path = !empty(trim($val2->doc_path))? $this->readDocumentPath($val2->document_path):"";
                                                     return $val2;
                                                 }); 
