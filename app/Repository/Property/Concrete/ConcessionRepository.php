@@ -44,6 +44,7 @@ class ConcessionRepository implements iConcessionRepository
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
             $userType = auth()->user()->user_type;
+            $concessionNo = "";
             // if ($userType == "JSK") {
             //     $obj  = new SafRepository();
             //     $data = $obj->getPropByHoldingNo($request);
@@ -77,6 +78,10 @@ class ConcessionRepository implements iConcessionRepository
             $concession->created_at = Carbon::now();
             $concession->date = Carbon::now();
             $concession->save();
+
+            $concessionNo = $this->concessionNo($concession->id);
+            PropActiveConcession::where('id', $concession->id)
+                ->update(['application_no' => $concessionNo]);
 
             //gender Doc
             //$concession->doc_type = $request->docType;
@@ -129,7 +134,7 @@ class ConcessionRepository implements iConcessionRepository
             $labelPending->save();
 
             DB::commit();
-            return responseMsg(true, 'Successfully Applied The Application', remove_null($concession->status));
+            return responseMsg(true, 'Successfully Applied The Application', $concessionNo);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -504,6 +509,21 @@ class ConcessionRepository implements iConcessionRepository
                 return responseMsg(1, "User Already Applied", $ownerDetails);
             } else return responseMsg(0, "User Not Exist", $ownerDetails);
             // return responseMsg(true, '', remove_null($ownerDetails));
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    //concession number generation
+    public function concessionNo($id)
+    {
+        try {
+            $count = PropActiveConcession::where('id', $id)
+                ->select('id')
+                ->get();
+            $concessionNo = 'CON' . "/" . str_pad($count['0']->id, 5, '0', STR_PAD_LEFT);
+
+            return $concessionNo;
         } catch (Exception $e) {
             echo $e->getMessage();
         }

@@ -44,13 +44,5 @@ trait Objection
 
     //insert data in Prop Active Objection
 
-    public function postObjection($objection, $request)
-    {
-        // $objectionTypeId = $request->id;
-        // $objection->objection_type_id = $objectionTypeId;
 
-        // $objection->property_id = $request->propId;
-        // $objection->remarks = $request->remarks;
-        // $objection->created_at = Carbon::now();
-    }
 }
