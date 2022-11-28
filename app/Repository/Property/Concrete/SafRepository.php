@@ -215,7 +215,7 @@ class SafRepository implements iSafRepository
             $safCalculation = new SafCalculation();
             $safTaxes = $safCalculation->calculateTax($request);
 
-            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
             DB::beginTransaction();
             // dd($request->ward);
@@ -266,7 +266,8 @@ class SafRepository implements iSafRepository
             return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
                 "applyDate" => $saf->application_date,
-                "safId" => $saf->id, "demand" => $demand
+                "safId" => $saf->id,
+                "demand" => $demand
             ]);
         } catch (Exception $e) {
             DB::rollBack();
