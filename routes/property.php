@@ -152,30 +152,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 
 
-    //Property Deactivation
-    /**
-     * Crated By - Sandeep Bara
-     * Created On- 19-11-2022 
-     */
-    Route::controller(PropertyDeactivateController::class)->group(function () {
-        Route::post('searchByHoldingNo', "readHoldigbyNo");
-        Route::match(["POST", "GET"], 'deactivationRequest/{id}', "deactivatProperty");
-        Route::post('inboxDeactivation', "inbox");
-        Route::post('postNextDeactivation', "postNextLevel");
-        Route::post('getDeactivationDtls', "readDeactivationReq");
-    });
-
-
-    //PropertyBifurcation Process
-    /**
-     * Crated By - Sandeep Bara
-     * Created On- 23-11-2022 
-     */
-    Route::controller(PropertyBifurcationController::class)->group(function () {
-        Route::post('searchByHoldingNoBi', "readHoldigbyNo");
-    });
-
-
     //Rain water Harvesting
     /**
      * Crated By - Sam kerketta
