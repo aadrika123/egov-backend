@@ -1619,7 +1619,6 @@ class Trade implements ITrade
         catch(Exception $e)
         {
 
-            dd($e->getLine(),$e->getFile(),$e->getMessage());
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }

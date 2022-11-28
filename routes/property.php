@@ -111,6 +111,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('bifurcationOutbox', "outbox");
         Route::post('bifurcationPostNext', "postNextLevel");
         Route::get('getSafDtls/{id}', "readSafDtls");
+        Route::match(["get", "post"],'documentUpload/{id}', 'documentUpload');
     });
 
 

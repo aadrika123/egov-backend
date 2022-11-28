@@ -264,11 +264,13 @@ class CitizenRepository implements iCitizenRepository
             $properties = PropProperty::select(
                 'prop_properties.id as properyId',
                 'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
                 'prop_properties.balance',
                 'prop_properties.elect_consumer_no',
                 'prop_properties.elect_acc_no'
             )
                 ->where('prop_properties.user_id', $userId)
+                ->orderByDesc('prop_properties.id')
                 ->get();
             $application['applications'] = $properties;
             $application['totalApplications'] = $properties->count();
