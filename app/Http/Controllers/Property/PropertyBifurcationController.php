@@ -45,4 +45,8 @@ class PropertyBifurcationController extends Controller
     {
         return $this->Repository->postNextLevel($request);
     }
+    public function readSafDtls(Request $request)
+    {
+        return $this->Repository->readSafDtls($request->id);
+    }
 }
