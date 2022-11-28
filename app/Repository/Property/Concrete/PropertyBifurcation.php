@@ -613,23 +613,28 @@ class PropertyBifurcation implements IPropertyBifurcation
                 }
                 foreach($safs_temp as $key=>$val)
                 {
-                   array_push($docs,$this->getLicenceDocuments($request->licenceId));
+                   array_push($docs,$this->getLicenceDocuments($val->id));
                 }
                 if(!$docs)
                 {
                     throw new Exception("No Anny Document Found");
                 }
+                
                 $docs = objToArray(collect($docs));
                 $test = array_filter($docs,function($val){
-                     if($val["verify_status"]!=1)
-                     {
-                        return True;
-                     }
+                    foreach($val as $keys=>$vals)
+                    {
+                        if($vals["verify_status"]!=1)
+                        {
+                           return True;
+                        }
+
+                    }
                 });
-                if($test)
-                {
-                    throw new Exception("All Document Are Not Verified");
-                }
+                // if($test)
+                // {
+                //     throw new Exception("All Document Are Not Verified");
+                // }
 
                 
             }
