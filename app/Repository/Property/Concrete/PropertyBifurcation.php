@@ -735,15 +735,15 @@ class PropertyBifurcation implements IPropertyBifurcation
                 throw new Exception("Data not found!....");
             }
             $pendingAt  = $init_finish['initiator']['id'];
-            $mlevelData = $this->getLevelData($id);
+            $mlevelData = $this->getLevelData($id); 
             if($mlevelData)
             {
-                $pendingAt = $mlevelData->receiver_role_id;                
+                $pendingAt = $mlevelData->receiver_role_id;             
             }
             $refTimeLine                = $this->getTimelin($id);
             $refApplication = $this->getAllReletedSafId($saf_data->previous_holding_id);
             $mworkflowRoles = $this->_common->getWorkFlowAllRoles($refUserId,$refUlbId,$refWorkflowId,true);
-            $mileSton = $this->_common->sortsWorkflowRols($mworkflowRoles);
+            $mileSton = $this->_common->sortsWorkflowRols($mworkflowRoles);   
             $data["userType"]       = $mUserType;
             $data["roles"]          = $mileSton;
             $data["pendingAt"]      = $pendingAt;
@@ -802,13 +802,13 @@ class PropertyBifurcation implements IPropertyBifurcation
                 ->where('ulb_id', $refUlbId)
                 ->first();
             if ($req->roadType <= 0)
-                $req->roadType = 4;
+                $roadWidthType = 4;
             elseif ($req->roadType > 0 && $req->roadType < 20)
-                $req->roadType = 3;
+                $roadWidthType = 3;
             elseif ($req->roadType >= 20 && $req->roadType <= 39)
-                $req->roadType = 2;
+                $roadWidthType = 2;
             elseif ($req->roadType > 40)
-                $req->roadType = 1;
+                $roadWidthType = 1;
 
             $safCalculation = new SafCalculation();
             $safTaxes = $safCalculation->calculateTax($req);
@@ -816,7 +816,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             $refInitiatorRoleId = $init_finish["initiator"]['id'];                // Get Current Initiator ID
             $initiatorRoleId = $refInitiatorRoleId;
             // dd($request->ward);
-            $safNo = $this->safNo($req->ward, $assessmentTypeId, $refUlbId);
+            $safNo = $this->safNo($req->ward, $assessmentTypeId, $refUlbId,);
             $saf = new PropActiveSaf();
             
             // workflows
@@ -827,7 +827,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             $saf->current_role = $initiatorRoleId;
             $saf->save();
             $safNo = $safNo."/".$saf->id;
-            $this->tApplySaf($saf, $req, $safNo, $assessmentTypeId);                    // Trait SAF Apply
+            $this->tApplySaf($saf, $req, $safNo, $assessmentTypeId,$roadWidthType);                    // Trait SAF Apply
             $saf->update(); 
             // SAF Owner Details
             if ($req['owner']) 
@@ -910,10 +910,10 @@ class PropertyBifurcation implements IPropertyBifurcation
             {
                 $docType[]="transfer_mode";
             }
-            if($application->is_water_harvestin)
-            {
-                $docType[]="water_harvesting";
-            }
+            // if($application->is_water_harvestin)
+            // {
+            //     $docType[]="water_harvesting";
+            // }
             $data = DB::table("ref_prop_docs_required")
                     ->select("doc_id","doc_type")
                     ->where("status",1)
@@ -1099,7 +1099,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                         "role_name",
                         DB::raw("prop_level_pendings.created_at as receiving_date")
                     )
-                    ->leftjoin(DB::raw("(SELECT receiver_user_type_id::bigint, licence_id::bigint, remarks
+                    ->leftjoin(DB::raw("(SELECT receiver_role_id::bigint, saf_id::bigint, remarks
                                         FROM prop_level_pendings 
                                         WHERE saf_id = $id
                                     )remaks_for"
