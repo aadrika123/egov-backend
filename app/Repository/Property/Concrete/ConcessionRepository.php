@@ -251,6 +251,27 @@ class ConcessionRepository implements iConcessionRepository
                 ->join('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
                 ->where('prop_active_concessions.id', $req->id)
                 ->first();
+            $details = json_decode(json_encode($details), true);
+
+            $levelComments = DB::table('prop_concession_levelpendings')
+                ->select(
+                    'prop_concession_levelpendings.id',
+                    'prop_concession_levelpendings.receiver_role_id as commentedByRoleId',
+                    'r.role_name as commentedByRoleName',
+                    'prop_concession_levelpendings.remarks',
+                    'prop_concession_levelpendings.forward_date',
+                    'prop_concession_levelpendings.forward_time',
+                    'prop_concession_levelpendings.verification_status',
+                    'prop_concession_levelpendings.created_at as received_at'
+                )
+                ->where('prop_concession_levelpendings.concession_id', $req->id)
+                ->where('prop_concession_levelpendings.status', 1)
+                ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_concession_levelpendings.receiver_role_id')
+                ->orderByDesc('prop_concession_levelpendings.id')
+                ->get();
+
+            $details['levelComments'] = $levelComments;
+
             return responseMsg(true, "Concession Details", remove_null($details));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -349,11 +370,11 @@ class ConcessionRepository implements iConcessionRepository
             $concession->save();
 
             // Add Comment On Prop Level Pending
-            $commentOnlevel = PropConcessionLevelPending::where('concession_id', $req->concessionId)
-                ->where('receiver_role_id', $req->senderRoleId)
-                ->first();
-
+            $receiverLevelPending = new PropConcessionLevelPending();
+            $commentOnlevel = $receiverLevelPending->getReceiverLevel($req->concessionId, $req->senderRoleId);
             $commentOnlevel->remarks = $req->comment;
+            $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
+            $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
             $commentOnlevel->save();
 
             DB::commit();
@@ -443,6 +464,22 @@ class ConcessionRepository implements iConcessionRepository
             $saf = PropActiveConcession::find($req->concessionId);
             $saf->current_role = $backId->wf_role_id;
             $saf->save();
+
+            $levelPending = new PropConcessionLevelPending;
+            $levelPending->concession_id = $req->concessionId;
+            $levelPending->sender_role_id = $req->currentRoleId;
+            $levelPending->receiver_role_id = $backId->wf_role_id;
+            $levelPending->user_id = authUser()->id;
+            $levelPending->sender_user_id = authUser()->id;
+            $levelPending->save();
+
+            $receiverLevelPending = new PropConcessionLevelPending();
+            $receiverLevelPending = $receiverLevelPending->getReceiverLevel($req->concessionId, $req->currentRoleId);
+            $receiverLevelPending->remarks = $req->comment;
+            $receiverLevelPending->forward_date = $this->_todayDate->format('Y-m-d');
+            $receiverLevelPending->forward_time = $this->_todayDate->format('H:i:m');
+            $receiverLevelPending->save();
+
             return responseMsg(true, "Successfully Done", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
