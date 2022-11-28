@@ -26,6 +26,12 @@ class ConcessionRepository implements iConcessionRepository
     use WorkflowTrait;
     use Concession;
 
+    private $_todayDate;
+
+    public function __construct()
+    {
+        $this->_todayDate = Carbon::now();
+    }
     //apply concession
     /**
      * | Query Costing-382ms 
@@ -174,6 +180,7 @@ class ConcessionRepository implements iConcessionRepository
             $concessions = $this->getConcessionList($ulbId)
                 ->whereIn('prop_active_concessions.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->orderByDesc('prop_active_concessions.id')
                 ->get();
             return responseMsg(true, "Inbox List", remove_null($concessions));
         } catch (Exception $e) {
@@ -210,6 +217,7 @@ class ConcessionRepository implements iConcessionRepository
             $concessions = $this->getConcessionList($ulbId)
                 ->whereNotIn('prop_active_concessions.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->orderByDesc('prop_active_concessions.id')
                 ->get();
 
             return responseMsg(true, "Outbox List", remove_null($concessions));
@@ -227,6 +235,7 @@ class ConcessionRepository implements iConcessionRepository
     public function getDetailsById($req)
     {
         try {
+            $details = array();
             $details = DB::table('prop_active_concessions')
                 ->select(
                     'prop_active_concessions.*',
@@ -299,6 +308,7 @@ class ConcessionRepository implements iConcessionRepository
             $concessions = $this->getConcessionList($ulbId)                                         // Get Concessions
                 ->where('prop_active_concessions.is_escalate', true)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->orderByDesc('prop_active_concessions.id')
                 ->get();
 
             return responseMsg(true, "Inbox List", remove_null($concessions));
