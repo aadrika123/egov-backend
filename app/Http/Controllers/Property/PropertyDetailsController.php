@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Models\Property\PropActiveSaf;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use Illuminate\Http\Request;
 
@@ -31,5 +32,12 @@ class PropertyDetailsController extends Controller
     public function getFilterSafs(Request $request)
     {
         return $this->propertyDetails->getFilterSafs($request);
+    }
+
+    // All saf no from Active Saf no
+    public function getListOfSaf()
+    {
+        $getSaf = new PropActiveSaf();
+        return $getSaf->allNonHoldingSaf();
     }
 }

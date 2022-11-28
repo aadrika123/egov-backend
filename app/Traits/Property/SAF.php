@@ -122,7 +122,7 @@ trait SAF
     }
 
     // SAF Inbox 
-    public function getSaf()
+    public function getSaf($workflowIds)
     {
         $data = DB::table('prop_active_safs')
             ->join('prop_active_safs_owners as o', 'o.saf_id', '=', 'prop_active_safs.id')
@@ -141,7 +141,8 @@ trait SAF
                 'p.property_type',
                 'prop_active_safs.assessment_type',
                 'at.assessment_type as assessment'
-            );
+            )
+            ->whereIn('workflow_id', $workflowIds);
         return $data;
     }
 

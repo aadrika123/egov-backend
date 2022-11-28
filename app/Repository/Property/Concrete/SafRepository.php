@@ -74,10 +74,13 @@ class SafRepository implements iSafRepository
     protected $user_id;
     protected $_redis;
     protected $_todayDate;
+    protected $_workflowIds;
+
     public function __construct()
     {
         $this->_redis = Redis::connection();
         $this->_todayDate = Carbon::now();
+        $this->_workflowIds = [3, 4, 5];
     }
     /**
      * | Master data in Saf Apply
@@ -374,7 +377,7 @@ class SafRepository implements iSafRepository
                 return $item->wf_role_id;
             });
 
-            $data = $this->getSaf()                                                     // Global SAF 
+            $data = $this->getSaf($this->_workflowIds)                                                     // Global SAF 
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleId)
@@ -417,7 +420,7 @@ class SafRepository implements iSafRepository
                 return $value->ward_id;
             });
 
-            $safData = $this->getSaf()
+            $safData = $this->getSaf($this->_workflowIds)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereNotIn('current_role', $roles)
                 ->whereIn('ward_mstr_id', $wardId)
@@ -589,7 +592,7 @@ class SafRepository implements iSafRepository
             $wardId = $occupiedWard->map(function ($item, $key) {                   // Filter All ward_id in an array using laravel collections
                 return $item->ward_id;
             });
-            $safData = $this->getSaf()
+            $safData = $this->getSaf($this->_workflowIds)
                 ->where('is_escalate', 1)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereIn('ward_mstr_id', $wardId)
