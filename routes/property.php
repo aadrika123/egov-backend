@@ -109,6 +109,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");
         Route::post('bifurcationInbox', "inbox");
         Route::post('bifurcationOutbox', "outbox");
+        Route::post('bifurcationPostNext', "postNextLevel");
+        Route::get('getSafDtls/{id}', "readSafDtls");
     });
 
 
@@ -148,30 +150,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     Route::controller(CalculatorController::class)->group(function () {
         Route::post('get-dashboard', 'dashboardDate');
-    });
-
-
-    //Property Deactivation
-    /**
-     * Crated By - Sandeep Bara
-     * Created On- 19-11-2022 
-     */
-    Route::controller(PropertyDeactivateController::class)->group(function () {
-        Route::post('searchByHoldingNo', "readHoldigbyNo");
-        Route::match(["POST", "GET"], 'deactivationRequest/{id}', "deactivatProperty");
-        Route::post('inboxDeactivation', "inbox");
-        Route::post('postNextDeactivation', "postNextLevel");
-        Route::post('getDeactivationDtls', "readDeactivationReq");
-    });
-
-
-    //PropertyBifurcation Process
-    /**
-     * Crated By - Sandeep Bara
-     * Created On- 23-11-2022 
-     */
-    Route::controller(PropertyBifurcationController::class)->group(function () {
-        Route::post('searchByHoldingNoBi', "readHoldigbyNo");
     });
 
 
@@ -220,6 +198,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::controller(PropertyDetailsController::class)->group(function () {
             Route::post('get-filter-property-details', 'getFilterProperty');
             Route::post('get-filter-safs-details', 'getFilterSafs');
+            Route::get('get-list-saf','getListOfSaf');
         });
     });
 });

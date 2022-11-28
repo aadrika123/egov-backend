@@ -157,6 +157,7 @@ trait Workflow
     {
         $roles = WfRoleusermap::select('id', 'wf_role_id', 'user_id')
             ->where('user_id', $userId)
+            ->where('is_suspended', false)
             ->get();
         return $roles;
     }
