@@ -18,14 +18,12 @@ class PropActiveHarvesting extends Model
         $details = PropActiveHarvesting::select(
             'id',
             'name',
-            'guardian_name AS guardianName',
             'mobile_no AS mobileNo',
-            'building_address AS buildingAddress',
-            'workflow_id AS workflowId',
-            'ward_id AS wardId'
+            'application_no AS applicationNo'
         )
             ->where('harvesting_status', false)
             ->get();
-        return $details;
+        return responseMsg(true,"Dat According to Water Harvesting!",$details);
+        
     }
 }

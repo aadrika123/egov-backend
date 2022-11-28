@@ -197,6 +197,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::controller(PropertyDetailsController::class)->group(function () {
             Route::post('get-filter-property-details', 'getFilterProperty');
             Route::post('get-filter-safs-details', 'getFilterSafs');
+            Route::get('get-list-saf','getListOfSaf');
         });
     });
 });

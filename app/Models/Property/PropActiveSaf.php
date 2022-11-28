@@ -16,10 +16,14 @@ class PropActiveSaf extends Model
      */
     public function allNonHoldingSaf()
     {
-        $allSafList = PropActiveSaf::select(
-            'id AS SafId'
-        )
-            ->get();
-        return $allSafList;
+        try {
+            $allSafList = PropActiveSaf::select(
+                'id AS SafId'
+            )
+                ->get();
+            return responseMsg(true, "Saf List!", $allSafList);
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
     }
 }
