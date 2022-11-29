@@ -1405,7 +1405,7 @@ class Trade implements ITrade
                 {              
                     $cnt=$request->btn_doc_path;
                     $rules = [
-                            'doc_path'.$cnt=>'required|max:30720]|mimes:pdf,jpg,jpeg',
+                            'doc_path'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg',
                             'doc_path_mstr_id'.$cnt.''=>'required|int',
                             'doc_path_for'.$cnt =>"required|string",
                         ];                         

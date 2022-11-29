@@ -412,7 +412,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 throw new Exception("You Are Not Authorized");
             }
             $role_id = $role->role_id;
-            $apply_from = $this->_common->userType($refWorkflowId);            
+            $apply_from = $this->_common->userType($refWorkflowId);           
             $rules = [
                 "btn" => "required|in:btc,forward,backward",
                 "safId" => "required|digits_between:1,9223372036854775807",
@@ -792,7 +792,7 @@ class PropertyBifurcation implements IPropertyBifurcation
         $mDocumentsList  = (array)null;
         $finalData      = (array)null;
         try{
-            $safId = $request->id;
+            $safId = $request->id; 
             if(!$safId)
             {
                 throw new Exception("Saf Id Required");
@@ -845,8 +845,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $data["documentsList"][$key3]["doc"] = $this->check_doc_exist($val->id,$key3);
                     if(isset($data["documentsList"][$key3]["doc"]["doc_path"]))
                     {
-                        $path = $this->readDocumentPath($data["documentsList"][$key]["doc"]["doc_path"]);
-                        $data["documentsList"][$key]["doc"]["doc_path"] = !empty(trim($data["documentsList"][$key]["doc"]["doc_path"]))?$path :null;
+                        $path = $this->readDocumentPath($data["documentsList"][$key3]["doc"]["doc_path"]);
+                        $data["documentsList"][$key3]["doc"]["doc_path"] = !empty(trim($data["documentsList"][$key3]["doc"]["doc_path"]))?$path :null;
     
                     }
                     
@@ -906,10 +906,10 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $rules = [];
                 $message = [];
                 $sms = "";
+                
                 if(!$request->safId || !in_array($request->safId,objToArray(collect($tempSafs)->pluck("id"))))
                 {
-                    dd(!in_array($request->safId,objToArray(collect($tempSafs)->pluck("id"))),objToArray(collect($tempSafs)->pluck("id")));
-                    throw new Exception ("Please Enter Valid SafId....");
+                    throw new Exception ("Please Enter Valid safId....");
                 }
                 $owneres = $this->getOwnereDtlBySId($request->safId);
                 # Upload Document 
@@ -917,7 +917,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 {              
                     $cnt=$request->btn_doc;
                     $rules = [
-                            'doc'.$cnt=>'required|max:30720]|mimes:pdf,jpg,jpeg',
+                            'doc'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg',
                             'doc_mstr_id'.$cnt.''=>'required|int',
                         ];                         
                     $validator = Validator::make($request->all(), $rules, $message);                    
@@ -926,9 +926,11 @@ class PropertyBifurcation implements IPropertyBifurcation
                     }                
                     $file = $request->file('doc'.$cnt);
                     $doc_mstr_id = "doc_mstr_id$cnt";
+                    
                     if ($file->IsValid())
                     { 
-                        if ($app_doc_dtl_id = $this->check_doc_exist($request->safId,$doc_mstr_id))
+                        dd($this->check_doc_exist($request->safId,$request->$doc_mstr_id),$request->safId,$request->$doc_mstr_id);
+                        if ($app_doc_dtl_id = $this->check_doc_exist($request->safId,$request->$doc_mstr_id))
                         {                                                          
                             $delete_path = storage_path('app/public/'.$app_doc_dtl_id['doc_path']);
                             if (file_exists($delete_path)) 
@@ -941,7 +943,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $fileName = "prop_bifurcation_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file,$fileName);
                             $app_doc_dtl_id->doc_path =  $filePath;
-                            $app_doc_dtl_id->document_id =  $doc_mstr_id;
+                            $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
                             $app_doc_dtl_id->save();
                             $sms .= "\n".$app_doc_dtl_id->document_id." Update Successfully";
 
@@ -950,8 +952,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                         {
                             $propDocs = new PropActiveSafsDoc;
                             $propDocs->saf_id = $request->safId;
-                            $propDocs->doc_mstr_id = $doc_mstr_id;
-                            $propDocs->emp_details_id = $refUserId;
+                            $propDocs->doc_mstr_id = $request->$doc_mstr_id;
+                            $propDocs->user_id = $refUserId;
                             
                             $propDocs->save();
                             $newFileName = $propDocs->id;
@@ -1001,7 +1003,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $doc_mstr_id = "doc_mstr_id";      
                     if ($file->IsValid() )
                     {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId,$request->owner_id,$doc_mstr_id))
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId,$request->owner_id,$request->$doc_mstr_id))
                         {                                
                             $delete_path = storage_path('app/public/'.$app_doc_dtl_id['doc_path']);
                             if (file_exists($delete_path)) 
@@ -1025,7 +1027,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $propDocs->saf_id = $request->safId;
                             $propDocs->saf_owner_dtl_id =$request->owner_id;
                             $propDocs->doc_mstr_id = $request->$doc_mstr_id;
-                            $propDocs->emp_details_id = $refUserId;
+                            $propDocs->user_id = $refUserId;
                             
                             $propDocs->save();
                             $newFileName = $propDocs->id;
@@ -1073,7 +1075,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $doc_mstr_id = "doc_mstr_id";      
                     if ($file->IsValid() )
                     {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId,$request->owner_id,$doc_mstr_id))
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId,$request->owner_id,$request->$doc_mstr_id))
                         {                                
                             $delete_path = storage_path('app/public/'.$app_doc_dtl_id['doc_path']);
                             if (file_exists($delete_path)) 
@@ -1097,7 +1099,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $propDocs->saf_id = $request->safId;
                             $propDocs->saf_owner_dtl_id =$request->owner_id;
                             $propDocs->doc_mstr_id = $request->$doc_mstr_id;
-                            $propDocs->emp_details_id = $refUserId;
+                            $propDocs->user_id = $refUserId;
                             
                             $propDocs->save();
                             $newFileName = $propDocs->id;
@@ -1145,7 +1147,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $doc_mstr_id = "doc_mstr_id";      
                     if ($file->IsValid() )
                     {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId,$request->owner_id,$doc_mstr_id))
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId,$request->owner_id,$request->$doc_mstr_id))
                         {                                
                             $delete_path = storage_path('app/public/'.$app_doc_dtl_id['doc_path']);
                             if (file_exists($delete_path)) 
@@ -1169,7 +1171,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $propDocs->saf_id = $request->safId;
                             $propDocs->saf_owner_dtl_id =$request->owner_id;
                             $propDocs->doc_mstr_id = $request->$doc_mstr_id;
-                            $propDocs->emp_details_id = $refUserId;
+                            $propDocs->user_id = $refUserId;
                             
                             $propDocs->save();
                             $newFileName = $propDocs->id;
@@ -1238,7 +1240,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $propDocs->saf_id = $request->safId;
                             $propDocs->saf_owner_dtl_id = $woner_id;
                             $propDocs->doc_mstr_id =0;
-                            $propDocs->emp_details_id = $refUserId;
+                            $propDocs->user_id = $refUserId;
                             
                             $propDocs->save();
                             $newFileName = $propDocs->id;
@@ -1263,6 +1265,7 @@ class PropertyBifurcation implements IPropertyBifurcation
         }
         catch(Exception $e)
         {
+            dd($e->getMessage(),$e->getFile(),$e->getLine());
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
@@ -1443,7 +1446,7 @@ class PropertyBifurcation implements IPropertyBifurcation
     public function check_doc_exist($saf_id,$doc_for,$doc_mstr_id=null,$woner_id=null)
     {
         try{
-            
+            DB::enableQueryLog();
             $doc = PropActiveSafsDoc::select("prop_active_safs_docs.id",
                                             "doc_type",
                                             "prop_active_safs_docs.verify_status",
@@ -1463,7 +1466,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                        }                       
                 $doc =$doc->where('prop_active_safs_docs.status',1)
                        ->orderBy('prop_active_safs_docs.id','DESC')
-                       ->first();                     
+                       ->first();   
+                       dd(DB::getQueryLog());                  
             return $doc;
           
        }
