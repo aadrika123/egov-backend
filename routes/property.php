@@ -111,7 +111,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('bifurcationOutbox', "outbox");
         Route::post('bifurcationPostNext', "postNextLevel");
         Route::get('getSafDtls/{id}', "readSafDtls");
-        Route::match(["get", "post"],'documentUpload/{id}', 'documentUpload');
+        Route::match(["get", "post"], 'documentUpload/{id}', 'documentUpload');
     });
 
 
@@ -199,8 +199,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::controller(PropertyDetailsController::class)->group(function () {
             Route::post('get-filter-property-details', 'getFilterProperty');
             Route::post('get-filter-safs-details', 'getFilterSafs');
+            Route::get('get-list-saf', 'getListOfSaf');
             # Diff
-            Route::get('get-list-saf','getListOfSaf');          //<----------- (may remove)
+            Route::get('get-list-saf', 'getListOfSaf');          //<----------- (may remove)
         });
     });
 });

@@ -18,6 +18,9 @@ class ObjectionController extends Controller
     //Objection for Clerical Mistake
     public function applyObjection(Request $request)
     {
+        $request->validate([
+            'propId' => 'required|integer'
+        ]);
         return $this->Repository->applyObjection($request);
     }
 

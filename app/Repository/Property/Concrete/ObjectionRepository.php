@@ -14,14 +14,13 @@ use App\Models\Property\PropActiveObjectionOwner;
 use App\Models\Property\RefPropObjectionType;
 use App\Traits\Property\Objection;
 use App\Models\Workflows\WfWorkflow;
-use App\Models\Property\PropObjectionDtl;
 use App\Repository\Property\Concrete\SafRepository;
 use App\Models\Property\PropProperty;
-use App\Models\Property\PropObjectionFloor;
 use App\Models\Property\PropObjectionLevelpending;
 use Illuminate\Support\Facades\Redis;
 use App\Models\Workflows\WfWorkflowrolemap;
-
+use App\Models\PropActiveObjectionDtl;
+use App\Models\PropActiveObjectionFloor;
 
 
 
@@ -53,11 +52,14 @@ class ObjectionRepository implements iObjectionRepository
     //apply objection
     public function applyObjection($request)
     {
+
         try {
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
             $userType = auth()->user()->user_type;
             $objectionFor = $request->objectionFor;
+            $objectionNo = "";
+
             $workflow_id_clerical = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
             $workflow_id_assesment = Config::get('workflow-constants.PROPERTY_OBJECTION_ASSESSMENT');
             $workflow_id_forgery = Config::get('workflow-constants.PROPERTY_OBJECTION_FORGERY');
@@ -77,6 +79,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->objection_for =  $objectionFor;
                 $objection->property_id = $request->propId;
                 $objection->remarks = $request->remarks;
+                $objection->date = Carbon::now();
                 $objection->created_at = Carbon::now();
                 // $initiatorRoleId = $this->commonFunction($request, $objection);
                 $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id_clerical)
@@ -141,6 +144,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->objection_for =  $objectionFor;
                 $objection->property_id = $request->propId;
                 $objection->remarks = $request->remarks;
+                $objection->date = Carbon::now();
                 $objection->created_at = Carbon::now();
 
                 // $this->commonFunction($request, $objection);
@@ -182,8 +186,8 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->user_id = $userId;
                 $objection->property_id = $request->propId;
                 $objection->remarks = $request->remarks;
+                $objection->date = Carbon::now();
                 $objection->created_at = Carbon::now();
-
 
 
                 // $this->commonFunction($request, $objection);
@@ -196,12 +200,7 @@ class ObjectionRepository implements iObjectionRepository
                 $initiatorRoleId = DB::select($refInitiatorRoleId);
                 $objection->workflow_id = $ulbWorkflowId->id;
                 $objection->current_role = $initiatorRoleId[0]->role_id;
-                $objection->save();
 
-                // return $objection->id;
-                $objectionNo = $this->objectionNo($objection->id);
-                PropActiveObjection::where('id', $objection->id)
-                    ->update(['objection_no' => $objectionNo]);
 
 
                 $assessmentData = collect($request->assessmentData);
@@ -210,48 +209,59 @@ class ObjectionRepository implements iObjectionRepository
                     $details['value'] = $value['value'];
                     return $details;
                 });
+                $objection->save();
 
                 foreach ($assessmentData as $otid) {
 
-                    $assement_error = new PropObjectionDtl;
+                    $assement_error = new PropActiveObjectionDtl;
                     $assement_error->objection_id = $objection->id;
                     $assement_error->objection_type_id = $otid["id"];
 
                     //RWH
                     if ($otid["id"] == 2) {
                         $assement_error->data_ref_type = 'boolean';
-                        // $objection->
+                        $objection->objection_type_id = 2;
                     }
                     //road width
                     if ($otid["id"] == 3) {
                         $assement_error->data_ref_type = 'ref_prop_road_types.id';
+                        $objection->objection_type_id = 3;
                     }
                     //property_types
                     if ($otid["id"] == 4) {
                         $assement_error->data_ref_type = 'ref_prop_types.id';
+                        $objection->objection_type_id = 4;
                     }
                     //area off plot
                     if ($otid["id"] == 5) {
                         $assement_error->data_ref_type = 'area';
+                        $objection->objection_type_id = 5;
                     }
                     //mobile tower
                     if ($otid["id"] == 6) {
                         $assement_error->data_ref_type = 'boolean';
+                        $objection->objection_type_id = 6;
                     }
                     //hoarding board
                     if ($otid["id"] == 7) {
                         $assement_error->data_ref_type = 'boolean';
+                        $objection->objection_type_id = 7;
                     }
                     $assement_error->assesment_data =  $request->assesmentData;
                     $assement_error->applicant_data =  $otid["value"];
                     $assement_error->save();
                 }
 
+
+                $objectionNo = $this->objectionNo($objection->id);
+                PropActiveObjection::where('id', $objection->id)
+                    ->update(['objection_no' => $objectionNo]);
+
                 $floorData = $request->floorData;
                 $floor = collect($floorData);
 
                 foreach ($floor as $floors) {
-                    $assement_floor = new PropObjectionFloor;
+                    $assement_floor = new PropActiveObjectionFloor;
                     $assement_floor->property_id = $request->propId;
                     $assement_floor->objection_id = $objection->id;
                     $assement_floor->prop_floor_id = $request->propFloorId;
@@ -264,6 +274,7 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor->date_upto = $floors['dateUpto'];
                     $assement_floor->save();
                 }
+
 
                 //objection_form
                 if ($file = $request->file('objectionForm')) {
@@ -282,13 +293,17 @@ class ObjectionRepository implements iObjectionRepository
                 }
             }
 
-            //level pending
-            $labelPending = new PropObjectionLevelpending();
-            $labelPending->objection_id = $objection->id;
-            $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
-            $labelPending->save();
+            if (isset($objectionFor) && $objectionNo) {
+                //level pending
+                $labelPending = new PropObjectionLevelpending();
+                $labelPending->objection_id = $objection->id;
+                $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
+                $labelPending->save();
 
-            return responseMsg(true, "Successfully Saved", $objectionNo);
+                return responseMsg(true, "Successfully Saved", $objectionNo);
+            } else {
+                return responseMsg(false, "Undefined parameter supply", "");
+            }
         } catch (Exception $e) {
             return response()->json($e->getMessage());
         }
@@ -649,23 +664,19 @@ class ObjectionRepository implements iObjectionRepository
     }
 
     //common function
-    public function commonFunction($request, $objection)
-    {
-        $ulbId = auth()->user()->ulb_id;
-        $workflow_id_clerical = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
+    // public function commonFunction($request, $objection)
+    // {
+    //     $ulbId = auth()->user()->ulb_id;
+    //     $workflow_id_clerical = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
 
-        $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id_clerical)
-            ->where('ulb_id', $ulbId)
-            ->first();
+    //     $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id_clerical)
+    //         ->where('ulb_id', $ulbId)
+    //         ->first();
 
-        $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
-        $initiatorRoleId = DB::select($refInitiatorRoleId);
+    //     $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
+    //     $initiatorRoleId = DB::select($refInitiatorRoleId);
 
-        $objection->workflow_id = $ulbWorkflowId->id;
-        $objection->current_role = $initiatorRoleId[0]->role_id;
-
-        // return $initiatorRoleId[0]->role_id;
-
-        // $this->postObjection($objection, $request);
-    }
+    //     $objection->workflow_id = $ulbWorkflowId->id;
+    //     $objection->current_role = $initiatorRoleId[0]->role_id;
+    // }
 }
