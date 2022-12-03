@@ -8,6 +8,7 @@ use App\Traits\Property\SAF;
 use App\Traits\Ward;
 use App\Traits\Workflow\Workflow;
 use Exception;
+use Illuminate\Support\Facades\Config;
 
 /**
  * | Created On - 22-11-2022
@@ -82,6 +83,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             $waterHaravesting->date_of_completion  =  $request->dateOfCompletion;
             $waterHaravesting->user_id = $userId;
             $waterHaravesting->ulb_id = $ulbId;
+            // $waterHaravesting->workflow_id = Config::get('workflow-constants.RAIN_WATER_HARVESTING_ID');
 
             $applicationNo = $this->generateApplicationNo($ulbId, $userId);
             $waterHaravesting->application_no = $applicationNo;
@@ -101,7 +103,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
      */
     public function generateApplicationNo($ulbId, $userId)
     {
-        $applicationId = "RWH/" . $ulbId . $userId . rand(0, 99999999999999);
+        $applicationId = "RWH-" . $ulbId . "-" . $userId . "-" . rand(0, 99999999999999);
         return $applicationId;
     }
 }
