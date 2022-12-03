@@ -40,4 +40,10 @@ class PropertyDetailsController extends Controller
         $getSaf = new PropActiveSaf();
         return $getSaf->allNonHoldingSaf();
     }
+
+    // All the listing of the Details of Applications According to the respective Id
+    public function getUserDetails(Request $request)
+    {
+        return $this->propertyDetails->getUserDetails($request);
+    }
 }

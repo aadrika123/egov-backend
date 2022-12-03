@@ -28,16 +28,16 @@ class PropActiveHarvesting extends Model
     }
 
     /**
-     * |-------------------------- All details of rainWaterHarvesting  -----------------------------------------------
+     * |-------------------------- All details of rainWaterHarvesting according to id -----------------------------------------------
      * | @param request
      */
     public function allDetails($request)
     {
         $allRwhData = PropActiveHarvesting::select(
-                'prop_active_harvestings.*'
-            )
+            'prop_active_harvestings.*'
+        )
             ->where('id', $request->id)
             ->get();
-        return responseMsg(true, "Dat According to Water Harvesting!", $allRwhData);
+        return $allRwhData;
     }
 }

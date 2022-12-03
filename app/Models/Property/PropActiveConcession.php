@@ -18,6 +18,6 @@ class PropActiveConcession extends Model
     {
         $concession = PropActiveConcession::where('id', $request->id)
             ->get();
-        return responseMsg(true, "Dat According to all concession!", $concession);
+        return $concession;
     }
 }
