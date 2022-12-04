@@ -192,12 +192,6 @@ class CitizenRepository implements iCitizenRepository
             }
         }
 
-        $totalApplications = collect($applications)->map(function ($application) {              // collection total applications sum of all modules
-            return $application['totalApplications'];
-        });
-
-        $applications['totalApplications'] = $totalApplications->sum();
-
         return responseMsg(true, "All Applied Applications", remove_null($applications));
     }
 
@@ -229,9 +223,25 @@ class CitizenRepository implements iCitizenRepository
             ->orderByDesc('prop_active_safs.id')
             ->get();
 
-        $applications['applications'] = $propertyApplications;
-        $applications['totalApplications'] = $propertyApplications->count();                // Total Applications
-        return collect($applications)->reverse();
+        $applications['SAF'] = collect($propertyApplications)->values();
+
+        $concessionApplications = DB::table('prop_active_concessions')
+            ->join('wf_roles as r', 'r.id', '=', 'prop_active_concessions.current_role')
+            ->join('prop_properties as p', 'p.id', '=', 'prop_active_concessions.property_id')
+            ->select(
+                'prop_active_concessions.id as application_id',
+                'prop_active_concessions.application_no',
+                'prop_active_concessions.applicant_name',
+                'prop_active_concessions.date as apply_date',
+                'p.holding_no',
+                'r.role_name as pending_at',
+                'prop_active_concessions.workflow_id'
+            )
+            ->where('prop_active_concessions.user_id', $userId)
+            ->get();
+
+        $applications['concessions'] = $concessionApplications;
+        return collect($applications);
     }
 
     /**
@@ -275,19 +285,20 @@ class CitizenRepository implements iCitizenRepository
     {
         try {
             $application = array();
-            $properties = PropProperty::select(
-                'prop_properties.id as properyId',
-                'prop_properties.holding_no',
-                'prop_properties.new_holding_no',
-                'prop_properties.balance',
-                'prop_properties.elect_consumer_no',
-                'prop_properties.elect_acc_no'
-            )
-                ->where('prop_properties.user_id', $userId)
-                ->orderByDesc('prop_properties.id')
-                ->get();
+            $query = "SELECT   
+                            p.id AS property_id,
+                            p.holding_no,
+                            p.new_holding_no,
+                            p.balance AS leftAmount,
+                            t.amount AS lastPaidAmount,
+                            t.tran_date AS lastPaidDate
+
+                        FROM prop_properties p
+
+                        LEFT JOIN (SELECT * FROM prop_transactions WHERE property_id=property_id ORDER BY id DESC LIMIT 1) AS t ON t.property_id=p.id";
+            $properties = DB::select($query);
             $application['applications'] = $properties;
-            $application['totalApplications'] = $properties->count();
+            $application['totalApplications'] = collect($properties)->count();
             return collect($application);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
