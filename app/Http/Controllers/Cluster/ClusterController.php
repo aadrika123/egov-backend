@@ -72,7 +72,7 @@ class ClusterController extends Controller
         }
         $cluster = new Cluster();
         return $cluster->saveClusterDetails($request);
-    } 
+    }
 
     //soft deletion of the cluster details 
     public function deleteClusterData(Request $request)
@@ -98,7 +98,7 @@ class ClusterController extends Controller
 
     /**
      * |----------------------------------- Cluster Maping ----------------------------------------|
-     * |date : 24-11-22
+     * | Date : 24-11-22
      */
 
     // selecting details according to clusterID
@@ -148,7 +148,7 @@ class ClusterController extends Controller
     /**
      * | ----------------- Common funtion for the return component in failer ------------------------------- |
      * | @param req
-     * | @var mreturn
+     * | @var return
      * | Operation : returning the messge using (responseMsg)
      */
     public function failure($req)

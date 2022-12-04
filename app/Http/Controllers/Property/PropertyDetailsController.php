@@ -15,6 +15,7 @@ class PropertyDetailsController extends Controller
      * --------------------------------------------------------------------------------------
      * | Controller regarding with Propery Module (Property Details)
      */
+    
     // Construction 
     private $propertyDetails;
     public function __construct(iPropertyDetailsRepo $propertyDetails)

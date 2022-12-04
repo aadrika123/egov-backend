@@ -31,6 +31,8 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
      * | @var filterByOwner
      * | @var filterByAddress
      * |
+     * | Rating : 2
+     * | time :  
      * | Operation : function filters the property details according to holdingNo/ ownerdetails/ Adddress/ wardID/ 
      */
     public function getFilterProperty($request)
@@ -176,6 +178,8 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
      * | @var filterByReAssisment
      * | @var filterByNewAssisment
      * |
+     * | Rating : 2
+     * | Time : 
      * | Operation : function filter the details of the the applicants according to workflow / only the applied Applications
      */
     public function getFilterSafs($request)
