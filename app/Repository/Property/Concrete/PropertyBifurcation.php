@@ -932,7 +932,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     
                     if ($file->IsValid())
                     { 
-                        dd($this->check_doc_exist($request->safId,$request->$doc_mstr_id),$request->safId,$request->$doc_mstr_id);
+                        // dd($this->check_doc_exist($request->safId,$request->$doc_mstr_id),$request->safId,$request->$doc_mstr_id);
                         if ($app_doc_dtl_id = $this->check_doc_exist($request->safId,$request->$doc_mstr_id))
                         {                                                          
                             $delete_path = storage_path('app/public/'.$app_doc_dtl_id['doc_path']);
@@ -967,6 +967,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $propDocs->doc_path =  $filePath;
                             $propDocs->save();
                             $sms .= "\n". $propDocs->doc_mstr_id." Upload Successfully";
+                            // dd($propDocs);
 
                         }                         
 
@@ -1449,7 +1450,7 @@ class PropertyBifurcation implements IPropertyBifurcation
     public function check_doc_exist($saf_id,$doc_for,$doc_mstr_id=null,$woner_id=null)
     {
         try{
-            DB::enableQueryLog();
+            // DB::enableQueryLog();
             $doc = PropActiveSafsDoc::select("prop_active_safs_docs.id",
                                             "doc_type",
                                             "prop_active_safs_docs.verify_status",
@@ -1470,7 +1471,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $doc =$doc->where('prop_active_safs_docs.status',1)
                        ->orderBy('prop_active_safs_docs.id','DESC')
                        ->first();   
-                       dd(DB::getQueryLog());                  
+                    //    dd(DB::getQueryLog());                  
             return $doc;
           
        }
