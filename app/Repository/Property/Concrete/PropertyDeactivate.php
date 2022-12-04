@@ -634,6 +634,8 @@ class PropertyDeactivate implements IPropertyDeactivate
             $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
             $mUserType = $this->_common->userType($refWorkflowId);
             $init_finish = $this->_common->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
+            $finisher = $init_finish['finisher'];
+            $finisher['short_user_name'] = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.'.strtoupper($init_finish['finisher']['role_name']));
             $rules = [
                 "requestId" => "required|int",
             ];
@@ -668,7 +670,8 @@ class PropertyDeactivate implements IPropertyDeactivate
                 "userType"   => $mUserType,
                 "levelData"  => $mlevelData,
                 "roles"      => $mileSton,
-                "pendingAt"  => $pendingAt
+                "pendingAt"  => $pendingAt,
+               'finisher'    => $finisher,
             ];
             return responseMsg(true,"",remove_null($data));
         }
