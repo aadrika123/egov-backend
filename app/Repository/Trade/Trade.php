@@ -1786,6 +1786,8 @@ class Trade implements ITrade
                 throw new Exception("Workflow Not Available");
             }
             $init_finish = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
+            $finisher = $init_finish['finisher'];
+            $finisher['short_user_name'] = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.'.strtoupper($init_finish['finisher']['role_name']));
             $mUserType      = $this->_parent->userType($refWorkflowId);
             $refApplication = $this->getLicenceById($id);
             $mItemName      ="";
@@ -1828,6 +1830,7 @@ class Trade implements ITrade
             $data["roles"]          = $mileSton;
             $data["pendingAt"]      = $pendingAt;
             $data["levelData"]      = $mlevelData;
+            $data['finisher']       = $finisher;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
             

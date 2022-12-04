@@ -741,6 +741,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                 throw new Exception("Workflow Not Available");
             }
             $init_finish = $this->_common->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
+            $finisher = $init_finish['finisher'];
+            $finisher['short_user_name'] = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.'.strtoupper($init_finish['finisher']['role_name']));
             $mUserType      = $this->_common->userType($refWorkflowId);
             $saf_data = PropActiveSaf::find($id);
             if(!$saf_data)
@@ -762,6 +764,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             $data["pendingAt"]      = $pendingAt;
             $data['remarks']        = $refTimeLine;            
             $data["levelData"]      = $mlevelData;
+            $data['finisher']       = $finisher;
             foreach($refApplication as $key => $val)
             {
                 $data['propertis'][$key]['property']     = $val;
