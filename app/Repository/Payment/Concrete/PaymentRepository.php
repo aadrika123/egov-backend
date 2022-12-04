@@ -94,7 +94,7 @@ class PaymentRepository implements iPayment
      * | @var mReadDepartment collecting data from the table DepartmentMaster
      * | 
      */
-    public function getDepartmentByulb(Request $req) //<-------- validatiom (SHIFT)
+    public function getDepartmentByulb(Request $req)
     {
         # operation
         try {
@@ -123,7 +123,7 @@ class PaymentRepository implements iPayment
      * | @var mReadPg collecting data from the table PaymentGatewayMaster
      * | 
      */
-    public function getPaymentgatewayByrequests(Request $req) //<-------- validatiom (SHIFT)
+    public function getPaymentgatewayByrequests(Request $req)
     {
         try {
             $mReadPg = PaymentGatewayMaster::select(
@@ -153,7 +153,7 @@ class PaymentRepository implements iPayment
      * | @var mReadRazorpay collecting data from the table RazorpayPgMaster
      * | 
      */
-    public function getPgDetails(Request $req) //<-------- validatiom (SHIFT)
+    public function getPgDetails(Request $req)
     {
         try {
             $mReadRazorpay = PaymentGatewayDetail::select(
@@ -196,7 +196,6 @@ class PaymentRepository implements iPayment
                 'payment_amount AS amount',
                 'payment_status AS status',
                 'created_at AS date',
-                // 'payment_notes AS notes'
             )->get();
 
             $mCollection = collect($mReadPayment)->map(function ($value, $key) {
@@ -207,8 +206,6 @@ class PaymentRepository implements iPayment
                     ->get();
                 $details = json_decode($decode['0']->userDetails);
                 $value['userDetails'] = (object)$details;
-                // $date = $value['date'];
-                // $value['date']=Str::limit($date, 10);
                 return $value;
             });
             return responseMsg(true, "Data fetched!", $mCollection);
@@ -671,7 +668,6 @@ class PaymentRepository implements iPayment
     {
         try {
             $userId = auth()->user()->id;
-            #-----------
             $transaction = WebhookPaymentData::join('department_masters', 'department_masters.id', '=', 'webhook_payment_data.department_id')
                 ->select(
                     'webhook_payment_data.payment_transaction_id AS transactionNo',
@@ -686,7 +682,7 @@ class PaymentRepository implements iPayment
             if (!empty($transaction['0'])) {
                 return $transaction;
             }
-            return ("No Dsata!");
+            return ("No Data!");
             return responseMsg(true, "All transaction for the respective id", $transaction);
         } catch (Exception $error) {
             return responseMsg(false, "", $error->getMessage());

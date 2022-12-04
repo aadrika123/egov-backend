@@ -200,8 +200,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
             Route::post('get-filter-property-details', 'getFilterProperty');
             Route::post('get-filter-safs-details', 'getFilterSafs');
             Route::get('get-list-saf', 'getListOfSaf');
-            # Diff
-            Route::get('get-list-saf', 'getListOfSaf');          //<----------- (may remove)
+            Route::post('active-application/get-user-details', 'getUserDetails');        
         });
     });
 });

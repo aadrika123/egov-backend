@@ -43,21 +43,21 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         if (empty($filterByHolding['0'])) {
                             return responseMsg(false, "Data Not Found!", $request->search);
                         }
-                        return responseMsg(true, "Data According to Holding!", $filterByHolding);
+                        return responseMsg(true, "Data According to Holding!", remove_null($filterByHolding));
                     }
                 case ("OwnerDetail"): {
                         $filterByOwner = $this->searchByOwner($request);
                         if (empty($filterByOwner['0'])) {
                             return responseMsg(false, "Data Not Found!", $request->search);
                         }
-                        return responseMsg(true, "Data According to Owner!", $filterByOwner);
+                        return responseMsg(true, "Data According to Owner!", remove_null($filterByOwner));
                     }
                 case ("Address"): {
                         $filterByAddress = $this->searchByAddress($request);
                         if (empty($filterByAddress['0'])) {
                             return responseMsg(false, "Data Not Found!", $request->search);
                         }
-                        return responseMsg(true, "Data According to Address!", $filterByAddress);
+                        return responseMsg(true, "Data According to Address!", remove_null($filterByAddress));
                     }
                 default:
                     return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", "");
@@ -165,9 +165,6 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
 
 
 
-
-
-
     /**
      * |-------------------------- filtring the details according to workflow / returning / 2 -----------------------------------------------
      * | @param request
@@ -202,28 +199,28 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         if (empty($filterByObjestion['0'])) {
                             return responseMsg(false, "Data Not Found!", $request->search);
                         }
-                        return responseMsg(true, "Data According to Objection!",  remove_null($filterByObjestion));
+                        return responseMsg(true, "Data According to Objection!", remove_null($filterByObjestion));
                     }
                 case ("mutation"): {
                         $filterByMutation = $this->searchByMutation($request);
                         if (empty($filterByMutation['0'])) {
                             return responseMsg(false, "Data Not Found!", $request->search);
                         }
-                        return responseMsg(true, "Data According to Mutation!",  remove_null($filterByMutation));
+                        return responseMsg(true, "Data According to Mutation!", remove_null($filterByMutation));
                     }
                 case ("reAssisment"): {
                         $filterByReAssisment = $this->searchByReAssisment($request);
                         if (empty($filterByReAssisment['0'])) {
                             return responseMsg(false, "Data Not Found!", $request->search);
                         }
-                        return responseMsg(true, "Data According to ReAssisment!",  remove_null($filterByReAssisment));
+                        return responseMsg(true, "Data According to ReAssisment!", remove_null($filterByReAssisment));
                     }
                 case ("newAssisment"): {
                         $filterByNewAssisment = $this->searchByNewAssisment($request);
                         if (empty($filterByNewAssisment['0'])) {
                             return responseMsg(false, "Data Not Found!", $request->search);
                         }
-                        return responseMsg(true, "Data According to NewAssisment!",  remove_null($filterByNewAssisment));
+                        return responseMsg(true, "Data According to NewAssisment!", remove_null($filterByNewAssisment));
                     }
                 default:
                     return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", $request->filteredBy);
@@ -232,7 +229,6 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
-
 
     /**
      * |-------------------------- details of Active Concillation  2.1 -----------------------------------------------
@@ -272,11 +268,11 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
         if (($request->wardId) == 0) {
             return PropActiveObjection::select(
                 'prop_active_objections.id AS id',
-                'objection_no AS applicationNo',
-                'prop_owners.owner_name AS name',
-                'prop_owners.mobile_no AS mobileNo',
+                'prop_active_objections.objection_no AS applicationNo',
+                'prop_active_objection_owners.name',
+                'prop_active_objection_owners.mobile',
             )
-                ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_active_objections.property_id')
+                ->join('prop_active_objection_owners', 'prop_active_objection_owners.objection_id', '=', 'prop_active_objections.id')
                 ->where('prop_active_objections.objection_no', $request->search)
                 ->get();
         }
@@ -302,19 +298,19 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             return PropActiveSaf::select(
                 'prop_active_safs.id AS id',
                 'saf_no AS applicationNo',
-                'users.user_name AS name',
-                'users.mobile AS mobileNo'
+                'prop_active_safs_owners.owner_name AS name',
+                'prop_active_safs_owners.mobile_no AS mobileNo'
             )
-                ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
+                ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', '=', 'prop_active_safs.id')
                 ->where('prop_active_safs.saf_no', $request->search)
-                ->where('prop_active_safs.property_assessment_id', 1)
+                ->where('prop_active_safs.property_assessment_id', 3)
                 ->get();
         }
         return PropActiveSaf::select(
             'prop_active_safs.id AS id',
             'saf_no AS applicationNo',
-            'users.user_name AS name',
-            'users.mobile AS mobileNo'
+            'prop_active_safs_owners.owner_name AS name',
+            'prop_active_safs_owners.mobile_no AS mobileNo'
         )
             ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
             ->where('prop_active_safs.ward_mstr_id', $request->wardId)
@@ -332,10 +328,10 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             return PropActiveSaf::select(
                 'prop_active_safs.id AS id',
                 'saf_no AS applicationNo',
-                'users.user_name AS name',
-                'users.mobile AS mobileNo'
+                'prop_active_safs_owners.owner_name AS name',
+                'prop_active_safs_owners.mobile_no AS mobileNo'
             )
-                ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
+                ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', '=', 'prop_active_safs.id')
                 ->where('prop_active_safs.saf_no', $request->search)
                 ->where('prop_active_safs.property_assessment_id', 2)
                 ->get();
@@ -343,10 +339,10 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
         return PropActiveSaf::select(
             'prop_active_safs.id AS id',
             'saf_no AS applicationNo',
-            'users.user_name AS name',
-            'users.mobile AS mobileNo'
+            'prop_active_safs_owners.owner_name AS name',
+            'prop_active_safs_owners.mobile_no AS mobileNo'
         )
-            ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
+            ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', '=', 'prop_active_safs.id')
             ->where('prop_active_safs.ward_mstr_id', $request->wardId)
             ->where('property_assessment_id', 2)
             ->get();
@@ -362,10 +358,10 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             return PropActiveSaf::select(
                 'prop_active_safs.id AS id',
                 'saf_no AS applicationNo',
-                'users.user_name AS name',
-                'users.mobile AS mobileNo'
+                'prop_active_safs_owners.owner_name AS name',
+                'prop_active_safs_owners.mobile_no AS mobileNo'
             )
-                ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
+                ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', '=', 'prop_active_safs.id')
                 ->where('prop_active_safs.saf_no', $request->search)
                 ->where('prop_active_safs.property_assessment_id', 1)
                 ->get();
@@ -373,20 +369,33 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
         return PropActiveSaf::select(
             'prop_active_safs.id AS id',
             'saf_no AS applicationNo',
-            'users.user_name AS name',
-            'users.mobile AS mobileNo'
+            'prop_active_safs_owners.owner_name AS name',
+            'prop_active_safs_owners.mobile_no AS mobileNo'
         )
-            ->join('users', 'users.id', '=', 'prop_active_safs.user_id')
+            ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', '=', 'prop_active_safs.id')
             ->where('prop_active_safs.ward_mstr_id', $request->wardId)
             ->where('property_assessment_id', 1)
             ->get();
     }
 
 
+
+
     /**
-     * |-------------------------- details of Active New Assisment 2.5-----------------------------------------------
+     * |-------------------------- details of Active Applicatins Accoring to Id / 3 -----------------------------------------------
      * | @param request
-     * | (WORKING) //<----------------(REMINDER)
+     * | @param error
+     * | @var requestDetails
+     * | @var waterHarvesting 
+     * | @var concession
+     * | @var objection
+     * | @var mutation
+     * | @var reAssisment
+     * | @var newAssisment
+     * |
+     * | Operation : filteration according to the request details ie. waterHarvesting/ concession/ objection/ mutation/ reAssisment/ newAssisment and there respective Id comming from request
+     * | rating : 2
+     * | timing : 275 ms
      */
     public function getUserDetails($request)
     {
@@ -394,43 +403,55 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             $requestDetails = $request->filterBy;
             switch ($requestDetails) {
                 case ("rainWaterHarvesting"): {
-                        $waterHarvesting = new PropActiveHarvesting();  //<---------- May change
-                        $waterHarvesting = $waterHarvesting->allDetails($request);
-                        if (empty($waterHarvesting['0'])) {
-                            return responseMsg(false, "Data Not Found!", $request->search);
+                        $waterHarvesting = new PropActiveHarvesting();
+                        $mWaterHarvesting = $waterHarvesting->allDetails($request);
+                        if (empty($mWaterHarvesting['0'])) {
+                            return responseMsg(false, "Data Not Found on Respective Id!", $request->id);
                         }
-                        return responseMsg(true, "Data According to Concession!", remove_null($waterHarvesting));
+                        return responseMsg(true, "Data of RainWaterHarvesting!", remove_null($mWaterHarvesting));
                     }
                 case ("concession"): {
                         $concession = new PropActiveConcession();
-                        $concession = $concession->allConcession($request);
-                        if (empty($concession['0'])) {
-                            return responseMsg(false, "Data Not Found!", $request->search);
+                        $mConcession = $concession->allConcession($request);
+                        if (empty($mConcession['0'])) {
+                            return responseMsg(false, "Data Not Found on Respective Id!", $request->id);
                         }
-                        return responseMsg(true, "Data According to Concession!", remove_null($concession));
+                        return responseMsg(true, "Data of Concesion!", remove_null($mConcession));
                     }
                 case ("objection"): {
                         $objection = new PropActiveObjection();
-                        $objection = $objection->allObjection($request);
-                        if (empty($objection['0'])) {
-                            return responseMsg(false, "Data Not Found!", $request->search);
+                        $mObjection = $objection->allObjection($request);
+                        if (empty($mObjection['0'])) {
+                            return responseMsg(false, "Data Not Found on Respective Id!", $request->id);
                         }
-                        return responseMsg(true, "Data According to Concession!", remove_null($objection));
+                        return responseMsg(true, "Data of Objection!", remove_null($mObjection));
                     }
                 case ("mutation"): {
                         $mutation = new PropActiveSaf();
-                        $mutation = $mutation->allMutation($request);
-                        if (empty($mutation['0'])) {
-                            return responseMsg(false, "Data Not Found!", $request->search);
+                        $mMutation = $mutation->allMutation($request);
+                        if (empty($mMutation['0'])) {
+                            return responseMsg(false, "Data Not Found on Respective Id!", $request->id);
                         }
-                        return responseMsg(true, "Data According to Concession!", remove_null($mutation));
+                        return responseMsg(true, "Data of Mutation!", remove_null($mMutation));
                     }
                 case ("reAssisment"): {
+                        $reAssisment = new PropActiveSaf();
+                        $mReAssisment = $reAssisment->allReAssisment($request);
+                        if (empty($mReAssisment['0'])) {
+                            return responseMsg(false, "Data Not Found on Respective Id!", $request->id);
+                        }
+                        return responseMsg(true, "Data of ReAssisment!", remove_null($mReAssisment));
                     }
                 case ("newAssisment"): {
+                        $newAssisment = new PropActiveSaf();
+                        $mNewAssisment = $newAssisment->allNewAssisment($request);
+                        if (empty($mNewAssisment['0'])) {
+                            return responseMsg(false, "Data Not Found on Respective Id!", $request->id);
+                        }
+                        return responseMsg(true, "Data of NewAssisment!", remove_null($mNewAssisment));
                     }
                 default:
-                    return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", $request->filteredBy);
+                    return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", $request->filterBy);
             }
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
