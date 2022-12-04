@@ -17,4 +17,12 @@ class PropLevelPending extends Model
             ->orderByDesc('id')
             ->first();
     }
+
+    // Get last Application Status
+    public function getLastLevelBySafId($safId)
+    {
+        return PropLevelPending::where('saf_id', $safId)
+            ->orderByDesc('id')
+            ->first();
+    }
 }
