@@ -313,7 +313,8 @@ class CitizenRepository implements iCitizenRepository
                                     ) AS ROW1
                                     FROM prop_owners 
                                     ORDER BY id ASC 
-                                    ) AS o ON o.property_id=p.id AND ROW1=1";
+                                    ) AS o ON o.property_id=p.id AND ROW1=1
+                                    WHERE p.user_id=$userId";
             $properties = DB::select($query);
             $application['applications'] = $properties;
             $application['totalApplications'] = collect($properties)->count();
