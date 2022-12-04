@@ -34,6 +34,7 @@ use App\Models\UlbWardMaster;
 use App\Models\UlbWorkflowMaster;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
+use App\Models\Workflows\WfRole;
 use App\Repository\Common\CommonFunction;
 use Illuminate\Http\Request;
 
@@ -896,7 +897,7 @@ class Trade implements ITrade
                 }
             }
             DB::commit();
-            return responseMsg(true,'',"Application Update SuccessFully!");
+            return responseMsg(true,"Application Update SuccessFully!","");
         }
         catch(Exception $e)
         {
@@ -1786,8 +1787,11 @@ class Trade implements ITrade
                 throw new Exception("Workflow Not Available");
             }
             $init_finish = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
+            $finisher = $init_finish['finisher'];
+            $finisher['short_user_name'] = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.'.strtoupper($init_finish['finisher']['role_name']));
             $mUserType      = $this->_parent->userType($refWorkflowId);
             $refApplication = $this->getLicenceById($id);
+            $mStatus = $this->applicationStatus($id);
             $mItemName      ="";
             $mCods          = "";
             if($refApplication->nature_of_bussiness)
@@ -1822,12 +1826,14 @@ class Trade implements ITrade
             $data['licenceDtl']     = $refApplication;
             $data['ownerDtl']       = $refOwnerDtl;
             $data['transactionDtl'] = $refTransactionDtl;
+            $data['pendingStatus']  = $mStatus;
             $data['remarks']        = $refTimeLine;
             $data['documents']      = $refUploadDocuments;            
             $data["userType"]       = $mUserType;
             $data["roles"]          = $mileSton;
             $data["pendingAt"]      = $pendingAt;
             $data["levelData"]      = $mlevelData;
+            $data['finisher']       = $finisher;
             $data = remove_null($data);
             return responseMsg(true,"",$data);
             
@@ -4226,6 +4232,68 @@ class Trade implements ITrade
     {
         $path = (config('app.url').'/api/getImageLink?path='.$path);
         return $path;
+    }
+    public function applicationStatus($licenceId)
+    {
+        $application = ActiveLicence::find($licenceId);
+        if(!$application)
+        {
+            $application = ExpireLicence::find($licenceId);
+        }
+        $transection = TradeTransaction::select("*")
+                        ->where("related_id",$licenceId)
+                        ->orderBy("id","DESC")
+                        ->first();
+        $level = $this->getLevelData($licenceId);
+        $status = "";        
+        if($application->pending_status==5)
+        {
+            $status="License Created Successfully";
+        }
+        elseif($application->pending_status==3)
+        {
+            $level = $this->getLevelData($licenceId);            
+            $rols  = WfRole::find($level->sender_user_type_id);           
+            $status="Application back to citizen by ".$rols->role_name;
+        }
+        elseif($application->pending_status==2)
+        {
+            $level = $this->getLevelData($licenceId);
+            $rols  = WfRole::find($level->receiver_user_type_id);
+            $status="Application pending at ".$rols->role_name;
+        }
+        elseif($application->pending_status==4)
+        {
+            $status="Application rejected ";
+        }
+        elseif($application->status==0)
+        {
+            $status="Application deactivaed ";
+        }
+        elseif($application->payment_status==0 && $application->document_upload_status=0)
+        {
+            $status="Payment is pending and document not uploaded ";
+        }
+        elseif($application->payment_status==1 && $application->document_upload_status=0)
+        {
+            $status="Payment is done but document not uploaded ";
+        }
+        elseif($application->payment_status==0 && $application->document_upload_status=1)
+        {
+            $status="Payment is pending but document is uploaded ";
+        }
+        elseif($application->payment_status==1 && $application->document_upload_status=1)
+        {
+            $status="Payment is done and document is uploaded ";
+        }
+        else
+        {
+            $status="Applilcation Not Appoved";
+        }
+
+
+        return $status;
+        
     }
    
     #-------------------- End core function of core function --------------
