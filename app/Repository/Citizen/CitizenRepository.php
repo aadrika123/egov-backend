@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use App\Models\ActiveCitizen;
 use App\Models\Payment\PaymentRequest;
+use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropProperty;
 use App\Models\Trade\ActiveLicence;
 use App\Models\User;
@@ -209,10 +210,23 @@ class CitizenRepository implements iCitizenRepository
     {
         $applications = array();
         $propertyApplications = DB::table('prop_active_safs')
-            ->select('id as application_id', 'saf_no', 'holding_no', 'assessment_type', 'application_date', 'payment_status', 'saf_pending_status', 'workflow_id',  'created_at', 'updated_at')
-            ->where('user_id', $userId)
-            ->where('status', 1)
-            ->orderByDesc('id')
+            ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_active_safs.current_role')
+            ->select(
+                'r.role_name as current_level',
+                'prop_active_safs.id as application_id',
+                'saf_no',
+                'holding_no',
+                'assessment_type',
+                'application_date',
+                'payment_status',
+                'saf_pending_status',
+                'workflow_id',
+                'prop_active_safs.created_at',
+                'prop_active_safs.updated_at'
+            )
+            ->where('prop_active_safs.user_id', $userId)
+            ->where('prop_active_safs.status', 1)
+            ->orderByDesc('prop_active_safs.id')
             ->get();
 
         $applications['applications'] = $propertyApplications;
