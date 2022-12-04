@@ -1826,7 +1826,7 @@ class Trade implements ITrade
             $data['licenceDtl']     = $refApplication;
             $data['ownerDtl']       = $refOwnerDtl;
             $data['transactionDtl'] = $refTransactionDtl;
-            $data['status']         = $mStatus;
+            $data['pendingStatus']  = $mStatus;
             $data['remarks']        = $refTimeLine;
             $data['documents']      = $refUploadDocuments;            
             $data["userType"]       = $mUserType;
