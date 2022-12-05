@@ -1389,13 +1389,13 @@ class Trade implements ITrade
                     $doc['isMadatory'] = 1;
                     $doc['docVal'] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0);
                     $refOwneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
-                    $doc['uploadDoc']=null;
+                    $doc['uploadDoc']=$refOwneres[$key]["Identity Proof"];
                     if(isset($refOwneres[$key]["Identity Proof"]["document_path"]))
                     {
                         $path = $this->readDocumentPath($refOwneres[$key]["Identity Proof"]["document_path"]);
                         // $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["Identity Proof"]["document_path"]):null;
                         $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?$path:null;
-                        $doc['uploadDoc'] = $path;
+                        $doc['uploadDoc']["document_path"] = $path;
                     }
                     array_push($ownersDoc,$doc);
                     $doc2 = (array) null;
@@ -1404,13 +1404,13 @@ class Trade implements ITrade
                     $doc2["docName"]   = "image";
                     $doc2['isMadatory'] = 0;
                     $refOwneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
-                    $doc2['uploadDoc']=null;
+                    $doc2['uploadDoc']=$refOwneres[$key]["image"];
                     if(isset( $refOwneres[$key]["image"]["document_path"]))
                     {
                         $path = $this->readDocumentPath($refOwneres[$key]["image"]["document_path"]);
                         $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["image"]["document_path"]):null;
                         $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?$path:null;
-                        $doc2['uploadDoc'] = $path;
+                        $doc2['uploadDoc']["document_path"] = $path;
                     }
                     array_push($ownersDoc,$doc2);
                 }         
