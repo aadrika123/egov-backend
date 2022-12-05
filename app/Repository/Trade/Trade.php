@@ -1303,6 +1303,8 @@ class Trade implements ITrade
         $refOwneres = (array)null;
         $mUploadDocument = (array)null;
         $mDocumentsList  = (array)null;
+        $requiedDocs =   (array) null;
+        $ownersDoc = (array) null;
         $mItemName="";
         $mCods = "";
         try{
@@ -1337,7 +1339,6 @@ class Trade implements ITrade
             $mUploadDocument = $this->getLicenceDocuments($licenceId);
             
             $mDocumentsList = $this->getDocumentTypeList($refLicence);
-            $requiedDocs =   (array) null;              
             foreach($mDocumentsList as $val)
             {                  
                 $doc = (array) null; 
@@ -1356,7 +1357,7 @@ class Trade implements ITrade
                 $doc['docName'] = "Identity Proof";
                 $doc['isMadatory'] = 1;
                 $doc['docVal'] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0);
-                array_push($requiedDocs,$doc);
+                // array_push($requiedDocs,$doc);
             }
             // $doc = (array) null;
             foreach($requiedDocs as $key => $val)
@@ -1375,32 +1376,48 @@ class Trade implements ITrade
 
                 }
                 $requiedDocs[$key]['uploadDoc']=$doc;
-            } 
+            }
+
             if($refLicence->application_type_id==1)
             {
                 foreach($refOwneres as $key=>$val)
                 {
-                   
+                    $doc = (array) null;
+                    $doc["ownerId"] = $val->id;
+                    $doc["ownerName"] = $val->owner_name;
+                    $doc["docName"]   = "Identity Proof";
+                    $doc['isMadatory'] = 1;
+                    $doc['docVal'] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0);
                     $refOwneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
+                    $doc['uploadDoc']=null;
                     if(isset($refOwneres[$key]["Identity Proof"]["document_path"]))
                     {
                         $path = $this->readDocumentPath($refOwneres[$key]["Identity Proof"]["document_path"]);
                         // $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["Identity Proof"]["document_path"]):null;
                         $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?$path:null;
-    
+                        $doc['uploadDoc'] = $path;
                     }
+                    array_push($ownersDoc,$doc);
+                    $doc2 = (array) null;
+                    $doc2["ownerId"] = $val->id;
+                    $doc2["ownerName"] = $val->owner_name;
+                    $doc2["docName"]   = "image";
+                    $doc2['isMadatory'] = 0;
                     $refOwneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
+                    $doc2['uploadDoc']=null;
                     if(isset( $refOwneres[$key]["image"]["document_path"]))
                     {
                         $path = $this->readDocumentPath($refOwneres[$key]["image"]["document_path"]);
                         $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["image"]["document_path"]):null;
                         $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?$path:null;
-    
+                        $doc2['uploadDoc'] = $path;
                     }
+                    array_push($ownersDoc,$doc2);
                 }         
 
             }
             $data["documentsList"]  = $requiedDocs;
+            $data["ownersDocList"]  = $ownersDoc;
             $data["licence"] = $refLicence;
             $data["owneres"] = $refOwneres;
             $data["uploadDocument"] = $mUploadDocument;
