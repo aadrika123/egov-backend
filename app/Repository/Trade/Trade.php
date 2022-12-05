@@ -1336,32 +1336,45 @@ class Trade implements ITrade
             $refOwneres = $this->getOwnereDtlByLId($licenceId);
             $mUploadDocument = $this->getLicenceDocuments($licenceId);
             
-            $mDocumentsList = $this->getDocumentTypeList($refLicence);                 
+            $mDocumentsList = $this->getDocumentTypeList($refLicence);
+            $requiedDocs =   (array) null;              
             foreach($mDocumentsList as $val)
-            {   
-                $data["documentsList"]["docList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$refLicence->application_type_id,$val->show);
-                $data["documentsList"]["isMedetory"][$val->doc_for] = $val->is_mandatory;
+            {                  
+                $doc = (array) null; 
+                // $data["documentsList"]["docList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$refLicence->application_type_id,$val->show);
+                // $data["documentsList"]["isMedetory"][$val->doc_for] = $val->is_mandatory;
+                $doc['docName'] = $val->doc_for;
+                $doc['isMadatory'] = $val->is_mandatory;
+                $doc['docVal'] = $this->getDocumentList($val->doc_for,$refLicence->application_type_id,$val->show);
+                array_push($requiedDocs,$doc);
             }
             if($refLicence->application_type_id==1)
             {                
-                $data["documentsList"]["docList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0);
-                $data["documentsList"]["isMedetory"]["Identity Proof"] = 1;
+                // $data["documentsList"]["docList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0);
+                // $data["documentsList"]["isMedetory"]["Identity Proof"] = 1;
+                $doc = (array) null; 
+                $doc['docName'] = "Identity Proof";
+                $doc['isMadatory'] = 1;
+                $doc['docVal'] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0);
+                array_push($requiedDocs,$doc);
             }
-            $doc = (array) null;
-            foreach($data["documentsList"]["docList"] as $key => $val)
+            // $doc = (array) null;
+            foreach($requiedDocs as $key => $val)
             {
-                if($key == "Identity Proof")
+                if($val['docName'] == "Identity Proof")
                 {
                     continue;
                 }
-                $data["documentsList"]['uploadDocs'][$key] = $this->check_doc_exist($licenceId,$key);
-                if(isset($data["documentsList"]['uploadDocs'][$key]["document_path"]))
+                $doc = (array) null; 
+                $doc = $this->check_doc_exist($licenceId,$val['docName']);
+                if(isset($doc["document_path"]))
                 {
-                    $path = $this->readDocumentPath($data["documentsList"]['uploadDocs'][$key]["document_path"]);
+                    $path = $this->readDocumentPath( $doc["document_path"]);
                     // $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"][$key]["doc"]["document_path"]):null;
-                    $data["documentsList"]['uploadDocs'][$key]["document_path"] = !empty(trim($data["documentsList"]['uploadDocs'][$key]["document_path"]))?$path :null;
+                    $doc["document_path"] = !empty(trim( $doc["document_path"]))?$path :null;
 
                 }
+                $requiedDocs[$key]['uploadDoc']=$doc;
             } 
             if($refLicence->application_type_id==1)
             {
@@ -1387,6 +1400,7 @@ class Trade implements ITrade
                 }         
 
             }
+            $data["documentsList"]  = $requiedDocs;
             $data["licence"] = $refLicence;
             $data["owneres"] = $refOwneres;
             $data["uploadDocument"] = $mUploadDocument;
