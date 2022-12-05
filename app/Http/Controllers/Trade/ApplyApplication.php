@@ -136,6 +136,10 @@ class ApplyApplication extends Controller
         $mailID = $request->mailID;
         return $this->Repository->denialView($id,$mailID,$request);
     }
+    public function approvedApplication(Request $request)
+    {
+        return $this->Repository->approvedApplication($request);
+    }
     public function reports(Request $request)
     {
         return $this->Repository->reports($request);
