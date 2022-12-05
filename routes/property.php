@@ -129,6 +129,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('concession/next-level', 'postNextLevel');                                  // Backward Forward Application
         Route::post('concession/approvalrejection', 'approvalRejection');                       // Approve Reject Application
         Route::post('concession/backtocitizen', 'backToCitizen');                                // Back To Citizen 
+
+        Route::get('concession/list', 'concessionList');
+        Route::post('concession/list-id', 'getConcessionByid');
+        Route::post('concession/doc-list', 'concessionDocList');
+        Route::post('concession/doc-status', 'concessionDocStatus');
     });
 
 

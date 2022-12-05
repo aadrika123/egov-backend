@@ -22,4 +22,9 @@ interface iConcessionRepository
     public function postNextLevel($req);                                    // post next level application
     public function approvalRejection($req);                                // Approve Reject Application
     public function backTocitizen($req);                                    // Back to citizen of the applications
+
+    public function concessionList();
+    public function getConcessionByid($req);
+    public function concessionDocList($req);
+    public function concessionDocStatus($req);
 }
