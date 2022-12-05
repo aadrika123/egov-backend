@@ -28,6 +28,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
      * |@param request
      * |@var ulbId
      * |@var wardList
+     * | Rating : 1
      */
     public function getWardMasterData($request)
     {
@@ -47,6 +48,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
      * |@param request
      * |@var ulbId
      * |@var wardList
+     * | Rating :2
      */
     public function waterHarvestingApplication($request)
     {
@@ -68,6 +70,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
      * |@param ulbId
      * |@param userId
      * |@var applicationNo
+     * | Rating : 1
      */
     public function waterApplicationSave($waterHaravesting, $request, $ulbId, $userId)
     {
@@ -100,6 +103,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
      * |@param ulbId
      * |@param userId
      * |@var applicationId
+     * | Rating : 0.1
      */
     public function generateApplicationNo($ulbId, $userId)
     {

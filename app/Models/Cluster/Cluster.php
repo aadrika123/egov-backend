@@ -89,4 +89,29 @@ class Cluster extends Model
             return responseMsg(false, "Opearion faild!", $error->getMessage());
         }
     }
+
+
+    /**
+     * | -------------------------Get All the Cluster Detils from the Cluster Table------------------------------- |
+     * | @param request
+     * | @var userId
+     * | @var ulbId
+     * | @param error
+     * | Operation : fetch all the cluster data from the Table
+     * | rating - 1
+     */
+    public function allClusters()
+    {
+        return Cluster::select(
+            'id',
+            'cluster_name AS name',
+            'cluster_type AS type',
+            'address',
+            'mobile_no AS mobileNo',
+            'authorized_person_name AS authPersonName',
+            'status'
+        )
+            ->where('status', 1)
+            ->get();
+    }
 }

@@ -22,12 +22,9 @@ class DocumentOperationController extends Controller
         $this->DocumentOperationRepo = $DocumentOperationRepo;
     }
 
+    // Get all Details Of the Document According to workflow and application ID
     public function getAllDocuments(Request $request)
     {
-        // $request->validate([
-        //     'workflowId' => 'required',
-        //     'applicationId' => 'required'
-        // ]);
         return $this->DocumentOperationRepo->getAllDocuments($request);
     }
 }

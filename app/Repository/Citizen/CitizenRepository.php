@@ -285,17 +285,36 @@ class CitizenRepository implements iCitizenRepository
     {
         try {
             $application = array();
-            $query = "SELECT   
-                            p.id AS property_id,
-                            p.holding_no,
-                            p.new_holding_no,
-                            p.balance AS leftAmount,
-                            t.amount AS lastPaidAmount,
-                            t.tran_date AS lastPaidDate
+            $query = "SELECT   p.id AS prop_id,
+                                p.holding_no,
+                                p.new_holding_no,
+                                p.application_date AS apply_date,
+                                o.owner_name,
+                                p.balance AS leftAmount,
+                                t.amount AS lastPaidAmount,
+                                t.tran_date AS lastPaidDate
 
-                        FROM prop_properties p
+                                FROM prop_properties p
+                                LEFT JOIN (
+                                    SELECT property_id,amount,tran_date,
+                                        ROW_NUMBER() OVER(
+                                            PARTITION BY property_id
+                                            ORDER BY id desc
+                                        ) AS row_num
+                                    FROM prop_transactions 
+                                    ORDER BY id DESC
+                                ) AS t ON t.property_id=p.id AND row_num =1
 
-                        LEFT JOIN (SELECT * FROM prop_transactions WHERE property_id=property_id ORDER BY id DESC LIMIT 1) AS t ON t.property_id=p.id";
+                                LEFT JOIN (
+                                    SELECT property_id,owner_name,
+                                    row_number() over(
+                                        partition BY property_id
+                                        ORDER BY id ASC
+                                    ) AS ROW1
+                                    FROM prop_owners 
+                                    ORDER BY id ASC 
+                                    ) AS o ON o.property_id=p.id AND ROW1=1
+                                    WHERE p.user_id=$userId";
             $properties = DB::select($query);
             $application['applications'] = $properties;
             $application['totalApplications'] = collect($properties)->count();

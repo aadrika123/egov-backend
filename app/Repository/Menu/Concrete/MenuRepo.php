@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Redis;
 /**
  * | Created On-23-11-2022 
  * | Created By-Anshu Kumar
+ * | Updated By-Sam Kerketta
  * | Repository for the Menu Permission
  */
 
@@ -23,6 +24,7 @@ class MenuRepo implements iMenuRepo
         $this->_redis = Redis::connection();
     }
     /**
+     * |-----------------------------------------------------------------------------------------------------|
      * | Get All the Menues
      */
     public function getAllMenues()
@@ -37,6 +39,7 @@ class MenuRepo implements iMenuRepo
     }
 
     /**
+     * |-----------------------------------------------------------------------------------------------------|
      * | Get All the Menu By Roles
      * | @param req
      * | Query Run Time - 343ms 
@@ -72,6 +75,7 @@ class MenuRepo implements iMenuRepo
 
 
     /**
+     * |------------------------------------------------------------------------------------------------------|
      * | update role menues
      * | @param request $req
      * | Query Run Time=366 ms 
@@ -111,6 +115,7 @@ class MenuRepo implements iMenuRepo
     }
 
     /**
+     * |-----------------------------------------------------------------------------------------------------|
      * | user->roles->menu getting userRole wise menues
      * | @param request 
      * | Query Run Time = 328ms 
