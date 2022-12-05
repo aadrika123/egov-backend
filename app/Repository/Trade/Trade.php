@@ -1438,7 +1438,7 @@ class Trade implements ITrade
                 {              
                     $cnt=$request->btn_doc_path;
                     $rules = [
-                            'doc_path'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg',
+                            'doc_path'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
                             'doc_path_mstr_id'.$cnt.''=>'required|int',
                             'doc_path_for'.$cnt =>"required|string",
                         ];                         
@@ -1503,7 +1503,7 @@ class Trade implements ITrade
                 { 
                     $cnt_owner=$request->btn_doc_path_owner;                    
                     $rules = [
-                            'id_doc_path_owner'.$cnt_owner =>'required|max:30720|mimes:pdf',
+                            'id_doc_path_owner'.$cnt_owner =>'required|max:30720|mimes:pdf,jpg,jpeg,png',
                             // 'idproof'.$cnt_owner.''=>'required',
                             'id_doc_mstr_id'.$cnt_owner =>"required|int",
                             "id_owner_id"=>"required|int",
@@ -1580,7 +1580,7 @@ class Trade implements ITrade
                 {                    
                     $cnt_owner = $request->btn_doc_path_owner_img;                    
                     $rules = [
-                            "photo_doc_path_owner$cnt_owner"=>'required|max:30720|mimes:pdf,png,jpg,jpeg',                            
+                            "photo_doc_path_owner$cnt_owner"=>'required|max:30720|mimes:pdf,png,jpg,jpeg,png',                            
                             'photo_doc_for'.$cnt_owner.''=>'required',
                             "photo_owner_id"=>"required|int",
                         ];
