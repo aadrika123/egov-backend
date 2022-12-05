@@ -15,6 +15,7 @@ class PropertyDetailsController extends Controller
      * --------------------------------------------------------------------------------------
      * | Controller regarding with Propery Module (Property Details)
      */
+    
     // Construction 
     private $propertyDetails;
     public function __construct(iPropertyDetailsRepo $propertyDetails)
@@ -39,5 +40,11 @@ class PropertyDetailsController extends Controller
     {
         $getSaf = new PropActiveSaf();
         return $getSaf->allNonHoldingSaf();
+    }
+
+    // All the listing of the Details of Applications According to the respective Id
+    public function getUserDetails(Request $request)
+    {
+        return $this->propertyDetails->getUserDetails($request);
     }
 }

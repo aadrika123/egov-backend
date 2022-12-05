@@ -59,4 +59,11 @@ class MenuController extends Controller
     {
         return $this->_repo->getRoleWiseMenu();
     }
+
+    // Soft Delition of the Menu in Menu Master
+    public function deleteMenuesDetails(Request $request)
+    {
+        $menuDeletion = new MenuMaster();
+        return $menuDeletion->deleteMenues($request);
+    }
 }

@@ -2,19 +2,15 @@
 
 namespace App\Repository\Payment\Concrete;
 
-use App\Models\Payment;
 use App\Models\Payment\DepartmentMaster;
 use App\Models\Payment\PaymentGatewayDetail;
 use App\Models\Payment\PaymentGatewayMaster;
 use App\Models\Payment\PaymentReconciliation;
-use App\Models\Payment\PaymentReject;
-use App\Models\Payment\PaymentSuccess;
 use App\Models\Payment\WebhookPaymentData;
-use App\Models\PaymentMaster; //<----------- model(CAUTION)
 use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
-use App\Repository\Property\Concrete\SafRepository;
-use Illuminate\Support\Facades\Validator;
+use App\Repository\Property\Concrete\SafRepository;;
+
 use App\Traits\Payment\Razorpay;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,81 +18,32 @@ use Exception;
 
 
 /**
+ * |--------------------------------------------------------------------------------------------------------|
  * | Created On-14-11-2022 
  * | Created By- Sam kerketta
  * | Payment Regarding Crud Operations
+ * |--------------------------------------------------------------------------------------------------------|
  */
+
+
 class PaymentRepository implements iPayment
 {
-    use Razorpay; //<-------------- here (TRAIT)
+    use Razorpay;
+
     private $refRazorpayId = "rzp_test_3MPOKRI8WOd54p";
     private $refRazorpayKey = "k23OSfMevkBszuPY5ZtZwutU";
 
-    /**
-     * | Function for Store Payment
-     * | @param Request
-     * | @param Request $request
-     * | @return response using laravel collections
-     */
-    // public function storePayment(Request $request)
-    // {
-    //     try {
-    //         $payment = new PaymentMaster;
-    //         $payment->payment_id = $request->paymentID;
-    //         $payment->order_id = $request->orderID;
-    //         $payment->amount = $request->amount;
-    //         $payment->payment_method = $request->paymentMethod;
-    //         $payment->payment_date = $request->paymentDate;
-    //         $payment->name = $request->name;
-    //         $payment->email = $request->email;
-    //         $payment->phone = $request->phone;
-    //         $payment->module = $request->module;
-    //         $payment->payment_status = $request->paymentStatus;
-    //         $payment->save();
-    //         $message = ["status" => true, "message" => "Payment Successfully Done", "data" => ""];
-    //         return response($message, 200);
-    //     } catch (Exception $e) {
-    //         return response()->json($e, 400);
-    //     }
-    // }
-
-    /**
-     * | Function for Get Payment by Payment-ID
-     * | @param payment-id $id
-     * | @return reponse
-     */
-    // public function getPaymentByID($id)
-    // {
-    //     $payment = PaymentMaster::find($id);
-    //     if ($payment) {
-    //         $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($payment)];
-    //         return response()->json($message, 200);
-    //     } else {
-    //         $message = ["status" => false, "message" => "Data Not Fetched", "data" => ''];
-    //         return response()->json($message, 200);
-    //     }
-    // }
-
-    /**
-     * | Get All Payments 
-     * | @return response $message with laravel collection filterations
-     */
-    // public function getAllPayments()
-    // {
-    //     $payment = PaymentMaster::orderByDesc('id')->get();
-    //     $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($payment)];
-    //     return response()->json($message, 200);
-    // }
 
     /**
      * | Get Department By Ulb
      * | @param req request from the frontend
      * | @var mReadDepartment collecting data from the table DepartmentMaster
      * | 
+     * | Rating : 2
+     * | Time :
      */
-    public function getDepartmentByulb(Request $req) //<-------- validatiom (SHIFT)
+    public function getDepartmentByulb(Request $req)
     {
-        # operation
         try {
             $mReadDepartment = DepartmentMaster::select(
                 'department_masters.id',
@@ -122,8 +69,10 @@ class PaymentRepository implements iPayment
      * | @param error collecting the operation error
      * | @var mReadPg collecting data from the table PaymentGatewayMaster
      * | 
+     * | Rating : 
+     * | Time :
      */
-    public function getPaymentgatewayByrequests(Request $req) //<-------- validatiom (SHIFT)
+    public function getPaymentgatewayByrequests(Request $req)
     {
         try {
             $mReadPg = PaymentGatewayMaster::select(
@@ -152,8 +101,10 @@ class PaymentRepository implements iPayment
      * | @param error collecting the operation error
      * | @var mReadRazorpay collecting data from the table RazorpayPgMaster
      * | 
+     * | Rating :
+     * | Time :
      */
-    public function getPgDetails(Request $req) //<-------- validatiom (SHIFT)
+    public function getPgDetails(Request $req)
     {
         try {
             $mReadRazorpay = PaymentGatewayDetail::select(
@@ -185,6 +136,8 @@ class PaymentRepository implements iPayment
      * | @param error collecting the operation error
      * | @var mReadPayment collecting data from the table WebhookPaymentData
      * | 
+     * | Rating :
+     * | Time :
      */
     public function getWebhookDetails()
     {
@@ -196,7 +149,6 @@ class PaymentRepository implements iPayment
                 'payment_amount AS amount',
                 'payment_status AS status',
                 'created_at AS date',
-                // 'payment_notes AS notes'
             )->get();
 
             $mCollection = collect($mReadPayment)->map(function ($value, $key) {
@@ -207,8 +159,6 @@ class PaymentRepository implements iPayment
                     ->get();
                 $details = json_decode($decode['0']->userDetails);
                 $value['userDetails'] = (object)$details;
-                // $date = $value['date'];
-                // $value['date']=Str::limit($date, 10);
                 return $value;
             });
             return responseMsg(true, "Data fetched!", $mCollection);
@@ -225,6 +175,8 @@ class PaymentRepository implements iPayment
      * | @param 
      * | @var 
      * | 
+     * | Rating : 
+     * | Time :
      */
     public function getTraitOrderId(Request $request)  //<------------------ here (INVALID)
     {
@@ -250,6 +202,9 @@ class PaymentRepository implements iPayment
      * | @param error collecting the operation error
      * | @var mAttributes
      * | @var mVerification
+     * |
+     * | Rating :
+     * | Time :
      */
     public function verifyPaymentStatus(Request $request)
     {
@@ -270,6 +225,9 @@ class PaymentRepository implements iPayment
      * | @param error collecting the operation error
      * | @var mAttributes
      * | @var mVerification
+     * |
+     * | Rating :
+     * | Time :
      */
     public function gettingWebhookDetails(Request $request)
     {
@@ -294,6 +252,9 @@ class PaymentRepository implements iPayment
      * | @param error collecting the operation error
      * | @var mReadTransactions
      * | @var mCollection
+     * |
+     * | Rating :
+     * | Time:
      */
     public function getTransactionNoDetails(Request $request)
     {
@@ -347,28 +308,15 @@ class PaymentRepository implements iPayment
      * | @param error
      * | @var reconciliation
      * | Operation :  Payment Reconciliation / viewing all data
-     * | this -> naming
-     * | here -> variable
-     * | (/) -> the api also calls this function
+     * | 
+     * | Rating :
+     * | Time : 
      */
     public function getReconcillationDetails()
     {
         try {
-            $reconciliation = PaymentReconciliation::select(
-                'ulb_id AS ulbId',
-                'department_id AS dpartmentId',
-                'transaction_no AS transactionNo',
-                'payment_mode AS paymentMode',
-                'date AS transactionDate',
-                'status',
-                'cheque_no AS chequeNo',
-                'cheque_date AS chequeDate',
-                'branch_name AS branchName',
-                'bank_name AS bankName',
-                'transaction_amount AS amount',
-                'clearance_date AS clearanceDate'
-            )
-                ->get();
+            $reconciliation = new PaymentReconciliation();
+            $reconciliation = $reconciliation->allReconciliation();
             return responseMsg(true, "Payment Reconciliation data!", $reconciliation);
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
@@ -387,8 +335,9 @@ class PaymentRepository implements iPayment
      * | @var reconciliationOnlyTranWise
      * | @var reconciliationWithAll
      * | Operation :  Payment Reconciliation / searching for the specific data
-     * | this -> naming
-     * | here -> variable
+     * |
+     * | Rating : 
+     * | Time :
      */
     public function searchReconciliationDetails($request)
     {
@@ -433,8 +382,9 @@ class PaymentRepository implements iPayment
      * | @param error
      * | @var reconciliation
      * | Operation :  Payment Reconciliation / updating the data of the payment Recou..
-     * | this -> naming
-     * | here -> variable
+     * | 
+     * | Rating :
+     * | Time :
      */
     public function updateReconciliationDetails($request)
     {
@@ -457,6 +407,7 @@ class PaymentRepository implements iPayment
     /**
      * |--------- reconciliationDateWise 1.1----------
      * |@param request
+     * |@var reconciliationDetails
      */
     public function reconciliationDateWise($request)
     {
@@ -490,6 +441,7 @@ class PaymentRepository implements iPayment
     /**
      * |--------- reconciliationModeWise 1.2----------
      * |@param request
+     * |@var reconciliationDetails
      */
     public function reconciliationModeWise($request)
     {
@@ -524,6 +476,7 @@ class PaymentRepository implements iPayment
     /**
      * |--------- reconciliationTypeWise 1.3----------
      * |@param request
+     * |@var reconciliationDetails
      */
     public function reconciliationTypeWise($request)
     {
@@ -558,6 +511,7 @@ class PaymentRepository implements iPayment
     /**
      * |--------- reconciliationOnlyTranWise 1.4-------
      * |@param request
+     * |@var reconciliationDetails
      */
     public function reconciliationOnlyTranWise($request)
     {
@@ -591,6 +545,7 @@ class PaymentRepository implements iPayment
     /**
      * |--------- reconciliationOnlyTranWise 1.5--------
      * |@param request
+     * |@var reconciliationDetails
      */
     public function reconciliationWithAll($request)
     {
@@ -627,6 +582,7 @@ class PaymentRepository implements iPayment
     /**
      * |--------- reconciliationDateWise 1.1----------
      * |@param request
+     * |@var reconciliationDetails
      */
     public function reconciliationModeType($request)
     {
@@ -663,15 +619,14 @@ class PaymentRepository implements iPayment
 
     /**
      * |--------- all the transaction details regardless of module ----------
-     * |@param request
      * |@var object webhookModel
      * |@var transaction
+     * |@var userId
      */
     public function allModuleTransaction()
     {
         try {
             $userId = auth()->user()->id;
-            #-----------
             $transaction = WebhookPaymentData::join('department_masters', 'department_masters.id', '=', 'webhook_payment_data.department_id')
                 ->select(
                     'webhook_payment_data.payment_transaction_id AS transactionNo',
@@ -686,7 +641,7 @@ class PaymentRepository implements iPayment
             if (!empty($transaction['0'])) {
                 return $transaction;
             }
-            return ("No Dsata!");
+            return ("No Data!");
             return responseMsg(true, "All transaction for the respective id", $transaction);
         } catch (Exception $error) {
             return responseMsg(false, "", $error->getMessage());

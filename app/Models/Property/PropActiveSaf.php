@@ -28,14 +28,43 @@ class PropActiveSaf extends Model
     }
 
 
-     /**
-     * |-------------------------- safs list whose Holding are not craeted -----------------------------------------------|
-     * | @var safDetails
+    /**
+     * |-------------------------- Details of the Mutation accordind to ID -----------------------------------------------|
+     * | @param request
+     * | @var mutation
      */
     public function allMutation($request)
     {
-        $mutation=PropActiveSaf::where('id',$request->id)
-        ->get();
-        return responseMsg(true, "Dat According to Mutation!", $mutation);
+        $mutation = PropActiveSaf::where('id', $request->id)
+            ->where('property_assessment_id', 3)
+            ->get();
+        return $mutation;
+    }
+
+
+    /**
+     * |-------------------------- Details of the ReAssisments according to ID  -----------------------------------------------|
+     * | @param request
+     * | @var reAssisment
+     */
+    public function allReAssisment($request)
+    {
+        $reAssisment = PropActiveSaf::where('id', $request->id)
+            ->where('property_assessment_id', 2)
+            ->get();
+        return $reAssisment;
+    }
+
+
+    /**
+     * |-------------------------- Details of the NewAssisment according to ID  -----------------------------------------------|
+     * | @var safDetails
+     */
+    public function allNewAssisment($request)
+    {
+        $newAssisment = PropActiveSaf::where('id', $request->id)
+            ->where('property_assessment_id', 1)
+            ->get();
+        return $newAssisment;
     }
 }

@@ -18,6 +18,6 @@ class PropActiveObjection extends Model
     {
         $objection = PropActiveObjection::where('id', $request->id)
             ->get();
-        return responseMsg(true, "Dat According to all objection!", $objection);
+        return $objection;
     }
 }

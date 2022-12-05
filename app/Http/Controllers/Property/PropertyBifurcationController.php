@@ -53,4 +53,8 @@ class PropertyBifurcationController extends Controller
     {
         return $this->Repository->documentUpload($request);
     }
+    public function safDocumentUpload(Request $request)
+    {
+        return $this->Repository->safDocumentUpload($request);
+    }
 }
