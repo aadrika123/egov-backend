@@ -1403,6 +1403,7 @@ class Trade implements ITrade
                     $doc2["ownerName"] = $val->owner_name;
                     $doc2["docName"]   = "image";
                     $doc2['isMadatory'] = 0;
+                    $doc2['docVal'][] = ["id"=>0,"doc_name"=>"Photo"];
                     $refOwneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
                     $doc2['uploadDoc']=$refOwneres[$key]["image"];
                     if(isset( $refOwneres[$key]["image"]["document_path"]))
