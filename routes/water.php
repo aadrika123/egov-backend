@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Water\NewConnectionController;
+use App\Http\Controllers\water\WaterApplication;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -45,4 +46,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-owner-type', 'getOwnerType');                                                           // Get Owner Type Details mstr
         Route::get('get-ward-no', 'getWardNo');                                                                 // Get Ward No According to Saf or Holding Details mstr
     });
+});
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+    Route::controller(WaterApplication::class)->group(function () {  
+        Route::match(["get", "post"], 'apply', 'applyApplication');
+    });
+
 });
