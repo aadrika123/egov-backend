@@ -17,4 +17,5 @@ interface IPropertyBifurcation
     public function postNextLevel(Request $request);
     public function readSafDtls($id);
     public function documentUpload(Request $request);
+    public function safDocumentUpload(Request $request);
 }

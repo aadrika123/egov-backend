@@ -45,4 +45,5 @@ class PropertyDeactivateController extends Controller
     {
         return $this->Repository-> readDeactivationReq($request);
     }
+    
 }
