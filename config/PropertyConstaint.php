@@ -317,4 +317,5 @@ return [
         "EO" => "10"
     ],
 
+    "VACANT_LAND"   => "4",
 ];
