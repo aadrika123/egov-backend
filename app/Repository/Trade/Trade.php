@@ -1812,6 +1812,7 @@ class Trade implements ITrade
                 $tradeDoc->remarks = ($status==2?$request->comment:null);
                 $tradeDoc->verified_by_emp_id = $user_id;
                 $tradeDoc->lvl_pending_id = $level_data->id;
+                $tradeDoc->update();
                 DB::commit();
                 $sms = $tradeDoc->doc_for." ".strtoupper($request->btn);
                 return responseMsg(true,$sms,"");
