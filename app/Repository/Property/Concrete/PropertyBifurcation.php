@@ -2191,8 +2191,38 @@ class PropertyBifurcation implements IPropertyBifurcation
                 DB::commit();
                 $mUploadDocument = $this->getSafDocuments($refSafs->id);
                 $data["uploadDocument"] = $mUploadDocument;
-                return responseMsg(true, $sms,"");
+                return responseMsg(true, $sms,$data);
             }
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+    public function getUploadDocuments(Request $request)
+    {
+        try{
+            $refUser = Auth()->user();
+            $refUserId = $refUser->id;
+            $refUlbId = $refUser->ulb_id;
+            $refSafs = null;
+            $mUploadDocument = (array)null;
+            $mDocumentsList  = (array)null;
+            $finalData       = (array)null;
+            $requiedDocs     = (array) null;
+            $ownersDoc       = (array) null;
+            $safId           = $request->id; 
+            if(!$safId)
+            {
+                throw new Exception("Saf Id Required");
+            }
+            $refSafs = PropActiveSaf::find($safId); ;
+            if(!$refSafs)
+            {
+                throw new Exception("Data Not Found");
+            }
+            $mUploadDocument = $this->getSafDocuments($refSafs->id);
+            $data["uploadDocument"] = $mUploadDocument;
         }
         catch(Exception $e)
         {

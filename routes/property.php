@@ -113,6 +113,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('getSafDtls/{id}', "readSafDtls");
         Route::match(["get", "post"], 'documentUpload/{id}', 'documentUpload');
         Route::match(["get", "post"], 'safDocumentUpload/{id}', 'safDocumentUpload');
+        Route::get('getSafUploadDocuments/{id}', 'getUploadDocuments');
     });
 
 
