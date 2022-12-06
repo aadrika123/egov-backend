@@ -132,8 +132,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('concession/backtocitizen', 'backToCitizen');                                // Back To Citizen 
 
         Route::get('concession/list', 'concessionList');
-        Route::post('concession/list-id', 'getConcessionByid');
+        Route::post('concession/list-id', 'concessionByid');
         Route::post('concession/doc-list', 'concessionDocList');
+        Route::post('concession/doc-upload', 'concessionDocUpload');
         Route::post('concession/doc-status', 'concessionDocStatus');
     });
 
@@ -153,6 +154,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('objection/next-level', 'postNextLevel');
         Route::post('objection/approvalrejection', 'approvalRejection');
         Route::post('objection/backtocitizen', 'backToCitizen');
+
+        Route::get('objection/list', 'objectionList');
+        Route::post('objection/list-id', 'objectionByid');
+        Route::post('objection/doc-list', 'objectionDocList');
+        Route::post('objection/doc-status', 'objectionDocStatus');
     });
 
     Route::controller(CalculatorController::class)->group(function () {
@@ -206,7 +212,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
             Route::post('get-filter-property-details', 'getFilterProperty');
             Route::post('get-filter-safs-details', 'getFilterSafs');
             Route::get('get-list-saf', 'getListOfSaf');
-            Route::post('active-application/get-user-details', 'getUserDetails');        
+            Route::post('active-application/get-user-details', 'getUserDetails');
         });
     });
 });

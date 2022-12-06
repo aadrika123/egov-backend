@@ -113,4 +113,28 @@ class ObjectionController extends Controller
         ]);
         return $this->Repository->backToCitizen($req);
     }
+
+    //objection list
+    public function objectionList()
+    {
+        return $this->Repository->objectionList();
+    }
+
+    //objection list  by id
+    public function objectionByid(Request $req)
+    {
+        return $this->Repository->objectionByid($req);
+    }
+
+    //get document status by id
+    public function objectionDocList(Request $req)
+    {
+        return $this->Repository->objectionDocList($req);
+    }
+
+    //post document status
+    public function objectionDocStatus(Request $req)
+    {
+        return $this->Repository->objectionDocStatus($req);
+    }
 }

@@ -715,4 +715,93 @@ class ObjectionRepository implements iObjectionRepository
     //     $objection->workflow_id = $ulbWorkflowId->id;
     //     $objection->current_role = $initiatorRoleId[0]->role_id;
     // }
+
+    //objection list
+    public function objectionList()
+    {
+        try {
+            $list = PropActiveObjection::select(
+                'prop_active_objections.id',
+                'prop_active_objections.applicant_name as ownerName',
+                'holding_no as holdingNo',
+                'ward_mstr_id as wardId',
+                'prop_type_mstr_id as propertyType'
+            )
+                ->where('prop_active_objections.status', 1)
+                ->orderByDesc('prop_active_objections.id')
+                ->join('prop_properties', 'prop_properties.id', 'prop_active_objections.property_id')
+                ->get();
+
+            return responseMsg(true, "Successfully Done", $list);
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    //get objection list by id
+    public function objectionByid($req)
+    {
+        try {
+            $list = PropActiveObjection::select(
+                'prop_active_objections.id',
+                'prop_active_objections.applicant_name as ownerName',
+                'holding_no as holdingNo',
+                'ward_mstr_id as wardId',
+                'prop_type_mstr_id as propertyType',
+                'dob',
+                'gender',
+                'is_armed_force as armedForce',
+                'is_specially_abled as speciallyAbled'
+            )
+                ->where('prop_active_objections.id', $req->id)
+                ->where('prop_active_objections.status', 1)
+                ->orderByDesc('prop_active_objections.id')
+                ->join('prop_properties', 'prop_properties.id', 'prop_active_objections.property_id')
+                ->first();
+
+            return responseMsg(true, "Successfully Done", $list);
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    //get objection list
+    public function objectionDocList($req)
+    {
+        try {
+            $list = PropObjectionDocDtl::select(
+                'id',
+                'doc_type as docName',
+                'doc_name as docUrl',
+                'verify_status as docStatus',
+                'remarks as docRemarks'
+            )
+                ->where('prop_objection_doc_dtls.objection_id', $req->id)
+                ->get();
+
+            return responseMsg(true, "Successfully Done", remove_null($list));
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    //post objection status
+    public function objectionDocStatus($req)
+    {
+        try {
+            $userId = auth()->user()->id;
+
+            $docStatus = PropObjectionDocDtl::find($req->id);
+            $docStatus->remarks = $req->remarks;
+            $docStatus->verify_status = $req->verifyStatus;
+            $docStatus->verify_by_emp_id = $userId;
+            $docStatus->verified_on = Carbon::now();
+            $docStatus->updated_at = Carbon::now();
+            $docStatus->save();
+
+            return responseMsg(true, "Successfully Done", '');
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
 }

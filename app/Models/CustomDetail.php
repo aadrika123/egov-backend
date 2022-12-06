@@ -24,12 +24,11 @@ class CustomDetail extends Model
     }
 
     //post custom details
-
     public function postCustomDetails($request)
     {
         try {
+            $customFor = $request->customFor;
             $customDetails = new CustomDetail;
-
 
             if ($file = $request->file('document')) {
                 $filename = time() .  '.' . $file->getClientOriginalExtension();
@@ -39,21 +38,30 @@ class CustomDetail extends Model
             }
 
             $customDetails = new CustomDetail;
-            if ($request->remarks && $request->document) {
+            if ($customFor == 'Concession') {
 
-                $customDetails->document = $filepath;
-                $customDetails->remarks = $request->remarks;
-                $customDetails->type = "both";
-            } elseif ($request->document) {
+                if ($request->remarks && $request->document) {
 
-                $customDetails->document = $filepath;
-                $customDetails->type = "file";
-            } elseif ($request->remarks) {
+                    $customDetails->ref_id = $request->id;
+                    $customDetails->ref_type = 'Concession';
+                    $customDetails->document = $filepath;
+                    $customDetails->remarks = $request->remarks;
+                    $customDetails->type = "both";
+                } elseif ($request->document) {
 
-                $customDetails->remarks = $request->remarks;
-                $customDetails->type = "text";
+                    $customDetails->ref_id = $request->id;
+                    $customDetails->ref_type = 'Concession';
+                    $customDetails->document = $filepath;
+                    $customDetails->type = "file";
+                } elseif ($request->remarks) {
+
+                    $customDetails->ref_id = $request->id;
+                    $customDetails->ref_type = 'Concession';
+                    $customDetails->remarks = $request->remarks;
+                    $customDetails->type = "text";
+                }
+                $customDetails->save();
             }
-            $customDetails->save();
             return responseMsg(true, "Successfully Saved", $customDetails);
         } catch (Exception $e) {
             return response()->json($e, 400);
