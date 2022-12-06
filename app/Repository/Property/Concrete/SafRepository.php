@@ -194,6 +194,7 @@ class SafRepository implements iSafRepository
             $user_id = auth()->user()->id;
             $ulb_id = auth()->user()->ulb_id;
             $demand = array();
+            $safPendingStatus = Config::get('PropertyConstaint.SAF_PENDING_STATUS.LABEL_PENDING');
             $assessmentTypeId = $request->assessmentType;
             if ($request->assessmentType == 1) {                                                    // New Assessment 
                 $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
@@ -464,15 +465,18 @@ class SafRepository implements iSafRepository
         try {
             // Saf Details
             $data = [];
-            $data = DB::table('prop_active_safs')
-                ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'w.ward_name as new_ward_no', 'o.ownership_type', 'p.property_type')
-                ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
-                ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
-                ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
-                ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
-                ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
-                ->where('prop_active_safs.id', $req->id)
-                ->first();
+            if ($req->id) {                         //<------- Search By SAF ID
+                $data = $this->tActiveSafDetails()    // <------- Trait Active SAF Details
+                    ->where('prop_active_safs.id', $req->id)
+                    ->first();
+            }
+
+            if ($req->safNo) {                      // <-------- Search By SAF No
+                $data = $this->tActiveSafDetails()    // <------- Trait Active SAF Details
+                    ->where('prop_active_safs.saf_no', $req->safNo)
+                    ->first();
+            }
+
             $data = json_decode(json_encode($data), true);
 
             $ownerDetails = PropActiveSafsOwner::where('saf_id', $data['id'])->get();
@@ -938,6 +942,7 @@ class SafRepository implements iSafRepository
             DB::beginTransaction();
             $saf = PropActiveSaf::find($req->safId);
             $saf->current_role = $backId->wf_role_id;
+            $saf->parked = true;                        //<------ SAF Pending Status true
             $saf->save();
 
             $propLevelPending = new PropLevelPending();
