@@ -1358,16 +1358,13 @@ class Trade implements ITrade
                 array_push($requiedDocs,$doc);
             }
             if($refLicence->application_type_id==1)
-            {                
-                // $data["documentsList"]["docList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0);
-                // $data["documentsList"]["isMedetory"]["Identity Proof"] = 1;
+            { 
                 $doc = (array) null; 
                 $doc['docName'] = "Identity Proof";
                 $doc['isMadatory'] = 1;
                 $doc['docVal'] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0);
-                // array_push($requiedDocs,$doc);
+                
             }
-            // $doc = (array) null;
             foreach($requiedDocs as $key => $val)
             {
                 if($val['docName'] == "Identity Proof")
@@ -1379,7 +1376,6 @@ class Trade implements ITrade
                 if(isset($doc["document_path"]))
                 {
                     $path = $this->readDocumentPath( $doc["document_path"]);
-                    // $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"][$key]["doc"]["document_path"]):null;
                     $doc["document_path"] = !empty(trim( $doc["document_path"]))?$path :null;
 
                 }
@@ -1508,16 +1504,9 @@ class Trade implements ITrade
                     
                 }
                 # Upload Owner Document Id Proof
-                // if(isset($request->btn_doc_path_owner))
                 elseif(isset($request->btn_doc_path) && isset($request->$doc_for) && $request->$doc_for=="Identity Proof")
                 { 
-                    $cnt=$request->btn_doc_path;                    
-                    // $rules = [
-                    //         'id_doc_path_owner'.$cnt_owner =>'required|max:30720|mimes:pdf,jpg,jpeg,png',
-                    //         'id_doc_mstr_id'.$cnt_owner =>"required|int",
-                    //         "id_owner_id"=>"required|int",
-                    //         "id_doc_for".$cnt_owner =>"required|string",
-                    //     ];
+                    $cnt=$request->btn_doc_path; 
                     $rules = [
                         'doc_path'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_path_mstr_id'.$cnt.''=>'required|int',
@@ -1590,16 +1579,9 @@ class Trade implements ITrade
                     
                 } 
                 # owner image upload hear 
-                // if(isset($request->btn_doc_path_owner_img))
                 elseif(isset($request->btn_doc_path)&& isset($request->$doc_for) && $request->$doc_for=="image")
-                {                    
-                    // $cnt_owner = $request->btn_doc_path_owner_img; 
-                    $cnt=$request->btn_doc_path;                   
-                    // $rules = [
-                    //         "photo_doc_path_owner$cnt_owner"=>'required|max:30720|mimes:pdf,png,jpg,jpeg,png',                            
-                    //         'photo_doc_for'.$cnt_owner.''=>'required|string',
-                    //         "photo_owner_id"=>"required|int",
-                    //     ];
+                {   
+                    $cnt=$request->btn_doc_path; 
                     $rules = [
                         'doc_path'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_path_mstr_id'.$cnt.''=>'required|int',
@@ -1731,7 +1713,7 @@ class Trade implements ITrade
         $workflows = $this->_parent->iniatorFinisher($user_id,$ulb_id,$workflow_id);   
         $roll_id =  $this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??null;
         $apply_from = $this->_parent->userType($workflow_id);  
-        $licenceId = $request->id;
+        $licenceId = $request->licenceId;
         $rules = [];
         $message = [];
         try{
@@ -1764,51 +1746,34 @@ class Trade implements ITrade
             $licence->items = $item_name;
             $licence->items_code = $cods;
             $owneres = $this->getOwnereDtlByLId($licenceId);
-            // $time_line = $this->getTimelin($licenceId);
-            $documents = $this->getLicenceDocuments($licenceId);
-            $documentsList = $this->getDocumentTypeList($licence);                 
-            foreach($documentsList as $val)
-            {   
-                $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$licence->application_type_id,$val->show);
-                $data["documentsList"][$val->doc_for]["is_mandatory"] = $val->is_mandatory;
-            }
-            if($licence->application_type_id==1)
-            {                
-                $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof",$licence->application_type_id,0);
-                $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
-            }
-            foreach($data["documentsList"] as $key =>$val)
-            {
-                if($key == "Identity Proof")
+            $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function($val){
+                if(isset($val["document_path"]))
                 {
-                    continue;
-                }     
-                $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenceId,$key);
-                if(isset($data["documentsList"][$key]["doc"]["document_path"]))
-                {
-                    $data["documentsList"][$key]["doc"]["document_path"] = !empty(trim($data["documentsList"][$key]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"][$key]["doc"]["document_path"]):null;
+                    $path = $this->readDocumentPath( $val["document_path"]);
+                    $val["document_path"] = !empty(trim( $val["document_path"]))?$path :null;                    
 
                 }
-            }
-            if($licence->application_type_id==1)
+                return $val;
+            }); 
+            foreach($owneres as $key=>$val)
             {
-                foreach($owneres as $key=>$val)
-                {                   
-                    $data["documentsList"]["Identity Proof"]["doc"] =  $this->check_doc_exist_owner($licenceId,$val->id);
-                    if(isset($data["documentsList"]["Identity Proof"]["doc"]["document_path"]))
-                    {
-                        $data["documentsList"]["Identity Proof"]["doc"]["document_path"] = !empty(trim($data["documentsList"]["Identity Proof"]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"]["Identity Proof"]["doc"]["document_path"]):null;
-    
-                    }
-                    $data["documentsList"]["image"]["doc"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
-                    if(isset($data["documentsList"]["image"]["doc"]["document_path"]))
-                    {
-                        $data["documentsList"]["image"]["doc"]["document_path"] = !empty(trim($data["documentsList"]["image"]["doc"]["document_path"]))?storage_path('app/public/' . $data["documentsList"]["image"]["doc"]["document_path"]):null;
-    
-                    }
-                }         
-
+                $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
+                if(isset($refOwneres[$key]["Identity Proof"]["document_path"]))
+                {
+                    $path = $this->readDocumentPath($owneres[$key]["Identity Proof"]["document_path"]);
+                    // $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["Identity Proof"]["document_path"]):null;
+                    $owneres[$key]["Identity Proof"]["document_path"] = !empty(trim($owneres[$key]["Identity Proof"]["document_path"]))?$path:null;
+                    
+                }
+                $owneres[$key]["image"] = $this->check_doc_exist_owner($licenceId,$val->id,0);
+                if(isset( $owneres[$key]["image"]["document_path"]))
+                {
+                    $path = $this->readDocumentPath($owneres[$key]["image"]["document_path"]);
+                    $owneres[$key]["image"]["document_path"] = !empty(trim($owneres[$key]["image"]["document_path"]))?$path:null;
+                    
+                }
             }
+            $data["uploadDocs"]=$mUploadDocument;
             $data["licence"] = $licence;
             $data["owneres"] = $owneres;
             if($request->getMethod()=="GET")
@@ -1823,7 +1788,7 @@ class Trade implements ITrade
                 $timstamp = Carbon::now()->format('Y-m-d H:i:s');                
                 $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';                
                 $rules = [
-                    'btn'=>'required|in:virify,reject',
+                    'btn'=>'required|in:verify,reject',
                     'id'=>'required',
                 ];
                 $status = 1;
@@ -4171,6 +4136,7 @@ class Trade implements ITrade
         try{
            
             $time_line =  TradeLicenceDocument::select(
+                        "trade_licence_documents.id",
                         "trade_licence_documents.doc_for",
                         "trade_licence_documents.document_path",
                         "trade_licence_documents.remarks",
