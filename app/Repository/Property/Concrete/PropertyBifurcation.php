@@ -1540,6 +1540,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $rules = [];
                 $message = [];
                 $sms = "";
+                throw new Exception("payload");
                 # Upload Document 
                 if(isset($request->btn_doc))
                 {              

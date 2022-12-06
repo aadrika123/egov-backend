@@ -1395,7 +1395,7 @@ class Trade implements ITrade
                     $doc["ownerName"] = $val->owner_name;
                     $doc["docName"]   = "Identity Proof";
                     $doc['isMadatory'] = 1;
-                    $doc['docVal'] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0);
+                    $doc['docVal'] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0); 
                     $refOwneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
                     $doc['uploadDoc']=$refOwneres[$key]["Identity Proof"];
                     if(isset($refOwneres[$key]["Identity Proof"]["document_path"]))
@@ -1545,7 +1545,7 @@ class Trade implements ITrade
 
                             $newFileName = $app_doc_dtl_id['id'];
 
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $file_ext = $file->getClientOriginalExtension();
                             $fileName = "licence_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file,$fileName);
                             $app_doc_dtl_id->document_path =  $filePath;
@@ -1597,7 +1597,7 @@ class Trade implements ITrade
                     $req_owner_id = $request->photo_owner_id;
                     $woner_id = array_filter($owners,function($val)use($req_owner_id){
                             return $val['id']==$req_owner_id;
-                    }); 
+                    });                     
                     $woner_id = array_values($woner_id)[0]??[];
                     if(!$woner_id)
                     {
@@ -1630,14 +1630,14 @@ class Trade implements ITrade
                             $licencedocs = new TradeLicenceDocument;
                             $licencedocs->licence_id = $licenceId;
                             $licencedocs->doc_for    = $request->$doc_for;
-                            $licencedocs->licence_owner_dtl_id =$request->photo_owner_id;
+                            $licencedocs->licence_owner_dtl_id = $request->photo_owner_id;
                             $licencedocs->document_id =0;
                             $licencedocs->emp_details_id = $refUserId;
                             
                             $licencedocs->save();
                             $newFileName = $licencedocs->id;
 
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $file_ext =$file->getClientOriginalExtension();
                             $fileName = "licence_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file,$fileName);
                             $licencedocs->document_path =  $filePath;
