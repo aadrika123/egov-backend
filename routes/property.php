@@ -67,7 +67,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     // SAF Demand and Property contollers
     Route::controller(SafDemandController::class)->group(function () {
-        Route::post('saf/get-demand-by-id', 'getDemandBySafId');
+        Route::post('saf/get-demand-by-id', 'getDemandBySafId');                // <------------- Get the demandable Amount of the Property after payment done
     });
 
     // SAF Reassessment

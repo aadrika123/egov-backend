@@ -57,15 +57,25 @@ trait SAF
         $saf->corr_city = $req->corrCity;
         $saf->corr_dist = $req->corrDist;
         $saf->corr_pin_code = $req->corrPinCode;
+
         $saf->is_mobile_tower = $req->isMobileTower;
-        $saf->tower_area = $req->towerArea;
-        $saf->tower_installation_date = $req->towerInstallationDate;
+        if ($req->isMobileTower == 1) {
+            $saf->tower_area = $req->mobileTower['area'];
+            $saf->tower_installation_date = $req->mobileTower['dateFrom'];
+        }
+
         $saf->is_hoarding_board = $req->isHoardingBoard;
-        $saf->hoarding_area = $req->hoardingArea;
-        $saf->hoarding_installation_date = $req->hoardingInstallationDate;
+        if ($req->isHoardingBoard == 1) {
+            $saf->hoarding_area = $req->hoardingBoard['area'];
+            $saf->hoarding_installation_date = $req->hoardingBoard['dateFrom'];
+        }
+
         $saf->is_petrol_pump = $req->isPetrolPump;
-        $saf->under_ground_area = $req->undergroundArea;
-        $saf->petrol_pump_completion_date = $req->petrolPumpCompletionDate;
+        if ($req->isPetrolPump == 1) {
+            $saf->under_ground_area = $req->petrolPump['area'];
+            $saf->petrol_pump_completion_date = $req->petrolPump['dateFrom'];
+        }
+
         $saf->is_water_harvesting = $req->isWaterHarvesting;
         $saf->land_occupation_date = $req->landOccupationDate;
         $saf->doc_verify_cancel_remarks = $req->docVerifyCancelRemark;
@@ -299,7 +309,7 @@ trait SAF
     }
 
     /**
-     * | tActive Details
+     * | Get Active Saf Details
      */
     public function tActiveSafDetails()
     {

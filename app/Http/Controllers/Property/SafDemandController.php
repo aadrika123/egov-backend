@@ -20,8 +20,8 @@ class SafDemandController extends Controller
         $this->_repo = $repository;
     }
 
-    /**
-     * | Get SAF Demand By SAF Id
+    /** 
+     * | Get SAF Demand By SAF Id After Payment
      * | @param request $req
      */
     public function getDemandBySafId(Request $req)
