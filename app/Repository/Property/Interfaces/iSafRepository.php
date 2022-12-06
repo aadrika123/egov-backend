@@ -30,4 +30,6 @@ interface iSafRepository
     public function getPropByHoldingNo($req);               // Get Property Details by Holding no
     public function siteVerification($req);                 // Site Verification for Agency TC and Ulb TC
     public function geoTagging($req);                       // Geo Tagging By Level
+    public function safDocumentUpload($request);
+    public function getUploadDocuments($request);
 }
