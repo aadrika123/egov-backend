@@ -222,7 +222,6 @@ class SafRepository implements iSafRepository
 
             $safCalculation = new SafCalculation();
             $safTaxes = $safCalculation->calculateTax($request);
-
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
             DB::beginTransaction();
@@ -464,15 +463,18 @@ class SafRepository implements iSafRepository
         try {
             // Saf Details
             $data = [];
-            $data = DB::table('prop_active_safs')
-                ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'w.ward_name as new_ward_no', 'o.ownership_type', 'p.property_type')
-                ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
-                ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
-                ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
-                ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
-                ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
-                ->where('prop_active_safs.id', $req->id)
-                ->first();
+            if ($req->id) {                         //<------- Search By SAF ID
+                $data = $this->tActiveSafDetails()    // <------- Trait Active SAF Details
+                    ->where('prop_active_safs.id', $req->id)
+                    ->first();
+            }
+
+            if ($req->safNo) {                      // <-------- Search By SAF No
+                $data = $this->tActiveSafDetails()    // <------- Trait Active SAF Details
+                    ->where('prop_active_safs.saf_no', $req->safNo)
+                    ->first();
+            }
+
             $data = json_decode(json_encode($data), true);
 
             $ownerDetails = PropActiveSafsOwner::where('saf_id', $data['id'])->get();
@@ -938,6 +940,7 @@ class SafRepository implements iSafRepository
             DB::beginTransaction();
             $saf = PropActiveSaf::find($req->safId);
             $saf->current_role = $backId->wf_role_id;
+            $saf->parked = true;                        //<------ SAF Pending Status true
             $saf->save();
 
             $propLevelPending = new PropLevelPending();
@@ -1004,29 +1007,29 @@ class SafRepository implements iSafRepository
             $totalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
             $safDemandDetails = $this->generateSafDemand($calculateSafById->original['data']['details']);
             // Check Requested amount is matching with the generated amount or not
-            if ($req->amount == $totalAmount) {
-                $orderDetails = $this->saveGenerateOrderid($req);
-                $orderDetails['name'] = $auth->user_name;
-                $orderDetails['mobile'] = $auth->mobile;
-                $orderDetails['email'] = $auth->email;
+            // if ($req->amount == $totalAmount) {
+            $orderDetails = $this->saveGenerateOrderid($req);
+            $orderDetails['name'] = $auth->user_name;
+            $orderDetails['mobile'] = $auth->mobile;
+            $orderDetails['email'] = $auth->email;
 
-                // update the data in saf prop demands
-                foreach ($safDemandDetails as $safDemandDetail) {
-                    $propSafDemand = new PropSafsDemand();
-                    $checkExisting = $propSafDemand->getPropSafDemands($safDemandDetail['quarterYear'], $safDemandDetail['qtr'], $req->id); // Get SAF demand from model function
-                    if ($checkExisting) {       // <---------------- If The Data is already Existing then update the data
-                        $this->tSaveSafDemand($checkExisting, $safDemandDetail);    // <--- Trait is Used for SAF Demand Update
-                        $checkExisting->save();
-                    }
-                    if (!$checkExisting) {      // <----------------- If not Existing then add new 
-                        $propSafDemand = new PropSafsDemand();
-                        $this->tSaveSafDemand($propSafDemand, $safDemandDetail);    // <--------- Trait is Used for Saf Demand Update
-                        $propSafDemand->save();
-                    }
+            // update the data in saf prop demands
+            foreach ($safDemandDetails as $safDemandDetail) {
+                $propSafDemand = new PropSafsDemand();
+                $checkExisting = $propSafDemand->getPropSafDemands($safDemandDetail['quarterYear'], $safDemandDetail['qtr'], $req->id); // Get SAF demand from model function
+                if ($checkExisting) {       // <---------------- If The Data is already Existing then update the data
+                    $this->tSaveSafDemand($checkExisting, $safDemandDetail);    // <--- Trait is Used for SAF Demand Update
+                    $checkExisting->save();
                 }
-
-                return responseMsg(true, "Order ID Generated", remove_null($orderDetails));
+                if (!$checkExisting) {      // <----------------- If not Existing then add new 
+                    $propSafDemand = new PropSafsDemand();
+                    $this->tSaveSafDemand($propSafDemand, $safDemandDetail);    // <--------- Trait is Used for Saf Demand Update
+                    $propSafDemand->save();
+                }
             }
+
+            return responseMsg(true, "Order ID Generated", remove_null($orderDetails));
+            // }
 
             return responseMsg(false, "Amount Not Matched", "");
         } catch (Exception $e) {
@@ -1047,6 +1050,8 @@ class SafRepository implements iSafRepository
     {
         try {
             $userId = authUser()->id;
+            DB::beginTransaction();
+            // Property Transactions
             $propTrans = new PropTransaction();
             $workflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             if ($req['workflowId'] == $workflowId)
@@ -1060,8 +1065,16 @@ class SafRepository implements iSafRepository
             $propTrans->user_id = $userId;
             $propTrans->save();
             Redis::del('property-transactions-user-' . $userId);
+
+            // Update SAF Payment Status
+            $activeSaf = PropActiveSaf::find($req['id']);
+            $activeSaf->payment_status = 1;
+            $activeSaf->save();
+
+            DB::commit();
             return responseMsg(true, "Payment Successfully Done", "");
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }

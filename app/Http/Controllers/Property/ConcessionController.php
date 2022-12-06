@@ -128,15 +128,21 @@ class ConcessionController extends Controller
     }
 
     //concesion list  by id
-    public function getConcessionByid(Request $req)
+    public function concessionByid(Request $req)
     {
-        return $this->Repository->getConcessionByid($req);
+        return $this->Repository->concessionByid($req);
     }
 
     //get document status by id
     public function concessionDocList(Request $req)
     {
         return $this->Repository->concessionDocList($req);
+    }
+
+    //doc upload
+    public function concessionDocUpload(Request $req)
+    {
+        return $this->Repository->concessionDocUpload($req);
     }
 
     //post document status

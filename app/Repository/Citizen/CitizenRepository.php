@@ -214,6 +214,7 @@ class CitizenRepository implements iCitizenRepository
                 'application_date',
                 'payment_status',
                 'saf_pending_status',
+                'parked as backToCitizen',
                 'workflow_id',
                 'prop_active_safs.created_at',
                 'prop_active_safs.updated_at'

@@ -318,4 +318,12 @@ return [
     ],
 
     "VACANT_LAND"   => "4",
+    // Saf Pending Status
+    "SAF_PENDING_STATUS" => [
+        "NOT_APPROVED" => 0,
+        "APPROVED" => 1,
+        "BACK_TO_CITIZEN" => 2,
+        "LABEL_PENDING" => 3
+    ]
+
 ];
