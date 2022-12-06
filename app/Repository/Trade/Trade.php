@@ -1504,7 +1504,6 @@ class Trade implements ITrade
                     $cnt_owner=$request->btn_doc_path_owner;                    
                     $rules = [
                             'id_doc_path_owner'.$cnt_owner =>'required|max:30720|mimes:pdf,jpg,jpeg,png',
-                            // 'idproof'.$cnt_owner.''=>'required',
                             'id_doc_mstr_id'.$cnt_owner =>"required|int",
                             "id_owner_id"=>"required|int",
                             "id_doc_for".$cnt_owner =>"required|string",
