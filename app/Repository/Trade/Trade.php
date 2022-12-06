@@ -2726,14 +2726,17 @@ class Trade implements ITrade
                     }         
 
                 }
-                // if($doc)
-                // {   $err = "";
-                //     foreach($doc as $val)
-                //     {
-                //         $err.="<li>$val</li>";
-                //     }                
-                //     throw new Exception($err);
-                // }
+                if($doc)
+                {   
+                    if(sizeOf($doc)>1)
+                    {
+                        throw new Exception("All Documernt Are Not Uploaded");
+                    }
+                    else
+                    {
+                        throw new Exception($doc[0]);
+                    }                
+                }
             }           
             if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
             {
