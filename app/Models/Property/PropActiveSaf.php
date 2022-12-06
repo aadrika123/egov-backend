@@ -67,4 +67,16 @@ class PropActiveSaf extends Model
             ->get();
         return $newAssisment;
     }
+
+
+    /**
+     * |-------------------------- safId According to saf no -----------------------------------------------|
+     */
+    public function getSafId($safNo)
+    {
+        return PropActiveSaf::where('saf_no',$safNo)
+        ->select('id')
+        ->get()
+        ->first();
+    }
 }

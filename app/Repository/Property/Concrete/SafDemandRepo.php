@@ -16,7 +16,7 @@ use Exception;
 class SafDemandRepo implements iSafDemandRepo
 {
     /**
-     * | Get the Demandable Amount By SAF ID
+     * | Get the Demandable Amount By SAF ID After Payment
      * | @param $req
      * | Query Run time -272ms 
      * | Rating-2

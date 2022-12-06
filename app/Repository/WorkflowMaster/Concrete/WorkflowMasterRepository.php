@@ -88,7 +88,6 @@ class WorkflowMasterRepository implements iWorkflowMasterRepository
                 'workflowName' => 'required',
                 'isSuspended' => 'required',
                 'workflowName' => 'required',
-
             ]
         );
 

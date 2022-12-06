@@ -317,6 +317,7 @@ return [
         "EO" => "10"
     ],
 
+    "VACANT_LAND"   => "4",
     // Saf Pending Status
     "SAF_PENDING_STATUS" => [
         "NOT_APPROVED" => 0,

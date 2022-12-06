@@ -24,7 +24,8 @@ interface iConcessionRepository
     public function backTocitizen($req);                                    // Back to citizen of the applications
 
     public function concessionList();
-    public function getConcessionByid($req);
+    public function concessionByid($req);
     public function concessionDocList($req);
+    public function concessionDocUpload($req);
     public function concessionDocStatus($req);
 }

@@ -23,4 +23,9 @@ interface iObjectionRepository
     public function postNextLevel($req);
     public function approvalRejection($req);
     public function backTocitizen($req);
+
+    public function objectionList();
+    public function objectionByid($req);
+    public function objectionDocList($req);
+    public function objectionDocStatus($req);
 }
