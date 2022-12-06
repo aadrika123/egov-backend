@@ -22,7 +22,7 @@ class PropertyBifurcationController extends Controller
     private $Property;
     public function __construct(IPropertyBifurcation $Repository)
     {
-        $this->Repository = $Repository ;
+        $this->Repository = $Repository;
         $this->Property = new PropertyDeactivate();
     }
     public function readHoldigbyNo(Request $request)
@@ -53,13 +53,4 @@ class PropertyBifurcationController extends Controller
     {
         return $this->Repository->documentUpload($request);
     }
-    public function safDocumentUpload(Request $request)
-    {
-        return $this->Repository->safDocumentUpload($request);
-    }
-    public function getUploadDocuments(Request $request)
-    {
-        return $this->Repository->getUploadDocuments($request);
-    }
-    
 }

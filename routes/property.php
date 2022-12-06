@@ -63,6 +63,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification
         Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging
+
+        Route::match(["get", "post"], 'safDocumentUpload/{id}', 'safDocumentUpload');
+        Route::get('getSafUploadDocuments/{id}', 'getUploadDocuments');
     });
 
     // SAF Demand and Property contollers
@@ -112,8 +115,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('bifurcationPostNext', "postNextLevel");
         Route::get('getSafDtls/{id}', "readSafDtls");
         Route::match(["get", "post"], 'documentUpload/{id}', 'documentUpload');
-        Route::match(["get", "post"], 'safDocumentUpload/{id}', 'safDocumentUpload');
-        Route::get('getSafUploadDocuments/{id}', 'getUploadDocuments');
     });
 
 
@@ -207,7 +208,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
             Route::post('get-filter-property-details', 'getFilterProperty');
             Route::post('get-filter-safs-details', 'getFilterSafs');
             Route::get('get-list-saf', 'getListOfSaf');
-            Route::post('active-application/get-user-details', 'getUserDetails');        
+            Route::post('active-application/get-user-details', 'getUserDetails');
         });
     });
 });

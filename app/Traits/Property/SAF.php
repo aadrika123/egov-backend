@@ -280,4 +280,21 @@ trait SAF
 
         return $taxes->values()->collapse();
     }
+
+    /**
+     * | Save SAF Demand
+     */
+    public function tSaveSafDemand($propSafDemand, $safDemandDetail)
+    {
+        $propSafDemand->holding_tax = $safDemandDetail['quarterYear'];
+        $propSafDemand->water_tax = $safDemandDetail['waterTax'];
+        $propSafDemand->education_cess = $safDemandDetail['educationTax'];
+        $propSafDemand->health_cess = $safDemandDetail['healthCess'];
+        $propSafDemand->latrine_tax = $safDemandDetail['latrineTax'];
+        $propSafDemand->additional_tax = $safDemandDetail['additionTax'];
+        $propSafDemand->holding_tax = $safDemandDetail['holdingTax'];
+        $propSafDemand->amount = $safDemandDetail['totalTax'];
+        $propSafDemand->balance = $safDemandDetail['totalTax'];
+        $propSafDemand->arv = $safDemandDetail['arv'];
+    }
 }

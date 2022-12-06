@@ -22,4 +22,13 @@ class PropSafsDemand extends Model
     {
         return PropSafsDemand::find($id);
     }
+
+    // Get Existing Prop SAF Demand by financial quarter and safid
+    public function getPropSafDemands($quarterYear, $qtr, $safId)
+    {
+        return PropSafsDemand::where('fyear', $quarterYear)
+            ->where('qtr', $qtr)
+            ->where('saf_id', $safId)
+            ->first();
+    }
 }
