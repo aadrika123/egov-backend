@@ -1395,8 +1395,8 @@ class Trade implements ITrade
                     $doc["ownerName"] = $val->owner_name;
                     $doc["docName"]   = "Identity Proof";
                     $doc['isMadatory'] = 1;
-                    $doc['docVal'] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0);
-                    $refOwneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
+                    $doc['docVal'] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0); 
+                    $refOwneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id,-1);
                     $doc['uploadDoc']=$refOwneres[$key]["Identity Proof"];
                     if(isset($refOwneres[$key]["Identity Proof"]["document_path"]))
                     {
@@ -1535,7 +1535,7 @@ class Trade implements ITrade
                     $doc_for = "id_doc_for$cnt_owner";                    
                     if ($file->IsValid() )
                     {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->id_owner_id))
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->id_owner_id,-1))
                         {                                
                             $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
                             if (file_exists($delete_path)) 
@@ -1545,7 +1545,7 @@ class Trade implements ITrade
 
                             $newFileName = $app_doc_dtl_id['id'];
 
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $file_ext = $file->getClientOriginalExtension();
                             $fileName = "licence_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file,$fileName);
                             $app_doc_dtl_id->document_path =  $filePath;
@@ -1560,6 +1560,7 @@ class Trade implements ITrade
                             $licencedocs->doc_for    = $request->$doc_for;
                             $licencedocs->licence_owner_dtl_id =$request->id_owner_id;
                             $licencedocs->document_id = $request->$doc_mstr_id;
+                            $licencedocs->licence_owner_dtl_id = $request->id_owner_id;
                             $licencedocs->emp_details_id = $refUserId;
                             
                             $licencedocs->save();
@@ -1632,6 +1633,7 @@ class Trade implements ITrade
                             $licencedocs->doc_for    = $request->$doc_for;
                             $licencedocs->licence_owner_dtl_id =$request->photo_owner_id;
                             $licencedocs->document_id =0;
+                            $licencedocs->licence_owner_dtl_id = $request->id_owner_id;
                             $licencedocs->emp_details_id = $refUserId;
                             
                             $licencedocs->save();
@@ -4364,7 +4366,7 @@ class Trade implements ITrade
             $doc = TradeLicenceDocument::select("id","doc_for","verify_status","document_path","document_id")
                            ->where('licence_id',$licenceId)
                            ->where('licence_owner_dtl_id',$owner_id);
-                           if($document_id!==null)
+                           if($document_id!==null && $document_id!=-1)
                             { 
                                 $document_id = (int)$document_id;
                                 $doc = $doc->where('document_id',$document_id);
