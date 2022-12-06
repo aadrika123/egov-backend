@@ -45,10 +45,11 @@ class ConcessionRepository implements iConcessionRepository
             $ulbId = auth()->user()->ulb_id;
             $userType = auth()->user()->user_type;
             $concessionNo = "";
-            // if ($userType == "JSK") {
-            //     $obj  = new SafRepository();
-            //     $data = $obj->getPropByHoldingNo($request);
-            // }
+
+            if ($userType == "JSK") {
+                $obj  = new SafRepository();
+                $data = $obj->getPropByHoldingNo($request);
+            }
 
             DB::beginTransaction();
             $workflow_id = Config::get('workflow-constants.PROPERTY_CONCESSION_ID');
@@ -83,48 +84,73 @@ class ConcessionRepository implements iConcessionRepository
             PropActiveConcession::where('id', $concession->id)
                 ->update(['application_no' => $concessionNo]);
 
-            //gender Doc
-            //$concession->doc_type = $request->docType;
+            //saving document in concession doc table
             if ($file = $request->file('genderDoc')) {
 
-                $name = time() . $file . '.' . $file->getClientOriginalExtension();
+                $name = time() . 'gender.' . $file->getClientOriginalExtension();
                 $path = public_path('concession/genderDoc');
                 $file->move($path, $name);
+
+                $concessionDoc = new PropConcessionDocDtl();
+                $concessionDoc->concession_id = $concession->id;
+                $concessionDoc->doc_type = 'genderDoc';
+                $concessionDoc->doc_name = $name;
+                $concessionDoc->status = 1;
+                $concessionDoc->date = Carbon::now();
+                $concessionDoc->created_at = Carbon::now();
+                $concessionDoc->save();
             }
 
             // dob Doc
             if ($file = $request->file('dobDoc')) {
 
-                $name = time() . $file . '.' . $file->getClientOriginalExtension();
+                $name = time() . 'dob.' . $file->getClientOriginalExtension();
                 $path = public_path('concession/dobDoc');
                 $file->move($path, $name);
+
+                $concessionDoc = new PropConcessionDocDtl();
+                $concessionDoc->concession_id = $concession->id;
+                $concessionDoc->doc_type = 'dobDoc';
+                $concessionDoc->doc_name = $name;
+                $concessionDoc->status = 1;
+                $concessionDoc->date = Carbon::now();
+                $concessionDoc->created_at = Carbon::now();
+                $concessionDoc->save();
             }
 
             // specially abled Doc
             if ($file = $request->file('speciallyAbledDoc')) {
 
-                $name = time() . $file . '.' . $file->getClientOriginalExtension();
+                $name = time() . 'speciallabled.' . $file->getClientOriginalExtension();
                 $path = public_path('concession/speciallyAbledDoc');
                 $file->move($path, $name);
+
+                $concessionDoc = new PropConcessionDocDtl();
+                $concessionDoc->concession_id = $concession->id;
+                $concessionDoc->doc_type = 'speciallyAbledDoc';
+                $concessionDoc->doc_name = $name;
+                $concessionDoc->status = 1;
+                $concessionDoc->date = Carbon::now();
+                $concessionDoc->created_at = Carbon::now();
+                $concessionDoc->save();
             }
 
             // Armed force Doc
             if ($file = $request->file('armedForceDoc')) {
 
-                $name = time() . $file . '.' . $file->getClientOriginalExtension();
+                $name = time() . 'armedforce.' . $file->getClientOriginalExtension();
                 $path = public_path('concession/armedForceDoc');
                 $file->move($path, $name);
-            }
 
-            //saving document in concession doc table
-            $concessionDoc = new PropConcessionDocDtl();
-            $concessionDoc->concession_id = $concession->id;
-            // $concessionDoc->doc_type = $file->dobDoc;
-            // $concessionDoc->doc_name = $name;
-            $concessionDoc->status = 1;
-            $concessionDoc->date = Carbon::now();
-            $concessionDoc->created_at = Carbon::now();
-            $concessionDoc->save();
+                $concessionDoc = new PropConcessionDocDtl();
+                $concessionDoc->concession_id = $concession->id;
+                $concessionDoc->doc_type = 'armedForceDoc';
+                $concessionDoc->doc_name = $name;
+                $concessionDoc->status = 1;
+                $concessionDoc->date = Carbon::now();
+                $concessionDoc->created_at = Carbon::now();
+                $concessionDoc->save();
+            }
 
 
             // Property SAF Label Pendings
@@ -524,6 +550,90 @@ class ConcessionRepository implements iConcessionRepository
             $concessionNo = 'CON' . "/" . str_pad($count['0']->id, 5, '0', STR_PAD_LEFT);
 
             return $concessionNo;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    //concession list
+    public function concessionList()
+    {
+        try {
+            $list = PropActiveConcession::select(
+                'prop_active_concessions.id',
+                'prop_active_concessions.applicant_name as ownerName',
+                'holding_no as holdingNo',
+                'ward_mstr_id as wardId',
+                'prop_type_mstr_id as propertyType'
+            )
+                ->where('prop_active_concessions.status', 1)
+                ->orderByDesc('prop_active_concessions.id')
+                ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
+                ->get();
+
+            return responseMsg(true, "Successfully Done", $list);
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    //get concession list by id
+    public function getConcessionByid($req)
+    {
+        try {
+            $list = PropActiveConcession::select(
+                'prop_active_concessions.id',
+                'prop_active_concessions.applicant_name as ownerName',
+                'holding_no as holdingNo',
+                'ward_mstr_id as wardId',
+                'prop_type_mstr_id as propertyType',
+                'dob',
+                'gender',
+                'is_armed_force as armedForce',
+                'is_specially_abled as speciallyAbled'
+            )
+                ->where('prop_active_concessions.id', $req->id)
+                ->where('prop_active_concessions.status', 1)
+                ->orderByDesc('prop_active_concessions.id')
+                ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
+                ->first();
+
+            return responseMsg(true, "Successfully Done", $list);
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    //get concession list
+    public function concessionDocList($req)
+    {
+        try {
+            $list = PropConcessionDocDtl::select(
+                'prop_concession_doc_dtls.doc_name as docName',
+                'prop_concession_doc_dtls.doc_type as docType',
+                'prop_concession_levelpendings.verification_status as verificationStatus'
+            )
+                ->where('prop_concession_levelpendings.concession_id', $req->id)
+                ->join(
+                    'prop_concession_levelpendings',
+                    'prop_concession_levelpendings.concession_id',
+                    'prop_concession_doc_dtls.concession_id'
+                )
+                ->get();
+
+            return responseMsg(true, "Successfully Done", $list);
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    //post concession status
+    public function concessionDocStatus($req)
+    {
+        try {
+
+
+            return responseMsg(true, "Successfully Done", '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
