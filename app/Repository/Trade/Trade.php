@@ -1441,8 +1441,11 @@ class Trade implements ITrade
                 $rules = [];
                 $message = [];
                 $sms = "";
+                $cnt=$request->btn_doc_path;
+                $doc_for = "doc_path_for$cnt";
+                $owners = objToArray($refOwneres);
                 # Upload Document 
-                if(isset($request->btn_doc_path))
+                if(isset($request->btn_doc_path)&& isset($request->$doc_for) && !in_array($request->$doc_for,["Identity Proof","image"]))
                 {              
                     $cnt=$request->btn_doc_path;
                     $rules = [
@@ -1504,24 +1507,29 @@ class Trade implements ITrade
                     }
                     
                 }
-                
-                $owners = objToArray($refOwneres);
                 # Upload Owner Document Id Proof
-                if(isset($request->btn_doc_path_owner))
+                // if(isset($request->btn_doc_path_owner))
+                elseif(isset($request->btn_doc_path) && isset($request->$doc_for) && $request->$doc_for=="Identity Proof")
                 { 
-                    $cnt_owner=$request->btn_doc_path_owner;                    
+                    $cnt=$request->btn_doc_path;                    
+                    // $rules = [
+                    //         'id_doc_path_owner'.$cnt_owner =>'required|max:30720|mimes:pdf,jpg,jpeg,png',
+                    //         'id_doc_mstr_id'.$cnt_owner =>"required|int",
+                    //         "id_owner_id"=>"required|int",
+                    //         "id_doc_for".$cnt_owner =>"required|string",
+                    //     ];
                     $rules = [
-                            'id_doc_path_owner'.$cnt_owner =>'required|max:30720|mimes:pdf,jpg,jpeg,png',
-                            'id_doc_mstr_id'.$cnt_owner =>"required|int",
-                            "id_owner_id"=>"required|int",
-                            "id_doc_for".$cnt_owner =>"required|string",
-                        ];
+                        'doc_path'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
+                        'doc_path_mstr_id'.$cnt.''=>'required|int',
+                        'doc_path_for'.$cnt =>"required|string",
+                        "owner_id"=>"required|int",
+                    ];
                         
                     $validator = Validator::make($request->all(), $rules, $message);                    
                     if ($validator->fails()) {
                         return responseMsg(false, $validator->errors(),$request->all());
                     }
-                    $req_owner_id = $request->id_owner_id;
+                    $req_owner_id = $request->owner_id;
                     $woner_id = array_filter($owners,function($val)use($req_owner_id){
                             return $val['id']==$req_owner_id;
                     }); 
@@ -1530,12 +1538,12 @@ class Trade implements ITrade
                     {
                         throw new Exception("Invalide Owner Id given!!!");
                     }                    
-                    $file = $request->file('id_doc_path_owner'.$cnt_owner);
-                    $doc_mstr_id = "id_doc_mstr_id$cnt_owner";
-                    $doc_for = "id_doc_for$cnt_owner";                    
+                    $file = $request->file('doc_path'.$cnt);
+                    $doc_mstr_id = "doc_path_mstr_id$cnt";
+                    $doc_for = "doc_path_for$cnt";                    
                     if ($file->IsValid() )
                     {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->id_owner_id))
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->owner_id))
                         {                                
                             $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
                             if (file_exists($delete_path)) 
@@ -1558,7 +1566,7 @@ class Trade implements ITrade
                             $licencedocs = new TradeLicenceDocument;
                             $licencedocs->licence_id = $licenceId;
                             $licencedocs->doc_for    = $request->$doc_for;
-                            $licencedocs->licence_owner_dtl_id =$request->id_owner_id;
+                            $licencedocs->licence_owner_dtl_id =$request->owner_id;
                             $licencedocs->document_id = $request->$doc_mstr_id;
                             $licencedocs->emp_details_id = $refUserId;
                             
@@ -1582,19 +1590,27 @@ class Trade implements ITrade
                     
                 } 
                 # owner image upload hear 
-                if(isset($request->btn_doc_path_owner_img))
+                // if(isset($request->btn_doc_path_owner_img))
+                elseif(isset($request->btn_doc_path)&& isset($request->$doc_for) && $request->$doc_for=="image")
                 {                    
-                    $cnt_owner = $request->btn_doc_path_owner_img;                    
+                    // $cnt_owner = $request->btn_doc_path_owner_img; 
+                    $cnt=$request->btn_doc_path;                   
+                    // $rules = [
+                    //         "photo_doc_path_owner$cnt_owner"=>'required|max:30720|mimes:pdf,png,jpg,jpeg,png',                            
+                    //         'photo_doc_for'.$cnt_owner.''=>'required|string',
+                    //         "photo_owner_id"=>"required|int",
+                    //     ];
                     $rules = [
-                            "photo_doc_path_owner$cnt_owner"=>'required|max:30720|mimes:pdf,png,jpg,jpeg,png',                            
-                            'photo_doc_for'.$cnt_owner.''=>'required|string',
-                            "photo_owner_id"=>"required|int",
-                        ];
+                        'doc_path'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
+                        'doc_path_mstr_id'.$cnt.''=>'required|int',
+                        'doc_path_for'.$cnt =>"required|string",
+                        "owner_id"=>"required|int",
+                    ];
                     $validator = Validator::make($request->all(), $rules, $message);                    
                     if ($validator->fails()) {
                         return responseMsg(false, $validator->errors(),$request->all());
                     } 
-                    $req_owner_id = $request->photo_owner_id;
+                    $req_owner_id = $request->owner_id;
                     $woner_id = array_filter($owners,function($val)use($req_owner_id){
                             return $val['id']==$req_owner_id;
                     });                     
@@ -1603,11 +1619,11 @@ class Trade implements ITrade
                     {
                         throw new Exception("Invalide Owner Id given!!!");
                     }
-                    $file = $request->file('photo_doc_path_owner'.$cnt_owner);
-                    $doc_for = "photo_doc_for$cnt_owner";
+                    $file = $request->file('doc_path'.$cnt);
+                    $doc_for = "doc_path_for$cnt";
                     if ($file->IsValid())
                     {  
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->photo_owner_id,0))
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->owner_id,0))
                         {
                             $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
                             if (file_exists($delete_path)) 
@@ -1630,7 +1646,7 @@ class Trade implements ITrade
                             $licencedocs = new TradeLicenceDocument;
                             $licencedocs->licence_id = $licenceId;
                             $licencedocs->doc_for    = $request->$doc_for;
-                            $licencedocs->licence_owner_dtl_id = $request->photo_owner_id;
+                            $licencedocs->licence_owner_dtl_id = $request->owner_id;
                             $licencedocs->document_id =0;
                             $licencedocs->emp_details_id = $refUserId;
                             
@@ -1652,6 +1668,7 @@ class Trade implements ITrade
                     }              
                 }                 
                 DB::commit();
+                $data=(array)null;
                 $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function($val){
                     if(isset($val["document_path"]))
                     {
