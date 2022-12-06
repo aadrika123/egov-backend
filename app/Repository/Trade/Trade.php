@@ -1336,7 +1336,15 @@ class Trade implements ITrade
             $refLicence->items = $mItemName;
             $refLicence->items_code = $mCods;
             $refOwneres = $this->getOwnereDtlByLId($licenceId);
-            $mUploadDocument = $this->getLicenceDocuments($licenceId);
+            $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function($val){
+                if(isset($val["document_path"]))
+                {
+                    $path = $this->readDocumentPath( $val["document_path"]);
+                    $val["document_path"] = !empty(trim( $val["document_path"]))?$path :null;                    
+
+                }
+                return $val;
+            });
             
             $mDocumentsList = $this->getDocumentTypeList($refLicence);
             foreach($mDocumentsList as $val)
@@ -1645,7 +1653,15 @@ class Trade implements ITrade
                     }              
                 }                 
                 DB::commit();
-                $mUploadDocument = $this->getLicenceDocuments($licenceId);
+                $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function($val){
+                    if(isset($val["document_path"]))
+                    {
+                        $path = $this->readDocumentPath( $val["document_path"]);
+                        $val["document_path"] = !empty(trim( $val["document_path"]))?$path :null;                    
+    
+                    }
+                    return $val;
+                });
                 $data["uploadDocument"] = $mUploadDocument;
                 return responseMsg(true, $sms,$data);
             }
@@ -1669,7 +1685,15 @@ class Trade implements ITrade
             {
                 throw new Exception("Data Not Found");
             }
-            $mUploadDocument = $this->getLicenceDocuments($licenceId);
+            $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function($val){
+                if(isset($val["document_path"]))
+                {
+                    $path = $this->readDocumentPath( $val["document_path"]);
+                    $val["document_path"] = !empty(trim( $val["document_path"]))?$path :null;                    
+
+                }
+                return $val;
+            });
             $data["uploadDocument"] = $mUploadDocument;
             return responseMsg(true,"",$data);
         }
