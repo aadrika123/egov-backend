@@ -94,31 +94,8 @@ class WaterNewConnection implements IWaterNewConnection
             {
 
                 $data['userType']           = $mUserType;
-                $data["firmTypeList"]       = $this->getFirmTypeList();
+                $data["propertyType"]       = $this->getPropertyTypeList();
                 $data["ownershipTypeList"]  = $this->getOwnershipTypeList();
-                $data["categoryTypeList"]   = $this->getCategoryList();
-                $data["natureOfBusiness"]   = $this->getItemsList(true);
-                if(isset($request->id) && $request->id  && $mApplicationTypeId !=1)
-                {
-                    $refOldLicece = $this->getLicenceById($request->id); // recieving olde lisense id from url
-                    if(!$refOldLicece)
-                    {
-                        throw new Exception("No Priviuse Licence Found");
-                    }
-                    $refOldOwneres =$this->getOwnereDtlByLId($request->id);
-                    $mnaturOfBusiness = $this->getLicenceItemsById($refOldLicece->nature_of_bussiness);
-                    $natur = array();
-                    foreach($mnaturOfBusiness as $val)
-                    {
-                        $natur[]=["id"=>$val->id,
-                            "trade_item" =>"(". $val->trade_code.") ". $val->trade_item
-                        ];
-                    }
-                    $refOldLicece->nature_of_bussiness = $natur;
-
-                    $data["licenceDtl"]     =  $refOldLicece;
-                    $data["ownerDtl"]       = $refOldOwneres;
-                }
                 return responseMsg(true,"",remove_null($data));
             }
             elseif($request->getMethod()=="POST")
@@ -134,17 +111,20 @@ class WaterNewConnection implements IWaterNewConnection
     }
 
     #---------- core function --------------------------------------------------
-    // public function getConnectionType()
-    // {
-    //     try {
-    //         $connectionTypes = WaterConnectionTypeMstr::table('water_connection_type_mstrs')
-    //             ->select('water_connection_type_mstrs.id', 'water_connection_type_mstrs.connection_type')
-    //             ->where('status', 1)
-    //             ->get();
-    //         return $connectionTypes;
-    //     } catch (Exception $e) 
-    //     {
-    //         return [];
-    //     }
-    // }
+    public function getPropertyTypeList()
+    {
+        // try {
+        //     $data = WaterPropertyTypeMstr::select('water_connection_type_mstrs.id', 'water_connection_type_mstrs.connection_type')
+        //         ->where('status', 1)
+        //         ->get();
+        //     return $data;
+        // } catch (Exception $e) 
+        // {
+        //     return [];
+        // }
+    }
+    public function getOwnershipTypeList()
+    {
+        
+    }
 }

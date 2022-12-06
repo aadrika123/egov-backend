@@ -66,6 +66,11 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->documentUpload($request);
     }
+    public function getUploadDocuments(Request $request)
+    {
+        return $this->Repository->getUploadDocuments($request);
+    }
+    
     public function documentVirify(Request $request)
     {
         return $this->Repository->documentVirify($request);

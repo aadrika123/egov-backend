@@ -31,4 +31,15 @@ class UlbWardMaster extends Model
     {
         return UlbWardMaster::find($id);
     }
+
+    /**
+     * | Get Ward By Ulb ID
+     * | @param ulbId
+     */
+    public function getWardByUlbId($ulbId)
+    {
+        return UlbWardMaster::select('id', 'ward_name')
+            ->where('ulb_id', $ulbId)
+            ->get();
+    }
 }

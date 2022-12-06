@@ -10,15 +10,10 @@ class RefPropConstructionType extends Model
 {
     use HasFactory;
 
-    public function propConstructionType()
+    public function getConstructionTypes()
     {
-        try {
-            $constType = RefPropConstructionType::select('id', 'construction_type as constructionType')
-                ->where('status', '1')
-                ->get();
-            return responseMsg(true, "Successfully Retrieved", $constType);
-        } catch (Exception $e) {
-            return response()->json($e, 400);
-        }
+        return RefPropConstructionType::select('id', "construction_type")
+            ->where('status', 1)
+            ->get();
     }
 }

@@ -57,15 +57,25 @@ trait SAF
         $saf->corr_city = $req->corrCity;
         $saf->corr_dist = $req->corrDist;
         $saf->corr_pin_code = $req->corrPinCode;
+
         $saf->is_mobile_tower = $req->isMobileTower;
-        $saf->tower_area = $req->towerArea;
-        $saf->tower_installation_date = $req->towerInstallationDate;
+        if ($req->isMobileTower == 1) {
+            $saf->tower_area = $req->mobileTower['area'];
+            $saf->tower_installation_date = $req->mobileTower['dateFrom'];
+        }
+
         $saf->is_hoarding_board = $req->isHoardingBoard;
-        $saf->hoarding_area = $req->hoardingArea;
-        $saf->hoarding_installation_date = $req->hoardingInstallationDate;
+        if ($req->isHoardingBoard == 1) {
+            $saf->hoarding_area = $req->hoardingBoard['area'];
+            $saf->hoarding_installation_date = $req->hoardingBoard['dateFrom'];
+        }
+
         $saf->is_petrol_pump = $req->isPetrolPump;
-        $saf->under_ground_area = $req->undergroundArea;
-        $saf->petrol_pump_completion_date = $req->petrolPumpCompletionDate;
+        if ($req->isPetrolPump == 1) {
+            $saf->under_ground_area = $req->petrolPump['area'];
+            $saf->petrol_pump_completion_date = $req->petrolPump['dateFrom'];
+        }
+
         $saf->is_water_harvesting = $req->isWaterHarvesting;
         $saf->land_occupation_date = $req->landOccupationDate;
         $saf->doc_verify_cancel_remarks = $req->docVerifyCancelRemark;
@@ -279,5 +289,36 @@ trait SAF
         });
 
         return $taxes->values()->collapse();
+    }
+
+    /**
+     * | Save SAF Demand
+     */
+    public function tSaveSafDemand($propSafDemand, $safDemandDetail)
+    {
+        $propSafDemand->holding_tax = $safDemandDetail['quarterYear'];
+        $propSafDemand->water_tax = $safDemandDetail['waterTax'];
+        $propSafDemand->education_cess = $safDemandDetail['educationTax'];
+        $propSafDemand->health_cess = $safDemandDetail['healthCess'];
+        $propSafDemand->latrine_tax = $safDemandDetail['latrineTax'];
+        $propSafDemand->additional_tax = $safDemandDetail['additionTax'];
+        $propSafDemand->holding_tax = $safDemandDetail['holdingTax'];
+        $propSafDemand->amount = $safDemandDetail['totalTax'];
+        $propSafDemand->balance = $safDemandDetail['totalTax'];
+        $propSafDemand->arv = $safDemandDetail['arv'];
+    }
+
+    /**
+     * | Get Active Saf Details
+     */
+    public function tActiveSafDetails()
+    {
+        return DB::table('prop_active_safs')
+            ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'w.ward_name as new_ward_no', 'o.ownership_type', 'p.property_type')
+            ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
+            ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+            ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
+            ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id');
     }
 }

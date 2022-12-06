@@ -1336,7 +1336,15 @@ class Trade implements ITrade
             $refLicence->items = $mItemName;
             $refLicence->items_code = $mCods;
             $refOwneres = $this->getOwnereDtlByLId($licenceId);
-            $mUploadDocument = $this->getLicenceDocuments($licenceId);
+            $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function($val){
+                if(isset($val["document_path"]))
+                {
+                    $path = $this->readDocumentPath( $val["document_path"]);
+                    $val["document_path"] = !empty(trim( $val["document_path"]))?$path :null;                    
+
+                }
+                return $val;
+            });
             
             $mDocumentsList = $this->getDocumentTypeList($refLicence);
             foreach($mDocumentsList as $val)
@@ -1387,7 +1395,7 @@ class Trade implements ITrade
                     $doc["ownerName"] = $val->owner_name;
                     $doc["docName"]   = "Identity Proof";
                     $doc['isMadatory'] = 1;
-                    $doc['docVal'] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0);
+                    $doc['docVal'] = $this->getDocumentList("Identity Proof",$refLicence->application_type_id,0); 
                     $refOwneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId,$val->id);
                     $doc['uploadDoc']=$refOwneres[$key]["Identity Proof"];
                     if(isset($refOwneres[$key]["Identity Proof"]["document_path"]))
@@ -1466,7 +1474,7 @@ class Trade implements ITrade
                             $app_doc_dtl_id->document_path =  $filePath;
                             $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
                             $app_doc_dtl_id->save();
-                            $sms .= "\n".$app_doc_dtl_id->doc_for." Update Successfully";
+                            $sms = $app_doc_dtl_id->doc_for." Update Successfully";
 
                         }
                         else
@@ -1485,7 +1493,7 @@ class Trade implements ITrade
                             $filePath = $this->uplodeFile($file,$fileName);
                             $licencedocs->document_path =  $filePath;
                             $licencedocs->save();
-                            $sms .= "\n". $licencedocs->doc_for." Upload Successfully";
+                            $sms = $licencedocs->doc_for." Upload Successfully";
 
                         }                         
 
@@ -1504,7 +1512,6 @@ class Trade implements ITrade
                     $cnt_owner=$request->btn_doc_path_owner;                    
                     $rules = [
                             'id_doc_path_owner'.$cnt_owner =>'required|max:30720|mimes:pdf,jpg,jpeg,png',
-                            // 'idproof'.$cnt_owner.''=>'required',
                             'id_doc_mstr_id'.$cnt_owner =>"required|int",
                             "id_owner_id"=>"required|int",
                             "id_doc_for".$cnt_owner =>"required|string",
@@ -1524,7 +1531,6 @@ class Trade implements ITrade
                         throw new Exception("Invalide Owner Id given!!!");
                     }                    
                     $file = $request->file('id_doc_path_owner'.$cnt_owner);
-                    // $idproof = "idproof$cnt_owner";
                     $doc_mstr_id = "id_doc_mstr_id$cnt_owner";
                     $doc_for = "id_doc_for$cnt_owner";                    
                     if ($file->IsValid() )
@@ -1539,13 +1545,13 @@ class Trade implements ITrade
 
                             $newFileName = $app_doc_dtl_id['id'];
 
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $file_ext = $file->getClientOriginalExtension();
                             $fileName = "licence_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file,$fileName);
                             $app_doc_dtl_id->document_path =  $filePath;
                             $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
                             $app_doc_dtl_id->save();
-                            $sms .= "\n". $app_doc_dtl_id->doc_for." Update Successfully";
+                            $sms = "Id Proof of ".$woner_id["owner_name"]." Update Successfully";
                         }                            
                         else 
                         {
@@ -1564,7 +1570,7 @@ class Trade implements ITrade
                             $filePath = $this->uplodeFile($file,$fileName);
                             $licencedocs->document_path =  $filePath;
                             $licencedocs->save();
-                            $sms .= "\n". $licencedocs->doc_for." Upload Successfully";
+                            $sms = "Id Proof of ".$woner_id["owner_name"]." Upload Successfully";
                             
                         }
                     } 
@@ -1581,7 +1587,7 @@ class Trade implements ITrade
                     $cnt_owner = $request->btn_doc_path_owner_img;                    
                     $rules = [
                             "photo_doc_path_owner$cnt_owner"=>'required|max:30720|mimes:pdf,png,jpg,jpeg,png',                            
-                            'photo_doc_for'.$cnt_owner.''=>'required',
+                            'photo_doc_for'.$cnt_owner.''=>'required|string',
                             "photo_owner_id"=>"required|int",
                         ];
                     $validator = Validator::make($request->all(), $rules, $message);                    
@@ -1591,7 +1597,7 @@ class Trade implements ITrade
                     $req_owner_id = $request->photo_owner_id;
                     $woner_id = array_filter($owners,function($val)use($req_owner_id){
                             return $val['id']==$req_owner_id;
-                    }); 
+                    });                     
                     $woner_id = array_values($woner_id)[0]??[];
                     if(!$woner_id)
                     {
@@ -1616,7 +1622,7 @@ class Trade implements ITrade
                             $app_doc_dtl_id->document_path =  $filePath;
                             $app_doc_dtl_id->document_id =  0;
                             $app_doc_dtl_id->save();
-                            $sms .= "\n". $app_doc_dtl_id->doc_for." Update Successfully";
+                            $sms = "Photo of ".$woner_id["owner_name"]." Update Successfully";
                         }
                         
                         else
@@ -1624,19 +1630,19 @@ class Trade implements ITrade
                             $licencedocs = new TradeLicenceDocument;
                             $licencedocs->licence_id = $licenceId;
                             $licencedocs->doc_for    = $request->$doc_for;
-                            $licencedocs->licence_owner_dtl_id =$request->photo_owner_id;
+                            $licencedocs->licence_owner_dtl_id = $request->photo_owner_id;
                             $licencedocs->document_id =0;
                             $licencedocs->emp_details_id = $refUserId;
                             
                             $licencedocs->save();
                             $newFileName = $licencedocs->id;
 
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $file_ext =$file->getClientOriginalExtension();
                             $fileName = "licence_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file,$fileName);
                             $licencedocs->document_path =  $filePath;
                             $licencedocs->save();
-                            $sms .= "\n". $licencedocs->doc_for." Upload Successfully";
+                            $sms = "Photo of ".$woner_id["owner_name"]." Upload Successfully";
                         }                                
 
                     } 
@@ -1646,7 +1652,17 @@ class Trade implements ITrade
                     }              
                 }                 
                 DB::commit();
-                return responseMsg(true, $sms,"");
+                $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function($val){
+                    if(isset($val["document_path"]))
+                    {
+                        $path = $this->readDocumentPath( $val["document_path"]);
+                        $val["document_path"] = !empty(trim( $val["document_path"]))?$path :null;                    
+    
+                    }
+                    return $val;
+                });
+                $data["uploadDocument"] = $mUploadDocument;
+                return responseMsg(true, $sms,$data);
             }
         }
         catch(Exception $e)
@@ -1654,6 +1670,38 @@ class Trade implements ITrade
 
             return responseMsg(false,$e->getMessage(),$request->all());
         }
+    }
+    public function getUploadDocuments(Request $request)
+    {
+        try{
+            $licenceId = $request->id;
+            if(!$licenceId)
+            {
+                throw new Exception("Licence Id Required");
+            }
+            $refLicence = $this->getLicenceById($licenceId);
+            if(!$refLicence)
+            {
+                throw new Exception("Data Not Found");
+            }
+            $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function($val){
+                if(isset($val["document_path"]))
+                {
+                    $path = $this->readDocumentPath( $val["document_path"]);
+                    $val["document_path"] = !empty(trim( $val["document_path"]))?$path :null;                    
+
+                }
+                return $val;
+            });
+            $data["uploadDocument"] = $mUploadDocument;
+            return responseMsg(true,"",$data);
+        }
+        catch(Exception $e)
+        {
+
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+
     }
     public function documentVirify(Request $request)
     {
