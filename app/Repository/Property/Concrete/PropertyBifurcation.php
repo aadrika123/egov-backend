@@ -1995,7 +1995,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             {
                 throw new Exception("Saf Id Required");
             }
-            $refSafs = PropActiveSaf::find($safId); ;
+            $refSafs = PropActiveSaf::find($safId);
             if(!$refSafs)
             {
                 throw new Exception("Data Not Found");
@@ -2010,6 +2010,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 return $val;
             });
             $data["uploadDocument"] = $mUploadDocument;
+            return responseMsg(true,"",$data);
         }
         catch(Exception $e)
         {

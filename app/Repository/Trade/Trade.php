@@ -1474,7 +1474,7 @@ class Trade implements ITrade
                             $app_doc_dtl_id->document_path =  $filePath;
                             $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
                             $app_doc_dtl_id->save();
-                            $sms .= "\n".$app_doc_dtl_id->doc_for." Update Successfully";
+                            $sms = $app_doc_dtl_id->doc_for." Update Successfully";
 
                         }
                         else
@@ -1493,7 +1493,7 @@ class Trade implements ITrade
                             $filePath = $this->uplodeFile($file,$fileName);
                             $licencedocs->document_path =  $filePath;
                             $licencedocs->save();
-                            $sms .= "\n". $licencedocs->doc_for." Upload Successfully";
+                            $sms = $licencedocs->doc_for." Upload Successfully";
 
                         }                         
 
@@ -1531,7 +1531,6 @@ class Trade implements ITrade
                         throw new Exception("Invalide Owner Id given!!!");
                     }                    
                     $file = $request->file('id_doc_path_owner'.$cnt_owner);
-                    // $idproof = "idproof$cnt_owner";
                     $doc_mstr_id = "id_doc_mstr_id$cnt_owner";
                     $doc_for = "id_doc_for$cnt_owner";                    
                     if ($file->IsValid() )
@@ -1552,7 +1551,7 @@ class Trade implements ITrade
                             $app_doc_dtl_id->document_path =  $filePath;
                             $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
                             $app_doc_dtl_id->save();
-                            $sms .= "\n". $app_doc_dtl_id->doc_for." Update Successfully";
+                            $sms = "Id Proof of ".$woner_id["owner_name"]." Update Successfully";
                         }                            
                         else 
                         {
@@ -1571,7 +1570,7 @@ class Trade implements ITrade
                             $filePath = $this->uplodeFile($file,$fileName);
                             $licencedocs->document_path =  $filePath;
                             $licencedocs->save();
-                            $sms .= "\n". $licencedocs->doc_for." Upload Successfully";
+                            $sms = "Id Proof of ".$woner_id["owner_name"]." Upload Successfully";
                             
                         }
                     } 
@@ -1588,7 +1587,7 @@ class Trade implements ITrade
                     $cnt_owner = $request->btn_doc_path_owner_img;                    
                     $rules = [
                             "photo_doc_path_owner$cnt_owner"=>'required|max:30720|mimes:pdf,png,jpg,jpeg,png',                            
-                            'photo_doc_for'.$cnt_owner.''=>'required',
+                            'photo_doc_for'.$cnt_owner.''=>'required|string',
                             "photo_owner_id"=>"required|int",
                         ];
                     $validator = Validator::make($request->all(), $rules, $message);                    
@@ -1623,7 +1622,7 @@ class Trade implements ITrade
                             $app_doc_dtl_id->document_path =  $filePath;
                             $app_doc_dtl_id->document_id =  0;
                             $app_doc_dtl_id->save();
-                            $sms .= "\n". $app_doc_dtl_id->doc_for." Update Successfully";
+                            $sms = "Photo of ".$woner_id["owner_name"]." Update Successfully";
                         }
                         
                         else
@@ -1643,7 +1642,7 @@ class Trade implements ITrade
                             $filePath = $this->uplodeFile($file,$fileName);
                             $licencedocs->document_path =  $filePath;
                             $licencedocs->save();
-                            $sms .= "\n". $licencedocs->doc_for." Upload Successfully";
+                            $sms = "Photo of ".$woner_id["owner_name"]." Upload Successfully";
                         }                                
 
                     } 
