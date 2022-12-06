@@ -10,15 +10,13 @@ class RefPropType extends Model
 {
     use HasFactory;
 
-    public function propPropertyType()
+    /**
+     * | Get All Property Types
+     */
+    public function getPropPropertyType()
     {
-        try {
-            $propType = RefPropType::select('id', 'property_type as propertyType')
-                ->where('status', '1')
-                ->get();
-            return responseMsg(true, "Successfully Retrieved", $propType);
-        } catch (Exception $e) {
-            return response()->json($e, 400);
-        }
+        return RefPropType::select('id', 'property_type')
+            ->where('status', 1)
+            ->get();
     }
 }
