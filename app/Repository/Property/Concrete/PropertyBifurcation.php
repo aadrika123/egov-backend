@@ -2189,12 +2189,13 @@ class PropertyBifurcation implements IPropertyBifurcation
                     }              
                 }                 
                 DB::commit();
+                $mUploadDocument = $this->getSafDocuments($refSafs->id);
+                $data["uploadDocument"] = $mUploadDocument;
                 return responseMsg(true, $sms,"");
             }
         }
         catch(Exception $e)
         {
-            dd($e->getMessage(),$e->getFile(),$e->getLine());
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
