@@ -1856,7 +1856,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     {
                         throw new Exception("Invalide Owner Id given!!!");
                     }                   
-                    $file = $request->file('doc'.$cnt_owner);
+                    $file = $request->file('doc');
                     $doc_mstr_id = "doc_mstr_id";      
                     if ($file->IsValid() )
                     {
@@ -1928,7 +1928,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     {
                         throw new Exception("Invalide Owner Id given!!!");
                     }                   
-                    $file = $request->file('doc'.$cnt_owner);
+                    $file = $request->file('doc');
                     $doc_mstr_id = "doc_mstr_id";      
                     if ($file->IsValid() )
                     {
@@ -2000,7 +2000,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     {
                         throw new Exception("Invalide Owner Id given!!!");
                     }                    
-                    $file = $request->file('doc'.$cnt_owner);
+                    $file = $request->file('doc');
                     $doc_mstr_id = "doc_mstr_id";      
                     if ($file->IsValid() )
                     {
@@ -2072,7 +2072,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     {
                         throw new Exception("Invalide Owner Id given!!!");
                     }                    
-                    $file = $request->file('doc'.$cnt_owner);
+                    $file = $request->file('doc');
                     $doc_mstr_id = "doc_mstr_id";      
                     if ($file->IsValid() )
                     {
