@@ -178,13 +178,4 @@ class ActiveSafController extends Controller
         ]);
         return $this->Repository->geoTagging($req);
     }
-
-    public function safDocumentUpload(Request $request)
-    {
-        return $this->Repository->safDocumentUpload($request);
-    }
-    public function getUploadDocuments(Request $request)
-    {
-        return $this->Repository->getUploadDocuments($request);
-    }
 }
