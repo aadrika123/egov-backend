@@ -1404,4 +1404,616 @@ class PropertyBifurcation implements IPropertyBifurcation
         $filePath = $file->storeAs('uploads/Property', $custumFileName, 'public');
         return  $filePath;
     }
+    public function safDocumentUpload(Request $request)
+    {        
+        try{
+            $refUser = Auth()->user();
+            $refUserId = $refUser->id;
+            $refUlbId = $refUser->ulb_id;
+            $refSafs = null;
+            $mUploadDocument = (array)null;
+            $mDocumentsList  = (array)null;
+            $finalData       = (array)null;
+            $requiedDocs     = (array) null;
+            $ownersDoc       = (array) null;
+            $safId           = $request->id; 
+            if(!$safId)
+            {
+                throw new Exception("Saf Id Required");
+            }
+            $refSafs = PropActiveSaf::find($safId); ;
+            if(!$refSafs)
+            {
+                throw new Exception("Data Not Found");
+            }
+            elseif($refSafs->doc_verify_status)
+            {
+                throw new Exception("Document Verified You Can Not Upload Documents");
+            }
+            $mOwneres = $this->getOwnereDtlBySId($refSafs->id);
+            $mDocumentsList = $this->getDocumentTypeList($refSafs);
+            $mUploadDocument = $this->getSafDocuments($refSafs->id)->map(function($val){
+                if(isset($val["doc_path"]))
+                {
+                    $path = $this->readDocumentPath( $val["doc_path"]);
+                    $val["doc_path"] = !empty(trim( $val["doc_path"]))?$path :null;                    
+
+                }
+                return $val;
+            });
+            foreach($mDocumentsList as $val)
+            {   
+                $doc = (array) null; 
+                $doc['docName'] = $val->doc_type;
+                $doc['isMadatory'] = in_array($val->doc_type,["additional_doc","other"])? 0 : 1;
+                $doc['docVal'] = $this->getDocumentList($val->doc_type);
+                $doc["uploadDoc"] = $this->check_doc_exist($refSafs->id,$val->doc_type);
+                if(isset($doc["uploadDoc"]["doc_path"]))
+                {
+                    $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
+                    $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"]))?$path :null;
+
+                }
+                array_push($requiedDocs,$doc);
+            }
+            foreach($mOwneres as $key=>$val)
+            { 
+                $doc = (array) null; 
+                $doc["ownerId"]     = $val->id;
+                $doc["ownerName"]   = $val->owner_name;
+                $doc['docName']     = "gender_document";
+                $doc['isMadatory']  = 1;
+                $doc['docVal']      = $this->getDocumentList("gender_document");
+                $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id,$val->id,$doc['docVal'][0]->id);
+                $doc["uploadDoc"]   = $this->check_doc_exist($refSafs->id,$val->doc_type);
+                if(isset($doc["uploadDoc"]["doc_path"]))
+                {
+                    $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
+                    $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"]))?$path :null;
+
+                }
+                array_push($ownersDoc,$doc);
+                $doc = (array) null; 
+                $doc["ownerId"]     = $val->id;
+                $doc["ownerName"]   = $val->owner_name;
+                $doc['docName']     = "dob_document";
+                $doc['isMadatory']  = 1;
+                $doc['docVal']      = $this->getDocumentList("dob_document");
+                $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id,$val->id,$doc['docVal'][0]->id);
+                $doc["uploadDoc"]   = $this->check_doc_exist($refSafs->id,$val->doc_type);
+                if(isset($doc["uploadDoc"]["doc_path"]))
+                {
+                    $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
+                    $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"]))?$path :null;
+
+                }
+                array_push($ownersDoc,$doc);
+                if($val->is_armed_force)
+                {   
+                    $doc = (array) null; 
+                    $doc["ownerId"]     = $val->id;
+                    $doc["ownerName"]   = $val->owner_name;
+                    $doc['docName']     = "armed_force_document";
+                    $doc['isMadatory']  = 1;
+                    $doc['docVal']      = $this->getDocumentList("armed_force_document");
+                    $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id,$val->id,$doc['docVal'][0]->id);
+                    $doc["uploadDoc"]   = $this->check_doc_exist($refSafs->id,$val->doc_type);
+                    if(isset($doc["uploadDoc"]["doc_path"]))
+                    {
+                        $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
+                        $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"]))?$path :null;
+
+                    }
+                    array_push($ownersDoc,$doc);
+                } 
+                if($val->is_specially_abled)
+                {   
+                    $doc = (array) null; 
+                    $doc["ownerId"]     = $val->id;
+                    $doc["ownerName"]   = $val->owner_name;
+                    $doc['docName']     = "handicaped_document";
+                    $doc['isMadatory']  = 1;
+                    $doc['docVal']      = $this->getDocumentList("handicaped_document");
+                    $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id,$val->id,$doc['docVal'][0]->id);
+                    $doc["uploadDoc"]   = $this->check_doc_exist($refSafs->id,$val->doc_type);
+                    if(isset($doc["uploadDoc"]["doc_path"]))
+                    {
+                        $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
+                        $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"]))?$path :null;
+
+                    }
+                    array_push($ownersDoc,$doc);
+                }
+            }
+            $data["documentsList"]  = $requiedDocs;
+            $data["ownersDocList"]  = $ownersDoc;
+            $data["safDtl"]         = $refSafs; 
+            $data["owners"]         = $mOwneres;
+            $data["uploadDocument"] = $mUploadDocument;
+            if($request->getMethod()=="GET")
+            {
+                return responseMsg(true,"",remove_null($data));
+            }
+            if($request->getMethod()=="POST")
+            {
+                DB::beginTransaction();
+                $rules = [];
+                $message = [];
+                $sms = "";
+                # Upload Document 
+                if(isset($request->btn_doc))
+                {              
+                    $cnt=$request->btn_doc;
+                    $rules = [
+                            'doc'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
+                            'doc_for'.$cnt =>"required|string",
+                            'doc_mstr_id'.$cnt.''=>'required|int',
+                        ];                         
+                    $validator = Validator::make($request->all(), $rules, $message);                    
+                    if ($validator->fails()) {                        
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    }                
+                    $file = $request->file('doc'.$cnt);
+                    $doc_mstr_id = "doc_mstr_id$cnt";
+                    $doc_for = "doc_for$cnt";
+                    if ($file->IsValid())
+                    { 
+                        if ($app_doc_dtl_id = $this->check_doc_exist($refSafs->id,$request->$doc_for,$request->$doc_mstr_id))
+                        {                                                          
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['doc_path']);
+                            if (file_exists($delete_path)) 
+                            {   
+                                unlink($delete_path);
+                            }
+                            $newFileName = $app_doc_dtl_id['id'];
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "saf_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->doc_path =  $filePath;
+                            $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->save();
+                            $sms = $request->$doc_for." Update Successfully";
+
+                        }
+                        else
+                        {
+                            $propDocs = new PropActiveSafsDoc;
+                            $propDocs->saf_id = $refSafs->id;
+                            $propDocs->doc_mstr_id = $request->$doc_mstr_id;
+                            $propDocs->user_id = $refUserId;
+                            
+                            $propDocs->save();
+                            $newFileName = $propDocs->id;
+                            
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "saf_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $propDocs->doc_path =  $filePath;
+                            $propDocs->save();
+                            $sms =  $request->$doc_for." Upload Successfully";
+                            
+
+                        }                         
+
+                    }
+                    else
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }
+                    
+                }
+                $owners = objToArray($mOwneres);
+                # Upload Owner Document Gender Document
+                if(isset($request->owner_doc) && $request->owner_doc ="Gender Document")
+                { 
+                    $cnt_owner=$request->owner_doc;                    
+                    $rules = [
+                            "owner_id" => "required|digits_between:1,9223372036854775807",
+                            'doc' =>'required|max:30720|mimes:pdf,jpg,jpeg,png',
+                            'doc_mstr_id' =>"required|int",
+                        ];
+                        
+                    $validator = Validator::make($request->all(), $rules, $message);                    
+                    if ($validator->fails()) {
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    }
+                    $owner_id = $request->owner_id;
+                    $woner_id = array_filter($owners,function($val)use($owner_id){
+                            return $val['id']==$owner_id;
+                    });
+                    $woner_id = array_values($woner_id)[0]??[];
+                    if(!$woner_id)
+                    {
+                        throw new Exception("Invalide Owner Id given!!!");
+                    }                   
+                    $file = $request->file('doc');
+                    $doc_mstr_id = "doc_mstr_id";      
+                    if ($file->IsValid() )
+                    {
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($refSafs->id,$request->owner_id,$request->$doc_mstr_id))
+                        {                                
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['doc_path']);
+                            if (file_exists($delete_path)) 
+                            { 
+                                unlink($delete_path);
+                            }
+
+                            $newFileName = $app_doc_dtl_id['id'];
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->doc_path =  $filePath;
+                            $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->save();
+                            $sms = "Gender Document ".$woner_id['owner_name']." Update Successfully";
+                        }                            
+                        else 
+                        {
+                            $propDocs = new PropActiveSafsDoc;
+                            $propDocs->saf_id = $refSafs->id;
+                            $propDocs->saf_owner_dtl_id =$request->owner_id;
+                            $propDocs->doc_mstr_id = $request->$doc_mstr_id;
+                            $propDocs->user_id = $refUserId;
+                            
+                            $propDocs->save();
+                            $newFileName = $propDocs->id;
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $propDocs->doc_path =  $filePath;
+                            $propDocs->save();
+                            $sms = "Gender Document ".$woner_id['owner_name']." Upload Successfully";
+                            
+                        }
+                    } 
+                    else 
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }
+                     
+                    
+                } 
+                # Upload Owner Document DOB Document
+                if(isset($request->owner_doc) && $request->owner_doc ="DOB Document")
+                { 
+                    $cnt_owner=$request->owner_doc;                    
+                    $rules = [
+                            "owner_id" => "required|digits_between:1,9223372036854775807",
+                            'doc' =>'required|max:30720|mimes:pdf,jpg,jpeg,png',
+                            'doc_mstr_id' =>"required|int",
+                        ];
+                        
+                    $validator = Validator::make($request->all(), $rules, $message);                    
+                    if ($validator->fails()) {
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    }
+                    $owner_id = $request->owner_id;
+                    $woner_id = array_filter($owners,function($val)use($owner_id){
+                            return $val['id']==$owner_id;
+                    });
+                    $woner_id = array_values($woner_id)[0]??[];
+                    if(!$woner_id)
+                    {
+                        throw new Exception("Invalide Owner Id given!!!");
+                    }                   
+                    $file = $request->file('doc');
+                    $doc_mstr_id = "doc_mstr_id";      
+                    if ($file->IsValid() )
+                    {
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($refSafs->id,$request->owner_id,$request->$doc_mstr_id))
+                        {                                
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['doc_path']);
+                            if (file_exists($delete_path)) 
+                            { 
+                                unlink($delete_path);
+                            }
+
+                            $newFileName = $app_doc_dtl_id['id'];
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->doc_path =  $filePath;
+                            $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->save();
+                            $sms = "DOB Document ".$woner_id['owner_name']." Update Successfully";
+                        }                            
+                        else 
+                        {
+                            $propDocs = new PropActiveSafsDoc;
+                            $propDocs->saf_id = $refSafs->id;
+                            $propDocs->saf_owner_dtl_id =$request->owner_id;
+                            $propDocs->doc_mstr_id = $request->$doc_mstr_id;
+                            $propDocs->user_id = $refUserId;
+                            
+                            $propDocs->save();
+                            $newFileName = $propDocs->id;
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $propDocs->doc_path =  $filePath;
+                            $propDocs->save();
+                            $sms = "DOB Document ".$woner_id['owner_name']." Upload Successfully";
+                            
+                        }
+                    } 
+                    else 
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }
+                     
+                    
+                }
+                # Upload Owner Document is_armfors
+                if(isset($request->owner_armforce) && $request->owner_armforce="Armed")
+                { 
+                    $cnt_owner=$request->owner_armforce;                    
+                    $rules = [
+                            "owner_id" => "required|digits_between:1,9223372036854775807",
+                            'doc' =>'required|max:30720|mimes:pdf,jpg,jpeg,png',
+                            'doc_mstr_id' =>"required|int",
+                        ];
+                        
+                    $validator = Validator::make($request->all(), $rules, $message);                    
+                    if ($validator->fails()) {
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    }
+                    $owner_id = $request->owner_id;
+                    $woner_id = array_filter($owners,function($val)use($owner_id){
+                            return ($val['id']==$owner_id && $val['is_armed_force']);
+                    }); 
+                    $woner_id = array_values($woner_id)[0]??[];
+                    if(!$woner_id)
+                    {
+                        throw new Exception("Invalide Owner Id given!!!");
+                    }                    
+                    $file = $request->file('doc');
+                    $doc_mstr_id = "doc_mstr_id";      
+                    if ($file->IsValid() )
+                    {
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($refSafs->id,$request->owner_id,$request->$doc_mstr_id))
+                        {                                
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['doc_path']);
+                            if (file_exists($delete_path)) 
+                            { 
+                                unlink($delete_path);
+                            }
+
+                            $newFileName = $app_doc_dtl_id['id'];
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->doc_path =  $filePath;
+                            $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->save();
+                            $sms = "Armed Certificate of". $woner_id['ownerName']." Update Successfully";
+                        }                            
+                        else 
+                        {
+                            $propDocs = new PropActiveSafsDoc;
+                            $propDocs->saf_id = $refSafs->id;
+                            $propDocs->saf_owner_dtl_id =$request->owner_id;
+                            $propDocs->doc_mstr_id = $request->$doc_mstr_id;
+                            $propDocs->user_id = $refUserId;
+                            
+                            $propDocs->save();
+                            $newFileName = $propDocs->id;
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $propDocs->doc_path =  $filePath;
+                            $propDocs->save();
+                            $sms = "Armed Certificate of". $woner_id['ownerName']." Upload Successfully";
+                            
+                        }
+                    } 
+                    else 
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }
+                     
+                    
+                }
+                # Upload Owner Document is_handicap
+                if(isset($request->owner_handicap) && $request->owner_handicap="Handicap")
+                { 
+                    $cnt_owner=$request->owner_handicap;                    
+                    $rules = [
+                            "owner_id" => "required|digits_between:1,9223372036854775807",
+                            'doc' =>'required|max:30720|mimes:pdf,jpg,jpeg,png',
+                            'doc_mstr_id' =>"required|int",
+                        ];
+                        
+                    $validator = Validator::make($request->all(), $rules, $message);                    
+                    if ($validator->fails()) {
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    }
+                    $owner_id = $request->owner_id;
+                    $woner_id = array_filter($owners,function($val)use($owner_id){
+                            return $val['id']==$owner_id && $val['is_specially_abled'];
+                    }); 
+                    $woner_id = array_values($woner_id)[0]??[];
+                    if(!$woner_id)
+                    {
+                        throw new Exception("Invalide Owner Id given!!!");
+                    }                    
+                    $file = $request->file('doc');
+                    $doc_mstr_id = "doc_mstr_id";      
+                    if ($file->IsValid() )
+                    {
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId,$request->owner_id,$request->$doc_mstr_id))
+                        {                                
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['doc_path']);
+                            if (file_exists($delete_path)) 
+                            { 
+                                unlink($delete_path);
+                            }
+
+                            $newFileName = $app_doc_dtl_id['id'];
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->doc_path =  $filePath;
+                            $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->save();
+                            $sms = "Handicap Certificate of ". $woner_id['ownerName']." Update Successfully";
+                        }                            
+                        else 
+                        {
+                            $propDocs = new PropActiveSafsDoc;
+                            $propDocs->saf_id =$refSafs->id;
+                            $propDocs->saf_owner_dtl_id =$request->owner_id;
+                            $propDocs->doc_mstr_id = $request->$doc_mstr_id;
+                            $propDocs->user_id = $refUserId;
+                            
+                            $propDocs->save();
+                            $newFileName = $propDocs->id;
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $propDocs->doc_path =  $filePath;
+                            $propDocs->save();
+                            $sms = "Handicap Certificate of ". $woner_id['ownerName']." Upload Successfully";
+                            
+                        }
+                    } 
+                    else 
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }
+                     
+                    
+                }
+                # owner image upload hear 
+                if(isset($request->owner_img) && $request->owner_img=="Photo")
+                {                    
+                    $cnt_owner = $request->owner_img;                    
+                    $rules = [
+                            "owner_id"=>'required|digits_between:1,9223372036854775807',
+                            "photo_owner"=>"required|max:30720|mimes:pdf,jpg,jpeg,png",
+                        ];
+                    $validator = Validator::make($request->all(), $rules, $message);                    
+                    if ($validator->fails()) {
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    } 
+                    $req_owner_id = $request->owner_id;
+                    $woner_id = array_filter($owners,function($val)use($req_owner_id){
+                            return $val['id']==$req_owner_id;
+                    }); 
+                    $woner_id = array_values($woner_id)[0]??[];
+                    if(!$woner_id)
+                    {
+                        throw new Exception("Invalide Owner Id given!!!");
+                    }
+                    $file = $request->file('photo_owner');
+                    if ($file->IsValid())
+                    {  
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId,$request->owner_id,0))
+                        {
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['doc_path']);
+                            if (file_exists($delete_path)) 
+                            { 
+                                unlink($delete_path);
+                            }
+
+                            $newFileName = $app_doc_dtl_id['id'];
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->doc_path =  $filePath;
+                            $app_doc_dtl_id->doc_mstr_id =  0;
+                            $app_doc_dtl_id->save();
+                            $sms = "Photo Of ". $woner_id['ownerName']." Update Successfully";
+                        }
+                        
+                        else
+                        {
+                            $propDocs = new PropActiveSafsDoc;
+                            $propDocs->saf_id = $refSafs->id;
+                            $propDocs->saf_owner_dtl_id = $request->owner_id;
+                            $propDocs->doc_mstr_id =0;
+                            $propDocs->user_id = $refUserId;
+                            
+                            $propDocs->save();
+                            $newFileName = $propDocs->id;
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $propDocs->doc_path =  $filePath;
+                            $propDocs->save();
+                            $sms = "Photo Of ". $woner_id['ownerName']." Upload Successfully";
+                        }                                
+
+                    } 
+                    else 
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }              
+                }                 
+                DB::commit();
+                $mUploadDocument = $this->getSafDocuments($refSafs->id)->map(function($val){
+                    if(isset($val["doc_path"]))
+                    {
+                        $path = $this->readDocumentPath( $val["doc_path"]);
+                        $val["doc_path"] = !empty(trim( $val["doc_path"]))?$path :null;                    
+    
+                    }
+                    return $val;
+                });
+                $data["uploadDocument"] = $mUploadDocument;
+                return responseMsg(true, $sms,$data);
+            }
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+    public function getUploadDocuments(Request $request)
+    {
+        try{
+            $refUser = Auth()->user();
+            $refUserId = $refUser->id;
+            $refUlbId = $refUser->ulb_id;
+            $refSafs = null;
+            $mUploadDocument = (array)null;
+            $mDocumentsList  = (array)null;
+            $finalData       = (array)null;
+            $requiedDocs     = (array) null;
+            $ownersDoc       = (array) null;
+            $safId           = $request->id; 
+            if(!$safId)
+            {
+                throw new Exception("Saf Id Required");
+            }
+            $refSafs = PropActiveSaf::find($safId); ;
+            if(!$refSafs)
+            {
+                throw new Exception("Data Not Found");
+            }
+            $mUploadDocument = $this->getSafDocuments($refSafs->id)->map(function($val){
+                if(isset($val["doc_path"]))
+                {
+                    $path = $this->readDocumentPath( $val["doc_path"]);
+                    $val["doc_path"] = !empty(trim( $val["doc_path"]))?$path :null;                    
+
+                }
+                return $val;
+            });
+            $data["uploadDocument"] = $mUploadDocument;
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
 }
