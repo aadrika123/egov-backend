@@ -76,17 +76,17 @@ class RouteServiceProvider extends ServiceProvider
                 ->namespace($this->namespace)
                 ->group(base_path('routes/grievance.php'));
 
-                //payment
-                Route::prefix('api/payment')
+            //payment
+            Route::prefix('api/payment')
                 ->middleware('api')
                 ->namespace($this->namespace)
                 ->group(base_path('routes/payment.php'));
 
-                 //Cluster
-                //  Route::prefix('api/cluster')
-                //  ->middleware('api')
-                //  ->namespace($this->namespace)
-                //  ->group(base_path('routes/cluster.php'));
+            //Cluster
+            //  Route::prefix('api/cluster')
+            //  ->middleware('api')
+            //  ->namespace($this->namespace)
+            //  ->group(base_path('routes/cluster.php'));
         });
     }
 

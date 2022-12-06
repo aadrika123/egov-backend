@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Redis;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
+use App\Models\PropActiveObjectionDocdtl;
 
 
 
@@ -59,6 +60,7 @@ class ObjectionRepository implements iObjectionRepository
             $userType = auth()->user()->user_type;
             $objectionFor = $request->objectionFor;
             $objectionNo = "";
+            $a = [];
 
             $workflow_id_clerical = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
             $workflow_id_assesment = Config::get('workflow-constants.PROPERTY_OBJECTION_ASSESSMENT');
@@ -105,28 +107,57 @@ class ObjectionRepository implements iObjectionRepository
                 // }
 
                 //name
-                if ($file = $request->file('nameDoc')) {
 
-                    $name = time() . '.' . $file->getClientOriginalExtension();
+
+                if ($namefile = $request->file('nameDoc')) {
+
+                    $objectionDoc = new PropActiveObjectionDocdtl;
+                    $name = time() . 'name.' . $namefile->getClientOriginalExtension();
                     $path = public_path('objection/name');
-                    $file->move($path, $name);
+                    $namefile->move($path, $name);
+                    $objectionDoc->objection_id = $objection->id;
+                    $objectionDoc->doc_type = 'nameDoc';
+                    $objectionDoc->relative_path = $path;
+                    $objectionDoc->doc_name = $name;
+                    $objectionDoc->status = 1;
+                    $objectionDoc->date = Carbon::now();
+                    $objectionDoc->created_at = Carbon::now();
+                    $objectionDoc->save();
                 }
 
 
                 //address
-                if ($file = $request->file('addressDoc')) {
+                if ($addressfile = $request->file('addressDoc')) {
 
-                    $name = time() . '.' . $file->getClientOriginalExtension();
+                    $objectionDoc = new PropActiveObjectionDocdtl;
+                    $name = time() . 'add.' . $addressfile->getClientOriginalExtension();
                     $path = public_path('objection/address');
-                    $file->move($path, $name);
+                    $addressfile->move($path, $name);
+                    $objectionDoc->objection_id = $objection->id;
+                    $objectionDoc->doc_type = 'addressDoc';
+                    $objectionDoc->relative_path = $path;
+                    $objectionDoc->doc_name = $name;
+                    $objectionDoc->status = 1;
+                    $objectionDoc->date = Carbon::now();
+                    $objectionDoc->created_at = Carbon::now();
+                    $objectionDoc->save();
                 }
 
                 //saf doc
-                if ($file = $request->file('safMemberDoc')) {
+                if ($memberfile = $request->file('safMemberDoc')) {
 
-                    $name = time() . '.' . $file->getClientOriginalExtension();
+                    $objectionDoc = new PropActiveObjectionDocdtl;
+                    $name = time() . 'member.' . $memberfile->getClientOriginalExtension();
                     $path = public_path('objection/safMembers');
-                    $file->move($path, $name);
+                    $memberfile->move($path, $name);
+                    $objectionDoc->objection_id = $objection->id;
+                    $objectionDoc->doc_type = 'safMemberDoc';
+                    $objectionDoc->relative_path = $path;
+                    $objectionDoc->doc_name = $name;
+                    $objectionDoc->status = 1;
+                    $objectionDoc->date = Carbon::now();
+                    $objectionDoc->created_at = Carbon::now();
+                    $objectionDoc->save();
                 }
 
                 $objectionNo = $this->objectionNo($objection->id);
@@ -249,6 +280,10 @@ class ObjectionRepository implements iObjectionRepository
                     }
                     $assement_error->assesment_data =  $request->assesmentData;
                     $assement_error->applicant_data =  $otid["value"];
+
+                    $a = $this->assesmentDetails($request);
+                    $assement_error->applicant_data =  $a;
+
                     $assement_error->save();
                 }
 
@@ -379,7 +414,7 @@ class ObjectionRepository implements iObjectionRepository
                     ->join('ref_prop_construction_types', 'ref_prop_construction_types.id', '=', 'prop_floors.const_type_mstr_id')
                     ->get();
             }
-            return responseMsg(true, "Successfully Retrieved", $assesmentDetailss);
+            return responseMsg(true, "Successfully Retrieved", remove_null($assesmentDetailss));
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -662,6 +697,7 @@ class ObjectionRepository implements iObjectionRepository
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
 
     //common function
     // public function commonFunction($request, $objection)

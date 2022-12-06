@@ -25,7 +25,6 @@ class RainWaterHarvestingController extends Controller
      # function to save the application of harvesting
      public function waterHarvestingApplication(Request $request)
      {
-        # validation 
         $validated = Validator::make(
             $request->all(),
             [

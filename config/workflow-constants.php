@@ -16,6 +16,7 @@ return [
     "PROPERTY_OBJECTION_CLERICAL"       => "36",
     "PROPERTY_OBJECTION_ASSESSMENT"     => "56",
     "PROPERTY_OBJECTION_FORGERY"        => "76",
+    "RAIN_WATER_HARVESTING_ID"  => "98",
     "SAF_BIFURCATION_ID"        => "25",
-    // "RAIN_WATER_HARVESTING_ID"  => "",
+   
 ];

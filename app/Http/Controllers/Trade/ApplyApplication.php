@@ -66,6 +66,11 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->documentUpload($request);
     }
+    public function getUploadDocuments(Request $request)
+    {
+        return $this->Repository->getUploadDocuments($request);
+    }
+    
     public function documentVirify(Request $request)
     {
         return $this->Repository->documentVirify($request);
@@ -135,6 +140,10 @@ class ApplyApplication extends Controller
         $id = $request->id;
         $mailID = $request->mailID;
         return $this->Repository->denialView($id,$mailID,$request);
+    }
+    public function approvedApplication(Request $request)
+    {
+        return $this->Repository->approvedApplication($request);
     }
     public function reports(Request $request)
     {

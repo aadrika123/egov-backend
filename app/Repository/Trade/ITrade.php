@@ -25,6 +25,7 @@ interface ITrade
     public function updateLicenseBo(Request $request);
     public function updateBasicDtl(Request $request);
     public function documentUpload(Request $request);
+    public function getUploadDocuments(Request $request);
     public function documentVirify(Request $request);
     public function readLicenceDtl($id);
     public function readDenialdtlbyNoticno(Request $request);
@@ -45,5 +46,6 @@ interface ITrade
     public function addDenail(Request $request);
     public function denialInbox(Request $request);
     public function denialView($id,$mailID,Request $request);
+    public function approvedApplication(Request $request);
     public function reports(Request $request);
 }

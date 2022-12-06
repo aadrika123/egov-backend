@@ -12,12 +12,6 @@ use Illuminate\Http\Request;
 
 interface iPayment
 {
-    /* 
-    public function storePayment(Request $request);
-    public function getPaymentByID($id);
-    public function getAllPayments();
-    */
-
     # payment Gateway (RAZORPAY/Property)
     public function getDepartmentByulb(Request $req);
     public function getPaymentgatewayByrequests(Request $req);

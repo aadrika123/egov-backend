@@ -12,7 +12,8 @@ class MenuMaster extends Model
 
     public function fetchAllMenues()
     {
-        return MenuMaster::orderByDesc('id')
+        return MenuMaster::where('is_deleted', false)
+            ->orderByDesc('id')
             ->get();
     }
 
@@ -37,6 +38,28 @@ class MenuMaster extends Model
             $newMenues->icon = $request->icon;
             $newMenues->save();
             return responseMsg(true, "Data Saved!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * | Delete the details of the Menu master 
+     * | @param request
+     * | Query Run Time - ms 
+     * | status- open
+     * | rating-1
+     */
+    public function deleteMenues($request)
+    {
+        try {
+            if (!null == ($request->id)) {
+                MenuMaster::where('id', $request->id)
+                    ->update(['is_deleted' => true]);
+                return responseMsg(true, "Respective Menu Deleted!", $request->id);
+            }
+            return responseMsg(false,"Enter a Valid Details!",$request->id);
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }

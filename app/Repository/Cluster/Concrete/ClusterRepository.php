@@ -22,16 +22,8 @@ class ClusterRepository implements iCluster
     public function getAllClusters()
     {
         try {
-            $mdetails = Cluster::select(
-                'id',
-                'cluster_name AS name',
-                'cluster_type AS type',
-                'address',
-                'mobile_no AS mobileNo',
-                'authorized_person_name AS authPersonName'
-            )
-                ->where('status', 1)
-                ->get();
+            $mdetails = new Cluster();
+            $mdetails = $mdetails->allClusters();
             return $this->success($mdetails);
         } catch (Exception $error) {
             return $this->failure($error->getMessage());
@@ -47,22 +39,13 @@ class ClusterRepository implements iCluster
      */
     public function getClusterById($request)
     {
-
         try {
-            $mdetailsById = Cluster::select(
-                'cluster_name AS name',
-                'cluster_type AS type',
-                'address',
-                'mobile_no AS mobileNo',
-                'authorized_person_name AS authorizedPersonName',
-                'status'
-            )
+            $mdetails = new Cluster();
+            $mdetailsById = $mdetails->allClusters()
                 ->where('id', $request->id)
-                ->where('status', 1)
-                ->get()
                 ->first();
 
-            if (!null == ($mdetailsById) && $mdetailsById->status == 1) {
+            if (!empty($mdetailsById)) {
                 return $this->success($mdetailsById);
             }
             return  $this->noData();
@@ -92,21 +75,14 @@ class ClusterRepository implements iCluster
 
 
 
-
-
-
-
-
-
-
-
-
-
     /**
      * | ----------------- details of the respective holding NO ------------------------------- |
      * | @param request
      * | @var holdingCheck
      * | Operation : returning details according to the holdin no 
+     * |
+     * | Rating : 2
+     * | Time :
      */
     public function detailsByHolding($request)
     {
@@ -134,8 +110,8 @@ class ClusterRepository implements iCluster
      * | @param request
      * | @var clusterDetails
      * | Operation : returning the details according to the cluster Id
-     * | time: 385ms
-     * | rating - 2
+     * | Time: 385ms
+     * | Rating - 2
      */
     public function holdingByCluster($request)
     {
@@ -166,6 +142,7 @@ class ClusterRepository implements iCluster
      * | ----------------- saving the respective holding to the cluster ------------------------------- |
      * | @param request
      * | @var clusterDetails
+     * | @var notActive
      * | Operation : 385ms
      * | rating - 2
      */

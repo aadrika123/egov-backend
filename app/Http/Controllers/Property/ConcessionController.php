@@ -120,4 +120,28 @@ class ConcessionController extends Controller
         ]);
         return $this->Repository->getOwnerDetails($request);
     }
+
+    //concesssion list
+    public function concessionList()
+    {
+        return $this->Repository->concessionList();
+    }
+
+    //concesion list  by id
+    public function getConcessionByid(Request $req)
+    {
+        return $this->Repository->getConcessionByid($req);
+    }
+
+    //get document status by id
+    public function concessionDocList(Request $req)
+    {
+        return $this->Repository->concessionDocList($req);
+    }
+
+    //post document status
+    public function concessionDocStatus(Request $req)
+    {
+        return $this->Repository->concessionDocStatus($req);
+    }
 }
