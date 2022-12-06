@@ -25,6 +25,7 @@ interface ITrade
     public function updateLicenseBo(Request $request);
     public function updateBasicDtl(Request $request);
     public function documentUpload(Request $request);
+    public function getUploadDocuments(Request $request);
     public function documentVirify(Request $request);
     public function readLicenceDtl($id);
     public function readDenialdtlbyNoticno(Request $request);

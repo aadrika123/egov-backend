@@ -1646,7 +1646,9 @@ class Trade implements ITrade
                     }              
                 }                 
                 DB::commit();
-                return responseMsg(true, $sms,"");
+                $mUploadDocument = $this->getLicenceDocuments($licenceId);
+                $data["uploadDocument"] = $mUploadDocument;
+                return responseMsg(true, $sms,$data);
             }
         }
         catch(Exception $e)
@@ -1654,6 +1656,30 @@ class Trade implements ITrade
 
             return responseMsg(false,$e->getMessage(),$request->all());
         }
+    }
+    public function getUploadDocuments(Request $request)
+    {
+        try{
+            $licenceId = $request->id;
+            if(!$licenceId)
+            {
+                throw new Exception("Licence Id Required");
+            }
+            $refLicence = $this->getLicenceById($licenceId);
+            if(!$refLicence)
+            {
+                throw new Exception("Data Not Found");
+            }
+            $mUploadDocument = $this->getLicenceDocuments($licenceId);
+            $data["uploadDocument"] = $mUploadDocument;
+            return responseMsg(true,"",$data);
+        }
+        catch(Exception $e)
+        {
+
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+
     }
     public function documentVirify(Request $request)
     {
