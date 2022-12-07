@@ -314,11 +314,20 @@ trait SAF
     public function tActiveSafDetails()
     {
         return DB::table('prop_active_safs')
-            ->select('prop_active_safs.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'w.ward_name as new_ward_no', 'o.ownership_type', 'p.property_type')
+            ->select(
+                'prop_active_safs.*',
+                'at.assessment_type as assessment',
+                'w.ward_name as old_ward_no',
+                'w.ward_name as new_ward_no',
+                'o.ownership_type',
+                'p.property_type',
+                'r.road_type as road_type_master'
+            )
             ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
             ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
             ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
-            ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id');
+            ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
+            ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id');
     }
 }
