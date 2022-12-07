@@ -1055,11 +1055,6 @@ class SafRepository implements iSafRepository
             $userId = authUser()->id;
             $propSafsDemand = new PropSafsDemand();
             $demands = $propSafsDemand->getDemandBySafId($req['id']);
-            $fromFinYear = $demands->first()['fyear'];
-            $fromFinQtr = $demands->first()['qtr'];
-            $upToFinYear = $demands->last()['fyear'];
-            $upToFinQtr = $demands->last()['qtr'];
-            $activeSafDetails = $this->details($req);
             DB::beginTransaction();
             // Property Transactions
             $propTrans = new PropTransaction();
@@ -1085,38 +1080,23 @@ class SafRepository implements iSafRepository
             $activeSaf->payment_status = 1;
             $activeSaf->save();
 
-            // Response Return Data
-            $responseData = [
-                "transactionDate" => $propTrans->tran_date,
-                "transactionNo" => $propTrans->tran_no,
-                "transactionTime" => $propTrans->created_at->format('H:i:s'),
-                "transactionTime" => $propTrans->created_at->format('H:i:s'),
-                "customerName" => $activeSafDetails->original['data']['applicant_name'],
-                "receiptWard" => $activeSafDetails->original['data']['new_ward_no'],
-                "address" => $activeSafDetails->original['data']['prop_address'],
-                "paidFrom" => $fromFinYear,
-                "paidFromQtr" => $fromFinQtr,
-                "paidUpto" => $upToFinYear,
-                "paidUptoQtr" => $upToFinQtr,
-                "paymentMode" => $propTrans->payment_mode,
-                "bankName" => "",
-                "branchName" => "",
-                "chequeNo" => "",
-                "chequeDate" => "",
-                "noOfFlats" => "",
-                "monthlyRate" => "",
-                "demandAmount" => $propTrans->amount,
-                "paidAmount" => $propTrans->amount,
-                "remainingAmount" => 0,
-                "tcName" => "",
-                "tcMobile" => ""
-            ];
-
             Redis::del('property-transactions-user-' . $userId);
             DB::commit();
-            return responseMsg(true, "Payment Successfully Done", remove_null($responseData));
+            return responseMsg(true, "Payment Successfully Done", "");
         } catch (Exception $e) {
             DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Generate Payment Receipt
+     * | @param request req
+     */
+    public function generatePaymentReceipt($req)
+    {
+        try {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
