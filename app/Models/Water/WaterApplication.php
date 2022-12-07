@@ -8,4 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class WaterApplication extends Model
 {
     use HasFactory;
+
+ 
 }

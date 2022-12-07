@@ -26,4 +26,16 @@ class WebhookPaymentData extends Model
         }
         return ("no data!");
     }
+
+    // get applicatin Id
+    public function getApplicationId($payId)
+    {
+       $userDetails= WebhookPaymentData::where('payment_id', $payId)
+            ->select(
+                'payment_notes AS userDetails'
+            )
+            ->get();
+            $data= collect($userDetails)->first()->userDetails;
+            return $data;
+    }
 }
