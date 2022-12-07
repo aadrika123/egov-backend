@@ -24,16 +24,8 @@ class InsertTax
             $safDemand = new PropSafsDemand();
             $safDemand->saf_id = $safId;
             $safDemand->qtr = $detail['qtr'];
-            $safDemand->holding_tax = $detail['holdingTax'];
-            $safDemand->water_tax = $detail['waterTax'];
-            $safDemand->education_cess = $detail['educationTax'];
-            $safDemand->health_cess = $detail['healthCess'];
-            $safDemand->latrine_tax = $detail['latrineTax'];
-            $safDemand->additional_tax = 0;
-            $safDemand->amount = $detail['totalTax'];
-            $safDemand->balance = $detail['totalTax'];
+            $this->tSaveSafDemand($safDemand, $detail);     // <-------- Trait to Save Fields
             $safDemand->paid_status = 0;
-            $safDemand->arv = $detail['arv'];
             $safDemand->fyear = $detail['quarterYear'];
             $safDemand->due_date = $detail['dueDate'];
             $safDemand->status = 1;

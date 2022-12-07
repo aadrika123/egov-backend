@@ -37,6 +37,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('postNext', 'postNextLevel');
         Route::post('postComment', 'addIndependentComment');
         Route::post('pay', 'PaymentCounter');
+        Route::post('payOnline', 'handeRazorPay');
         Route::match(["get", "post"],'applyDenail', 'applyDenail');
         Route::match(["get", "post"],'denialInbox', 'denialInbox');
         Route::match(["get", "post"],'denialview/{id}/{mailId}', 'denialview');

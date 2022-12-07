@@ -144,6 +144,16 @@ class ActiveSafController extends Controller
         return $this->Repository->paymentSaf($req);
     }
 
+    // Generate Payment Receipt
+    public function generatePaymentReceipt(Request $req)
+    {
+        $req->validate([
+            'paymentId' => 'required|integer'
+        ]);
+
+        return $this->Repository->generatePaymentReceipt($req);
+    }
+
     // Get Property Transactions
     public function getPropTransactions(Request $req)
     {
