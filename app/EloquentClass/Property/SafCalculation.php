@@ -930,6 +930,7 @@ class SafCalculation
      */
     public function calculateFinalPayableAmount()
     {
+
         $demand = collect($this->_GRID['details'])->pipe(function ($values) {
             return collect([
                 'totalTax' => roundFigure($values->sum('totalTax')),
@@ -938,6 +939,13 @@ class SafCalculation
         });
 
         $this->_GRID['demand'] = $demand;
+        // From Quarter Year and Quarter Month
+        $this->_GRID['demand']['fromQuarterYear'] = $this->_GRID['details']->first()['quarterYear'];
+        $this->_GRID['demand']['fromQuarter'] = $this->_GRID['details']->first()['qtr'];
+        // To Quarter Year and Quarter Month
+        $this->_GRID['demand']['toQuarterYear'] = $this->_GRID['details']->last()['quarterYear'];
+        $this->_GRID['demand']['toQuarter'] = $this->_GRID['details']->last()['qtr'];
+
         $this->_GRID['demand']['isResidential'] = $this->_isResidential;
 
         $fine = 0;
