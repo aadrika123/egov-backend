@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Models\Property\PropActiveSafsDoc;
 use Illuminate\Http\Request;
+use App\Repository\Property\Interfaces\iDocumentRepository;
 
 class DocumentController extends Controller
 {
@@ -13,4 +15,12 @@ class DocumentController extends Controller
      * --------------------------------------------------------------------------------------
      * | Controller regarding with Property Document 
      */
+
+
+    //document verification
+    public function safDocStatus(Request $req)
+    {
+        $obj = new PropActiveSafsDoc();
+        return $obj->safDocStatus($req);
+    }
 }

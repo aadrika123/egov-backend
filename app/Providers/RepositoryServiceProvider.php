@@ -34,6 +34,8 @@ use App\Repository\Trade\Trade;
 
 use App\Repository\Water\Concrete\NewConnectionRepository;
 use App\Repository\Water\Interfaces\iNewConnection;
+use App\Repository\Water\Concrete\WaterNewConnection;
+use App\Repository\Water\Interfaces\IWaterNewConnection;
 
 use App\Repository\WorkflowMaster\Concrete\WorkflowMasterRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowMasterRepository;
@@ -48,7 +50,7 @@ use App\Repository\WorkflowMaster\Interface\iWorkflowRoleUserMapRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowWardUserRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowWardUserRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
-
+use App\Repository\WorkflowMaster\Interface\iWorkflowMapRepository;
 
 use App\Repository\Property\Concrete\CalculatorRepository;
 use App\Repository\Property\Concrete\DocumentOperationRepo;
@@ -60,10 +62,6 @@ use App\Repository\Property\Interfaces\iDocumentOperationRepo;
 use App\Repository\Property\Interfaces\IPropertyBifurcation;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use App\Repository\Property\Interfaces\iSafDemandRepo;
-use App\Repository\Water\Concrete\WaterNewConnection;
-use App\Repository\Water\Interfaces\IWaterNewConnection;
-use App\Repository\WorkflowMaster\Interface\iWorkflowMapRepository;
-
 
 
 use Illuminate\Support\ServiceProvider;
