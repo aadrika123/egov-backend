@@ -58,7 +58,7 @@ trait Razorpay
 
             $mReciptId = Str::random(10);                                           //<--------- here (STATIC)
 
-            $mApi = new Api($this->refRazorpayId, $this->refRazorpayKey);           //<--------- here (CAUTION)
+           $mApi = new Api($this->refRazorpayId, $this->refRazorpayKey);           //<--------- here (CAUTION)
             $mOrder = $mApi->order->create(array(
                 'receipt' => $mReciptId,
                 'amount' => $request->all()['amount'] * 100,
@@ -87,7 +87,7 @@ trait Razorpay
             $transaction->razorpay_order_id = $mReturndata['orderId'];
             $transaction->amount = $request->amount;
             $transaction->currency = 'INR';
-            $transaction->save();                                                       
+            $transaction->save();
 
             return $mReturndata;                                                        //<------------------ here(RESPONSE)
         } catch (Exception $error) {
@@ -207,11 +207,11 @@ trait Razorpay
         #notes
         $notes = json_encode($request->payload['payment']['entity']['notes']);
         $depatmentId = $request->payload['payment']['entity']['notes']['departmentId'];
-       
+
         #amount/ actualAmount
         $amount = $request->payload['payment']['entity']['amount'];
         $actulaAmount = $amount / 100;
-        
+
         #accquireData/ Its key Valaue
         $arrayInAquirer = $dataOfRequest['payload']['payment']['entity']['acquirer_data'];
         $firstKey = array_key_first($arrayInAquirer);
@@ -288,8 +288,6 @@ trait Razorpay
         $data->department_id                = $request->payload['payment']['entity']['notes']['departmentId'];
         $data->workflow_id                  = $request->payload['payment']['entity']['notes']['workflowId'];
         $data->ulb_id                       = $request->payload['payment']['entity']['notes']['ulbId'];
-        $data->save();
-
         # transaction id generation and saving
         $actualTransactionNo = $this->generatingTransactionId($transTransferDetails);
         $data->payment_transaction_id = $actualTransactionNo;
@@ -348,7 +346,4 @@ trait Razorpay
             return response()->json([$error->getMessage()]);
         }
     }
-
-
-    
 }
