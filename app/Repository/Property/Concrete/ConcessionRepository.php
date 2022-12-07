@@ -91,86 +91,29 @@ class ConcessionRepository implements iConcessionRepository
             //saving document in concession doc table
             if ($file = $request->file('genderDoc')) {
                 $concessionDoc = new PropConcessionDocDtl();
+                $concessionDoc->concession_id = $concession->id;
                 $this->genderDocUpload($file, $concessionDoc);
-
-                // $name = time() . 'gender.' . $file->getClientOriginalExtension();
-                // $path = storage_path('app/public/concession/genderDoc');
-                // $file->move($path, $name);
-
-
-                // $concessionDoc->concession_id = $concession->id;
-                // $concessionDoc->doc_type = 'genderDoc';
-                // $concessionDoc->relative_path = '/concession/genderDoc/';
-                // $concessionDoc->doc_name = $name;
-                // $concessionDoc->status = '1';
-                // $concessionDoc->user_id = $userId;
-                // $concessionDoc->date = Carbon::now();
-                // $concessionDoc->created_at = Carbon::now();
-
-                // $concessionDoc->save();
             }
 
             // dob Doc
             if ($file = $request->file('dobDoc')) {
                 $concessionDoc = new PropConcessionDocDtl();
+                $concessionDoc->concession_id = $concession->id;
                 $this->dobDocUpload($file, $concessionDoc);
-
-                // $name = time() . 'dob.' . $file->getClientOriginalExtension();
-                // $path = storage_path('app/public/concession/dobDoc');
-                // $file->move($path, $name);
-
-                // $concessionDoc = new PropConcessionDocDtl();
-                // $concessionDoc->concession_id = $concession->id;
-                // $concessionDoc->doc_type = 'dobDoc';
-                // $concessionDoc->relative_path = '/concession/dobDoc/';
-                // $concessionDoc->doc_name = $name;
-                // $concessionDoc->status = '1';
-                // $concessionDoc->user_id = $userId;
-                // $concessionDoc->date = Carbon::now();
-                // $concessionDoc->created_at = Carbon::now();
-                // $concessionDoc->save();
             }
 
             // specially abled Doc
             if ($file = $request->file('speciallyAbledDoc')) {
                 $concessionDoc = new PropConcessionDocDtl();
+                $concessionDoc->concession_id = $concession->id;
                 $this->speciallyAbledDocUpload($file, $concessionDoc);
-
-                // $name = time() . 'speciallabled.' . $file->getClientOriginalExtension();
-                // $path = storage_path('app/public/concession/speciallyAbledDoc');
-                // $file->move($path, $name);
-
-
-                // $concessionDoc->concession_id = $concession->id;
-                // $concessionDoc->doc_type = 'speciallyAbledDoc';
-                // $concessionDoc->relative_path = '/concession/speciallyAbledDoc/';
-                // $concessionDoc->doc_name = $name;
-                // $concessionDoc->status = '1';
-                // $concessionDoc->user_id = $userId;
-                // $concessionDoc->date = Carbon::now();
-                // $concessionDoc->created_at = Carbon::now();
-                // $concessionDoc->save();
             }
 
             // Armed force Doc
             if ($file = $request->file('armedForceDoc')) {
                 $concessionDoc = new PropConcessionDocDtl();
+                $concessionDoc->concession_id = $concession->id;
                 $this->armedForceDocUpload($file, $concessionDoc);
-
-                // $name = time() . 'armedforce.' . $file->getClientOriginalExtension();
-                // $path = storage_path('app/public/concession/armedForceDoc');
-                // $file->move($path, $name);
-
-
-                // $concessionDoc->concession_id = $concession->id;
-                // $concessionDoc->doc_type = 'armedForceDoc';
-                // $concessionDoc->relative_path = '/concession/armedForceDoc/';
-                // $concessionDoc->doc_name = $name;
-                // $concessionDoc->status = '1';
-                // $concessionDoc->user_id = $userId;
-                // $concessionDoc->date = Carbon::now();
-                // $concessionDoc->created_at = Carbon::now();
-                // $concessionDoc->save();
             }
 
 
@@ -704,10 +647,17 @@ class ConcessionRepository implements iConcessionRepository
 
             $docStatus = PropConcessionDocDtl::find($req->id);
             $docStatus->remarks = $req->docRemarks;
-            $docStatus->verify_status = $req->docStatus;
+            // $docStatus->verify_status = $req->docStatus;
             $docStatus->verify_by_emp_id = $userId;
             $docStatus->verified_on = Carbon::now();
             $docStatus->updated_at = Carbon::now();
+
+            if ($req->docStatus == 'Verified') {
+                $docStatus->verify_status = 1;
+            }
+            if ($req->docStatus == 'Rejected') {
+                $docStatus->verify_status = 2;
+            }
             $docStatus->save();
 
             return responseMsg(true, "Successfully Done", '');
@@ -755,7 +705,7 @@ class ConcessionRepository implements iConcessionRepository
         $concessionDoc->save();
     }
 
-    //
+    // armed force doc upload
     public function armedForceDocUpload($file, $concessionDoc)
     {
         $userId = auth()->user()->id;
@@ -774,7 +724,7 @@ class ConcessionRepository implements iConcessionRepository
         $concessionDoc->save();
     }
 
-    //
+    //specially doc upload
     public function speciallyAbledDocUpload($file, $concessionDoc)
     {
         $userId = auth()->user()->id;

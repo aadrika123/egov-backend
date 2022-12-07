@@ -14,6 +14,7 @@ use App\Models\Payment;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\WebhookPaymentData;
 use App\Repository\Property\Concrete\SafRepository;
+use App\Repository\Trade\Trade;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -87,7 +88,7 @@ trait Razorpay
             $transaction->razorpay_order_id = $mReturndata['orderId'];
             $transaction->amount = $request->amount;
             $transaction->currency = 'INR';
-            $transaction->save();                                                       
+            $transaction->save();
 
             return $mReturndata;                                                        //<------------------ here(RESPONSE)
         } catch (Exception $error) {
@@ -207,11 +208,11 @@ trait Razorpay
         #notes
         $notes = json_encode($request->payload['payment']['entity']['notes']);
         $depatmentId = $request->payload['payment']['entity']['notes']['departmentId'];
-       
+
         #amount/ actualAmount
         $amount = $request->payload['payment']['entity']['amount'];
         $actulaAmount = $amount / 100;
-        
+
         #accquireData/ Its key Valaue
         $arrayInAquirer = $dataOfRequest['payload']['payment']['entity']['acquirer_data'];
         $firstKey = array_key_first($arrayInAquirer);
@@ -227,8 +228,7 @@ trait Razorpay
         $transTransferDetails['orderId'] = $request->payload['payment']['entity']['order_id'];
         $transTransferDetails['status'] = $status;
 
-        #data to be saved in card detail table
-        DB::beginTransaction();                                                                             //<----------here
+        #data to be saved in card detail table                                                                           //<----------here
         $aCard = $request->payload['payment']['entity']['card_id'];
         if (!is_null($aCard)) {
             $card = new CardDetail();
@@ -288,8 +288,6 @@ trait Razorpay
         $data->department_id                = $request->payload['payment']['entity']['notes']['departmentId'];
         $data->workflow_id                  = $request->payload['payment']['entity']['notes']['workflowId'];
         $data->ulb_id                       = $request->payload['payment']['entity']['notes']['ulbId'];
-        $data->save();
-
         # transaction id generation and saving
         $actualTransactionNo = $this->generatingTransactionId($transTransferDetails);
         $data->payment_transaction_id = $actualTransactionNo;
@@ -313,14 +311,14 @@ trait Razorpay
                     $obj = new SafRepository();
                     $obj->paymentSaf($transfer);
                     break;
-                    // case(2):
-                    //     //  $msge= "operation";
-                    //     break;    
+                case ('3'):
+                    $objTrade = new Trade();
+                    $objTrade->razorPayResponse($transfer);
+                    break;
                 default:
                     // $msg = 'Something went wrong on switch';
             }
-        }
-        DB::commit();                                                                                       //<------------------ here (CAUTION)
+        }                                                                                    //<------------------ here (CAUTION)
         return responseMsg(true, "Webhook Data Collected!", $request->event);
     }
 
@@ -348,7 +346,4 @@ trait Razorpay
             return response()->json([$error->getMessage()]);
         }
     }
-
-
-    
 }

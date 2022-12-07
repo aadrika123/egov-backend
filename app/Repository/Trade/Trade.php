@@ -1284,7 +1284,13 @@ class Trade implements ITrade
             $TradeRazorPayRequest->order_id	    = $temp["orderId"];
             $TradeRazorPayRequest->department_id = $temp["departmentId"];
             $TradeRazorPayRequest->save();
-            $temp["request_id"] = $TradeRazorPayRequest->id; 
+
+            $temp["requestId"] = $TradeRazorPayRequest->id; 
+            $temp['name']       = $refUser->user_name;
+            $temp['mobile']     = $refUser->mobile;
+            $temp['email']      = $refUser->email;
+            $temp['userId']     = $refUser->id;
+            $temp['ulbId']      = $refUser->ulb_id;
             return responseMsg(true,"",$temp);
         }
         catch(Exception $e)
@@ -1293,7 +1299,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
-    public function RazorPayResponse($args)
+    public function razorPayResponse($args)
     {
         try{
             $refUser        = Auth()->user();
@@ -1326,16 +1332,6 @@ class Trade implements ITrade
                 DB::rollBack();
                 throw new Exception("You Are Not Authorized For Payment Cut");
             }
-
-
-        //     $transfer['paymentMode'] = $data->payment_method;
-        // $transfer['id'] = $request->payload['payment']['entity']['notes']['applicationId'];
-        // $transfer['amount'] = $actulaAmount;
-        // $transfer['workflowId'] = $request->payload['payment']['entity']['notes']['workflowId'];
-        // $transfer['transactionNo'] = $actualTransactionNo;
-            $TradeRazorPayRequest = TradeRazorPayRequest::select("*")->where("order_id",$args["id"]);
-            $response = new TradeRazorPayResponse();
-
             $refLecenceData = ActiveLicence::find($args["id"]);
             $licenceId = $args["id"];
             $refLevelData = $this->getLevelData($licenceId);
