@@ -23,6 +23,7 @@ use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
+use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
 use App\Models\Property\RefPropConstructionType;
 use App\Models\Property\RefPropFloor;
@@ -1008,7 +1009,7 @@ class SafRepository implements iSafRepository
             $safDemandDetails = $this->generateSafDemand($calculateSafById->original['data']['details']);
             // Check Requested amount is matching with the generated amount or not
             // if ($req->amount == $totalAmount) {
-            $orderDetails = $this->saveGenerateOrderid($req);
+            $orderDetails = $this->saveGenerateOrderid($req);       //<---------- Generate Order ID Trait
             $orderDetails['name'] = $auth->user_name;
             $orderDetails['mobile'] = $auth->mobile;
             $orderDetails['email'] = $auth->email;
@@ -1027,6 +1028,8 @@ class SafRepository implements iSafRepository
                     $propSafDemand->save();
                 }
             }
+
+            // Save Prop Transaction Details On Payment
 
             return responseMsg(true, "Order ID Generated", remove_null($orderDetails));
             // }
@@ -1050,29 +1053,68 @@ class SafRepository implements iSafRepository
     {
         try {
             $userId = authUser()->id;
+            $propSafsDemand = new PropSafsDemand();
+            $demands = $propSafsDemand->getDemandBySafId($req['id']);
+            $fromFinYear = $demands->first()['fyear'];
+            $fromFinQtr = $demands->first()['qtr'];
+            $upToFinYear = $demands->last()['fyear'];
+            $upToFinQtr = $demands->last()['qtr'];
+            $activeSafDetails = $this->details($req);
             DB::beginTransaction();
             // Property Transactions
             $propTrans = new PropTransaction();
-            $workflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-            if ($req['workflowId'] == $workflowId)
-                $propTrans->saf_id = $req['id'];
-            else
-                $propTrans->property_id = $req['id'];
+            $propTrans->saf_id = $req['id'];
             $propTrans->amount = $req['amount'];
             $propTrans->tran_date = Carbon::now()->format('Y-m-d');
             $propTrans->tran_no = $req['transactionNo'];
             $propTrans->payment_mode = $req['paymentMode'];
             $propTrans->user_id = $userId;
             $propTrans->save();
-            Redis::del('property-transactions-user-' . $userId);
+
+            // Reflect on Prop Tran Details
+            foreach ($demands as $demand) {
+                $propTranDtl = new PropTranDtl();
+                $propTranDtl->tran_id = $propTrans->id;
+                $propTranDtl->saf_demand_id = $demand['id'];
+                $propTranDtl->total_demand = $demand['amount'];
+                $propTranDtl->save();
+            }
 
             // Update SAF Payment Status
             $activeSaf = PropActiveSaf::find($req['id']);
             $activeSaf->payment_status = 1;
             $activeSaf->save();
 
+            // Response Return Data
+            $responseData = [
+                "transactionDate" => $propTrans->tran_date,
+                "transactionNo" => $propTrans->tran_no,
+                "transactionTime" => $propTrans->created_at->format('H:i:s'),
+                "transactionTime" => $propTrans->created_at->format('H:i:s'),
+                "customerName" => $activeSafDetails->original['data']['applicant_name'],
+                "receiptWard" => $activeSafDetails->original['data']['new_ward_no'],
+                "address" => $activeSafDetails->original['data']['prop_address'],
+                "paidFrom" => $fromFinYear,
+                "paidFromQtr" => $fromFinQtr,
+                "paidUpto" => $upToFinYear,
+                "paidUptoQtr" => $upToFinQtr,
+                "paymentMode" => $propTrans->payment_mode,
+                "bankName" => "",
+                "branchName" => "",
+                "chequeNo" => "",
+                "chequeDate" => "",
+                "noOfFlats" => "",
+                "monthlyRate" => "",
+                "demandAmount" => $propTrans->amount,
+                "paidAmount" => $propTrans->amount,
+                "remainingAmount" => 0,
+                "tcName" => "",
+                "tcMobile" => ""
+            ];
+
+            Redis::del('property-transactions-user-' . $userId);
             DB::commit();
-            return responseMsg(true, "Payment Successfully Done", "");
+            return responseMsg(true, "Payment Successfully Done", remove_null($responseData));
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
