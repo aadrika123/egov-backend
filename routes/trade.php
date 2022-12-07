@@ -26,7 +26,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('updateBasicDtl', 'updateBasicDtl');
         Route::match(["get", "post"],'documentUpload/{id}', 'documentUpload');
         Route::get('getUploadDocuments/{id}', 'getUploadDocuments');
-        Route::match(["get", "post"],'documentVirify/{id}', 'documentVirify');
+        Route::match(["get", "post"],'documentVerify/{licenceId}', 'documentVirify');
         Route::get('getLicenceDtl/{id}', 'getLicenceDtl');
         Route::post('getDenialDetails',"getDenialDetails");
         Route::post('searchLicense', 'searchLicence');

@@ -85,7 +85,7 @@ class RepositoryServiceProvider extends ServiceProvider
         #------trade module----------
         $this->app->bind(ITrade::class, Trade::class);
         #------water module----------
-        $this->app->bind(IWaterNewConnection::class, NewConnectionRepository::class);
+        $this->app->bind(iNewConnection::class, NewConnectionRepository::class);
         $this->app->bind(IWaterNewConnection::class, WaterNewConnection::class);
 
         // Property

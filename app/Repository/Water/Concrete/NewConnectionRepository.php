@@ -2,29 +2,132 @@
 
 namespace App\Repository\Water\Concrete;
 
+use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropProperty;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplicantDoc;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
+use App\Models\Water\WaterConnectionThroughMstrs;
+use App\Models\Water\WaterConnectionTypeMstr;
+use App\Models\Water\WaterOwnerTypeMstr;
+use App\Models\Water\WaterPropertyTypeMstr;
+use App\Models\Workflows\WfWorkflow;
 use App\Repository\Water\Interfaces\iNewConnection;
+use App\Traits\Ward;
+use App\Traits\Workflow\Workflow;
+use App\Traits\Property\SAF;
 use Carbon\Carbon;
-use DateTime;
 use Exception;
-use Hamcrest\Arrays\IsArray;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
 
 /**
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
  * | Created On-07-10-2022 
  * | Created By-Anshu Kumar
+ * | Updated By-Sam kerketta
  */
 
 class NewConnectionRepository implements iNewConnection
 {
-    private $refPropertyType = 4; //<-------------------- here 
+    use SAF;
+    use Workflow;
+    use Ward;
+
+    /**
+     * | ----------------- Get Owner Type / Water ------------------------------- |
+     * | @var ulbId 
+     * | @var ward
+     * | Operation : data fetched by table ulb_ward_masters 
+     */
+    public function getWardNo()
+    {
+        try {
+            $ulbId = auth()->user()->ulb_id;
+            $ward = $this->getAllWard($ulbId);
+            return responseMsg(true, "Ward List!", $ward);
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * | ----------------- Get Owner Type / Water ------------------------------- |
+     * | @var ownerType 
+     * | #request null
+     * | Operation : data fetched by table water_owner_type_mstrs 
+     */
+    public function getOwnerType()
+    {
+        try {
+            $ownerType = new WaterOwnerTypeMstr();
+            $ownerType = $ownerType->getallOwnwers();
+            return response()->json(['status' => true, 'message' => 'data of the ownerType', 'data' => $ownerType]);
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * | ----------------- Get Connection Type / Water ------------------------------- |
+     * | @var connectionTypes 
+     * | #request null
+     * | Operation : data fetched by table water_connection_type_mstrs 
+     */
+    public function getConnectionType()
+    {
+        try {
+            $connectionTypes = new WaterConnectionTypeMstr();
+            $connectionTypes = $connectionTypes->getConnectionType();
+            return response()->json(['status' => true, 'message' => 'data of the connectionType', 'data' => $connectionTypes]);
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+
+
+    /**
+     * | ----------------- Get Connection Through / Water ------------------------------- |
+     * | @var connectionThrough 
+     * | #request null
+     * | Operation : data fetched by table water_connection_through_mstrs 
+     */
+    public function getConnectionThrough()
+    {
+        try {
+            $connectionThrough = new WaterConnectionThroughMstrs();
+            $connectionThrough = $connectionThrough->getAllThrough();
+            return response()->json(['status' => true, 'message' => 'data of the connectionThrough', 'data' => $connectionThrough]);
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * | ----------------- Get Property Type / Water ------------------------------- |
+     * | @var propertyType 
+     * | #request null
+     * | Operation : data fetched by table water_property_type_mstrs 
+     */
+    public function getPropertyType()
+    {
+        try {
+            $propertyType = new WaterPropertyTypeMstr();
+            $propertyType = $propertyType->getAllPropertyType();
+            return response()->json(['status' => true, 'message' => 'data of the propertyType', 'data' => $propertyType]);
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+
     /**
      * | -------------  Apply for the new Application for Water Application ------------- |
      * | Edited by Sam Kerketta
@@ -36,77 +139,50 @@ class NewConnectionRepository implements iNewConnection
      */
     public function store(Request $req)
     {
-        #   validation
-        $validateUser = Validator::make(
-            $req->all(),
-            [
-                'connectionTypeId'   => 'required|integer',
-                'propertyTypeId'     => 'required|integer',
-                'ownerType'          => 'required',
-                'category'           => 'required',
-                'pipelineTypeId'     => 'required|integer',
-                'wardId'             => 'required|integer',
-                'areaSqft'           => 'required|integer',
-                'address'            => 'required',
-                'landmark'           => 'required',
-                'pin'                => 'required|integer',
-                'flatCount'          => 'required|integer',
-                'elecKNo'            => 'required',
-                'elecBindBookNo'     => 'required',
-                'elecAccountNo'      => 'required',
-                'elecCategory'       => 'required',
-                'connection_through' => 'required|integer',
-            ]
-        );
+      
+    //  $images = $req->doc;
+    //     foreach($images AS $docs)
+    //     {
+    //        return $docs['this'];
+    //     }
+    //     return $req;
 
-        if ($validateUser->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'validation error',
-                'data' => $validateUser->errors()
-            ], 401);
-        }
-
-
-        # check the property type by saf no
-        if ($req->saf_no != null) {
-
-            $readPropetySafCheck = DB::table('active_safs')
-                ->select('active_safs.prop_type_mstr_id')
-                ->join('prop_m_property_types', 'prop_m_property_types.id', '=', 'active_safs.prop_type_mstr_id')
-                ->where('active_safs.saf_no', $req->saf_no)
-                ->get()
-                ->first();
-            if ($readPropetySafCheck->prop_type_mstr_id == $this->refPropertyType) //<---------- 4 for the vacand land
-            {
-                return responseMsg(false, "water cannot be applied on Vacant land!", "");
-            }
-        }
-
-        # check the property type by holding no  
-        elseif ($req->holdingNo != null) {
-
-            $readpropetyHoldingCheck = DB::table('active_safs')
-                ->select('active_safs.prop_type_mstr_id')
-                ->join('prop_m_property_types', 'prop_m_property_types.id', '=', 'active_safs.prop_type_mstr_id')
-                ->join('prop_properties', 'prop_properties.saf_id', '=', 'active_safs.id')
-                ->where('prop_properties.new_holding_no', $req->holdingNo)
-                ->get()
-                ->first();
-            if ($readpropetyHoldingCheck->prop_type_mstr_id == $this->refPropertyType) //<------------- 4 for the vacand land
-            {
-                return responseMsg(false, "water cannot be applied on Vacant land!", "");
-            }
-        }
-
-        DB::beginTransaction();
         try {
+            $vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
+            $wfWater= Config::get('workflow-constants.WATER_MASTER_ID');
+            $ulbId = auth()->user()->ulb_id;
+
+            # check the property type by saf no
+            if ($req->saf_no != null) {
+
+                $readPropetySafCheck = PropActiveSaf::select('prop_active_safs.prop_type_mstr_id')
+                    ->where('prop_active_safs.saf_no', $req->saf_no)
+                    ->get()
+                    ->first();
+                if ($readPropetySafCheck->prop_type_mstr_id == $vacantLand) {
+                    return responseMsg(false, "water cannot be applied on Vacant land!", "");
+                }
+            }
+
+            # check the property type by holding no  
+            elseif ($req->holdingNo != null) {
+
+                $readpropetyHoldingCheck = PropProperty::select('prop_properties.prop_type_mstr_id')
+                    ->where('prop_properties.new_holding_no', $req->holdingNo)
+                    ->get()
+                    ->first();
+                if ($readpropetyHoldingCheck->prop_type_mstr_id == $vacantLand) {
+                    return responseMsg(false, "water cannot be applied on Vacant land!", "");
+                }
+            }
+
+            DB::beginTransaction();
+
             $newApplication = new WaterApplication();
             $newApplication->connection_type_id = $req->connectionTypeId;
             $newApplication->property_type_id = $req->propertyTypeId;
             $newApplication->owner_type = $req->ownerType;
             $newApplication->category = $req->category;
-            // $newApplication->proof_document_id = $req->proofDocumentId;
             $newApplication->pipeline_type_id = $req->pipelineTypeId;
             $newApplication->ward_id = $req->wardId;
             $newApplication->area_sqft = $req->areaSqft;
@@ -119,23 +195,44 @@ class NewConnectionRepository implements iNewConnection
             $newApplication->elec_account_no = $req->elecAccountNo;
             $newApplication->elec_category = $req->elecCategory;
             $newApplication->connection_through = $req->connection_through;
+            $newApplication->apply_date = date('Y-m-d H:i:s');
+
+            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $wfWater)
+                ->where('ulb_id', $ulbId)
+                ->first();
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                
+            $initiatorRoleId = DB::select($refInitiatorRoleId);
+
+            $newApplication->workflow_id = $ulbWorkflowId->id;
+            $newApplication->current_role = collect($initiatorRoleId)->first()->role_id;
+            $newApplication->initiator = collect($initiatorRoleId)->first()->role_id;
             $newApplication->holding_no = $req->holdingNo;
             $newApplication->saf_no = $req->saf_no;
 
-            # connection through condition
+            # condition entry 
             if ($req->connection_through == 3) {
                 $newApplication->id_proof = 3;
             }
+            if (!is_null($req->holdingNo)) {
+                $propertyId = new PropProperty();
+                $propertyId = $propertyId->getPropertyId($req->holdingNo);
+                $newApplication->prop_id = $propertyId->id;
+            }
+            if (!is_null($req->saf_no)) {
+                $safId = new PropActiveSaf();
+                $safId = $safId->getSafId($req->saf_no);
+                $newApplication->saf_id = $safId->id;
+            }
 
-            // Generating Application No 
+            # Generating Application No 
             $now = Carbon::now();
             $applicationNo = 'APP' . $now->getTimeStamp();
             $newApplication->application_no = $applicationNo;
-            $newApplication->ulb_id = auth()->user()->ulb_id;
-            $newApplication->citizen_id = auth()->user()->id;
+            $newApplication->ulb_id = $ulbId;
+            $newApplication->user_id = auth()->user()->id;
             $newApplication->save();
 
-            // Water Applicants Owners
+            # Water Applicants Owners
             $owner = $req['owners'];
             foreach ($owner as $owners) {
                 $applicant = new WaterApplicant();
@@ -147,7 +244,7 @@ class NewConnectionRepository implements iNewConnection
                 $applicant->save();
             }
 
-            // Generating Demand and reflecting on water connection charges table
+            # Generating Demand and reflecting on water connection charges table
             $charges = new WaterConnectionCharge();
             $charges->application_id = $newApplication->id;
             $charges->charge_category = $req->connectionTypeId;
@@ -158,13 +255,68 @@ class NewConnectionRepository implements iNewConnection
             $charges->amount = $penalty + $conn_fee;
             $charges->save();
 
-            // DB::commit(); //<----------- reminder 
+            DB::commit();
             return responseMsg(true, "Successfully Saved", $applicationNo);
-        } catch (Exception $e) {
+        } catch (Exception $error) {
             DB::rollBack();
-            return  $e;
+            return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * |--------- Get the Water Connection charges Details for Logged In user ------------ |
@@ -173,9 +325,8 @@ class NewConnectionRepository implements iNewConnection
     public function getUserWaterConnectionCharges(Request $req)
     {
         try {
-            $citizen_id = auth()->user()->id;
-            $connections = DB::table('water_applications')
-                ->join('water_connection_charges', 'water_applications.id', '=', 'water_connection_charges.application_id')
+            $userId = auth()->user()->id;
+            $connections = WaterApplication::join('water_connection_charges', 'water_applications.id', '=', 'water_connection_charges.application_id')
                 ->select(
                     'water_connection_charges.application_id',
                     'water_applications.application_no',
@@ -185,11 +336,11 @@ class NewConnectionRepository implements iNewConnection
                     'water_connection_charges.penalty',
                     'water_connection_charges.conn_fee'
                 )
-                ->where('water_applications.citizen_id', '=', $citizen_id)
+                ->where('water_applications.user_id', '=', $userId)
                 ->get();
-            return $connections;
-        } catch (Exception $e) {
-            return $e;
+            return responseMsg(true, "", $connections);
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
 
@@ -246,114 +397,13 @@ class NewConnectionRepository implements iNewConnection
         }
     }
 
-    /**
-     * | code : Sam Kerketta
-     * | ----------------- Get Connection Type / Water ------------------------------- |
-     * | @var connectionTypes 
-     * | #request null
-     * | Operation : data fetched by table water_connection_type_mstrs 
-     */
-    public function getConnectionType()
-    {
-        try {
-            $connectionTypes = DB::table('water_connection_type_mstrs')
-                ->select('water_connection_type_mstrs.id', 'water_connection_type_mstrs.connection_type')
-                ->where('status', 1)
-                ->get();
-            // $collection = collect($connectionTypes)->map(function ($value) {
-            //     return $value->connection_type;
-            // });
-            // $type['connectionType'] = $collection;
-            return response()->json(['status' => true, 'message' => 'data of the connectionType', 'data' => $connectionTypes]);
-        } catch (Exception $e) {
-            return $e;
-        }
-    }
 
-    /**
-     * | code : Sam Kerketta
-     * | ----------------- Get Connection Through / Water ------------------------------- |
-     * | @var connectionThrough 
-     * | #request null
-     * | Operation : data fetched by table water_connection_through_mstrs 
-     */
-    public function getConnectionThrough()
-    {
-        try {
-            $connectionThrough = DB::table('water_connection_through_mstrs')
-                ->select('water_connection_through_mstrs.id', 'water_connection_through_mstrs.connection_through')
-                ->where('status', 1)
-                ->orderBy('id')
-                ->get();
-            return response()->json(['status' => true, 'message' => 'data of the connectionThrough', 'data' => $connectionThrough]);
-        } catch (Exception $e) {
-            return $e;
-        }
-    }
 
-    /**
-     * | code : Sam Kerketta
-     * | ----------------- Get Property Type / Water ------------------------------- |
-     * | @var propertyType 
-     * | #request null
-     * | Operation : data fetched by table water_property_type_mstrs 
-     */
-    public function getPropertyType()
-    {
-        try {
-            $propertyType = DB::table('water_property_type_mstrs')
-                ->select('water_property_type_mstrs.id', 'water_property_type_mstrs.property_type')
-                ->where('status', 1)
-                ->get();
-            return response()->json(['status' => true, 'message' => 'data of the propertyType', 'data' => $propertyType]);
-        } catch (Exception $e) {
-            return $e;
-        }
-    }
 
-    /**
-     * | code : Sam Kerketta
-     * | ----------------- Get Owner Type / Water ------------------------------- |
-     * | @var ownerType 
-     * | #request null
-     * | Operation : data fetched by table water_owner_type_mstrs 
-     */
-    public function getOwnerType()
-    {
-        try {
-            $ownerType = DB::table('water_owner_type_mstrs')
-                ->select('water_owner_type_mstrs.id', 'water_owner_type_mstrs.owner_type')
-                ->where('status', 1)
-                ->get();
-            return response()->json(['status' => true, 'message' => 'data of the ownerType', 'data' => $ownerType]);
-        } catch (Exception $e) {
-            return $e;
-        }
-    }
 
-    /**
-     * | code : Sam Kerketta
-     * | ----------------- Get Owner Type / Water ------------------------------- |
-     * | @var wfmaster 
-     * | @var ward
-     * | #request null
-     * | Operation : data fetched by table ulb_ward_masters 
-     */
-    public function getWardNo()
-    {
-        $wfmaster = 3;  //<--------------- this is fot the water ie. 3 is the wfmasterid create a constant
-        try {
-            $ward = DB::table('ulb_ward_masters')
-                ->select('ulb_ward_masters.id', 'ulb_ward_masters.ward_name')
-                ->join('wf_workflows', 'wf_workflows.ulb_id', '=', 'ulb_ward_masters.ulb_id')
-                ->where('wf_workflows.wf_master_id', $wfmaster)
-                ->get();
 
-            return response()->json(['status' => true, 'message' => 'data of the Ward NO', 'data' => $ward]);
-        } catch (Exception $e) {
-            return $e;
-        }
-    }
+
+
 
 
 

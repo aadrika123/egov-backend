@@ -18,5 +18,7 @@ return [
     "PROPERTY_OBJECTION_FORGERY"        => "76",
     "RAIN_WATER_HARVESTING_ID"  => "98",
     "SAF_BIFURCATION_ID"        => "25",
+    // workflow master
+    "WATER_MASTER_ID"   => "3",
    
 ];

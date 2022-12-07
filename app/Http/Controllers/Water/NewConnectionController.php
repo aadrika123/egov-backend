@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Water;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Repository\Water\Interfaces\iNewConnection;
+use Illuminate\Support\Facades\Validator;
 
 class NewConnectionController extends Controller
 {
@@ -41,7 +42,32 @@ class NewConnectionController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request);
+        #   validation
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                // 'connectionTypeId'   => 'required|integer',
+                // 'propertyTypeId'     => 'required|integer',
+                // 'ownerType'          => 'required',
+                // 'category'           => 'required',
+                // 'pipelineTypeId'     => 'required|integer',
+                // 'wardId'             => 'required|integer',
+                // 'areaSqft'           => 'required|integer',
+                // 'address'            => 'required',
+                // 'landmark'           => 'required',
+                // 'pin'                => 'required|integer',
+                // 'flatCount'          => 'required|integer',
+                // 'elecKNo'            => 'required',
+                // 'elecBindBookNo'     => 'required',
+                // 'elecAccountNo'      => 'required',
+                // 'elecCategory'       => 'required',
+                // 'connection_through' => 'required|integer',
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return responseMsg(false, "Vallidation Error!", $validateUser->errors());
+        }
         return $this->newConnection->store($request);
     }
 
@@ -125,21 +151,21 @@ class NewConnectionController extends Controller
         return $this->newConnection->getConnectionThrough();
     }
 
-     // Get property type / water
-     public function getPropertyType()
-     {
-         return $this->newConnection->getPropertyType();
-     }
+    // Get property type / water
+    public function getPropertyType()
+    {
+        return $this->newConnection->getPropertyType();
+    }
 
-     // Get owner type / water
-     public function getOwnerType()
-     {
-         return $this->newConnection->getOwnerType();
-     }
+    // Get owner type / water
+    public function getOwnerType()
+    {
+        return $this->newConnection->getOwnerType();
+    }
 
-      // Get ward no / water
-      public function getWardNo()
-      {
-          return $this->newConnection->getWardNo();
-      }
+    // Get ward no / water
+    public function getWardNo()
+    {
+        return $this->newConnection->getWardNo();
+    }
 }
