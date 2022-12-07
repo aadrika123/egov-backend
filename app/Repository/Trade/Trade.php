@@ -1293,7 +1293,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
-    public function RazorPayResponse($args)
+    public function razorPayResponse($args)
     {
         try{
             $refUser        = Auth()->user();
@@ -1333,8 +1333,8 @@ class Trade implements ITrade
         // $transfer['amount'] = $actulaAmount;
         // $transfer['workflowId'] = $request->payload['payment']['entity']['notes']['workflowId'];
         // $transfer['transactionNo'] = $actualTransactionNo;
-            $TradeRazorPayRequest = TradeRazorPayRequest::select("*")->where("order_id",$args["id"]);
-            $response = new TradeRazorPayResponse();
+            // $TradeRazorPayRequest = TradeRazorPayRequest::select("*")->where("order_id",$args["id"]);
+            // $response = new TradeRazorPayResponse();
 
             $refLecenceData = ActiveLicence::find($args["id"]);
             $licenceId = $args["id"];
