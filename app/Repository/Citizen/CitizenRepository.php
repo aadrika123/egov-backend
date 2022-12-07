@@ -253,7 +253,7 @@ class CitizenRepository implements iCitizenRepository
     {
         $applications = array();
         $waterApplications = WaterApplication::select('id as application_id', 'category', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
-            ->where('citizen_id', $userId)
+            ->where('user_id', $userId)
             ->where('status', 1)
             ->orderByDesc('id')
             ->get();

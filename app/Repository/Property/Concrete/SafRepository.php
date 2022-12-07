@@ -1257,10 +1257,12 @@ class SafRepository implements iSafRepository
     /**
      * | Geo Tagging Photo Uploads
      * | @param request req
+     * | @var relativePath Geo Tagging Document Ralative path
      */
     public function geoTagging($req)
     {
         try {
+            $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
             foreach ($req->uploads as $upload) {
                 $geoTagging = new PropSafGeotagUpload();
                 $geoTagging->saf_id = $req->safId;
@@ -1276,6 +1278,7 @@ class SafRepository implements iSafRepository
                 $upload['imagePath']->storeAs('public/Property/GeoTagging', $imageName);
 
                 $geoTagging->image_path = $imageName;
+                $geoTagging->relative_path = $relativePath;
                 $geoTagging->save();
             }
             return responseMsg(true, "Geo Tagging Done Successfully", "");

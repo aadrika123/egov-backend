@@ -324,6 +324,9 @@ return [
         "APPROVED" => 1,
         "BACK_TO_CITIZEN" => 2,
         "LABEL_PENDING" => 3
-    ]
+    ],
+
+    // Relative GeoTagging Path of Geo Tagging
+    "GEOTAGGING_RELATIVE_PATH" => "Property/GeoTagging"
 
 ];
