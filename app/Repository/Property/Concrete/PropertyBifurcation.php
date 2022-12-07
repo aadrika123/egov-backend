@@ -1818,7 +1818,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     
                 }
                 # Upload Owner Document is_handicap
-                elseif(isset($request->owner_handicap) && isset($request->$doc_for) && $request->$doc_for=="Handicap")
+                elseif(isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for=="Handicap")
                 { 
                     $rules = [
                         'doc'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
@@ -1890,7 +1890,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     
                 }
                 # owner image upload hear 
-                elseif(isset($request->owner_img) && isset($request->$doc_for) && $request->$doc_for=="Photo")
+                elseif(isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for=="Photo")
                 {                    
                     $rules = [
                         'doc'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
@@ -1958,17 +1958,17 @@ class PropertyBifurcation implements IPropertyBifurcation
                     }              
                 }                 
                 DB::commit();
-                $mUploadDocument = $this->getSafDocuments($refSafs->id)->map(function($val){
-                    if(isset($val["doc_path"]))
-                    {
-                        $path = $this->readDocumentPath( $val["doc_path"]);
-                        $val["doc_path"] = !empty(trim( $val["doc_path"]))?$path :null;                    
+                // $mUploadDocument = $this->getSafDocuments($refSafs->id)->map(function($val){
+                //     if(isset($val["doc_path"]))
+                //     {
+                //         $path = $this->readDocumentPath( $val["doc_path"]);
+                //         $val["doc_path"] = !empty(trim( $val["doc_path"]))?$path :null;                    
     
-                    }
-                    return $val;
-                });
-                $data["uploadDocument"] = $mUploadDocument;
-                return responseMsg(true, $sms,$data);
+                //     }
+                //     return $val;
+                // });
+                // $data["uploadDocument"] = $mUploadDocument;
+                return responseMsg(true, $sms,$request->all());
             }
         }
         catch(Exception $e)

@@ -119,6 +119,10 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->paymentCounter($request);
     }
+    public function handeRazorPay(Request $request)
+    {
+        return $this->Repository->handeRazorPay($request);
+    }
     public function provisionalCertificate(Request $request)
     {
         return $this->Repository->provisionalCertificate($request->id);
