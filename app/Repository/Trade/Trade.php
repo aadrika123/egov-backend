@@ -29,6 +29,7 @@ use App\Models\Trade\TradeParamItemType;
 use App\Models\Trade\TradeParamLicenceRate;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Models\Trade\TradeRazorPayRequest;
+use App\Models\Trade\TradeRazorPayResponse;
 use App\Models\Trade\TradeTransaction;
 use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
@@ -1190,8 +1191,7 @@ class Trade implements ITrade
     public function handeRazorPay(Request $request)
     {
         try{
-            #------------------------ Declaration----------------------- 
-            dd(TradeRazorPayRequest::select("*")->get());        
+            #------------------------ Declaration-----------------------
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id;
@@ -1212,7 +1212,6 @@ class Trade implements ITrade
             $mNoticeDate        = null;
             $mProprtyId         = null;
             $mnaturOfBusiness   = null;
-
             $rollId             =  $mUserData['role_id']??($this->_parent->getUserRoll($refUserId, $refUlbId,$refWorkflowId)->role_id??-1);
             #------------------------End Declaration-----------------------
             $refLecenceData = ActiveLicence::find($request->licenceId);
@@ -1275,12 +1274,189 @@ class Trade implements ITrade
             $myRequest->request->add(['workflowId' => $refWorkflowId]);
             $myRequest->request->add(['id' => $request->licenceId]);
             $myRequest->request->add(['departmentId' => 3]);
-            return $this->saveGenerateOrderid($myRequest);
+            $temp = $this->saveGenerateOrderid($myRequest);
+            DB::beginTransaction();
+            $TradeRazorPayRequest = new TradeRazorPayRequest;
+            $TradeRazorPayRequest->licence_id   = $request->licenceId;
+            $TradeRazorPayRequest->payment_from = $transactionType ;
+            $TradeRazorPayRequest->amount       = $totalCharge; 
+            $TradeRazorPayRequest->ip_address   = $request->ip() ;
+            $TradeRazorPayRequest->order_id	    = $temp["orderId"];
+            $TradeRazorPayRequest->department_id = $temp["departmentId"];
+            $TradeRazorPayRequest->save();
+            $temp["request_id"] = $TradeRazorPayRequest->id; 
+            return responseMsg(true,"",$temp);
         }
         catch(Exception $e)
         { 
             DB::rollBack();
             return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+    public function RazorPayResponse($args)
+    {
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $refUlbId       = $refUser->ulb_id; 
+            $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID'); 
+            $refWorkflows   = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);  
+            $refNoticeDetails= null;
+            $refDenialId    = null;
+            $refUlbDtl      = UlbMaster::find($refUlbId);
+            $refUlbName     = explode(' ',$refUlbDtl->ulb_name);
+
+            $mUserData      = $this->_parent->getUserRoll($refUserId, $refUlbId,$refWorkflowId);
+            $mUserType      = $this->_parent->userType($refWorkflowId);
+            $mNowDate       = Carbon::now()->format('Y-m-d'); 
+            $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
+            $mDenialAmount  = 0;
+            $mPaymentStatus = 1;            
+            $mNoticeDate    = null;            
+            $mShortUlbName  = "";
+            $mWardNo        = "";
+            foreach($refUlbName as $val)
+            {
+                $mShortUlbName.=$val[0];
+            }
+
+            #-----------valication-------------------                            
+            if(!in_array($mUserType,["JSK","UTC","TC","SUPER ADMIN","TL"]))
+            {
+                DB::rollBack();
+                throw new Exception("You Are Not Authorized For Payment Cut");
+            }
+
+
+        //     $transfer['paymentMode'] = $data->payment_method;
+        // $transfer['id'] = $request->payload['payment']['entity']['notes']['applicationId'];
+        // $transfer['amount'] = $actulaAmount;
+        // $transfer['workflowId'] = $request->payload['payment']['entity']['notes']['workflowId'];
+        // $transfer['transactionNo'] = $actualTransactionNo;
+            $TradeRazorPayRequest = TradeRazorPayRequest::select("*")->where("order_id",$args["id"]);
+            $response = new TradeRazorPayResponse();
+
+            $refLecenceData = ActiveLicence::find($args["id"]);
+            $licenceId = $args["id"];
+            $refLevelData = $this->getLevelData($licenceId);
+            if(!$refLecenceData)
+            {
+                throw new Exception("Licence Data Not Found !!!!!");
+            }
+            elseif($refLecenceData->application_type_id==4)
+            {
+                throw new Exception("Surender Application Not Pay Anny Amount");
+            }
+            elseif(in_array($refLecenceData->payment_status,[1,2]))
+            {
+                throw new Exception("Payment Already Done Of This Application");
+            }
+            if($refNoticeDetails = $this->readNotisDtl($refLecenceData->id))
+            { 
+                $refDenialId = $refNoticeDetails->dnialid;
+                $mNoticeDate = date("Y-m-d",strtotime($refNoticeDetails['created_on'])); //notice date 
+            }
+
+            $ward_no = UlbWardMaster::select("ward_name")
+                        ->where("id",$refLecenceData->ward_mstr_id)
+                        ->first();
+            $mWardNo = $ward_no['ward_name']; 
+
+            #-----------End valication-------------------
+
+            #-------------Calculation-----------------------------                
+            $args['areaSqft']            = (float)$refLecenceData->area_in_sqft;
+            $args['application_type_id'] = $refLecenceData->application_type_id;                    
+            $args['firmEstdDate'] = !empty(trim($refLecenceData->valid_from)) ? $refLecenceData->valid_from : $refLecenceData->apply_date;
+            if($refLecenceData->application_type_id==1)
+            {
+                $args['firmEstdDate'] = $refLecenceData->establishment_date;
+            }
+            $args['tobacco_status']      = $refLecenceData->tobacco_status;
+            $args['licenseFor']          = $refLecenceData->licence_for_years ;
+            $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
+            $args['noticeDate']          = $mNoticeDate;
+            $chargeData = $this->cltCharge($args);
+            if($chargeData['response']==false || round($args['amount'])!= round($chargeData['total_charge']))
+            {
+                throw new Exception("Payble Amount Missmatch!!!");
+            }
+            
+            $transactionType = Config::get('TradeConstant.APPLICATION-TYPE-BY-ID.'.$refLecenceData->application_type_id);  
+            
+            $totalCharge = $chargeData['total_charge'] ;
+            $mDenialAmount = $chargeData['notice_amount'];
+            #-------------End Calculation-----------------------------
+            #-------- Transection -------------------
+            DB::beginTransaction();
+            $Tradetransaction = new TradeTransaction ;
+            $Tradetransaction->related_id       = $licenceId;
+            $Tradetransaction->ward_mstr_id     = $refLecenceData->ward_mstr_id;
+            $Tradetransaction->transaction_type = $transactionType;
+            $Tradetransaction->transaction_date = $mNowDate;
+            $Tradetransaction->payment_mode     = "Online";
+            $Tradetransaction->paid_amount      = $totalCharge;
+            $Tradetransaction->penalty          = $chargeData['penalty'] + $mDenialAmount + $chargeData['arear_amount'];
+            $Tradetransaction->emp_details_id   = $refUserId;
+            $Tradetransaction->created_on       = $mTimstamp;
+            $Tradetransaction->ip_address       = '';
+            $Tradetransaction->ulb_id           = $refUlbId;
+            $Tradetransaction->save();
+            $transaction_id                     = $Tradetransaction->id;
+            $Tradetransaction->transaction_no   = $this->createTransactionNo($transaction_id);//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
+            $Tradetransaction->update();
+
+            $TradeFineRebet = new TradeFineRebetDetail;
+            $TradeFineRebet->transaction_id = $transaction_id;
+            $TradeFineRebet->head_name      = 'Delay Apply License';
+            $TradeFineRebet->amount         = $chargeData['penalty'];
+            $TradeFineRebet->value_add_minus = 'Add';
+            $TradeFineRebet->created_on     = $mTimstamp;
+            $TradeFineRebet->save();
+
+            $mDenialAmount = $mDenialAmount + $chargeData['arear_amount'];
+            if ($mDenialAmount > 0) 
+            {
+                $TradeFineRebet2 = new TradeFineRebetDetail;
+                $TradeFineRebet2->transaction_id = $transaction_id;
+                $TradeFineRebet2->head_name      = 'Denial Apply';
+                $TradeFineRebet2->amount         = $mDenialAmount;
+                $TradeFineRebet2->value_add_minus = 'Add';
+                $TradeFineRebet2->created_on     = $mTimstamp;
+                $TradeFineRebet2->save();
+            }
+
+            if($mPaymentStatus==1 && $refLecenceData->document_upload_status =1 && $refLecenceData->pending_status=0 && !$refLevelData)
+            {
+                $refLecenceData->current_user_id = $refWorkflows['initiator']['id'];
+                $level_insert = new TradeLevelPending;
+                $level_insert->licence_id            = $licenceId;
+                $level_insert->sender_user_type_id   = $refWorkflows['initiator']['id'];
+                $level_insert->receiver_user_type_id = $refWorkflows['initiator']['forward_id'];
+                $level_insert->sender_user_id        = $refUserId;
+                $level_insert->save();
+            }
+            
+            $provNo = $this->createProvisinalNo($mShortUlbName,$mWardNo,$licenceId);
+            $refLecenceData->provisional_license_no = $provNo;
+            $refLecenceData->payment_status         = $mPaymentStatus;
+            $refLecenceData->save();
+                            
+            if($refNoticeDetails)
+            {
+                $this->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId,1); //update status and fineAmount                     
+            }
+            DB::commit();
+            #----------End transaction------------------------
+            #----------Response------------------------------
+            $res['transactionId'] = $transaction_id;
+            $res['paymentRecipt']= config('app.url')."/api/trade/paymentRecipt/".$licenceId."/".$transaction_id;
+            return responseMsg(true,"",$res); 
+        }
+        catch(Exception $e)
+        {
+            DB::rollBack();
+            return responseMsg(false,$e->getMessage(),$args);
         }
     }
     
