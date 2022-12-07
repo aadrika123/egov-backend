@@ -3613,7 +3613,15 @@ class Trade implements ITrade
                         ->where("trade_denial_consumer_dtls.status",1)
                         ->orderBy("trade_denial_consumer_dtls.created_on","DESC")
                         ->get();
-            $data['denila_consumer'] =$denila_consumer;
+            $data['denila_consumer'] =$denila_consumer->map(function($val){
+                if(isset($val["file_name"]))
+                {
+                    $path = $this->readDocumentPath( $val["file_name"]);
+                    $val["file_name"] = !empty(trim( $val["file_name"]))?$path :null;                    
+
+                }
+                return $val;
+            });
             return responseMsg(false,"", remove_null($data));
         }
         catch(Exception $e)
