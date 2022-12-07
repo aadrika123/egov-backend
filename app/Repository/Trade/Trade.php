@@ -28,6 +28,7 @@ use App\Models\Trade\TradeParamFirmType;
 use App\Models\Trade\TradeParamItemType;
 use App\Models\Trade\TradeParamLicenceRate;
 use App\Models\Trade\TradeParamOwnershipType;
+use App\Models\Trade\TradeRazorPayRequest;
 use App\Models\Trade\TradeTransaction;
 use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
@@ -40,6 +41,8 @@ use Illuminate\Http\Request;
 
 use App\Traits\Auth;
 use App\Traits\Property\WardPermission;
+use App\Traits\Payment;
+use App\Traits\Payment\Razorpay;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Config;
@@ -51,6 +54,7 @@ class Trade implements ITrade
 {
     use Auth;               // Trait Used added by sandeep bara date 17-09-2022
     use WardPermission;
+    use Razorpay;
 
     /**
      * | Created On-01-10-2022 
@@ -264,7 +268,10 @@ class Trade implements ITrade
                 
                 DB::beginTransaction();                
                 $licence = new ActiveLicence();
-                
+                if(strtoupper($mUserType)=="ONLINE")
+                {
+                    $licence->user_id      = $refUserId;
+                }
                 #----------------Crate Application--------------------
                 if (in_array($mApplicationTypeId, ["2","4"])) # code for Renewal,Amendment,Surender respectively
                 {   
@@ -1054,10 +1061,10 @@ class Trade implements ITrade
             {
                 throw new Exception("Tobaco Application Not Take Licence More Than One Year");
             }
-            if($refLecenceData->applyWith==1 && $refNoticeDetails = $this->readNotisDtl($refLecenceData->id))
+            if($refNoticeDetails = $this->readNotisDtl($refLecenceData->id))
             { 
                 $refDenialId = $refNoticeDetails->dnialid;
-                $mNoticeDate = strtotime($refNoticeDetails['created_on']); //notice date 
+                $mNoticeDate = date("Y-m-d",strtotime($refNoticeDetails['created_on'])); //notice date 
             }
 
             $ward_no = UlbWardMaster::select("ward_name")
@@ -1176,6 +1183,102 @@ class Trade implements ITrade
         }
         catch(Exception $e)
         {
+            DB::rollBack();
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+    public function handeRazorPay(Request $request)
+    {
+        try{
+            #------------------------ Declaration----------------------- 
+            dd(TradeRazorPayRequest::select("*")->get());        
+            $refUser            = Auth()->user();
+            $refUserId          = $refUser->id;
+            $refUlbId           = $refUser->ulb_id;
+            $refUlbDtl          = UlbMaster::find($refUlbId);
+            $refUlbName         = explode(' ',$refUlbDtl->ulb_name);
+            $refNoticeDetails   = null;
+            $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $refWorkflows       = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
+
+            $redis              = new Redis;
+            $mDenialAmount      = 0; 
+            $mUserData          = json_decode($redis::get('user:' . $refUserId), true);
+            $mUserType          = $this->_parent->userType($refWorkflowId); 
+            $mShortUlbName      = "";
+            $mApplicationTypeId = null;
+            $mNowdate           = Carbon::now()->format('Y-m-d'); 
+            $mTimstamp          = Carbon::now()->format('Y-m-d H:i:s'); 
+            $mNoticeDate        = null;
+            $mProprtyId         = null;
+            $mnaturOfBusiness   = null;
+
+            $rollId             =  $mUserData['role_id']??($this->_parent->getUserRoll($refUserId, $refUlbId,$refWorkflowId)->role_id??-1);
+            #------------------------End Declaration-----------------------
+            $refLecenceData = ActiveLicence::find($request->licenceId);
+            $licenceId = $request->licenceId;
+            $licenceId = $request->licenceId;
+            $refLevelData = $this->getLevelData($licenceId);
+            if(!$refLecenceData)
+            {
+                throw new Exception("Licence Data Not Found !!!!!");
+            }
+            elseif($refLecenceData->application_type_id==4)
+            {
+                throw new Exception("Surender Application Not Pay Anny Amount");
+            }
+            elseif(in_array($refLecenceData->payment_status,[1,2]))
+            {
+                throw new Exception("Payment Already Done Of This Application");
+            }
+            if($refLecenceData->tobacco_status==1 && $request->licenseFor >1)
+            {
+                throw new Exception("Tobaco Application Not Take Licence More Than One Year");
+            }
+            if($refNoticeDetails = $this->readNotisDtl($refLecenceData->id))
+            { 
+                $refDenialId = $refNoticeDetails->dnialid;
+                $mNoticeDate = date('Y-m-d',strtotime($refNoticeDetails['created_on'])); //notice date 
+            }
+
+            $ward_no = UlbWardMaster::select("ward_name")
+                        ->where("id",$refLecenceData->ward_mstr_id)
+                        ->first();
+            $mWardNo = $ward_no['ward_name']; 
+
+            #-----------End valication-------------------
+            #-------------Calculation-----------------------------                
+            $args['areaSqft']            = (float)$refLecenceData->area_in_sqft;
+            $args['application_type_id'] = $refLecenceData->application_type_id;                    
+            $args['firmEstdDate'] = !empty(trim($refLecenceData->valid_from)) ? $refLecenceData->valid_from : $refLecenceData->apply_date;
+            if($refLecenceData->application_type_id==1)
+            {
+                $args['firmEstdDate'] = $refLecenceData->establishment_date;
+            }
+            $args['tobacco_status']      = $refLecenceData->tobacco_status;
+            $args['licenseFor']          = $refLecenceData->licence_for_years ;
+            $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
+            $args['noticeDate']          = $mNoticeDate;
+            $chargeData = $this->cltCharge($args);
+            if($chargeData['response']==false || $chargeData['total_charge']==0)
+            {
+                throw new Exception("Payble Amount Missmatch!!!");
+            }
+            
+            $transactionType = Config::get('TradeConstant.APPLICATION-TYPE-BY-ID.'.$refLecenceData->application_type_id);  
+            
+            $totalCharge = $chargeData['total_charge'] ;
+
+            $myRequest = new \Illuminate\Http\Request();
+            $myRequest->setMethod('POST');
+            $myRequest->request->add(['amount' => $totalCharge]);
+            $myRequest->request->add(['workflowId' => $refWorkflowId]);
+            $myRequest->request->add(['id' => $request->licenceId]);
+            $myRequest->request->add(['departmentId' => 3]);
+            return $this->saveGenerateOrderid($myRequest);
+        }
+        catch(Exception $e)
+        { 
             DB::rollBack();
             return responseMsg(false,$e->getMessage(),$request->all());
         }
@@ -3286,8 +3389,8 @@ class Trade implements ITrade
             $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
             $role_id = $this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??-1;
             $mUserType = $this->_parent->userType($workflow_id);
-            // dd($role_id);
-            if(!in_array($role_id,[11]))
+            //dd($role_id);
+            if(!in_array($role_id,[10]))
             {
                 throw new Exception("You Are Not Authorized");
             }

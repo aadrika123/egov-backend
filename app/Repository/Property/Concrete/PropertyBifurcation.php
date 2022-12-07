@@ -1540,6 +1540,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $owners = objToArray($mOwneres);
                 $cnt=$request->btn_doc;
                 $doc_for = "doc_for$cnt";
+                return responseMsg(true, "payload",$request->all());
                 # Upload Document 
                 if(isset($request->btn_doc) && isset($request->$doc_for) && !in_array($request->$doc_for,["Gender Document","DOB Document","Armed","Handicap","Photo"]))
                 {  
