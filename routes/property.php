@@ -15,6 +15,7 @@ use App\Http\Controllers\Property\PropertyBifurcationController;
 use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\Property\SafDemandController;
+use App\Http\Controllers\Property\DocumentController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -161,6 +162,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('objection/list-id', 'objectionByid');
         Route::post('objection/doc-list', 'objectionDocList');
         Route::post('objection/doc-status', 'objectionDocStatus');
+    });
+
+    //Document verification
+    Route::controller(DocumentController::class)->group(function () {
+        Route::post('saf/doc-status', 'safDocStatus');
     });
 
     Route::controller(CalculatorController::class)->group(function () {

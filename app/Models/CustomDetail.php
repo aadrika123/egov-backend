@@ -2,21 +2,34 @@
 
 namespace App\Models;
 
+use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Carbon;
 use Exception;
 
 class CustomDetail extends Model
 {
     use HasFactory;
+    private $_bifuraction;
+
+    public function __construct()
+    {
+        $this->_bifuraction = new PropertyBifurcation();
+    }
 
     public function getCustomDetails()
     {
         try {
-            $customDetails = CustomDetail::select('id', 'document', 'remarks', 'type', 'created_at as date')
+            $customDetails = CustomDetail::select('id', 'document', 'remarks', 'type', 'created_at as date', 'ref_type as customFor')
                 ->orderBy("id", 'desc')
                 ->get();
+            $customDetails = $customDetails->map(function ($val) {
+                $path = $this->_bifuraction->readDocumentPath($val->relative_path . $val->docUrl);
+                $val->docUrl = $path;
+                return $val;
+            });
             return responseMsg(true, "Successfully Retrieved", $customDetails);
         } catch (Exception $e) {
             return response()->json($e, 400);
@@ -57,6 +70,31 @@ class CustomDetail extends Model
 
                     $customDetails->ref_id = $request->id;
                     $customDetails->ref_type = 'Concession';
+                    $customDetails->remarks = $request->remarks;
+                    $customDetails->type = "text";
+                }
+                $customDetails->save();
+            }
+
+            if ($customFor == 'SAF') {
+
+                if ($request->remarks && $request->document) {
+
+                    $customDetails->ref_id = $request->id;
+                    $customDetails->ref_type = 'SAF';
+                    $customDetails->document = $filepath;
+                    $customDetails->remarks = $request->remarks;
+                    $customDetails->type = "both";
+                } elseif ($request->document) {
+
+                    $customDetails->ref_id = $request->id;
+                    $customDetails->ref_type = 'SAF';
+                    $customDetails->document = $filepath;
+                    $customDetails->type = "file";
+                } elseif ($request->remarks) {
+
+                    $customDetails->ref_id = $request->id;
+                    $customDetails->ref_type = 'SAF';
                     $customDetails->remarks = $request->remarks;
                     $customDetails->type = "text";
                 }
