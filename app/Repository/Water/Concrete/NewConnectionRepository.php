@@ -2,6 +2,7 @@
 
 namespace App\Repository\Water\Concrete;
 
+use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
 use App\Models\Water\WaterApplicant;
@@ -14,6 +15,7 @@ use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterPropertyTypeMstr;
 use App\Models\Workflows\WfWorkflow;
 use App\Repository\Water\Interfaces\iNewConnection;
+use App\Traits\Payment\Razorpay;
 use App\Traits\Ward;
 use App\Traits\Workflow\Workflow;
 use App\Traits\Property\SAF;
@@ -22,7 +24,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-
+use League\CommonMark\Node\Block\Document;
 
 /**
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
@@ -36,6 +38,7 @@ class NewConnectionRepository implements iNewConnection
     use SAF;
     use Workflow;
     use Ward;
+    use Razorpay;
 
     /**
      * | ----------------- Get Owner Type / Water ------------------------------- |
@@ -139,17 +142,9 @@ class NewConnectionRepository implements iNewConnection
      */
     public function store(Request $req)
     {
-      
-    //  $images = $req->doc;
-    //     foreach($images AS $docs)
-    //     {
-    //        return $docs['this'];
-    //     }
-    //     return $req;
-
         try {
             $vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
-            $wfWater= Config::get('workflow-constants.WATER_MASTER_ID');
+            $wfWater = Config::get('workflow-constants.WATER_MASTER_ID');
             $ulbId = auth()->user()->ulb_id;
 
             # check the property type by saf no
@@ -200,7 +195,7 @@ class NewConnectionRepository implements iNewConnection
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $wfWater)
                 ->where('ulb_id', $ulbId)
                 ->first();
-            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
             $newApplication->workflow_id = $ulbWorkflowId->id;
@@ -264,6 +259,39 @@ class NewConnectionRepository implements iNewConnection
     }
 
 
+    /**
+     * | ----------------- Document Upload for the Applicant ------------------------------- |
+     * | @param Req
+     * | #documents[] > contains all the documents upload to be
+     */
+    public function applicantDocumentUpload(Request $req)
+    {
+        DB::beginTransaction();
+        try {
+            $document = $req['documents'];
+            foreach ($document as $documents) {
+
+                $doc = array_key_last($documents);
+                $base64Encode = base64_encode($documents[$doc]->getClientOriginalName());
+                $extention = $documents[$doc]->getClientOriginalExtension();
+                $imageName = time() . '-' . $base64Encode . '.' . $extention;
+                $documents[$doc]->storeAs('public/Water/Payment/' . $doc, $imageName);
+
+                $appDoc = new WaterApplicantDoc();
+                $appDoc->application_id = $req->applicationId;
+                $appDoc->document_id = $documents['documentId'];
+                $appDoc->doc_name = $imageName;
+                $appDoc->relative_path = ('public/Water/Payment/' . $doc);
+                $appDoc->doc_for = array_key_last($documents);
+                $appDoc->save();
+            }
+            DB::commit();
+            return responseMsg(true, "Document Successfully Uploaded!", "");
+        } catch (Exception $error) {
+            DB::rollBack();
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
 
 
 
@@ -334,10 +362,13 @@ class NewConnectionRepository implements iNewConnection
                     'water_connection_charges.paid_status',
                     'water_connection_charges.status',
                     'water_connection_charges.penalty',
-                    'water_connection_charges.conn_fee'
+                    'water_connection_charges.conn_fee',
                 )
                 ->where('water_applications.user_id', '=', $userId)
-                ->get();
+                ->where('water_applications.id', $req->applicationId)
+                ->get()
+                ->first();
+            $connections['workflowId'] = "working";
             return responseMsg(true, "", $connections);
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
@@ -372,30 +403,71 @@ class NewConnectionRepository implements iNewConnection
 
 
     /**
-     * | ----------------- Document Upload for the Applicant ------------------------------- |
+     * | -------- Water Payment Order Id generation----------------------------------------------------------- |
      * | @param Request
-     * | @param Request $req
-     * | #documents[] > contains all the documents upload to be
+     * | #calling the payment gateway trait > Get OrderId
+     * | @return responseMsg
      */
-    public function applicantDocumentUpload(Request $req)
+    public function generateWaterOrderId($request)
     {
-        DB::beginTransaction();
         try {
-            $document = $req['documents'];
-            foreach ($document as $documents) {
-                $appDoc = new WaterApplicantDoc();
-                $appDoc->application_id = $documents['applicationId'];
-                $appDoc->document_id = $documents['documentId'];
-                $appDoc->doc_for = $documents['docFor'];
-                $appDoc->save();
-            }
-            DB::commit();
-            return responseMsg(true, "Document Successfully Uploaded", "");
-        } catch (Exception $e) {
-            DB::rollBack();
-            return $e;
+            $refUser = Auth()->user();
+            $orderDetails = $this->saveGenerateOrderid($request);
+            $orderDetails['name'] = $refUser->user_name;
+            $orderDetails['mobile'] = $refUser->mobile;
+            $orderDetails['email'] = $refUser->email;
+            return responseMsg(true, "OrderId Generated!", $orderDetails);
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
+
+
+        /**
+     * |--------- Get the WaterAppications details ------------ |
+     * | @param Request $req
+     */
+    // public function getAllWaterApplications()
+    // {
+    //     WaterApplication::select(
+    //         'appplication_no AS applicationNo'
+    //         ''
+    //     )
+    // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
