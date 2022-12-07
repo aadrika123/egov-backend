@@ -3665,7 +3665,7 @@ class Trade implements ITrade
             {
                 throw new Exception("Denial Request Rejected");
             }
-            $denial_details->file_name = !empty(trim($denial_details->file_name))?storage_path('app/public/' . $denial_details->file_name):null;
+            $denial_details->file_name = !empty(trim($denial_details->file_name))?$this->readDocumentPath($denial_details->file_name):null;
             if($request->getMethod()=='GET')
             {
                 $data["denial_details"] = $denial_details;
