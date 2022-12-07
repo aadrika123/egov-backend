@@ -755,7 +755,7 @@ class ConcessionRepository implements iConcessionRepository
         $concessionDoc->save();
     }
 
-    //
+    // armed force doc upload
     public function armedForceDocUpload($file, $concessionDoc)
     {
         $userId = auth()->user()->id;
@@ -774,7 +774,7 @@ class ConcessionRepository implements iConcessionRepository
         $concessionDoc->save();
     }
 
-    //
+    //specially doc upload
     public function speciallyAbledDocUpload($file, $concessionDoc)
     {
         $userId = auth()->user()->id;
