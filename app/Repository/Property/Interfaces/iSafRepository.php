@@ -26,6 +26,7 @@ interface iSafRepository
     public function calculateSafBySafId($req);              // SAF Calculation by Existing SAF ID
     public function generateOrderId($req);                  // Generate Payment Order ID
     public function paymentSaf($req);                       // SAF Payment
+    public function generatePaymentReceipt($req);           // Generate Payment Receipt
     public function getPropTransactions($req);              // Get Property Transactions
     public function getPropByHoldingNo($req);               // Get Property Details by Holding no
     public function siteVerification($req);                 // Site Verification for Agency TC and Ulb TC
