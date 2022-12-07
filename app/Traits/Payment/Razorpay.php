@@ -88,7 +88,7 @@ trait Razorpay
             $transaction->razorpay_order_id = $mReturndata['orderId'];
             $transaction->amount = $request->amount;
             $transaction->currency = 'INR';
-            $transaction->save();                                                       
+            $transaction->save();
 
             return $mReturndata;                                                        //<------------------ here(RESPONSE)
         } catch (Exception $error) {
@@ -208,11 +208,11 @@ trait Razorpay
         #notes
         $notes = json_encode($request->payload['payment']['entity']['notes']);
         $depatmentId = $request->payload['payment']['entity']['notes']['departmentId'];
-       
+
         #amount/ actualAmount
         $amount = $request->payload['payment']['entity']['amount'];
         $actulaAmount = $amount / 100;
-        
+
         #accquireData/ Its key Valaue
         $arrayInAquirer = $dataOfRequest['payload']['payment']['entity']['acquirer_data'];
         $firstKey = array_key_first($arrayInAquirer);
@@ -288,7 +288,7 @@ trait Razorpay
         $data->department_id                = $request->payload['payment']['entity']['notes']['departmentId'];
         $data->workflow_id                  = $request->payload['payment']['entity']['notes']['workflowId'];
         $data->ulb_id                       = $request->payload['payment']['entity']['notes']['ulbId'];
-       # transaction id generation and saving
+        # transaction id generation and saving
         $actualTransactionNo = $this->generatingTransactionId($transTransferDetails);
         $data->payment_transaction_id = $actualTransactionNo;
         $data->save();
@@ -311,10 +311,10 @@ trait Razorpay
                     $obj = new SafRepository();
                     $obj->paymentSaf($transfer);
                     break;
-                case('3'):
+                case ('3'):
                     $objTrade = new Trade();
-                    $objTrade->handeRazorPay($transfer);
-                    break;    
+                    $objTrade->razorPayResponse($transfer);
+                    break;
                 default:
                     // $msg = 'Something went wrong on switch';
             }
