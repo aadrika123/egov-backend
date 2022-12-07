@@ -3003,14 +3003,14 @@ class Trade implements ITrade
                 }
                 if($doc)
                 {   
-                    if(sizeOf($doc)>1)
-                    {
-                        throw new Exception("All Documernt Are Not Uploaded");
-                    }
-                    else
-                    {
-                        throw new Exception($doc[0]);
-                    }                
+                    // if(sizeOf($doc)>1)
+                    // {
+                    //     throw new Exception("All Documernt Are Not Uploaded");
+                    // }
+                    // else
+                    // {
+                    //     throw new Exception($doc[0]);
+                    // }                
                 }
             }           
             if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
@@ -3027,10 +3027,10 @@ class Trade implements ITrade
                         return True;
                      }
                 });
-                if($test)
-                {
-                    throw new Exception("All Document Are Not Verified");
-                }
+                // if($test)
+                // {
+                //     throw new Exception("All Document Are Not Verified");
+                // }
 
                 
             }
@@ -3756,11 +3756,20 @@ class Trade implements ITrade
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
-            $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
-                $val->ward_no = $val->ward_name;
-                return $val;
-            });
-            $mWardPermission = objToArray($mWardPermission);
+            $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $mUserType          = $this->_parent->userType($refWorkflowId);                         
+            if(in_array(strtoupper($mUserType),["ONLINE","JSK","BO","SUPER ADMIN","TL"]))
+            {
+                $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $mWardPermission = objToArray($mWardPermission);
+            }
+            else
+            {
+                $mWardPermission = $this->_parent->WardPermission($refUserId);
+            }            
             $licence = ActiveLicence::select("active_licences.id",
                                             "active_licences.application_no",
                                             "active_licences.provisional_license_no",
@@ -3813,6 +3822,11 @@ class Trade implements ITrade
                                 $licence = $licence
                                     ->whereBetween('licence_level_pendings.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
                             }
+            if(in_array(strtoupper($mUserType),["ONLINE"]))
+            {
+                $licence = $licence
+                            ->where("user_id",$refUserId);
+            }
             $licence = $licence
                     ->get();
             $data = [
