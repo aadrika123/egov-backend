@@ -1495,9 +1495,9 @@ class Trade implements ITrade
                                         ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
                                         ")
                                     )
-                            ->join("ulb_masters","ulb_masters.id","active_licences.ulb_id")
+                            ->join("ulb_masters","ulb_masters.id","expire_licences.ulb_id")
                             ->join("ulb_ward_masters",function($join){
-                                $join->on("ulb_ward_masters.id","=","active_licences.ward_mstr_id");                                
+                                $join->on("ulb_ward_masters.id","=","expire_licences.ward_mstr_id");                                
                             })
                             ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                                 STRING_AGG(guardian_name,',') as guardian_name,
