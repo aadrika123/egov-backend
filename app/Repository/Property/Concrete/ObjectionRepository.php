@@ -22,14 +22,20 @@ use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
 use App\Models\PropActiveObjectionDocdtl;
-
-
+use App\Repository\Property\Concrete\PropertyBifurcation;
+use PhpParser\Node\Expr\Cast\Object_;
 
 class ObjectionRepository implements iObjectionRepository
 {
     use Objection;
     use WorkflowTrait;
     private $_objectionNo;
+    private $_bifuraction;
+
+    public function __construct()
+    {
+        $this->_bifuraction = new PropertyBifurcation();
+    }
 
     /**
      * | CLERICAL Workflow ID=36                            | Assesment Workflow ID=56
@@ -113,7 +119,7 @@ class ObjectionRepository implements iObjectionRepository
 
                     $objectionDoc = new PropActiveObjectionDocdtl;
                     $name = time() . 'name.' . $namefile->getClientOriginalExtension();
-                    $path = public_path('objection/name');
+                    $path = storage_path('objection/name');
                     $namefile->move($path, $name);
                     $objectionDoc->objection_id = $objection->id;
                     $objectionDoc->doc_type = 'nameDoc';
@@ -131,7 +137,7 @@ class ObjectionRepository implements iObjectionRepository
 
                     $objectionDoc = new PropActiveObjectionDocdtl;
                     $name = time() . 'add.' . $addressfile->getClientOriginalExtension();
-                    $path = public_path('objection/address');
+                    $path = storage_path('objection/address');
                     $addressfile->move($path, $name);
                     $objectionDoc->objection_id = $objection->id;
                     $objectionDoc->doc_type = 'addressDoc';
@@ -148,7 +154,7 @@ class ObjectionRepository implements iObjectionRepository
 
                     $objectionDoc = new PropActiveObjectionDocdtl;
                     $name = time() . 'member.' . $memberfile->getClientOriginalExtension();
-                    $path = public_path('objection/safMembers');
+                    $path = storage_path('objection/safMembers');
                     $memberfile->move($path, $name);
                     $objectionDoc->objection_id = $objection->id;
                     $objectionDoc->doc_type = 'safMemberDoc';
@@ -194,7 +200,7 @@ class ObjectionRepository implements iObjectionRepository
                 if ($file = $request->file('objectionForm')) {
 
                     $name = time() . '.' . $file->getClientOriginalExtension();
-                    $path = public_path('objection/objectionForm');
+                    $path = storage_path('objection/objectionForm');
                     $file->move($path, $name);
                 }
 
@@ -202,7 +208,7 @@ class ObjectionRepository implements iObjectionRepository
                 if ($file = $request->file('evidenceDoc')) {
 
                     $name = time() . '.' . $file->getClientOriginalExtension();
-                    $path = public_path('objection/evidenceDoc');
+                    $path = storage_path('objection/evidenceDoc');
                     $file->move($path, $name);
                 }
                 return responseMsg(true, "Successfully Saved", $name);
@@ -248,42 +254,47 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_error->objection_id = $objection->id;
                     $assement_error->objection_type_id = $otid["id"];
 
+                    $assesmentDetail = $this->assesmentDetails($request);
+                    $assesmentData = collect($assesmentDetail);
+
                     //RWH
                     if ($otid["id"] == 2) {
                         $assement_error->data_ref_type = 'boolean';
                         $objection->objection_type_id = 2;
+                        $assement_error->assesment_data = collect($assesmentData['original']['data']['isWaterHarvesting']);
                     }
                     //road width
                     if ($otid["id"] == 3) {
                         $assement_error->data_ref_type = 'ref_prop_road_types.id';
                         $objection->objection_type_id = 3;
+                        $assement_error->assesment_data = collect($assesmentData['original']['data']['roadType']);
                     }
                     //property_types
                     if ($otid["id"] == 4) {
                         $assement_error->data_ref_type = 'ref_prop_types.id';
                         $objection->objection_type_id = 4;
+                        $assement_error->assesment_data = collect($assesmentData['original']['data']['propertyType']);
                     }
                     //area off plot
                     if ($otid["id"] == 5) {
                         $assement_error->data_ref_type = 'area';
                         $objection->objection_type_id = 5;
+                        $assement_error->assesment_data = collect($assesmentData['original']['data']['areaOfPlot']);
                     }
                     //mobile tower
                     if ($otid["id"] == 6) {
                         $assement_error->data_ref_type = 'boolean';
                         $objection->objection_type_id = 6;
+                        $assement_error->assesment_data = collect($assesmentData['original']['data']['isMobileTower']);
                     }
                     //hoarding board
                     if ($otid["id"] == 7) {
                         $assement_error->data_ref_type = 'boolean';
                         $objection->objection_type_id = 7;
+                        $assement_error->assesment_data = collect($assesmentData['original']['data']['isHoarding']);
                     }
-                    $assement_error->assesment_data =  $request->assesmentData;
+
                     $assement_error->applicant_data =  $otid["value"];
-
-                    $a = $this->assesmentDetails($request);
-                    $assement_error->applicant_data =  $a;
-
                     $assement_error->save();
                 }
 
@@ -315,7 +326,7 @@ class ObjectionRepository implements iObjectionRepository
                 if ($file = $request->file('objectionForm')) {
 
                     $name = time() . '.' . $file->getClientOriginalExtension();
-                    $path = public_path('objection/objectionForm');
+                    $path = storage_path('objection/objectionForm');
                     $file->move($path, $name);
                 }
 
@@ -323,7 +334,7 @@ class ObjectionRepository implements iObjectionRepository
                 if ($file = $request->file('evidenceDoc')) {
 
                     $name = time() . '.' . $file->getClientOriginalExtension();
-                    $path = public_path('objection/evidenceDoc');
+                    $path = storage_path('objection/evidenceDoc');
                     $file->move($path, $name);
                 }
             }
@@ -722,14 +733,22 @@ class ObjectionRepository implements iObjectionRepository
         try {
             $list = PropActiveObjection::select(
                 'prop_active_objections.id',
-                'prop_active_objections.applicant_name as ownerName',
+                'applicant_name as ownerName',
                 'holding_no as holdingNo',
                 'ward_mstr_id as wardId',
-                'prop_type_mstr_id as propertyType'
+                'objection_for as objectionFor',
+                'prop_type_mstr_id as propertyType',
+                'ward_name as wardId',
+                'property_type as propertyType',
+                'dob',
+                'gender'
             )
                 ->where('prop_active_objections.status', 1)
                 ->orderByDesc('prop_active_objections.id')
                 ->join('prop_properties', 'prop_properties.id', 'prop_active_objections.property_id')
+                ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+                ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                 ->get();
 
             return responseMsg(true, "Successfully Done", $list);
@@ -744,19 +763,22 @@ class ObjectionRepository implements iObjectionRepository
         try {
             $list = PropActiveObjection::select(
                 'prop_active_objections.id',
-                'prop_active_objections.applicant_name as ownerName',
+                'applicant_name as ownerName',
                 'holding_no as holdingNo',
-                'ward_mstr_id as wardId',
-                'prop_type_mstr_id as propertyType',
+                'objection_for as objectionFor',
+                'ward_name as wardId',
+                'property_type as propertyType',
                 'dob',
                 'gender',
-                'is_armed_force as armedForce',
-                'is_specially_abled as speciallyAbled'
+
             )
                 ->where('prop_active_objections.id', $req->id)
                 ->where('prop_active_objections.status', 1)
                 ->orderByDesc('prop_active_objections.id')
                 ->join('prop_properties', 'prop_properties.id', 'prop_active_objections.property_id')
+                ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+                ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                 ->first();
 
             return responseMsg(true, "Successfully Done", $list);
@@ -769,15 +791,21 @@ class ObjectionRepository implements iObjectionRepository
     public function objectionDocList($req)
     {
         try {
-            $list = PropObjectionDocDtl::select(
+            $list = PropActiveObjectionDocdtl::select(
                 'id',
                 'doc_type as docName',
                 'doc_name as docUrl',
+                'relative_path',
                 'verify_status as docStatus',
                 'remarks as docRemarks'
             )
-                ->where('prop_objection_doc_dtls.objection_id', $req->id)
+                ->where('prop_active_objection_docdtls.objection_id', $req->id)
                 ->get();
+            $list = $list->map(function ($val) {
+                $path = $this->_bifuraction->readDocumentPath($val->relative_path . $val->docUrl);
+                $val->docUrl = $path;
+                return $val;
+            });
 
             return responseMsg(true, "Successfully Done", remove_null($list));
         } catch (Exception $e) {
@@ -785,18 +813,70 @@ class ObjectionRepository implements iObjectionRepository
         }
     }
 
+
+    //objectionn document upload 
+    public function objectionDocUpload($req)
+    {
+        try {
+            // $doc['nameDoc'] = $req->nameDoc;
+            // $doc['addressDoc'] = $req->addressDoc;
+            // $doc['safMemberDoc'] = $req->safMemberDoc;
+            // foreach ($doc as $key => $documents) {
+            //     $base64Encode = base64_encode($documents->getClientOriginalName());
+            //     $extention = $documents->getClientOriginalExtension();
+            //     $imageName = time() . '-' . $base64Encode . '.' . $extention;
+            //     $documents->storeAs('public/Objection/' . $key, $imageName);
+
+            //     $appDoc = new PropActiveObjectionDocdtl();
+            //     $appDoc->objection_id = $req->id;
+            //     $appDoc->doc_name = $imageName;
+            //     $appDoc->relative_path = ('public/Objection/' . $key);
+            //     $appDoc->doc_type = $key;
+            //     $appDoc->save();
+            // }
+            if ($file = $req->file('docFile')) {
+
+                $name = time() . '.' . $file->getClientOriginalExtension();
+                $path = storage_path('app/public/Objection/');
+                $file->move($path, $name);
+            }
+
+            $appDoc = new PropActiveObjectionDocdtl();
+            $appDoc->objection_id = $req->id;
+            $appDoc->doc_name = $name;
+            $appDoc->date = Carbon::now();
+            $appDoc->relative_path = ('app/public/Objection/');
+            $appDoc->doc_type = $req->docType;
+            $appDoc->user_id = auth()->user()->id;
+            $appDoc->save();
+
+
+            return responseMsg(true, "Document Successfully Uploaded!", "");
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+
     //post objection status
     public function objectionDocStatus($req)
     {
         try {
             $userId = auth()->user()->id;
 
-            $docStatus = PropObjectionDocDtl::find($req->id);
-            $docStatus->remarks = $req->remarks;
-            $docStatus->verify_status = $req->verifyStatus;
-            $docStatus->verify_by_emp_id = $userId;
+            $docStatus = PropActiveObjectionDocdtl::find($req->id);
+            $docStatus->remarks = $req->docRemarks;
+            // $docStatus->verify_status = $req->verifyStatus;
+            $docStatus->verified_by_emp_id = $userId;
             $docStatus->verified_on = Carbon::now();
             $docStatus->updated_at = Carbon::now();
+
+            if ($req->docStatus == 'Verified') {
+                $docStatus->verify_status = 1;
+            }
+            if ($req->docStatus == 'Rejected') {
+                $docStatus->verify_status = 2;
+            }
             $docStatus->save();
 
             return responseMsg(true, "Successfully Done", '');

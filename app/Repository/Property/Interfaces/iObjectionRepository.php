@@ -27,5 +27,6 @@ interface iObjectionRepository
     public function objectionList();
     public function objectionByid($req);
     public function objectionDocList($req);
+    public function objectionDocUpload($req);
     public function objectionDocStatus($req);
 }
