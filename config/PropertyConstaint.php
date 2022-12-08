@@ -327,6 +327,26 @@ return [
     ],
 
     // Relative GeoTagging Path of Geo Tagging
-    "GEOTAGGING_RELATIVE_PATH" => "Property/GeoTagging"
+    "GEOTAGGING_RELATIVE_PATH" => "Property/GeoTagging",
+
+    // Rebates
+    "REBATES" => [
+        "CITIZEN" => [
+            "ID" => 1,
+            "PERC" => 5
+        ],
+        "JSK" => [
+            "ID" => 2,
+            "PERC" => 2.5
+        ],
+        "SPECIALLY_ABLED" => [
+            "ID" => 3,
+            "PERC" => 5
+        ],
+        "SERIOR_CITIZEN" => [
+            "ID" => 4,
+            "PERC" => 5
+        ]
+    ]
 
 ];
