@@ -1540,6 +1540,15 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $owners = objToArray($mOwneres);
                 $cnt=$request->btn_doc;
                 $doc_for = "doc_for$cnt";
+                $rules = [
+                    'doc'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
+                    'doc_for'.$cnt =>"required|string",
+                    'doc_mstr_id'.$cnt.''=>'required|int',
+                ];                         
+                $validator = Validator::make($request->all(), $rules, $message);                    
+                if ($validator->fails()) {                        
+                    return responseMsg(false, $validator->errors(),$request->all());
+                }
                 # Upload Document 
                 if(isset($request->btn_doc) && isset($request->$doc_for) && !in_array($request->$doc_for,["Gender Document","DOB Document","Armed","Handicap","Photo"]))
                 {  
@@ -1968,7 +1977,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     return $val;
                 });
                 $data["uploadDocument"] = $mUploadDocument;
-                return responseMsg(true, $request->$doc_for,$data["uploadDocument"]);
+                return responseMsg(true, $sms,$data["uploadDocument"]);
             }
         }
         catch(Exception $e)
