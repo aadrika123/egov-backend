@@ -46,27 +46,27 @@ class NewConnectionController extends Controller
         $validateUser = Validator::make(
             $request->all(),
             [
-                // 'connectionTypeId'   => 'required|integer',
-                // 'propertyTypeId'     => 'required|integer',
-                // 'ownerType'          => 'required',
-                // 'category'           => 'required',
+                'connectionTypeId'   => 'required|integer',
+                'propertyTypeId'     => 'required|integer',
+                'ownerType'          => 'required',
                 // 'pipelineTypeId'     => 'required|integer',
-                // 'wardId'             => 'required|integer',
-                // 'areaSqft'           => 'required|integer',
+                'wardId'             => 'required|integer',
+                'areaSqft'           => 'required|integer',
                 // 'address'            => 'required',
-                // 'landmark'           => 'required',
-                // 'pin'                => 'required|integer',
+                'landmark'           => 'required',
+                'pin'                => 'required|integer',
                 // 'flatCount'          => 'required|integer',
-                // 'elecKNo'            => 'required',
-                // 'elecBindBookNo'     => 'required',
-                // 'elecAccountNo'      => 'required',
-                // 'elecCategory'       => 'required',
-                // 'connection_through' => 'required|integer',
+                'elecKNo'            => 'required',
+                'elecBindBookNo'     => 'required',
+                'elecAccountNo'      => 'required',
+                'elecCategory'       => 'required',
+                'connection_through' => 'required|integer',
+                'owners'          => 'required',
             ]
         );
 
         if ($validateUser->fails()) {
-            return responseMsg(false, "Vallidation Error!", $validateUser->errors());
+            return response()->json(["status" => false, "message" => "Validation Error!", "data" => $validateUser->getMessageBag()], 400);
         }
         return $this->newConnection->store($request);
     }
