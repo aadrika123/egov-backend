@@ -1313,8 +1313,8 @@ class Trade implements ITrade
             $refUlbDtl      = UlbMaster::find($refUlbId);
             $refUlbName     = explode(' ',$refUlbDtl->ulb_name);
 
-            $mUserData      = $this->_parent->getUserRoll($refUserId, $refUlbId,$refWorkflowId);
-            $mUserType      = $this->_parent->userType($refWorkflowId);
+            // $mUserData      = $this->_parent->getUserRoll($refUserId, $refUlbId,$refWorkflowId);
+            // $mUserType      = $this->_parent->userType($refWorkflowId);
             $mNowDate       = Carbon::now()->format('Y-m-d'); 
             $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
             $mDenialAmount  = 0;
@@ -1328,11 +1328,11 @@ class Trade implements ITrade
             }
 
             #-----------valication-------------------                            
-            if(!in_array($mUserType,["JSK","UTC","TC","SUPER ADMIN","TL"]))
-            {
-                DB::rollBack();
-                throw new Exception("You Are Not Authorized For Payment Cut");
-            }
+            // if(!in_array($mUserType,["JSK","UTC","TC","SUPER ADMIN","TL"]))
+            // {
+            //     DB::rollBack();
+            //     throw new Exception("You Are Not Authorized For Payment Cut");
+            // }
             $refLecenceData = ActiveLicence::find($args["id"]);
             $licenceId = $args["id"];
             $refLevelData = $this->getLevelData($licenceId);
