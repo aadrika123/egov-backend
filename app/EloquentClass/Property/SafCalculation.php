@@ -54,6 +54,14 @@ class SafCalculation
     private $_currentQuarterDate;
     private $_loggedInUserType;
     private $_redis;
+    private $_citizenRebatePerc;
+    private $_jskRebatePerc;
+    private $_speciallyAbledRebatePerc;
+    private $_seniorCitizenRebatePerc;
+    private $_citizenRebateID;
+    private $_jskRebateID;
+    private $_speciallyAbledRebateID;
+    private $_seniorCitizenRebateID;
 
     /** 
      * | For Building
@@ -168,6 +176,17 @@ class SafCalculation
         $currentQuarterDate = Carbon::parse($current)->floorMonth();
         $this->_currentQuarterDate = $currentQuarterDate;                                                           // Quarter Current Date
         $this->_loggedInUserType = auth()->user()->user_type ?? 'Citizen';                                            // User Type of current Logged In User
+
+        // Types of Rebates and Rebate Percentages
+        $this->_citizenRebatePerc = Config::get('PropertyConstaint.REBATES.CITIZEN.PERC');                  // 5
+        $this->_jskRebatePerc = Config::get('PropertyConstaint.REBATES.JSK.PERC');                          // 2.5
+        $this->_speciallyAbledRebatePerc = Config::get('PropertyConstaint.REBATES.SPECIALLY_ABLED.PERC');   // 5
+        $this->_seniorCitizenRebatePerc = Config::get('PropertyConstaint.REBATES.SERIOR_CITIZEN.PERC');     // 5
+
+        $this->_citizenRebateID = Config::get('PropertyConstaint.REBATES.CITIZEN.ID');                  // 5
+        $this->_jskRebateID = Config::get('PropertyConstaint.REBATES.JSK.ID');                          // 2.5
+        $this->_speciallyAbledRebateID = Config::get('PropertyConstaint.REBATES.SPECIALLY_ABLED.ID');   // 5
+        $this->_seniorCitizenRebateID = Config::get('PropertyConstaint.REBATES.SERIOR_CITIZEN.ID');     // 5
     }
 
     /**
@@ -995,27 +1014,65 @@ class SafCalculation
      */
     public function readRebate()
     {
+        $rebates = array();
         $ownerDetails = collect($this->_propertyDetails['owner'])->first();
         $rebate = 0;
         $currentDate = Carbon::now()->toDateTimeString();
         $days = dateDiff($ownerDetails['dob'], $currentDate) + 1;
-        $seniorCitizen = 60;  // Define for year of senior citizen
+        $seniorCitizen = 60;                                    // Define for year of senior citizen
+        // Rebate Percentage Amount
+        $citizenRebatePerc = $this->_citizenRebatePerc;
+        $jskRebatePerc = $this->_jskRebatePerc;
+        $speciallyAbledRebatePerc = $this->_speciallyAbledRebatePerc;
+        $seniorCitizenRebatePerc = $this->_seniorCitizenRebatePerc;
 
+        $totalDemand = $this->_GRID['demand']['totalDemand'];
         if ($this->_loggedInUserType == 'Citizen') {                                                // In Case of Citizen
-            $rebate += 5;
+            $rebate += $citizenRebatePerc;
+            $this->_GRID['demand']['citizenRebate'] = $citizenRebatePerc;
+            $this->_GRID['rebates']['citizenRebate'] = $citizenRebatePerc;
+            array_push($rebates, [
+                "rebateTypeId" => $this->_citizenRebateID,
+                "rebateType" => "citizenRebate",
+                "rebatePerc" => $citizenRebatePerc,
+                "rebateAmount" => roundFigure(($totalDemand * $citizenRebatePerc) / 100)
+            ]);
         }
         if ($this->_loggedInUserType == 'JSK') {                                                    // In Case of JSK
-            $rebate += 2.5;
+            $rebate += $jskRebatePerc;
+            $this->_GRID['demand']['jskRebate'] = $jskRebatePerc;
+            $this->_GRID['rebates']['jskRebate'] = $jskRebatePerc;
+            array_push($rebates, [
+                "rebateTypeId" => $this->_jskRebateID,
+                "rebateType" => "jskRebate",
+                "rebatePerc" => $jskRebatePerc,
+                "rebateAmount" => roundFigure(($totalDemand * $jskRebatePerc) / 100)
+            ]);
         }
 
         if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  > 1) {
-            $rebate += 5;
+            $rebate += $speciallyAbledRebatePerc;
+            $this->_GRID['demand']['speciallyAbledRebate'] = $speciallyAbledRebatePerc;
+            array_push($rebates, [
+                "rebateTypeId" => $this->_speciallyAbledRebateID,
+                "rebateType" => "speciallyAbledRebate",
+                "rebatePerc" => $speciallyAbledRebatePerc,
+                "rebateAmount" => roundFigure(($totalDemand * $speciallyAbledRebatePerc) / 100)
+            ]);
         }
 
         if ($days >= $seniorCitizen) {
-            $rebate += 5;
+            $rebate += $seniorCitizenRebatePerc;
+            $this->_GRID['demand']['seniorCitizenRebate'] = $seniorCitizenRebatePerc;
+            array_push($rebates, [
+                "rebateTypeId" => $this->_seniorCitizenRebateID,
+                "rebateType" => "seniorCitizenRebate",
+                "rebatePerc" => $seniorCitizenRebatePerc,
+                "rebateAmount" => roundFigure(($totalDemand * $seniorCitizenRebatePerc) / 100)
+            ]);
         }
 
+        $this->_GRID['rebates'] = $rebates;
         return $rebate;
     }
 
