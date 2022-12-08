@@ -199,6 +199,7 @@ trait Razorpay
      */
     public function collectWebhookDetails($request)
     {
+        // try{
         # Variable Defining Section
         $dataOfRequest = $request->all();
 
@@ -311,11 +312,11 @@ trait Razorpay
 
             # calling function for the modules   //<------------ here (Call Another Function)
             switch ($depatmentId) {
-                case ('1'):
+                case ('1'):                         //<------------------ (SAF PAYMENT)
                     $obj = new SafRepository();
                     $obj->paymentSaf($transfer);
                     break;
-                case ('3'):
+                case ('3'):                         //<-------------------(TRADE)
                     $objTrade = new Trade();
                     $objTrade->razorPayResponse($transfer);
                     break;
@@ -324,6 +325,12 @@ trait Razorpay
             }
         }                                                                                    //<------------------ here (CAUTION)
         return responseMsg(true, "Webhook Data Collected!", $request->event);
+    // }
+    // catch(Exception $e)
+    // {
+    //     dd($e->getfile(),$e->getMessage());
+    //     return responseMsg(false,"error occured",$e->getLine());
+    // }
     }
 
 
