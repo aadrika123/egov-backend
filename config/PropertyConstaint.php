@@ -347,6 +347,12 @@ return [
             "ID" => 4,
             "PERC" => 5
         ]
+    ],
+
+    // Penalties
+    "PENALTIES" => [
+        "RWH_PENALTY_ID" => 1,
+        "LATE_ASSESSMENT_ID" => 2
     ]
 
 ];

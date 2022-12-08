@@ -1009,6 +1009,8 @@ class SafRepository implements iSafRepository
             $safRepo = new SafRepository();
             $calculateSafById = $safRepo->calculateSafBySafId($req);
             $safDemandDetails = $this->generateSafDemand($calculateSafById->original['data']['details']);
+            $rwhPenaltyId = Config::get('PropertyConstaint.PENALTIES.RWH_PENALTY_ID');
+            $lateAssesPenaltyId = Config::get('PropertyConstaint.PENALTIES.LATE_ASSESSMENT_ID');
 
             $demands = $calculateSafById->original['data']['demand'];
             $rebates = $calculateSafById->original['data']['rebates'];
@@ -1038,28 +1040,28 @@ class SafRepository implements iSafRepository
 
                 //  RWH Penalty
                 $mPayPropPenalty = new PaymentPropPenalty();
-                $checkRwhPenaltyExist = $mPayPropPenalty->getPenaltyByDemandPenaltyID($propSafDemand->id, 1);   // <--- Check the Presence of data
+                $checkRwhPenaltyExist = $mPayPropPenalty->getPenaltyByDemandPenaltyID($propSafDemand->id, $rwhPenaltyId);   // <--- Check the Presence of data
 
                 if ($checkRwhPenaltyExist) {
-                    $this->tSavePropPenalties($checkRwhPenaltyExist, 1, $propSafDemand->id, $safDemandDetail['rwhPenalty']);   // <-------- trait to save rwh
+                    $this->tSavePropPenalties($checkRwhPenaltyExist, $rwhPenaltyId, $propSafDemand->id, $safDemandDetail['rwhPenalty']);   // <-------- trait to save rwh
                     $checkRwhPenaltyExist->save();
                 }
                 if (!$checkRwhPenaltyExist) {
                     $paymentPropPenalty = new PaymentPropPenalty();
-                    $this->tSavePropPenalties($paymentPropPenalty, 1, $propSafDemand->id, $safDemandDetail['rwhPenalty']);   // <-------- trait to save rwh
+                    $this->tSavePropPenalties($paymentPropPenalty, $rwhPenaltyId, $propSafDemand->id, $safDemandDetail['rwhPenalty']);   // <-------- trait to save rwh
                     $paymentPropPenalty->save();
                 }
 
                 // One Perc Penalty
-                $checkOnePercExist = $mPayPropPenalty->getPenaltyByDemandPenaltyID($propSafDemand->id, 2);      // <------ Check The Presence of data
+                $checkOnePercExist = $mPayPropPenalty->getPenaltyByDemandPenaltyID($propSafDemand->id, $lateAssesPenaltyId);      // <------ Check The Presence of data
 
                 if ($checkOnePercExist) {
-                    $this->tSavePropPenalties($checkOnePercExist, 2, $propSafDemand->id, $safDemandDetail['onePercPenaltyTax']);   // <-------- trait to save rwh
+                    $this->tSavePropPenalties($checkOnePercExist, $lateAssesPenaltyId, $propSafDemand->id, $safDemandDetail['onePercPenaltyTax']);   // <-------- trait to save rwh
                     $checkOnePercExist->save();
                 }
                 if (!$checkOnePercExist) {
                     $paymentPropPenalty = new PaymentPropPenalty();
-                    $this->tSavePropPenalties($paymentPropPenalty, 2, $propSafDemand->id, $safDemandDetail['onePercPenaltyTax']);   // <-------- trait to save rwh
+                    $this->tSavePropPenalties($paymentPropPenalty, $lateAssesPenaltyId, $propSafDemand->id, $safDemandDetail['onePercPenaltyTax']);   // <-------- trait to save rwh
                     $paymentPropPenalty->save();
                 }
             }
