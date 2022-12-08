@@ -262,7 +262,7 @@ trait SAF
         $filtered = $collection->map(function ($value) {
             return collect($value)->only([
                 'qtr', 'holdingTax', 'waterTax', 'educationTax',
-                'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv', 'rwhPenalty'
+                'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv', 'rwhPenalty', 'onePercPenaltyTax'
             ]);
         });
 
@@ -275,6 +275,7 @@ trait SAF
                     'qtr' => $collection->first()['qtr'],
                     'dueDate' => $collection->first()['dueDate'],
                     'rwhPenalty' => $collection->sum('rwhPenalty'),
+                    'onePercPenaltyTax' => $collection->sum('onePercPenaltyTax'),
                     'arv' => $collection->sum('arv'),
                     'holdingTax' => $collection->sum('holdingTax'),
                     'waterTax' => $collection->sum('waterTax'),
@@ -326,5 +327,27 @@ trait SAF
             ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
             ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
             ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id');
+    }
+
+    /**
+     * | Trait to Save On Payment Property Rebates
+     */
+    public function tSavePropRebate($paymentPropRebate, $req, $rebate)
+    {
+        $paymentPropRebate->saf_id = $req->id;
+        $paymentPropRebate->rebate_type_id = $rebate['rebateTypeId'];
+        $paymentPropRebate->amount = $rebate['rebateAmount'];
+        $paymentPropRebate->description = $rebate['rebateType'];
+    }
+
+    /**
+     * | Trait to Save On Payment Property Penalties
+     */
+    public function tSavePropPenalties($paymentPropPenalty, $penaltyTypeId, $demandId, $amount)
+    {
+        $paymentPropPenalty->saf_demand_id = $demandId;
+        $paymentPropPenalty->penalty_type_id = $penaltyTypeId;
+        $paymentPropPenalty->amount = $amount;
+        $paymentPropPenalty->penalty_date = Carbon::now()->format('Y-m-d');
     }
 }

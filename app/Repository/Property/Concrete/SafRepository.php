@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
+use App\Models\Payment\WebhookPaymentData;
+use App\Models\Property\PaymentPropPenalty;
+use App\Models\Property\PaymentPropRebate;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Property\PropActiveSafsFloor;
@@ -464,8 +467,8 @@ class SafRepository implements iSafRepository
         try {
             // Saf Details
             $data = [];
-            if ($req->id) {                         //<------- Search By SAF ID
-                $data = $this->tActiveSafDetails()    // <------- Trait Active SAF Details
+            if ($req->id) {                             //<------- Search By SAF ID
+                $data = $this->tActiveSafDetails()      // <------- Trait Active SAF Details
                     ->where('prop_active_safs.id', $req->id)
                     ->first();
             }
@@ -1005,37 +1008,86 @@ class SafRepository implements iSafRepository
             $auth = auth()->user();
             $safRepo = new SafRepository();
             $calculateSafById = $safRepo->calculateSafBySafId($req);
-            $totalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
             $safDemandDetails = $this->generateSafDemand($calculateSafById->original['data']['details']);
+            $rwhPenaltyId = Config::get('PropertyConstaint.PENALTIES.RWH_PENALTY_ID');
+            $lateAssesPenaltyId = Config::get('PropertyConstaint.PENALTIES.LATE_ASSESSMENT_ID');
+
+            $demands = $calculateSafById->original['data']['demand'];
+            $rebates = $calculateSafById->original['data']['rebates'];
+            $totalAmount = $demands['payableAmount'];
             // Check Requested amount is matching with the generated amount or not
             // if ($req->amount == $totalAmount) {
             $orderDetails = $this->saveGenerateOrderid($req);       //<---------- Generate Order ID Trait
             $orderDetails['name'] = $auth->user_name;
             $orderDetails['mobile'] = $auth->mobile;
             $orderDetails['email'] = $auth->email;
-
-            // update the data in saf prop demands
+            DB::beginTransaction();
+            // Update the data in saf prop demands
             foreach ($safDemandDetails as $safDemandDetail) {
-                $propSafDemand = new PropSafsDemand();
-                $checkExisting = $propSafDemand->getPropSafDemands($safDemandDetail['quarterYear'], $safDemandDetail['qtr'], $req->id); // Get SAF demand from model function
-                if ($checkExisting) {       // <---------------- If The Data is already Existing then update the data
-                    $this->tSaveSafDemand($checkExisting, $safDemandDetail);    // <--- Trait is Used for SAF Demand Update
-                    $checkExisting->save();
+                $mSafDemand = new PropSafsDemand();
+                $propSafDemand = $mSafDemand->getPropSafDemands($safDemandDetail['quarterYear'], $safDemandDetail['qtr'], $req->id); // Get SAF demand from model function
+                if ($propSafDemand) {       // <---------------- If The Data is already Existing then update the data
+                    $this->tSaveSafDemand($propSafDemand, $safDemandDetail);    // <--- Trait is Used for SAF Demand Update
+                    $propSafDemand->save();
                 }
-                if (!$checkExisting) {      // <----------------- If not Existing then add new 
+                if (!$propSafDemand) {                                          // <----------------- If not Existing then add new 
                     $propSafDemand = new PropSafsDemand();
                     $this->tSaveSafDemand($propSafDemand, $safDemandDetail);    // <--------- Trait is Used for Saf Demand Update
                     $propSafDemand->save();
                 }
+
+                // Save Prop Transaction Penalties
+
+                //  RWH Penalty
+                $mPayPropPenalty = new PaymentPropPenalty();
+                $checkRwhPenaltyExist = $mPayPropPenalty->getPenaltyByDemandPenaltyID($propSafDemand->id, $rwhPenaltyId);   // <--- Check the Presence of data
+
+                if ($checkRwhPenaltyExist) {
+                    $this->tSavePropPenalties($checkRwhPenaltyExist, $rwhPenaltyId, $propSafDemand->id, $safDemandDetail['rwhPenalty']);   // <-------- trait to save rwh
+                    $checkRwhPenaltyExist->save();
+                }
+                if (!$checkRwhPenaltyExist) {
+                    $paymentPropPenalty = new PaymentPropPenalty();
+                    $this->tSavePropPenalties($paymentPropPenalty, $rwhPenaltyId, $propSafDemand->id, $safDemandDetail['rwhPenalty']);   // <-------- trait to save rwh
+                    $paymentPropPenalty->save();
+                }
+
+                // One Perc Penalty
+                $checkOnePercExist = $mPayPropPenalty->getPenaltyByDemandPenaltyID($propSafDemand->id, $lateAssesPenaltyId);      // <------ Check The Presence of data
+
+                if ($checkOnePercExist) {
+                    $this->tSavePropPenalties($checkOnePercExist, $lateAssesPenaltyId, $propSafDemand->id, $safDemandDetail['onePercPenaltyTax']);   // <-------- trait to save rwh
+                    $checkOnePercExist->save();
+                }
+                if (!$checkOnePercExist) {
+                    $paymentPropPenalty = new PaymentPropPenalty();
+                    $this->tSavePropPenalties($paymentPropPenalty, $lateAssesPenaltyId, $propSafDemand->id, $safDemandDetail['onePercPenaltyTax']);   // <-------- trait to save rwh
+                    $paymentPropPenalty->save();
+                }
             }
 
-            // Save Prop Transaction Details On Payment
+            // Save Prop Transaction Rebates
+            foreach ($rebates as $rebate) {
+                $paymentPropRebate = new PaymentPropRebate();
+                $checkExisting = $paymentPropRebate->getPaymentRebate('saf_id', $req->id, $rebate['rebateTypeId']);
+                if ($checkExisting) {
+                    $this->tSavePropRebate($checkExisting, $req, $rebate);      // <------- Trait to Save Property Rebate
+                    $checkExisting->save();
+                }
+                if (!$checkExisting) {
+                    $paymentPropRebate = new PaymentPropRebate();
+                    $this->tSavePropRebate($paymentPropRebate, $req, $rebate);  // <------- Trait to Save Property Rebate
+                    $paymentPropRebate->save();
+                }
+            }
 
+            DB::commit();
             return responseMsg(true, "Order ID Generated", remove_null($orderDetails));
             // }
 
-            return responseMsg(false, "Amount Not Matched", "");
+            // return responseMsg(false, "Amount Not Matched", "");
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -1046,7 +1098,7 @@ class SafRepository implements iSafRepository
      * | @var workflowId SAF workflow ID
      * | Status-Closed
      * | Query Consting-374ms
-     * | Rating-1
+     * | Rating-3
      */
 
     public function paymentSaf($req)
@@ -1080,6 +1132,29 @@ class SafRepository implements iSafRepository
             $activeSaf->payment_status = 1;
             $activeSaf->save();
 
+            // Replication Prop Rebates
+            $mPaymentPropRebates = new PaymentPropRebate();
+            $paymentRebates = $mPaymentPropRebates->getRebatesBySafId($req['id']);
+            foreach ($paymentRebates as $paymentRebate) {
+                $propRebate = $paymentRebate->replicate();
+                $propRebate->setTable('prop_rebates');
+                $propRebate->tran_id = $propTrans->id;
+                $propRebate->tran_date = $this->_todayDate->format('Y-m-d');
+                $propRebate->save();
+            }
+
+            // Replication Prop Penalties
+            foreach ($demands as $demand) {
+                $pPropPenalties = PaymentPropPenalty::where('saf_demand_id', $demand['id'])->get();
+                foreach ($pPropPenalties as $pPropPenaltie) {
+                    $propPenalties = $pPropPenaltie->replicate();
+                    $propPenalties->setTable('prop_penalties');
+                    $propPenalties->penalty_date = $this->_todayDate->format('Y-m-d');
+                    $propPenalties->tran_id = $propTrans->id;
+                    $propPenalties->save();
+                }
+            }
+
             Redis::del('property-transactions-user-' . $userId);
             DB::commit();
             return responseMsg(true, "Payment Successfully Done", "");
@@ -1092,10 +1167,55 @@ class SafRepository implements iSafRepository
     /**
      * | Generate Payment Receipt
      * | @param request req
+     * | Status-Closed
+     * | Query Cost-3
      */
     public function generatePaymentReceipt($req)
     {
         try {
+            $paymentData = new WebhookPaymentData();
+            $applicationIds = $paymentData->getApplicationId($req->paymentId);
+            $safId = json_decode($applicationIds)->applicationId;
+            $reqSafId = new Request(['id' => $safId]);
+            $propSafsDemand = new PropSafsDemand();
+            $demands = $propSafsDemand->getDemandBySafId($safId);
+
+            $fromFinYear = $demands->first()['fyear'];
+            $fromFinQtr = $demands->first()['qtr'];
+            $upToFinYear = $demands->last()['fyear'];
+            $upToFinQtr = $demands->last()['qtr'];
+            $activeSafDetails = $this->details($reqSafId);
+
+            $transaction = new PropTransaction();
+            $propTrans = $transaction->getPropTransactions($safId, "saf_id");
+            $propTrans = collect($propTrans)->last();
+
+            // Response Return Data
+            $responseData = [
+                "transactionDate" => $propTrans->tran_date,
+                "transactionNo" => $propTrans->tran_no,
+                "transactionTime" => $propTrans->created_at->format('H:i:s'),
+                "customerName" => $activeSafDetails->original['data']['applicant_name'],
+                "receiptWard" => $activeSafDetails->original['data']['new_ward_no'],
+                "address" => $activeSafDetails->original['data']['prop_address'],
+                "paidFrom" => $fromFinYear,
+                "paidFromQtr" => $fromFinQtr,
+                "paidUpto" => $upToFinYear,
+                "paidUptoQtr" => $upToFinQtr,
+                "paymentMode" => $propTrans->payment_mode,
+                "bankName" => "",
+                "branchName" => "",
+                "chequeNo" => "",
+                "chequeDate" => "",
+                "noOfFlats" => "",
+                "monthlyRate" => "",
+                "demandAmount" => $propTrans->amount,
+                "paidAmount" => $propTrans->amount,
+                "remainingAmount" => 0,
+                "tcName" => "",
+                "tcMobile" => ""
+            ];
+            return responseMsg(true, "Payment Receipt", remove_null($responseData));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
