@@ -3904,7 +3904,7 @@ class Trade implements ITrade
                                         "owner.guardian_name",
                                         "owner.mobile_no",
                                         "owner.email_id",
-                                        DB::raw("'expire' as license_type"),
+                                        DB::raw("'expired' as license_type"),
                                         )
                             ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                             STRING_AGG(guardian_name,',') AS guardian_name,
