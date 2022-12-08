@@ -294,6 +294,35 @@ class NewConnectionRepository implements iNewConnection
     }
 
 
+    //document verify
+    public function waterDocStatus($req)
+    {
+        try {
+            $userId = auth()->user()->id;
+
+            $docStatus = WaterApplicantDoc::find($req->id);
+            $docStatus->remarks = $req->docRemarks;
+            // $docStatus->verify_status = $req->docStatus;
+            $docStatus->verified_by_emp_id = $userId;
+            $docStatus->verified_on = Carbon::now();
+            $docStatus->updated_at = Carbon::now();
+
+            if ($req->docStatus == 'Verified') {
+                $docStatus->verify_status = 1;
+            }
+            if ($req->docStatus == 'Rejected') {
+                $docStatus->verify_status = 2;
+            }
+
+            $docStatus->save();
+
+            return responseMsg(true, "Successfully Done", '');
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+
 
 
 
@@ -423,7 +452,7 @@ class NewConnectionRepository implements iNewConnection
     }
 
 
-        /**
+    /**
      * |--------- Get the WaterAppications details ------------ |
      * | @param Request $req
      */
