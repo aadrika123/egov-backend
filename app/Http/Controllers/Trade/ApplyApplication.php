@@ -153,4 +153,12 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->reports($request);
     }
+    public function citizenApplication(Request $request)
+    {
+        return $this->Repository->citizenApplication();
+    }
+    public function readCitizenLicenceDtl($id)
+    {
+        return $this->Repository->readCitizenLicenceDtl($id);
+    }
 }
