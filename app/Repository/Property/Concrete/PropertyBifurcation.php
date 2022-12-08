@@ -1958,17 +1958,17 @@ class PropertyBifurcation implements IPropertyBifurcation
                     }              
                 }                 
                 DB::commit();
-                // $mUploadDocument = $this->getSafDocuments($refSafs->id)->map(function($val){
-                //     if(isset($val["doc_path"]))
-                //     {
-                //         $path = $this->readDocumentPath( $val["doc_path"]);
-                //         $val["doc_path"] = !empty(trim( $val["doc_path"]))?$path :null;                    
+                $mUploadDocument = $this->getSafDocuments($refSafs->id)->map(function($val){
+                    if(isset($val["doc_path"]))
+                    {
+                        $path = $this->readDocumentPath( $val["doc_path"]);
+                        $val["doc_path"] = !empty(trim( $val["doc_path"]))?$path :null;                    
     
-                //     }
-                //     return $val;
-                // });
-                // $data["uploadDocument"] = $mUploadDocument;
-                return responseMsg(true, $sms,$request->all());
+                    }
+                    return $val;
+                });
+                $data["uploadDocument"] = $mUploadDocument;
+                return responseMsg(true, $sms,$data["uploadDocument"]);
             }
         }
         catch(Exception $e)
