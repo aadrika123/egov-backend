@@ -1404,6 +1404,7 @@ class PropertyBifurcation implements IPropertyBifurcation
         $filePath = $file->storeAs('uploads/Property', $custumFileName, 'public');
         return  $filePath;
     }
+    #-------------------------saf-----------------------
     public function safDocumentUpload(Request $request)
     {
         try {
@@ -1921,4 +1922,76 @@ class PropertyBifurcation implements IPropertyBifurcation
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+    #-------------------------End saf-----------------------
+    #-------------------------Citize------------------------
+    public function CitizenPymentHistory(Request $request)
+    {
+        try{
+            $refUser = Auth()->user();
+            $refUserId   = $refUser->id;
+            $refUlbId    = $refUser->ulb_id;
+            $refTran     = null;
+            $propTran    = PropActiveSaf::select("prop_active_safs.saf_no",
+                                                "prop_active_safs.application_date",
+                                                "prop_transactions.tran_no",
+                                                "prop_transactions.tran_date",
+                                                "prop_transactions.payment_mode",
+                                                "prop_transactions.amount",
+                                                DB::raw("prop_active_safs.id AS saf_id ,
+                                                    prop_transactions.id As tran_id,
+                                                    'active_saf' AS type
+                                                ")
+                                                )
+                                        ->join("prop_transactions","prop_transactions.saf_id","prop_active_safs.id")
+                                        ->whereIn("prop_transactions.status",[1,2])
+                                        ->where("prop_active_safs.status",1)
+                                        ->where("prop_active_safs.user_id",$refUserId)
+                                        ->where("prop_active_safs.ulb_id",$refUlbId)
+                                        ->union(
+                                            DB::table("prop_safs")->select("prop_safs.saf_no",
+                                                "prop_safs.application_date",
+                                                "prop_transactions.tran_no",
+                                                "prop_transactions.tran_date",
+                                                "prop_transactions.payment_mode",
+                                                "prop_transactions.amount",
+                                                DB::raw("prop_safs.id AS saf_id ,
+                                                    prop_transactions.id As tran_id,
+                                                    'saf' AS type 
+                                                ")
+                                            )
+                                            ->join("prop_transactions","prop_transactions.saf_id","prop_safs.id")
+                                            ->whereIn("prop_transactions.status",[1,2])
+                                            ->where("prop_safs.status",1)
+                                            ->where("prop_safs.user_id",$refUserId)
+                                            ->where("prop_safs.ulb_id",$refUlbId)
+                                        )
+                                        ->union(
+                                            PropProperty::select(
+                                                    DB::raw("prop_properties.new_holding_no as saf_no,
+                                                            prop_properties.application_date"),
+                                                                "prop_transactions.tran_no",
+                                                                "prop_transactions.tran_date",
+                                                                "prop_transactions.payment_mode",
+                                                                "prop_transactions.amount",
+                                                                DB::raw("prop_properties.id AS property_id ,
+                                                                    prop_transactions.id As tran_id,
+                                                                    'property' AS type 
+                                                                ")
+                                            )
+                                            ->join("prop_transactions","prop_transactions.property_id","prop_properties.id")
+                                            ->whereIn("prop_transactions.status",[1,2])
+                                            ->where("prop_properties.status",1)
+                                            ->where("prop_properties.user_id",$refUserId)
+                                            ->where("prop_properties.ulb_id",$refUlbId)
+                                        )
+                                        ->get();
+            return responseMsg(true, "", $propTran);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    #-------------------------End Citize--------------------
 }

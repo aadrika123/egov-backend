@@ -61,4 +61,8 @@ class PropertyBifurcationController extends Controller
     {
         return $this->Repository->getUploadDocuments($request);
     }
+    public function CitizenPymentHistory(Request $request)
+    {
+        return $this->Repository->CitizenPymentHistory( $request);
+    }
 }
