@@ -1982,7 +1982,7 @@ class PropertyBifurcation implements IPropertyBifurcation
         }
         catch(Exception $e)
         {
-            return responseMsg(false,$e->getMessage(),$request->all());
+            return responseMsg(false,$e->getMessage(),"");
         }
     }
     public function getUploadDocuments(Request $request)
