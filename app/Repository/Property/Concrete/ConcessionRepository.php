@@ -648,7 +648,7 @@ class ConcessionRepository implements iConcessionRepository
             $docStatus = PropConcessionDocDtl::find($req->id);
             $docStatus->remarks = $req->docRemarks;
             // $docStatus->verify_status = $req->docStatus;
-            $docStatus->verify_by_emp_id = $userId;
+            $docStatus->verified_by_emp_id = $userId;
             $docStatus->verified_on = Carbon::now();
             $docStatus->updated_at = Carbon::now();
 

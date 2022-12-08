@@ -16,6 +16,7 @@ use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\Property\SafDemandController;
 use App\Http\Controllers\Property\DocumentController;
+use App\Http\Controllers\CustomController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -163,7 +164,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('objection/list', 'objectionList');
         Route::post('objection/list-id', 'objectionByid');
         Route::post('objection/doc-list', 'objectionDocList');
+        Route::post('objection/doc-upload', 'objectionDocUpload');
         Route::post('objection/doc-status', 'objectionDocStatus');
+    });
+
+    // for custom details
+    Route::controller(CustomController::class)->group(function () {
+        Route::post('get-all-custom-tab-data', 'getCustomDetails');
+        Route::post('post-custom-data', 'postCustomDetails');
     });
 
     //Document verification

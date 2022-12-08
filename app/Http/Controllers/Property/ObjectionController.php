@@ -132,6 +132,12 @@ class ObjectionController extends Controller
         return $this->Repository->objectionDocList($req);
     }
 
+    //get document status by id
+    public function objectionDocUpload(Request $req)
+    {
+        return $this->Repository->objectionDocUpload($req);
+    }
+
     //post document status
     public function objectionDocStatus(Request $req)
     {

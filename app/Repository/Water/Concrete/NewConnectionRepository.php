@@ -67,7 +67,7 @@ class NewConnectionRepository implements iNewConnection
     public function getOwnerType()
     {
         try {
-            $ownerType = new WaterOwnerTypeMstr();
+            $ownerType = new WaterOwnerTypeMstr();  //<---------------- make object
             $ownerType = $ownerType->getallOwnwers();
             return response()->json(['status' => true, 'message' => 'data of the ownerType', 'data' => $ownerType]);
         } catch (Exception $error) {
@@ -85,7 +85,7 @@ class NewConnectionRepository implements iNewConnection
     public function getConnectionType()
     {
         try {
-            $connectionTypes = new WaterConnectionTypeMstr();
+            $connectionTypes = new WaterConnectionTypeMstr();       //<---------------- make object
             $connectionTypes = $connectionTypes->getConnectionType();
             return response()->json(['status' => true, 'message' => 'data of the connectionType', 'data' => $connectionTypes]);
         } catch (Exception $error) {
@@ -104,7 +104,7 @@ class NewConnectionRepository implements iNewConnection
     public function getConnectionThrough()
     {
         try {
-            $connectionThrough = new WaterConnectionThroughMstrs();
+            $connectionThrough = new WaterConnectionThroughMstrs();     //<---------------- make object
             $connectionThrough = $connectionThrough->getAllThrough();
             return response()->json(['status' => true, 'message' => 'data of the connectionThrough', 'data' => $connectionThrough]);
         } catch (Exception $error) {
@@ -122,7 +122,7 @@ class NewConnectionRepository implements iNewConnection
     public function getPropertyType()
     {
         try {
-            $propertyType = new WaterPropertyTypeMstr();
+            $propertyType = new WaterPropertyTypeMstr();        //<---------------- make object
             $propertyType = $propertyType->getAllPropertyType();
             return response()->json(['status' => true, 'message' => 'data of the propertyType', 'data' => $propertyType]);
         } catch (Exception $error) {
