@@ -7,10 +7,10 @@ use App\Models\CustomDetail;
 
 class CustomController extends Controller
 {
-    public function getCustomDetails()
+    public function getCustomDetails(Request $request)
     {
         $obj = new CustomDetail();
-        return $obj->getCustomDetails();
+        return $obj->getCustomDetails($request);
     }
 
     //post custom details

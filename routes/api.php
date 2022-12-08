@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
 use App\Http\Controllers\CitizenController;
-use App\Http\Controllers\CustomController;
 use App\Http\Controllers\Menu\MenuController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\SelfAdvertisementController;
@@ -339,12 +338,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(UlbMaster::class)->group(function () {
         Route::get('get-all-wards', 'getAllWards');
     });
-
-    // for custom details
-    Route::controller(CustomController::class)->group(function () {
-        Route::get('get-all-custom-tab-data', 'getCustomDetails');
-        Route::post('post-custom-data', 'postCustomDetails');
-    });
 });
 
 
@@ -357,7 +350,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(MenuController::class)->group(function () {
         Route::get('crud/menu/get-all-menues', 'getAllMenues');             // Get All the Menu List
-        Route::post('crud/menu/delete-menues','deleteMenuesDetails');         // Soft Delition of the menus
+        Route::post('crud/menu/delete-menues', 'deleteMenuesDetails');         // Soft Delition of the menus
         Route::post('menu-roles/get-menu-by-roles', 'getMenuByroles');        // Get all the menu by roles
         Route::post('menu-roles/update-menu-by-role', 'updateMenuByRole');      // Update Menu Permission By Role
         # Diff

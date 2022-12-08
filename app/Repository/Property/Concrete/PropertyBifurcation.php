@@ -1452,7 +1452,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $doc = (array) null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
-                $doc['docName']     = "gender_document";
+                $doc['docName']     = "Gender Document";
                 $doc['isMadatory']  = 1;
                 $doc['docVal']      = $this->getDocumentList("gender_document");
                 $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id, $val->id, $doc['docVal'][0]->id);
@@ -1464,7 +1464,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $doc = (array) null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
-                $doc['docName']     = "dob_document";
+                $doc['docName']     = "DOB Document";
                 $doc['isMadatory']  = 1;
                 $doc['docVal']      = $this->getDocumentList("dob_document");
                 $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id, $val->id, $doc['docVal'][0]->id);
@@ -1477,7 +1477,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $doc = (array) null;
                     $doc["ownerId"]     = $val->id;
                     $doc["ownerName"]   = $val->owner_name;
-                    $doc['docName']     = "armed_force_document";
+                    $doc['docName']     = "Armed";
                     $doc['isMadatory']  = 1;
                     $doc['docVal']      = $this->getDocumentList("armed_force_document");
                     $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id, $val->id, $doc['docVal'][0]->id);
@@ -1491,7 +1491,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $doc = (array) null;
                     $doc["ownerId"]     = $val->id;
                     $doc["ownerName"]   = $val->owner_name;
-                    $doc['docName']     = "handicaped_document";
+                    $doc['docName']     = "Handicap";
                     $doc['isMadatory']  = 1;
                     $doc['docVal']      = $this->getDocumentList("handicaped_document");
                     $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id, $val->id, $doc['docVal'][0]->id);

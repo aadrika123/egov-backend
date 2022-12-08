@@ -19,11 +19,13 @@ class CustomDetail extends Model
         $this->_bifuraction = new PropertyBifurcation();
     }
 
-    public function getCustomDetails()
+    public function getCustomDetails($request)
     {
         try {
-            $customDetails = CustomDetail::select('id', 'document', 'remarks', 'type', 'created_at as date', 'ref_type as customFor')
+            $customDetails = CustomDetail::select('id', 'ref_id', 'ref_type', 'document', 'remarks', 'type', 'created_at as date', 'ref_type as customFor')
                 ->orderBy("id", 'desc')
+                ->where('ref_id', $request->id)
+                ->where('ref_type', $request->customFor)
                 ->get();
             $customDetails = $customDetails->map(function ($val) {
                 $path = $this->_bifuraction->readDocumentPath($val->relative_path . $val->docUrl);
@@ -42,67 +44,59 @@ class CustomDetail extends Model
         try {
             $customFor = $request->customFor;
             $customDetails = new CustomDetail;
+            $filepath = NULL;
 
             if ($file = $request->file('document')) {
                 $filename = time() .  '.' . $file->getClientOriginalExtension();
-                $path = public_path('custom');
+                $path = storage_path('app/public/custom');
                 $file->move($path, $filename);
-                $filepath = public_path('custom' . '/' . $filename);
+                $filepath = storage_path('app/public/custom' . '/' . $filename);
             }
 
             $customDetails = new CustomDetail;
             if ($customFor == 'Concession') {
-
-                if ($request->remarks && $request->document) {
-
-                    $customDetails->ref_id = $request->id;
-                    $customDetails->ref_type = 'Concession';
-                    $customDetails->document = $filepath;
-                    $customDetails->remarks = $request->remarks;
-                    $customDetails->type = "both";
-                } elseif ($request->document) {
-
-                    $customDetails->ref_id = $request->id;
-                    $customDetails->ref_type = 'Concession';
-                    $customDetails->document = $filepath;
-                    $customDetails->type = "file";
-                } elseif ($request->remarks) {
-
-                    $customDetails->ref_id = $request->id;
-                    $customDetails->ref_type = 'Concession';
-                    $customDetails->remarks = $request->remarks;
-                    $customDetails->type = "text";
-                }
+                $customDetails->ref_type = 'Concession';
+                $this->saveCustomDetail($request, $filepath, $customDetails);
                 $customDetails->save();
             }
 
             if ($customFor == 'SAF') {
-
-                if ($request->remarks && $request->document) {
-
-                    $customDetails->ref_id = $request->id;
-                    $customDetails->ref_type = 'SAF';
-                    $customDetails->document = $filepath;
-                    $customDetails->remarks = $request->remarks;
-                    $customDetails->type = "both";
-                } elseif ($request->document) {
-
-                    $customDetails->ref_id = $request->id;
-                    $customDetails->ref_type = 'SAF';
-                    $customDetails->document = $filepath;
-                    $customDetails->type = "file";
-                } elseif ($request->remarks) {
-
-                    $customDetails->ref_id = $request->id;
-                    $customDetails->ref_type = 'SAF';
-                    $customDetails->remarks = $request->remarks;
-                    $customDetails->type = "text";
-                }
+                $customDetails->ref_type = 'SAF';
+                $this->saveCustomDetail($request, $filepath, $customDetails);
                 $customDetails->save();
             }
+
+            if ($customFor == 'Objection') {
+                $customDetails->ref_type = 'Objection';
+                $this->saveCustomDetail($request, $filepath, $customDetails);
+                $customDetails->save();
+            }
+
             return responseMsg(true, "Successfully Saved", $customDetails);
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // save custom details
+    public function saveCustomDetail($request, $filepath, $customDetails)
+    {
+        if ($request->remarks && $request->document) {
+
+            $customDetails->ref_id = $request->id;
+            $customDetails->document = $filepath;
+            $customDetails->remarks = $request->remarks;
+            $customDetails->type = "both";
+        } elseif ($request->document) {
+
+            $customDetails->ref_id = $request->id;
+            $customDetails->document = $filepath;
+            $customDetails->type = "file";
+        } elseif ($request->remarks) {
+
+            $customDetails->ref_id = $request->id;
+            $customDetails->remarks = $request->remarks;
+            $customDetails->type = "text";
         }
     }
 }
