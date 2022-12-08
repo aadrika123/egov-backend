@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
+use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Property\PropActiveSafsFloor;
@@ -464,8 +465,8 @@ class SafRepository implements iSafRepository
         try {
             // Saf Details
             $data = [];
-            if ($req->id) {                         //<------- Search By SAF ID
-                $data = $this->tActiveSafDetails()    // <------- Trait Active SAF Details
+            if ($req->id) {                             //<------- Search By SAF ID
+                $data = $this->tActiveSafDetails()      // <------- Trait Active SAF Details
                     ->where('prop_active_safs.id', $req->id)
                     ->first();
             }
@@ -1096,6 +1097,49 @@ class SafRepository implements iSafRepository
     public function generatePaymentReceipt($req)
     {
         try {
+            $paymentData = new WebhookPaymentData();
+            $applicationIds = $paymentData->getApplicationId($req->paymentId);
+            $safId = json_decode($applicationIds)->applicationId;
+            $reqSafId = new Request(['id' => $safId]);
+            $propSafsDemand = new PropSafsDemand();
+            $demands = $propSafsDemand->getDemandBySafId($safId);
+
+            $fromFinYear = $demands->first()['fyear'];
+            $fromFinQtr = $demands->first()['qtr'];
+            $upToFinYear = $demands->last()['fyear'];
+            $upToFinQtr = $demands->last()['qtr'];
+            $activeSafDetails = $this->details($reqSafId);
+
+            $transaction = new PropTransaction();
+            $propTrans = $transaction->getPropTransactions($safId, "saf_id");
+            $propTrans = collect($propTrans)->last();
+
+            // Response Return Data
+            $responseData = [
+                "transactionDate" => $propTrans->tran_date,
+                "transactionNo" => $propTrans->tran_no,
+                "transactionTime" => $propTrans->created_at->format('H:i:s'),
+                "customerName" => $activeSafDetails->original['data']['applicant_name'],
+                "receiptWard" => $activeSafDetails->original['data']['new_ward_no'],
+                "address" => $activeSafDetails->original['data']['prop_address'],
+                "paidFrom" => $fromFinYear,
+                "paidFromQtr" => $fromFinQtr,
+                "paidUpto" => $upToFinYear,
+                "paidUptoQtr" => $upToFinQtr,
+                "paymentMode" => $propTrans->payment_mode,
+                "bankName" => "",
+                "branchName" => "",
+                "chequeNo" => "",
+                "chequeDate" => "",
+                "noOfFlats" => "",
+                "monthlyRate" => "",
+                "demandAmount" => $propTrans->amount,
+                "paidAmount" => $propTrans->amount,
+                "remainingAmount" => 0,
+                "tcName" => "",
+                "tcMobile" => ""
+            ];
+            return responseMsg(true, "Payment Receipt", remove_null($responseData));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

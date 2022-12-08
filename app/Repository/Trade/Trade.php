@@ -3003,14 +3003,14 @@ class Trade implements ITrade
                 }
                 if($doc)
                 {   
-                    if(sizeOf($doc)>1)
-                    {
-                        throw new Exception("All Documernt Are Not Uploaded");
-                    }
-                    else
-                    {
-                        throw new Exception($doc[0]);
-                    }                
+                    // if(sizeOf($doc)>1)
+                    // {
+                    //     throw new Exception("All Documernt Are Not Uploaded");
+                    // }
+                    // else
+                    // {
+                    //     throw new Exception($doc[0]);
+                    // }                
                 }
             }           
             if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
@@ -3027,10 +3027,10 @@ class Trade implements ITrade
                         return True;
                      }
                 });
-                if($test)
-                {
-                    throw new Exception("All Document Are Not Verified");
-                }
+                // if($test)
+                // {
+                //     throw new Exception("All Document Are Not Verified");
+                // }
 
                 
             }
@@ -3613,7 +3613,15 @@ class Trade implements ITrade
                         ->where("trade_denial_consumer_dtls.status",1)
                         ->orderBy("trade_denial_consumer_dtls.created_on","DESC")
                         ->get();
-            $data['denila_consumer'] =$denila_consumer;
+            $data['denila_consumer'] =$denila_consumer->map(function($val){
+                if(isset($val["file_name"]))
+                {
+                    $path = $this->readDocumentPath( $val["file_name"]);
+                    $val["file_name"] = !empty(trim( $val["file_name"]))?$path :null;                    
+
+                }
+                return $val;
+            });
             return responseMsg(false,"", remove_null($data));
         }
         catch(Exception $e)
@@ -3657,7 +3665,7 @@ class Trade implements ITrade
             {
                 throw new Exception("Denial Request Rejected");
             }
-            $denial_details->file_name = !empty(trim($denial_details->file_name))?storage_path('app/public/' . $denial_details->file_name):null;
+            $denial_details->file_name = !empty(trim($denial_details->file_name))?$this->readDocumentPath($denial_details->file_name):null;
             if($request->getMethod()=='GET')
             {
                 $data["denial_details"] = $denial_details;
@@ -3756,11 +3764,20 @@ class Trade implements ITrade
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
-            $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
-                $val->ward_no = $val->ward_name;
-                return $val;
-            });
-            $mWardPermission = objToArray($mWardPermission);
+            $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $mUserType          = $this->_parent->userType($refWorkflowId);                         
+            if(in_array(strtoupper($mUserType),["ONLINE","JSK","BO","SUPER ADMIN","TL"]))
+            {
+                $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $mWardPermission = objToArray($mWardPermission);
+            }
+            else
+            {
+                $mWardPermission = $this->_parent->WardPermission($refUserId);
+            }            
             $licence = ActiveLicence::select("active_licences.id",
                                             "active_licences.application_no",
                                             "active_licences.provisional_license_no",
@@ -3813,6 +3830,11 @@ class Trade implements ITrade
                                 $licence = $licence
                                     ->whereBetween('licence_level_pendings.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
                             }
+            if(in_array(strtoupper($mUserType),["ONLINE"]))
+            {
+                $licence = $licence
+                            ->where("user_id",$refUserId);
+            }
             $licence = $licence
                     ->get();
             $data = [
