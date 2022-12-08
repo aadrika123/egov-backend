@@ -277,9 +277,9 @@ trait Razorpay
         $data->payment_tax                  = $request->payload['payment']['entity']['tax'];
         $data->payment_error_code           = $request->payload['payment']['entity']['error_code'];
         $data->payment_error_description    = $request->payload['payment']['entity']['error_description'];
-        $data->payment_error_source         = $request->payload['payment']['entity']['error_source'];
-        $data->payment_error_step           = $request->payload['payment']['entity']['error_step'];
-        $data->payment_error_reason         = $request->payload['payment']['entity']['error_reason'];
+        $data->payment_error_source         = $request->payload['payment']['entity']['error_source'] ?? null;
+        $data->payment_error_step           = $request->payload['payment']['entity']['error_step'] ?? null;
+        $data->payment_error_reason         = $request->payload['payment']['entity']['error_reason'] ?? null;
         $data->payment_acquirer_data_type   = $firstKey;                                                    //<------------here (FIRSTKEY)
         $data->payment_acquirer_data_value  = $request->payload['payment']['entity']['acquirer_data'][$firstKey];
         $data->payment_created_at           = $request->payload['payment']['entity']['created_at'];
@@ -299,6 +299,10 @@ trait Razorpay
         $transfer['amount'] = $actulaAmount;
         $transfer['workflowId'] = $request->payload['payment']['entity']['notes']['workflowId'];
         $transfer['transactionNo'] = $actualTransactionNo;
+        $transfer['userId'] = $data->user_id;
+        $transfer['ulbId'] = $data->ulb_id;
+        $transfer['departmentId'] = $data->department_id;
+        $transfer['workflowId'] = $data->workflow_id;
 
         # conditionaly upadting the request data
         if ($status == 'captured' && $captured == 1) {

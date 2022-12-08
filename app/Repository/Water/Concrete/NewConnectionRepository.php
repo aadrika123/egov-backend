@@ -143,6 +143,7 @@ class NewConnectionRepository implements iNewConnection
     public function store(Request $req)
     {
         try {
+
             $vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
             $wfWater = Config::get('workflow-constants.WATER_MASTER_ID');
             $ulbId = auth()->user()->ulb_id;
@@ -260,6 +261,27 @@ class NewConnectionRepository implements iNewConnection
 
 
     /**
+     * | ------------------------------------ View All Application list ------------------------------- |
+     * | @param Req <--------------- (route)
+     */
+    public function getAllApplicationsDetails()
+    {
+        try {
+            $applicationDetails = WaterApplication::join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
+                ->select(
+                    'water_applications.id',
+                    'water_applicants.applicant_name AS appplicantName',
+                    'water_applications.address'
+                )
+                ->get();
+            return responseMsg(true, "List of Applicants!", $applicationDetails);
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+
+    /**
      * | ----------------- Document Upload for the Applicant ------------------------------- |
      * | @param Req
      * | #documents[] > contains all the documents upload to be
@@ -294,7 +316,12 @@ class NewConnectionRepository implements iNewConnection
     }
 
 
-    //document verify
+    /**
+     * | ----------------- Document verification processs ------------------------------- |
+     * | @param Req <------------------------- (rourte)
+     * | @var userId
+     * | @var docStatus
+     */
     public function waterDocStatus($req)
     {
         try {
@@ -302,91 +329,42 @@ class NewConnectionRepository implements iNewConnection
 
             $docStatus = WaterApplicantDoc::find($req->id);
             $docStatus->remarks = $req->docRemarks;
-            // $docStatus->verify_status = $req->docStatus;
             $docStatus->verified_by_emp_id = $userId;
             $docStatus->verified_on = Carbon::now();
             $docStatus->updated_at = Carbon::now();
 
-            if ($req->docStatus == 'Verified') {
+            if ($req->docStatus == 'Verified') {                        //<------------ (here data type small int)        
                 $docStatus->verify_status = 1;
             }
-            if ($req->docStatus == 'Rejected') {
+            if ($req->docStatus == 'Rejected') {                        //<------------ (here data type small int)
                 $docStatus->verify_status = 2;
             }
 
             $docStatus->save();
 
             return responseMsg(true, "Successfully Done", '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
      * |--------- Get the Water Connection charges Details for Logged In user ------------ |
-     * | @param Request $req
+     * | @param Req
+     * | @var userId
+     * | @var connections
      */
     public function getUserWaterConnectionCharges(Request $req)
     {
         try {
             $userId = auth()->user()->id;
             $connections = WaterApplication::join('water_connection_charges', 'water_applications.id', '=', 'water_connection_charges.application_id')
+                ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
                 ->select(
-                    'water_connection_charges.application_id',
+                    'water_connection_charges.application_id AS applicationId',
                     'water_applications.application_no',
+                    'water_applicants.applicant_name AS appplicantName',
                     'water_connection_charges.amount',
                     'water_connection_charges.paid_status',
                     'water_connection_charges.status',
@@ -394,15 +372,65 @@ class NewConnectionRepository implements iNewConnection
                     'water_connection_charges.conn_fee',
                 )
                 ->where('water_applications.user_id', '=', $userId)
-                ->where('water_applications.id', $req->applicationId)
-                ->get()
-                ->first();
-            $connections['workflowId'] = "working";
+                ->orwhere('water_applications.id', $req->applicationId)
+                ->get();
             return responseMsg(true, "", $connections);
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * | -------- Water Payment ----------------------------------------------------------- |
@@ -425,15 +453,15 @@ class NewConnectionRepository implements iNewConnection
             } else {
                 return responseMsg(false, "ApplicationId Not found", "");
             }
-        } catch (Exception $e) {
-            return $e;
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
 
 
     /**
      * | -------- Water Payment Order Id generation----------------------------------------------------------- |
-     * | @param Request
+     * | @param Request <------------------------------------(Route)
      * | #calling the payment gateway trait > Get OrderId
      * | @return responseMsg
      */
@@ -451,18 +479,6 @@ class NewConnectionRepository implements iNewConnection
         }
     }
 
-
-    /**
-     * |--------- Get the WaterAppications details ------------ |
-     * | @param Request $req
-     */
-    // public function getAllWaterApplications()
-    // {
-    //     WaterApplication::select(
-    //         'appplication_no AS applicationNo'
-    //         ''
-    //     )
-    // }
 
 
 
