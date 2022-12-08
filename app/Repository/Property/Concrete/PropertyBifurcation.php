@@ -1968,7 +1968,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     return $val;
                 });
                 $data["uploadDocument"] = $mUploadDocument;
-                return responseMsg(true, $sms,$data["uploadDocument"]);
+                return responseMsg(true, $request->$doc_for,$data["uploadDocument"]);
             }
         }
         catch(Exception $e)
