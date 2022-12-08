@@ -3943,6 +3943,12 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
+            $tbl = "expire";
+            $application = ActiveLicence::select("id")->find($id);
+            if($application)
+            {
+                $tbl = "active";
+            }
             $init_finish = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
             $finisher = $init_finish['finisher'];
             $finisher['short_user_name'] = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.'.strtoupper($init_finish['finisher']['role_name']));
@@ -3967,7 +3973,7 @@ class Trade implements ITrade
             $refOwnerDtl                = $this->getAllOwnereDtlByLId($id);
             $refTransactionDtl          = $this->readTranDtl($id);
             $refTimeLine                = $this->getTimelin($id);
-            $refUploadDocuments         = $this->getLicenceDocuments($id)->map(function($val){
+            $refUploadDocuments         = $this->getLicenceDocuments($id,$tbl)->map(function($val){
                                                 $val->document_path = !empty(trim($val->document_path))? $this->readDocumentPath($val->document_path):"";
                                                 return $val;
                                             });
@@ -4647,22 +4653,34 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-    public function getLicenceDocuments($id)
+    public function getLicenceDocuments($id,$tbl="active")
     {
         try{
-           
-            $time_line =  TradeLicenceDocument::select(
+            $doc =  TradeLicenceDocument::select(
                         "trade_licence_documents.id",
-                        "trade_licence_documents.doc_for",
                         "trade_licence_documents.document_path",
                         "trade_licence_documents.remarks",
-                        "trade_licence_documents.verify_status"
-                    )
-                    ->where('trade_licence_documents.licence_id', $id)
+                        "trade_licence_documents.verify_status",                        
+                        // "trade_licence_documents.doc_for",
+                        DB::raw("CASE WHEN active_licence_owners.id NOTNULL THEN CONCAT(active_licence_owners.owner_name,'( ',trade_licence_documents.doc_for,' )') ELSE trade_licence_documents.doc_for END doc_for")
+            );
+            if($tbl=="active")
+            {
+                $doc = $doc->leftjoin("active_licence_owners",function($join){
+                    $join->on("active_licence_owners.id","trade_licence_documents.licence_owner_dtl_id");
+                });
+            }
+            else
+            {
+                $doc = $doc->leftjoin("expire_licence_owners AS active_licence_owners",function($join){
+                    $join->on("active_licence_owners.id","trade_licence_documents.licence_owner_dtl_id");
+                });
+            }
+            $doc = $doc->where('trade_licence_documents.licence_id', $id)
                     ->where('trade_licence_documents.status', 1)                    
                     ->orderBy('trade_licence_documents.id', 'desc')
                     ->get();
-            return $time_line;
+            return $doc;
         }
         catch(Exception $e)
         {
@@ -4927,19 +4945,19 @@ class Trade implements ITrade
         {
             $status="Application deactivaed ";
         }
-        elseif($application->payment_status==0 && $application->document_upload_status=0)
+        elseif($application->payment_status==0 && $application->document_upload_status==0)
         {
             $status="Payment is pending and document not uploaded ";
         }
-        elseif($application->payment_status==1 && $application->document_upload_status=0)
+        elseif($application->payment_status==1 && $application->document_upload_status==0)
         {
             $status="Payment is done but document not uploaded ";
         }
-        elseif($application->payment_status==0 && $application->document_upload_status=1)
+        elseif($application->payment_status==0 && $application->document_upload_status==1)
         {
             $status="Payment is pending but document is uploaded ";
         }
-        elseif($application->payment_status==1 && $application->document_upload_status=1)
+        elseif($application->payment_status==1 && $application->document_upload_status==1)
         {
             $status="Payment is done and document is uploaded ";
         }
