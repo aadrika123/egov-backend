@@ -1304,8 +1304,8 @@ class Trade implements ITrade
     {
         try{
             $refUser        = Auth()->user();
-            $refUserId      = $refUser->id;
-            $refUlbId       = $refUser->ulb_id; 
+            $refUserId      = $refUser->id??$args["userId"];
+            $refUlbId       = $refUser->ulb_id??$args["ulbId"]; 
             $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID'); 
             $refWorkflows   = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);  
             $refNoticeDetails= null;
