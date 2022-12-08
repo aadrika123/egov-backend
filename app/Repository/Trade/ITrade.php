@@ -49,4 +49,6 @@ interface ITrade
     public function denialView($id,$mailID,Request $request);
     public function approvedApplication(Request $request);
     public function reports(Request $request);
+    public function citizenApplication();
+    public function readCitizenLicenceDtl($id);
 }
