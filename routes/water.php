@@ -56,6 +56,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(WaterApplication::class)->group(function () {  
         // Route::match(["get", "post"], 'apply', 'applyApplication');
         Route::get('citizenApplications', 'getCitizenApplication');
+        Route::post('onlinePayment', 'handeRazorPay');
     });
 
 });

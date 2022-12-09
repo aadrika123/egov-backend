@@ -9,6 +9,7 @@ use App\Models\Water\WaterConnectionCharge;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Water\Interfaces\IWaterNewConnection;
 use App\Traits\Auth;
+use App\Traits\Payment\Razorpay;
 use App\Traits\Property\WardPermission;
 use Carbon\Carbon;
 use Exception;
@@ -16,11 +17,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Validator;
 
 class WaterNewConnection implements IWaterNewConnection
 {
     use Auth;               // Trait Used added by sandeep bara date 17-09-2022
     use WardPermission;
+    use Razorpay;
 
     protected $_modelWard;
     protected $_parent;
@@ -33,7 +36,142 @@ class WaterNewConnection implements IWaterNewConnection
         $this->_modelWard = new ModelWard();
         $this->_parent = new CommonFunction();
     }
+    public function getCitizenApplication(Request $request)
+    {
+        try{
+            $refUser            = Auth()->user();
+            $refUserId          = $refUser->id;
+            $refUlbId           = $refUser->ulb_id;
+            $connection         = WaterApplication::select("water_applications.id",
+                                        "water_applications.application_no",
+                                        "water_applications.address",
+                                        "water_applications.payment_status",
+                                        "water_applications.doc_status",
+                                        "charges.amount",
+                                        DB::raw("'connection' AS type,water_applications.apply_date::date AS apply_date")
+                                        )
+                                        ->join(
+                                            DB::raw("( 
+                                                SELECT DISTINCT(water_applications.id) AS application_id , SUM(COALESCE(amount,0)) AS amount
+                                                FROM water_applications 
+                                                LEFT JOIN water_connection_charges 
+                                                    ON water_applications.id = water_connection_charges.application_id 
+                                                    AND ( 
+                                                        water_connection_charges.paid_status ISNULL  
+                                                        OR water_connection_charges.paid_status=FALSE 
+                                                    )  
+                                                    AND( 
+                                                            water_connection_charges.status = TRUE
+                                                            OR water_connection_charges.status ISNULL  
+                                                        )
+                                                WHERE water_applications.user_id = $refUserId
+                                                    AND water_applications.ulb_id = $refUlbId
+                                                GROUP BY water_applications.id
+                                                ) AS charges
+                                            "),
+                                        function($join){
+                                            $join->on("charges.application_id","water_applications.id");
+                                        })
+                                // ->whereNotIn("status",[0,6,7])
+                                ->where("water_applications.user_id",$refUserId)
+                                ->where("water_applications.ulb_id",$refUlbId)
+                                ->get();
+            return responseMsg(true,"",$connection);
+        }
+        catch(Exception $e)
+        {
 
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+    public function handeRazorPay(Request $request)
+    {
+        try{
+            $refUser            = Auth()->user();
+            $refUserId          = $refUser->id;
+            $refUlbId           = $refUser->ulb_id;
+            $refUlbDtl          = UlbMaster::find($refUlbId);
+            $refUlbName         = explode(' ',$refUlbDtl->ulb_name);
+            // $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            // $refWorkflows       = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
+            $rules = [
+                'id'                =>'required|digits_between:1,9223372036854775807',
+                'applycationType'  =>'required|string|in:connection,consumer',
+            ];                         
+            $validator = Validator::make($request->all(), $rules,);                    
+            if ($validator->fails()) {                        
+                return responseMsg(false, $validator->errors(),$request->all());
+            }
+            #------------ new connection --------------------
+            DB::beginTransaction();
+            if($request->applycationType=="connection")
+            {
+                $application = WaterApplication::find($request->id);
+                if(!$application)
+                {
+                    throw new Exception("Data Not Found!......");
+                }                
+                $cahges = $this->getWaterConnectionChages($application->id);
+                if(!$cahges)
+                {
+                    throw new Exception("No Anny Due Amount!......");
+                }
+                $myRequest = new \Illuminate\Http\Request();
+                $myRequest->setMethod('POST');
+                $myRequest->request->add(['amount' => $cahges]);
+                $myRequest->request->add(['workflowId' => $application->workflow_id]);
+                $myRequest->request->add(['id' => $application->id]);
+                $myRequest->request->add(['departmentId' => 2]);
+                $temp = $this->saveGenerateOrderid($myRequest);
+                // dd($temp);
+                $temp['name']       = $refUser->user_name;
+                $temp['mobile']     = $refUser->mobile;
+                $temp['email']      = $refUser->email;
+                $temp['userId']     = $refUser->id;
+                $temp['ulbId']      = $refUser->ulb_id;               
+
+            }
+            #--------------------water Consumer----------------------
+            else
+            {
+
+            }
+            $temp["applycationType"] = $request->applycationType;
+            return responseMsg(true,"",$temp);
+        }
+        catch(Exception $e)
+        { 
+            DB::rollBack();
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+
+    #---------- core function --------------------------------------------------
+     
+    public function getWaterConnectionChages($applicationId)
+    {
+        try{
+            $cahges = WaterConnectionCharge::select(DB::raw("SUM(COALESCE(amount,0)) AS amount"))
+                          ->where("application_id",$applicationId)
+                          ->Where(function($where){
+                            $where->orWhere("paid_status",FALSE)
+                            ->orWhereNull("paid_status");
+                          })
+                          ->Where(function($where){
+                            $where->orWhere("status",TRUE)
+                            ->orWhereNull("status");
+                          })
+                          ->groupBy("application_id")
+                          ->first();
+            return $cahges->amount;
+        }
+        catch(Exception $e)
+        {
+            return 0;
+        }
+    }  
+    
+    #-----------------incomplite Code------------------------------
     public function applyApplication(Request $request)
     {
         try{
@@ -111,56 +249,6 @@ class WaterNewConnection implements IWaterNewConnection
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
-    public function getCitizenApplication(Request $request)
-    {
-        try{
-            $refUser            = Auth()->user();
-            $refUserId          = $refUser->id;
-            $refUlbId           = $refUser->ulb_id;
-            $connection         = WaterApplication::select("water_applications.id",
-                                        "water_applications.application_no",
-                                        "water_applications.address",
-                                        "water_applications.payment_status",
-                                        "water_applications.doc_status",
-                                        "charges.amount",
-                                        DB::raw("'connection' AS type,water_applications.apply_date::date AS apply_date")
-                                        )
-                                        ->join(
-                                            DB::raw("( 
-                                                SELECT DISTINCT(water_applications.id) AS application_id , SUM(COALESCE(amount,0)) AS amount
-                                                FROM water_applications 
-                                                LEFT JOIN water_connection_charges 
-                                                    ON water_applications.id = water_connection_charges.application_id 
-                                                    AND ( 
-                                                        water_connection_charges.paid_status ISNULL  
-                                                        OR water_connection_charges.paid_status=FALSE 
-                                                    )  
-                                                    AND( 
-                                                            water_connection_charges.status = TRUE
-                                                            OR water_connection_charges.status ISNULL  
-                                                        )
-                                                WHERE water_applications.user_id = $refUserId
-                                                    AND water_applications.ulb_id = $refUlbId
-                                                GROUP BY water_applications.id
-                                                ) AS charges
-                                            "),
-                                        function($join){
-                                            $join->on("charges.application_id","water_applications.id");
-                                        })
-                                // ->whereNotIn("status",[0,6,7])
-                                ->where("water_applications.user_id",$refUserId)
-                                ->where("water_applications.ulb_id",$refUlbId)
-                                ->get();
-            return responseMsg(true,"",$connection);
-        }
-        catch(Exception $e)
-        {
-
-            return responseMsg(false,$e->getMessage(),$request->all());
-        }
-    }
-
-    #---------- core function --------------------------------------------------
     public function getPropertyTypeList()
     {
         // try {
@@ -176,5 +264,5 @@ class WaterNewConnection implements IWaterNewConnection
     public function getOwnershipTypeList()
     {
         
-    }    
+    }
 }
