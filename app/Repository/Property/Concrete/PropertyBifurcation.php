@@ -13,6 +13,8 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropTransaction;
+use App\Models\Trade\ActiveLicence;
+use App\Models\Trade\ExpireLicence;
 use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfWorkflow;
 use App\Repository\Common\CommonFunction;
@@ -1937,8 +1939,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                                                 "prop_transactions.tran_date",
                                                 "prop_transactions.payment_mode",
                                                 "prop_transactions.amount",
-                                                DB::raw("prop_active_safs.id AS saf_id ,
-                                                    prop_transactions.id As tran_id,
+                                                "prop_active_safs.id" ,
+                                               DB::raw("prop_transactions.id As tran_id,
                                                     'active_saf' AS type
                                                 ")
                                                 )
@@ -1954,7 +1956,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                                                 "prop_transactions.tran_date",
                                                 "prop_transactions.payment_mode",
                                                 "prop_transactions.amount",
-                                                DB::raw("prop_safs.id AS saf_id ,
+                                                DB::raw("prop_safs.id,
                                                     prop_transactions.id As tran_id,
                                                     'saf' AS type 
                                                 ")
@@ -1973,7 +1975,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                                                                 "prop_transactions.tran_date",
                                                                 "prop_transactions.payment_mode",
                                                                 "prop_transactions.amount",
-                                                                DB::raw("prop_properties.id AS property_id ,
+                                                                DB::raw("prop_properties.id ,
                                                                     prop_transactions.id As tran_id,
                                                                     'property' AS type 
                                                                 ")
@@ -1985,7 +1987,46 @@ class PropertyBifurcation implements IPropertyBifurcation
                                             ->where("prop_properties.ulb_id",$refUlbId)
                                         )
                                         ->get();
-            return responseMsg(true, "", $propTran);
+            $tradeTran = ActiveLicence::select("active_licences.application_no",
+                                                "active_licences.license_no",
+                                                "active_licences.provisional_license_no",
+                                                "active_licences.apply_date",
+                                                "trade_transactions.transaction_no",
+                                                "trade_transactions.transaction_date",
+                                                "trade_transactions.payment_mode",
+                                                "trade_transactions.paid_amount",
+                                        DB::raw("active_licences.id, 
+                                        trade_transactions.id as tran_id") ,                   
+                        )
+                        ->join("trade_transactions","trade_transactions.related_id","active_licences.id")
+                        ->whereIn("trade_transactions.status",[1,2])
+                        ->where("active_licences.status",1)
+                        ->where("active_licences.user_id",$refUserId)
+                        ->where("active_licences.ulb_id",$refUlbId)
+                        ->union(
+                            ExpireLicence::select("expire_licences.application_no",
+                                                "expire_licences.license_no",
+                                                "expire_licences.provisional_license_no",
+                                                "expire_licences.apply_date",
+                                                "trade_transactions.transaction_no",
+                                                "trade_transactions.transaction_date",
+                                                "trade_transactions.payment_mode",
+                                                "trade_transactions.paid_amount",
+                                        DB::raw("expire_licences.id, 
+                                        trade_transactions.id as tran_id") ,                   
+                        )
+                        ->join("trade_transactions","trade_transactions.related_id","expire_licences.id")
+                        ->whereIn("trade_transactions.status",[1,2])
+                        ->where("expire_licences.status",1)
+                        ->where("expire_licences.user_id",$refUserId)
+                        ->where("expire_licences.ulb_id",$refUlbId)
+                        )
+                        ->get();
+                $data["property"] = $propTran;
+                $data["trade"] = $tradeTran;
+                $data["water"] = [];
+
+            return responseMsg(true, "", $data);
         }
         catch(Exception $e)
         {
