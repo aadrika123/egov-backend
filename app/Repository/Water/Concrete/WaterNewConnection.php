@@ -4,6 +4,8 @@ namespace App\Repository\Water\Concrete;
 
 use App\EloquentModels\Common\ModelWard;
 use App\Models\UlbMaster;
+use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterConnectionCharge;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Water\Interfaces\IWaterNewConnection;
 use App\Traits\Auth;
@@ -109,6 +111,54 @@ class WaterNewConnection implements IWaterNewConnection
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
+    public function getCitizenApplication(Request $request)
+    {
+        try{
+            $refUser            = Auth()->user();
+            $refUserId          = $refUser->id;
+            $refUlbId           = $refUser->ulb_id;
+            $connection         = WaterApplication::select("water_applications.id",
+                                        "water_applications.application_no",
+                                        "water_applications.address",
+                                        "water_applications.payment_status",
+                                        "water_applications.doc_status",
+                                        "charges.amount",
+                                        DB::raw("'connection' AS type,water_applications.apply_date::date AS apply_date")
+                                        )
+                                        ->join(
+                                            DB::raw("( 
+                                                SELECT DISTINCT(water_applications.id) AS application_id , SUM(COALESCE(amount,0)) AS amount
+                                                FROM water_applications 
+                                                LEFT JOIN water_connection_charges 
+                                                    ON water_applications.id = water_connection_charges.application_id 
+                                                    AND ( 
+                                                        water_connection_charges.paid_status ISNULL  
+                                                        OR water_connection_charges.paid_status=FALSE 
+                                                    )  
+                                                    AND( 
+                                                            water_connection_charges.status = TRUE
+                                                            OR water_connection_charges.status ISNULL  
+                                                        )
+                                                WHERE water_applications.user_id = $refUserId
+                                                    AND water_applications.ulb_id = $refUlbId
+                                                GROUP BY water_applications.id
+                                                ) AS charges
+                                            "),
+                                        function($join){
+                                            $join->on("charges.application_id","water_applications.id");
+                                        })
+                                // ->whereNotIn("status",[0,6,7])
+                                ->where("water_applications.user_id",$refUserId)
+                                ->where("water_applications.ulb_id",$refUlbId)
+                                ->get();
+            return responseMsg(true,"",$connection);
+        }
+        catch(Exception $e)
+        {
+
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
 
     #---------- core function --------------------------------------------------
     public function getPropertyTypeList()
@@ -126,5 +176,5 @@ class WaterNewConnection implements IWaterNewConnection
     public function getOwnershipTypeList()
     {
         
-    }
+    }    
 }
