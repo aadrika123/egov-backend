@@ -271,7 +271,10 @@ class NewConnectionRepository implements iNewConnection
                 ->select(
                     'water_applications.id',
                     'water_applicants.applicant_name AS appplicantName',
-                    'water_applications.address'
+                    'water_applications.address',
+                    'water_applications.doc_status AS documentStatus',
+                    'water_applications.payment_status AS paymentStatus',
+                    'water_applications.application_no AS applicationNo'
                 )
                 ->get();
             return responseMsg(true, "List of Applicants!", $applicationDetails);
