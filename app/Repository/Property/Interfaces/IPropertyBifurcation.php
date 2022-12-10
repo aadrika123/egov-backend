@@ -19,4 +19,5 @@ interface IPropertyBifurcation
     public function documentUpload(Request $request);
     public function safDocumentUpload(Request $request);
     public function getUploadDocuments(Request $request);
+    public function CitizenPymentHistory(Request $request);
 }

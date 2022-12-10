@@ -18,5 +18,13 @@ class WaterApplication extends Controller
     {
         return $this->Repository->applyApplication($request);
     }
+    public function getCitizenApplication(Request $request)
+    {
+        return $this->Repository->getCitizenApplication($request);
+    }
+    public function handeRazorPay(Request $request)
+    {
+        return $this->Repository->handeRazorPay($request);
+    }
     
 }

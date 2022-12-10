@@ -47,9 +47,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-ward-no', 'getWardNo');                                                                 // Get Ward No According to Saf or Holding Details mstr
     });
 });
+/**
+     * | Created On:09-12-2022 
+     * | Created by:Sandeep Bara
+     * | ------------------- Water Connection / mobile ------------------------ |
+     */
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     Route::controller(WaterApplication::class)->group(function () {  
-        Route::match(["get", "post"], 'apply', 'applyApplication');
+        // Route::match(["get", "post"], 'apply', 'applyApplication');
+        Route::get('citizenApplications', 'getCitizenApplication');
+        Route::post('onlinePayment', 'handeRazorPay');
     });
 
 });

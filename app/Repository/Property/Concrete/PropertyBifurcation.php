@@ -13,6 +13,8 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropTransaction;
+use App\Models\Trade\ActiveLicence;
+use App\Models\Trade\ExpireLicence;
 use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfWorkflow;
 use App\Repository\Common\CommonFunction;
@@ -1404,6 +1406,7 @@ class PropertyBifurcation implements IPropertyBifurcation
         $filePath = $file->storeAs('uploads/Property', $custumFileName, 'public');
         return  $filePath;
     }
+    #-------------------------saf-----------------------
     public function safDocumentUpload(Request $request)
     {
         try {
@@ -1921,4 +1924,115 @@ class PropertyBifurcation implements IPropertyBifurcation
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+    #-------------------------End saf-----------------------
+    #-------------------------Citize------------------------
+    public function CitizenPymentHistory(Request $request)
+    {
+        try{
+            $refUser = Auth()->user();
+            $refUserId   = $refUser->id;
+            $refUlbId    = $refUser->ulb_id;
+            $refTran     = null;
+            $propTran    = PropActiveSaf::select("prop_active_safs.saf_no",
+                                                "prop_active_safs.application_date",
+                                                "prop_transactions.tran_no",
+                                                "prop_transactions.tran_date",
+                                                "prop_transactions.payment_mode",
+                                                "prop_transactions.amount",
+                                                "prop_active_safs.id" ,
+                                               DB::raw("prop_transactions.id As tran_id,
+                                                    'active_saf' AS type
+                                                ")
+                                                )
+                                        ->join("prop_transactions","prop_transactions.saf_id","prop_active_safs.id")
+                                        ->whereIn("prop_transactions.status",[1,2])
+                                        ->where("prop_active_safs.status",1)
+                                        ->where("prop_active_safs.user_id",$refUserId)
+                                        ->where("prop_active_safs.ulb_id",$refUlbId)
+                                        ->union(
+                                            DB::table("prop_safs")->select("prop_safs.saf_no",
+                                                "prop_safs.application_date",
+                                                "prop_transactions.tran_no",
+                                                "prop_transactions.tran_date",
+                                                "prop_transactions.payment_mode",
+                                                "prop_transactions.amount",
+                                                DB::raw("prop_safs.id,
+                                                    prop_transactions.id As tran_id,
+                                                    'saf' AS type 
+                                                ")
+                                            )
+                                            ->join("prop_transactions","prop_transactions.saf_id","prop_safs.id")
+                                            ->whereIn("prop_transactions.status",[1,2])
+                                            ->where("prop_safs.status",1)
+                                            ->where("prop_safs.user_id",$refUserId)
+                                            ->where("prop_safs.ulb_id",$refUlbId)
+                                        )
+                                        ->union(
+                                            PropProperty::select(
+                                                    DB::raw("prop_properties.new_holding_no as saf_no,
+                                                            prop_properties.application_date"),
+                                                                "prop_transactions.tran_no",
+                                                                "prop_transactions.tran_date",
+                                                                "prop_transactions.payment_mode",
+                                                                "prop_transactions.amount",
+                                                                DB::raw("prop_properties.id ,
+                                                                    prop_transactions.id As tran_id,
+                                                                    'property' AS type 
+                                                                ")
+                                            )
+                                            ->join("prop_transactions","prop_transactions.property_id","prop_properties.id")
+                                            ->whereIn("prop_transactions.status",[1,2])
+                                            ->where("prop_properties.status",1)
+                                            ->where("prop_properties.user_id",$refUserId)
+                                            ->where("prop_properties.ulb_id",$refUlbId)
+                                        )
+                                        ->get();
+            $tradeTran = ActiveLicence::select("active_licences.application_no",
+                                                "active_licences.license_no",
+                                                "active_licences.provisional_license_no",
+                                                "active_licences.apply_date",
+                                                "trade_transactions.transaction_no",
+                                                "trade_transactions.transaction_date",
+                                                "trade_transactions.payment_mode",
+                                                "trade_transactions.paid_amount",
+                                        DB::raw("active_licences.id, 
+                                        trade_transactions.id as tran_id") ,                   
+                        )
+                        ->join("trade_transactions","trade_transactions.related_id","active_licences.id")
+                        ->whereIn("trade_transactions.status",[1,2])
+                        ->where("active_licences.status",1)
+                        ->where("active_licences.user_id",$refUserId)
+                        ->where("active_licences.ulb_id",$refUlbId)
+                        ->union(
+                            ExpireLicence::select("expire_licences.application_no",
+                                                "expire_licences.license_no",
+                                                "expire_licences.provisional_license_no",
+                                                "expire_licences.apply_date",
+                                                "trade_transactions.transaction_no",
+                                                "trade_transactions.transaction_date",
+                                                "trade_transactions.payment_mode",
+                                                "trade_transactions.paid_amount",
+                                        DB::raw("expire_licences.id, 
+                                        trade_transactions.id as tran_id") ,                   
+                        )
+                        ->join("trade_transactions","trade_transactions.related_id","expire_licences.id")
+                        ->whereIn("trade_transactions.status",[1,2])
+                        ->where("expire_licences.status",1)
+                        ->where("expire_licences.user_id",$refUserId)
+                        ->where("expire_licences.ulb_id",$refUlbId)
+                        )
+                        ->get();
+                $data["property"] = $propTran;
+                $data["trade"] = $tradeTran;
+                $data["water"] = [];
+
+            return responseMsg(true, "", $data);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    #-------------------------End Citize--------------------
 }
