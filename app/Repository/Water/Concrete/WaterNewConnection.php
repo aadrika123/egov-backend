@@ -273,10 +273,13 @@ class WaterNewConnection implements IWaterNewConnection
         }
     }
 
-    public function readPaymentRecipt($id, $transectionId)
+    public function paymentRecipt($id, $transectionId)
     {
         try{
-            return responseMsg(true,"",'');
+            $transection = WaterTranDetail::select("*")
+                           ->where("id",$transectionId)
+                           ->whereIn("status",[1,2]);
+            return responseMsg(true,"datFech",'');
         }
         catch(Exception $e)
         {

@@ -61,3 +61,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 
 });
+Route::controller(WaterApplication::class)->group(function () {    
+    Route::get('paymentRecipt/{id}/{transectionId}', 'paymentRecipt');
+});
