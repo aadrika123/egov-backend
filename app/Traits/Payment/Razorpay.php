@@ -303,7 +303,8 @@ trait Razorpay
         $transfer['userId'] = $data->user_id;
         $transfer['ulbId'] = $data->ulb_id;
         $transfer['departmentId'] = $data->department_id;
-        $transfer['workflowId'] = $data->workflow_id;
+        $transfer['orderId']= $data->payment_order_id;
+        $transfer['paymentId']= $data->payment_id;
 
         # conditionaly upadting the request data
         if ($status == 'captured' && $captured == 1) {
