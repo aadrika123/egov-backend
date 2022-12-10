@@ -3859,7 +3859,6 @@ class Trade implements ITrade
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
             $mUserType          = $this->_parent->userType($refWorkflowId);
-            DB::enableQueryLog(); 
             $licence = ActiveLicence::select("active_licences.id",
                                             "active_licences.application_no",
                                             "active_licences.provisional_license_no",
