@@ -90,30 +90,54 @@ class ConcessionRepository implements iConcessionRepository
 
             //saving document in concession doc table
             if ($file = $request->file('genderDoc')) {
+
+                $name = time() . 'genderDoc.' . $file->getClientOriginalExtension();
+                $path = storage_path('app/public/concession/genderDoc/');
+                $file->move($path, $name);
+                $docName = "genderDoc";
+
                 $concessionDoc = new PropConcessionDocDtl();
                 $concessionDoc->concession_id = $concession->id;
-                $this->genderDocUpload($file, $concessionDoc);
+                $this->citizenDocUpload($concessionDoc, $name, $docName);
             }
 
             // dob Doc
             if ($file = $request->file('dobDoc')) {
+
+                $name = time() . 'dobDoc.' . $file->getClientOriginalExtension();
+                $path = storage_path('app/public/concession/dobDoc/');
+                $file->move($path, $name);
+                $docName = "dobDoc";
+
                 $concessionDoc = new PropConcessionDocDtl();
                 $concessionDoc->concession_id = $concession->id;
-                $this->dobDocUpload($file, $concessionDoc);
+                $this->citizenDocUpload($concessionDoc, $name, $docName);
             }
 
             // specially abled Doc
             if ($file = $request->file('speciallyAbledDoc')) {
+
+                $name = time() . 'speciallyAbledDoc.' . $file->getClientOriginalExtension();
+                $path = storage_path('app/public/concession/speciallyAbledDoc/');
+                $file->move($path, $name);
+                $docName = "speciallyAbledDoc";
+
                 $concessionDoc = new PropConcessionDocDtl();
                 $concessionDoc->concession_id = $concession->id;
-                $this->speciallyAbledDocUpload($file, $concessionDoc);
+                $this->citizenDocUpload($concessionDoc, $name, $docName);
             }
 
             // Armed force Doc
             if ($file = $request->file('armedForceDoc')) {
+
+                $name = time() . 'armedForceDoc.' . $file->getClientOriginalExtension();
+                $path = storage_path('app/public/concession/armedForceDoc/');
+                $file->move($path, $name);
+                $docName = "armedForceDoc";
+
                 $concessionDoc = new PropConcessionDocDtl();
                 $concessionDoc->concession_id = $concession->id;
-                $this->armedForceDocUpload($file, $concessionDoc);
+                $this->citizenDocUpload($concessionDoc, $name, $docName);
             }
 
 
@@ -603,34 +627,103 @@ class ConcessionRepository implements iConcessionRepository
     public function concessionDocUpload($req)
     {
         try {
+
+
+            //gender doc
             if ($file = $req->file('genderDoc')) {
 
-                $concessionDoc = new PropConcessionDocDtl();
-                $concessionDoc->concession_id = $req->id;
-                $this->genderDocUpload($file, $concessionDoc);
+                $checkExisting = PropConcessionDocDtl::where('concession_id', $req->id)
+                    ->where('doc_type', 'genderDoc')
+                    ->get()
+                    ->first();
+                $name = time() . 'genderDoc.' . $file->getClientOriginalExtension();
+                $path = storage_path('app/public/concession/genderDoc/');
+                $file->move($path, $name);
+                $docName = "genderDoc";
+
+                if ($checkExisting) {
+                    $this->updateDocument($req, $docName, $name);
+                } else {
+                    $this->saveConcessionDoc($req, $name, $docName);
+                }
             }
 
+
+            //dob doc
             if ($file = $req->file('dobDoc')) {
 
-                $concessionDoc = new PropConcessionDocDtl();
-                $concessionDoc->concession_id = $req->id;
-                $this->dobDocUpload($file, $concessionDoc);
+                $checkExisting = PropConcessionDocDtl::where('concession_id', $req->id)
+                    ->where('doc_type', 'dobDoc')
+                    ->get()
+                    ->first();
+                $name = time() . 'dobDoc.' . $file->getClientOriginalExtension();
+                $path = storage_path('app/public/concession/dobDoc/');
+                $file->move($path, $name);
+                $docName = "dobDoc";
+
+                if ($checkExisting) {
+                    $this->updateDocument($req, $docName, $name);
+                } else {
+                    $this->saveConcessionDoc($req, $name, $docName);
+                }
             }
 
+            //specially abled doc
             if ($file = $req->file('speciallyAbledDoc')) {
 
-                $concessionDoc = new PropConcessionDocDtl();
-                $concessionDoc->concession_id = $req->id;
-                $this->armedForceDocUpload($file, $concessionDoc);
+                $checkExisting = PropConcessionDocDtl::where('concession_id', $req->id)
+                    ->where('doc_type', 'speciallyAbledDoc')
+                    ->get()
+                    ->first();
+                $name = time() . 'speciallyAbledDoc.' . $file->getClientOriginalExtension();
+                $path = storage_path('app/public/concession/speciallyAbledDoc/');
+                $file->move($path, $name);
+                $docName = "speciallyAbledDoc";
+
+                if ($checkExisting) {
+                    $this->updateDocument($req, $docName, $name);
+                } else {
+                    $this->saveConcessionDoc($req, $name, $docName);
+                }
             }
 
+            //armed forcce doc
             if ($file = $req->file('armedForceDoc')) {
 
-                $concessionDoc = new PropConcessionDocDtl();
-                $concessionDoc->concession_id = $req->id;
-                $this->speciallyAbledDocUpload($file, $concessionDoc);
+                $checkExisting = PropConcessionDocDtl::where('concession_id', $req->id)
+                    ->where('doc_type', 'armedForceDoc')
+                    ->get()
+                    ->first();
+                $name = time() . 'armedForceDoc.' . $file->getClientOriginalExtension();
+                $path = storage_path('app/public/concession/armedForceDoc/');
+                $file->move($path, $name);
+                $docName = "armedForceDoc";
+
+                if ($checkExisting) {
+                    $this->updateDocument($req, $docName, $name);
+                } else {
+                    $this->saveConcessionDoc($req, $name, $docName);
+                }
             }
 
+            //concession doc
+            if ($file = $req->file('concessionFormDoc')) {
+
+                $checkExisting = PropConcessionDocDtl::where('concession_id', $req->id)
+                    ->where('doc_type', 'concessionFormDoc')
+                    ->get()
+                    ->first();
+                $name = time() . 'concessionFormDoc.' . $file->getClientOriginalExtension();
+                $path = storage_path('app/public/concession/concessionFormDoc/');
+                $file->move($path, $name);
+                $docName = "concessionFormDoc";
+
+                if ($checkExisting) {
+                    $this->updateDocument($req, $docName, $name);
+                } else {
+                    $this->saveConcessionDoc($req, $name, $docName);
+                }
+            }
 
             return responseMsg(true, "Successfully Uploaded", '');
         } catch (Exception $e) {
@@ -666,37 +759,15 @@ class ConcessionRepository implements iConcessionRepository
         }
     }
 
-    //gender doc upload
-    public function genderDocUpload($file, $concessionDoc)
+    //save documents
+    public function saveConcessionDoc($req, $name, $docName)
     {
         $userId = auth()->user()->id;
+        $concessionDoc = new PropConcessionDocDtl();
+        $concessionDoc->concession_id = $req->id;
 
-        $name = time() . 'gender.' . $file->getClientOriginalExtension();
-        $path = storage_path('app/public/concession/genderDoc');
-        $file->move($path, $name);
-
-        $concessionDoc->doc_type = 'genderDoc';
-        $concessionDoc->relative_path = '/concession/genderDoc/';
-        $concessionDoc->doc_name = $name;
-        $concessionDoc->status = '1';
-        $concessionDoc->user_id = $userId;
-        $concessionDoc->date = Carbon::now();
-        $concessionDoc->created_at = Carbon::now();
-
-        $concessionDoc->save();
-    }
-
-    //dob doc upload
-    public function dobDocUpload($file, $concessionDoc)
-    {
-        $userId = auth()->user()->id;
-
-        $name = time() . 'dob.' . $file->getClientOriginalExtension();
-        $path = storage_path('app/public/concession/dobDoc');
-        $file->move($path, $name);
-
-        $concessionDoc->doc_type = 'dobDoc';
-        $concessionDoc->relative_path = '/concession/dobDoc/';
+        $concessionDoc->doc_type = $docName;
+        $concessionDoc->relative_path = '/concession/' . $docName . '/';
         $concessionDoc->doc_name = $name;
         $concessionDoc->status = '1';
         $concessionDoc->user_id = $userId;
@@ -705,17 +776,13 @@ class ConcessionRepository implements iConcessionRepository
         $concessionDoc->save();
     }
 
-    // armed force doc upload
-    public function armedForceDocUpload($file, $concessionDoc)
+    //citizen doc upload
+    public function citizenDocUpload($concessionDoc, $name, $docName)
     {
         $userId = auth()->user()->id;
 
-        $name = time() . 'dob.' . $file->getClientOriginalExtension();
-        $path = storage_path('app/public/concession/dobDoc');
-        $file->move($path, $name);
-
-        $concessionDoc->doc_type = 'armedForceDoc';
-        $concessionDoc->relative_path = '/concession/armedForceDoc/';
+        $concessionDoc->doc_type = $docName;
+        $concessionDoc->relative_path = '/concession/' . $docName . '/';
         $concessionDoc->doc_name = $name;
         $concessionDoc->status = '1';
         $concessionDoc->user_id = $userId;
@@ -724,22 +791,18 @@ class ConcessionRepository implements iConcessionRepository
         $concessionDoc->save();
     }
 
-    //specially doc upload
-    public function speciallyAbledDocUpload($file, $concessionDoc)
+    //update documents
+    public function updateDocument($req, $docName, $name)
     {
-        $userId = auth()->user()->id;
-
-        $name = time() . 'dob.' . $file->getClientOriginalExtension();
-        $path = storage_path('app/public/concession/dobDoc');
-        $file->move($path, $name);
-
-        $concessionDoc->doc_type = 'speciallyAbledDoc';
-        $concessionDoc->relative_path = '/concession/speciallyAbledDoc/';
-        $concessionDoc->doc_name = $name;
-        $concessionDoc->status = '1';
-        $concessionDoc->user_id = $userId;
-        $concessionDoc->date = Carbon::now();
-        $concessionDoc->created_at = Carbon::now();
-        $concessionDoc->save();
+        PropConcessionDocDtl::where('concession_id', $req->id)
+            ->where('doc_type', $docName)
+            ->update([
+                'concession_id' => $req->id,
+                'doc_type' => $docName,
+                'relative_path' => ('concession/' . $docName . '/'),
+                'doc_name' => $name,
+                'status' => 1,
+                'updated_at' => Carbon::now()
+            ]);
     }
 }
