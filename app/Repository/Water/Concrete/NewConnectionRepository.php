@@ -295,23 +295,34 @@ class NewConnectionRepository implements iNewConnection
         try {
             $document = $req['documents'];
             foreach ($document as $documents) {
+                switch ($documents['documentId']) {
+                    case ("2"): {
 
-                $doc = array_key_last($documents);
-                $base64Encode = base64_encode($documents[$doc]->getClientOriginalName());
-                $extention = $documents[$doc]->getClientOriginalExtension();
-                $imageName = time() . '-' . $base64Encode . '.' . $extention;
-                $documents[$doc]->storeAs('public/Water/Payment/' . $doc, $imageName);
+                            $fileName = "Aadhar";
+                            $base64Encode = base64_encode($documents['data']->getClientOriginalName());
+                            $extention = $documents['data']->getClientOriginalExtension();
+                            $imageName = time() . '-' . $base64Encode . '.' . $extention;
+                            // $docsuments['data']->storeAs('public/Water/Payment/' . $fileName, $imageName);
 
-                $appDoc = new WaterApplicantDoc();
-                $appDoc->application_id = $req->applicationId;
-                $appDoc->document_id = $documents['documentId'];
-                $appDoc->doc_name = $imageName;
-                $appDoc->relative_path = ('public/Water/Payment/' . $doc);
-                $appDoc->doc_for = array_key_last($documents);
-                $appDoc->save();
+                            // $appDoc = new WaterApplicantDoc();
+                            // $appDoc->application_id = $req->applicationId;
+                            // $appDoc->document_id = $documents['documentId'];
+                            // $appDoc->doc_name = $imageName;
+                            // $appDoc->relative_path = ('public/Water/Payment/' . $fileName);
+                            // $appDoc->doc_for = array_key_last($documents);
+                            // $appDoc->save();
+                        }
+                    case ("4"): {
+                        $fileName = "Pan";
+                        $base64Encode = base64_encode($documents['data']->getClientOriginalName());
+                        $extention = $documents['data']->getClientOriginalExtension();
+                        $imageName = time() . '-' . $base64Encode . '.' . $extention;
+                        // $documents['data']->storeAs('public/Water/Payment/' . $fileName, $imageName);
+                        }
+                }
+                DB::commit();
+                // return responseMsg(true, "Document Successfully Uploaded!", "");
             }
-            DB::commit();
-            return responseMsg(true, "Document Successfully Uploaded!", "");
         } catch (Exception $error) {
             DB::rollBack();
             return responseMsg(false, "ERROR!", $error->getMessage());
