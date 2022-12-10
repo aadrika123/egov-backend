@@ -258,6 +258,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $val->update();
             }
             $application->payment_status = true;
+            $application->update();
             DB::commit();
             #----------End transaction------------------------
             #----------Response------------------------------
