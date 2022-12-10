@@ -57,6 +57,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         // Route::match(["get", "post"], 'apply', 'applyApplication');
         Route::get('citizenApplications', 'getCitizenApplication');
         Route::post('Razorpay-Orderid', 'handeRazorPay');
+        Route::post('getTranNo', 'readTransectionAndApl');
     });
 
 });
