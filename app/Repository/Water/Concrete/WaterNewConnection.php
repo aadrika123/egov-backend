@@ -251,7 +251,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $TradeDtl->demand_id      = $val->id;
                 $TradeDtl->total_demand   = $val->amount;
                 $TradeDtl->application_id   = $val->application_id;
-                $TradeDtl->created_on     = $mTimstamp;
+                $TradeDtl->created_at     = $mTimstamp;
                 $TradeDtl->save();
 
                 $val->paid_status = true ;
