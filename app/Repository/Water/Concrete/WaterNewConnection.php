@@ -304,8 +304,8 @@ class WaterNewConnection implements IWaterNewConnection
             }
             $WaterRazorPayResponse = WaterRazorPayResponse::select("water_razor_pay_requests.*")
                                     ->join("water_razor_pay_requests","water_razor_pay_requests.id","water_razor_pay_responses.request_id")
-                                    ->where("order_id",$request->orderId)
-                                    ->where("payment_id",$request->paymentId)
+                                    ->where("water_razor_pay_responses.order_id",$request->orderId)
+                                    ->where("water_razor_pay_responses.payment_id",$request->paymentId)
                                     ->where("water_razor_pay_requests.status",1)
                                     ->first();
             if(!$WaterRazorPayResponse)
