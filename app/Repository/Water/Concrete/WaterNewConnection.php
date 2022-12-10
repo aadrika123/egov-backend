@@ -339,7 +339,7 @@ class WaterNewConnection implements IWaterNewConnection
         }
         catch(Exception $e)
         {
-            return responseMsg(false,$e->getMessage(),'');
+            return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
 
