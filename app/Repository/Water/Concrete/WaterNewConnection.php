@@ -236,7 +236,7 @@ class WaterNewConnection implements IWaterNewConnection
             $Tradetransaction->payment_mode     = "Online";
             $Tradetransaction->amount           = $totalCharge;
             $Tradetransaction->emp_dtl_id       = $refUserId;
-            $Tradetransaction->created_on       = $mTimstamp;
+            $Tradetransaction->created_at       = $mTimstamp;
             $Tradetransaction->ip_address       = '';
             $Tradetransaction->ulb_id           = $refUlbId;
             $Tradetransaction->save();
