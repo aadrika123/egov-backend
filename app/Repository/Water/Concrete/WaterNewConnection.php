@@ -231,8 +231,8 @@ class WaterNewConnection implements IWaterNewConnection
             $Tradetransaction = new WaterTran;
             $Tradetransaction->related_id       = $applicationId;
             $Tradetransaction->ward_id          = $application->ward_id;
-            $Tradetransaction->transaction_type = $transactionType;
-            $Tradetransaction->transaction_date = $mNowDate;
+            $Tradetransaction->tran_type = $transactionType;
+            $Tradetransaction->tran_date = $mNowDate;
             $Tradetransaction->payment_mode     = "Online";
             $Tradetransaction->amount           = $totalCharge;
             $Tradetransaction->emp_dtl_id       = $refUserId;
@@ -241,7 +241,7 @@ class WaterNewConnection implements IWaterNewConnection
             $Tradetransaction->ulb_id           = $refUlbId;
             $Tradetransaction->save();
             $transaction_id                     = $Tradetransaction->id;
-            $Tradetransaction->transaction_no   = "WTRAN/".date("m")."/".date("Y")."/".($transaction_id);//"WTRAN/date('m')/date('Y')/$transaction_id;
+            $Tradetransaction->tran_no   = "WTRAN/".date("m")."/".date("Y")."/".($transaction_id);//"WTRAN/date('m')/date('Y')/$transaction_id;
             $Tradetransaction->update();
             
             foreach($mDemands as $val)
