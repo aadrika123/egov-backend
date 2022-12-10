@@ -1292,6 +1292,7 @@ class Trade implements ITrade
             $temp['email']      = $refUser->email;
             $temp['userId']     = $refUser->id;
             $temp['ulbId']      = $refUser->ulb_id;
+            DB::commit();
             return responseMsg(true,"",$temp);
         }
         catch(Exception $e)
