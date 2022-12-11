@@ -4,12 +4,16 @@ namespace App\Repository\Water\Concrete;
 
 use App\EloquentModels\Common\ModelWard;
 use App\Models\UlbMaster;
+use App\Models\Water\WaterApplicant;
+use App\Models\Water\WaterApplicantDoc;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
+use App\Models\Water\WaterParamDocumentType;
 use App\Models\Water\WaterRazorPayRequest;
 use App\Models\Water\WaterRazorPayResponse;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
+use App\Models\Workflows\WfWorkflow;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Water\Interfaces\IWaterNewConnection;
 use App\Traits\Auth;
@@ -330,7 +334,7 @@ class WaterNewConnection implements IWaterNewConnection
             if(!$transection)
             {
                 throw new Exception("Not Transection Data Found....");
-            }
+            }            
             $data["amount"]            = $WaterRazorPayResponse->amount;
             $data["applicationId"]     = $WaterRazorPayResponse->related_id;
             $data["applicationNo"]     = $application->application_no;
@@ -345,6 +349,235 @@ class WaterNewConnection implements IWaterNewConnection
         {
             return responseMsg(false,$e->getMessage(),$request->all());
         }
+    }
+
+    public function documentUpload(Request $request)
+    {
+        try{
+            $refUser            = Auth()->user();
+            $refUserId          = $refUser->id;
+            $refUlbId           = $refUser->ulb_id;
+            $refApplication     = (array)null;
+            $refOwneres         = (array)null;
+            $mUploadDocument    = (array)null;
+            $mDocumentsList     = (array)null;
+            $requiedDocs        = (array)null;
+            $ownersDoc          = (array)null;
+            $data               = (array)null;
+            $sms                = "";
+
+            $rules = [
+                'applicationId'     =>'required|digits_between:1,9223372036854775807',
+            ];                         
+            $validator = Validator::make($request->all(), $rules, );                    
+            if ($validator->fails()) {                        
+                return responseMsg(false, $validator->errors(),$request->all());
+            }
+            $connectionId = $request->applicationId;
+            $refApplication = WaterApplication::where("status",1)->find($connectionId); 
+            if(!$refApplication)
+            {
+                throw new Exception("Application Not Found.....");
+            }
+            // elseif($refApplication->doc_verify_status)
+            // {
+            //     throw new Exception("Documernt Already Verifed.....");
+            // }
+            $requiedDocType = $this->getDocumentTypeList($refApplication);
+            $refOwneres = $this->getOwnereDtlByLId($refApplication->id);
+            foreach($requiedDocType as $val)
+            {                  
+                $doc = (array) null;
+                $doc['docName'] = $val->doc_for;
+                $doc['isMadatory'] = $val->is_mandatory;
+                $doc['docVal'] = $this->getDocumentList($val->doc_for);
+                array_push($requiedDocs,$doc);
+            }
+            foreach($refOwneres as $key=>$val)
+            {
+                $doc = (array) null;
+                $doc["ownerId"] = $val->id;
+                $doc["ownerName"] = $val->applicant_name;
+                $doc["docName"]   = "ID Proof";
+                $doc['isMadatory'] = 1;
+                $doc['docVal'] = $this->getDocumentList("ID Proof");                
+                $refOwneres[$key]["ID Proof"] = $this->check_doc_exist_owner($refApplication->id,$val->id);               
+                $doc['uploadDoc']= $refOwneres[$key]["ID Proof"];
+                if(isset($refOwneres[$key]["ID Proof"]["document_path"]))
+                { 
+                    $path = $this->readDocumentPath($refOwneres[$key]["ID Proof"]["document_path"]);
+                    $refOwneres[$key]["ID Proof"]["document_path"] = !empty(trim($refOwneres[$key]["ID Proof"]["document_path"]))?$path:null;
+                    $doc['uploadDoc']["document_path"] = $path;
+                }
+                array_push($ownersDoc,$doc);
+                $doc2 = (array) null;
+                $doc2["ownerId"] = $val->id;
+                $doc2["ownerName"] = $val->owner_name;
+                $doc2["docName"]   = "image";
+                $doc2['isMadatory'] = 0;
+                $doc2['docVal'][] = ["id"=>0,"doc_name"=>"Photo"];
+                $refOwneres[$key]["image"] = $this->check_doc_exist_owner($refApplication->id,$val->id,0);
+                $doc2['uploadDoc']=$refOwneres[$key]["image"];
+                if(isset( $refOwneres[$key]["image"]["document_path"]))
+                {
+                    $path = $this->readDocumentPath($refOwneres[$key]["image"]["document_path"]);
+                    $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["image"]["document_path"]):null;
+                    $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?$path:null;
+                    $doc2['uploadDoc']["document_path"] = $path;
+                }
+                array_push($ownersDoc,$doc2);
+            }
+            if(isset($request->docFor))
+            {
+                #connection Doc
+                if(in_array($request->docFor,objToArray($requiedDocType->pluck("doc_for"))))
+                {
+                    $rules = [
+                        'docPath'        =>'required|max:30720|mimes:pdf,jpg,jpeg,png',
+                        'docMstrId'      =>'required|digits_between:1,9223372036854775807',
+                        'docFor'         =>"required|string",
+                    ];                         
+                    $validator = Validator::make($request->all(), $rules, );                    
+                    if ($validator->fails()) {                        
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    }                
+                    $file = $request->file('docPath');
+                    $doc_for = "docFor";
+                    $doc_mstr_id = "docMstrId";
+                    $ids = objToArray(collect($this->getDocumentList($request->$doc_for))->pluck("id"));
+                    if ($file->IsValid() && in_array($request->$doc_mstr_id,$ids))
+                    { 
+                        if ($app_doc_dtl_id = $this->check_doc_exist($connectionId,$request->$doc_for))
+                        {                                                          
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                            if (file_exists($delete_path)) 
+                            {   
+                                unlink($delete_path);
+                            }
+                            $newFileName = $app_doc_dtl_id['id'];
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "water_conn_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->doc_name       =  $filePath;
+                            $app_doc_dtl_id->document_id    =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->save();
+                            $sms = $app_doc_dtl_id->doc_for." Update Successfully";
+
+                        }
+                        else
+                        {
+                            $waterDoc = new WaterApplicantDoc;
+                            $waterDoc->application_id = $connectionId;
+                            $waterDoc->doc_for    = $request->$doc_for;
+                            $waterDoc->document_id = $request->$doc_mstr_id;
+                            $waterDoc->emp_details_id = $refUserId;
+                            
+                            $waterDoc->save();
+                            $newFileName = $waterDoc->id;
+                            
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "water_conn_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $waterDoc->doc_name =  $filePath;
+                            $waterDoc->save();
+                            $sms = $waterDoc->doc_for." Upload Successfully";
+
+                        }                         
+
+                    }
+                    else
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }
+                }
+                #owners Doc
+                elseif(in_array($request->docFor,objToArray(collect($ownersDoc)->pluck("docName"))))
+                {
+                    $rules = [
+                        'docPath'        =>'required|max:30720|mimes:pdf,jpg,jpeg,png',
+                        'docMstrId'      =>'required|digits_between:1,9223372036854775807',
+                        'docFor'         =>"required|string",
+                        'ownerId'        =>"required|digits_between:1,9223372036854775807",
+                    ];                         
+                    $validator = Validator::make($request->all(), $rules, );                    
+                    if ($validator->fails()) {                        
+                        return responseMsg(false, $validator->errors(),$request->all());
+                    }                
+                    $file = $request->file('docPath');
+                    $doc_for = "docFor";
+                    $doc_mstr_id = "docMstrId";
+                    if($request->$doc_for=="image")
+                    {
+                        $ids = [0];
+                    }
+                    else
+                    {
+
+                        $ids = objToArray(collect($this->getDocumentList($request->$doc_for))->pluck("id"));
+                    }
+                    if(!in_array($request->ownerId,objToArray(collect($ownersDoc)->pluck("ownerId"))))
+                    {
+                        throw new Exception("Invalid Owner Id supply.....");
+                    }
+                    if ($file->IsValid() && in_array($request->$doc_mstr_id,$ids))
+                    { 
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($connectionId,$request->ownerId,$request->docMstrId))
+                        {                                                          
+                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                            if (file_exists($delete_path)) 
+                            {   
+                                unlink($delete_path);
+                            }
+                            $newFileName = $app_doc_dtl_id['id'];
+
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "water_conn_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $app_doc_dtl_id->doc_name       =  $filePath;
+                            $app_doc_dtl_id->document_id    =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->save();
+                            $sms = $app_doc_dtl_id->doc_for." Update Successfully";
+
+                        }
+                        else
+                        {
+                            $waterDoc                = new WaterApplicantDoc;
+                            $waterDoc->application_id    = $connectionId;
+                            $waterDoc->doc_for       = $request->docFor;
+                            $waterDoc->document_id   = $request->docMstrId;                            
+                            $waterDoc->applicant_id  = $request->ownerId;
+                            $waterDoc->emp_details_id = $refUserId;
+                            
+                            $waterDoc->save();
+                            $newFileName = $waterDoc->id;
+                            
+                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                            $fileName = "water_conn_doc/$newFileName.$file_ext";
+                            $filePath = $this->uplodeFile($file,$fileName);
+                            $waterDoc->doc_name =  $filePath;
+                            $waterDoc->save();
+                            $sms = $waterDoc->doc_for." Upload Successfully";
+
+                        }                         
+
+                    }
+                    else
+                    {
+                        return responseMsg(false, "something errors in Document Uploades",$request->all());
+                    }
+                }
+                else{
+                    throw new Exception("Invalid Document type Passe");
+                }
+            }
+            $data["documentsList"]  = $requiedDocs;
+            $data["ownersDocList"]  = $ownersDoc;
+            return responseMsg(true,$sms,$data);
+        }
+        catch(Exception $e){
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }        
     }
 
     #---------- core function --------------------------------------------------
@@ -466,5 +699,139 @@ class WaterNewConnection implements IWaterNewConnection
     public function getOwnershipTypeList()
     {
         
+    }
+
+    public function getDocumentTypeList(WaterApplication $application)
+	{
+        $refUser            = Auth()->user();
+        $refUserId          = $refUser->id;
+        $refUlbId           = $refUser->ulb_id;
+        $WfWorkflow         = WfWorkflow::where('id',$application->workflow_id)->first();
+        $mUserType          = $this->_parent->userType($WfWorkflow->wf_master_id);
+		$return = (array)null;
+        $type   = ["METER BILL","ELECTRICITY_NEW","ELECTRICITY_NEW","Address Proof","Others"];
+		if(in_array($application->connection_through_id, [1, 5]))	// Holding No, SAF No
+		{
+            $type[] = "HOLDING PROOF";
+		}
+        if(strtoupper($application->category)=="BPL")	// FOR BPL APPLICATION
+		{
+            $type[] = "BPL";
+		}
+        if($application->property_type_id==2)	// FOR COMERCIAL APPLICATION
+		{
+            $type[] = "Commercial";
+		}
+
+        if(strtoupper($mUserType)=="ONLINE") // Online
+		{
+            $type[]  = "Form(Scan Copy)";
+		}
+		$doc = WaterParamDocumentType::select("doc_for",
+                                            DB::raw("CASE WHEN doc_for ='Others' THEN 0 
+                                                ELSE 1 END AS is_mandatory")
+                                        )
+                                        ->whereIn("doc_for",$type)
+                                        ->where("status",1)
+                                        ->groupBy("doc_for")
+                                        ->get();
+		return $doc;
+	}
+    public function getDocumentList($doc_for)
+    {
+        try{
+            $data = WaterParamDocumentType::select("id","document_name")
+                                ->where("status",1)
+                                ->where("doc_for",$doc_for)
+                                ->get();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            return $e->getMessage();   
+        }
+    }
+    public function check_doc_exist($applicationId,$doc_for,$doc_mstr_id=null,$woner_id=null)
+    {
+        try{
+            
+            $doc = WaterApplicantDoc::select("id","doc_for","verify_status",
+                                        DB::raw("doc_name AS document_path"),
+                                        "document_id")
+                       ->where('application_id',$applicationId)
+                       ->where('doc_for',$doc_for);
+                       if($doc_mstr_id)
+                       {
+                            $doc =$doc->where('document_id',$doc_mstr_id);
+                       }                       
+                       if($woner_id)
+                       {
+                            $doc =$doc->where('applicant_id', $woner_id);
+                       }                       
+                $doc =$doc->where('status',1)
+                       ->orderBy('id','DESC')
+                       ->first();                     
+            return $doc;
+          
+       }
+       catch(Exception $e)
+       {
+          echo $e->getMessage();   
+       }
+    }
+
+    public function check_doc_exist_owner($applicationId,$owner_id,$document_id=null)
+    {
+        try{
+            // DB::enableQueryLog();
+            $doc = WaterApplicantDoc::select("id","doc_for","verify_status",
+                                        DB::raw("doc_name AS document_path"),
+                                        "document_id")
+                           ->where('application_id',$applicationId)
+                           ->where('applicant_id',$owner_id);
+                           if($document_id!==null)
+                            { 
+                                $document_id = (int)$document_id;
+                                $doc = $doc->where('document_id',$document_id);
+                            }
+                            else
+                            {
+                                $doc = $doc->where("document_id","<>",0);                     
+
+                            }
+                $doc =$doc->where('status',1)
+                        ->orderBy('id','DESC')
+                        ->first();                        
+        //    print_var(DB::getQueryLog());                    
+            return $doc;
+        }
+        catch(Exception $e)
+        {
+            return $e->getMessage();   
+        }
+    }
+    public function getOwnereDtlByLId($applicationId)
+    {
+        try{
+            $ownerDtl   = WaterApplicant::select("*")
+                            ->where("application_id",$applicationId)
+                            ->where("status",1)
+                            ->get();
+            return $ownerDtl;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+    public function uplodeFile($file,$custumFileName)
+    {
+        $filePath = $file->storeAs('uploads/Water', $custumFileName, 'public');
+        return  $filePath;
+    }
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url').'/api/getImageLink?path='.$path);
+        return $path;
     }
 }

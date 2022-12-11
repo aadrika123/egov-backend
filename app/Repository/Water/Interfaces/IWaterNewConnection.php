@@ -11,4 +11,5 @@ interface IWaterNewConnection
     public function handeRazorPay(Request $request);
     public function readTransectionAndApl(Request $request);
     public function paymentRecipt($id, $transectionId);
+    public function documentUpload(Request $request);
 }
