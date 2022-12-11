@@ -333,6 +333,7 @@ class WaterNewConnection implements IWaterNewConnection
             }
             $data["amount"]            = $WaterRazorPayResponse->amount;
             $data["applicationId"]     = $WaterRazorPayResponse->related_id;
+            $data["applicationNo"]     = $application->application_no;
             $data["tranType"]          = $WaterRazorPayResponse->payment_from;
             $data["transectionId"]     = $transection->id;
             $data["transectionNo"]     = $transection->tran_no;
