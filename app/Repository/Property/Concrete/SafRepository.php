@@ -1018,6 +1018,7 @@ class SafRepository implements iSafRepository
             $demands = $calculateSafById->original['data']['demand'];
             $rebates = $calculateSafById->original['data']['rebates'];
             $totalAmount = $demands['payableAmount'];
+            $lateAssessPenalty = $calculateSafById->original['data']['demand']['lateAssessmentPenalty'];
             // Check Requested amount is matching with the generated amount or not
             // if ($req->amount == $totalAmount) {
             $orderDetails = $this->saveGenerateOrderid($req);       //<---------- Generate Order ID Trait
@@ -1123,6 +1124,9 @@ class SafRepository implements iSafRepository
 
             // Reflect on Prop Tran Details
             foreach ($demands as $demand) {
+                $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $demand->save();
+
                 $propTranDtl = new PropTranDtl();
                 $propTranDtl->tran_id = $propTrans->id;
                 $propTranDtl->saf_demand_id = $demand['id'];
@@ -1406,6 +1410,8 @@ class SafRepository implements iSafRepository
      */
     public function geoTagging($req)
     {
+        return responseMsgs(true, "Data Fetched", "sad", "1", "1.0", "289ms", "POST", "adsf");
+        // dd($req->all());
         try {
             $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
             foreach ($req->uploads as $upload) {

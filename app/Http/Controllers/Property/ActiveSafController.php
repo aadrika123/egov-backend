@@ -180,7 +180,8 @@ class ActiveSafController extends Controller
     public function geoTagging(Request $req)
     {
         $req->validate([
-            "safId" => "required|integer"
+            "safId" => "required|integer",
+            "uploads.*.imagePath" => "image|mimes:jpeg,jpg,png,gif|required"
         ]);
         return $this->Repository->geoTagging($req);
     }
