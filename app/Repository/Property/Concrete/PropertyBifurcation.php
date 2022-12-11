@@ -1737,7 +1737,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $app_doc_dtl_id->doc_path =  $filePath;
                             $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
                             $app_doc_dtl_id->save();
-                            $sms = "Armed Certificate of" . $woner_id['ownerName'] . " Update Successfully";
+                            $sms = "Armed Certificate of" . $woner_id['owner_name'] . " Update Successfully";
                         } else {
                             $propDocs = new PropActiveSafsDoc;
                             $propDocs->saf_id = $refSafs->id;
@@ -1753,7 +1753,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $filePath = $this->uplodeFile($file, $fileName);
                             $propDocs->doc_path =  $filePath;
                             $propDocs->save();
-                            $sms = "Armed Certificate of" . $woner_id['ownerName'] . " Upload Successfully";
+                            $sms = "Armed Certificate of" . $woner_id['owner_name'] . " Upload Successfully";
                         }
                     } else {
                         return responseMsg(false, "something errors in Document Uploades", $request->all());
