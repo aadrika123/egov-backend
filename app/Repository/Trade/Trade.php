@@ -1292,6 +1292,7 @@ class Trade implements ITrade
             $temp['email']      = $refUser->email;
             $temp['userId']     = $refUser->id;
             $temp['ulbId']      = $refUser->ulb_id;
+            DB::commit();
             return responseMsg(true,"",$temp);
         }
         catch(Exception $e)
@@ -1312,9 +1313,6 @@ class Trade implements ITrade
             $refDenialId    = null;
             $refUlbDtl      = UlbMaster::find($refUlbId);
             $refUlbName     = explode(' ',$refUlbDtl->ulb_name);
-
-            // $mUserData      = $this->_parent->getUserRoll($refUserId, $refUlbId,$refWorkflowId);
-            // $mUserType      = $this->_parent->userType($refWorkflowId);
             $mNowDate       = Carbon::now()->format('Y-m-d'); 
             $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
             $mDenialAmount  = 0;
@@ -1327,12 +1325,16 @@ class Trade implements ITrade
                 $mShortUlbName.=$val[0];
             }
 
-            #-----------valication-------------------                            
-            // if(!in_array($mUserType,["JSK","UTC","TC","SUPER ADMIN","TL"]))
-            // {
-            //     DB::rollBack();
-            //     throw new Exception("You Are Not Authorized For Payment Cut");
-            // }
+            #-----------valication-------------------   
+            $RazorPayRequest = TradeRazorPayRequest::select("*")
+                                    ->where("order_id",$args["orderId"])
+                                    ->where("licence_id",$args["id"])
+                                    ->where("status",2)
+                                    ->first();                         
+            if(!$RazorPayRequest)
+            {
+                throw new Exception("Data Not Found");
+            }
             $refLecenceData = ActiveLicence::find($args["id"]);
             $licenceId = $args["id"];
             $refLevelData = $this->getLevelData($licenceId);
@@ -1386,6 +1388,19 @@ class Trade implements ITrade
             #-------------End Calculation-----------------------------
             #-------- Transection -------------------
             DB::beginTransaction();
+
+            $RazorPayResponse = new TradeRazorPayResponse;
+            $RazorPayResponse->licence_id   = $RazorPayRequest->related_id;
+            $RazorPayResponse->request_id   = $RazorPayRequest->id;
+            $RazorPayResponse->amount       = $args['amount'];
+            $RazorPayResponse->merchant_id  = $args['merchantId']??null;
+            $RazorPayResponse->order_id     = $args["orderId"];
+            $RazorPayResponse->payment_id   = $args["paymentId"];
+            $RazorPayResponse->save();
+
+            $RazorPayRequest->status=1;
+            $RazorPayRequest->update();
+
             $Tradetransaction = new TradeTransaction ;
             $Tradetransaction->related_id       = $licenceId;
             $Tradetransaction->ward_mstr_id     = $refLecenceData->ward_mstr_id;
@@ -1400,7 +1415,7 @@ class Trade implements ITrade
             $Tradetransaction->ulb_id           = $refUlbId;
             $Tradetransaction->save();
             $transaction_id                     = $Tradetransaction->id;
-            $Tradetransaction->transaction_no   = $this->createTransactionNo($transaction_id);//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
+            $Tradetransaction->transaction_no   = $args["transactionNo"];//$this->createTransactionNo($transaction_id);//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
             $Tradetransaction->update();
 
             $TradeFineRebet = new TradeFineRebetDetail;

@@ -31,6 +31,7 @@ class ActiveSafController extends Controller
     //  Function for applying SAF
     public function applySaf(Request $request)
     {
+        // return $request->all();
         return $this->Repository->applySaf($request);
     }
 
@@ -179,9 +180,10 @@ class ActiveSafController extends Controller
     // Geo Tagging
     public function geoTagging(Request $req)
     {
-        $req->validate([
-            "safId" => "required|integer"
-        ]);
+        // $req->validate([
+        //     "safId" => "required|integer",
+        //     "uploads.*.imagePath" => "image|mimes:jpeg,jpg,png,gif|required"
+        // ]);
         return $this->Repository->geoTagging($req);
     }
 }

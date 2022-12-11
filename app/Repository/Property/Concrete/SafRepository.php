@@ -1015,6 +1015,7 @@ class SafRepository implements iSafRepository
             $demands = $calculateSafById->original['data']['demand'];
             $rebates = $calculateSafById->original['data']['rebates'];
             $totalAmount = $demands['payableAmount'];
+            $lateAssessPenalty = $calculateSafById->original['data']['demand']['lateAssessmentPenalty'];
             // Check Requested amount is matching with the generated amount or not
             // if ($req->amount == $totalAmount) {
             $orderDetails = $this->saveGenerateOrderid($req);       //<---------- Generate Order ID Trait
@@ -1120,6 +1121,9 @@ class SafRepository implements iSafRepository
 
             // Reflect on Prop Tran Details
             foreach ($demands as $demand) {
+                $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $demand->save();
+
                 $propTranDtl = new PropTranDtl();
                 $propTranDtl->tran_id = $propTrans->id;
                 $propTranDtl->saf_demand_id = $demand['id'];
@@ -1405,25 +1409,17 @@ class SafRepository implements iSafRepository
     {
         try {
             $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
-            foreach ($req->uploads as $upload) {
-                $geoTagging = new PropSafGeotagUpload();
-                $geoTagging->saf_id = $req->safId;
-                $geoTagging->latitude = $upload['latitude'];
-                $geoTagging->longitude = $upload['longitude'];
-                $geoTagging->direction_type = $upload['directionType'];
-                $geoTagging->user_id = authUser()->id;
+            $geoTagging = new PropSafGeotagUpload();
+            $base64Encode = base64_encode($req->imagePath->getClientOriginalName());
+            $extention = $req->imagePath->getClientOriginalExtension();
+            $imageName = time() . '-' . $base64Encode . '.' . $extention;
+            $req->imagePath->storeAs('public/Property/GeoTagging', $imageName);
 
-                // Upload Image
-                $base64Encode = base64_encode($upload['imagePath']->getClientOriginalName());
-                $extention = $upload['imagePath']->getClientOriginalExtension();
-                $imageName = time() . '-' . $base64Encode . '.' . $extention;
-                $upload['imagePath']->storeAs('public/Property/GeoTagging', $imageName);
-
-                $geoTagging->image_path = $imageName;
-                $geoTagging->relative_path = $relativePath;
-                $geoTagging->save();
-            }
-            return responseMsg(true, "Geo Tagging Done Successfully", "");
+            $geoTagging->image_path = $imageName;
+            $geoTagging->direction_type = $req->directionType;
+            $geoTagging->relative_path = $relativePath;
+            $geoTagging->save();
+            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010123", "1.0", "289ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

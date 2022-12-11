@@ -26,5 +26,17 @@ class WaterApplication extends Controller
     {
         return $this->Repository->handeRazorPay($request);
     }
+    public function readTransectionAndApl(Request $request)
+    {
+        return $this->Repository->readTransectionAndApl($request);
+    }
+    public function paymentRecipt(Request $request)
+    {
+        return $this->Repository->paymentRecipt($request->id,$request->transectionId);
+    }
+    public function documentUpload(Request $request)
+    {
+        return $this->Repository->documentUpload($request);
+    }
     
 }
