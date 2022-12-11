@@ -31,6 +31,7 @@ class ActiveSafController extends Controller
     //  Function for applying SAF
     public function applySaf(Request $request)
     {
+        // return $request->all();
         return $this->Repository->applySaf($request);
     }
 
