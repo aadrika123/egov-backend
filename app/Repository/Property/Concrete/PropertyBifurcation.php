@@ -1406,6 +1406,27 @@ class PropertyBifurcation implements IPropertyBifurcation
         $filePath = $file->storeAs('uploads/Property', $custumFileName, 'public');
         return  $filePath;
     }
+    public function getSafDtlById($safId)
+    {
+        try{
+            $saf = PropActiveSaf::select("prop_active_safs.*","ref_prop_types.property_type",
+                                        "ref_prop_ownership_types.ownership_type",
+                                        DB::raw("new_ward.ward_name as new_ward_no,
+                                        old_ward.ward_name as ward_no"),
+                                        )
+                ->leftjoin("ref_prop_types","ref_prop_types.id","prop_active_safs.prop_type_mstr_id")
+                ->leftjoin("ref_prop_ownership_types","ref_prop_ownership_types.id","prop_active_safs.ownership_type_mstr_id")
+                ->leftjoin("ulb_ward_masters AS new_ward","new_ward.id","prop_active_safs.new_ward_mstr_id")
+                ->leftjoin("ulb_ward_masters AS old_ward","old_ward.id","prop_active_safs.ward_mstr_id")
+                ->where("prop_active_safs.id",$safId)
+                ->first();
+            return $saf;
+        }
+        catch(Exception $e)
+        {
+            return [];
+        }
+    }
     #-------------------------saf-----------------------
     public function safDocumentUpload(Request $request)
     {
@@ -1424,7 +1445,8 @@ class PropertyBifurcation implements IPropertyBifurcation
             if (!$safId) {
                 throw new Exception("Saf Id Required");
             }
-            $refSafs = PropActiveSaf::find($safId);;
+            // $refSafs = PropActiveSaf::find($safId);
+            $refSafs = $this->getSafDtlById($safId);
             if (!$refSafs) {
                 throw new Exception("Data Not Found");
             } elseif ($refSafs->doc_verify_status) {
