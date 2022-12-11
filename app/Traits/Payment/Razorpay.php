@@ -10,11 +10,13 @@ use Razorpay\Api\Api;
 use Illuminate\Support\Str;
 use Razorpay\Api\Errors\SignatureVerificationError;
 use App\Http\Controllers\NewPdfController; //<----------traits
+use App\Http\Controllers\water\WaterApplication;
 use App\Models\Payment;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\WebhookPaymentData;
 use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\Trade\Trade;
+use App\Repository\Water\Concrete\WaterNewConnection;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -303,7 +305,8 @@ trait Razorpay
         $transfer['userId'] = $data->user_id;
         $transfer['ulbId'] = $data->ulb_id;
         $transfer['departmentId'] = $data->department_id;
-        $transfer['workflowId'] = $data->workflow_id;
+        $transfer['orderId'] = $data->payment_order_id;
+        $transfer['paymentId'] = $data->payment_id;
 
         # conditionaly upadting the request data
         if ($status == 'captured' && $captured == 1) {
@@ -316,6 +319,10 @@ trait Razorpay
                     $obj = new SafRepository();
                     $obj->paymentSaf($transfer);
                     break;
+                case ('2'):                         //<-------------------(Water)
+                    $objWater = new WaterNewConnection();
+                    return $objWater->razorPayResponse($transfer);
+                    break;
                 case ('3'):                         //<-------------------(TRADE)
                     $objTrade = new Trade();
                     $objTrade->razorPayResponse($transfer);
@@ -325,12 +332,12 @@ trait Razorpay
             }
         }                                                                                    //<------------------ here (CAUTION)
         return responseMsg(true, "Webhook Data Collected!", $request->event);
-    // }
-    // catch(Exception $e)
-    // {
-    //     dd($e->getfile(),$e->getMessage());
-    //     return responseMsg(false,"error occured",$e->getLine());
-    // }
+        // }
+        // catch(Exception $e)
+        // {
+        //     dd($e->getfile(),$e->getMessage());
+        //     return responseMsg(false,"error occured",$e->getLine());
+        // }
     }
 
 

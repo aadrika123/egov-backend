@@ -56,7 +56,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(WaterApplication::class)->group(function () {  
         // Route::match(["get", "post"], 'apply', 'applyApplication');
         Route::get('citizenApplications', 'getCitizenApplication');
-        Route::post('onlinePayment', 'handeRazorPay');
+        Route::post('Razorpay-Orderid', 'handeRazorPay');
+        Route::post('getTranNo', 'readTransectionAndApl');
     });
 
+});
+Route::controller(WaterApplication::class)->group(function () {    
+    Route::get('paymentRecipt/{id}/{transectionId}', 'paymentRecipt');
 });
