@@ -693,9 +693,6 @@ class SafRepository implements iSafRepository
 
             // SAF Application Update Current Role Updation
             $saf = PropActiveSaf::find($request->safId);
-            if ($request->senderRoleId == 11) {     // Initiator Role Id
-                $saf->doc_upload_status = 1;
-            }
             $saf->current_role = $request->receiverRoleId;
             $saf->save();
 

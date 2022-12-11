@@ -72,6 +72,12 @@ class CustomDetail extends Model
                 $customDetails->save();
             }
 
+            if ($customFor == 'Harvesting') {
+                $customDetails->ref_type = 'Harvesting';
+                $this->saveCustomDetail($request, $filepath, $customDetails);
+                $customDetails->save();
+            }
+
             return responseMsg(true, "Successfully Saved", $customDetails);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
