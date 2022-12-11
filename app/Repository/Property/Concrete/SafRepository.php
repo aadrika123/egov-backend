@@ -1410,29 +1410,19 @@ class SafRepository implements iSafRepository
      */
     public function geoTagging($req)
     {
-        return responseMsgs(true, "Data Fetched", "sad", "1", "1.0", "289ms", "POST", "adsf");
-        // dd($req->all());
         try {
             $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
-            foreach ($req->uploads as $upload) {
-                $geoTagging = new PropSafGeotagUpload();
-                $geoTagging->saf_id = $req->safId;
-                $geoTagging->latitude = $upload['latitude'];
-                $geoTagging->longitude = $upload['longitude'];
-                $geoTagging->direction_type = $upload['directionType'];
-                $geoTagging->user_id = authUser()->id;
+            $geoTagging = new PropSafGeotagUpload();
+            $base64Encode = base64_encode($req->imagePath->getClientOriginalName());
+            $extention = $req->imagePath->getClientOriginalExtension();
+            $imageName = time() . '-' . $base64Encode . '.' . $extention;
+            $req->imagePath->storeAs('public/Property/GeoTagging', $imageName);
 
-                // Upload Image
-                $base64Encode = base64_encode($upload['imagePath']->getClientOriginalName());
-                $extention = $upload['imagePath']->getClientOriginalExtension();
-                $imageName = time() . '-' . $base64Encode . '.' . $extention;
-                $upload['imagePath']->storeAs('public/Property/GeoTagging', $imageName);
-
-                $geoTagging->image_path = $imageName;
-                $geoTagging->relative_path = $relativePath;
-                $geoTagging->save();
-            }
-            return responseMsg(true, "Geo Tagging Done Successfully", "");
+            $geoTagging->image_path = $imageName;
+            $geoTagging->direction_type = $req->directionType;
+            $geoTagging->relative_path = $relativePath;
+            $geoTagging->save();
+            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010123", "1.0", "289ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
