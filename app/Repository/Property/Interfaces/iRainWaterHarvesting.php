@@ -11,4 +11,11 @@ interface iRainWaterHarvesting
 {
     public function getWardMasterData($request);
     public function waterHarvestingApplication($request);
+
+    public function harvestingInbox();
+    public function waterHarvestingList();
+    public function harvestingListById($req);
+    public function harvestingDocList($req);
+    public function docUpload($req);
+    public function docStatus($req);
 }

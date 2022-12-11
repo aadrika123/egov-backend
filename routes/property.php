@@ -44,7 +44,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(ActiveSafController::class)->group(function () {
         Route::post('saf/apply', 'applySaf');                                                               // Applying Saf Route
         Route::post('saf/doc-upload', 'documentUpload');                                                    // Document Upload by Citizen or JSK
-        Route::post('saf/verifydoc', 'verifyDoc');                                                         // Verify Uploaded Document by DA
+        Route::post('saf/verifydoc', 'verifyDoc');                                                          // Verify Uploaded Document by DA
         Route::get('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf
         Route::get('saf/inbox', 'inbox');                                                                   // Saf Inbox
         Route::get('saf/outbox', 'outbox');                                                                 // Saf Workflow Outbox and Outbox By search key
@@ -117,8 +117,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::match(["get", "post"], 'documentUpload/{id}', 'documentUpload');
         Route::match(["get", "post"], 'safDocumentUpload/{id}', 'safDocumentUpload');
         Route::get('getSafUploadDocuments/{id}', 'getUploadDocuments');
-        #----------citizen-Payment-history--------------------
-        Route::get('pymentHistory', 'CitizenPymentHistory');
     });
 
 
@@ -191,7 +189,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(RainWaterHarvestingController::class)->group(function () {
         Route::get('get-wardmaster-data', 'getWardMasterData');
-        Route::post('water_harvesting_application', 'waterHarvestingApplication');
+        Route::post('water-harvesting-application', 'waterHarvestingApplication');
+        Route::post('get-harvesting-list', 'waterHarvestingList');
+        Route::post('harvesting-list-id', 'harvestingListById');
+        Route::post('harvesting-doc-id', 'harvestingDocList');
+        Route::post('harvesting-doc-upload', 'docUpload');
+        Route::post('harvesting-doc-status', 'docStatus');
+
+        Route::post('inbox', 'harvestingInbox');
     });
 
     // Property Cluster

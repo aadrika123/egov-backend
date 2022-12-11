@@ -15,7 +15,9 @@ if (!function_exists("responseMsg")) {
     }
 }
 
-
+/**
+ * | Response Msg Version2 with apiMetaData
+ */
 if (!function_exists("responseMsgs")) {
     function responseMsgs($status, $msg, $data, $apiId, $version, $queryRunTime, $action, $deviceId)
     {
