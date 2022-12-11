@@ -15,6 +15,27 @@ if (!function_exists("responseMsg")) {
     }
 }
 
+
+if (!function_exists("responseMsgs")) {
+    function responseMsgs($status, $msg, $data, $apiId, $version, $queryRunTime, $action, $deviceId)
+    {
+        return response()->json([
+            'status' => $status,
+            'message' => $msg,
+            'metaData' => [
+                'apiId' => $apiId,
+                'version' => $version,
+                'queryRunTime' => $queryRunTime,
+                'timeInPoch' => Carbon::now()->format('Y-m-d H:i:m'),
+                'action' => $action,
+                'deviceId' => $deviceId
+            ],
+            'data' => $data
+        ]);
+    }
+}
+
+
 if (!function_exists("print_var")) {
     function print_var($data = '')
     {
