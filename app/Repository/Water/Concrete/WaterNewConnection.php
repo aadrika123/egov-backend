@@ -391,6 +391,12 @@ class WaterNewConnection implements IWaterNewConnection
                 $doc['docName'] = $val->doc_for;
                 $doc['isMadatory'] = $val->is_mandatory;
                 $doc['docVal'] = $this->getDocumentList($val->doc_for);
+                $doc['uploadDoc']=$this->check_doc_exist($connectionId,$val->doc_for);
+                if(isset($doc['uploadDoc']["document_path"]))
+                {
+                    $path = $this->readDocumentPath($doc['uploadDoc']["document_path"]);
+                    $doc['uploadDoc']["document_path"] = !empty(trim($doc['uploadDoc']["document_path"]))?$path:null;
+                }
                 array_push($requiedDocs,$doc);
             }
             foreach($refOwneres as $key=>$val)
@@ -570,6 +576,7 @@ class WaterNewConnection implements IWaterNewConnection
                 else{
                     throw new Exception("Invalid Document type Passe");
                 }
+                return responseMsg(true,$sms,"");
             }
             $data["documentsList"]  = $requiedDocs;
             $data["ownersDocList"]  = $ownersDoc;
