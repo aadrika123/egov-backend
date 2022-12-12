@@ -131,24 +131,24 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
        | Serial No : 07
      */
     Route::controller(ConcessionController::class)->group(function () {
-        Route::post('concession/apply-concession', 'applyConcession');
-        Route::post('concession/postHolding', 'postHolding');
-        Route::get('concession/inbox', 'inbox');                                               // Concession Inbox 
-        Route::get('concession/outbox', 'outbox');                                             // Concession Outbox
-        Route::post('concession/details', 'getDetailsById');                                   // Get Concession Details by ID
-        Route::post('concession/escalate', 'escalateApplication');                             // escalate application
-        Route::get('concession/special-inbox', 'specialInbox');                                // escalated application inbox
-        Route::post('concession/owner-details', 'getOwnerDetails');
+        Route::post('concession/apply-concession', 'applyConcession');      //01                
+        Route::post('concession/postHolding', 'postHolding');               //02  
+        Route::get('concession/inbox', 'inbox');                            //03               // Concession Inbox 
+        Route::get('concession/outbox', 'outbox');                          //04               // Concession Outbox
+        Route::post('concession/details', 'getDetailsById');                //05               // Get Concession Details by ID
+        Route::post('concession/escalate', 'escalateApplication');          //06               // escalate application
+        Route::get('concession/special-inbox', 'specialInbox');             //07               // escalated application inbox
 
-        Route::post('concession/next-level', 'postNextLevel');                                  // Backward Forward Application
-        Route::post('concession/approvalrejection', 'approvalRejection');                       // Approve Reject Application
-        Route::post('concession/backtocitizen', 'backToCitizen');                                // Back To Citizen 
+        Route::post('concession/next-level', 'postNextLevel');              //08               // Backward Forward Application
+        Route::post('concession/approvalrejection', 'approvalRejection');   //09               // Approve Reject Application
+        Route::post('concession/backtocitizen', 'backToCitizen');           //10               // Back To Citizen 
+        Route::post('concession/owner-details', 'getOwnerDetails');         //11
 
-        Route::get('concession/list', 'concessionList');
-        Route::post('concession/list-id', 'concessionByid');
-        Route::post('concession/doc-list', 'concessionDocList');
-        Route::post('concession/doc-upload', 'concessionDocUpload');
-        Route::post('concession/doc-status', 'concessionDocStatus');
+        Route::get('concession/list', 'concessionList');                    //12
+        Route::post('concession/list-id', 'concessionByid');                //13
+        Route::post('concession/doc-list', 'concessionDocList');            //14
+        Route::post('concession/doc-upload', 'concessionDocUpload');        //15
+        Route::post('concession/doc-status', 'concessionDocStatus');        //16
     });
 
 
@@ -186,11 +186,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get-all-custom-tab-data', 'getCustomDetails');
         Route::post('post-custom-data', 'postCustomDetails');
     });
-
-    /**
-     * |
-       | Serial No : 10
-     */
 
 
     /**

@@ -658,6 +658,8 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
                 'relative_path' => ('/harvesting/' . $docName . '/'),
                 'doc_name' => $name,
                 'status' => 1,
+                'verify_status' => 0,
+                'remarks' => '',
                 'updated_at' => Carbon::now()
             ]);
     }

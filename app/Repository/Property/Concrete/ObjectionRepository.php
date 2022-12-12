@@ -937,6 +937,8 @@ class ObjectionRepository implements iObjectionRepository
                 'relative_path' => ('objection' . $docName . '/'),
                 'doc_name' => $name,
                 'status' => 1,
+                'verify_status' => 0,
+                'remarks' => '',
                 'updated_at' => Carbon::now()
             ]);
     }
