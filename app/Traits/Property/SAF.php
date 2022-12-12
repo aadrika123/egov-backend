@@ -92,6 +92,7 @@ trait SAF
         $saf->new_ward_mstr_id = $req->newWard;
         $saf->percentage_of_property_transfer = $req->percOfPropertyTransfer;
         $saf->apartment_details_id = $req->apartmentDetail;
+        $saf->applicant_name = collect($req->owner)->first()['ownerName'];
         $saf->road_width = $req->roadType;
     }
 
