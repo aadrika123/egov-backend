@@ -212,6 +212,7 @@ class CitizenRepository implements iCitizenRepository
                 'holding_no',
                 'assessment_type',
                 'application_date',
+                'applicant_name',
                 'payment_status',
                 'doc_upload_status',
                 'saf_pending_status',
