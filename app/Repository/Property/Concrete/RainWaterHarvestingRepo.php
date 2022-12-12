@@ -93,14 +93,8 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
             $waterHaravesting = new PropActiveHarvesting();
-            $waterHaravesting->property_id = $request->propId;
+            $waterHaravesting->property_id = $request->propertyId;
             $waterHaravesting->harvesting_status = $request->isWaterHarvestingBefore;
-            $waterHaravesting->name  =  $request->name;
-            $waterHaravesting->guardian_name  =  $request->guardianName;
-            $waterHaravesting->ward_id  =  $request->wardNo;
-            $waterHaravesting->mobile_no  =  $request->mobileNo;
-            $waterHaravesting->holding_no  =  $request->holdingNo;
-            $waterHaravesting->building_address  =  $request->buildingAddress;
             $waterHaravesting->date_of_completion  =  $request->dateOfCompletion;
             $waterHaravesting->workflow_id = $ulbWorkflowId->id;
             $waterHaravesting->current_role = collect($initiatorRoleId)->first()->role_id;
@@ -442,14 +436,13 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
 
 
 
-    //
-
+    //applied harvesting list
     public function waterHarvestingList()
     {
         try {
             $list = PropActiveHarvesting::select(
                 'prop_active_harvestings.id',
-                'prop_active_harvestings.name as owner_name',
+                // 'prop_active_harvestings.name as owner_name',
                 'a.ward_mstr_id',
                 'u.ward_name as ward_no',
                 'a.holding_no',
@@ -469,6 +462,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
         }
     }
 
+    //applied harvesting list by id
     public function harvestingListById($req)
     {
         try {
@@ -493,6 +487,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
         }
     }
 
+    //harvesting document list
     public function harvestingDocList($req)
     {
         try {

@@ -351,20 +351,6 @@ class ObjectionRepository implements iObjectionRepository
         }
     }
 
-
-    //objection type list
-    public function objectionType()
-    {
-        try {
-            $objectionType = RefPropObjectionType::where('status', 1)
-                ->select('id', 'type')
-                ->get();
-            return $objectionType;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
     //assesment detail
     public function assesmentDetails($request)
     {
