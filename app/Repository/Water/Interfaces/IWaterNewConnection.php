@@ -12,4 +12,5 @@ interface IWaterNewConnection
     public function readTransectionAndApl(Request $request);
     public function paymentRecipt($id, $transectionId);
     public function documentUpload(Request $request);
+    public function getUploadDocuments(Request $request);
 }
