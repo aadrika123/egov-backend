@@ -40,7 +40,10 @@ use App\Http\Controllers\CustomController;
 
 // Inside Middleware Routes with API Authenticate 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
-    // SAF 
+    /**
+     * | SAF
+       | Serial No : 01
+     */
     Route::controller(ActiveSafController::class)->group(function () {
         Route::post('saf/apply', 'applySaf');                                                               // Applying Saf Route
         Route::post('saf/doc-upload', 'documentUpload');                                                    // Document Upload by Citizen or JSK
@@ -68,31 +71,34 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging
     });
 
-    // SAF Demand and Property contollers
+    /**
+     * | SAF Demand and Property contollers
+       | Serial No : 02
+     */
     Route::controller(SafDemandController::class)->group(function () {
         Route::post('saf/get-demand-by-id', 'getDemandBySafId');                // <------------- Get the demandable Amount of the Property after payment done
     });
 
-    // SAF Reassessment
+    /**
+     * | SAF Reassessment
+       | Serial No : 03
+     */
     Route::controller(SafReassessmentController::class)->group(function () {
     });
 
-    Route::controller(CalculatorController::class)->group(function () {
-        Route::post('get-dashboard', 'dashboardDate');
-    });
-
-    // Property Calculator
+    /**
+     * | Property Calculator
+       | Serial No : 04
+     */
     Route::controller(SafCalculatorController::class)->group(function () {
         Route::post('saf-calculation', 'calculateSaf');
     });
 
-    Route::controller(CalculatorController::class)->group(function () {
-        Route::post('get-dashboard', 'dashboardDate');
-    });
-    //Property Deactivation
     /**
-     * Crated By - Sandeep Bara
-     * Created On- 19-11-2022 
+     * | Property Deactivation
+     * | Crated By - Sandeep Bara
+     * | Created On- 19-11-2022 
+       | Serial No : 05
      */
     Route::controller(PropertyDeactivateController::class)->group(function () {
         Route::post('searchByHoldingNo', "readHoldigbyNo");
@@ -102,10 +108,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('postNextDeactivation', "postNextLevel");
         Route::post('getDeactivationDtls', "readDeactivationReq");
     });
-    //PropertyBifurcation Process
+
     /**
-     * Crated By - Sandeep Bara
-     * Created On- 23-11-2022 
+     * | PropertyBifurcation Process
+     * | Crated By - Sandeep Bara
+     * | Created On- 23-11-2022
+       | Serial No : 06
      */
     Route::controller(PropertyBifurcationController::class)->group(function () {
         Route::post('searchByHoldingNoBi', "readHoldigbyNo");
@@ -117,12 +125,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::match(["get", "post"], 'documentUpload/{id}', 'documentUpload');
         Route::match(["get", "post"], 'safDocumentUpload/{id}', 'safDocumentUpload');
         Route::get('getSafUploadDocuments/{id}', 'getUploadDocuments');
-        #----------citizen-Payment-history--------------------
-        Route::get('pymentHistory', 'CitizenPymentHistory');
     });
 
-
-    //Property Concession
+    /**
+     * | Property Concession
+       | Serial No : 07
+     */
     Route::controller(ConcessionController::class)->group(function () {
         Route::post('concession/apply-concession', 'applyConcession');
         Route::post('concession/postHolding', 'postHolding');
@@ -145,7 +153,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 
 
-    //Property Objection
+    /**
+     * | Property Objection
+       | Serial No : 08
+     */
     Route::controller(ObjectionController::class)->group(function () {
         Route::post('objection/apply-objection', 'applyObjection');
         Route::get('objection/objection-type', 'objectionType');
@@ -168,36 +179,55 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('objection/doc-status', 'objectionDocStatus');
     });
 
-    // for custom details
+    /**
+     * | for custom details
+       | Serial No : 09
+     */
     Route::controller(CustomController::class)->group(function () {
         Route::post('get-all-custom-tab-data', 'getCustomDetails');
         Route::post('post-custom-data', 'postCustomDetails');
     });
 
-    //Document verification
+    /**
+     * | Document verification
+       | Serial No : 10
+     */
     Route::controller(DocumentController::class)->group(function () {
         Route::post('saf/doc-status', 'safDocStatus');
     });
 
+    /**
+     * | Calculator dashboardDate
+       | Serial No : 11
+     */
     Route::controller(CalculatorController::class)->group(function () {
         Route::post('get-dashboard', 'dashboardDate');
     });
 
 
-    //Rain water Harvesting
     /**
-     * Crated By - Sam kerketta
-     * Created On- 22-11-2022 
+     * | Rain water Harvesting
+     * | Created By - Sam kerketta
+     * | Created On- 22-11-2022 
+       | Serial No : 12
      */
     Route::controller(RainWaterHarvestingController::class)->group(function () {
         Route::get('get-wardmaster-data', 'getWardMasterData');
-        Route::post('water_harvesting_application', 'waterHarvestingApplication');
+        Route::post('water-harvesting-application', 'waterHarvestingApplication');
+        Route::post('get-harvesting-list', 'waterHarvestingList');
+        Route::post('harvesting-list-id', 'harvestingListById');
+        Route::post('harvesting-doc-id', 'harvestingDocList');
+        Route::post('harvesting-doc-upload', 'docUpload');
+        Route::post('harvesting-doc-status', 'docStatus');
+
+        Route::post('inbox', 'harvestingInbox');
     });
 
-    // Property Cluster
     /**
-     * Crated By - Sam kerketta
-     * Created On- 23-11-2022 
+     * | Property Cluster
+     * | Created By - Sam kerketta
+     * | Created On- 23-11-2022 
+       | Serial No : 13
      */
     Route::controller(ClusterController::class)->group(function () {
         #cluster data entry / Master
@@ -212,28 +242,42 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('cluster/save-holding-in-cluster', 'saveHoldingInCluster');
     });
 
-    // Property Document Operation
+    /**
+     * | Property Document Operation
+       | Serial No : 14
+     */
     Route::controller(DocumentOperationController::class)->group(function () {
         Route::post('get-all-documents', 'getAllDocuments');
     });
 
+    /**
+     * | poperty related type details form ref
+       | Serial No : 15 
+     */
     Route::controller(PropMaster::class)->group(function () {
         Route::get('prop-usage-type', 'propUsageType');
         Route::get('prop-const-type', 'propConstructionType');
         Route::get('prop-occupancy-type', 'propOccupancyType');
         Route::get('prop-property-type', 'propPropertyType');
         Route::get('prop-road-type', 'propRoadType');
+    });
 
-
-        // Property Details
-        Route::controller(PropertyDetailsController::class)->group(function () {
-            Route::post('get-filter-property-details', 'getFilterProperty');
-            Route::post('get-filter-safs-details', 'getFilterSafs');
-            Route::get('get-list-saf', 'getListOfSaf');
-            Route::post('active-application/get-user-details', 'getUserDetails');
-        });
+    /**
+     * | Property Details
+       | Serial No : 16
+     */
+    Route::controller(PropertyDetailsController::class)->group(function () {
+        Route::post('get-filter-property-details', 'getFilterProperty');
+        Route::post('get-filter-safs-details', 'getFilterSafs');
+        Route::get('get-list-saf', 'getListOfSaf');
+        Route::post('active-application/get-user-details', 'getUserDetails');
     });
 });
+
+/**
+ * | Route Outside the Middleware
+   | Serial No : 
+ */
 Route::controller(CalculatorController::class)->group(function () {
     Route::post('calculatePropertyTax', 'calculator');
 });

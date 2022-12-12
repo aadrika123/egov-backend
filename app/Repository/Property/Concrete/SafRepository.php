@@ -706,7 +706,7 @@ class SafRepository implements iSafRepository
             $levelPending->sender_user_id = auth()->user()->id;
             $levelPending->save();
 
-            // previous level pending Add Comment On Prop Level Pending
+            // Add Comment On Prop Level Pending
             $propLevelPending = new PropLevelPending();
             $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->senderRoleId);    //<-----Get SAF level Pending By safid and current role ID
             $commentOnlevel->remarks = $request->comment;
