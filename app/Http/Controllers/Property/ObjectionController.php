@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Property;
 use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Property\RefPropObjectionType;
 
 class ObjectionController extends Controller
 {
@@ -25,9 +26,10 @@ class ObjectionController extends Controller
     }
 
     //objection type list
-    public function objectionType(Request $request)
+    public function objectionType()
     {
-        return $this->Repository->objectionType($request);
+        $objType = new RefPropObjectionType();
+        return $objType->objectionType();
     }
 
     //ownerDetails

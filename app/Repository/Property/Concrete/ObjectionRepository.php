@@ -244,13 +244,13 @@ class ObjectionRepository implements iObjectionRepository
                     if ($otid["id"] == 3) {
                         $assement_error->data_ref_type = 'ref_prop_road_types.id';
                         $objection->objection_type_id = 3;
-                        $assement_error->assesment_data = collect($assesmentData['original']['data']['roadType']);
+                        $assement_error->assesment_data = collect($assesmentData['original']['data']['road_type_mstr_id']);
                     }
                     //property_types
                     if ($otid["id"] == 4) {
                         $assement_error->data_ref_type = 'ref_prop_types.id';
                         $objection->objection_type_id = 4;
-                        $assement_error->assesment_data = collect($assesmentData['original']['data']['propertyType']);
+                        $assement_error->assesment_data = collect($assesmentData['original']['data']['prop_type_mstr_id']);
                     }
                     //area off plot
                     if ($otid["id"] == 5) {
@@ -351,20 +351,6 @@ class ObjectionRepository implements iObjectionRepository
         }
     }
 
-
-    //objection type list
-    public function objectionType()
-    {
-        try {
-            $objectionType = RefPropObjectionType::where('status', 1)
-                ->select('id', 'type')
-                ->get();
-            return $objectionType;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
     //assesment detail
     public function assesmentDetails($request)
     {
@@ -379,7 +365,9 @@ class ObjectionRepository implements iObjectionRepository
                 'tower_installation_date',
                 'area_of_plot as areaOfPlot',
                 'property_type as propertyType',
+                'road_type_mstr_id',
                 'road_type as roadType',
+                'prop_type_mstr_id'
                 // 'prop_floors.*'
             )
                 ->where('prop_properties.id', $request->propId)
@@ -486,8 +474,9 @@ class ObjectionRepository implements iObjectionRepository
         $details = DB::table('prop_active_objections')
             ->select(
                 'prop_active_objections.id as objection_id',
-                'prop_active_objections.objection_type_id',
-                'ot.type as objection_type',
+                'objection_for',
+                // 'prop_active_objections.objection_type_id',
+                // 'ot.type as objection_type',
                 'prop_active_objections.objection_no',
                 'prop_active_objections.workflow_id',
                 'prop_active_objections.current_role',
@@ -505,7 +494,7 @@ class ObjectionRepository implements iObjectionRepository
             ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
             ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
             ->leftJoin('ref_prop_types as pt', 'pt.id', '=', 's.property_assessment_id')
-            ->join('ref_prop_objection_types as ot', 'ot.id', '=', 'prop_active_objections.objection_type_id')
+            // ->join('ref_prop_objection_types as ot', 'ot.id', '=', 'prop_active_objections.objection_type_id')
             ->where('p.status', 1)
             ->where('prop_active_objections.id', $req->id)
             ->first();
@@ -694,7 +683,17 @@ class ObjectionRepository implements iObjectionRepository
     public function objectionList()
     {
         try {
-            $list = PropActiveObjection::join('prop_properties', 'prop_properties.id', 'prop_active_objections.property_id')
+            $list = PropActiveObjection::select(
+                'prop_active_objections.id',
+                'applicant_name as ownerName',
+                'holding_no as holdingNo',
+                'objection_for as objectionFor',
+                'ward_name as wardId',
+                'property_type as propertyType',
+                'dob',
+                'gender',
+            )
+                ->join('prop_properties', 'prop_properties.id', 'prop_active_objections.property_id')
                 ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                 ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')

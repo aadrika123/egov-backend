@@ -29,11 +29,7 @@ class RainWaterHarvestingController extends Controller
             $request->all(),
             [
                 'isWaterHarvestingBefore' => 'required',
-                'wardNo' => 'required|integer',
-                'mobileNo' => ['required', 'min:10', 'max:10'],
-                'holdingNo' => 'required',
                 'dateOfCompletion' => 'required|date',
-
             ]
         );
         if ($validated->fails()) {
