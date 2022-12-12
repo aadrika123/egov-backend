@@ -19,7 +19,7 @@ if (!function_exists("responseMsg")) {
  * | Response Msg Version2 with apiMetaData
  */
 if (!function_exists("responseMsgs")) {
-    function responseMsgs($status, $msg, $data, $apiId, $version, $queryRunTime, $action, $deviceId)
+    function responseMsgs($status, $msg, $data, $apiId = null, $version = null, $queryRunTime = null, $action = null, $deviceId = null)
     {
         return response()->json([
             'status' => $status,
