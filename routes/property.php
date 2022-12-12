@@ -208,19 +208,19 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     /**
      * | Rain water Harvesting
      * | Created By - Sam kerketta
+     * | Edited By - Mrinal Kumar
      * | Created On- 22-11-2022 
        | Serial No : 12
      */
     Route::controller(RainWaterHarvestingController::class)->group(function () {
-        Route::get('get-wardmaster-data', 'getWardMasterData');
-        Route::post('water-harvesting-application', 'waterHarvestingApplication');
-        Route::post('get-harvesting-list', 'waterHarvestingList');
-        Route::post('harvesting-list-id', 'harvestingListById');
-        Route::post('harvesting-doc-id', 'harvestingDocList');
-        Route::post('harvesting-doc-upload', 'docUpload');
-        Route::post('harvesting-doc-status', 'docStatus');
-
-        Route::post('inbox', 'harvestingInbox');
+        Route::get('get-wardmaster-data', 'getWardMasterData');                     //01
+        Route::post('water-harvesting-application', 'waterHarvestingApplication');  //02
+        Route::post('get-harvesting-list', 'waterHarvestingList');                  //03
+        Route::post('harvesting-list-id', 'harvestingListById');                    //04
+        Route::post('harvesting-doc-id', 'harvestingDocList');                      //05
+        Route::post('harvesting-doc-upload', 'docUpload');                          //06
+        Route::post('harvesting-doc-status', 'docStatus');                          //07
+        Route::post('inbox', 'harvestingInbox');                                    //08
     });
 
     /**

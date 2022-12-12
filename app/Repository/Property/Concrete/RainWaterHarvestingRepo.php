@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Models\Property\PropHarvestingDoc;
 use Illuminate\Support\Carbon;
+use phpDocumentor\Reflection\Types\Null_;
 
 /**
  * | Created On - 22-11-2022
@@ -439,10 +440,15 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //applied harvesting list
     public function waterHarvestingList()
     {
+        $apiId = '011203';
+        $version = 01;
+        $queryRunTime = '300ms - 359ms';
+        $action = 'Post';
+        $deviceId = '';
         try {
             $list = PropActiveHarvesting::select(
                 'prop_active_harvestings.id',
-                // 'prop_active_harvestings.name as owner_name',
+                'a.applicant_name as owner_name',
                 'a.ward_mstr_id',
                 'u.ward_name as ward_no',
                 'a.holding_no',
@@ -456,7 +462,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
                 ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
                 ->get();
 
-            return responseMsg(true, "Successfully Done", $list);
+            return responseMsgs(true, "Success", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -465,9 +471,15 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //applied harvesting list by id
     public function harvestingListById($req)
     {
+        $apiId = '011204';
+        $version = 01;
+        $queryRunTime = '315ms - 342ms';
+        $action = 'Post';
+        $deviceId = '';
         try {
             $list = PropActiveHarvesting::select(
                 'prop_active_harvestings.*',
+                'a.applicant_name as owner_name',
                 'a.ward_mstr_id',
                 'u.ward_name as ward_no',
                 'a.holding_no',
@@ -481,7 +493,10 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
                 ->join('ulb_ward_masters as u', 'u.id', 'a.ward_mstr_id')
                 ->first();
 
-            return responseMsg(true, "Successfully Done", $list);
+            if ($list == Null) {
+                return responseMsg(false, "No Data Found", '');
+            } else
+                return responseMsgs(true, "Success", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -490,6 +505,11 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //harvesting document list
     public function harvestingDocList($req)
     {
+        $apiId = '011205';
+        $version = 01;
+        $queryRunTime = '311ms - 379ms';
+        $action = 'Post';
+        $deviceId = '';
         try {
             $list = PropHarvestingDoc::select(
                 'id',
@@ -511,7 +531,10 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
                 return $val;
             });
 
-            return responseMsg(true, "Successfully Done", $list);
+            if ($list == Null) {
+                return responseMsg(false, "No Data Found", '');
+            } else
+                return responseMsgs(true, "Success", remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -520,58 +543,71 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //doc upload
     public function docUpload($req)
     {
-        if ($file = $req->file('rwhImage')) {
-            $docName = "rwhImage";
+        $apiId = '011206';
+        $version = 01;
+        $queryRunTime = '313ms - 354ms';
+        $action = 'Post';
+        $deviceId = '';
+        try {
+            if ($file = $req->file('rwhImage')) {
+                $docName = "rwhImage";
 
-            $checkExisting = PropHarvestingDoc::where('harvesting_id', $req->id)
-                ->where('doc_type', $docName)
-                ->get()
-                ->first();
+                $checkExisting = PropHarvestingDoc::where('harvesting_id', $req->id)
+                    ->where('doc_type', $docName)
+                    ->get()
+                    ->first();
 
-            $name = time() . 'rwhImage.' . $file->getClientOriginalExtension();
-            $path = storage_path('app/public/harvesting/rwhImage/');
-            $file->move($path, $name);
+                $name = time() . 'rwhImage.' . $file->getClientOriginalExtension();
+                $path = storage_path('app/public/harvesting/rwhImage/');
+                $file->move($path, $name);
 
-            if ($checkExisting) {
+                if ($checkExisting) {
 
-                $this->updateDocument($req, $docName, $name);
-            } else {
+                    $this->updateDocument($req, $docName, $name);
+                } else {
 
-                $harvestingDoc = new PropHarvestingDoc();
-                $harvestingDoc->harvesting_id = $req->id;
-                $this->citizenDocUpload($harvestingDoc, $name, $docName);
+                    $harvestingDoc = new PropHarvestingDoc();
+                    $harvestingDoc->harvesting_id = $req->id;
+                    $this->citizenDocUpload($harvestingDoc, $name, $docName);
+                }
             }
-        }
 
-        if ($file = $req->file('rwhForm')) {
-            $docName = "rwhForm";
+            if ($file = $req->file('rwhForm')) {
+                $docName = "rwhForm";
 
-            $checkExisting = PropHarvestingDoc::where('harvesting_id', $req->id)
-                ->where('doc_type', $docName)
-                ->get()
-                ->first();
+                $checkExisting = PropHarvestingDoc::where('harvesting_id', $req->id)
+                    ->where('doc_type', $docName)
+                    ->get()
+                    ->first();
 
-            $name = time() . 'rwhForm.' . $file->getClientOriginalExtension();
-            $path = storage_path('app/public/harvesting/rwhForm/');
-            $file->move($path, $name);
+                $name = time() . 'rwhForm.' . $file->getClientOriginalExtension();
+                $path = storage_path('app/public/harvesting/rwhForm/');
+                $file->move($path, $name);
 
-            if ($checkExisting) {
+                if ($checkExisting) {
 
-                $this->updateDocument($req, $docName, $name);
-            } else {
+                    $this->updateDocument($req, $docName, $name);
+                } else {
 
-                $harvestingDoc = new PropHarvestingDoc();
-                $harvestingDoc->harvesting_id = $req->id;
-                $this->citizenDocUpload($harvestingDoc, $name, $docName);
+                    $harvestingDoc = new PropHarvestingDoc();
+                    $harvestingDoc->harvesting_id = $req->id;
+                    $this->citizenDocUpload($harvestingDoc, $name, $docName);
+                }
             }
+            return responseMsgs(true, "Successfully Uploaded", '', $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            echo $e->getMessage();
         }
-
-        return responseMsg(true, "Successfully Uploaded", '');
     }
 
     //doc status
     public function docStatus($req)
     {
+        $apiId = '011207';
+        $version = 01;
+        $queryRunTime = '290ms - 342ms';
+        $action = 'Post';
+        $deviceId = '';
         try {
             $userId = auth()->user()->id;
 
@@ -590,7 +626,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             }
             $docStatus->save();
 
-            return responseMsg(true, "Successfully Done", '');
+            return responseMsgs(true, "Successfully Verified", '', $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             echo $e->getMessage();
         }
