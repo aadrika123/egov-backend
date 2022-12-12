@@ -67,6 +67,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification(20)
         Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging(21)
+        Route::post('saf/doc-status', 'safDocStatus');                                                      // Saf Doc Verify (22)
     });
 
     /**
@@ -187,16 +188,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 
     /**
-     * | Document verification
+     * |
        | Serial No : 10
      */
-    Route::controller(DocumentController::class)->group(function () {
-        Route::post('saf/doc-status', 'safDocStatus');
-    });
+
 
     /**
      * | Calculator dashboardDate
-       | Serial No : 11
+       | Serial No : 10
      */
     Route::controller(CalculatorController::class)->group(function () {
         Route::post('get-dashboard', 'dashboardDate');
@@ -207,7 +206,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | Rain water Harvesting
      * | Created By - Sam kerketta
      * | Created On- 22-11-2022 
-       | Serial No : 12
+       | Serial No : 11
      */
     Route::controller(RainWaterHarvestingController::class)->group(function () {
         Route::get('get-wardmaster-data', 'getWardMasterData');                     //01
@@ -224,7 +223,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | Property Cluster
      * | Created By - Sam kerketta
      * | Created On- 23-11-2022 
-       | Serial No : 13
+       | Serial No : 12
      */
     Route::controller(ClusterController::class)->group(function () {
         #cluster data entry / Master
@@ -241,7 +240,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     /**
      * | Property Document Operation
-       | Serial No : 14
+       | Serial No : 13
      */
     Route::controller(DocumentOperationController::class)->group(function () {
         Route::post('get-all-documents', 'getAllDocuments');
@@ -249,7 +248,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     /**
      * | poperty related type details form ref
-       | Serial No : 15 
+       | Serial No : 14 
      */
     Route::controller(PropMaster::class)->group(function () {
         Route::get('prop-usage-type', 'propUsageType');
@@ -261,7 +260,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     /**
      * | Property Details
-       | Serial No : 16
+       | Serial No : 15
      */
     Route::controller(PropertyDetailsController::class)->group(function () {
         Route::post('get-filter-property-details', 'getFilterProperty');

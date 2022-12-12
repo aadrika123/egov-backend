@@ -440,7 +440,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //applied harvesting list
     public function waterHarvestingList()
     {
-        $apiId = '011203';
+        $apiId = '011103';
         $version = 01;
         $queryRunTime = '300ms - 359ms';
         $action = 'Post';
@@ -471,7 +471,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //applied harvesting list by id
     public function harvestingListById($req)
     {
-        $apiId = '011204';
+        $apiId = '011104';
         $version = 01;
         $queryRunTime = '315ms - 342ms';
         $action = 'Post';
@@ -505,7 +505,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //harvesting document list
     public function harvestingDocList($req)
     {
-        $apiId = '011205';
+        $apiId = '011105';
         $version = 01;
         $queryRunTime = '311ms - 379ms';
         $action = 'Post';
@@ -543,7 +543,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //doc upload
     public function docUpload($req)
     {
-        $apiId = '011206';
+        $apiId = '011106';
         $version = 01;
         $queryRunTime = '313ms - 354ms';
         $action = 'Post';
@@ -603,7 +603,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //doc status
     public function docStatus($req)
     {
-        $apiId = '011207';
+        $apiId = '011107';
         $version = 01;
         $queryRunTime = '290ms - 342ms';
         $action = 'Post';
