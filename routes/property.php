@@ -45,30 +45,28 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
        | Serial No : 01
      */
     Route::controller(ActiveSafController::class)->group(function () {
-        Route::post('saf/apply', 'applySaf');                                                               // Applying Saf Route
-        Route::post('saf/doc-upload', 'documentUpload');                                                    // Document Upload by Citizen or JSK
-        Route::post('saf/verifydoc', 'verifyDoc');                                                          // Verify Uploaded Document by DA
-        Route::get('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf
-        Route::get('saf/inbox', 'inbox');                                                                   // Saf Inbox
-        Route::get('saf/outbox', 'outbox');                                                                 // Saf Workflow Outbox and Outbox By search key
-        Route::post('saf-details', 'details');                                                              // Saf Workflow safDetails and safDetails By ID
-        Route::post('saf/candidates', 'getSafCandidates');                                                  // Get SAF Candidates
-        Route::post('saf/escalate', 'postEscalate');                                                        // Saf Workflow special and safDetails By id
-        Route::get('saf/escalate/inbox/{key?}', 'specialInbox');                                            // Saf workflow Inbox and Inbox By search key
-        Route::post('saf/independent-comment', 'commentIndependent');                                       // Independent Comment for SAF Application
-        Route::post('saf/post/level', 'postNextLevel');                                                     // Forward or Backward Application
-        Route::post('saf/approvalrejection', 'approvalRejectionSaf');                                       // Approval Rejection SAF Application
-        Route::post('saf/back-to-citizen', 'backToCitizen');                                                // Saf Application Back To Citizen
-        Route::post('saf/get-prop-byholding', 'getPropByHoldingNo');                                        // get Property (search) by ward no and holding no
-        Route::match(["get", "post"], 'ulb/workflow/member', 'setWorkFlowForwordBackword');                 // get Property (search) by ward no and holding no
-        Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID
-        Route::post('saf/generate-order-id', 'generateOrderId');                                            // Generate Order ID
-        Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment
-        Route::post('saf/payment-receipt', 'generatePaymentReceipt');                                       // Generate payment Receipt
-        Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions
+        Route::get('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf(1)
+        Route::post('saf/apply', 'applySaf');                                                               // Applying Saf Route(2)
+        Route::get('saf/inbox', 'inbox');                                                                   // Saf Inbox(3)
+        Route::get('saf/outbox', 'outbox');                                                                 // Saf Workflow Outbox and Outbox By search key(4)
+        Route::post('saf-details', 'details');                                                              // Saf Workflow safDetails and safDetails By ID(5)
+        Route::post('saf/candidates', 'getSafCandidates');                                                  // Get SAF Candidates(6)
+        Route::post('saf/escalate', 'postEscalate');                                                        // Saf Workflow special and safDetails By id(7)
+        Route::get('saf/escalate/inbox/{key?}', 'specialInbox');                                            // Saf workflow Inbox and Inbox By search key(8)
+        Route::post('saf/independent-comment', 'commentIndependent');                                       // Independent Comment for SAF Application(9)
+        Route::post('saf/post/level', 'postNextLevel');                                                     // Forward or Backward Application(10)
+        Route::post('saf/approvalrejection', 'approvalRejectionSaf');                                       // Approval Rejection SAF Application(11)
+        Route::post('saf/back-to-citizen', 'backToCitizen');                                                // Saf Application Back To Citizen(12)
+        Route::post('saf/get-prop-byholding', 'getPropByHoldingNo');                                        // get Property (search) by ward no and holding no(13)
+        Route::match(["get", "post"], 'ulb/workflow/member', 'setWorkFlowForwordBackword');                 // get Property (search) by ward no and holding no(14)
+        Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID(15)
+        Route::post('saf/generate-order-id', 'generateOrderId');                                            // Generate Order ID(16)
+        Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment(17)
+        Route::post('saf/payment-receipt', 'generatePaymentReceipt');                                       // Generate payment Receipt(18)
+        Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions(19)
 
-        Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification
-        Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging
+        Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification(20)
+        Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging(21)
     });
 
     /**
@@ -208,7 +206,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     /**
      * | Rain water Harvesting
      * | Created By - Sam kerketta
-     * | Edited By - Mrinal Kumar
      * | Created On- 22-11-2022 
        | Serial No : 12
      */

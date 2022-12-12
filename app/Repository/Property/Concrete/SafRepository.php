@@ -182,7 +182,7 @@ class SafRepository implements iSafRepository
 
         $data['transfer_mode'] = $transferModuleType;
 
-        return  responseMsg(true, 'Property Masters', $data);
+        return responseMsgs(true, 'Property Masters', $data, "0101", "1.0", "317ms", "GET", "");
     }
 
     /**
@@ -274,76 +274,18 @@ class SafRepository implements iSafRepository
             $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
 
             DB::commit();
-            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
+            return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
                 "applyDate" => $saf->application_date,
                 "safId" => $saf->id,
                 "demand" => $demand
-            ]);
+            ], "0102", "1.0", "1s", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return $e;
         }
     }
 
-    /**
-     * | Verify Document by Dealing Assistant
-     * | @param req
-     * | Verification Status (0 is for pending, 1 is for Approval, 2 for Rejection)
-     */
-    public function verifyDoc($req)
-    {
-        try {
-            $verifications = $req->verifications;
-            DB::beginTransaction();
-            foreach ($verifications as $verification) {
-                $activeSafDoc = new PropActiveSafsDoc();
-                $document = $activeSafDoc->getSafDocument($verification['documentId']);             // Get Saf Document By id
-                if ($verification['verifyStatus'] == 1) {
-                    $document->verify_status = 1;
-                    $document->save();
-                }
-                if ($verification['verifyStatus'] == 0) {
-                    $document->verify_status = 2;
-                    $document->save();
-                }
-            }
-            DB::commit();
-            return responseMsg(true, "Document Verification Successfully Done", "");
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Citizen or JSK Document Upload
-     * | @param request $req
-     */
-    public function documentUpload($req)
-    {
-        try {
-            $images = $req->uploads;
-            foreach ($images as $image) {
-                $document = new PropActiveSafsDoc();
-                $document->saf_id = $req->safId;
-                // Upload Image
-                $base64Encode = base64_encode($image['docPath']->getClientOriginalName());
-                $extention = $image['docPath']->getClientOriginalExtension();
-                $imageName = time() . '-' . $base64Encode . '.' . $extention;
-                $image['docPath']->storeAs('public/Property/SafOwnerDetails', $imageName);
-
-                $document->doc_mstr_id = $image['docMastId'];
-                $document->doc_path = $imageName;
-                $document->saf_owner_dtl_id = $image['ownerDtlId'];
-                $document->user_id = authUser()->id;
-                $document->save();
-            }
-            return responseMsg(true, "Successfully Uploaded the Images", "");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 
     /**
      * ---------------------- Saf Workflow Inbox --------------------
@@ -683,6 +625,21 @@ class SafRepository implements iSafRepository
     {
         try {
             DB::beginTransaction();
+            // SAF Application Update Current Role Updation
+            $saf = PropActiveSaf::find($request->safId);
+            if ($request->senderRoleId == 11) {                 // Initiator Role Id
+                $saf->doc_upload_status = 1;
+            }
+            // Check if the application is in case of BTC
+            if ($saf->parked == true) {
+                $levelPending = new PropLevelPending();
+                $lastLevelEntry = $levelPending->getLastLevelBySafId($request->safId);              // Send Last Level Current Role
+                $saf->parked = false;                                                               // Disable BTC
+                $saf->current_role = $lastLevelEntry->sender_role_id;
+            } else
+                $saf->current_role = $request->receiverRoleId;
+            $saf->save();
+
             // previous level pending verification enabling
             $levelPending = new PropLevelPending();
             $levelPending->saf_id = $request->safId;
@@ -690,11 +647,6 @@ class SafRepository implements iSafRepository
             $levelPending->receiver_role_id = $request->receiverRoleId;
             $levelPending->sender_user_id = auth()->user()->id;
             $levelPending->save();
-
-            // SAF Application Update Current Role Updation
-            $saf = PropActiveSaf::find($request->safId);
-            $saf->current_role = $request->receiverRoleId;
-            $saf->save();
 
             // Add Comment On Prop Level Pending
             $propLevelPending = new PropLevelPending();
