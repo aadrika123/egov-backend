@@ -586,6 +586,44 @@ class WaterNewConnection implements IWaterNewConnection
             return responseMsg(false,$e->getMessage(),$request->all());
         }        
     }
+    public function getUploadDocuments(Request $request)
+    {
+        try{
+            $rules = [
+                'applicationId'     =>'required|digits_between:1,9223372036854775807',
+            ];                         
+            $validator = Validator::make($request->all(), $rules, );                    
+            if ($validator->fails()) {                        
+                return responseMsg(false, $validator->errors(),$request->all());
+            }
+            $applicationId = $request->applicationId;
+            if(!$applicationId)
+            {
+                throw new Exception("Applicatin Id Required");
+            }
+            $refApplication = WaterApplication::where("status",1)->find($applicationId);;
+            if(!$refApplication)
+            {
+                throw new Exception("Data Not Found");
+            }
+            $mUploadDocument = $this->getWaterDocuments($applicationId)->map(function($val){
+                if(isset($val["document_path"]))
+                {
+                    $path = $this->readDocumentPath( $val["document_path"]);
+                    $val["document_path"] = !empty(trim( $val["document_path"]))?$path :null;                    
+
+                }
+                return $val;
+            });
+            $data["uploadDocument"] = $mUploadDocument;
+            return responseMsg(true,"",$data);
+        }
+        catch(Exception $e)
+        {
+
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
 
     #---------- core function --------------------------------------------------
      
@@ -611,103 +649,6 @@ class WaterNewConnection implements IWaterNewConnection
             return [];
         }
     }  
-    
-    #-----------------incomplite Code------------------------------
-   
-    public function applyApplication(Request $request)
-    {
-        try{
-            #------------------------ Declaration-----------------------           
-            $refUser            = Auth()->user();
-            $refUserId          = $refUser->id;
-            $refUlbId           = $refUser->ulb_id;
-            $refUlbDtl          = UlbMaster::find($refUlbId);
-            $refUlbName         = explode(' ',$refUlbDtl->ulb_name);
-            $refNoticeDetails   = null;
-            $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $refWorkflows       = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
-
-            $redis              = new Redis;
-            $mDenialAmount      = 0; 
-            $mUserData          = json_decode($redis::get('user:' . $refUserId), true);
-            $mUserType          = $this->_parent->userType($refWorkflowId); 
-            $mShortUlbName      = "";
-            $mNowdate           = Carbon::now()->format('Y-m-d'); 
-            $mTimstamp          = Carbon::now()->format('Y-m-d H:i:s'); 
-            $mNoticeDate        = null;
-            $mProprtyId         = null;
-            $mnaturOfBusiness   = null;
-
-            $rollId             =  $mUserData['role_id']??($this->_parent->getUserRoll($refUserId, $refUlbId,$refWorkflowId)->role_id??-1);
-            $data               = array() ;
-            #------------------------End Declaration-----------------------
-            #---------------validation-------------------------------------
-            if(!in_array(strtoupper($mUserType),["ONLINE","JSK","UTC","TC","SUPER ADMIN","TL"]))
-            {
-                throw new Exception("You Are Not Authorized For This Action !");
-            }       
-            if (!$refWorkflows) 
-            {
-                return responseMsg(false, "Workflow Not Available", $request->all());
-            }
-            elseif(!$refWorkflows['initiator'])
-            {
-                return responseMsg(false, "Initiator Not Available", $request->all()); 
-            }
-            elseif(!$refWorkflows['finisher'])
-            {
-                return responseMsg(false, "Finisher Not Available", $request->all()); 
-            }
-            #---------------End validation-------------------------
-            if(in_array(strtoupper($mUserType),["ONLINE","JSK","SUPER ADMIN","TL"]))
-            {
-                $data['wardList'] = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
-                    $val->ward_no = $val->ward_name;
-                    return $val;
-                });
-                $data['wardList'] = objToArray($data['wardList']);
-            }
-            else
-            {                
-                $data['wardList'] = $this->_parent->WardPermission($refUserId);
-            }
-
-            if($request->getMethod()=='GET')
-            {
-
-                $data['userType']           = $mUserType;
-                $data["propertyType"]       = $this->getPropertyTypeList();
-                $data["ownershipTypeList"]  = $this->getOwnershipTypeList();
-                return responseMsg(true,"",remove_null($data));
-            }
-            elseif($request->getMethod()=="POST")
-            {
-                return responseMsg(true,"",$data);
-            }
-        }
-        catch(Exception $e)
-        {
-
-            return responseMsg(false,$e->getMessage(),$request->all());
-        }
-    }
-    public function getPropertyTypeList()
-    {
-        // try {
-        //     $data = WaterPropertyTypeMstr::select('water_connection_type_mstrs.id', 'water_connection_type_mstrs.connection_type')
-        //         ->where('status', 1)
-        //         ->get();
-        //     return $data;
-        // } catch (Exception $e) 
-        // {
-        //     return [];
-        // }
-    }
-    public function getOwnershipTypeList()
-    {
-        
-    }
-
     public function getDocumentTypeList(WaterApplication $application)
 	{
         $refUser            = Auth()->user();
@@ -840,5 +781,130 @@ class WaterNewConnection implements IWaterNewConnection
     {
         $path = (config('app.url').'/api/getImageLink?path='.$path);
         return $path;
+    }
+    public function getWaterDocuments($id)
+    {
+        try{
+            $doc =  WaterApplicantDoc::select(
+                        "water_applicant_docs.id",
+                        "water_applicant_docs.remarks",
+                        "water_applicant_docs.verify_status",                        
+                        // "trade_licence_documents.doc_for",
+                        DB::raw("
+                            CASE WHEN water_applicants.id NOTNULL THEN CONCAT(water_applicants.applicant_name,'( ',water_applicant_docs.doc_for,' )') 
+                            ELSE water_applicant_docs.doc_for 
+                            END doc_for,
+                            water_applicant_docs.doc_name AS document_path
+                            ")
+                    )
+                    ->leftjoin("water_applicants",function($join){
+                            $join->on("water_applicants.id","water_applicant_docs.applicant_id");
+                        })
+                    ->where('water_applicant_docs.application_id', $id)
+                    ->where('water_applicant_docs.status', 1)                    
+                    ->orderBy('water_applicant_docs.id', 'desc')
+                    ->get();
+            return $doc;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+    }
+    
+    #-----------------incomplite Code------------------------------
+   
+    public function applyApplication(Request $request)
+    {
+        try{
+            #------------------------ Declaration-----------------------           
+            $refUser            = Auth()->user();
+            $refUserId          = $refUser->id;
+            $refUlbId           = $refUser->ulb_id;
+            $refUlbDtl          = UlbMaster::find($refUlbId);
+            $refUlbName         = explode(' ',$refUlbDtl->ulb_name);
+            $refNoticeDetails   = null;
+            $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $refWorkflows       = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
+
+            $redis              = new Redis;
+            $mDenialAmount      = 0; 
+            $mUserData          = json_decode($redis::get('user:' . $refUserId), true);
+            $mUserType          = $this->_parent->userType($refWorkflowId); 
+            $mShortUlbName      = "";
+            $mNowdate           = Carbon::now()->format('Y-m-d'); 
+            $mTimstamp          = Carbon::now()->format('Y-m-d H:i:s'); 
+            $mNoticeDate        = null;
+            $mProprtyId         = null;
+            $mnaturOfBusiness   = null;
+
+            $rollId             =  $mUserData['role_id']??($this->_parent->getUserRoll($refUserId, $refUlbId,$refWorkflowId)->role_id??-1);
+            $data               = array() ;
+            #------------------------End Declaration-----------------------
+            #---------------validation-------------------------------------
+            if(!in_array(strtoupper($mUserType),["ONLINE","JSK","UTC","TC","SUPER ADMIN","TL"]))
+            {
+                throw new Exception("You Are Not Authorized For This Action !");
+            }       
+            if (!$refWorkflows) 
+            {
+                return responseMsg(false, "Workflow Not Available", $request->all());
+            }
+            elseif(!$refWorkflows['initiator'])
+            {
+                return responseMsg(false, "Initiator Not Available", $request->all()); 
+            }
+            elseif(!$refWorkflows['finisher'])
+            {
+                return responseMsg(false, "Finisher Not Available", $request->all()); 
+            }
+            #---------------End validation-------------------------
+            if(in_array(strtoupper($mUserType),["ONLINE","JSK","SUPER ADMIN","TL"]))
+            {
+                $data['wardList'] = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $data['wardList'] = objToArray($data['wardList']);
+            }
+            else
+            {                
+                $data['wardList'] = $this->_parent->WardPermission($refUserId);
+            }
+
+            if($request->getMethod()=='GET')
+            {
+
+                $data['userType']           = $mUserType;
+                $data["propertyType"]       = $this->getPropertyTypeList();
+                $data["ownershipTypeList"]  = $this->getOwnershipTypeList();
+                return responseMsg(true,"",remove_null($data));
+            }
+            elseif($request->getMethod()=="POST")
+            {
+                return responseMsg(true,"",$data);
+            }
+        }
+        catch(Exception $e)
+        {
+
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+    public function getPropertyTypeList()
+    {
+        // try {
+        //     $data = WaterPropertyTypeMstr::select('water_connection_type_mstrs.id', 'water_connection_type_mstrs.connection_type')
+        //         ->where('status', 1)
+        //         ->get();
+        //     return $data;
+        // } catch (Exception $e) 
+        // {
+        //     return [];
+        // }
+    }
+    public function getOwnershipTypeList()
+    {
+        
     }
 }

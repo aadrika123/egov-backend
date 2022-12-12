@@ -79,7 +79,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 ->orderBy("id", "desc")
                 ->first();
             if ($priv_data) {
-                throw new Exception("Assesment already appled");
+                throw new Exception("Assesment already applied");
             }
             $mOwrners  = $this->_property->getPropOwnerByProId($mProperty->id);
             $mFloors    = $this->getFlooreDtl($mProperty->id);

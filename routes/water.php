@@ -59,6 +59,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('Razorpay-Orderid', 'handeRazorPay');
         Route::post('getTranNo', 'readTransectionAndApl');
         Route::post('documentUpload', 'documentUpload');
+        Route::post('getUploadedDoc', 'getUploadDocuments');
     });
 
 });

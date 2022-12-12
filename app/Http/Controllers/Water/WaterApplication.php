@@ -38,5 +38,9 @@ class WaterApplication extends Controller
     {
         return $this->Repository->documentUpload($request);
     }
+    public function getUploadDocuments(Request $request)
+    {
+        return $this->Repository->getUploadDocuments($request);
+    }
     
 }
