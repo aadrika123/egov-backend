@@ -683,6 +683,21 @@ class SafRepository implements iSafRepository
     {
         try {
             DB::beginTransaction();
+            // SAF Application Update Current Role Updation
+            $saf = PropActiveSaf::find($request->safId);
+            if ($request->senderRoleId == 11) {                 // Initiator Role Id
+                $saf->doc_upload_status = 1;
+            }
+            // Check if the application is in case of BTC
+            if ($saf->parked == true) {
+                $levelPending = new PropLevelPending();
+                $lastLevelEntry = $levelPending->getLastLevelBySafId($request->safId);              // Send Last Level Current Role
+                $saf->parked = false;                                                               // Disable BTC
+                $saf->current_role = $lastLevelEntry->sender_role_id;
+            } else
+                $saf->current_role = $request->receiverRoleId;
+            $saf->save();
+
             // previous level pending verification enabling
             $levelPending = new PropLevelPending();
             $levelPending->saf_id = $request->safId;
@@ -691,15 +706,7 @@ class SafRepository implements iSafRepository
             $levelPending->sender_user_id = auth()->user()->id;
             $levelPending->save();
 
-            // SAF Application Update Current Role Updation
-            $saf = PropActiveSaf::find($request->safId);
-            if ($request->senderRoleId == 11) {     // Initiator Role Id
-                $saf->doc_upload_status = 1;
-            }
-            $saf->current_role = $request->receiverRoleId;
-            $saf->save();
-
-            // Add Comment On Prop Level Pending
+            // previous level pending Add Comment On Prop Level Pending
             $propLevelPending = new PropLevelPending();
             $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->senderRoleId);    //<-----Get SAF level Pending By safid and current role ID
             $commentOnlevel->remarks = $request->comment;
