@@ -29,7 +29,7 @@ class PropertyBifurcationController extends Controller
     {
         return $this->Property->readHoldigbyNo($request);
     }
-    public function addRecord(reqBifurcation $request)
+    public function addRecord(Request $request)
     {
         return $this->Repository->addRecord($request);
     }

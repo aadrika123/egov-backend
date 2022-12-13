@@ -653,7 +653,8 @@ class WaterNewConnection implements IWaterNewConnection
                         return responseMsg(false, "something errors in Document Uploades",$request->all());
                     }
                 }
-                else{
+                else
+                {
                     throw new Exception("Invalid Document type Passe");
                 }
                 return responseMsg(true,$sms,"");
