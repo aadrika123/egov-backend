@@ -91,6 +91,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 ];
                 return responseMsg(true, '', remove_null($data));
             } elseif ($request->getMethod() == "POST") {
+                dd($request->all());
                 $assessmentTypeId = $request->assessmentType;
                 $ulbWorkflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
                     ->where('ulb_id', $refUlbId)
@@ -98,6 +99,10 @@ class PropertyBifurcation implements IPropertyBifurcation
                 DB::beginTransaction();
                 $safNo = [];
                 $parentSaf = "";
+                if(sizeOf($request->container)<=1)
+                {
+                    throw new Exception("Atleast 2 Saf Record is required");
+                }
                 foreach ($request->container as $key => $val) {
                     $myRequest = new \Illuminate\Http\Request();
                     $myRequest->setMethod('POST');
@@ -111,7 +116,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     }
                 }
                 $safNo = $parentSaf;
-                DB::commit();
+                // DB::commit();
                 return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo]);
             }
         } catch (Exception $e) {
@@ -1155,7 +1160,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             // $labelPending->save();
             // Insert Tax
             $tax = new InsertTax();
-            $tax->insertTax($saf->id, $refUserId, $safTaxes);                                         // Insert SAF Tax
+            $tax->insertTax($saf->id, $refUserId, $safTaxes);                                        // Insert SAF Tax
             return $safNo;
         } catch (Exception $e) {
             echo $e->getMessage();

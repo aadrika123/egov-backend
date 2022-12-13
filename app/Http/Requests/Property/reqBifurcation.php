@@ -35,7 +35,7 @@ class reqBifurcation extends FormRequest
         $req = $this->all();
         $isAcquired = false;
         $count = 0;
-        if(isset($req['container']))
+        if(isset($req['container']) && is_array($req['container']) )
         {
             foreach($req['container'] as $key =>$val)
             { 
@@ -60,19 +60,19 @@ class reqBifurcation extends FormRequest
                 $rules['container.'.$key.'.roadType']      = "required|numeric";
                 $rules['container.'.$key.'.areaOfPlot']    = "required|numeric";
                 $rules['container.'.$key.'.isMobileTower'] = "required|bool";
-                if(isset($this->container[$key]["isMobileTower"]) && $this->container[$key]["isMobileTower"])
+                if(isset($val["isMobileTower"]) && $val["isMobileTower"])
                 {
                     $rules['container.'.$key.'.mobileTower.area'] = "required|numeric";
                     $rules['container.'.$key.'.mobileTower.dateFrom'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
                 }
                 $rules['container.'.$key.'.isHoardingBoard'] = "required|bool";
-                if(isset($this->container[$key]["isHoardingBoard"]) && $this->container[$key]["isHoardingBoard"])
+                if(isset($val["isHoardingBoard"]) && $val["isHoardingBoard"])
                 {
                     $rules['container.'.$key.'.hoardingBoard.area'] = "required|numeric";
                     $rules['container.'.$key.'.hoardingBoard.dateFrom'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
                 }
                 $rules['container.'.$key.'.isPetrolPump'] = "required|bool";
-                if(isset($this->container[$key]["isPetrolPump"]) && $this->container[$key]["isPetrolPump"])
+                if(isset($val["isPetrolPump"]) && $val["isPetrolPump"])
                 {
                     $rules['container.'.$key.'.petrolPump.area'] = "required|numeric";
                     $rules['container.'.$key.'.petrolPump.dateFrom'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
@@ -85,10 +85,11 @@ class reqBifurcation extends FormRequest
                 else
                 {
                     $rules['container.'.$key.'.floor']        = "required|array";
+                    //dd($val["floor"]);
                     if(isset($val["floor"]) && $val["floor"])
                     {
                         $rules["container.".$key.".floor.*.floorNo"]           =   "required|int";
-                        $rules["container".$key."floor.*.useType"]           =   "required|int";
+                        $rules["container.".$key.".floor.*.useType"]           =   "required|int";
                         $rules["container.".$key.".floor.*.constructionType"]  =   "required|int|in:1,2,3";
                         $rules["container.".$key.".floor.*.occupancyType"]     =   "required|int";
     

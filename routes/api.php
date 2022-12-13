@@ -356,6 +356,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         # Diff
         Route::post('crud/menu/add-new-menues', 'addNewMenues');         // adding the details of the menues in the menue table
         Route::get('role-menu/get-role-by-menu', 'getRoleWiseMenu');     //<--------- (May not be USED)    // get menu according to the user role
+        Route::post('sub-menu/tree-structure','getTreeStructureMenu');      // Generation of the menu tree Structure
     });
 });
 

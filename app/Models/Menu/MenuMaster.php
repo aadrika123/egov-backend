@@ -13,7 +13,7 @@ class MenuMaster extends Model
     public function fetchAllMenues()
     {
         return MenuMaster::where('is_deleted', false)
-            ->orderByDesc('id')
+            // ->orderByDesc('id')
             ->get();
     }
 

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
+use App\MicroServices\DocUpload;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenalty;
 use App\Models\Property\PaymentPropRebate;
@@ -200,14 +201,17 @@ class SafRepository implements iSafRepository
             $assessmentTypeId = $request->assessmentType;
             if ($request->assessmentType == 1) {                                                    // New Assessment 
                 $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+                $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.1');
             }
 
             if ($request->assessmentType == 2) {                                                    // Reassessment
                 $workflow_id = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
+                $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
             }
 
             if ($request->assessmentType == 3) {                                                    // Mutation
                 $workflow_id = Config::get('workflow-constants.SAF_MUTATION_ID');
+                $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.3');
             }
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
@@ -331,7 +335,7 @@ class SafRepository implements iSafRepository
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleId)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name', 'at.assessment_type')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
 
             $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
@@ -374,7 +378,7 @@ class SafRepository implements iSafRepository
                 ->whereNotIn('current_role', $roles)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name', 'at.assessment_type')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
             return responseMsgs(true, "Data Fetched", remove_null($safData->values()), "010104", "1.0", "274ms", "POST", "");
         } catch (Exception $e) {
@@ -548,7 +552,7 @@ class SafRepository implements iSafRepository
                 ->where('is_escalate', 1)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereIn('ward_mstr_id', $wardId)
-                ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type', 'at.assessment_type')
+                ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type')
                 ->get();
             return responseMsgs(true, "Data Fetched", remove_null($safData), "010107", "1.0", "251ms", "POST", "");
         } catch (Exception $e) {
@@ -690,14 +694,14 @@ class SafRepository implements iSafRepository
             if ($refGetFinisher->role_id != $req->roleId) {
                 return responseMsg(false, "Forbidden Access", "");
             }
-
+            $reAssessment = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
             DB::beginTransaction();
             // Approval
             if ($req->status == 1) {
                 $safDetails = PropActiveSaf::find($req->safId);
-                if ($req->assessmentType == 2)
+                if ($req->assessmentType == $reAssessment)
                     $safDetails->holding_no = $safDetails->previous_holding_id;
-                if ($req->assessmentType != 2) {
+                if ($req->assessmentType != $reAssessment) {
                     $safDetails->holding_no = 'HOL-SAF-' . $req->safId;
                 }
 
@@ -1056,7 +1060,7 @@ class SafRepository implements iSafRepository
     public function paymentSaf($req)
     {
         try {
-            $userId = authUser()->id;
+            $userId = $req['userId'];
             $propSafsDemand = new PropSafsDemand();
             $demands = $propSafsDemand->getDemandBySafId($req['id']);
             DB::beginTransaction();
@@ -1216,12 +1220,11 @@ class SafRepository implements iSafRepository
             $propertyDtl = [];
             if ($req->holdingNo) {
                 $properties = DB::table('prop_properties')
-                    ->select('s.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                    ->select('s.*', 's.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
                     ->join('prop_safs as s', 's.id', '=', 'prop_properties.saf_id')
                     ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
                     ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
                     ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
-                    ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
                     ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
                     ->where('prop_properties.ward_mstr_id', $req->wardId)
                     ->where('prop_properties.holding_no', $req->holdingNo)
@@ -1231,12 +1234,11 @@ class SafRepository implements iSafRepository
 
             if ($req->propertyId) {
                 $properties = DB::table('prop_properties')
-                    ->select('s.*', 'at.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+                    ->select('s.*', 's.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
                     ->join('prop_safs as s', 's.id', '=', 'prop_properties.saf_id')
                     ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
                     ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
                     ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
-                    ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
                     ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
                     ->where('prop_properties.id', $req->propertyId)
                     ->where('prop_properties.status', 1)
@@ -1359,17 +1361,25 @@ class SafRepository implements iSafRepository
     public function geoTagging($req)
     {
         try {
+            $docUpload = new DocUpload;
             $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
-            $geoTagging = new PropSafGeotagUpload();
-            $base64Encode = base64_encode($req->imagePath->getClientOriginalName());
-            $extention = $req->imagePath->getClientOriginalExtension();
-            $imageName = time() . '-' . $base64Encode . '.' . $extention;
-            $req->imagePath->storeAs('public/Property/GeoTagging', $imageName);
+            $images = $req->imagePath;
+            $directionTypes = $req->directionType;
 
-            $geoTagging->image_path = $imageName;
-            $geoTagging->direction_type = $req->directionType;
-            $geoTagging->relative_path = $relativePath;
-            $geoTagging->save();
+            collect($images)->map(function ($image, $key) use ($directionTypes, $relativePath, $req, $docUpload) {
+                $geoTagging = new PropSafGeotagUpload();
+                $refImageName = 'saf-geotagging-' . $directionTypes[$key] . '-' . $req->safId;
+
+                $imageName = $docUpload->upload($refImageName, $image);         // <------- Get uploaded image name and move the image in folder
+
+                $geoTagging->saf_id = $req->safId;
+                $geoTagging->image_path = $imageName;
+                $geoTagging->direction_type = $directionTypes[$key];
+                $geoTagging->relative_path = $relativePath;
+                $geoTagging->user_id = authUser()->id;
+                $geoTagging->save();
+            });
+
             return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
