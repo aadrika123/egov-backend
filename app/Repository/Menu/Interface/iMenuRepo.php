@@ -14,4 +14,5 @@ interface iMenuRepo
     public function getMenuByRoles($req);       // Get All the menu by roles
     public function updateMenuByRole($req);     // Enable or Disable Menu by Role
     public function getRoleWiseMenu();          // get userRole eise menues
+    public function generateMenuTree($req);     // Generate a Menu Tree
 }

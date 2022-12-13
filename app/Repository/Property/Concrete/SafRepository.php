@@ -1105,7 +1105,7 @@ class SafRepository implements iSafRepository
     public function paymentSaf($req)
     {
         try {
-            $userId = authUser()->id;
+            $userId = $req['userId'];
             $propSafsDemand = new PropSafsDemand();
             $demands = $propSafsDemand->getDemandBySafId($req['id']);
             DB::beginTransaction();
