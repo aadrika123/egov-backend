@@ -42,7 +42,7 @@ class reqBifurcation extends FormRequest
                 if(isset($this->assessmentType) && $this->assessmentType ==3)
                 {
                     $rules["container.".$key.".transferModeId"] = "required";
-                    $rules["container.".$key.".dateOfPurchase"] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
+                    // $rules["container.".$key.".dateOfPurchase"] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
                     $rules["container.".$key.".isOwnerChanged"] = "required|bool";
                 } 
                 $rules['container.'.$key.'.isAcquired']          = "required|bool";
@@ -130,7 +130,7 @@ class reqBifurcation extends FormRequest
                 $rules['container.0.isAcquired'] = "required|bool|in:1";
             }
 
-        }
+        } 
         return $rules;
     }
 

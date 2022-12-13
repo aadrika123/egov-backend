@@ -20,7 +20,7 @@ trait SAF
     /**
      * | Apply SAF Trait
      */
-    public function tApplySaf($saf, $req, $safNo, $assessmentTypeId, $roadWidthType)
+    public function tApplySaf($saf, $req, $safNo, $roadWidthType)
     {
         $saf->has_previous_holding_no = $req->hasPreviousHoldingNo;
         $saf->previous_holding_id = $req->previousHoldingId;
@@ -144,7 +144,8 @@ trait SAF
                 DB::raw("string_agg(o.id::VARCHAR,',') as owner_id"),
                 DB::raw("string_agg(o.owner_name,',') as owner_name"),
                 'p.property_type',
-                'prop_active_safs.assessment_type as assessment'
+                'prop_active_safs.assessment_type as assessment',
+                'prop_active_safs.application_date as apply_date'
             )
             ->whereIn('workflow_id', $workflowIds);
         return $data;
@@ -347,5 +348,20 @@ trait SAF
         $paymentPropPenalty->penalty_type_id = $penaltyTypeId;
         $paymentPropPenalty->amount = $amount;
         $paymentPropPenalty->penalty_date = Carbon::now()->format('Y-m-d');
+    }
+
+    /**
+     * | to Get Property Details
+     */
+    public function tPropertyDetails()
+    {
+        return DB::table('prop_properties')
+            ->select('s.*', 's.assessment_type as assessment', 'w.ward_name as old_ward_no', 'o.ownership_type', 'p.property_type')
+            ->join('prop_safs as s', 's.id', '=', 'prop_properties.saf_id')
+            ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
+            ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
+            ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
+            ->where('prop_properties.status', 1);
     }
 }

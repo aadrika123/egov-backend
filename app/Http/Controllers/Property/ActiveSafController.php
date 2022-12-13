@@ -193,4 +193,10 @@ class ActiveSafController extends Controller
     {
         return $this->Repository->safDocStatus($req);
     }
+
+    // Get TC Verifications
+    public function getTcVerifications(Request $req)
+    {
+        return $this->Repository->getTcVerifications($req);
+    }
 }
