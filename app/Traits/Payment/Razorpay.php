@@ -50,7 +50,7 @@ trait Razorpay
      * | @param request
      * | Operation : generating the order id according the request data using the razorpay API 
      * | Rating : 3
-     * | Time : 
+        | Serial No : 01
      */
 
     public function saveGenerateOrderid($request)
@@ -114,8 +114,7 @@ trait Razorpay
      * |
      * | Operation : generating the order id according the request data using the razorpay API 
      * | Rating : 4
-     * | this -> naming
-     * | here -> variable
+        | Serial No : 02
      */
     function paymentVerify($request, $attributes)
     {
@@ -193,11 +192,13 @@ trait Razorpay
      * | @var url
      * | @var token
      * | @param request
+     * |
      * | Operation : this function url is hited by the webhook and the detail of the payment is collected in request 
      *               thie the storage -> generating pdf -> generating json ->save -> hitting url for watsapp message.
      * | Rating : 4
      * | this -> naming
      * | here -> variable
+        | Serial No : 03
      */
     public function collectWebhookDetails($request)
     {
@@ -231,7 +232,7 @@ trait Razorpay
         $transTransferDetails['orderId'] = $request->payload['payment']['entity']['order_id'];
         $transTransferDetails['status'] = $status;
 
-        #data to be saved in card detail table                                                                           //<----------here
+        #data to be saved in card detail table                                                                         
         $aCard = $request->payload['payment']['entity']['card_id'];
         if (!is_null($aCard)) {
             $card = new CardDetail();
@@ -269,7 +270,6 @@ trait Razorpay
         $data->payment_captured             = $captured;
         $data->payment_description          = $request->payload['payment']['entity']['description'];
         $data->payment_card_id              = $request->payload['payment']['entity']['card_id'];
-        // $data->card_detail_id               = $card->cid;                                                //<----------- this(EXCEPTION)
         $data->payment_bank                 = $request->payload['payment']['entity']['bank'];
         $data->payment_wallet               = $request->payload['payment']['entity']['wallet'];
         $data->payment_vpa                  = $request->payload['payment']['entity']['vpa'];
@@ -291,6 +291,7 @@ trait Razorpay
         $data->department_id                = $request->payload['payment']['entity']['notes']['departmentId'];
         $data->workflow_id                  = $request->payload['payment']['entity']['notes']['workflowId'];
         $data->ulb_id                       = $request->payload['payment']['entity']['notes']['ulbId'];
+
         # transaction id generation and saving
         $actualTransactionNo = $this->generatingTransactionId($transTransferDetails);
         $data->payment_transaction_id = $actualTransactionNo;
@@ -330,7 +331,7 @@ trait Razorpay
                 default:
                     // $msg = 'Something went wrong on switch';
             }
-        }                                                                                    //<------------------ here (CAUTION)
+        }
         return responseMsg(true, "Webhook Data Collected!", $request->event);
         // } catch (Exception $e) {
         //     print_r($e->getfile(), $e->getMessage());
@@ -347,6 +348,7 @@ trait Razorpay
      * | @return transactionNo
      * | Operation : this function generate a random and unique transactionID
      * | Rating : 1
+        | Serial No : 04
      */
     public function generatingTransactionId($request)
     {

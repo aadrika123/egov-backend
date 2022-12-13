@@ -66,6 +66,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification(18)
     Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging(19)
     Route::post('saf/doc-status', 'safDocStatus');
+    Route::post('saf/get-tc-verifications', 'getTcVerifications');                                      // Get TC Verifications  Data(20)
   });
 
   /**

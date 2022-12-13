@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Redis;
 use Razorpay\Api\Request;
 use stdClass;
 
+use function PHPUnit\Framework\isJson;
+
 /**
  * | Created On-23-11-2022 
  * | Created By-Anshu Kumar
@@ -26,8 +28,10 @@ class MenuRepo implements iMenuRepo
         $this->_redis = Redis::connection();
     }
     /**
-     * |-----------------------------------------------------------------------------------------------------|
-     * | Get All the Menues
+     * |------------------------------- fetching the details of Menues from table  ---------------------------------|
+     * | @var menuMaster/ Obj
+     * | @var menues
+        | Serial No : 01
      */
     public function getAllMenues()
     {
@@ -41,12 +45,14 @@ class MenuRepo implements iMenuRepo
     }
 
     /**
-     * |-----------------------------------------------------------------------------------------------------|
-     * | Get All the Menu By Roles
+     * |-------------------------------------------- Get All the Menu By Roles ---------------------------------------------------------|
      * | @param req
-     * | Query Run Time - 343ms 
+     * | @var query
+     * | @var menues
+     * | Query Time - 343ms 
      * | status-Closed
      * | rating-2
+        |  Serial No : 02
      */
     public function getMenuByRoles($req)
     {
@@ -77,12 +83,14 @@ class MenuRepo implements iMenuRepo
 
 
     /**
-     * |------------------------------------------------------------------------------------------------------|
-     * | update role menues
-     * | @param request $req
-     * | Query Run Time=366 ms 
+     * |------------------------------------------ update role menues ------------------------------------------------------|
+     * | @param req
+     * | @var roleMenus / Obj
+     * | @var readRoleMenus
+     * | Query Time - 366 ms 
      * | Status-Closed 
      * | Rating-2
+        |  Serial No : 03
      */
     public function updateMenuByRole($req)
     {
@@ -117,28 +125,29 @@ class MenuRepo implements iMenuRepo
     }
 
     /**
-     * |-----------------------------------------------------------------------------------------------------|
-     * | user->roles->menu getting userRole wise menues
+     * |------------------------------------------- user->roles->menu getting userRole wise menues ----------------------------------------------------------|
      * | @param request 
-     * | Query Run Time = 328ms 
-     * | Status- open
-     * | Rating-3
+     * | Query Time = 328ms 
+     * | Status- Closed
+     * | Rating- 2 
+        | Serial No : 04
      */
     public function getRoleWiseMenu()
     {
         try {
             $userId = auth()->user()->id;
-            $menuDetails = WfRolemenu::join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_rolemenus.role_id')
+            $menuDetails = WfRolemenu::select(
+                'menu_masters.menu_string AS menuName',
+                'menu_masters.route',
+            )
+                ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_rolemenus.role_id')
                 ->join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
                 ->join('wf_roles', 'wf_roles', '=', 'wf_rolemenus.role_id')
                 ->where('wf_roleusermaps.user_id', $userId)
                 ->where('wf_rolemenus.is_suspended', false)
                 ->where('wf_roleusermaps.is_suspended', false)
-                ->select(
-                    'menu_masters.menu_string AS menuName',
-                    'menu_masters.route',
-                )
                 ->get();
+
             if (!empty($menuDetails['0'])) {
                 return responseMsg(true, "Data according to roles", $menuDetails);
             }
@@ -150,8 +159,17 @@ class MenuRepo implements iMenuRepo
 
 
     /**
-     * | Algorithem for the generation of the menu  paren/childeran structure
-     * | 
+     * |---------------------- Algorithem for the generation of the menu  paren/childeran structure -------------------|
+     * | @param req
+     * | @var menuMaster / Obj
+     * | @var menues
+     * | @var data
+     * | @var itemsByReference
+     * | @var item
+     * | Query Time = 308ms 
+     * | Rating- 4
+     * | Status- Closed
+        | Serial No : 05  
      */
     public function generateMenuTree($req)
     {
@@ -160,36 +178,35 @@ class MenuRepo implements iMenuRepo
             $menuMaster = new MenuMaster();
             $menues = $menuMaster->fetchAllMenues();
 
-
             $data = collect($menues)->map(function ($value, $key) {
+                $return = array();
                 $return['id'] = $value['id'];
                 $return['parentId'] = $value['parent_serial'];
                 $return['name'] = $value['menu_string'];
-                return $return;
+                $return['children'] = array();
+                return ($return);
             });
+
+            $data = (objToArray($data));
 
             $itemsByReference = array();
 
-            foreach ($data as $datas) {
-                $itemsByReference[$datas['id']] = $datas;
-                $itemsByReference[$datas['id']]['children'] = array();
+            foreach ($data as $key => &$item) {
+                $itemsByReference[$item['id']] = &$item;
             }
 
-            foreach ($data as $items) {
-                if ($items['parentId'] && isset($itemsByReference[$items['parentId']])) {
-                    $itemsByReference[$items['parentId']]['children'][] = $items;
-                }
-            }
+            # looping for the generation of child nodes / operation will end if the parentId is not match to id 
+            foreach ($data as $key => &$item)
+                if ($item['id'] && isset($itemsByReference[$item['parentId']]))
+                    $itemsByReference[$item['parentId']]['children'][] = &$item;
 
-            return $itemsByReference;
-
-            foreach ($data as $key => $item) {
+            # this loop is to remove the external loop of the child node ie. not allowing the child node to create its own treee
+            foreach ($data as $key => &$item) {
                 if ($item['parentId'] && isset($itemsByReference[$item['parentId']]))
                     unset($data[$key]);
             }
-            
-            // return $data;
-            // return responseMsgs(true, "OPERATION OK!", $data, "", "01", ".ms", "POST", $req->deviceId);
+            $data = collect($data)->values();
+            return responseMsgs(true, "OPERATION OK!", $data, "", "01", "308.ms", "POST", $req->deviceId);
         } catch (Exception $error) {
             return responseMsgs(false, $error->getMessage(), $error->getLine(), "", "01", ".ms", "POST", $req->deviceId);
         }
