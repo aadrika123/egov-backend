@@ -8,6 +8,8 @@ use App\Repository\Menu\Interface\iMenuRepo;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use Razorpay\Api\Request;
+use stdClass;
 
 /**
  * | Created On-23-11-2022 
@@ -128,10 +130,10 @@ class MenuRepo implements iMenuRepo
             $userId = auth()->user()->id;
             $menuDetails = WfRolemenu::join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_rolemenus.role_id')
                 ->join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
-                ->join('wf_roles','wf_roles','=','wf_rolemenus.role_id')
+                ->join('wf_roles', 'wf_roles', '=', 'wf_rolemenus.role_id')
                 ->where('wf_roleusermaps.user_id', $userId)
-                ->where('wf_rolemenus.is_suspended',false)
-                ->where('wf_roleusermaps.is_suspended',false)
+                ->where('wf_rolemenus.is_suspended', false)
+                ->where('wf_roleusermaps.is_suspended', false)
                 ->select(
                     'menu_masters.menu_string AS menuName',
                     'menu_masters.route',
@@ -143,6 +145,53 @@ class MenuRepo implements iMenuRepo
             return responseMsg(false, "Data not Found!", "");
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * | Algorithem for the generation of the menu  paren/childeran structure
+     * | 
+     */
+    public function generateMenuTree($req)
+    {
+        try {
+
+            $menuMaster = new MenuMaster();
+            $menues = $menuMaster->fetchAllMenues();
+
+
+            $data = collect($menues)->map(function ($value, $key) {
+                $return['id'] = $value['id'];
+                $return['parentId'] = $value['parent_serial'];
+                $return['name'] = $value['menu_string'];
+                return $return;
+            });
+
+            $itemsByReference = array();
+
+            foreach ($data as $datas) {
+                $itemsByReference[$datas['id']] = $datas;
+                $itemsByReference[$datas['id']]['children'] = array();
+            }
+
+            foreach ($data as $items) {
+                if ($items['parentId'] && isset($itemsByReference[$items['parentId']])) {
+                    $itemsByReference[$items['parentId']]['children'][] = $items;
+                }
+            }
+
+            return $itemsByReference;
+
+            foreach ($data as $key => $item) {
+                if ($item['parentId'] && isset($itemsByReference[$item['parentId']]))
+                    unset($data[$key]);
+            }
+            
+            // return $data;
+            // return responseMsgs(true, "OPERATION OK!", $data, "", "01", ".ms", "POST", $req->deviceId);
+        } catch (Exception $error) {
+            return responseMsgs(false, $error->getMessage(), $error->getLine(), "", "01", ".ms", "POST", $req->deviceId);
         }
     }
 }

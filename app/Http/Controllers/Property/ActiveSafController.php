@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Models\Property\PropActiveSafsDoc;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iSafRepository;
 
@@ -185,5 +186,12 @@ class ActiveSafController extends Controller
         //     "uploads.*.imagePath" => "image|mimes:jpeg,jpg,png,gif|required"
         // ]);
         return $this->Repository->geoTagging($req);
+    }
+
+    //document verification
+    public function safDocStatus(Request $req)
+    {
+        $obj = new PropActiveSafsDoc();
+        return $obj->safDocStatus($req);
     }
 }

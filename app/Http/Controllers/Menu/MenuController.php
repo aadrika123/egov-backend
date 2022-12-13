@@ -66,4 +66,10 @@ class MenuController extends Controller
         $menuDeletion = new MenuMaster();
         return $menuDeletion->deleteMenues($request);
     }
+
+      // Generate the menu tree srtucture
+      public function getTreeStructureMenu(Request $request)
+      {
+          return $this->_repo->generateMenuTree($request);
+      }
 }
