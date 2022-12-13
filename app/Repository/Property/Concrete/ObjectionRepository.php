@@ -71,6 +71,7 @@ class ObjectionRepository implements iObjectionRepository
             $userType = auth()->user()->user_type;
             $objectionFor = $request->objectionFor;
             $objectionNo = "";
+            $objNo = "";
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflow_id_clerical)
                 ->where('ulb_id', $ulbId)
@@ -95,7 +96,10 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->current_role = $initiatorRoleId[0]->role_id;
                 $objection->save();
 
-                $objectionNo = $this->objectionNo($objection->id);
+                //objection No generation in model
+                $objNo = new PropActiveObjection();
+                $objectionNo = $objNo->objectionNo($objection->id);
+
                 PropActiveObjection::where('id', $objection->id)
                     ->update(['objection_no' => $objectionNo]);
 
@@ -111,11 +115,10 @@ class ObjectionRepository implements iObjectionRepository
 
                 //name document
                 if ($namefile = $request->file('nameDoc')) {
-
+                    $docName = "nameDoc";
                     $name = time() . 'name.' . $namefile->getClientOriginalExtension();
                     $path = storage_path('app/public/objection/nameDoc/');
                     $namefile->move($path, $name);
-                    $docName = "nameDoc";
 
                     $objectionDoc = new PropActiveObjectionDocdtl();
                     $objectionDoc->objection_id = $objection->id;
@@ -125,11 +128,10 @@ class ObjectionRepository implements iObjectionRepository
 
                 // //address document 
                 if ($addressfile = $request->file('addressDoc')) {
-
+                    $docName = "addressDoc";
                     $name = time() . 'add.' . $addressfile->getClientOriginalExtension();
                     $path = storage_path('app/public/objection/addressDoc/');
                     $addressfile->move($path, $name);
-                    $docName = "addressDoc";
 
                     $objectionDoc = new PropActiveObjectionDocdtl;
                     $objectionDoc->objection_id = $objection->id;
@@ -138,11 +140,10 @@ class ObjectionRepository implements iObjectionRepository
 
                 // //saf doc
                 if ($memberfile = $request->file('safMemberDoc')) {
-
+                    $docName = "safMemberDoc";
                     $name = time() . 'member.' . $memberfile->getClientOriginalExtension();
                     $path = storage_path('app/public/objection/safMemberDoc/');
                     $memberfile->move($path, $name);
-                    $docName = "safMemberDoc";
 
                     $objectionDoc = new PropActiveObjectionDocdtl;
                     $objectionDoc->objection_id = $objection->id;
@@ -177,11 +178,11 @@ class ObjectionRepository implements iObjectionRepository
 
                 //objection_form
                 if ($file = $request->file('objectionForm')) {
-
-                    $name = time() . '.' . $file->getClientOriginalExtension();
-                    $path = storage_path('objection/objectionForm');
-                    $file->move($path, $name);
                     $docName = "objectionForm";
+                    $name = time() . '.' . $file->getClientOriginalExtension();
+                    $path = storage_path('objection/objectionForm/');
+                    $file->move($path, $name);
+
                     $this->citizenDocUpload($objectionDoc, $name, $docName);
                 }
 
@@ -189,7 +190,7 @@ class ObjectionRepository implements iObjectionRepository
                 if ($file = $request->file('evidenceDoc')) {
 
                     $name = time() . '.' . $file->getClientOriginalExtension();
-                    $path = storage_path('objection/evidenceDoc');
+                    $path = storage_path('objection/evidenceDoc/');
                     $file->move($path, $name);
                     $docName = "evidenceDoc";
                     $this->citizenDocUpload($objectionDoc, $name, $docName);
@@ -275,7 +276,10 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_error->save();
                 }
 
-                $objectionNo = $this->objectionNo($objection->id);
+                //objection No generation in model
+                $objNo = new PropActiveObjection();
+                $objectionNo = $objNo->objectionNo($objection->id);
+
                 PropActiveObjection::where('id', $objection->id)
                     ->update(['objection_no' => $objectionNo]);
 
@@ -302,7 +306,7 @@ class ObjectionRepository implements iObjectionRepository
                 if ($file = $request->file('objectionForm')) {
 
                     $name = time() . '.' . $file->getClientOriginalExtension();
-                    $path = storage_path('objection/objectionForm');
+                    $path = storage_path('objection/objectionForm/');
                     $file->move($path, $name);
                     $docName = "objectionForm";
                     $this->citizenDocUpload($objectionDoc, $name, $docName);
@@ -312,7 +316,7 @@ class ObjectionRepository implements iObjectionRepository
                 if ($file = $request->file('evidenceDoc')) {
 
                     $name = time() . '.' . $file->getClientOriginalExtension();
-                    $path = storage_path('objection/evidenceDoc');
+                    $path = storage_path('objection/evidenceDoc/');
                     $file->move($path, $name);
                     $docName = "evidenceDoc";
                     $this->citizenDocUpload($objectionDoc, $name, $docName);
@@ -332,22 +336,6 @@ class ObjectionRepository implements iObjectionRepository
             }
         } catch (Exception $e) {
             return response()->json($e->getMessage());
-        }
-    }
-
-
-    //objection number generation
-    public function objectionNo($id)
-    {
-        try {
-            $count = PropActiveObjection::where('id', $id)
-                ->select('id')
-                ->get();
-            $_objectionNo = 'OBJ' . "/" . str_pad($count['0']->id, 5, '0', STR_PAD_LEFT);
-
-            return $_objectionNo;
-        } catch (Exception $e) {
-            echo $e->getMessage();
         }
     }
 
@@ -393,7 +381,11 @@ class ObjectionRepository implements iObjectionRepository
                     ->join('ref_prop_construction_types', 'ref_prop_construction_types.id', '=', 'prop_floors.const_type_mstr_id')
                     ->get();
             }
-            return responseMsg(true, "Successfully Retrieved", remove_null($assesmentDetailss));
+            if (isset($assesmentDetailss)) {
+                return responseMsg(true, "Successfully Retrieved", remove_null($assesmentDetailss));
+            } else {
+                return responseMsg(false, "Supply Valid Property Id", "");
+            }
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -794,17 +786,19 @@ class ObjectionRepository implements iObjectionRepository
 
 
             //for address doc
+            // return $doc = key($req->nameDoc);
+
+
             if ($addfile = $req->file('addressDoc')) {
                 $docName = "addressDoc";
-                $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
-                    ->where('doc_type', $docName)
-                    ->get()
-                    ->first();
                 $name = time() . 'addressDoc.' . $addfile->getClientOriginalExtension();
                 $path = storage_path('app/public/objection/addressDoc/');
                 $addfile->move($path, $name);
 
-
+                $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
+                    ->where('doc_type', $docName)
+                    ->get()
+                    ->first();
                 if ($checkExisting) {
                     $this->updateDocument($req, $docName, $name);
                 } else {
@@ -815,14 +809,14 @@ class ObjectionRepository implements iObjectionRepository
             // saf doc
             if ($saffile = $req->file('safMemberDoc')) {
                 $docName = "safMemberDoc";
-                $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
-                    ->where('doc_type', $docName)
-                    ->get()
-                    ->first();
                 $name = time() . 'safMemberDoc.' . $saffile->getClientOriginalExtension();
                 $path = storage_path('app/public/objection/safMemberDoc/');
                 $saffile->move($path, $name);
 
+                $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
+                    ->where('doc_type', $docName)
+                    ->get()
+                    ->first();
                 if ($checkExisting) {
                     $this->updateDocument($req, $docName, $name);
                 } else {
@@ -832,15 +826,14 @@ class ObjectionRepository implements iObjectionRepository
 
             if ($namefile = $req->file('nameDoc')) {
                 $docName = "nameDoc";
-                $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
-                    ->where('doc_type', $docName)
-                    ->get()
-                    ->first();
-
                 $name = time() . 'nameDoc.' . $namefile->getClientOriginalExtension();
                 $path = storage_path('app/public/objection/nameDoc/');
                 $namefile->move($path, $name);
 
+                $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
+                    ->where('doc_type', $docName)
+                    ->get()
+                    ->first();
                 if ($checkExisting) {
                     $this->updateDocument($req, $docName, $name);
                 } else {
@@ -849,15 +842,15 @@ class ObjectionRepository implements iObjectionRepository
             }
 
             if ($namefile = $req->file('objectionFormDoc')) {
+                $docName = "objectionFormDoc";
+                $name = time() . 'objectionFormDoc.' . $namefile->getClientOriginalExtension();
+                $path = storage_path('app/public/objection/objectionFormDoc/');
+                $namefile->move($path, $name);
 
                 $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
                     ->where('doc_type', 'objectionFormDoc')
                     ->get()
                     ->first();
-                $name = time() . 'objectionFormDoc.' . $namefile->getClientOriginalExtension();
-                $path = storage_path('app/public/objection/objectionFormDoc/');
-                $namefile->move($path, $name);
-                $docName = "objectionFormDoc";
                 if ($checkExisting) {
                     $this->updateDocument($req, $docName, $name);
                 } else {
@@ -879,7 +872,6 @@ class ObjectionRepository implements iObjectionRepository
 
             $docStatus = PropActiveObjectionDocdtl::find($req->id);
             $docStatus->remarks = $req->docRemarks;
-            // $docStatus->verify_status = $req->verifyStatus;
             $docStatus->verified_by_emp_id = $userId;
             $docStatus->verified_on = Carbon::now();
             $docStatus->updated_at = Carbon::now();
@@ -904,7 +896,7 @@ class ObjectionRepository implements iObjectionRepository
         $objectionDoc =  new PropActiveObjectionDocdtl();
         $objectionDoc->objection_id = $req->id;
         $objectionDoc->doc_type = $docName;
-        $objectionDoc->relative_path = ('objection/' . $docName);
+        $objectionDoc->relative_path = ('/objection/' . $docName . '/');
         $objectionDoc->doc_name = $name;
         $objectionDoc->status = 1;
         $objectionDoc->date = Carbon::now();
@@ -918,7 +910,7 @@ class ObjectionRepository implements iObjectionRepository
         $userId = auth()->user()->id;
 
         $objectionDoc->doc_type = $docName;
-        $objectionDoc->relative_path = ('objection/' . $docName);
+        $objectionDoc->relative_path = ('/objection/' . $docName . '/');
         $objectionDoc->doc_name = $name;
         $objectionDoc->status = 1;
         $objectionDoc->user_id = $userId;
@@ -934,7 +926,7 @@ class ObjectionRepository implements iObjectionRepository
             ->update([
                 'objection_id' => $req->id,
                 'doc_type' => $docName,
-                'relative_path' => ('objection' . $docName . '/'),
+                'relative_path' => ('/objection/' . $docName . '/'),
                 'doc_name' => $name,
                 'status' => 1,
                 'verify_status' => 0,
