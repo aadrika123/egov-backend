@@ -1360,16 +1360,20 @@ class SafRepository implements iSafRepository
     {
         try {
             $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
-            $geoTagging = new PropSafGeotagUpload();
-            $base64Encode = base64_encode($req->imagePath->getClientOriginalName());
-            $extention = $req->imagePath->getClientOriginalExtension();
-            $imageName = time() . '-' . $base64Encode . '.' . $extention;
-            $req->imagePath->storeAs('public/Property/GeoTagging', $imageName);
+            // $geoTagging = new PropSafGeotagUpload();
+            // $base64Encode = base64_encode($req->imagePath->getClientOriginalName());
+            // $extention = $req->imagePath->getClientOriginalExtension();
+            // $imageName = time() . '-' . $base64Encode . '.' . $extention;
+            // $req->imagePath->storeAs('public/Property/GeoTagging', $imageName);
 
-            $geoTagging->image_path = $imageName;
-            $geoTagging->direction_type = $req->directionType;
-            $geoTagging->relative_path = $relativePath;
-            $geoTagging->save();
+            // $geoTagging->image_path = $imageName;
+            // $geoTagging->direction_type = $req->directionType;
+            // $geoTagging->relative_path = $relativePath;
+            // $geoTagging->save();
+            $images = $req->imagePath;
+            $directionTypes = $req->directionType;
+            collect($images)->map(function ($values) {
+            });
             return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
