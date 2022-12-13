@@ -1375,6 +1375,8 @@ class SafRepository implements iSafRepository
         $docVerify = new PropActiveSafsDoc();
         return $docVerify->safDocStatus($req);
     }
+
+
     /**
      * | Get Tc Verifications
      * | @param request $req
