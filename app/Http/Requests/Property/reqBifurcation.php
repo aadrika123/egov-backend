@@ -35,7 +35,7 @@ class reqBifurcation extends FormRequest
         $req = $this->all();
         $isAcquired = false;
         $count = 0;
-        if(isset($req['container']))
+        if(isset($req['container']) && is_array($req['container']) )
         {
             foreach($req['container'] as $key =>$val)
             { 
