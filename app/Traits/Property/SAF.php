@@ -20,7 +20,7 @@ trait SAF
     /**
      * | Apply SAF Trait
      */
-    public function tApplySaf($saf, $req, $safNo, $assessmentTypeId, $roadWidthType)
+    public function tApplySaf($saf, $req, $safNo, $roadWidthType)
     {
         $saf->has_previous_holding_no = $req->hasPreviousHoldingNo;
         $saf->previous_holding_id = $req->previousHoldingId;
