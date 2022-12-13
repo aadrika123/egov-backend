@@ -1802,7 +1802,7 @@ class Trade implements ITrade
                         'doc_path'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_path_mstr_id'.$cnt.''=>'required|int',
                         'doc_path_for'.$cnt =>"required|string",
-                        "owner_id"=>"required|int",
+                        "owner_id"=>"required|digits_between:1,9223372036854775807",
                     ];
                         
                     $validator = Validator::make($request->all(), $rules, $message);                    
@@ -1877,7 +1877,7 @@ class Trade implements ITrade
                         'doc_path'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_path_mstr_id'.$cnt.''=>'required|int',
                         'doc_path_for'.$cnt =>"required|string",
-                        "owner_id"=>"required|int",
+                        "owner_id"=>"required|digits_between:1,9223372036854775807",
                     ];
                     $validator = Validator::make($request->all(), $rules, $message);                    
                     if ($validator->fails()) {
