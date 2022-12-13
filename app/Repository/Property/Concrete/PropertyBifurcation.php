@@ -1300,6 +1300,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 "prop_active_safs_docs.id",
                 "doc_type",
                 "prop_active_safs_docs.verify_status",
+                "prop_active_safs_docs.remarks",
                 "prop_active_safs_docs.doc_path",
                 "doc_mstr_id"
             )
@@ -1329,6 +1330,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 "prop_active_safs_docs.id",
                 "doc_type",
                 "prop_active_safs_docs.verify_status",
+                "prop_active_safs_docs.remarks",
                 "prop_active_safs_docs.doc_path",
                 "doc_mstr_id"
             )
@@ -1508,14 +1510,18 @@ class PropertyBifurcation implements IPropertyBifurcation
             $requiedDocs     = (array) null;
             $ownersDoc       = (array) null;
             $safId           = $request->id;
-            if (!$safId) {
+            if (!$safId) 
+            {
                 throw new Exception("Saf Id Required");
             }
             // $refSafs = PropActiveSaf::find($safId);
             $refSafs = $this->getSafDtlById($safId);
-            if (!$refSafs) {
+            if (!$refSafs) 
+            {
                 throw new Exception("Data Not Found");
-            } elseif ($refSafs->doc_verify_status) {
+            } 
+            elseif ($refSafs->doc_verify_status) 
+            {
                 throw new Exception("Document Verified You Can Not Upload Documents");
             }
             $mOwneres = $this->getOwnereDtlBySId($refSafs->id);
@@ -1527,7 +1533,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                 }
                 return $val;
             });
-            foreach ($mDocumentsList as $val) {
+            foreach ($mDocumentsList as $val) 
+            {
                 $doc = (array) null;
                 $doc['docName'] = $val->doc_type;
                 $doc['isMadatory'] = in_array($val->doc_type, ["additional_doc", "other"]) ? 0 : 1;
@@ -1539,7 +1546,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                 }
                 array_push($requiedDocs, $doc);
             }
-            foreach ($mOwneres as $key => $val) {
+            foreach ($mOwneres as $key => $val) 
+            {
                 $doc = (array) null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
@@ -1570,7 +1578,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $doc["ownerName"]   = $val->owner_name;
                     $doc['docName']     = "Armed";
                     $doc['isMadatory']  = 1;
-                    $doc['docVal']      = $this->getDocumentList("armed_force_document");
+                    $doc['docVal']      = $this->getDocumentList("armed_force_document"); 
                     $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id, $val->id, $doc['docVal'][0]->id);
                     if (isset($doc["uploadDoc"]["doc_path"])) {
                         $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
@@ -1599,10 +1607,12 @@ class PropertyBifurcation implements IPropertyBifurcation
             $data["safDtl"]         = $refSafs;
             $data["owners"]         = $mOwneres;
             $data["uploadDocument"] = $mUploadDocument;
-            if ($request->getMethod() == "GET") {
+            if ($request->getMethod() == "GET") 
+            {
                 return responseMsg(true, "", remove_null($data));
             }
-            if ($request->getMethod() == "POST") {
+            if ($request->getMethod() == "POST") 
+            {
                 DB::beginTransaction();
                 $rules = [];
                 $message = [];
@@ -1616,11 +1626,13 @@ class PropertyBifurcation implements IPropertyBifurcation
                     'doc_mstr_id' . $cnt . '' => 'required|int',
                 ];
                 $validator = Validator::make($request->all(), $rules, $message);
-                if ($validator->fails()) {
+                if ($validator->fails()) 
+                {
                     return responseMsg(false, $validator->errors(), $request->all());
                 }
                 # Upload Document 
-                if (isset($request->btn_doc) && isset($request->$doc_for) && !in_array($request->$doc_for, ["Gender Document", "DOB Document", "Armed", "Handicap", "Photo"])) {
+                if (isset($request->btn_doc) && isset($request->$doc_for) && !in_array($request->$doc_for, ["Gender Document", "DOB Document", "Armed", "Handicap", "Photo"])) 
+                {
                     $rules = [
                         'doc' . $cnt => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_for' . $cnt => "required|string",
@@ -1632,24 +1644,49 @@ class PropertyBifurcation implements IPropertyBifurcation
                     }
                     $file = $request->file('doc' . $cnt);
                     $doc_mstr_id = "doc_mstr_id$cnt";
-                    if ($file->IsValid()) {
-                        if ($app_doc_dtl_id = $this->check_doc_exist($refSafs->id, $request->$doc_for, $request->$doc_mstr_id)) {
-                            $delete_path = storage_path('app/public/' . $app_doc_dtl_id['doc_path']);
-                            if (file_exists($delete_path)) {
-                                unlink($delete_path);
-                            }
-                            $newFileName = $app_doc_dtl_id['id'];
+                    if ($file->IsValid()) 
+                    {
+                        if ($app_doc_dtl_id = $this->check_doc_exist($refSafs->id, $request->$doc_for, $request->$doc_mstr_id)) 
+                        {
+                            if($app_doc_dtl_id->verify_status==0 )
+                            {
+                                $delete_path = storage_path('app/public/' . $app_doc_dtl_id['doc_path']);
+                                if (file_exists($delete_path)) 
+                                {
+                                    unlink($delete_path);
+                                }
+                                $newFileName = $app_doc_dtl_id['id'];
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "saf_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file, $fileName);
+                                $app_doc_dtl_id->update();
 
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                            $fileName = "saf_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file, $fileName);
-                            $app_doc_dtl_id->doc_path =  $filePath;
-                            $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
-                            $app_doc_dtl_id->remarks    =NULL;
-                            $app_doc_dtl_id->verify_status    = 0;
-                            $app_doc_dtl_id->save();
+                            }
+                            else
+                            {
+                                $app_doc_dtl_id->status =  0 ;
+                                $app_doc_dtl_id->update();
+
+                                $propDocs = new PropActiveSafsDoc;
+                                $propDocs->saf_id = $refSafs->id;
+                                $propDocs->doc_mstr_id = $request->$doc_mstr_id;
+                                $propDocs->user_id = $refUserId;
+    
+                                $propDocs->save();
+                                $newFileName = $propDocs->id;
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "saf_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file, $fileName);
+                                $propDocs->doc_path =  $filePath;
+                                $propDocs->update();
+                            }
+
                             $sms = $request->$doc_for . " Update Successfully";
-                        } else {
+                        } 
+                        else 
+                        {
                             $propDocs = new PropActiveSafsDoc;
                             $propDocs->saf_id = $refSafs->id;
                             $propDocs->doc_mstr_id = $request->$doc_mstr_id;
@@ -1665,12 +1702,15 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $propDocs->save();
                             $sms =  $request->$doc_for . " Upload Successfully";
                         }
-                    } else {
+                    } 
+                    else 
+                    {
                         return responseMsg(false, "something errors in Document Uploades", $request->all());
                     }
                 }
                 # Upload Owner Document Gender Document
-                elseif (isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for == "Gender Document") {
+                elseif (isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for == "Gender Document") 
+                {
                     $rules = [
                         'doc' . $cnt => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_for' . $cnt => "required|string",
@@ -1687,30 +1727,58 @@ class PropertyBifurcation implements IPropertyBifurcation
                         return $val['id'] == $owner_id;
                     });
                     $woner_id = array_values($woner_id)[0] ?? [];
-                    if (!$woner_id) {
+                    if (!$woner_id) 
+                    {
                         throw new Exception("Invalide Owner Id given!!!");
                     }
                     $file = $request->file('doc' . $cnt);
                     $doc_mstr_id = "doc_mstr_id$cnt";
-                    if ($file->IsValid()) {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($refSafs->id, $request->owner_id, $request->$doc_mstr_id)) {
-                            $delete_path = storage_path('app/public/' . $app_doc_dtl_id['doc_path']);
-                            if (file_exists($delete_path)) {
-                                unlink($delete_path);
+                    if ($file->IsValid()) 
+                    {
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($refSafs->id, $request->owner_id, $request->$doc_mstr_id)) 
+                        {
+                            if($app_doc_dtl_id->verify_status==0)
+                            {
+                                $delete_path = storage_path('app/public/' . $app_doc_dtl_id['doc_path']);
+                                if (file_exists($delete_path)) 
+                                {
+                                    unlink($delete_path);
+                                }
+    
+                                $newFileName = $app_doc_dtl_id['id'];
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file, $fileName);
+                                $app_doc_dtl_id->doc_path =  $filePath;
+                                $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                                $app_doc_dtl_id->update();
+
                             }
-
-                            $newFileName = $app_doc_dtl_id['id'];
-
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file, $fileName);
-                            $app_doc_dtl_id->doc_path =  $filePath;
-                            $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
-                            $app_doc_dtl_id->remarks    =NULL;
-                            $app_doc_dtl_id->verify_status    = 0;
-                            $app_doc_dtl_id->save();
+                            else
+                            {
+                                $app_doc_dtl_id->status =  0 ;
+                                $app_doc_dtl_id->update();
+    
+                                $propDocs = new PropActiveSafsDoc;
+                                $propDocs->saf_id = $refSafs->id;
+                                $propDocs->saf_owner_dtl_id = $request->owner_id;
+                                $propDocs->doc_mstr_id = $request->$doc_mstr_id;
+                                $propDocs->user_id = $refUserId;
+    
+                                $propDocs->save();
+                                $newFileName = $propDocs->id;
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file, $fileName);
+                                $propDocs->doc_path =  $filePath;
+                                $propDocs->update();
+                            }
                             $sms = "Gender Document " . $woner_id['owner_name'] . " Update Successfully";
-                        } else {
+                        } 
+                        else 
+                        {
                             $propDocs = new PropActiveSafsDoc;
                             $propDocs->saf_id = $refSafs->id;
                             $propDocs->saf_owner_dtl_id = $request->owner_id;
@@ -1724,15 +1792,18 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $fileName = "saf_owner_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file, $fileName);
                             $propDocs->doc_path =  $filePath;
-                            $propDocs->save();
+                            $propDocs->update();
                             $sms = "Gender Document " . $woner_id['owner_name'] . " Upload Successfully";
                         }
-                    } else {
+                    } 
+                    else 
+                    {
                         return responseMsg(false, "something errors in Document Uploades", $request->all());
                     }
                 }
                 # Upload Owner Document DOB Document
-                elseif (isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for == "DOB Document") {
+                elseif (isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for == "DOB Document") 
+                {
                     $rules = [
                         'doc' . $cnt => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_for' . $cnt => "required|string",
@@ -1741,7 +1812,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                     ];
 
                     $validator = Validator::make($request->all(), $rules, $message);
-                    if ($validator->fails()) {
+                    if ($validator->fails()) 
+                    {
                         return responseMsg(false, $validator->errors(), $request->all());
                     }
                     $owner_id = $request->owner_id;
@@ -1749,30 +1821,57 @@ class PropertyBifurcation implements IPropertyBifurcation
                         return $val['id'] == $owner_id;
                     });
                     $woner_id = array_values($woner_id)[0] ?? [];
-                    if (!$woner_id) {
+                    if (!$woner_id) 
+                    {
                         throw new Exception("Invalide Owner Id given!!!");
                     }                
                     $file = $request->file('doc' . $cnt); 
                     $doc_mstr_id = "doc_mstr_id$cnt";
-                    if ($file->IsValid()) {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($refSafs->id, $request->owner_id, $request->$doc_mstr_id)) {
-                            $delete_path = storage_path('app/public/' . $app_doc_dtl_id['doc_path']);
-                            if (file_exists($delete_path)) {
-                                unlink($delete_path);
+                    if ($file->IsValid()) 
+                    {
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($refSafs->id, $request->owner_id, $request->$doc_mstr_id)) 
+                        {
+                            if($app_doc_dtl_id->verify_status==0)
+                            {
+                                $delete_path = storage_path('app/public/' . $app_doc_dtl_id['doc_path']);
+                                if (file_exists($delete_path)) 
+                                {
+                                    unlink($delete_path);
+                                }
+    
+                                $newFileName = $app_doc_dtl_id['id'];
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file, $fileName);
+                                $app_doc_dtl_id->doc_path =  $filePath;
+                                $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                                $app_doc_dtl_id->update();
                             }
-
-                            $newFileName = $app_doc_dtl_id['id'];
-
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file, $fileName);
-                            $app_doc_dtl_id->doc_path =  $filePath;
-                            $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
-                            $app_doc_dtl_id->remarks    =NULL;
-                            $app_doc_dtl_id->verify_status    = 0;
-                            $app_doc_dtl_id->save();
+                            else
+                            {
+                                $app_doc_dtl_id->status =  0 ;
+                                $app_doc_dtl_id->update();
+    
+                                $propDocs = new PropActiveSafsDoc;
+                                $propDocs->saf_id = $refSafs->id;
+                                $propDocs->saf_owner_dtl_id = $request->owner_id;
+                                $propDocs->doc_mstr_id = $request->$doc_mstr_id;
+                                $propDocs->user_id = $refUserId;
+    
+                                $propDocs->save();
+                                $newFileName = $propDocs->id;
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file, $fileName);
+                                $propDocs->doc_path =  $filePath;
+                                $propDocs->update();
+                            }
                             $sms = "DOB Document " . $woner_id['owner_name'] . " Update Successfully";
-                        } else {
+                        } 
+                        else 
+                        {
                             $propDocs = new PropActiveSafsDoc;
                             $propDocs->saf_id = $refSafs->id;
                             $propDocs->saf_owner_dtl_id = $request->owner_id;
@@ -1786,15 +1885,18 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $fileName = "saf_owner_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file, $fileName);
                             $propDocs->doc_path =  $filePath;
-                            $propDocs->save();
+                            $propDocs->update();
                             $sms = "DOB Document " . $woner_id['owner_name'] . " Upload Successfully";
                         }
-                    } else {
+                    } 
+                    else 
+                    {
                         return responseMsg(false, "something errors in Document Uploades", $request->all());
                     }
                 }
                 # Upload Owner Document is_armfors
-                if (isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for == "Armed") {
+                if (isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for == "Armed") 
+                {
                     $rules = [
                         'doc' . $cnt => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_for' . $cnt => "required|string",
@@ -1816,25 +1918,53 @@ class PropertyBifurcation implements IPropertyBifurcation
                     }
                     $file = $request->file('doc' . $cnt);
                     $doc_mstr_id = "doc_mstr_id$cnt";
-                    if ($file->IsValid()) {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($refSafs->id, $request->owner_id, $request->$doc_mstr_id)) {
-                            $delete_path = storage_path('app/public/' . $app_doc_dtl_id['doc_path']);
-                            if (file_exists($delete_path)) {
-                                unlink($delete_path);
+                    if ($file->IsValid()) 
+                    {
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($refSafs->id, $request->owner_id, $request->$doc_mstr_id)) 
+                        {
+                            if($app_doc_dtl_id->verify_status==0)
+                            {
+
+                                $delete_path = storage_path('app/public/' . $app_doc_dtl_id['doc_path']);
+                                if (file_exists($delete_path)) 
+                                {
+                                    unlink($delete_path);
+                                }
+    
+                                $newFileName = $app_doc_dtl_id['id'];
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file, $fileName);
+                                $app_doc_dtl_id->doc_path =  $filePath;
+                                $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                                $app_doc_dtl_id->update();
                             }
+                            else
+                            {
 
-                            $newFileName = $app_doc_dtl_id['id'];
-
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file, $fileName);
-                            $app_doc_dtl_id->doc_path =  $filePath;
-                            $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
-                            $app_doc_dtl_id->remarks    =NULL;
-                            $app_doc_dtl_id->verify_status    = 0;
-                            $app_doc_dtl_id->save();
-                            $sms = "Armed Certificate of" . $woner_id['owner_name'] . " Update Successfully";
-                        } else {
+                                $app_doc_dtl_id->status =  0 ;
+                                $app_doc_dtl_id->update();
+    
+                                $propDocs = new PropActiveSafsDoc;
+                                $propDocs->saf_id = $refSafs->id;
+                                $propDocs->saf_owner_dtl_id = $request->owner_id;
+                                $propDocs->doc_mstr_id = $request->$doc_mstr_id;
+                                $propDocs->user_id = $refUserId;
+    
+                                $propDocs->save();
+                                $newFileName = $propDocs->id;
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file, $fileName);
+                                $propDocs->doc_path =  $filePath;
+                                $propDocs->update();
+                            }
+                            $sms = "Armed Certificate of " . $woner_id['owner_name'] . " Update Successfully";
+                        } 
+                        else 
+                        {
                             $propDocs = new PropActiveSafsDoc;
                             $propDocs->saf_id = $refSafs->id;
                             $propDocs->saf_owner_dtl_id = $request->owner_id;
@@ -1848,15 +1978,18 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $fileName = "saf_owner_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file, $fileName);
                             $propDocs->doc_path =  $filePath;
-                            $propDocs->save();
-                            $sms = "Armed Certificate of" . $woner_id['owner_name'] . " Upload Successfully";
+                            $propDocs->update();
+                            $sms = "Armed Certificate of " . $woner_id['owner_name'] . " Upload Successfully";
                         }
-                    } else {
+                    } 
+                    else 
+                    {
                         return responseMsg(false, "something errors in Document Uploades", $request->all());
                     }
                 }
                 # Upload Owner Document is_handicap
-                elseif (isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for == "Handicap") {
+                elseif (isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for == "Handicap") 
+                {
                     $rules = [
                         'doc' . $cnt => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_for' . $cnt => "required|string",
@@ -1873,30 +2006,60 @@ class PropertyBifurcation implements IPropertyBifurcation
                         return $val['id'] == $owner_id && $val['is_specially_abled'];
                     });
                     $woner_id = array_values($woner_id)[0] ?? [];
-                    if (!$woner_id) {
+                    if (!$woner_id) 
+                    {
                         throw new Exception("Invalide Owner Id given!!!");
                     }
                     $file = $request->file('doc' . $cnt);
                     $doc_mstr_id = "doc_mstr_id$cnt";
-                    if ($file->IsValid()) {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId, $request->owner_id, $request->$doc_mstr_id)) {
-                            $delete_path = storage_path('app/public/' . $app_doc_dtl_id['doc_path']);
-                            if (file_exists($delete_path)) {
-                                unlink($delete_path);
+                    if ($file->IsValid()) 
+                    {
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId, $request->owner_id, $request->$doc_mstr_id)) 
+                        {
+                            if($app_doc_dtl_id->verify_status==0)
+                            {
+
+                                $delete_path = storage_path('app/public/' . $app_doc_dtl_id['doc_path']);
+                                if (file_exists($delete_path)) 
+                                {
+                                    unlink($delete_path);
+                                }
+    
+                                $newFileName = $app_doc_dtl_id['id'];
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file, $fileName);
+                                $app_doc_dtl_id->doc_path =  $filePath;
+                                $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                                $app_doc_dtl_id->update();
+                            }
+                            else
+                            {
+
+                                $app_doc_dtl_id->status =  0 ;
+                                $app_doc_dtl_id->update();
+                                
+                                $propDocs = new PropActiveSafsDoc;
+                                $propDocs->saf_id = $refSafs->id;
+                                $propDocs->saf_owner_dtl_id = $request->owner_id;
+                                $propDocs->doc_mstr_id = $request->$doc_mstr_id;
+                                $propDocs->user_id = $refUserId;
+    
+                                $propDocs->save();
+                                $newFileName = $propDocs->id;
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file, $fileName);
+                                $propDocs->doc_path =  $filePath;
+                                $propDocs->update();
                             }
 
-                            $newFileName = $app_doc_dtl_id['id'];
-
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file, $fileName);
-                            $app_doc_dtl_id->doc_path =  $filePath;
-                            $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
-                            $app_doc_dtl_id->remarks    =NULL;
-                            $app_doc_dtl_id->verify_status    = 0;
-                            $app_doc_dtl_id->save();
                             $sms = "Handicap Certificate of " . $woner_id['owner_name'] . " Update Successfully";
-                        } else {
+                        } 
+                        else 
+                        {
                             $propDocs = new PropActiveSafsDoc;
                             $propDocs->saf_id = $refSafs->id;
                             $propDocs->saf_owner_dtl_id = $request->owner_id;
@@ -1910,15 +2073,18 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $fileName = "saf_owner_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file, $fileName);
                             $propDocs->doc_path =  $filePath;
-                            $propDocs->save();
+                            $propDocs->update();
                             $sms = "Handicap Certificate of " . $woner_id['owner_name'] . " Upload Successfully";
                         }
-                    } else {
+                    } 
+                    else 
+                    {
                         return responseMsg(false, "something errors in Document Uploades", $request->all());
                     }
                 }
                 # owner image upload hear 
-                elseif (isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for == "Photo") {
+                elseif (isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for == "Photo") 
+                {
                     $rules = [
                         'doc' . $cnt => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_for' . $cnt => "required|string",
@@ -1926,34 +2092,62 @@ class PropertyBifurcation implements IPropertyBifurcation
                         "owner_id" => "required|digits_between:1,9223372036854775807"
                     ];
                     $validator = Validator::make($request->all(), $rules, $message);
-                    if ($validator->fails()) {
+                    if ($validator->fails()) 
+                    {
                         return responseMsg(false, $validator->errors(), $request->all());
                     }
                     $req_owner_id = $request->owner_id;
-                    $woner_id = array_filter($owners, function ($val) use ($req_owner_id) {
+                    $woner_id = array_filter($owners, function ($val) use ($req_owner_id) 
+                    {
                         return $val['id'] == $req_owner_id;
                     });
                     $woner_id = array_values($woner_id)[0] ?? [];
-                    if (!$woner_id) {
+                    if (!$woner_id) 
+                    {
                         throw new Exception("Invalide Owner Id given!!!");
                     }
                     $file = $request->file('doc' . $cnt);
-                    if ($file->IsValid()) {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId, $request->owner_id, 0)) {
-                            $delete_path = storage_path('app/public/' . $app_doc_dtl_id['doc_path']);
-                            if (file_exists($delete_path)) {
-                                unlink($delete_path);
-                            }
+                    if ($file->IsValid()) 
+                    {
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId, $request->owner_id, 0)) 
+                        {
+                            if($app_doc_dtl_id->verify_status==0)
+                            {
 
-                            $newFileName = $app_doc_dtl_id['id'];
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                            $fileName = "saf_owner_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file, $fileName);
-                            $app_doc_dtl_id->doc_path =  $filePath;
-                            $app_doc_dtl_id->doc_mstr_id =  0;
-                            $app_doc_dtl_id->remarks    =NULL;
-                            $app_doc_dtl_id->verify_status    = 0;
-                            $app_doc_dtl_id->save();
+                                $delete_path = storage_path('app/public/' . $app_doc_dtl_id['doc_path']);
+                                if (file_exists($delete_path)) {
+                                    unlink($delete_path);
+                                }
+    
+                                $newFileName = $app_doc_dtl_id['id'];
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file, $fileName);
+                                $app_doc_dtl_id->doc_path =  $filePath;
+                                $app_doc_dtl_id->doc_mstr_id =  0;
+                                $app_doc_dtl_id->update();
+                            }
+                            else
+                            {
+                                $app_doc_dtl_id->status =  0;
+                                $app_doc_dtl_id->update();
+    
+                                $propDocs = new PropActiveSafsDoc;
+                                $propDocs->saf_id = $refSafs->id;
+                                $propDocs->saf_owner_dtl_id = $request->owner_id;
+                                $propDocs->doc_mstr_id = 0;
+                                $propDocs->user_id = $refUserId;
+    
+                                $propDocs->save();
+                                $newFileName = $propDocs->id;
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "saf_owner_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file, $fileName);
+                                $propDocs->doc_path =  $filePath;
+                                $propDocs->update();
+
+                            }
                             $sms = "Photo Of " . $woner_id['owner_name'] . " Update Successfully";
                         } else {
                             $propDocs = new PropActiveSafsDoc;
@@ -1969,7 +2163,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $fileName = "saf_owner_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file, $fileName);
                             $propDocs->doc_path =  $filePath;
-                            $propDocs->save();
+                            $propDocs->update();
                             $sms = "Photo Of " . $woner_id['owner_name'] . " Upload Successfully";
                         }
                     } else {
