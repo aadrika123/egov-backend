@@ -1895,7 +1895,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $app_doc_dtl_id->remarks    =NULL;
                             $app_doc_dtl_id->verify_status    = 0;
                             $app_doc_dtl_id->save();
-                            $sms = "Handicap Certificate of " . $woner_id['ownerName'] . " Update Successfully";
+                            $sms = "Handicap Certificate of " . $woner_id['owner_name'] . " Update Successfully";
                         } else {
                             $propDocs = new PropActiveSafsDoc;
                             $propDocs->saf_id = $refSafs->id;
@@ -1911,7 +1911,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $filePath = $this->uplodeFile($file, $fileName);
                             $propDocs->doc_path =  $filePath;
                             $propDocs->save();
-                            $sms = "Handicap Certificate of " . $woner_id['ownerName'] . " Upload Successfully";
+                            $sms = "Handicap Certificate of " . $woner_id['owner_name'] . " Upload Successfully";
                         }
                     } else {
                         return responseMsg(false, "something errors in Document Uploades", $request->all());
@@ -1954,7 +1954,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $app_doc_dtl_id->remarks    =NULL;
                             $app_doc_dtl_id->verify_status    = 0;
                             $app_doc_dtl_id->save();
-                            $sms = "Photo Of " . $woner_id['ownerName'] . " Update Successfully";
+                            $sms = "Photo Of " . $woner_id['owner_name'] . " Update Successfully";
                         } else {
                             $propDocs = new PropActiveSafsDoc;
                             $propDocs->saf_id = $refSafs->id;
@@ -1970,7 +1970,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $filePath = $this->uplodeFile($file, $fileName);
                             $propDocs->doc_path =  $filePath;
                             $propDocs->save();
-                            $sms = "Photo Of " . $woner_id['ownerName'] . " Upload Successfully";
+                            $sms = "Photo Of " . $woner_id['owner_name'] . " Upload Successfully";
                         }
                     } else {
                         return responseMsg(false, "something errors in Document Uploades", $request->all());
