@@ -9,7 +9,7 @@ class RefPropOccupancyType extends Model
 {
     use HasFactory;
 
-    public function getOccupancyTypes()
+    public function propOccupancyType()
     {
         return RefPropOccupancyType::select('id', 'occupancy_type')
             ->where('status', 1)

@@ -10,7 +10,7 @@ class RefPropUsageType extends Model
 {
     use HasFactory;
 
-    public function getPropUsageTypes()
+    public function propUsageType()
     {
         return RefPropUsageType::select('id', 'usage_type', 'usage_code')
             ->where('status', 1)

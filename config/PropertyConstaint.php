@@ -265,15 +265,15 @@ return [
         "2" => "Pucca with Asbestos/Corrugated Sheet (ACC)",
         "3" => "Kuttcha with Clay Roof (Other)",
     ],
+
+    // Property Assessment Type
     "ASSESSMENT-TYPE" =>
     [
-        // "NewAssessment" => "1",
-        // "ReAssessment" => "2",
-        // "Mutation" => "3"
         "1" => "New Assessment",
         "2" => "Re Assessment",
         "3" => "Mutation"
     ],
+
     "ULB-TYPE-ID" => [
         "Municipal Carporation" => 1,
         "Nagar Parishad" => 2,
