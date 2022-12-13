@@ -800,7 +800,8 @@ class WaterNewConnection implements IWaterNewConnection
     {
         try{
             
-            $doc = WaterApplicantDoc::select("id","doc_for","verify_status",
+            $doc = WaterApplicantDoc::select("id","doc_for","verify_status",                                            
+                                            "water_applicant_docs.remarks",
                                         DB::raw("doc_name AS document_path"),
                                         "document_id")
                        ->where('application_id',$applicationId)
@@ -830,6 +831,7 @@ class WaterNewConnection implements IWaterNewConnection
         try{
             // DB::enableQueryLog();
             $doc = WaterApplicantDoc::select("id","doc_for","verify_status",
+                                            "water_applicant_docs.remarks",
                                         DB::raw("doc_name AS document_path"),
                                         "document_id")
                            ->where('application_id',$applicationId)
