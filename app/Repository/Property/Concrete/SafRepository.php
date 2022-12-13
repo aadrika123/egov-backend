@@ -19,6 +19,7 @@ use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenalty;
 use App\Models\Property\PaymentPropRebate;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropLevelPending;
@@ -1384,5 +1385,12 @@ class SafRepository implements iSafRepository
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    //document verification calling to model
+    public function safDocStatus($req)
+    {
+        $docVerify = new PropActiveSafsDoc();
+        return $docVerify->safDocStatus($req);
     }
 }

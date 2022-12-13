@@ -191,7 +191,6 @@ class ActiveSafController extends Controller
     //document verification
     public function safDocStatus(Request $req)
     {
-        $obj = new PropActiveSafsDoc();
-        return $obj->safDocStatus($req);
+        return $this->Repository->safDocStatus($req);
     }
 }
