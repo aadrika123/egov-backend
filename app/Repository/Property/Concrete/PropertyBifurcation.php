@@ -177,13 +177,12 @@ class PropertyBifurcation implements IPropertyBifurcation
                 "owner.email_id",
                 DB::raw(
                     "prop_level_pendings.id AS level_id, 
-                                                    ward.ward_name as ward_no,
-                                                    at.assessment_type as assessment"
+                     ward.ward_name as ward_no"
                 )
             )
                 ->join("ref_prop_types", "ref_prop_types.id", "prop_active_safs.prop_type_mstr_id")
                 ->join('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
-                ->join('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
+                // ->join('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
                 ->$mJoins("prop_level_pendings", function ($join) use ($mRoleId) {
                     $join->on("prop_level_pendings.saf_id", "prop_active_safs.id")
                         ->where("prop_level_pendings.receiver_role_id", $mRoleId)
@@ -291,13 +290,12 @@ class PropertyBifurcation implements IPropertyBifurcation
                 "owner.mobile_no",
                 "owner.email_id",
                 DB::raw(
-                    "ward.ward_name as ward_no,
-                                                at.assessment_type as assessment"
+                    "ward.ward_name as ward_no"
                 )
             )
                 ->join("ref_prop_types", "ref_prop_types.id", "prop_active_safs.prop_type_mstr_id")
                 ->join('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
-                ->join('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
+                // ->join('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
                 ->$joins("prop_level_pendings", function ($join) use ($role_id) {
                     $join->on("prop_level_pendings.saf_id", "prop_active_safs.id")
                         ->where("prop_level_pendings.sender_role_id", $role_id)
@@ -372,12 +370,14 @@ class PropertyBifurcation implements IPropertyBifurcation
             $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
                 ->where('ulb_id', $ulb_id)
                 ->first();
-            if (!$workflowId) {
+            if (!$workflowId) 
+            {
                 throw new Exception("Workflow Not Available");
             }
             $role = $this->_common->getUserRoll($user_id, $ulb_id, $workflowId->wf_master_id);
             $init_finish = $this->_common->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
-            if (!$role) {
+            if (!$role) 
+            {
                 throw new Exception("You Are Not Authorized");
             }
             $role_id = $role->role_id;
@@ -393,121 +393,166 @@ class PropertyBifurcation implements IPropertyBifurcation
                 "comment.min" => "Comment Length can't be less than 10 charecters",
             ];
             $validator = Validator::make($request->all(), $rules, $message);
-            if ($validator->fails()) {
+            if ($validator->fails()) 
+            {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
-            if ($role->is_initiator && in_array($request->btn, ['btc', 'backward'])) {
+            if ($role->is_initiator && in_array($request->btn, ['btc', 'backward'])) 
+            {
                 throw new Exception("Initator Can Not send Back The Application");
             }
             $saf_data = PropActiveSaf::find($request->safId);
             $level_data = $this->getLevelData($request->safId);
 
-            if (!$saf_data) {
+            if (!$saf_data) 
+            {
                 throw new Exception("Data Not Found");
-            } elseif ($saf_data->saf_pending_status == 1) {
+            } 
+            elseif ($saf_data->saf_pending_status == 1) 
+            {
                 throw new Exception("Saf Is Already Approved");
-            } elseif (!$role->is_initiator && isset($level_data->receiver_role_id) && $level_data->receiver_role_id != $role->role_id) {
+            } 
+            elseif (!$role->is_initiator && isset($level_data->receiver_role_id) && $level_data->receiver_role_id != $role->role_id) 
+            {
                 throw new Exception("You are not authorised for this action");
-            } elseif (!$role->is_initiator && !$level_data) {
+            } 
+            elseif (!$role->is_initiator && !$level_data) {
                 throw new Exception("Data Not Found On Level. Please Contact Admin!!!...");
-            } elseif (isset($level_data->receiver_role_id) && $level_data->receiver_role_id != $role->role_id) {
+            } 
+            elseif (isset($level_data->receiver_role_id) && $level_data->receiver_role_id != $role->role_id) 
+            {
                 throw new Exception("You Have Already Taken The Action On This Application");
             }
-            if (!$init_finish) {
+            if (!$init_finish) 
+            {
                 throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
-            } elseif (!$init_finish["initiator"]) {
+            } 
+            elseif (!$init_finish["initiator"]) 
+            {
                 throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
-            } elseif (!$init_finish["finisher"]) {
+            } 
+            elseif (!$init_finish["finisher"]) 
+            {
                 throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
             }
 
             // dd($role);
-            if ($request->btn == "forward" && !$role->is_finisher && !$role->is_initiator) {
+            if ($request->btn == "forward" && !$role->is_finisher && !$role->is_initiator) 
+            {
                 $sms = "Application Forwarded To " . $role->forword_name;
                 $receiver_user_type_id = $role->forward_role_id;
-            } elseif ($request->btn == "backward" && !$role->is_initiator) {
+            } 
+            elseif ($request->btn == "backward" && !$role->is_initiator) 
+            {
                 $sms = "Application Forwarded To " . $role->backword_name;
                 $receiver_user_type_id = $role->backward_role_id;
                 $licence_pending = $init_finish["initiator"]['id'] == $role->backward_role_id ? 3 : $licence_pending;
-            } elseif ($request->btn == "btc" && !$role->is_initiator) {
+            } 
+            elseif ($request->btn == "btc" && !$role->is_initiator) 
+            {
                 $licence_pending = 2;
                 $sms = "Application Forwarded To " . $init_finish["initiator"]['role_name'];
                 $receiver_user_type_id = $init_finish["initiator"]['id'];
-            } elseif ($request->btn == "forward" && !$role->is_initiator && $level_data) {
+            } 
+            elseif ($request->btn == "forward" && !$role->is_initiator && $level_data) 
+            {
                 $sms = "Application Forwarded ";
                 $receiver_user_type_id = $level_data->sender_role_id;
-            } elseif ($request->btn == "forward" && $role->is_initiator && !$level_data) {
+            } 
+            elseif ($request->btn == "forward" && $role->is_initiator && !$level_data) 
+            {
                 $licence_pending = 3;
                 $sms = "Application Forwarded To " . $role->forword_name;
                 $receiver_user_type_id = $role->forward_role_id;
-            } elseif ($request->btn == "forward" && $role->is_initiator && $level_data) {
+            } 
+            elseif ($request->btn == "forward" && $role->is_initiator && $level_data) 
+            {
                 $licence_pending = 3;
                 $sms = "Application Forwarded To ";
                 $receiver_user_type_id = $level_data->sender_role_id;
             }
-            if ($request->btn == "forward" && $role->is_initiator) {
+            if ($request->btn == "forward" && $role->is_initiator) 
+            {
                 $doc = (array) null;
                 $safs_temp = $this->getAllReletedSaf($saf_data->previous_holding_id);
                 if (sizeOf($safs_temp) < 1) {
                     throw new Exception("Opps some errors occur!....");
                 }
-                foreach ($safs_temp as $key => $val) {
+                foreach ($safs_temp as $key => $val) 
+                {
                     $documentsList = [];
                     $owneres = $this->getOwnereDtlBySId($val->id);
                     $documentsList = $this->getDocumentTypeList($val);
-                    foreach ($owneres as $key2 => $val2) {
+                    foreach ($owneres as $key2 => $val2) 
+                    {
                         $data["documentsList"]["gender_document"] = $this->getDocumentList("gender_document");
                         $data["documentsList"]["dob_document"] = $this->getDocumentList("dob_document");
-                        if ($val2->is_armed_force) {
+                        if ($val2->is_armed_force) 
+                        {
                             $data["documentsList"]["armed_force_document"] = $this->getDocumentList("armed_force_document");
                         }
-                        if ($val2->is_specially_abled) {
+                        if ($val2->is_specially_abled) 
+                        {
                             $data["documentsList"]["handicaped_document"] = $this->getDocumentList("handicaped_document");
                         }
                     }
 
-                    if ($saf_data->payment_status != 1) {
+                    if ($saf_data->payment_status != 1) 
+                    {
                         throw new Exception("Payment is Not Clear");
                     }
-                    foreach ($documentsList as $val) {
+                    foreach ($documentsList as $val) 
+                    {
                         $data["documentsList"][$val->doc_type] = $this->getDocumentList($val->doc_type);
                         $data["documentsList"][$val->doc_type]["is_mandatory"] = 1;
-                        if (in_array($val->doc_type, ["additional_doc", "no_elect_connection", "other"])) {
+                        if (in_array($val->doc_type, ["additional_doc", "no_elect_connection", "other"])) 
+                        {
                             $data["documentsList"][$val->doc_type]["is_mandatory"] = 0;
                         }
                     }
-                    foreach ($data["documentsList"] as $key3 => $val3) {
-                        if (in_array($key3, ["Identity Proof", "gender_document", "dob_document", "armed_force_document", "handicaped_document"])) {
+                    foreach ($data["documentsList"] as $key3 => $val3) 
+                    {
+                        if (in_array($key3, ["Identity Proof", "gender_document", "dob_document", "armed_force_document", "handicaped_document"])) 
+                        {
                             continue;
                         }
                         $data["documentsList"][$key3]["doc"] = $this->check_doc_exist($saf_data->id, $key3);
-                        if (!isset($data["documentsList"][$key3]["doc"]["document_path"]) && $data["documentsList"][$key3]["is_mandatory"]) {
+                        if (!isset($data["documentsList"][$key3]["doc"]["document_path"]) && $data["documentsList"][$key3]["is_mandatory"]) 
+                        {
                             $doc[] = $key3 . " Not Uploaded";
                         }
                     }
-                    foreach ($owneres as $key2 => $val2) {
+                    foreach ($owneres as $key2 => $val2) 
+                    {
                         $owneres[$key2]["Identity Proof"] = $this->check_doc_exist_owner($saf_data->id, $val2->id);
-                        if (!isset($owneres[$key2]["Identity Proof"]["doc_path"])) {
+                        if (!isset($owneres[$key2]["Identity Proof"]["doc_path"])) 
+                        {
                             $doc[] = "Identity Proof Of " . $val2->owner_name . " Not Uploaded";
                         }
                         $owneres[$key2]["gender_document"]  = $this->check_doc_exist_owner($saf_data->id, $val2->id, $data["documentsList"]["gender_document"][0]->id);
-                        if (!isset($owneres[$key2]["gender_document"]["doc_path"])) {
+                        if (!isset($owneres[$key2]["gender_document"]["doc_path"])) 
+                        {
                             $doc[] = $val2->owner_name . " Gender Document Not Uploaded";
                         }
                         $owneres[$key2]["dob_document"]     = $this->check_doc_exist_owner($saf_data->id, $val2->id, $data["documentsList"]["dob_document"][0]->id);;
-                        if (!isset($owneres[$key2]["dob_document"]["doc_path"])) {
+                        if (!isset($owneres[$key2]["dob_document"]["doc_path"])) 
+                        {
                             $doc[] = $val2->owner_name . " DOB Document Not Uploaded";
                         }
-                        if ($val2->is_armed_force) {
+                        if ($val2->is_armed_force) 
+                        {
                             $owneres[$key2]["armed_force_document"] = $this->check_doc_exist_owner($saf_data->id, $val2->id, $data["documentsList"]["armed_force_document"][0]->id);
-                            if (!isset($owneres[$key2]["armed_force_document"]["doc_path"])) {
+                            if (!isset($owneres[$key2]["armed_force_document"]["doc_path"])) 
+                            {
                                 $doc[] = "Identity Proof Of " . $val2->owner_name . " Armed Force Document Not Uploaded";
                             }
                         }
-                        if ($val2->is_specially_abled) {
+                        if ($val2->is_specially_abled) 
+                        {
                             $data["documentsList"]["handicaped_document"] = $this->getDocumentList("handicaped_document");
                             $owneres[$key2]["handicaped_document"] = $this->check_doc_exist_owner($saf_data->id, $val2->id, $data["documentsList"]["handicaped_document"][0]->id);
-                            if (!isset($owneres[$key2]["handicaped_document"]["doc_path"])) {
+                            if (!isset($owneres[$key2]["handicaped_document"]["doc_path"])) 
+                            {
                                 $doc[] = $val2->owner_name . " Handicaped Document Not Uploaded";
                             }
                         }
@@ -522,13 +567,16 @@ class PropertyBifurcation implements IPropertyBifurcation
                 //     throw new Exception($err);
                 // }
             }
-            if ($request->btn == "forward" && in_array(strtoupper($apply_from), ["DA"])) {
+            if ($request->btn == "forward" && in_array(strtoupper($apply_from), ["DA"])) 
+            {
                 $safs_temp = $this->getAllReletedSaf($saf_data->previous_holding_id);
                 $docs = [];
-                if (sizeOf($safs_temp) < 1) {
+                if (sizeOf($safs_temp) < 1) 
+                {
                     throw new Exception("Opps some errors occur!....");
                 }
-                foreach ($safs_temp as $key => $val) {
+                foreach ($safs_temp as $key => $val) 
+                {
                     array_push($docs, $this->getSafDocuments($val->id));
                 }
                 if (!$docs) {
@@ -537,8 +585,10 @@ class PropertyBifurcation implements IPropertyBifurcation
 
                 $docs = objToArray(collect($docs));
                 $test = array_filter($docs, function ($val) {
-                    foreach ($val as $keys => $vals) {
-                        if ($vals["verify_status"] != 1) {
+                    foreach ($val as $keys => $vals) 
+                    {
+                        if ($vals["verify_status"] != 1) 
+                        {
                             return True;
                         }
                     }
@@ -551,12 +601,14 @@ class PropertyBifurcation implements IPropertyBifurcation
 
             }
 
-            if (!$role->is_finisher && !$receiver_user_type_id) {
+            if (!$role->is_finisher && !$receiver_user_type_id) 
+            {
                 throw new Exception("Next Role Not Found !!!....");
             }
             $data = "";
             DB::beginTransaction();
-            if ($level_data) {
+            if ($level_data) 
+            {
 
                 $level_data->verification_status = 1;
                 $level_data->receiver_user_id = $user_id;
@@ -565,7 +617,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $level_data->forward_time = Carbon::now()->format('H:s:i');
                 $level_data->save();
             }
-            if (!$role->is_finisher || in_array($request->btn, ["backward", "btc"])) {
+            if (!$role->is_finisher || in_array($request->btn, ["backward", "btc"])) 
+            {
                 $level_insert = new PropLevelPending;
                 $level_insert->saf_id = $saf_data->id;
                 $level_insert->sender_role_id = $role_id;
@@ -574,12 +627,14 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $level_insert->save();
                 $saf_data->current_role = $receiver_user_type_id;
             }
-            if ($role->is_finisher && $request->btn == "forward") {
+            if ($role->is_finisher && $request->btn == "forward") 
+            {
                 $licence_pending = 1;
                 $sms = "Application Approved By " . $role->forword_name;
                 $safs_temp = $this->getAllReletedSaf($saf_data->previous_holding_id);
                 $holding = [];
-                foreach ($safs_temp as $val) {
+                foreach ($safs_temp as $val) 
+                {
                     $myRequest = new \Illuminate\Http\Request();
                     $myRequest->setMethod('POST');
                     $myRequest->request->add(['workflowId' => $workflowId->id]);
@@ -588,28 +643,34 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $myRequest->request->add(['status'   => 1]);
                     $temholding = $this->_Saf->approvalRejectionSaf($myRequest);
                     $holding[$val->saf_no] = ($temholding->original['message']);
-                    if ($val->is_aquired) {
+                    if ($val->is_aquired) 
+                    {
                         $sms = $temholding->original['message'];
                     }
                 }
                 $data = $holding;
                 $property = PropProperty::find($saf_data->previous_holding_id)->where("status", 1);
-                if (!$property) {
+                if (!$property) 
+                {
                     throw new Exception("Somthig went worng!........");
                 }
                 $property->status = 0;
                 $property->update();
             }
 
-            if ($request->btn == "forward" && $role->is_initiator) {
-                foreach ($safs_temp as $val) {
+            if ($request->btn == "forward" && $role->is_initiator) 
+            {
+                foreach ($safs_temp as $val) 
+                {
                     $saf = PropActiveSaf::find($val->id);
                     $val->doc_upload_status = 1;
                 }
             }
-            if ($request->btn == "forward" && in_array(strtoupper($apply_from), ["DA"])) {
+            if ($request->btn == "forward" && in_array(strtoupper($apply_from), ["DA"])) 
+            {
                 $nowdate = Carbon::now()->format('Y-m-d');
-                foreach ($safs_temp as $val) {
+                foreach ($safs_temp as $val) 
+                {
                     $saf = PropActiveSaf::find($val->id);
                     $saf->doc_verify_status = 1;
                 }
@@ -1584,6 +1645,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $filePath = $this->uplodeFile($file, $fileName);
                             $app_doc_dtl_id->doc_path =  $filePath;
                             $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->remarks    =NULL;
+                            $app_doc_dtl_id->verify_status    = 0;
                             $app_doc_dtl_id->save();
                             $sms = $request->$doc_for . " Update Successfully";
                         } else {
@@ -1643,6 +1706,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $filePath = $this->uplodeFile($file, $fileName);
                             $app_doc_dtl_id->doc_path =  $filePath;
                             $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->remarks    =NULL;
+                            $app_doc_dtl_id->verify_status    = 0;
                             $app_doc_dtl_id->save();
                             $sms = "Gender Document " . $woner_id['owner_name'] . " Update Successfully";
                         } else {
@@ -1703,6 +1768,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $filePath = $this->uplodeFile($file, $fileName);
                             $app_doc_dtl_id->doc_path =  $filePath;
                             $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->remarks    =NULL;
+                            $app_doc_dtl_id->verify_status    = 0;
                             $app_doc_dtl_id->save();
                             $sms = "DOB Document " . $woner_id['owner_name'] . " Update Successfully";
                         } else {
@@ -1763,6 +1830,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $filePath = $this->uplodeFile($file, $fileName);
                             $app_doc_dtl_id->doc_path =  $filePath;
                             $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->remarks    =NULL;
+                            $app_doc_dtl_id->verify_status    = 0;
                             $app_doc_dtl_id->save();
                             $sms = "Armed Certificate of" . $woner_id['owner_name'] . " Update Successfully";
                         } else {
@@ -1823,6 +1892,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $filePath = $this->uplodeFile($file, $fileName);
                             $app_doc_dtl_id->doc_path =  $filePath;
                             $app_doc_dtl_id->doc_mstr_id =  $request->$doc_mstr_id;
+                            $app_doc_dtl_id->remarks    =NULL;
+                            $app_doc_dtl_id->verify_status    = 0;
                             $app_doc_dtl_id->save();
                             $sms = "Handicap Certificate of " . $woner_id['ownerName'] . " Update Successfully";
                         } else {
@@ -1880,6 +1951,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $filePath = $this->uplodeFile($file, $fileName);
                             $app_doc_dtl_id->doc_path =  $filePath;
                             $app_doc_dtl_id->doc_mstr_id =  0;
+                            $app_doc_dtl_id->remarks    =NULL;
+                            $app_doc_dtl_id->verify_status    = 0;
                             $app_doc_dtl_id->save();
                             $sms = "Photo Of " . $woner_id['ownerName'] . " Update Successfully";
                         } else {
