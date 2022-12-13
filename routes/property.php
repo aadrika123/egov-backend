@@ -45,30 +45,26 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
        | Serial No : 01
      */
     Route::controller(ActiveSafController::class)->group(function () {
-        Route::post('saf/apply', 'applySaf');                                                               // Applying Saf Route
-        Route::post('saf/doc-upload', 'documentUpload');                                                    // Document Upload by Citizen or JSK
-        Route::post('saf/verifydoc', 'verifyDoc');                                                          // Verify Uploaded Document by DA
-        Route::get('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf
-        Route::get('saf/inbox', 'inbox');                                                                   // Saf Inbox
-        Route::get('saf/outbox', 'outbox');                                                                 // Saf Workflow Outbox and Outbox By search key
-        Route::post('saf-details', 'details');                                                              // Saf Workflow safDetails and safDetails By ID
-        Route::post('saf/candidates', 'getSafCandidates');                                                  // Get SAF Candidates
-        Route::post('saf/escalate', 'postEscalate');                                                        // Saf Workflow special and safDetails By id
-        Route::get('saf/escalate/inbox/{key?}', 'specialInbox');                                            // Saf workflow Inbox and Inbox By search key
-        Route::post('saf/independent-comment', 'commentIndependent');                                       // Independent Comment for SAF Application
-        Route::post('saf/post/level', 'postNextLevel');                                                     // Forward or Backward Application
-        Route::post('saf/approvalrejection', 'approvalRejectionSaf');                                       // Approval Rejection SAF Application
-        Route::post('saf/back-to-citizen', 'backToCitizen');                                                // Saf Application Back To Citizen
-        Route::post('saf/get-prop-byholding', 'getPropByHoldingNo');                                        // get Property (search) by ward no and holding no
-        Route::match(["get", "post"], 'ulb/workflow/member', 'setWorkFlowForwordBackword');                 // get Property (search) by ward no and holding no
-        Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID
-        Route::post('saf/generate-order-id', 'generateOrderId');                                            // Generate Order ID
-        Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment
-        Route::post('saf/payment-receipt', 'generatePaymentReceipt');                                       // Generate payment Receipt
-        Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions
+        Route::get('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf(1)
+        Route::post('saf/apply', 'applySaf');                                                               // Applying Saf Route(2)
+        Route::get('saf/inbox', 'inbox');                                                                   // Saf Inbox(3)
+        Route::get('saf/outbox', 'outbox');                                                                 // Saf Workflow Outbox and Outbox By search key(4)
+        Route::post('saf-details', 'details');                                                              // Saf Workflow safDetails and safDetails By ID(5)
+        Route::post('saf/escalate', 'postEscalate');                                                        // Saf Workflow special and safDetails By id(6)
+        Route::get('saf/escalate/inbox/{key?}', 'specialInbox');                                            // Saf workflow Inbox and Inbox By search key(7)
+        Route::post('saf/independent-comment', 'commentIndependent');                                       // Independent Comment for SAF Application(8)
+        Route::post('saf/post/level', 'postNextLevel');                                                     // Forward or Backward Application(9)
+        Route::post('saf/approvalrejection', 'approvalRejectionSaf');                                       // Approval Rejection SAF Application(10)
+        Route::post('saf/back-to-citizen', 'backToCitizen');                                                // Saf Application Back To Citizen(11)
+        Route::post('saf/get-prop-byholding', 'getPropByHoldingNo');                                        // get Property (search) by ward no and holding no(12)
+        Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID(13)
+        Route::post('saf/generate-order-id', 'generateOrderId');                                            // Generate Order ID(14)
+        Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment(15)
+        Route::post('saf/payment-receipt', 'generatePaymentReceipt');                                       // Generate payment Receipt(16)
+        Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions(17)
 
-        Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification
-        Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging
+        Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification(18)
+        Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging(19)
     });
 
     /**
@@ -132,24 +128,24 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
        | Serial No : 07
      */
     Route::controller(ConcessionController::class)->group(function () {
-        Route::post('concession/apply-concession', 'applyConcession');
-        Route::post('concession/postHolding', 'postHolding');
-        Route::get('concession/inbox', 'inbox');                                               // Concession Inbox 
-        Route::get('concession/outbox', 'outbox');                                             // Concession Outbox
-        Route::post('concession/details', 'getDetailsById');                                   // Get Concession Details by ID
-        Route::post('concession/escalate', 'escalateApplication');                             // escalate application
-        Route::get('concession/special-inbox', 'specialInbox');                                // escalated application inbox
-        Route::post('concession/owner-details', 'getOwnerDetails');
+        Route::post('concession/apply-concession', 'applyConcession');      //01                
+        Route::post('concession/postHolding', 'postHolding');               //02  
+        Route::get('concession/inbox', 'inbox');                            //03               // Concession Inbox 
+        Route::get('concession/outbox', 'outbox');                          //04               // Concession Outbox
+        Route::post('concession/details', 'getDetailsById');                //05               // Get Concession Details by ID
+        Route::post('concession/escalate', 'escalateApplication');          //06               // escalate application
+        Route::get('concession/special-inbox', 'specialInbox');             //07               // escalated application inbox
 
-        Route::post('concession/next-level', 'postNextLevel');                                  // Backward Forward Application
-        Route::post('concession/approvalrejection', 'approvalRejection');                       // Approve Reject Application
-        Route::post('concession/backtocitizen', 'backToCitizen');                                // Back To Citizen 
+        Route::post('concession/next-level', 'postNextLevel');              //08               // Backward Forward Application
+        Route::post('concession/approvalrejection', 'approvalRejection');   //09               // Approve Reject Application
+        Route::post('concession/backtocitizen', 'backToCitizen');           //10               // Back To Citizen 
+        Route::post('concession/owner-details', 'getOwnerDetails');         //11
 
-        Route::get('concession/list', 'concessionList');
-        Route::post('concession/list-id', 'concessionByid');
-        Route::post('concession/doc-list', 'concessionDocList');
-        Route::post('concession/doc-upload', 'concessionDocUpload');
-        Route::post('concession/doc-status', 'concessionDocStatus');
+        Route::get('concession/list', 'concessionList');                    //12
+        Route::post('concession/list-id', 'concessionByid');                //13
+        Route::post('concession/doc-list', 'concessionDocList');            //14
+        Route::post('concession/doc-upload', 'concessionDocUpload');        //15
+        Route::post('concession/doc-status', 'concessionDocStatus');        //16
     });
 
 
@@ -188,17 +184,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('post-custom-data', 'postCustomDetails');
     });
 
-    /**
-     * | Document verification
-       | Serial No : 10
-     */
-    Route::controller(DocumentController::class)->group(function () {
-        Route::post('saf/doc-status', 'safDocStatus');
-    });
 
     /**
      * | Calculator dashboardDate
-       | Serial No : 11
+       | Serial No : 10
      */
     Route::controller(CalculatorController::class)->group(function () {
         Route::post('get-dashboard', 'dashboardDate');
@@ -209,25 +198,24 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | Rain water Harvesting
      * | Created By - Sam kerketta
      * | Created On- 22-11-2022 
-       | Serial No : 12
+       | Serial No : 11
      */
     Route::controller(RainWaterHarvestingController::class)->group(function () {
-        Route::get('get-wardmaster-data', 'getWardMasterData');
-        Route::post('water-harvesting-application', 'waterHarvestingApplication');
-        Route::post('get-harvesting-list', 'waterHarvestingList');
-        Route::post('harvesting-list-id', 'harvestingListById');
-        Route::post('harvesting-doc-id', 'harvestingDocList');
-        Route::post('harvesting-doc-upload', 'docUpload');
-        Route::post('harvesting-doc-status', 'docStatus');
-
-        Route::post('inbox', 'harvestingInbox');
+        Route::get('get-wardmaster-data', 'getWardMasterData');                     //01
+        Route::post('water-harvesting-application', 'waterHarvestingApplication');  //02
+        Route::post('get-harvesting-list', 'waterHarvestingList');                  //03
+        Route::post('harvesting-list-id', 'harvestingListById');                    //04
+        Route::post('harvesting-doc-id', 'harvestingDocList');                      //05
+        Route::post('harvesting-doc-upload', 'docUpload');                          //06
+        Route::post('harvesting-doc-status', 'docStatus');                          //07
+        Route::post('inbox', 'harvestingInbox');                                    //08
     });
 
     /**
      * | Property Cluster
      * | Created By - Sam kerketta
      * | Created On- 23-11-2022 
-       | Serial No : 13
+       | Serial No : 12
      */
     Route::controller(ClusterController::class)->group(function () {
         #cluster data entry / Master
@@ -244,7 +232,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     /**
      * | Property Document Operation
-       | Serial No : 14
+       | Serial No : 13
      */
     Route::controller(DocumentOperationController::class)->group(function () {
         Route::post('get-all-documents', 'getAllDocuments');
@@ -252,7 +240,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     /**
      * | poperty related type details form ref
-       | Serial No : 15 
+       | Serial No : 14 
      */
     Route::controller(PropMaster::class)->group(function () {
         Route::get('prop-usage-type', 'propUsageType');
@@ -264,7 +252,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     /**
      * | Property Details
-       | Serial No : 16
+       | Serial No : 15
      */
     Route::controller(PropertyDetailsController::class)->group(function () {
         Route::post('get-filter-property-details', 'getFilterProperty');

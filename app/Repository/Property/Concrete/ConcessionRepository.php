@@ -59,7 +59,6 @@ class ConcessionRepository implements iConcessionRepository
             $workflow_id = Config::get('workflow-constants.PROPERTY_CONCESSION_ID');
             $concession = new PropActiveConcession;
             $concession->property_id = $request->propId;
-            $concession->application_no = $request->applicationNo;
             $concession->applicant_name = $request->applicantName;
             $concession->gender = $request->gender;
             $concession->dob = $request->dob;
@@ -148,7 +147,7 @@ class ConcessionRepository implements iConcessionRepository
             $labelPending->save();
 
             DB::commit();
-            return responseMsg(true, 'Successfully Applied The Application', $concessionNo);
+            return responseMsgs(true, 'Successfully Applied The Application', $concessionNo, '010701', '01', '382ms-547ms', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -162,7 +161,7 @@ class ConcessionRepository implements iConcessionRepository
             $user = PropProperty::where('holding_no', $request->holdingNo)
                 ->get();
             if (!empty($user['0'])) {
-                return responseMsg(true, 'True', $user);
+                return responseMsgs(true, 'True', $user, '010702', '01', '334ms-401ms', 'Post', '');
             }
             return responseMsg(false, "False", "");
             // return $user['0'];
@@ -201,7 +200,7 @@ class ConcessionRepository implements iConcessionRepository
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_concessions.id')
                 ->get();
-            return responseMsg(true, "Inbox List", remove_null($concessions));
+            return responseMsgs(true, "Inbox List", remove_null($concessions), '010703', '01', '326ms-478ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -239,7 +238,7 @@ class ConcessionRepository implements iConcessionRepository
                 ->orderByDesc('prop_active_concessions.id')
                 ->get();
 
-            return responseMsg(true, "Outbox List", remove_null($concessions));
+            return responseMsgs(true, "Outbox List", remove_null($concessions), '010704', '01', '355ms-419ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -291,7 +290,7 @@ class ConcessionRepository implements iConcessionRepository
 
             $details['levelComments'] = $levelComments;
 
-            return responseMsg(true, "Concession Details", remove_null($details));
+            return responseMsgs(true, "Concession Details", remove_null($details), '010705', '01', '326ms-408ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -313,14 +312,14 @@ class ConcessionRepository implements iConcessionRepository
                 $concession->is_escalate = 1;
                 $concession->escalated_by = $userId;
                 $concession->save();
-                return responseMsg(true, "Successfully Escalated the application", "");
+                return responseMsgs(true, "Successfully Escalated the application", "", '010706', '01', '400ms', 'Post', '');
             }
             if ($req->escalateStatus == 0) {
                 $concession = PropActiveConcession::find($req->id);
                 $concession->is_escalate = 0;
                 $concession->escalated_by = null;
                 $concession->save();
-                return responseMsg(true, "Successfully De-Escalated the application", "");
+                return responseMsgs(true, "Successfully De-Escalated the application", "", '010706', '01', '400ms', 'Post', '');
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -351,7 +350,7 @@ class ConcessionRepository implements iConcessionRepository
                 ->orderByDesc('prop_active_concessions.id')
                 ->get();
 
-            return responseMsg(true, "Inbox List", remove_null($concessions));
+            return responseMsg(true, "Inbox List", remove_null($concessions), "", '010707', '01', '303ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -397,7 +396,7 @@ class ConcessionRepository implements iConcessionRepository
             $commentOnlevel->save();
 
             DB::commit();
-            return responseMsg(true, "Successfully Forwarded The Application!!", "");
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", '010708', '01', '355ms', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -453,7 +452,7 @@ class ConcessionRepository implements iConcessionRepository
                 $msg = "Application Successfully Rejected !!";
             }
             DB::commit();
-            return responseMsg(true, $msg, "");
+            return responseMsgs(true, $msg, "", "", '010709', '01', '376ms', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -499,7 +498,7 @@ class ConcessionRepository implements iConcessionRepository
             $receiverLevelPending->forward_time = $this->_todayDate->format('H:i:m');
             $receiverLevelPending->save();
 
-            return responseMsg(true, "Successfully Done", "");
+            return responseMsgs(true, "Successfully Done", "", "", '010710', '01', '358ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -520,8 +519,8 @@ class ConcessionRepository implements iConcessionRepository
             if ($checkExisting) {
                 $checkExisting->property_id = $request->propId;
                 $checkExisting->save();
-                return responseMsg(1, "User Already Applied", $ownerDetails);
-            } else return responseMsg(0, "User Not Exist", $ownerDetails);
+                return responseMsgs(1, "User Already Applied", $ownerDetails, "", '010711', '01', '303ms-406ms', 'Post', '');
+            } else return responseMsgs(0, "User Not Exist", $ownerDetails, "", '010711', '01', '303ms-406ms', 'Post', '');
             // return responseMsg(true, '', remove_null($ownerDetails));
         } catch (Exception $e) {
             echo $e->getMessage();
@@ -562,7 +561,7 @@ class ConcessionRepository implements iConcessionRepository
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                 ->get();
 
-            return responseMsg(true, "Successfully Done", $list);
+            return responseMsgs(true, "Successfully Done", $list, "", '010712', '01', '308ms-396ms', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -591,7 +590,7 @@ class ConcessionRepository implements iConcessionRepository
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                 ->first();
 
-            return responseMsg(true, "Successfully Done", $list);
+            return responseMsgs(true, "Successfully Done", $list, "", '010713', '01', '312ms-389ms', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -617,7 +616,7 @@ class ConcessionRepository implements iConcessionRepository
                 $val->docUrl = $path;
                 return $val;
             });
-            return responseMsg(true, "Successfully Done", remove_null($list));
+            return responseMsgs(true, "Successfully Done", remove_null($list), "", '010714', '01', '314ms-451ms', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -724,7 +723,7 @@ class ConcessionRepository implements iConcessionRepository
                 }
             }
 
-            return responseMsg(true, "Successfully Uploaded", '');
+            return responseMsgs(true, "Successfully Uploaded", '', "", '010715', '01', '434ms', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -752,7 +751,7 @@ class ConcessionRepository implements iConcessionRepository
             }
             $docStatus->save();
 
-            return responseMsg(true, "Successfully Done", '');
+            return responseMsgs(true, "Successfully Done", '', "", '010716', '01', '308ms-431ms', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -801,6 +800,8 @@ class ConcessionRepository implements iConcessionRepository
                 'relative_path' => ('concession/' . $docName . '/'),
                 'doc_name' => $name,
                 'status' => 1,
+                'verify_status' => 0,
+                'remarks' => '',
                 'updated_at' => Carbon::now()
             ]);
     }

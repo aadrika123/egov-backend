@@ -92,6 +92,7 @@ trait SAF
         $saf->new_ward_mstr_id = $req->newWard;
         $saf->percentage_of_property_transfer = $req->percOfPropertyTransfer;
         $saf->apartment_details_id = $req->apartmentDetail;
+        $saf->applicant_name = collect($req->owner)->first()['ownerName'];
         $saf->road_width = $req->roadType;
     }
 
@@ -323,7 +324,7 @@ trait SAF
             )
             ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
-            ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+            ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
             ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 'prop_active_safs.assessment_type')
             ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')
             ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id');

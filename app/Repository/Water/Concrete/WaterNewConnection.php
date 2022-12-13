@@ -32,11 +32,16 @@ class WaterNewConnection implements IWaterNewConnection
     use Auth;               // Trait Used added by sandeep bara date 17-09-2022
     use WardPermission;
     use Razorpay;
+    
+    /**
+     * | Created On-01-12-2022
+     * | Created By- Sandeep Bara
+     * -----------------------------------------------------------------------------------------
+     * | WATER Module
+    */
 
     protected $_modelWard;
     protected $_parent;
-    protected $_wardNo;
-    protected $_licenceId;
     protected $_shortUlbName;
 
     public function __construct()
@@ -44,6 +49,16 @@ class WaterNewConnection implements IWaterNewConnection
         $this->_modelWard = new ModelWard();
         $this->_parent = new CommonFunction();
     }
+    /**
+     * | Search the Citizen Related Water Application
+       query cost (2.30)
+     * ---------------------------------------------------------------------
+     * | @var refUser            = Auth()->user()
+     * | @var refUserId          = refUser->id      | loging user Id
+     * | @var refUlbId           = refUser->ulb_id  | loging user ulb Id
+     * | @var connection         = query data  [Model use (WaterApplication , WaterConnectionCharge)]
+     * 
+    */
     public function getCitizenApplication(Request $request)
     {
         try{
@@ -56,30 +71,31 @@ class WaterNewConnection implements IWaterNewConnection
                                         "water_applications.payment_status",
                                         "water_applications.doc_status",
                                         "charges.amount",
-                                        DB::raw("'connection' AS type,water_applications.apply_date::date AS apply_date")
+                                        DB::raw("'connection' AS type,
+                                        water_applications.apply_date::date AS apply_date")
                                         )
-                                        ->join(
-                                            DB::raw("( 
-                                                SELECT DISTINCT(water_applications.id) AS application_id , SUM(COALESCE(amount,0)) AS amount
-                                                FROM water_applications 
-                                                LEFT JOIN water_connection_charges 
-                                                    ON water_applications.id = water_connection_charges.application_id 
-                                                    AND ( 
-                                                        water_connection_charges.paid_status ISNULL  
-                                                        OR water_connection_charges.paid_status=FALSE 
-                                                    )  
-                                                    AND( 
-                                                            water_connection_charges.status = TRUE
-                                                            OR water_connection_charges.status ISNULL  
-                                                        )
-                                                WHERE water_applications.user_id = $refUserId
-                                                    AND water_applications.ulb_id = $refUlbId
-                                                GROUP BY water_applications.id
-                                                ) AS charges
-                                            "),
-                                        function($join){
-                                            $join->on("charges.application_id","water_applications.id");
-                                        })
+                                ->join(
+                                    DB::raw("( 
+                                        SELECT DISTINCT(water_applications.id) AS application_id , SUM(COALESCE(amount,0)) AS amount
+                                        FROM water_applications 
+                                        LEFT JOIN water_connection_charges 
+                                            ON water_applications.id = water_connection_charges.application_id 
+                                            AND ( 
+                                                water_connection_charges.paid_status ISNULL  
+                                                OR water_connection_charges.paid_status=FALSE 
+                                            )  
+                                            AND( 
+                                                    water_connection_charges.status = TRUE
+                                                    OR water_connection_charges.status ISNULL  
+                                                )
+                                        WHERE water_applications.user_id = $refUserId
+                                            AND water_applications.ulb_id = $refUlbId
+                                        GROUP BY water_applications.id
+                                        ) AS charges
+                                    "),
+                                    function($join){
+                                        $join->on("charges.application_id","water_applications.id");
+                                })
                                 // ->whereNotIn("status",[0,6,7])
                                 ->where("water_applications.user_id",$refUserId)
                                 ->where("water_applications.ulb_id",$refUlbId)
@@ -92,6 +108,14 @@ class WaterNewConnection implements IWaterNewConnection
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
+    /**
+     *  Genrate the RazorPay OrderId 
+       Query const(3.30)
+     * ---------------------------------------------------------------------------
+     * | @var refUser            = Auth()->user()
+     * | @var refUserId          = refUser->id      | loging user Id
+     * | @var refUlbId           = refUser->ulb_id  | loging user ulb Id
+    */
     public function handeRazorPay(Request $request)
     {
         try{
@@ -277,20 +301,6 @@ class WaterNewConnection implements IWaterNewConnection
         }
     }
 
-    public function paymentRecipt($id, $transectionId)
-    {
-        try{
-            $transection = WaterTranDetail::select("*")
-                           ->where("id",$transectionId)
-                           ->whereIn("status",[1,2]);
-            return responseMsg(true,"datFech",'');
-        }
-        catch(Exception $e)
-        {
-            return responseMsg(false,$e->getMessage(),'');
-        }
-    }
-
     public function readTransectionAndApl(Request $request)
     {
         try{
@@ -351,6 +361,26 @@ class WaterNewConnection implements IWaterNewConnection
         }
     }
 
+    /**
+     * get And Uploade Water Requied Documents
+       Query cost(3.00)
+     * ------------------------------------------------------------------ 
+     * | @var refUser            = Auth()->user()
+     * | @var refUserId          = refUser->id      | loging user Id
+     * | @var refUlbId           = refUser->ulb_id  | loging user ulb Id
+     * | @var refApplication     = WaterApplication(Model);
+     * | @var refOwneres         = WaterApplicant(Model);
+     * | @var requiedDocType     = $this->getDocumentTypeList()         |
+     * | @var requiedDocs        = Application Related Required Documents
+     * | @var ownersDoc          = Owners Related Required Documents
+     * ----------------fucntion use---------------------------------------
+     * | @var requiedDocType = $this->getDocumentTypeList(refApplication);
+     * | @var refOwneres     = $this->getOwnereDtlByLId(refApplication->id);
+     * | $this->getDocumentList($val->doc_for) |get All Related Document List
+     * | $this->check_doc_exist(connectionId,$val->doc_for); |  Check Document is Uploaded Of That Type
+     * | $this->readDocumentPath($doc['uploadDoc']["document_path"]); |  Create The Relative Path For Document Read
+     * | $this->check_doc_exist_owner(refApplication->id,$val->id); # check Owners  Documents
+    */
     public function documentUpload(Request $request)
     {
         try{
@@ -383,18 +413,18 @@ class WaterNewConnection implements IWaterNewConnection
             // {
             //     throw new Exception("Documernt Already Verifed.....");
             // }
-            $requiedDocType = $this->getDocumentTypeList($refApplication);
-            $refOwneres = $this->getOwnereDtlByLId($refApplication->id);
+            $requiedDocType = $this->getDocumentTypeList($refApplication);  # get All Related Document Type List
+            $refOwneres = $this->getOwnereDtlByLId($refApplication->id);    # get Owneres List
             foreach($requiedDocType as $val)
             {                  
                 $doc = (array) null;
                 $doc['docName'] = $val->doc_for;
                 $doc['isMadatory'] = $val->is_mandatory;
-                $doc['docVal'] = $this->getDocumentList($val->doc_for);
-                $doc['uploadDoc']=$this->check_doc_exist($connectionId,$val->doc_for);
+                $doc['docVal'] = $this->getDocumentList($val->doc_for);  # get All Related Document List
+                $doc['uploadDoc']=$this->check_doc_exist($connectionId,$val->doc_for); # Check Document is Uploaded Of That Type
                 if(isset($doc['uploadDoc']["document_path"]))
                 {
-                    $path = $this->readDocumentPath($doc['uploadDoc']["document_path"]);
+                    $path = $this->readDocumentPath($doc['uploadDoc']["document_path"]); # Create The Relative Path For Document Read
                     $doc['uploadDoc']["document_path"] = !empty(trim($doc['uploadDoc']["document_path"]))?$path:null;
                 }
                 array_push($requiedDocs,$doc);
@@ -407,7 +437,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $doc["docName"]   = "ID Proof";
                 $doc['isMadatory'] = 1;
                 $doc['docVal'] = $this->getDocumentList("ID Proof");                
-                $refOwneres[$key]["ID Proof"] = $this->check_doc_exist_owner($refApplication->id,$val->id);               
+                $refOwneres[$key]["ID Proof"] = $this->check_doc_exist_owner($refApplication->id,$val->id); # check Owners ID Proof Documents             
                 $doc['uploadDoc']= $refOwneres[$key]["ID Proof"];
                 if(isset($refOwneres[$key]["ID Proof"]["document_path"]))
                 { 
@@ -433,6 +463,8 @@ class WaterNewConnection implements IWaterNewConnection
                 }
                 array_push($ownersDoc,$doc2);
             }
+
+            #---------- upload the documents--------------
             if(isset($request->docFor))
             {
                 #connection Doc
@@ -586,6 +618,18 @@ class WaterNewConnection implements IWaterNewConnection
             return responseMsg(false,$e->getMessage(),$request->all());
         }        
     }
+
+    /**
+     * Get Uploade Document Of Water Application
+        Query Cost(2.30)
+     * | --------------------------------------------------
+     * | @var applicationId     = request->applicationId
+     * | @var refApplication    = WaterApplication(Model);
+     * | @var mUploadDocument   = $this->getWaterDocuments(applicationId)
+     * ----------------------function use----------------------------------------
+     * | @var mUploadDocument   = $this->getWaterDocuments(applicationId)
+     * | $this->readDocumentPath( $val["document_path"])
+    */
     public function getUploadDocuments(Request $request)
     {
         try{
@@ -622,6 +666,59 @@ class WaterNewConnection implements IWaterNewConnection
         {
 
             return responseMsg(false,$e->getMessage(),$request->all());
+        }
+    }
+
+    /**
+     *  Get The Payment Reciept Data Or Water Module
+        Query Cost(2.00)
+     */
+    public function paymentRecipt($id, $transectionId)
+    {
+        try{
+            $application = (array)null;
+            $transection = WaterTran::select("*")
+                           ->where("id",$transectionId)
+                           ->whereIn("status",[1,2])
+                           ->first();
+            if(!$transection)
+            {
+                throw new Exception("Transection Data Not Found....");
+            }
+            if($transection->tran_type!="Demand-collection")
+            {
+                $application = WaterApplication::select("water_applications.application_no",
+                                                        "address",
+                                            "owner.owner_name","owner.guardian_name","owner.mobile",
+                                            DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+                                            ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
+                                            ")
+                                        )
+                                        ->join("ulb_masters","ulb_masters.id","water_applications.ulb_id")
+                                        ->join("ulb_ward_masters",function($join){
+                                            $join->on("ulb_ward_masters.id","=","water_applications.ward_id");                                
+                                        })
+                                        ->leftjoin(DB::raw("(SELECT STRING_AGG(applicant_name,',') as owner_name,
+                                                            STRING_AGG(guardian_name,',') as guardian_name,
+                                                            STRING_AGG(mobile_no::text,',') as mobile,
+                                                            application_id
+                                                        FROM water_applicants 
+                                                        WHERE application_id = $id
+                                                            AND status != FALSE
+                                                        GROUP BY application_id
+                                                        ) owner"),function($join){
+                                                            $join->on("owner.application_id","=","water_applications.id");
+                                                        })
+                                        ->where('water_applications.id',$id)
+                                        ->first();
+            }
+            $data["transaction"] = $transection;
+            $data["application"] = $application;
+            return responseMsg(true,"datFech",$data);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),'');
         }
     }
 
@@ -906,5 +1003,5 @@ class WaterNewConnection implements IWaterNewConnection
     public function getOwnershipTypeList()
     {
         
-    }
+    }    
 }

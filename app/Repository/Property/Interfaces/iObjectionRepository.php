@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 interface iObjectionRepository
 {
     public function applyObjection($request);
-    public function objectionType();
     public function ownerDetails($request);
     public function assesmentDetails($request);
     public function inbox();

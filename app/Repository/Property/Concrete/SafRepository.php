@@ -18,7 +18,6 @@ use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenalty;
 use App\Models\Property\PaymentPropRebate;
 use App\Models\Property\PropActiveSaf;
-use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropLevelPending;
@@ -182,7 +181,7 @@ class SafRepository implements iSafRepository
 
         $data['transfer_mode'] = $transferModuleType;
 
-        return  responseMsg(true, 'Property Masters', $data);
+        return responseMsgs(true, 'Property Masters', $data, "010101", "1.0", "317ms", "GET", "");
     }
 
     /**
@@ -274,76 +273,18 @@ class SafRepository implements iSafRepository
             $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
 
             DB::commit();
-            return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
+            return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
                 "applyDate" => $saf->application_date,
                 "safId" => $saf->id,
                 "demand" => $demand
-            ]);
+            ], "010102", "1.0", "1s", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return $e;
         }
     }
 
-    /**
-     * | Verify Document by Dealing Assistant
-     * | @param req
-     * | Verification Status (0 is for pending, 1 is for Approval, 2 for Rejection)
-     */
-    public function verifyDoc($req)
-    {
-        try {
-            $verifications = $req->verifications;
-            DB::beginTransaction();
-            foreach ($verifications as $verification) {
-                $activeSafDoc = new PropActiveSafsDoc();
-                $document = $activeSafDoc->getSafDocument($verification['documentId']);             // Get Saf Document By id
-                if ($verification['verifyStatus'] == 1) {
-                    $document->verify_status = 1;
-                    $document->save();
-                }
-                if ($verification['verifyStatus'] == 0) {
-                    $document->verify_status = 2;
-                    $document->save();
-                }
-            }
-            DB::commit();
-            return responseMsg(true, "Document Verification Successfully Done", "");
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Citizen or JSK Document Upload
-     * | @param request $req
-     */
-    public function documentUpload($req)
-    {
-        try {
-            $images = $req->uploads;
-            foreach ($images as $image) {
-                $document = new PropActiveSafsDoc();
-                $document->saf_id = $req->safId;
-                // Upload Image
-                $base64Encode = base64_encode($image['docPath']->getClientOriginalName());
-                $extention = $image['docPath']->getClientOriginalExtension();
-                $imageName = time() . '-' . $base64Encode . '.' . $extention;
-                $image['docPath']->storeAs('public/Property/SafOwnerDetails', $imageName);
-
-                $document->doc_mstr_id = $image['docMastId'];
-                $document->doc_path = $imageName;
-                $document->saf_owner_dtl_id = $image['ownerDtlId'];
-                $document->user_id = authUser()->id;
-                $document->save();
-            }
-            return responseMsg(true, "Successfully Uploaded the Images", "");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 
     /**
      * ---------------------- Saf Workflow Inbox --------------------
@@ -395,7 +336,7 @@ class SafRepository implements iSafRepository
 
             $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
 
-            return responseMsg(true, "Data Fetched", remove_null($safInbox->values()));
+            return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", "339ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -435,7 +376,7 @@ class SafRepository implements iSafRepository
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name', 'at.assessment_type')
                 ->get();
-            return responseMsg(true, "Data Fetched", remove_null($safData->values()));
+            return responseMsgs(true, "Data Fetched", remove_null($safData->values()), "010104", "1.0", "274ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -526,7 +467,7 @@ class SafRepository implements iSafRepository
 
             $data['citizenComment'] = $citizenComment;
 
-            return responseMsg(true, 'Data Fetched', remove_null($data));
+            return responseMsgs(true, 'Data Fetched', remove_null($data), "010104", "1.0", "303ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -574,7 +515,7 @@ class SafRepository implements iSafRepository
             $data->escalate_by = $userId;
             $data->save();
             DB::commit();
-            return responseMsg(true, $request->escalateStatus == 1 ? 'Saf is Escalated' : "Saf is removed from Escalated", '');
+            return responseMsgs(true, $request->escalateStatus == 1 ? 'Saf is Escalated' : "Saf is removed from Escalated", '', "010106", "1.0", "353ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
@@ -609,7 +550,7 @@ class SafRepository implements iSafRepository
                 ->whereIn('ward_mstr_id', $wardId)
                 ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type', 'at.assessment_type')
                 ->get();
-            return responseMsg(true, "Data Fetched", remove_null($safData));
+            return responseMsgs(true, "Data Fetched", remove_null($safData), "010107", "1.0", "251ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -663,7 +604,7 @@ class SafRepository implements iSafRepository
             $workflowTrack->save();
 
             DB::commit();
-            return responseMsg(true, "You Have Commented Successfully!!", ['Comment' => $request->comment]);
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "427ms", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -683,6 +624,21 @@ class SafRepository implements iSafRepository
     {
         try {
             DB::beginTransaction();
+            // SAF Application Update Current Role Updation
+            $saf = PropActiveSaf::find($request->safId);
+            if ($request->senderRoleId == 11) {                 // Initiator Role Id
+                $saf->doc_upload_status = 1;
+            }
+            // Check if the application is in case of BTC
+            if ($saf->parked == true) {
+                $levelPending = new PropLevelPending();
+                $lastLevelEntry = $levelPending->getLastLevelBySafId($request->safId);              // Send Last Level Current Role
+                $saf->parked = false;                                                               // Disable BTC
+                $saf->current_role = $lastLevelEntry->sender_role_id;
+            } else
+                $saf->current_role = $request->receiverRoleId;
+            $saf->save();
+
             // previous level pending verification enabling
             $levelPending = new PropLevelPending();
             $levelPending->saf_id = $request->safId;
@@ -690,11 +646,6 @@ class SafRepository implements iSafRepository
             $levelPending->receiver_role_id = $request->receiverRoleId;
             $levelPending->sender_user_id = auth()->user()->id;
             $levelPending->save();
-
-            // SAF Application Update Current Role Updation
-            $saf = PropActiveSaf::find($request->safId);
-            $saf->current_role = $request->receiverRoleId;
-            $saf->save();
 
             // Add Comment On Prop Level Pending
             $propLevelPending = new PropLevelPending();
@@ -707,7 +658,7 @@ class SafRepository implements iSafRepository
             $commentOnlevel->save();
 
             DB::commit();
-            return responseMsg(true, "Successfully Forwarded The Application!!", "");
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
@@ -911,7 +862,7 @@ class SafRepository implements iSafRepository
             }
 
             DB::commit();
-            return responseMsg(true, $msg, ['holdingNo' => $safDetails->holding_no]);
+            return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -963,7 +914,7 @@ class SafRepository implements iSafRepository
             $levelPending->save();
 
             DB::commit();
-            return responseMsg(true, "Successfully Done", "");
+            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1083,7 +1034,7 @@ class SafRepository implements iSafRepository
             }
 
             DB::commit();
-            return responseMsg(true, "Order ID Generated", remove_null($orderDetails));
+            return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010114", "1.0", "1s", "POST", $req->deviceId);
             // }
 
             // return responseMsg(false, "Amount Not Matched", "");
@@ -1161,7 +1112,7 @@ class SafRepository implements iSafRepository
 
             Redis::del('property-transactions-user-' . $userId);
             DB::commit();
-            return responseMsg(true, "Payment Successfully Done", "");
+            return responseMsgs(true, "Payment Successfully Done", "", "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1219,7 +1170,7 @@ class SafRepository implements iSafRepository
                 "tcName" => "",
                 "tcMobile" => ""
             ];
-            return responseMsg(true, "Payment Receipt", remove_null($responseData));
+            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "451ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -1251,7 +1202,7 @@ class SafRepository implements iSafRepository
                 ->get();
             $this->_redis->set('property-transactions-user-' . $userId, json_encode($propTrans));
         }
-        return responseMsg(true, "Transactions History", remove_null($propTrans));
+        return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", "265ms", "POST", $req->deviceId);
     }
 
     /**
@@ -1309,7 +1260,7 @@ class SafRepository implements iSafRepository
             $propertyDtl['floors'] = $floors;
             $propertyDtl['owners'] = $owners;
 
-            return responseMsg(true, "Property Details", remove_null($propertyDtl));
+            return responseMsgs(true, "Property Details", remove_null($propertyDtl), "010112", "1.0", "238ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -1393,7 +1344,7 @@ class SafRepository implements iSafRepository
             }
 
             DB::commit();
-            return responseMsg(true, $msg, "");
+            return responseMsgs(true, $msg, "", "010118", "1.0", "310ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1419,7 +1370,7 @@ class SafRepository implements iSafRepository
             $geoTagging->direction_type = $req->directionType;
             $geoTagging->relative_path = $relativePath;
             $geoTagging->save();
-            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010123", "1.0", "289ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
