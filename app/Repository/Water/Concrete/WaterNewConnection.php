@@ -486,20 +486,44 @@ class WaterNewConnection implements IWaterNewConnection
                     if ($file->IsValid() && in_array($request->$doc_mstr_id,$ids))
                     { 
                         if ($app_doc_dtl_id = $this->check_doc_exist($connectionId,$request->$doc_for))
-                        {                                                          
-                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                            if (file_exists($delete_path)) 
-                            {   
-                                unlink($delete_path);
-                            }
-                            $newFileName = $app_doc_dtl_id['id'];
+                        {   
+                            if($app_doc_dtl_id->verify_status==0 )
+                            {
+                                $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                                if (file_exists($delete_path)) 
+                                {   
+                                    unlink($delete_path);
+                                }
+                                $newFileName = $app_doc_dtl_id['id'];
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "water_conn_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $app_doc_dtl_id->doc_name       =  $filePath;
+                                $app_doc_dtl_id->document_id    =  $request->$doc_mstr_id;
+                                $app_doc_dtl_id->update();
+                            }    
+                            else
+                            {
+                                $app_doc_dtl_id->status =0;
+                                $app_doc_dtl_id->update();
 
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                            $fileName = "water_conn_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file,$fileName);
-                            $app_doc_dtl_id->doc_name       =  $filePath;
-                            $app_doc_dtl_id->document_id    =  $request->$doc_mstr_id;
-                            $app_doc_dtl_id->save();
+                                $waterDoc = new WaterApplicantDoc;
+                                $waterDoc->application_id = $connectionId;
+                                $waterDoc->doc_for    = $request->$doc_for;
+                                $waterDoc->document_id = $request->$doc_mstr_id;
+                                $waterDoc->emp_details_id = $refUserId;
+                                
+                                $waterDoc->save();
+                                $newFileName = $waterDoc->id;
+                                
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "water_conn_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $waterDoc->doc_name =  $filePath;
+                                $waterDoc->update();
+
+                            }                                                   
                             $sms = $app_doc_dtl_id->doc_for." Update Successfully";
 
                         }
@@ -518,7 +542,7 @@ class WaterNewConnection implements IWaterNewConnection
                             $fileName = "water_conn_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file,$fileName);
                             $waterDoc->doc_name =  $filePath;
-                            $waterDoc->save();
+                            $waterDoc->update();
                             $sms = $waterDoc->doc_for." Upload Successfully";
 
                         }                         
@@ -561,20 +585,44 @@ class WaterNewConnection implements IWaterNewConnection
                     if ($file->IsValid() && in_array($request->$doc_mstr_id,$ids))
                     { 
                         if ($app_doc_dtl_id = $this->check_doc_exist_owner($connectionId,$request->ownerId,$request->docMstrId))
-                        {                                                          
-                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                            if (file_exists($delete_path)) 
-                            {   
-                                unlink($delete_path);
-                            }
-                            $newFileName = $app_doc_dtl_id['id'];
+                        {   
+                            if($app_doc_dtl_id->verify_status==0) 
+                            {
+                                $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                                if (file_exists($delete_path)) 
+                                {   
+                                    unlink($delete_path);
+                                }
+                                $newFileName = $app_doc_dtl_id['id'];
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "water_conn_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $app_doc_dtl_id->doc_name       =  $filePath;
+                                $app_doc_dtl_id->document_id    =  $request->$doc_mstr_id;
+                                $app_doc_dtl_id->update();
+                            }  
+                            else
+                            {
+                                $app_doc_dtl_id->status    =  0 ;
+                                $app_doc_dtl_id->update();
 
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                            $fileName = "water_conn_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file,$fileName);
-                            $app_doc_dtl_id->doc_name       =  $filePath;
-                            $app_doc_dtl_id->document_id    =  $request->$doc_mstr_id;
-                            $app_doc_dtl_id->save();
+                                $waterDoc                = new WaterApplicantDoc;
+                                $waterDoc->application_id    = $connectionId;
+                                $waterDoc->doc_for       = $request->docFor;
+                                $waterDoc->document_id   = $request->docMstrId;                            
+                                $waterDoc->applicant_id  = $request->ownerId;
+                                $waterDoc->emp_details_id = $refUserId;
+                                
+                                $waterDoc->save();
+                                $newFileName = $waterDoc->id;
+                                
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "water_conn_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $waterDoc->doc_name =  $filePath;
+                                $waterDoc->update();
+                            }                                                    
                             $sms = $app_doc_dtl_id->doc_for." Update Successfully";
 
                         }
@@ -594,7 +642,7 @@ class WaterNewConnection implements IWaterNewConnection
                             $fileName = "water_conn_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file,$fileName);
                             $waterDoc->doc_name =  $filePath;
-                            $waterDoc->save();
+                            $waterDoc->update();
                             $sms = $waterDoc->doc_for." Upload Successfully";
 
                         }                         
@@ -800,7 +848,8 @@ class WaterNewConnection implements IWaterNewConnection
     {
         try{
             
-            $doc = WaterApplicantDoc::select("id","doc_for","verify_status",
+            $doc = WaterApplicantDoc::select("id","doc_for","verify_status",                                            
+                                            "water_applicant_docs.remarks",
                                         DB::raw("doc_name AS document_path"),
                                         "document_id")
                        ->where('application_id',$applicationId)
@@ -830,6 +879,7 @@ class WaterNewConnection implements IWaterNewConnection
         try{
             // DB::enableQueryLog();
             $doc = WaterApplicantDoc::select("id","doc_for","verify_status",
+                                            "water_applicant_docs.remarks",
                                         DB::raw("doc_name AS document_path"),
                                         "document_id")
                            ->where('application_id',$applicationId)

@@ -1750,20 +1750,45 @@ class Trade implements ITrade
                     if ($file->IsValid())
                     { 
                         if ($app_doc_dtl_id = $this->check_doc_exist($licenceId,$request->$doc_for))
-                        {                                                          
-                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                            if (file_exists($delete_path)) 
-                            {   
-                                unlink($delete_path);
-                            }
-                            $newFileName = $app_doc_dtl_id['id'];
+                        {  
+                            if($app_doc_dtl_id->verify_status==0 )
+                            { 
+                                $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                                if (file_exists($delete_path)) 
+                                {   
+                                    unlink($delete_path);
+                                }
+                                $newFileName = $app_doc_dtl_id['id'];
+    
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "licence_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $app_doc_dtl_id->document_path =  $filePath;
+                                $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
+                                $app_doc_dtl_id->update();
 
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                            $fileName = "licence_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file,$fileName);
-                            $app_doc_dtl_id->document_path =  $filePath;
-                            $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
-                            $app_doc_dtl_id->save();
+                            } 
+                            else
+                            {
+                                $app_doc_dtl_id->status =  0 ;
+                                $app_doc_dtl_id->update();
+
+                                $licencedocs = new TradeLicenceDocument;
+                                $licencedocs->licence_id = $licenceId;
+                                $licencedocs->doc_for    = $request->$doc_for;
+                                $licencedocs->document_id = $request->$doc_mstr_id;
+                                $licencedocs->emp_details_id = $refUserId;
+                                
+                                $licencedocs->save();
+                                $newFileName = $licencedocs->id;
+                                
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "licence_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $licencedocs->document_path =  $filePath;
+                                $licencedocs->update();
+
+                            }                                                      
                             $sms = $app_doc_dtl_id->doc_for." Update Successfully";
 
                         }
@@ -1782,7 +1807,7 @@ class Trade implements ITrade
                             $fileName = "licence_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file,$fileName);
                             $licencedocs->document_path =  $filePath;
-                            $licencedocs->save();
+                            $licencedocs->update();
                             $sms = $licencedocs->doc_for." Upload Successfully";
 
                         }                         
@@ -1802,7 +1827,7 @@ class Trade implements ITrade
                         'doc_path'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_path_mstr_id'.$cnt.''=>'required|int',
                         'doc_path_for'.$cnt =>"required|string",
-                        "owner_id"=>"required|int",
+                        "owner_id"=>"required|digits_between:1,9223372036854775807",
                     ];
                         
                     $validator = Validator::make($request->all(), $rules, $message);                    
@@ -1824,21 +1849,46 @@ class Trade implements ITrade
                     if ($file->IsValid() )
                     {
                         if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->owner_id))
-                        {                                
-                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                            if (file_exists($delete_path)) 
-                            { 
-                                unlink($delete_path);
-                            }
+                        {   
+                            if($app_doc_dtl_id->verify_status==0 )
+                            {
 
-                            $newFileName = $app_doc_dtl_id['id'];
+                                $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                                if (file_exists($delete_path)) 
+                                { 
+                                    unlink($delete_path);
+                                }
+    
+                                $newFileName = $app_doc_dtl_id['id'];
+    
+                                $file_ext = $file->getClientOriginalExtension();
+                                $fileName = "licence_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $app_doc_dtl_id->document_path =  $filePath;
+                                $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
+                                $app_doc_dtl_id->update();
+                            }  
+                            else
+                            {
+                                $app_doc_dtl_id->status =  0 ;
+                                $app_doc_dtl_id->update();
 
-                            $file_ext = $file->getClientOriginalExtension();
-                            $fileName = "licence_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file,$fileName);
-                            $app_doc_dtl_id->document_path =  $filePath;
-                            $app_doc_dtl_id->document_id =  $request->$doc_mstr_id;
-                            $app_doc_dtl_id->save();
+                                $licencedocs = new TradeLicenceDocument;
+                                $licencedocs->licence_id = $licenceId;
+                                $licencedocs->doc_for    = $request->$doc_for;
+                                $licencedocs->licence_owner_dtl_id =$request->owner_id;
+                                $licencedocs->document_id = $request->$doc_mstr_id;
+                                $licencedocs->emp_details_id = $refUserId;
+                                
+                                $licencedocs->save();
+                                $newFileName = $licencedocs->id;
+
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "licence_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $licencedocs->document_path =  $filePath;
+                                $licencedocs->update();
+                            }                           
                             $sms = "Id Proof of ".$woner_id["owner_name"]." Update Successfully";
                         }                            
                         else 
@@ -1857,7 +1907,7 @@ class Trade implements ITrade
                             $fileName = "licence_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file,$fileName);
                             $licencedocs->document_path =  $filePath;
-                            $licencedocs->save();
+                            $licencedocs->update();
                             $sms = "Id Proof of ".$woner_id["owner_name"]." Upload Successfully";
                             
                         }
@@ -1877,7 +1927,7 @@ class Trade implements ITrade
                         'doc_path'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_path_mstr_id'.$cnt.''=>'required|int',
                         'doc_path_for'.$cnt =>"required|string",
-                        "owner_id"=>"required|int",
+                        "owner_id"=>"required|digits_between:1,9223372036854775807",
                     ];
                     $validator = Validator::make($request->all(), $rules, $message);                    
                     if ($validator->fails()) {
@@ -1898,19 +1948,45 @@ class Trade implements ITrade
                     {  
                         if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->owner_id,0))
                         {
-                            $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
-                            if (file_exists($delete_path)) 
-                            { 
-                                unlink($delete_path);
-                            }
+                            if($app_doc_dtl_id->verify_status==0 )
+                            {
 
-                            $newFileName = $app_doc_dtl_id['id'];
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                            $fileName = "licence_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file,$fileName);
-                            $app_doc_dtl_id->document_path =  $filePath;
-                            $app_doc_dtl_id->document_id =  0;
-                            $app_doc_dtl_id->save();
+                                $delete_path = storage_path('app/public/'.$app_doc_dtl_id['document_path']);
+                                if (file_exists($delete_path)) 
+                                { 
+                                    unlink($delete_path);
+                                }
+    
+                                $newFileName = $app_doc_dtl_id['id'];
+                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                                $fileName = "licence_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $app_doc_dtl_id->document_path =  $filePath;
+                                $app_doc_dtl_id->document_id =  0;
+                                $app_doc_dtl_id->update();
+                            }
+                            else
+                            {
+                                $app_doc_dtl_id->status =  0 ;
+                                $app_doc_dtl_id->update();
+
+                                $licencedocs = new TradeLicenceDocument;
+                                $licencedocs->licence_id = $licenceId;
+                                $licencedocs->doc_for    = $request->$doc_for;
+                                $licencedocs->licence_owner_dtl_id = $request->owner_id;
+                                $licencedocs->document_id =0;
+                                $licencedocs->emp_details_id = $refUserId;
+                                
+                                $licencedocs->save();
+                                $newFileName = $licencedocs->id;
+
+                                $file_ext =$file->getClientOriginalExtension();
+                                $fileName = "licence_doc/$newFileName.$file_ext";
+                                $filePath = $this->uplodeFile($file,$fileName);
+                                $licencedocs->document_path =  $filePath;
+                                $licencedocs->update();
+
+                            }
                             $sms = "Photo of ".$woner_id["owner_name"]." Update Successfully";
                         }
                         
@@ -1930,7 +2006,7 @@ class Trade implements ITrade
                             $fileName = "licence_doc/$newFileName.$file_ext";
                             $filePath = $this->uplodeFile($file,$fileName);
                             $licencedocs->document_path =  $filePath;
-                            $licencedocs->save();
+                            $licencedocs->update();
                             $sms = "Photo of ".$woner_id["owner_name"]." Upload Successfully";
                         }                                
 
@@ -4865,7 +4941,7 @@ class Trade implements ITrade
     {
         try{
             
-            $doc = TradeLicenceDocument::select("id","doc_for","verify_status","document_path","document_id")
+            $doc = TradeLicenceDocument::select("id","doc_for","verify_status","remarks","document_path","document_id")
                        ->where('licence_id',$licenceId)
                        ->where('doc_for',$doc_for);
                        if($doc_mstr_id)
@@ -4892,7 +4968,7 @@ class Trade implements ITrade
     {
         try{
             // DB::enableQueryLog();
-            $doc = TradeLicenceDocument::select("id","doc_for","verify_status","document_path","document_id")
+            $doc = TradeLicenceDocument::select("id","doc_for","verify_status","remarks","document_path","document_id")
                            ->where('licence_id',$licenceId)
                            ->where('licence_owner_dtl_id',$owner_id);
                            if($document_id!==null)

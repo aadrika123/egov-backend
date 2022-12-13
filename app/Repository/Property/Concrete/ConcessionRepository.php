@@ -24,17 +24,19 @@ class ConcessionRepository implements iConcessionRepository
 {
 
     //wf_master_id = 35;
-    //workflow_id = 106;
+    //workflowId = 106;
     use WorkflowTrait;
     use Concession;
 
     private $_todayDate;
     private $_bifuraction;
+    private $_workflowId;
 
     public function __construct()
     {
         $this->_todayDate = Carbon::now();
         $this->_bifuraction = new PropertyBifurcation();
+        $this->_workflowId = Config::get('workflow-constants.PROPERTY_CONCESSION_ID');
     }
     //apply concession
     /**
@@ -50,13 +52,19 @@ class ConcessionRepository implements iConcessionRepository
             $userType = auth()->user()->user_type;
             $concessionNo = "";
 
+            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
+                ->where('ulb_id', $ulbId)
+                ->first();
+
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
+            $initiatorRoleId = DB::select($refInitiatorRoleId);
+
             if ($userType == "JSK") {
                 $obj  = new SafRepository();
                 $data = $obj->getPropByHoldingNo($request);
             }
 
             DB::beginTransaction();
-            $workflow_id = Config::get('workflow-constants.PROPERTY_CONCESSION_ID');
             $concession = new PropActiveConcession;
             $concession->property_id = $request->propId;
             $concession->applicant_name = $request->applicantName;
@@ -68,16 +76,7 @@ class ConcessionRepository implements iConcessionRepository
             $concession->status = '1';
             $concession->user_id = $userId;
             $concession->ulb_id = $ulbId;
-
-
-            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
-                ->where('ulb_id', $ulbId)
-                ->first();
-
-            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
-            $initiatorRoleId = DB::select($refInitiatorRoleId);
-
-            $concession->workflow_id = $ulbWorkflowId->id;
+            $concession->workflowId = $ulbWorkflowId->id;
             $concession->current_role = collect($initiatorRoleId)->first()->role_id;
             $concession->created_at = Carbon::now();
             $concession->date = Carbon::now();
@@ -138,7 +137,6 @@ class ConcessionRepository implements iConcessionRepository
                 $concessionDoc->concession_id = $concession->id;
                 $this->citizenDocUpload($concessionDoc, $name, $docName);
             }
-
 
             // Property SAF Label Pendings
             $labelPending = new PropConcessionLevelpending();
@@ -474,7 +472,7 @@ class ConcessionRepository implements iConcessionRepository
             $workflowId = $req->workflowId;
             $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
             if (!$backId) {
-                $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
+                $backId = WfWorkflowrolemap::where('workflowId', $workflowId)
                     ->where('is_initiator', true)
                     ->first();
                 $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
@@ -797,7 +795,7 @@ class ConcessionRepository implements iConcessionRepository
             ->update([
                 'concession_id' => $req->id,
                 'doc_type' => $docName,
-                'relative_path' => ('concession/' . $docName . '/'),
+                'relative_path' => ('/concession/' . $docName . '/'),
                 'doc_name' => $name,
                 'status' => 1,
                 'verify_status' => 0,

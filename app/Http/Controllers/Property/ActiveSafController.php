@@ -194,4 +194,10 @@ class ActiveSafController extends Controller
         $obj = new PropActiveSafsDoc();
         return $obj->safDocStatus($req);
     }
+
+    // Get TC Verifications
+    public function getTcVerifications(Request $req)
+    {
+        return $this->Repository->getTcVerifications($req);
+    }
 }

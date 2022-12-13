@@ -700,7 +700,7 @@ class PropertyDeactivate implements IPropertyDeactivate
     }
     public function getPropertyById($id)
     {
-        try{
+        try{ 
             $application = PropProperty::select("prop_properties.*","ref_prop_ownership_types.ownership_type",
                             "ref_prop_types.property_type",
                     DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no")
