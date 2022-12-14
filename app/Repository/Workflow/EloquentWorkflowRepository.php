@@ -362,4 +362,12 @@ class EloquentWorkflowRepository implements iWorkflowRepository
             return response()->json($e, 400);
         }
     }
+
+    /*
+    * Get Workflow Current User
+    */
+    public function workflowCurrentUser($workflowId)
+    {
+        $this->getWorkflowCurrentUser($workflowId);
+    }
 }

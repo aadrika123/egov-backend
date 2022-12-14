@@ -10,6 +10,12 @@ class PropActiveObjection extends Model
 {
     use HasFactory;
 
+    /**
+     * Created By: Mrinal Kumar
+     * Date : 14/12/2022
+     * Status : Open
+     */
+
 
     /**
      * |-------------------------- details of all concession according id -----------------------------------------------
@@ -22,7 +28,11 @@ class PropActiveObjection extends Model
         return $objection;
     }
 
-    //objection number generation
+    /**
+     * This code is for generating the appliction number of Objection 
+     * | @param id
+     */
+
     public function objectionNo($id)
     {
         try {

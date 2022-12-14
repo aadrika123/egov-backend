@@ -14,6 +14,7 @@ use App\Http\Controllers\Workflows\WorkflowController;
 use App\Http\Controllers\Workflows\WorkflowTrackController;
 use App\Http\Controllers\Ward\WardController;
 use App\Http\Controllers\Ward\WardUserController;
+use App\Http\Controllers\WcController;
 use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
 use App\Http\Controllers\WorkflowMaster\WorkflowMasterController;
 use App\Http\Controllers\WorkflowMaster\WfWorkflowController;
@@ -338,6 +339,21 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(UlbMaster::class)->group(function () {
         Route::get('get-all-wards', 'getAllWards');
     });
+
+
+    /**
+     * | Created On-14-12-2022 
+     * | Created By-Mrinal Kumar
+     * | Workflow Traits
+     */
+    Route::controller(WcController::class)->group(function () {
+        Route::post('workflow-current-user', 'workflowCurrentUser');
+        Route::post('workflow-initiator', 'workflowInitiatorData');
+        Route::post('role-by-user', 'roleIdByUserId');
+        Route::post('ward-by-user', 'wardByUserId');
+        Route::post('initiator', 'initiatorId');
+        Route::post('finisher', 'finisherId');
+    });
 });
 
 
@@ -356,7 +372,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         # Diff
         Route::post('crud/menu/add-new-menues', 'addNewMenues');         // adding the details of the menues in the menue table
         Route::get('role-menu/get-role-by-menu', 'getRoleWiseMenu');     //<--------- (May not be USED)    // get menu according to the user role
-        Route::post('sub-menu/tree-structure','getTreeStructureMenu');      // Generation of the menu tree Structure
+        Route::post('sub-menu/tree-structure', 'getTreeStructureMenu');      // Generation of the menu tree Structure
     });
 });
 

@@ -62,8 +62,9 @@ use App\Repository\Property\Interfaces\iDocumentOperationRepo;
 use App\Repository\Property\Interfaces\IPropertyBifurcation;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use App\Repository\Property\Interfaces\iSafDemandRepo;
-
-
+use App\Repository\Workflow\Concrete\WorkflowRepository;
+use App\Repository\Workflow\Interface\iWorkflowRepo;
+use App\Repository\Workflow\Interface\iWorkflowRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -130,6 +131,9 @@ class RepositoryServiceProvider extends ServiceProvider
 
         // Menues
         $this->app->bind(iMenuRepo::class, MenuRepo::class);
+
+        //traits
+        $this->app->bind(iWorkflowRepository::class, WorkflowRepository::class);
     }
 
     /**

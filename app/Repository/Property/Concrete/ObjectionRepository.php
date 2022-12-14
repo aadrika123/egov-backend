@@ -11,10 +11,8 @@ use App\Traits\Workflow\Workflow as WorkflowTrait;
 use Illuminate\Support\Facades\Config;
 use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveObjectionOwner;
-use App\Models\Property\RefPropObjectionType;
 use App\Traits\Property\Objection;
 use App\Models\Workflows\WfWorkflow;
-use App\Repository\Property\Concrete\SafRepository;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropObjectionLevelpending;
 use Illuminate\Support\Facades\Redis;
@@ -23,7 +21,7 @@ use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
 use App\Models\PropActiveObjectionDocdtl;
 use App\Repository\Property\Concrete\PropertyBifurcation;
-use PhpParser\Node\Expr\Cast\Object_;
+use Illuminate\Support\Facades\Validator;
 
 class ObjectionRepository implements iObjectionRepository
 {
@@ -66,7 +64,7 @@ class ObjectionRepository implements iObjectionRepository
     public function applyObjection($request)
     {
         try {
-            $userId = auth()->user()->id;
+            $userId = authUser()->id;
             $ulbId = auth()->user()->ulb_id;
             $userType = auth()->user()->user_type;
             $objectionFor = $request->objectionFor;
@@ -81,7 +79,7 @@ class ObjectionRepository implements iObjectionRepository
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
             if ($objectionFor == "Clerical Mistake") {
-                DB::beginTransaction();
+                // DB::beginTransaction();
 
                 //saving objection details
                 $objection = new PropActiveObjection();
@@ -143,7 +141,7 @@ class ObjectionRepository implements iObjectionRepository
                     $objectionDoc->objection_id = $objection->id;
                     $this->citizenDocUpload($objectionDoc, $name, $docName);
                 }
-                DB::commit();
+                // DB::commit();
             }
 
             //objection for forgery 
@@ -313,7 +311,7 @@ class ObjectionRepository implements iObjectionRepository
                 $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
                 $labelPending->save();
 
-                return responseMsg(true, "Successfully Saved", $objectionNo);
+                return responseMsgs(true, "Successfully Saved", $objectionNo, '010801', '01', '382ms-547ms', 'Post', '');
             } else {
                 return responseMsg(false, "Undefined parameter supply", "");
             }
@@ -365,7 +363,7 @@ class ObjectionRepository implements iObjectionRepository
                     ->get();
             }
             if (isset($assesmentDetailss)) {
-                return responseMsg(true, "Successfully Retrieved", remove_null($assesmentDetailss));
+                return responseMsgs(true, "Successfully Retrieved", remove_null($assesmentDetailss), '010804', '01', '332ms-367ms', 'Post', '');
             } else {
                 return responseMsg(false, "Supply Valid Property Id", "");
             }
@@ -401,7 +399,7 @@ class ObjectionRepository implements iObjectionRepository
                 ->orderByDesc('prop_active_objections.id')
                 ->get();
 
-            return responseMsg(true, "", remove_null($objection));
+            return responseMsgs(true, "", remove_null($objection), '010805', '01', '474ms-573ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -434,7 +432,7 @@ class ObjectionRepository implements iObjectionRepository
                 ->orderByDesc('prop_active_objections.id')
                 ->get();
 
-            return responseMsg(true, "Outbox List", remove_null($objections));
+            return responseMsgs(true, "Outbox List", remove_null($objections), '010806', '01', '336ms-420ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -450,13 +448,11 @@ class ObjectionRepository implements iObjectionRepository
             ->select(
                 'prop_active_objections.id as objection_id',
                 'objection_for',
-                // 'prop_active_objections.objection_type_id',
-                // 'ot.type as objection_type',
                 'prop_active_objections.objection_no',
                 'prop_active_objections.workflow_id',
                 'prop_active_objections.current_role',
                 'p.*',
-                'at.assessment_type as assessment',
+                'p.assessment_type as assessment',
                 'w.ward_name as old_ward_no',
                 'o.ownership_type',
                 'pt.property_type'
@@ -467,13 +463,11 @@ class ObjectionRepository implements iObjectionRepository
             ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
             ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
-            ->leftJoin('prop_ref_assessment_types as at', 'at.id', '=', 's.assessment_type')
             ->leftJoin('ref_prop_types as pt', 'pt.id', '=', 's.property_assessment_id')
-            // ->join('ref_prop_objection_types as ot', 'ot.id', '=', 'prop_active_objections.objection_type_id')
             ->where('p.status', 1)
             ->where('prop_active_objections.id', $req->id)
             ->first();
-        return responseMsg(true, "Objection Details", remove_null($details));
+        return responseMsgs(true, "Objection Details", remove_null($details), '010807', '01', '474ms-573', 'Post', '');
     }
 
     /**
@@ -491,7 +485,7 @@ class ObjectionRepository implements iObjectionRepository
             $data->escalated_by = $userId;
             $data->save();
             DB::commit();
-            return responseMsg(true, $req->escalateStatus == 1 ? 'Objection is Escalated' : "Objection is removed from Escalated", '');
+            return responseMsgs(true, $req->escalateStatus == 1 ? 'Objection is Escalated' : "Objection is removed from Escalated", '', '010808', '01', '474ms-573', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -514,7 +508,7 @@ class ObjectionRepository implements iObjectionRepository
                 ->where('prop_active_objections.is_escalated', true)
                 ->whereIn('p.ward_mstr_id', $wardId)
                 ->get();
-            return responseMsg(true, "Data Fetched", remove_null($safData));
+            return responseMsgs(true, "Data Fetched", remove_null($safData), '010809', '01', '474ms-573', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -550,7 +544,7 @@ class ObjectionRepository implements iObjectionRepository
             $commentOnlevel->save();
 
             DB::commit();
-            return responseMsg(true, "Successfully Forwarded The Application!!", "");
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', '474ms-573', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -604,7 +598,7 @@ class ObjectionRepository implements iObjectionRepository
                 $msg = "Application Successfully Rejected !!";
             }
             DB::commit();
-            return responseMsg(true, $msg, "");
+            return responseMsgs(true, $msg, "", '010811', '01', '474ms-573', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -646,7 +640,7 @@ class ObjectionRepository implements iObjectionRepository
             $levelPending->save();
 
             DB::commit();
-            return responseMsg(true, "Successfully Done", "");
+            return responseMsgs(true, "Successfully Done", "", '010812', '01', '474ms-573', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -676,7 +670,7 @@ class ObjectionRepository implements iObjectionRepository
                 ->orderByDesc('prop_active_objections.id')
                 ->get();
 
-            return responseMsg(true, "", $list);
+            return responseMsgs(true, "", $list, '010813', '01', '319ms-364ms', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -706,7 +700,7 @@ class ObjectionRepository implements iObjectionRepository
                 ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                 ->first();
 
-            return responseMsg(true, "Successfully Done", $list);
+            return responseMsgs(true, "Successfully Done", $list, '010814', '01', '315ms-352ms', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -734,7 +728,7 @@ class ObjectionRepository implements iObjectionRepository
                 return $val;
             });
 
-            return responseMsg(true, "Successfully Done", remove_null($list));
+            return responseMsgs(true, "Successfully Done", remove_null($list), '010815', '01', '329ms-400ms', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -745,7 +739,19 @@ class ObjectionRepository implements iObjectionRepository
     public function objectionDocUpload($req)
     {
         try {
+            $validator = Validator::make($req->all(), [
+                'nameDoc' => 'max:2000',
+                'addressDoc' => 'max:2000',
+                'safMemberDoc' => 'max:2000',
+                'objectionFormDoc' => 'max:2000',
+            ]);
 
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $validator->errors()
+                ], 401);
+            }
             // return $req;
             // $doc['nameDoc'] = $req->nameDoc;
             // $doc['addressDoc'] = $req->addressDoc;
@@ -823,7 +829,7 @@ class ObjectionRepository implements iObjectionRepository
                 $name = $this->moveFile($docName, $file);
 
                 $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
-                    ->where('doc_type', 'objectionFormDoc')
+                    ->where('doc_type', $docName)
                     ->get()
                     ->first();
                 if ($checkExisting) {
@@ -832,7 +838,7 @@ class ObjectionRepository implements iObjectionRepository
                     $this->saveObjectionDoc($req, $name,  $docName);
                 }
             }
-            return responseMsg(true, "Document Successfully Uploaded!", '');
+            return responseMsgs(true, "Document Successfully Uploaded!", '', '010816', '01', '364ms-389ms', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -859,7 +865,7 @@ class ObjectionRepository implements iObjectionRepository
             }
             $docStatus->save();
 
-            return responseMsg(true, "Successfully Done", '');
+            return responseMsgs(true, "Successfully Done", '', '010817', '01', '302ms-356ms', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }

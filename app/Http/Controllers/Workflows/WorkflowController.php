@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Workflows;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Repository\Workflow\EloquentWorkflowRepository;
+use App\Repository\Workflow\Interface\iWorkflowRepository;
 
 /**
  * Controller for Saving Workflows, WorkflowCandidates and all Workflows 
@@ -23,10 +24,14 @@ class WorkflowController extends Controller
      */
     protected $eloquentWorkflow;
 
+
     public function __construct(EloquentWorkflowRepository $eloquentWorkflow)
     {
         $this->eloquentWorkflow = $eloquentWorkflow;
     }
+
+
+
 
     // Storing Workflow
     public function storeWorkflow(Request $request)
@@ -96,3 +101,27 @@ class WorkflowController extends Controller
         return $this->eloquentWorkflow->getWorkflowCandidatesByUlbWorkflowID($ulbworkflowid);
     }
 }
+
+
+
+//=========================================================================================================
+//                                  Created By: Mrinal Kumar                                            
+//=========================================================================================================
+
+// class WC extends Controller
+// {
+//     protected $iworkflow;
+
+//     public function __construct(iWorkflowRepository $iworkflow)
+//     {
+//         $this->iworkflow = $iworkflow;
+//     }
+
+//     /*
+//     * Get Workflow Current User
+//     */
+//     public function workflowCurrentUser(Request $request)
+//     {
+//         return $this->iworkflow->workflowCurrentUser($request);
+//     }
+// }

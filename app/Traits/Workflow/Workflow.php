@@ -5,6 +5,7 @@ namespace App\Traits\Workflow;
 use App\Models\WorkflowCandidate;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
+use App\Models\Workflows\WfWorkflowrolemap;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -99,19 +100,11 @@ trait Workflow
      */
     public function getWorkflowCurrentUser($workflowId)
     {
-        $query = "SELECT rm.id,
-                        rm.workflow_id,
-                        rm.wf_role_id,
-                        wr.role_name,
-                        wr.forward_role_id,
-                        wr.backward_role_id,
-                        wr.is_initiator,
-                        wr.is_finisher
-                        FROM wf_workflowrolemaps rm
-                        LEFT JOIN wf_roles wr ON wr.id=rm.wf_role_id
-                    WHERE rm.workflow_id=$workflowId AND rm.status=1";
-        $data = DB::select($query);
-        return $data;
+        $query = WfWorkflowrolemap::select('*')
+            ->join('wf_roles', 'wf_roles.id', 'wf_workflowrolemaps.wf_role_id')
+            ->where('workflow_id', $workflowId)
+            ->get();
+        return $query;
     }
 
     /** | Code to be used to determine initiator
