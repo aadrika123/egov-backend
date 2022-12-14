@@ -935,12 +935,15 @@ class SafRepository implements iSafRepository
     public function calculateSafBySafId($req)
     {
         $safDetails = $this->details($req);
+        $safNo = $safDetails->original['data']['saf_no'];
         $req = $safDetails->original['data'];
         $array = $this->generateSafRequest($req);                                                                       // Generate SAF Request by SAF Id Using Trait
         $safCalculation = new SafCalculation();
         $request = new Request($array);
         $safTaxes = $safCalculation->calculateTax($request);
-        return $safTaxes;
+        $safTaxes = json_decode(json_encode($safTaxes), true);
+        $safTaxes['original']['safNo'] = $safNo;
+        return $safTaxes['original'];
     }
 
     /**

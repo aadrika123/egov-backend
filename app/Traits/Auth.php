@@ -207,19 +207,29 @@ trait Auth
      * |@var userId
      * |@var menuDetails
      * |@var collection
+         | Under Modification Remarks:(Split the functions/costant inetilization/collide the collection:line-248,253)
      * | Remark (CAUTION) -> make the join for the user name and remove the user serch in USER table
      */
     public function getUserDetails($emailInfo)
     {
+        $citizen = "Citizen";
         $userInfo = User::where('email', $emailInfo)
             ->select(
                 'id',
-                'user_name AS name'
+                'user_name AS name',
+                'user_type AS userType'
             )
             ->get();
 
         $collection['userName'] = $userInfo['0']->name;
+        $collection['userType'] = $userInfo['0']->userType;
         $userId = $userInfo['0']->id;
+
+        if (($userInfo['0']->userType) == $citizen) {
+            $collection['userName'];
+            $collection['userType'];
+            return $collection;
+        }
 
         # may call another function for below database serch
         $menuRoleDetails = WfRoleusermap::leftJoin('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_role_id')
@@ -256,7 +266,7 @@ trait Auth
                 )
                 ->get();
         }
-        
+
         $menuDetails = collect($roleBasedMenu)->collapse();
         $collection['menuPermission'] = $menuDetails->unique()->values();
         return $collection;
