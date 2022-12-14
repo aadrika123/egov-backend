@@ -173,7 +173,10 @@ class ActiveSafController extends Controller
     {
         $req->validate([
             'safId' => 'required|integer',
-            'verificationStatus' => 'required|bool'
+            'verificationStatus' => 'required|bool',
+            'propertyType' => 'required|integer',
+            'roadTypeId' => 'required|integer',
+            'wardId' => 'required|integer'
         ]);
         return $this->Repository->siteVerification($req);
     }
@@ -181,10 +184,10 @@ class ActiveSafController extends Controller
     // Geo Tagging
     public function geoTagging(Request $req)
     {
-        // $req->validate([
-        //     "safId" => "required|integer",
-        //     "uploads.*.imagePath" => "image|mimes:jpeg,jpg,png,gif|required"
-        // ]);
+        $req->validate([
+            "safId" => "required|integer",
+            "imagePath.*" => "image|mimes:jpeg,jpg,png,gif|required"
+        ]);
         return $this->Repository->geoTagging($req);
     }
 

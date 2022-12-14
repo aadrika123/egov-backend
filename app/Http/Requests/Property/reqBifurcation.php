@@ -32,6 +32,16 @@ class reqBifurcation extends FormRequest
         }
         $rules['assessmentType'] = "required|int|in:3";
         $rules['container']      = "required|array";
+        // if(isset($this->assessmentType) && $this->assessmentType !=1)
+        // {
+        //     $rules['container.'.$key.'.previousHoldingId'] = "required|digits_between:1,9223372036854775807";
+        //     $rules['container.'.$key.'.holdingNo']         = "required|string";
+        // }
+        if(isset($this->assessmentType) && $this->assessmentType !=1)
+        { 
+            $rules['oldHoldingId'] = "required|digits_between:1,9223372036854775807";
+            $rules['oldHoldingNo']         = "required|string";
+        }
         $req = $this->all();
         $isAcquired = false;
         $count = 0;
@@ -100,11 +110,6 @@ class reqBifurcation extends FormRequest
                 }
                 $rules['container.'.$key.'.isWaterHarvesting'] = "required|bool";
                 
-                if(isset($this->assessmentType) && $this->assessmentType !=1)
-                {
-                    $rules['container.'.$key.'.previousHoldingId'] = "required|digits_between:1,9223372036854775807";
-                    $rules['container.'.$key.'.holdingNo']         = "required|string";
-                }
                 $rules['container.'.$key.'.zone']           = "required|int|in:1,2";
                 if(isset($this->assessmentType) && ($this->assessmentType ==1 || ($this->assessmentType ==3 && isset($val['isOwnerChanged']) && $val['isOwnerChanged'])))
                 { 
@@ -114,8 +119,8 @@ class reqBifurcation extends FormRequest
                         $rules["container.".$key.".owner.*.ownerName"]           =   "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
                         $rules["container.".$key.".owner.*.gender"]              =   "required|int|in:1,2,3";
                         $rules["container.".$key.".owner.*.dob"]                 =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
-                        $rules["container.".$key.".owner.*.guardianName"]        =   "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-                        $rules["container.".$key.".owner.*.relation"]            =   "required|string|in:S/O,W/O,D/O";
+                        $rules["container.".$key.".owner.*.guardianName"]        =   "regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/|nullable";
+                        $rules["container.".$key.".owner.*.relation"]            =   "nullable|string|in:S/O,W/O,D/O,C/O";
                         $rules["container.".$key.".owner.*.mobileNo"]            =   "required|digits:10|regex:/[0-9]{10}/";
                         $rules["container.".$key.".owner.*.email"]               =   "email|nullable";
                         $rules["container.".$key.".owner.*.pan"]                 =   "string|nullable";

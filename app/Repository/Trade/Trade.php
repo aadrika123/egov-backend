@@ -1730,10 +1730,26 @@ class Trade implements ITrade
                 $sms = "";
                 $cnt=$request->btn_doc_path;
                 $doc_for = "doc_path_for$cnt";
+                $doc_mstr_id = "doc_path_mstr_id$cnt";
                 $owners = objToArray($refOwneres);
+                $show = "";
+                $ids = [0];
+                if(in_array($request->$doc_for,objToArray(collect($mDocumentsList)->pluck("doc_for"))))
+                {
+                    $type = ($mDocumentsList->filter(function($val) use($request,$doc_for){
+                        return $val->doc_for==$request->$doc_for;
+                    }));
+                    $show = (collect($type)->pluck("show"))[0];
+                    $ids =  (objToArray($this->getDocumentList($request->$doc_for,$refLicence->application_type_id,$show)->pluck("id")));
+                }
+                elseif(isset($request->$doc_for) && $request->$doc_for=="Identity Proof" && in_array($request->$doc_for,objToArray(collect($ownersDoc)->pluck("docName"))))
+                {
+                    $ids = (objToArray(collect($this->getDocumentList("Identity Proof",$refLicence->application_type_id,0))->pluck("id")));
+                }
+                
                 # Upload Document 
-                if(isset($request->btn_doc_path)&& isset($request->$doc_for) && !in_array($request->$doc_for,["Identity Proof","image"]))
-                {              
+                if(isset($request->btn_doc_path) && isset($request->$doc_for) && in_array($request->$doc_for,objToArray(collect($mDocumentsList)->pluck("doc_for"))))
+                {             
                     $cnt=$request->btn_doc_path;
                     $rules = [
                             'doc_path'.$cnt=>'required|max:30720|mimes:pdf,jpg,jpeg,png',
@@ -1747,7 +1763,7 @@ class Trade implements ITrade
                     $file = $request->file('doc_path'.$cnt);
                     $doc_for = "doc_path_for$cnt";
                     $doc_mstr_id = "doc_path_mstr_id$cnt";
-                    if ($file->IsValid())
+                    if ($file->IsValid() && in_array($request->$doc_mstr_id,$ids))
                     { 
                         if ($app_doc_dtl_id = $this->check_doc_exist($licenceId,$request->$doc_for))
                         {  
@@ -1846,7 +1862,7 @@ class Trade implements ITrade
                     $file = $request->file('doc_path'.$cnt);
                     $doc_mstr_id = "doc_path_mstr_id$cnt";
                     $doc_for = "doc_path_for$cnt";                    
-                    if ($file->IsValid() )
+                    if ($file->IsValid() && in_array($request->$doc_mstr_id,$ids))
                     {
                         if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->owner_id))
                         {   
@@ -1944,7 +1960,7 @@ class Trade implements ITrade
                     }
                     $file = $request->file('doc_path'.$cnt);
                     $doc_for = "doc_path_for$cnt";
-                    if ($file->IsValid())
+                    if ($file->IsValid() && in_array($request->$doc_mstr_id,$ids))
                     {  
                         if ($app_doc_dtl_id = $this->check_doc_exist_owner($licenceId,$request->owner_id,0))
                         {
@@ -2015,6 +2031,10 @@ class Trade implements ITrade
                     {
                         return responseMsg(false, "something errors in Document Uploades",$request->all());
                     }              
+                }
+                else
+                {
+                    throw new Exception("Invalid Document type Passe");
                 }                 
                 DB::commit();
                 $data=(array)null;
