@@ -70,6 +70,7 @@ class SafRepository implements iSafRepository
     use GlobalSAF;
     use Razorpay;
     use Helper;
+
     /**
      * | Citizens Applying For SAF
      * | Proper Validation will be applied after 
@@ -1369,13 +1370,6 @@ class SafRepository implements iSafRepository
         }
     }
 
-    //document verification calling to model
-    public function safDocStatus($req)
-    {
-        $docVerify = new PropActiveSafsDoc();
-        return $docVerify->safDocStatus($req);
-    }
-
 
     /**
      * | Get Tc Verifications
@@ -1404,5 +1398,12 @@ class SafRepository implements iSafRepository
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    //document verification calling to model
+    public function safDocStatus($req)
+    {
+        $docVerify = new PropActiveSafsDoc();
+        return $docVerify->safDocStatus($req);
     }
 }

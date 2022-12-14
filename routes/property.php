@@ -65,8 +65,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification(18)
     Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging(19)
-    Route::post('saf/doc-status', 'safDocStatus');
     Route::post('saf/get-tc-verifications', 'getTcVerifications');                                      // Get TC Verifications  Data(20)
+    Route::post('saf/doc-status', 'safDocStatus');                                                      // Doc Verify (21)
   });
 
   /**
@@ -156,25 +156,25 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
        | Serial No : 08
    */
   Route::controller(ObjectionController::class)->group(function () {
-    Route::post('objection/apply-objection', 'applyObjection');
-    Route::get('objection/objection-type', 'objectionType');
-    Route::post('objection/owner-details', 'ownerDetails');
-    Route::post('objection/assesment-details', 'assesmentDetails');
+    Route::post('objection/apply-objection', 'applyObjection');          //01
+    Route::get('objection/objection-type', 'objectionType');             //02                      
+    Route::post('objection/owner-details', 'ownerDetails');              //03
+    Route::post('objection/assesment-details', 'assesmentDetails');      //04
 
-    Route::get('objection/inbox', 'inbox');
-    Route::get('objection/outbox', 'outbox');
-    Route::post('objection/details', 'getDetailsById');
-    Route::post('objection/post-escalate', 'postEscalate');                                 // Escalate the application and send to special category
-    Route::get('objection/special-inbox', 'specialInbox');                                   // Special Inbox 
-    Route::post('objection/next-level', 'postNextLevel');
-    Route::post('objection/approvalrejection', 'approvalRejection');
-    Route::post('objection/backtocitizen', 'backToCitizen');
+    Route::get('objection/inbox', 'inbox');                              //05        //Inbox
+    Route::get('objection/outbox', 'outbox');                            //06        //Outbox
+    Route::post('objection/details', 'getDetailsById');                  //07
+    Route::post('objection/post-escalate', 'postEscalate');              //08        // Escalate the application and send to special category
+    Route::get('objection/special-inbox', 'specialInbox');               //09        // Special Inbox 
+    Route::post('objection/next-level', 'postNextLevel');                //10
+    Route::post('objection/approvalrejection', 'approvalRejection');     //11
+    Route::post('objection/backtocitizen', 'backToCitizen');             //12
 
-    Route::get('objection/list', 'objectionList');
-    Route::post('objection/list-id', 'objectionByid');
-    Route::post('objection/doc-list', 'objectionDocList');
-    Route::post('objection/doc-upload', 'objectionDocUpload');
-    Route::post('objection/doc-status', 'objectionDocStatus');
+    Route::get('objection/list', 'objectionList');                       //13
+    Route::post('objection/list-id', 'objectionByid');                   //14
+    Route::post('objection/doc-list', 'objectionDocList');               //15
+    Route::post('objection/doc-upload', 'objectionDocUpload');           //16
+    Route::post('objection/doc-status', 'objectionDocStatus');           //17
   });
 
   /**
@@ -199,7 +199,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   /**
    * | Rain water Harvesting
    * | Created By - Sam kerketta
-   * | Created On- 22-11-2022 
+   * | Created On- 22-11-2022
        | Serial No : 11
    */
   Route::controller(RainWaterHarvestingController::class)->group(function () {
