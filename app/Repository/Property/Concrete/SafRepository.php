@@ -1340,6 +1340,8 @@ class SafRepository implements iSafRepository
      * | Geo Tagging Photo Uploads
      * | @param request req
      * | @var relativePath Geo Tagging Document Ralative path
+     * | @var array images- request image path
+     * | @var array directionTypes- request direction types
      */
     public function geoTagging($req)
     {
@@ -1353,7 +1355,7 @@ class SafRepository implements iSafRepository
                 $geoTagging = new PropSafGeotagUpload();
                 $refImageName = 'saf-geotagging-' . $directionTypes[$key] . '-' . $req->safId;
 
-                $imageName = $docUpload->upload($refImageName, $image);         // <------- Get uploaded image name and move the image in folder
+                $imageName = $docUpload->upload($refImageName, $image, $relativePath);         // <------- Get uploaded image name and move the image in folder
 
                 $geoTagging->saf_id = $req->safId;
                 $geoTagging->image_path = $imageName;
