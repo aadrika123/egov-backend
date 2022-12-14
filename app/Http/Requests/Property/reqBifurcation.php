@@ -32,6 +32,16 @@ class reqBifurcation extends FormRequest
         }
         $rules['assessmentType'] = "required|int|in:3";
         $rules['container']      = "required|array";
+        // if(isset($this->assessmentType) && $this->assessmentType !=1)
+        // {
+        //     $rules['container.'.$key.'.previousHoldingId'] = "required|digits_between:1,9223372036854775807";
+        //     $rules['container.'.$key.'.holdingNo']         = "required|string";
+        // }
+        if(isset($this->assessmentType) && $this->assessmentType !=1)
+        { 
+            $rules['oldHoldingId'] = "required|digits_between:1,9223372036854775807";
+            $rules['oldHoldingNo']         = "required|string";
+        }
         $req = $this->all();
         $isAcquired = false;
         $count = 0;
@@ -100,11 +110,6 @@ class reqBifurcation extends FormRequest
                 }
                 $rules['container.'.$key.'.isWaterHarvesting'] = "required|bool";
                 
-                if(isset($this->assessmentType) && $this->assessmentType !=1)
-                {
-                    $rules['container.'.$key.'.previousHoldingId'] = "required|digits_between:1,9223372036854775807";
-                    $rules['container.'.$key.'.holdingNo']         = "required|string";
-                }
                 $rules['container.'.$key.'.zone']           = "required|int|in:1,2";
                 if(isset($this->assessmentType) && ($this->assessmentType ==1 || ($this->assessmentType ==3 && isset($val['isOwnerChanged']) && $val['isOwnerChanged'])))
                 { 
