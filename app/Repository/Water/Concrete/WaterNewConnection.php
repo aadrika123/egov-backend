@@ -8,6 +8,7 @@ use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplicantDoc;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
+use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterParamDocumentType;
 use App\Models\Water\WaterRazorPayRequest;
 use App\Models\Water\WaterRazorPayResponse;
@@ -1054,5 +1055,96 @@ class WaterNewConnection implements IWaterNewConnection
     public function getOwnershipTypeList()
     {
         
-    }    
+    } 
+    
+    public function calWaterConCharge(Request $request)
+    {
+        $response = (array)null;
+        $response["status"]=false;
+        try{
+            $response["water_fee_mstr_id"] = 0;
+            $response["water_fee_mstr"] = [];
+            $response["installment_amount"] = [];
+            $conneFee  = 0;
+            $mPenalty  = 0;
+            $mNowDate  = Carbon::now()->format("Y-m-d");
+            $mEffectiveFrom  = Carbon::parse("2021-01-01")->format('Y-m-d');
+            $mSixMonthsAfter = Carbon::parse("2021-01-01")->addMonth(6)->format('Y-m-d');
+            if($request->category!="BPL")
+            {
+                $waterConFee = WaterParamConnFee::select("*")
+                            ->where("property_type_id",$request->propertyTypeId)
+                            ->where("effective_date","<=",Carbon::now()->format("Y-m-d"));
+                if(in_array($request->propertyTypeId,[1,7]))
+                {
+                    $waterConFee = $waterConFee->where(function($where)use($request){
+                        $where->where("area_from_sqft","<=",ceil($request->areaSqft))
+                              ->where("area_upto_sqft",">=",ceil($request->areaSqft));
+                    });
+                }
+                
+                $waterConFee = $waterConFee->first();
+                $response["water_fee_mstr"] = collect($waterConFee);
+                $response["water_fee_mstr_id"]   =   $waterConFee->id;
+                if($waterConFee->calculation_type=='Fixed')
+                {
+                    $conneFee   = $waterConFee->conn_fee;
+                }
+                else
+                {
+                    $conneFee   = $waterConFee->conn_fee * $request->areaSqft;
+                }
+            }
+    
+            $conn_fee_charge=array();
+            $conn_fee_charge['charge_for'] = 'New Connection';
+            $conn_fee_charge['conn_fee']   = (float)$conneFee;
+            
+            // Regularization
+            # penalty 4000 for residential 10000 for commercial in regularization effective from 
+            # 01-01-2021 and half the amount is applied for connection who applied under 6 months from 01-01-2021 
+            if($request->connectionTypeId==2) 
+            {
+                $mPenalty = 10000;
+                if($request->propertyTypeId==1)
+                {
+                    $mPenalty = 4000;
+                }
+                if($mNowDate < $mSixMonthsAfter)
+                {
+                    $mPenalty = $mPenalty/2;
+                }
+
+                $inltment40Per=($mPenalty*40)/100;
+                $inltment30Per=($mPenalty*30)/100;
+                for($j=1;$j<=3;$j++)
+                { 
+                    if($j==1)
+                    {
+                        $installment_amount=$inltment40Per;
+                    }
+                    else
+                    {
+                        $installment_amount=$inltment30Per;
+                    }
+                    $penalty_installment=array();
+                    $penalty_installment['penalty_head']="$j"." Installment";
+                    $penalty_installment['installment_amount']=$installment_amount;
+                    $penalty_installment['balance_amount']=$installment_amount;
+                    array_push($response["installment_amount"],$penalty_installment);
+                }  
+            }                 
+            $conn_fee_charge['penalty'] = $mPenalty;
+            $conn_fee_charge['amount']  = $mPenalty + $conneFee;
+            $response["conn_fee_charge"] =  $conn_fee_charge; 
+            $response["status"] = true;           
+            return collect($response);
+    
+        }
+        catch(Exception $e)
+        {
+            $response["errors"] = $e->getMessage();
+            return collect($response);
+        }
+    }
 }

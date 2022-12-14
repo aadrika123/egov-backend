@@ -119,8 +119,8 @@ class reqBifurcation extends FormRequest
                         $rules["container.".$key.".owner.*.ownerName"]           =   "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
                         $rules["container.".$key.".owner.*.gender"]              =   "required|int|in:1,2,3";
                         $rules["container.".$key.".owner.*.dob"]                 =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
-                        $rules["container.".$key.".owner.*.guardianName"]        =   "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-                        $rules["container.".$key.".owner.*.relation"]            =   "required|string|in:S/O,W/O,D/O";
+                        $rules["container.".$key.".owner.*.guardianName"]        =   "regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/|nullable";
+                        $rules["container.".$key.".owner.*.relation"]            =   "nullable|string|in:S/O,W/O,D/O,C/O";
                         $rules["container.".$key.".owner.*.mobileNo"]            =   "required|digits:10|regex:/[0-9]{10}/";
                         $rules["container.".$key.".owner.*.email"]               =   "email|nullable";
                         $rules["container.".$key.".owner.*.pan"]                 =   "string|nullable";
