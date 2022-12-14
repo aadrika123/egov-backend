@@ -1386,21 +1386,16 @@ class SafRepository implements iSafRepository
         try {
             $data = array();
             $safVerifications = new PropSafVerification();
-            $data = $safVerifications->getVerificationsData($req->safId);
+            $safVerificationDtls = new PropSafVerificationDtl();
+
+            $data = $safVerifications->getVerificationsData($req->safId);           // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
 
             $data = json_decode(json_encode($data), true);
 
-            $verificationDtls = DB::table('prop_saf_verification_dtls')
-                ->select('prop_saf_verification_dtls.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')
-                ->join('ref_prop_floors as f', 'f.id', '=', 'prop_saf_verification_dtls.floor_mstr_id')
-                ->join('ref_prop_usage_types as u', 'u.id', '=', 'prop_saf_verification_dtls.usage_type_id')
-                ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_saf_verification_dtls.occupancy_type_id')
-                ->join('ref_prop_construction_types as c', 'c.id', '=', 'prop_saf_verification_dtls.construction_type_id')
-                ->where('verification_id', $data['id'])
-                ->get();
+            $verificationDtls = $safVerificationDtls->getFullVerificationDtls($data['id']);     // <----- Prop Saf Verification Model Function to Get Verification Floor Dtls
 
             $data['floorDetails'] = $verificationDtls;
-            return responseMsg(true, "TC Verification Details", remove_null($data));
+            return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
