@@ -42,5 +42,9 @@ class WaterApplication extends Controller
     {
         return $this->Repository->getUploadDocuments($request);
     }
+    public function calWaterConCharge(Request $request)
+    {
+        return $this->Repository->calWaterConCharge($request);
+    }
     
 }

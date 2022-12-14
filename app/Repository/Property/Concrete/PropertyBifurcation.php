@@ -99,7 +99,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             } 
             elseif ($request->getMethod() == "POST") 
             {
-                return($request->all());
+                // return($request->all());
                 $assessmentTypeId   = $request->assessmentType;
                 $previousHoldingId  = $request->oldHoldingId;
                 $holdingNo          = $request->oldHoldingNo;
@@ -133,7 +133,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $safNo = $parentSaf;
                 // DB::commit();
                 DB::rollBack();
-                return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo]);
+                return responseMsg(true, "Application Submitted Successfully. Your New SAF No is $safNo", ["safNo" => $safNo]);
             }
         } catch (Exception $e) {
             DB::rollBack();
@@ -1646,7 +1646,9 @@ class PropertyBifurcation implements IPropertyBifurcation
             $tax = new InsertTax();
             $tax->insertTax($saf->id, $refUserId, $safTaxes);                                        // Insert SAF Tax
             return $safNo;
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {
             echo $e->getMessage();
         }
     }
