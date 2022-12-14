@@ -32,6 +32,9 @@ class ClusterController extends Controller
     }
 
     //updating the cluster details to the respective id
+    /**
+     | ----------flag
+     */
     public function editClusterDetails(Request $request)
     {
         # validation
@@ -54,6 +57,9 @@ class ClusterController extends Controller
     }
 
     //saving the cluster details 
+    /**
+     | ----------flag
+     */
     public function saveClusterDetails(Request $request)
     {
         # validation

@@ -41,4 +41,13 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * |---------- get all details of the users ----------|
+        | Under Construction
+     */
+    public function getAllUSers()
+    {
+
+    }
 }

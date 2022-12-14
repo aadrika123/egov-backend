@@ -59,7 +59,7 @@ class MenuMaster extends Model
                     ->update(['is_deleted' => true]);
                 return responseMsg(true, "Respective Menu Deleted!", $request->id);
             }
-            return responseMsg(false,"Enter a Valid Details!",$request->id);
+            return responseMsg(false,"Enter Valid Details!",$request->id);
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }

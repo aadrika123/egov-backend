@@ -44,6 +44,9 @@ class MenuController extends Controller
     }
 
     // adding new menu in menu master
+    /**
+     | ----------flag
+     */
     public function addNewMenues(Request $request)
     {
         $request->validate([
@@ -61,6 +64,9 @@ class MenuController extends Controller
     }
 
     // Soft Delition of the Menu in Menu Master
+    /**
+     | ---------flag
+     */
     public function deleteMenuesDetails(Request $request)
     {
         $menuDeletion = new MenuMaster();

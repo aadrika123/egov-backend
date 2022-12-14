@@ -36,6 +36,9 @@ class PropertyDetailsController extends Controller
     }
 
     // All saf no from Active Saf no
+    /**
+     | ----------flag
+     */
     public function getListOfSaf()
     {
         $getSaf = new PropActiveSaf();
