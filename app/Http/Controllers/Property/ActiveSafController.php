@@ -173,7 +173,10 @@ class ActiveSafController extends Controller
     {
         $req->validate([
             'safId' => 'required|integer',
-            'verificationStatus' => 'required|bool'
+            'verificationStatus' => 'required|bool',
+            'propertyType' => 'required|integer',
+            'roadTypeId' => 'required|integer',
+            'wardId' => 'required|integer'
         ]);
         return $this->Repository->siteVerification($req);
     }
