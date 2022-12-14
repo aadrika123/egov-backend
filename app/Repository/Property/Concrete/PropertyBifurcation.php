@@ -65,12 +65,16 @@ class PropertyBifurcation implements IPropertyBifurcation
             $refWorkflowId = Config::get('workflow-constants.SAF_BIFURCATION_ID');
             $mUserType  = $this->_common->userType($refWorkflowId);
             $init_finish = $this->_common->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
-            if (!$init_finish) {
+            if (!$init_finish) 
+            {
                 throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
-            } elseif (!$init_finish["initiator"]) {
+            } 
+            elseif (!$init_finish["initiator"]) 
+            {
                 throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
             }
-            if (!$mProperty) {
+            if (!$mProperty) 
+            {
                 throw new Exception("Property Not Found");
             }
 
@@ -78,21 +82,27 @@ class PropertyBifurcation implements IPropertyBifurcation
                 ->where("previous_holding_id", $mProperty->id)
                 ->orderBy("id", "desc")
                 ->first();
-            if ($priv_data) {
+            if ($priv_data) 
+            {
                 throw new Exception("Assesment already applied");
             }
             $mOwrners  = $this->_property->getPropOwnerByProId($mProperty->id);
             $mFloors    = $this->getFlooreDtl($mProperty->id);
-            if ($request->getMethod() == "GET") {
+            if ($request->getMethod() == "GET") 
+            {
                 $data = [
                     "property" => $mProperty,
                     "owners"    => $mOwrners,
                     "floors"   => $mFloors,
                 ];
                 return responseMsg(true, '', remove_null($data));
-            } elseif ($request->getMethod() == "POST") {
+            } 
+            elseif ($request->getMethod() == "POST") 
+            {
                 return($request->all());
-                $assessmentTypeId = $request->assessmentType;
+                $assessmentTypeId   = $request->assessmentType;
+                $previousHoldingId  = $request->oldHoldingId;
+                $holdingNo          = $request->oldHoldingNo;
                 $ulbWorkflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
                     ->where('ulb_id', $refUlbId)
                     ->first();
@@ -103,20 +113,26 @@ class PropertyBifurcation implements IPropertyBifurcation
                 {
                     throw new Exception("Atleast 2 Saf Record is required");
                 }
-                foreach ($request->container as $key => $val) {
+                foreach ($request->container as $key => $val) 
+                {
                     $myRequest = new \Illuminate\Http\Request();
                     $myRequest->setMethod('POST');
                     $myRequest->request->add(['assessmentType' => $assessmentTypeId]);
-                    foreach ($val as $key2 => $val2) {
+                    $myRequest->request->add(['previousHoldingId' => $previousHoldingId]);
+                    $myRequest->request->add(['holdingNo' => $holdingNo]);
+                    foreach ($val as $key2 => $val2) 
+                    {
                         $myRequest->request->add([$key2 => $val2]);
-                    }
+                    }                    
                     $safNo[$key] = $this->insertData($myRequest);
-                    if ($myRequest->isAcquired) {
+                    if ($myRequest->isAcquired) 
+                    {
                         $parentSaf = $safNo[$key];
                     }
                 }
                 $safNo = $parentSaf;
                 // DB::commit();
+                DB::rollBack();
                 return responseMsg(true, "Successfully Submitted Your Application Your SAF No. $safNo", ["safNo" => $safNo]);
             }
         } catch (Exception $e) {
@@ -2047,9 +2063,10 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $doc_for = "doc_for$cnt";
                 $doc_mstr_id = "doc_mstr_id$cnt";
                 $rules = [
-                    'doc' . $cnt => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
-                    'doc_for' . $cnt => "required|string",
-                    'doc_mstr_id'.$cnt . '' => 'required|int',
+                    'doc'.$cnt         => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
+                    'doc_for'.$cnt     => "required|string",
+                    'doc_mstr_id'.$cnt => 'required|int',
+                    'btn_doc'          =>"required",
                 ];
                 $validator = Validator::make($request->all(), $rules, $message);
                 if ($validator->fails()) 
