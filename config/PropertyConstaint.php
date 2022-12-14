@@ -327,7 +327,7 @@ return [
     ],
 
     // Relative GeoTagging Path of Geo Tagging
-    "GEOTAGGING_RELATIVE_PATH" => "Property/GeoTagging",
+    "GEOTAGGING_RELATIVE_PATH" => "public/Property/GeoTagging",
 
     // Rebates
     "REBATES" => [
