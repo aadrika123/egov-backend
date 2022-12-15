@@ -964,14 +964,14 @@ class SafRepository implements iSafRepository
             $auth = auth()->user();
             $safRepo = new SafRepository();
             $calculateSafById = $safRepo->calculateSafBySafId($req);
-            $safDemandDetails = $this->generateSafDemand($calculateSafById->original['data']['details']);
+            $safDemandDetails = $this->generateSafDemand($calculateSafById['data']['details']);
             $rwhPenaltyId = Config::get('PropertyConstaint.PENALTIES.RWH_PENALTY_ID');
             $lateAssesPenaltyId = Config::get('PropertyConstaint.PENALTIES.LATE_ASSESSMENT_ID');
 
-            $demands = $calculateSafById->original['data']['demand'];
-            $rebates = $calculateSafById->original['data']['rebates'];
+            $demands = $calculateSafById['data']['demand'];
+            $rebates = $calculateSafById['data']['rebates'];
             $totalAmount = $demands['payableAmount'];
-            $lateAssessPenalty = $calculateSafById->original['data']['demand']['lateAssessmentPenalty'];
+            $lateAssessPenalty = $calculateSafById['data']['demand']['lateAssessmentPenalty'];
             // Check Requested amount is matching with the generated amount or not
             // if ($req->amount == $totalAmount) {
             $orderDetails = $this->saveGenerateOrderid($req);       //<---------- Generate Order ID Trait

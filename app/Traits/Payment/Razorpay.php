@@ -81,17 +81,9 @@ trait Razorpay
 
             ];
 
-            $transaction = new PaymentRequest();
-            $transaction->user_id = $mUserID;
-            $transaction->workflow_id = $request->workflowId;
-            $transaction->ulb_id = $mUlbID;
-            $transaction->application_id = $request->id;
-            $transaction->department_id = $request->departmentId;                       //<--------here(CHECK)
-            $transaction->razorpay_order_id = $mReturndata['orderId'];
-            $transaction->amount = $request->amount;
-            $transaction->currency = 'INR';
-            $transaction->save();
-
+            $saveRequestObj = new PaymentRequest();
+            $saveRequestObj->saveRazorpayRequest($mUserID,$mUlbID,$mReturndata['orderId'],$request);
+            
             return $mReturndata;                                                        //<------------------ here(RESPONSE)
         } catch (Exception $error) {
             return responseMsg(false, "Error Listed Below!", $error->getMessage());
@@ -115,6 +107,7 @@ trait Razorpay
      * | Operation : generating the order id according the request data using the razorpay API 
      * | Rating : 4
         | Serial No : 02
+        | (Working)
      */
     function paymentVerify($request, $attributes)
     {
@@ -122,7 +115,7 @@ trait Razorpay
             $success = false;
 
             # verify the existence of the razerpay Id
-            if (!null == ($request->razorpayPaymentId) && !empty($request->razorpaySignature)) {
+            if (!is_null($request->razorpayPaymentId) && !empty($request->razorpaySignature)) {
                 $api = new Api($this->refRazorpayId, $this->refRazorpayKey);
                 try {
                     $attributes = [
@@ -156,15 +149,15 @@ trait Razorpay
             $rejectData = new PaymentReject();
             $rejectData->razerpay_order_id = $request->razorpayOrderId;
             $rejectData->razerpay_payment_id = $request->razorpayPaymentId;
-            if (!empty($request->razorpaySignature)) {
-                $rejectData->suspecious = true;
-            }
             $rejectData->razerpay_signature = $request->razorpaySignature;
             $rejectData->reason = $request->reason;
             $rejectData->source = $request->source;
             $rejectData->step = $request->step;
             $rejectData->code = $request->code;
             $rejectData->description = $request->description;
+            if (!empty($request->razorpaySignature)) {
+                $rejectData->suspecious = true;
+            }
             $rejectData->save();
 
             return responseMsg(true, "Failer data saved", $error);
@@ -173,32 +166,20 @@ trait Razorpay
         }
     }
 
-    // the integration of the webhook
+
+
     /**
-     * | ----------------- verification of the signature ------------------------------- |
-     * | @var dataOfRequest 
-     * | @var accountId
-     * | @var aCard
-     * | @var card
-     * | @var something
-     * | @var notes
-     * | @var arrayInAquirer
-     * | @var firstKey
-     * | @var save
-     * | @var obj
-     * | @var amount
-     * | @var emai
-     * | @var phone
-     * | @var url
-     * | @var token
+     * | -------------------------------- integration of the webhook ------------------------------- |
      * | @param request
-     * |
+     * | 
+     * | @return 
      * | Operation : this function url is hited by the webhook and the detail of the payment is collected in request 
      *               thie the storage -> generating pdf -> generating json ->save -> hitting url for watsapp message.
      * | Rating : 4
      * | this -> naming
      * | here -> variable
         | Serial No : 03
+        | Flag : department Id will be replaced / switch case / the checking of the payment is success (keys:amount,orderid,departmentid,status)
      */
     public function collectWebhookDetails($request)
     {
@@ -297,7 +278,7 @@ trait Razorpay
         $data->payment_transaction_id = $actualTransactionNo;
         $data->save();
 
-        # property data transfer to the respective module dataBase 
+        # data transfer to the respective module dataBase 
         $transfer['paymentMode'] = $data->payment_method;
         $transfer['id'] = $request->payload['payment']['entity']['notes']['applicationId'];
         $transfer['amount'] = $actulaAmount;

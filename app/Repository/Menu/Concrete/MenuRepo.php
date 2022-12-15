@@ -211,4 +211,46 @@ class MenuRepo implements iMenuRepo
             return responseMsgs(false, $error->getMessage(), $error->getLine(), "", "01", ".ms", "POST", $req->deviceId);
         }
     }
+
+
+    /**
+     * |-------------------------------- Adding new menu in menu master ---------------------------------------|
+     * | @param request
+     * | @var menuMaster
+     * |
+     * | Query Time = 308ms 
+     * | Rating- 1
+     * | Status- Closed
+        | Serial No : 06
+     */
+    public function addNewMenues($request)
+    {
+        try {
+            $menuMaster = new MenuMaster();
+            return $menuMaster->putNewMenues($request);
+        } catch (Exception $error) {
+            return responseMsg(false, $error->getMessage(), "");
+        }
+    }
+
+
+    /**
+     * |------------------------------------ Soft Delition of the Menu in Menu Master --------------------------|
+     * | @param request
+     * | @var menuDeletion
+     * |
+     * | Query time - .ms
+     * | Rating - 1
+     * | state - Open 
+        | Serilal No : 07
+     */
+    public function deleteMenuesDetails($request)
+    {
+        try {
+            $menuDeletion = new MenuMaster();
+            return $menuDeletion->softDeleteMenues($request);
+        } catch (Exception $error) {
+            return responseMsg(false, $error->getMessage(), "");
+        }
+    }
 }
