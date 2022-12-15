@@ -8,4 +8,27 @@ use Illuminate\Database\Eloquent\Model;
 class PaymentRequest extends Model
 {
     use HasFactory;
+
+    /**
+     * |--------------------- Save the details of the Payment requests -------------------------------------|
+     * | @param request
+     * | @param userId
+     * | @param UlbId
+     * | @param orderId
+     * | @var transaction 
+        | (Working)
+     */
+    public function saveRazorpayRequest($userID,$ulbId,$orderId,$request)
+    {
+        $transaction = new PaymentRequest();
+        $transaction->user_id = $userID;
+        $transaction->workflow_id = $request->workflowId;
+        $transaction->ulb_id = $ulbId;
+        $transaction->application_id = $request->id;
+        $transaction->department_id = $request->departmentId;                       //<--------here(CHECK)
+        $transaction->razorpay_order_id = $orderId;
+        $transaction->amount = $request->amount;
+        $transaction->currency = 'INR';
+        $transaction->save();
+    }
 }
