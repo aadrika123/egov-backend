@@ -9,15 +9,11 @@ use Exception;
 use Razorpay\Api\Api;
 use Illuminate\Support\Str;
 use Razorpay\Api\Errors\SignatureVerificationError;
-use App\Http\Controllers\NewPdfController; //<----------traits
-use App\Http\Controllers\water\WaterApplication;
-use App\Models\Payment;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\WebhookPaymentData;
 use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\Trade\Trade;
 use App\Repository\Water\Concrete\WaterNewConnection;
-use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
@@ -34,7 +30,8 @@ use Illuminate\Support\Facades\Storage;
 
 trait Razorpay
 {
-    
+    private $refRazorpayId = "rzp_test_3MPOKRI8WOd54p";
+    private $refRazorpayKey = "k23OSfMevkBszuPY5ZtZwutU";
 
     /**
      * | code : Sam Kerketta
@@ -58,11 +55,11 @@ trait Razorpay
         try {
             $mUserID = auth()->user()->id;
             $mUlbID = auth()->user()->ulb_id;
-            $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
-            $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
+            // $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
+            // $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
             $mReciptId = Str::random(10);                                           //<--------- here (STATIC)
 
-            $mApi = new Api($refRazorpayId, $refRazorpayKey);           
+            $mApi = new Api($this->refRazorpayId, $this->refRazorpayKey);           
             $mOrder = $mApi->order->create(array(
                 'receipt' => $mReciptId,
                 'amount' => $request->all()['amount'] * 100,
@@ -114,12 +111,12 @@ trait Razorpay
     {
         try {
             $success = false;
-            $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
-            $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
+            // $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
+            // $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
 
             # verify the existence of the razerpay Id
             if (!is_null($request->razorpayPaymentId) && !empty($request->razorpaySignature)) {
-                $api = new Api($refRazorpayId, $refRazorpayKey);
+                $api = new Api($this->refRazorpayId, $this->refRazorpayKey);
                 try {
                     $attributes = [
                         'razorpay_order_id' => $request->razorpayOrderId,
