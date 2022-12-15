@@ -19,12 +19,18 @@ use Illuminate\Support\Facades\Redis;
 use App\Models\Property\PropConcessionDocDtl;
 use Illuminate\Support\Facades\URL;
 
+/**
+ * | Created On-16-11-2022
+ * | Created By-Mrinal Kumar
+ * | -----------------------------------------------------------------------------------------
+ * | Concession Module all operations 
+ * | --------------------------- Workflow Parameters ---------------------------------------
+ * | Concession Master ID   = 35                
+ * | Concession WorkflowID  = 106              
+ */
 
 class ConcessionRepository implements iConcessionRepository
 {
-
-    //wf_master_id = 35;
-    //workflowId = 106;
     use WorkflowTrait;
     use Concession;
 
@@ -40,7 +46,7 @@ class ConcessionRepository implements iConcessionRepository
     }
     //apply concession
     /**
-     * | Query Costing-382ms 
+     * | Query Costing-464ms 
      * | Rating-3
      * | Status-Closed
      */
@@ -76,7 +82,7 @@ class ConcessionRepository implements iConcessionRepository
             $concession->status = '1';
             $concession->user_id = $userId;
             $concession->ulb_id = $ulbId;
-            $concession->workflowId = $ulbWorkflowId->id;
+            $concession->workflow_id = $ulbWorkflowId->id;
             $concession->current_role = collect($initiatorRoleId)->first()->role_id;
             $concession->created_at = Carbon::now();
             $concession->date = Carbon::now();

@@ -109,7 +109,9 @@ class EloquentWorkflowTrack implements WorkflowTrack
                 'user_name'
             )
             ->join('users', 'users.id', '=', 'workflow_tracks.commented_by')
-            ->first();
+            ->where('workflow_id', $request->workflowId)
+            ->where('ref_table_id_value', $request->id)
+            ->get();
         return responseMsg(true, "Data Retrived", $notification);
     }
 }

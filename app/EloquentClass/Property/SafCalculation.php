@@ -662,7 +662,7 @@ class SafCalculation
         // Tax Calculation Quaterly
         $tax = [
             "arv" => roundFigure($arv / 4),
-            "rebatePerc" => $arvCalcPercFactor,
+            "calculationPercFactor" => $arvCalcPercFactor,
             "rentalValue" => $readRentalValue->rate,
             "holdingTax" => roundFigure($holdingTax / 4),
             "latrineTax" => roundFigure($latrineTax / 4),
@@ -805,7 +805,7 @@ class SafCalculation
             "rentalRate" => roundFigure($rentalRate),
             "occupancyFactor" => $paramOccupancyFactor,
 
-            "holdingTax" => roundFigure($totalTax / 4),
+            "holdingTax" => roundFigure($arv / 4),
             "latrineTax" => 0,
             "waterTax" => 0,
             "healthTax" => 0,
@@ -909,8 +909,9 @@ class SafCalculation
         }
 
         $calculatePropertyTax = ($readCircleRate * $readBuildupArea * $paramOccupancyFactor * $taxPerc * (float)$readCalculationFactor) / 100;
-        $calculatePropertyTax = $calculatePropertyTax * $readMatrixFactor;
+        $calculatePropertyTax = $calculatePropertyTax * $readMatrixFactor;                                  // As Holding Tax
         $rwhPenalty = 0;
+
         if ($this->_rwhPenaltyStatus == true) {
             $rwhPenalty = $calculatePropertyTax / 2;
         }
@@ -928,7 +929,7 @@ class SafCalculation
             "calculationFactor" => $readCalculationFactor,
             "matrixFactor" => $readMatrixFactor,
 
-            "holdingTax" => roundFigure($totalTax / 4),
+            "holdingTax" => roundFigure($calculatePropertyTax / 4),
             "latrineTax" => 0,
             "waterTax" => 0,
             "healthTax" => 0,
@@ -1017,8 +1018,10 @@ class SafCalculation
         $rebates = array();
         $ownerDetails = collect($this->_propertyDetails['owner'])->first();
         $rebate = 0;
-        $currentDate = Carbon::now()->toDateTimeString();
-        $days = dateDiff($ownerDetails['dob'], $currentDate) + 1;
+
+        $currentDate = Carbon::now();
+        $years = $currentDate->diffInYears(Carbon::parse($ownerDetails['dob']));
+
         $seniorCitizen = 60;                                    // Define for year of senior citizen
         // Rebate Percentage Amount
         $citizenRebatePerc = $this->_citizenRebatePerc;
@@ -1061,7 +1064,7 @@ class SafCalculation
             ]);
         }
 
-        if ($days >= $seniorCitizen) {
+        if ($years >= $seniorCitizen) {
             $rebate += $seniorCitizenRebatePerc;
             $this->_GRID['demand']['seniorCitizenRebate'] = $seniorCitizenRebatePerc;
             array_push($rebates, [

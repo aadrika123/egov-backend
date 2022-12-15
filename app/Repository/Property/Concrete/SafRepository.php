@@ -138,7 +138,7 @@ class SafRepository implements iSafRepository
 
         // Property Types
         if (!$propertyType) {
-            $propertyType = $refPropType->getPropPropertyType();
+            $propertyType = $refPropType->propPropertyType();
             $this->_redis->set('property-types', json_encode($propertyType));
         }
 
@@ -154,7 +154,7 @@ class SafRepository implements iSafRepository
 
         // Property Usage Types
         if (!$usageType) {
-            $usageType = $refPropUsageType->getPropUsageTypes();
+            $usageType = $refPropUsageType->propUsageType();
             $this->_redis->set('property-usage-types', json_encode($usageType));
         }
 
@@ -162,7 +162,7 @@ class SafRepository implements iSafRepository
 
         // Property Occupancy Types
         if (!$occupancyType) {
-            $occupancyType = $refPropOccupancyType->getOccupancyTypes();
+            $occupancyType = $refPropOccupancyType->propOccupancyType();
             $this->_redis->set('property-occupancy-types', json_encode($occupancyType));
         }
 
@@ -170,7 +170,7 @@ class SafRepository implements iSafRepository
 
         // property construction types
         if (!$constructionType) {
-            $constructionType = $refPropConstructionType->getConstructionTypes();
+            $constructionType = $refPropConstructionType->propConstructionType();
             $this->_redis->set('property-construction-types', json_encode($constructionType));
         }
 
@@ -1193,21 +1193,30 @@ class SafRepository implements iSafRepository
      */
     public function getPropTransactions($req)
     {
+        $propTransaction = new PropTransaction();
         $userId = auth()->user()->id;
 
         $propTrans = json_decode(Redis::get('property-transactions-user-' . $userId));                      // Should Be Deleted SAF Payment
         if (!$propTrans) {
-            $propTrans = DB::table('prop_transactions')
-                ->select('prop_transactions.*', 'a.saf_no', 'p.holding_no')
-                ->leftJoin('prop_active_safs as a', 'a.id', '=', 'prop_transactions.saf_id')
-                ->leftJoin('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
-                ->where('prop_transactions.user_id', $userId)
-                ->where('prop_transactions.status', 1)
-                ->orderByDesc('prop_transactions.id')
-                ->get();
+            $propTrans = $propTransaction->getPropTransByUserId($userId);
             $this->_redis->set('property-transactions-user-' . $userId, json_encode($propTrans));
         }
         return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", "265ms", "POST", $req->deviceId);
+    }
+
+    /**
+     * | Get Transactions by Property id or SAF id
+     * | @param Request $req
+     */
+    public function getTransactionBySafPropId($req)
+    {
+        $propTransaction = new PropTransaction();
+        if ($req->safId)                                                // Get By SAF Id
+            $propTrans = $propTransaction->getPropTransBySafId($req->safId);
+        if ($req->propertyId)                                           // Get by Property Id
+            $propTrans = $propTransaction->getPropTransByPropId($req->propertyId);
+
+        return responseMsg(true, "Property Transactions", remove_null($propTrans));
     }
 
     /**
@@ -1374,7 +1383,6 @@ class SafRepository implements iSafRepository
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-
 
     /**
      * | Get Tc Verifications

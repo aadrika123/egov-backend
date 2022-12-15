@@ -162,6 +162,12 @@ class ActiveSafController extends Controller
         return $this->Repository->getPropTransactions($req);
     }
 
+    // Get Transactions by prop id or safid
+    public function getTransactionBySafPropId(Request $req)
+    {
+        return $this->Repository->getTransactionBySafPropId($req);
+    }
+
     // Get Property by Holding No
     public function getPropByHoldingNo(Request $req)
     {
