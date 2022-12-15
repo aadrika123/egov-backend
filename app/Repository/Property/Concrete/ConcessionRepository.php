@@ -58,6 +58,9 @@ class ConcessionRepository implements iConcessionRepository
             $userType = auth()->user()->user_type;
             $concessionNo = "";
 
+            $applicantName = $this->getOwnerName($request->propId);
+            $ownerName = $applicantName->ownerName;
+
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
                 ->first();
@@ -73,7 +76,7 @@ class ConcessionRepository implements iConcessionRepository
             DB::beginTransaction();
             $concession = new PropActiveConcession;
             $concession->property_id = $request->propId;
-            $concession->applicant_name = $request->applicantName;
+            $concession->applicant_name = $ownerName;
             $concession->gender = $request->gender;
             $concession->dob = $request->dob;
             $concession->is_armed_force = $request->armedForce;
@@ -777,5 +780,15 @@ class ConcessionRepository implements iConcessionRepository
         $file->move($path, $name);
 
         return $name;
+    }
+
+    //owner name
+    public function getOwnerName($propId)
+    {
+        $ownerDetails = PropProperty::select('applicant_name as ownerName')
+            ->where('prop_properties.id', $propId)
+            ->first();
+
+        return $ownerDetails;
     }
 }
