@@ -1193,18 +1193,12 @@ class SafRepository implements iSafRepository
      */
     public function getPropTransactions($req)
     {
+        $propTransaction = new PropTransaction();
         $userId = auth()->user()->id;
 
         $propTrans = json_decode(Redis::get('property-transactions-user-' . $userId));                      // Should Be Deleted SAF Payment
         if (!$propTrans) {
-            $propTrans = DB::table('prop_transactions')
-                ->select('prop_transactions.*', 'a.saf_no', 'p.holding_no')
-                ->leftJoin('prop_active_safs as a', 'a.id', '=', 'prop_transactions.saf_id')
-                ->leftJoin('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
-                ->where('prop_transactions.status', 1)
-                ->where('prop_transactions.user_id', $userId)
-                ->orderByDesc('prop_transactions.id')
-                ->get();
+            $propTrans = $propTransaction->getPropTransByUserId($userId);
             $this->_redis->set('property-transactions-user-' . $userId, json_encode($propTrans));
         }
         return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", "265ms", "POST", $req->deviceId);
@@ -1216,26 +1210,11 @@ class SafRepository implements iSafRepository
      */
     public function getTransactionBySafPropId($req)
     {
-        if ($req->safId) {                              // Get By SAF Id
-            $propTrans = DB::table('prop_transactions')
-                ->select('prop_transactions.*', 'a.saf_no', 'p.holding_no')
-                ->leftJoin('prop_active_safs as a', 'a.id', '=', 'prop_transactions.saf_id')
-                ->leftJoin('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
-                ->where('prop_transactions.status', 1)
-                ->where('prop_transactions.saf_id', $req->safId)
-                ->orderByDesc('prop_transactions.id')
-                ->get();
-        }
-        if ($req->propertyId) {                       // Get by Property Id
-            $propTrans = DB::table('prop_transactions')
-                ->select('prop_transactions.*', 'a.saf_no', 'p.holding_no')
-                ->leftJoin('prop_active_safs as a', 'a.id', '=', 'prop_transactions.saf_id')
-                ->leftJoin('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
-                ->where('prop_transactions.status', 1)
-                ->where('prop_transactions.property_id', $req->propertyId)
-                ->orderByDesc('prop_transactions.id')
-                ->get();
-        }
+        $propTransaction = new PropTransaction();
+        if ($req->safId)                                                // Get By SAF Id
+            $propTrans = $propTransaction->getPropTransBySafId($req->safId);
+        if ($req->propertyId)                                           // Get by Property Id
+            $propTrans = $propTransaction->getPropTransByPropId($req->propertyId);
 
         return responseMsg(true, "Property Transactions", remove_null($propTrans));
     }
