@@ -9,16 +9,13 @@ use Exception;
 use Razorpay\Api\Api;
 use Illuminate\Support\Str;
 use Razorpay\Api\Errors\SignatureVerificationError;
-use App\Http\Controllers\NewPdfController; //<----------traits
-use App\Http\Controllers\water\WaterApplication;
-use App\Models\Payment;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\WebhookPaymentData;
 use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\Trade\Trade;
 use App\Repository\Water\Concrete\WaterNewConnection;
-use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -33,11 +30,7 @@ use Illuminate\Support\Facades\Storage;
 
 trait Razorpay
 {
-    private $refRazorpayId = "rzp_test_3MPOKRI8WOd54p";
-    private $refRazorpayKey = "k23OSfMevkBszuPY5ZtZwutU";
-
     /**
-     * | code : Sam Kerketta
      * | ----------------- payment generating order id / Saving in database ------------------------------- |
      * | @var mReciptId
      * | @var mUserID
@@ -58,10 +51,11 @@ trait Razorpay
         try {
             $mUserID = auth()->user()->id;
             $mUlbID = auth()->user()->ulb_id;
-
+            $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
+            $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
             $mReciptId = Str::random(10);                                           //<--------- here (STATIC)
 
-            $mApi = new Api($this->refRazorpayId, $this->refRazorpayKey);           //<--------- here (CAUTION)
+            $mApi = new Api($refRazorpayId, $refRazorpayKey);           
             $mOrder = $mApi->order->create(array(
                 'receipt' => $mReciptId,
                 'amount' => $request->all()['amount'] * 100,
@@ -77,22 +71,14 @@ trait Razorpay
                 'ulbId' => $mUlbID,
                 'workflowId' => $request->workflowId,
                 'applicationId' => $request->id,
-                'departmentId' => $request->departmentId                              //<-----here(CHECK)
+                'departmentId' => $request->departmentId                              
 
             ];
 
-            $transaction = new PaymentRequest();
-            $transaction->user_id = $mUserID;
-            $transaction->workflow_id = $request->workflowId;
-            $transaction->ulb_id = $mUlbID;
-            $transaction->application_id = $request->id;
-            $transaction->department_id = $request->departmentId;                       //<--------here(CHECK)
-            $transaction->razorpay_order_id = $mReturndata['orderId'];
-            $transaction->amount = $request->amount;
-            $transaction->currency = 'INR';
-            $transaction->save();
-
-            return $mReturndata;                                                        //<------------------ here(RESPONSE)
+            $saveRequestObj = new PaymentRequest();
+            $saveRequestObj->saveRazorpayRequest($mUserID,$mUlbID,$mReturndata['orderId'],$request);
+            
+            return $mReturndata;                                                       
         } catch (Exception $error) {
             return responseMsg(false, "Error Listed Below!", $error->getMessage());
         }
@@ -115,15 +101,18 @@ trait Razorpay
      * | Operation : generating the order id according the request data using the razorpay API 
      * | Rating : 4
         | Serial No : 02
+        | (Working)
      */
     function paymentVerify($request, $attributes)
     {
         try {
             $success = false;
+            $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
+            $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
 
             # verify the existence of the razerpay Id
-            if (!null == ($request->razorpayPaymentId) && !empty($request->razorpaySignature)) {
-                $api = new Api($this->refRazorpayId, $this->refRazorpayKey);
+            if (!is_null($request->razorpayPaymentId) && !empty($request->razorpaySignature)) {
+                $api = new Api($refRazorpayId, $refRazorpayKey);
                 try {
                     $attributes = [
                         'razorpay_order_id' => $request->razorpayOrderId,
@@ -156,15 +145,15 @@ trait Razorpay
             $rejectData = new PaymentReject();
             $rejectData->razerpay_order_id = $request->razorpayOrderId;
             $rejectData->razerpay_payment_id = $request->razorpayPaymentId;
-            if (!empty($request->razorpaySignature)) {
-                $rejectData->suspecious = true;
-            }
             $rejectData->razerpay_signature = $request->razorpaySignature;
             $rejectData->reason = $request->reason;
             $rejectData->source = $request->source;
             $rejectData->step = $request->step;
             $rejectData->code = $request->code;
             $rejectData->description = $request->description;
+            if (!empty($request->razorpaySignature)) {
+                $rejectData->suspecious = true;
+            }
             $rejectData->save();
 
             return responseMsg(true, "Failer data saved", $error);
@@ -173,32 +162,20 @@ trait Razorpay
         }
     }
 
-    // the integration of the webhook
+
+
     /**
-     * | ----------------- verification of the signature ------------------------------- |
-     * | @var dataOfRequest 
-     * | @var accountId
-     * | @var aCard
-     * | @var card
-     * | @var something
-     * | @var notes
-     * | @var arrayInAquirer
-     * | @var firstKey
-     * | @var save
-     * | @var obj
-     * | @var amount
-     * | @var emai
-     * | @var phone
-     * | @var url
-     * | @var token
+     * | -------------------------------- integration of the webhook ------------------------------- |
      * | @param request
-     * |
+     * | 
+     * | @return 
      * | Operation : this function url is hited by the webhook and the detail of the payment is collected in request 
      *               thie the storage -> generating pdf -> generating json ->save -> hitting url for watsapp message.
      * | Rating : 4
      * | this -> naming
      * | here -> variable
         | Serial No : 03
+        | Flag : department Id will be replaced / switch case / the checking of the payment is success (keys:amount,orderid,departmentid,status)
      */
     public function collectWebhookDetails($request)
     {
@@ -297,7 +274,7 @@ trait Razorpay
         $data->payment_transaction_id = $actualTransactionNo;
         $data->save();
 
-        # property data transfer to the respective module dataBase 
+        # data transfer to the respective module dataBase 
         $transfer['paymentMode'] = $data->payment_method;
         $transfer['id'] = $request->payload['payment']['entity']['notes']['applicationId'];
         $transfer['amount'] = $actulaAmount;

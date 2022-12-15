@@ -259,7 +259,7 @@ trait SAF
      */
     public function generateSafDemand($collection)
     {
-        $filtered = $collection->map(function ($value) {
+        $filtered = collect($collection)->map(function ($value) {
             return collect($value)->only([
                 'qtr', 'holdingTax', 'waterTax', 'educationTax',
                 'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv', 'rwhPenalty', 'onePercPenaltyTax'

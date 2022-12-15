@@ -23,6 +23,16 @@ use App\Models\PropActiveObjectionDocdtl;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * | Created On-20-11-2022
+ * | Created By-Mrinal Kumar
+ * | -----------------------------------------------------------------------------------------
+ * | Objection Module all operations 
+ * | --------------------------- Workflow Parameters ---------------------------------------
+ * | CLERICAL Master ID=36                | Assesment Master ID=56              | Forgery Master ID=79
+ * | CLERICAL WorkflowID=169              | Assesment Workflow ID=183           | Forgery Workflow ID=212
+ */
+
 class ObjectionRepository implements iObjectionRepository
 {
     use Objection;
@@ -41,10 +51,6 @@ class ObjectionRepository implements iObjectionRepository
         $this->_workflow_id_forgery = Config::get('workflow-constants.PROPERTY_OBJECTION_FORGERY');
     }
 
-    /**
-     * | CLERICAL Workflow ID=36                            | Assesment Workflow ID=56
-     * | CLERICAL Ulb WorkflowID=169                        | Assesment Ulb Workflow ID=183
-     */
 
     //get owner details
     public function ownerDetails($request)
@@ -79,7 +85,7 @@ class ObjectionRepository implements iObjectionRepository
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
             if ($objectionFor == "Clerical Mistake") {
-                // DB::beginTransaction();
+                DB::beginTransaction();
 
                 //saving objection details
                 $objection = new PropActiveObjection();
@@ -141,7 +147,6 @@ class ObjectionRepository implements iObjectionRepository
                     $objectionDoc->objection_id = $objection->id;
                     $this->citizenDocUpload($objectionDoc, $name, $docName);
                 }
-                // DB::commit();
             }
 
             //objection for forgery 
@@ -303,6 +308,7 @@ class ObjectionRepository implements iObjectionRepository
                     $this->citizenDocUpload($objectionDoc, $name, $docName);
                 }
             }
+            DB::commit();
 
             if (isset($objectionFor) && $objectionNo) {
                 //level pending

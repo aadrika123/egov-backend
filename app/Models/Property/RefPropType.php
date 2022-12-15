@@ -15,7 +15,7 @@ class RefPropType extends Model
      */
     public function propPropertyType()
     {
-        return RefPropType::select('id', 'property_type')
+        return RefPropType::select('id', 'property_type as propertyType')
             ->where('status', 1)
             ->get();
     }

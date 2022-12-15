@@ -24,7 +24,7 @@ class MenuMaster extends Model
      * | status- open
      * | rating-1
      */
-    public function addNewMenues($request)
+    public function putNewMenues($request)
     {
         try {
             $newMenues = new MenuMaster();
@@ -51,15 +51,15 @@ class MenuMaster extends Model
      * | status- open
      * | rating-1
      */
-    public function deleteMenues($request)
+    public function softDeleteMenues($request)
     {
         try {
-            if (!null == ($request->id)) {
+            if (!is_null($request->id)) {
                 MenuMaster::where('id', $request->id)
                     ->update(['is_deleted' => true]);
                 return responseMsg(true, "Respective Menu Deleted!", $request->id);
             }
-            return responseMsg(false,"Enter Valid Details!",$request->id);
+            return responseMsg(false, "Enter Valid Details!", $request->id);
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }

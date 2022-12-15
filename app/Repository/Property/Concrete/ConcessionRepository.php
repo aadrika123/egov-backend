@@ -19,12 +19,18 @@ use Illuminate\Support\Facades\Redis;
 use App\Models\Property\PropConcessionDocDtl;
 use Illuminate\Support\Facades\URL;
 
+/**
+ * | Created On-16-11-2022
+ * | Created By-Mrinal Kumar
+ * | -----------------------------------------------------------------------------------------
+ * | Concession Module all operations 
+ * | --------------------------- Workflow Parameters ---------------------------------------
+ * | Concession Master ID   = 35                
+ * | Concession WorkflowID  = 106              
+ */
 
 class ConcessionRepository implements iConcessionRepository
 {
-
-    //wf_master_id = 35;
-    //workflowId = 106;
     use WorkflowTrait;
     use Concession;
 
@@ -40,7 +46,7 @@ class ConcessionRepository implements iConcessionRepository
     }
     //apply concession
     /**
-     * | Query Costing-382ms 
+     * | Query Costing-464ms 
      * | Rating-3
      * | Status-Closed
      */
@@ -51,6 +57,9 @@ class ConcessionRepository implements iConcessionRepository
             $ulbId = auth()->user()->ulb_id;
             $userType = auth()->user()->user_type;
             $concessionNo = "";
+
+            $applicantName = $this->getOwnerName($request->propId);
+            $ownerName = $applicantName->ownerName;
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
@@ -67,7 +76,7 @@ class ConcessionRepository implements iConcessionRepository
             DB::beginTransaction();
             $concession = new PropActiveConcession;
             $concession->property_id = $request->propId;
-            $concession->applicant_name = $request->applicantName;
+            $concession->applicant_name = $ownerName;
             $concession->gender = $request->gender;
             $concession->dob = $request->dob;
             $concession->is_armed_force = $request->armedForce;
@@ -76,7 +85,7 @@ class ConcessionRepository implements iConcessionRepository
             $concession->status = '1';
             $concession->user_id = $userId;
             $concession->ulb_id = $ulbId;
-            $concession->workflowId = $ulbWorkflowId->id;
+            $concession->workflow_id = $ulbWorkflowId->id;
             $concession->current_role = collect($initiatorRoleId)->first()->role_id;
             $concession->created_at = Carbon::now();
             $concession->date = Carbon::now();
@@ -771,5 +780,15 @@ class ConcessionRepository implements iConcessionRepository
         $file->move($path, $name);
 
         return $name;
+    }
+
+    //owner name
+    public function getOwnerName($propId)
+    {
+        $ownerDetails = PropProperty::select('applicant_name as ownerName')
+            ->where('prop_properties.id', $propId)
+            ->first();
+
+        return $ownerDetails;
     }
 }

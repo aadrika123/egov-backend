@@ -12,6 +12,7 @@ use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterOwnerTypeMstr;
+use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterPropertyTypeMstr;
 use App\Models\Workflows\WfWorkflow;
 use App\Repository\Water\Interfaces\iNewConnection;
@@ -25,6 +26,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use League\CommonMark\Node\Block\Document;
+
+use function PHPUnit\Framework\isNull;
 
 /**
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
@@ -145,12 +148,19 @@ class NewConnectionRepository implements iNewConnection
         try {
 
             $vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
-            $wfWater = Config::get('workflow-constants.WATER_MASTER_ID');
+            $workflowID = Config::get('workflow-constants.WATER_MASTER_ID');
             $ulbId = auth()->user()->ulb_id;
+
+            $ulbWorkflowObj = new WfWorkflow();
+            $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID,$ulbId);
+
+            # Generating Demand and reflecting on water connection charges table
+            $objCall = new WaterNewConnection();
+            $newConnectionCharges = $objCall->calWaterConCharge($req);
+            $installment = $newConnectionCharges['installment_amount'];
 
             # check the property type by saf no
             if ($req->saf_no != null) {
-
                 $readPropetySafCheck = PropActiveSaf::select('prop_active_safs.prop_type_mstr_id')
                     ->where('prop_active_safs.saf_no', $req->saf_no)
                     ->get()
@@ -162,7 +172,6 @@ class NewConnectionRepository implements iNewConnection
 
             # check the property type by holding no  
             elseif ($req->holdingNo != null) {
-
                 $readpropetyHoldingCheck = PropProperty::select('prop_properties.prop_type_mstr_id')
                     ->where('prop_properties.new_holding_no', $req->holdingNo)
                     ->get()
@@ -192,10 +201,7 @@ class NewConnectionRepository implements iNewConnection
             $newApplication->elec_category = $req->elecCategory;
             $newApplication->connection_through = $req->connection_through;
             $newApplication->apply_date = date('Y-m-d H:i:s');
-
-            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $wfWater)
-                ->where('ulb_id', $ulbId)
-                ->first();
+      
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
@@ -241,21 +247,34 @@ class NewConnectionRepository implements iNewConnection
             }
 
             # Generating Demand and reflecting on water connection charges table
+
+            if (!is_null($installment)) {
+                foreach ($installment as $installments) {
+                    $quaters = new WaterPenaltyInstallment();
+                    $quaters->apply_connection_id = $newApplication->id;
+                    $quaters->installment_amount = $installments['installment_amount'];
+                    $quaters->penalty_head = $installments['penalty_head'];
+                    $quaters->balance_amount = $installments['balance_amount'];
+                    $quaters->save();
+                }
+            }
+        
             $charges = new WaterConnectionCharge();
             $charges->application_id = $newApplication->id;
             $charges->charge_category = $req->connectionTypeId;
             $charges->paid_status = 0;
             $charges->status = 1;
-            $penalty = $charges->penalty = '4000';
-            $conn_fee = $charges->conn_fee = '7000';
-            $charges->amount = $penalty + $conn_fee;
+            $charges->penalty = $newConnectionCharges['conn_fee_charge']['penalty'];
+            $charges->conn_fee = $newConnectionCharges['conn_fee_charge']['conn_fee'];
+            $charges->amount = $newConnectionCharges['conn_fee_charge']['amount'];
+            $charges->rule_set = $newConnectionCharges['ruleSete'];
             $charges->save();
 
             DB::commit();
-            return responseMsg(true, "Successfully Saved", $applicationNo);
+            return responseMsg(true, "Successfully Saved!", $applicationNo);
         } catch (Exception $error) {
             DB::rollBack();
-            return responseMsg(false, "ERROR!", $error->getMessage());
+            return responseMsg(false, $error->getLine(), $error->getMessage());
         }
     }
 
