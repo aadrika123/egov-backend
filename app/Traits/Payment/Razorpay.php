@@ -9,18 +9,14 @@ use Exception;
 use Razorpay\Api\Api;
 use Illuminate\Support\Str;
 use Razorpay\Api\Errors\SignatureVerificationError;
-use App\Http\Controllers\NewPdfController; //<----------traits
-use App\Http\Controllers\water\WaterApplication;
-use App\Models\Payment;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\WebhookPaymentData;
 use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\Trade\Trade;
 use App\Repository\Water\Concrete\WaterNewConnection;
-use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -33,9 +29,6 @@ use Illuminate\Support\Facades\Storage;
 
 trait Razorpay
 {
-    private $refRazorpayId = "rzp_test_3MPOKRI8WOd54p";
-    private $refRazorpayKey = "k23OSfMevkBszuPY5ZtZwutU";
-
     /**
      * | code : Sam Kerketta
      * | ----------------- payment generating order id / Saving in database ------------------------------- |
@@ -54,14 +47,15 @@ trait Razorpay
      */
 
     public function saveGenerateOrderid($request)
-    {
-        try {
+    {      
+        try {            
+            
             $mUserID = auth()->user()->id;
             $mUlbID = auth()->user()->ulb_id;
 
             $mReciptId = Str::random(10);                                           //<--------- here (STATIC)
 
-            $mApi = new Api($this->refRazorpayId, $this->refRazorpayKey);           //<--------- here (CAUTION)
+            $mApi = new Api($this->refRazorpayId, $this->refRazorpayKey);           
             $mOrder = $mApi->order->create(array(
                 'receipt' => $mReciptId,
                 'amount' => $request->all()['amount'] * 100,
@@ -77,14 +71,14 @@ trait Razorpay
                 'ulbId' => $mUlbID,
                 'workflowId' => $request->workflowId,
                 'applicationId' => $request->id,
-                'departmentId' => $request->departmentId                              //<-----here(CHECK)
+                'departmentId' => $request->departmentId                              
 
             ];
 
             $saveRequestObj = new PaymentRequest();
             $saveRequestObj->saveRazorpayRequest($mUserID,$mUlbID,$mReturndata['orderId'],$request);
             
-            return $mReturndata;                                                        //<------------------ here(RESPONSE)
+            return $mReturndata;                                                       
         } catch (Exception $error) {
             return responseMsg(false, "Error Listed Below!", $error->getMessage());
         }

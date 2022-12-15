@@ -88,6 +88,8 @@ class SafRepository implements iSafRepository
         $this->_redis = Redis::connection();
         $this->_todayDate = Carbon::now();
         $this->_workflowIds = [3, 4, 5];
+        $this->refRazorpayId  = Config::get('razorpay.RAZORPAY_ID');
+        $this->refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
     }
 
     /**
