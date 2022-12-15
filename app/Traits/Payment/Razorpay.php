@@ -30,11 +30,7 @@ use Illuminate\Support\Facades\Storage;
 
 trait Razorpay
 {
-    // private $refRazorpayId = "rzp_test_3MPOKRI8WOd54p";
-    // private $refRazorpayKey = "k23OSfMevkBszuPY5ZtZwutU";
-
     /**
-     * | code : Sam Kerketta
      * | ----------------- payment generating order id / Saving in database ------------------------------- |
      * | @var mReciptId
      * | @var mUserID
