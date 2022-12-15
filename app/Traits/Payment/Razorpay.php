@@ -30,8 +30,8 @@ use Illuminate\Support\Facades\Storage;
 
 trait Razorpay
 {
-    private $refRazorpayId = "rzp_test_3MPOKRI8WOd54p";
-    private $refRazorpayKey = "k23OSfMevkBszuPY5ZtZwutU";
+    // private $refRazorpayId = "rzp_test_3MPOKRI8WOd54p";
+    // private $refRazorpayKey = "k23OSfMevkBszuPY5ZtZwutU";
 
     /**
      * | code : Sam Kerketta
@@ -55,11 +55,11 @@ trait Razorpay
         try {
             $mUserID = auth()->user()->id;
             $mUlbID = auth()->user()->ulb_id;
-            // $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
-            // $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
+            $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
+            $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
             $mReciptId = Str::random(10);                                           //<--------- here (STATIC)
 
-            $mApi = new Api($this->refRazorpayId, $this->refRazorpayKey);           
+            $mApi = new Api($refRazorpayId, $refRazorpayKey);           
             $mOrder = $mApi->order->create(array(
                 'receipt' => $mReciptId,
                 'amount' => $request->all()['amount'] * 100,
@@ -111,12 +111,12 @@ trait Razorpay
     {
         try {
             $success = false;
-            // $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
-            // $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
+            $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
+            $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
 
             # verify the existence of the razerpay Id
             if (!is_null($request->razorpayPaymentId) && !empty($request->razorpaySignature)) {
-                $api = new Api($this->refRazorpayId, $this->refRazorpayKey);
+                $api = new Api($refRazorpayId, $refRazorpayKey);
                 try {
                     $attributes = [
                         'razorpay_order_id' => $request->razorpayOrderId,
