@@ -181,7 +181,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('gen/workflow-track/{RefTableID}/{RefTableValue}', 'getWorkflowTrackByTableIDValue');                     // Get WorkflowTrack By TableRefID and RefTableValue
 
         //changes by mrinal
-        Route::get('workflow-track/getNotificationByCitizenId', 'getNotificationByCitizenId');
+        Route::post('workflow-track/getNotificationByCitizenId', 'getNotificationByCitizenId');
     });
 
     // Citizen Register

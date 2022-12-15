@@ -12,7 +12,7 @@ class RefPropUsageType extends Model
 
     public function propUsageType()
     {
-        return RefPropUsageType::select('id', 'usage_type', 'usage_code')
+        return RefPropUsageType::select('id', 'usage_type as usageType', 'usage_code as usageCode')
             ->where('status', 1)
             ->get();
     }
