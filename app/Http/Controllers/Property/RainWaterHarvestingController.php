@@ -64,6 +64,34 @@ class RainWaterHarvestingController extends Controller
         return $this->RainWaterHarvesting->postNextLevel($req);
     }
 
+    //approval rejection
+    public function finalApprovalRejection(Request $req)
+    {
+        $req->validate([
+            'workflowId' => 'required',
+            'roleId' => 'required',
+            'harvestingId' => 'required',
+            // 'senderRoleId' => 'required',
+            // 'receiverRoleId' => 'required',
+            // 'comment' => 'required'
+        ]);
+        return $this->RainWaterHarvesting->finalApprovalRejection($req);
+    }
+
+    //rejection
+    public function rejectionOfHarvesting(Request $req)
+    {
+        $req->validate([
+            // 'workflowId' => 'required',
+            // 'roleId' => 'required',
+            'harvestingId' => 'required',
+            // 'senderRoleId' => 'required',
+            // 'receiverRoleId' => 'required',
+            // 'comment' => 'required'
+        ]);
+        return $this->RainWaterHarvesting->rejectionOfHarvesting($req);
+    }
+
     //harvestig list
     public function waterHarvestingList()
     {

@@ -77,7 +77,17 @@ class ConcessionRepository implements iConcessionRepository
             $concession = new PropActiveConcession;
             $concession->property_id = $request->propId;
             $concession->applicant_name = $ownerName;
-            $concession->gender = $request->gender;
+
+            if ($request->gender == 1) {
+                $concession->gender = 'Male';
+            }
+            if ($request->gender == 2) {
+                $concession->gender = 'Female';
+            }
+            if ($request->gender == 3) {
+                $concession->gender = 'Transgender';
+            }
+
             $concession->dob = $request->dob;
             $concession->is_armed_force = $request->armedForce;
             $concession->is_specially_abled = $request->speciallyAbled;

@@ -217,7 +217,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/inbox', 'harvestingInbox');                         //08
     Route::post('harvesting/outbox', 'harvestingOutbox');                       //09
     Route::post('harvesting/next-level', 'postNextLevel');                      //10
-    Route::post('harvesting/approval-rejection', 'postNextLevel');
+    Route::post('harvesting/approval-rejection', 'finalApprovalRejection');     //11
+    Route::post('harvesting/rejection', 'rejectionOfHarvesting');
   });
 
   /**

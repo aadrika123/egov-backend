@@ -196,32 +196,6 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
 
 
     /**
-     * |----------------------- function for the harvesting list according to ulb/user details --------------------------
-     * | @param ulbId
-     * | Rating : 2
-     */
-    public function getHarvestingList($ulbId)
-    {
-        return PropActiveHarvesting::select(
-            'prop_active_harvestings.id',
-            'a.applicant_name',
-            'a.ward_mstr_id',
-            'u.ward_name as ward_no',
-            'a.holding_no',
-            'a.prop_type_mstr_id',
-            'p.property_type',
-            'prop_active_harvestings.workflow_id',
-            'prop_active_harvestings.current_role as role_id'
-        )
-            ->join('prop_properties as a', 'a.id', '=', 'prop_active_harvestings.property_id')
-            ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
-            ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
-            ->where('prop_active_harvestings.status', 1)
-            ->where('prop_active_harvestings.ulb_id', $ulbId);
-    }
-
-
-    /**
      * |----------------------- function for the Outbox --------------------------
      * |@param ulbId
      * |@param userId
@@ -255,6 +229,32 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+
+    /**
+     * |----------------------- function for the harvesting list according to ulb/user details --------------------------
+     * | @param ulbId
+     * | Rating : 2
+     */
+    public function getHarvestingList($ulbId)
+    {
+        return PropActiveHarvesting::select(
+            'prop_active_harvestings.id',
+            'a.applicant_name',
+            'a.ward_mstr_id',
+            'u.ward_name as ward_no',
+            'a.holding_no',
+            'a.prop_type_mstr_id',
+            'p.property_type',
+            'prop_active_harvestings.workflow_id',
+            'prop_active_harvestings.current_role as role_id'
+        )
+            ->join('prop_properties as a', 'a.id', '=', 'prop_active_harvestings.property_id')
+            ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
+            ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
+            ->where('prop_active_harvestings.status', 1)
+            ->where('prop_active_harvestings.ulb_id', $ulbId);
     }
 
 
@@ -373,6 +373,16 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     public function rejectionOfHarvesting($req)
     {
         try {
+            $userId = authUser()->id;
+            $getRole = $this->getRoleIdByUserId($userId);
+            $roleId = $getRole->map(function ($value, $key) {                         // Get user Workflow Roles
+                return $value->wf_role_id;
+            });
+
+            if ($roleId != $req->roleId) {
+                return responseMsg(false, " Access Forbidden!", "");
+            }
+
             $activeHarvesting = PropActiveHarvesting::query()
                 ->where('id', $req->harvestingId)
                 ->first();
@@ -383,7 +393,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             $rejectedHarvesting->save();
             $activeHarvesting->delete();
 
-            return responseMsg(true, "Application Successfully Rejected !!", "");
+            return responseMsg(true, "Application Rejected !!", "");
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
@@ -399,7 +409,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
         try {
             // Check if the Current User is Finisher or Not                                                                                 
             $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
-            $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
+            return $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
             if ($refGetFinisher->role_id != $req->roleId) {
                 return responseMsg(false, " Access Forbidden", "");
             }
@@ -443,7 +453,6 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     }
 
 
-
     //applied harvesting list
     public function waterHarvestingList()
     {
@@ -452,6 +461,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
         $queryRunTime = '300ms - 359ms';
         $action = 'Post';
         $deviceId = '';
+
         try {
             $list = PropActiveHarvesting::select(
                 'prop_active_harvestings.id',
@@ -528,10 +538,8 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             )
                 ->where('prop_harvesting_docs.status', 1)
                 ->where('prop_harvesting_docs.harvesting_id', $req->id)
-                // ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
-                // ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
-                // ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                 ->get();
+
             $list = $list->map(function ($val) {
                 $path = $this->_bifuraction->readDocumentPath($val->relative_path . $val->docUrl);
                 $val->docUrl = $path;

@@ -15,6 +15,8 @@ interface iRainWaterHarvesting
     public function harvestingInbox();
     public function harvestingOutbox();
     public function postNextLevel($req);
+    public function finalApprovalRejection($req);
+    public function rejectionOfHarvesting($req);
     public function waterHarvestingList();
     public function harvestingListById($req);
     public function harvestingDocList($req);
