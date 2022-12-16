@@ -138,6 +138,27 @@ if (!function_exists('calculateQuaterDueDate')) {
     }
 }
 
+// Get Financial Year Due Quarter 
+if (!function_exists('readFinancialDueQuarter')) {
+    function readFinancialDueQuarter($date)
+    {
+        // $carbonDate = Carbon::createFromDate("Y-m-d", $date);
+        $DD = (int)$date->format("d");
+        $MM = (int)$date->format("m");
+        $YYYY = (int)$date->format("Y");
+
+        if ($MM <= 4) $MM = 03;
+
+        if ($MM > 4) {
+            $MM = 03;
+            $YYYY = $YYYY + 1;
+        }
+
+        $dueDate = $YYYY . '-' . $MM . '-' . $DD;           // Financial Year Due Date=$YYYY-03-31
+        return $dueDate;
+    }
+}
+
 // Get Quarter Start Date
 if (!function_exists('calculateQuarterStartDate')) {
     function calculateQuarterStartDate(String $date): String
