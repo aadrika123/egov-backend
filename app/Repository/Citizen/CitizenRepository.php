@@ -81,7 +81,7 @@ class CitizenRepository implements iCitizenRepository
             $citizen->mobile = $request->mobile;
             $citizen->email = $request->email;
             $citizen->password = Hash::make($request->password);
-            $citizen->user_type = $request->userType;
+            $citizen->user_type = "Citizen";
             $citizen->ulb_id = $request->ulb;
             $citizen->save();
             return responseMsg(true, "Succesfully Registered", "");
