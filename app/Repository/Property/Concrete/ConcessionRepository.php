@@ -142,6 +142,7 @@ class ConcessionRepository implements iConcessionRepository
             $labelPending = new PropConcessionLevelpending();
             $labelPending->concession_id = $concession->id;
             $labelPending->receiver_role_id = $initiatorRoleId[0]->role_id;
+            $labelPending->sender_user_id = $userId;
             $labelPending->save();
 
             DB::commit();
@@ -193,7 +194,7 @@ class ConcessionRepository implements iConcessionRepository
                 return $role->wf_role_id;
             });
 
-            $concessions = $this->getConcessionList($ulbId)
+            return $concessions = $this->getConcessionList($ulbId)
                 ->whereIn('prop_active_concessions.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_concessions.id')
@@ -389,6 +390,7 @@ class ConcessionRepository implements iConcessionRepository
             $receiverLevelPending = new PropConcessionLevelPending();
             $commentOnlevel = $receiverLevelPending->getReceiverLevel($req->concessionId, $req->senderRoleId);
             $commentOnlevel->remarks = $req->comment;
+            $commentOnlevel->receiver_user_id = auth()->user()->id;
             $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
             $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
             $commentOnlevel->save();
@@ -775,7 +777,7 @@ class ConcessionRepository implements iConcessionRepository
     //move file to location
     public function moveFile($docName, $file)
     {
-        $name = time() . $docName . $file->getClientOriginalExtension();
+        $name = time() . $docName . '.' . $file->getClientOriginalExtension();
         $path = storage_path('app/public/concession/' . $docName . '/');
         $file->move($path, $name);
 

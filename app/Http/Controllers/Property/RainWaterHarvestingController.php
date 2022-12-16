@@ -30,6 +30,7 @@ class RainWaterHarvestingController extends Controller
             [
                 'isWaterHarvestingBefore' => 'required',
                 'dateOfCompletion' => 'required|date',
+                'propertyId' => 'required',
             ]
         );
         if ($validated->fails()) {
@@ -42,6 +43,25 @@ class RainWaterHarvestingController extends Controller
     public function harvestingInbox()
     {
         return $this->RainWaterHarvesting->harvestingInbox();
+    }
+
+
+    //outbox list
+    public function harvestingOutbox()
+    {
+        return $this->RainWaterHarvesting->harvestingOutbox();
+    }
+
+    //post next level
+    public function postNextLevel(Request $req)
+    {
+        $req->validate([
+            'harvestingId' => 'required',
+            'senderRoleId' => 'required',
+            'receiverRoleId' => 'required',
+            'comment' => 'required'
+        ]);
+        return $this->RainWaterHarvesting->postNextLevel($req);
     }
 
     //harvestig list

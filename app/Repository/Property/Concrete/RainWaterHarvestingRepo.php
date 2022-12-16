@@ -20,6 +20,8 @@ use phpDocumentor\Reflection\Types\Null_;
  * | Created On - 22-11-2022
  * | Created By - Sam Kerketta
  * | Property RainWaterHarvesting apply
+ * | Modified By - Mrinal Kumar
+ * | Modification On- 10-12-2022
  */
 
 class RainWaterHarvestingRepo implements iRainWaterHarvesting
@@ -27,10 +29,12 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     use SAF;
     use Workflow;
     use Ward;
+    private $_todayDate;
     private $_bifuraction;
 
     public function __construct()
     {
+        $this->_todayDate = Carbon::now();
         $this->_bifuraction = new PropertyBifurcation();
     }
 
@@ -107,11 +111,8 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             $waterHaravesting->save();
 
             if ($file = $request->file('rwhImage')) {
-
-                $name = time() . 'rwhImage.' . $file->getClientOriginalExtension();
-                $path = storage_path('app/public/harvesting/rwhImage/');
-                $file->move($path, $name);
                 $docName = "rwhImage";
+                $name = $this->moveFile($docName, $file);
 
                 $harvestingDoc = new PropHarvestingDoc();
                 $harvestingDoc->harvesting_id = $waterHaravesting->id;
@@ -119,17 +120,23 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             }
 
             if ($file = $request->file('rwhForm')) {
-
-                $name = time() . 'rwhForm.' . $file->getClientOriginalExtension();
-                $path = storage_path('app/public/harvesting/rwhForm/');
-                $file->move($path, $name);
                 $docName = "rwhForm";
+                $name = $this->moveFile($docName, $file);
 
                 $harvestingDoc = new PropHarvestingDoc();
                 $harvestingDoc->harvesting_id = $waterHaravesting->id;
                 $this->citizenDocUpload($harvestingDoc, $name, $docName);
             }
 
+            //level pending
+            if (isset($applicationNo)) {
+
+                $labelPending = new PropHarvestingLevelpending();
+                $labelPending->harvesting_id = $waterHaravesting->id;
+                $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
+                $labelPending->sender_user_id = $userId;
+                $labelPending->save();
+            }
             return responseMsg(true, "Application applied!", $applicationNo);
         } catch (Exception $error) {
             return responseMsg(false, "Data not saved", $error->getMessage());
@@ -175,12 +182,12 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
                 return $role->wf_role_id;
             });
 
-            return $harvesting = $this->getHarvestingList($ulbId)
+            $harvesting = $this->getHarvestingList($ulbId)
                 ->whereIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_harvestings.id')
-                ->get()
-                ->first();
+                ->get();
+
             return responseMsg(true, "Inbox List", remove_null($harvesting));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -197,7 +204,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     {
         return PropActiveHarvesting::select(
             'prop_active_harvestings.id',
-            'prop_active_harvestings.name as owner_name',
+            'a.applicant_name',
             'a.ward_mstr_id',
             'u.ward_name as ward_no',
             'a.holding_no',
@@ -206,12 +213,11 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             'prop_active_harvestings.workflow_id',
             'prop_active_harvestings.current_role as role_id'
         )
-            ->leftJoin('prop_properties as a', 'a.holding_no', '=', 'prop_active_harvestings.holding_no')
+            ->join('prop_properties as a', 'a.id', '=', 'prop_active_harvestings.property_id')
             ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
             ->where('prop_active_harvestings.status', 1)
-            ->where('prop_active_harvestings.ulb_id', $ulbId)
-            ->get();
+            ->where('prop_active_harvestings.ulb_id', $ulbId);
     }
 
 
@@ -242,7 +248,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             $harvesting = $this->getHarvestingList($ulbId)
                 ->whereNotIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
-                // ->orderByDesc('prop_active_harvestings.id')
+                ->orderByDesc('prop_active_harvestings.id')
                 ->get();
 
             return responseMsg(true, "Outbox List", remove_null($harvesting));
@@ -346,6 +352,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             $receiverLevelPending = new PropHarvestingLevelpending();
             $commentOnlevel = $receiverLevelPending->getReceiverLevel($req->harvestingId, $req->senderRoleId);
             $commentOnlevel->remarks = $req->comment;
+            $commentOnlevel->receiver_user_id = auth()->user()->id;
             $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
             $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
             $commentOnlevel->save();
@@ -390,7 +397,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     public function finalApprovalRejection($req)
     {
         try {
-            // Check if the Current User is Finisher or Not
+            // Check if the Current User is Finisher or Not                                                                                 
             $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
             if ($refGetFinisher->role_id != $req->roleId) {
@@ -493,7 +500,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
                 ->join('ulb_ward_masters as u', 'u.id', 'a.ward_mstr_id')
                 ->first();
 
-            if ($list == Null) {
+            if (is_null($list)) {
                 return responseMsg(false, "No Data Found", '');
             } else
                 return responseMsgs(true, "Success", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -551,15 +558,12 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
         try {
             if ($file = $req->file('rwhImage')) {
                 $docName = "rwhImage";
+                $name = $this->moveFile($docName, $file);
 
                 $checkExisting = PropHarvestingDoc::where('harvesting_id', $req->id)
                     ->where('doc_type', $docName)
                     ->get()
                     ->first();
-
-                $name = time() . 'rwhImage.' . $file->getClientOriginalExtension();
-                $path = storage_path('app/public/harvesting/rwhImage/');
-                $file->move($path, $name);
 
                 if ($checkExisting) {
 
@@ -574,15 +578,12 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
 
             if ($file = $req->file('rwhForm')) {
                 $docName = "rwhForm";
+                $name = $this->moveFile($docName, $file);
 
                 $checkExisting = PropHarvestingDoc::where('harvesting_id', $req->id)
                     ->where('doc_type', $docName)
                     ->get()
                     ->first();
-
-                $name = time() . 'rwhForm.' . $file->getClientOriginalExtension();
-                $path = storage_path('app/public/harvesting/rwhForm/');
-                $file->move($path, $name);
 
                 if ($checkExisting) {
 
@@ -662,5 +663,15 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
                 'remarks' => '',
                 'updated_at' => Carbon::now()
             ]);
+    }
+
+    //moving function to location
+    public function moveFile($docName, $file)
+    {
+        $name = time() . $docName . '.' . $file->getClientOriginalExtension();
+        $path = storage_path('app/public/harvesting/' . $docName . '/');
+        $file->move($path, $name);
+
+        return $name;
     }
 }
