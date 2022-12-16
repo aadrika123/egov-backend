@@ -201,6 +201,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    * | Rain water Harvesting
    * | Created By - Sam kerketta
    * | Created On- 22-11-2022
+   * | Modified By - Mrinal Kumar
+   * | Modification On- 10-12-2022
+   * 
        | Serial No : 11
    */
   Route::controller(RainWaterHarvestingController::class)->group(function () {
@@ -211,7 +214,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting-doc-id', 'harvestingDocList');                      //05
     Route::post('harvesting-doc-upload', 'docUpload');                          //06
     Route::post('harvesting-doc-status', 'docStatus');                          //07
-    Route::post('inbox', 'harvestingInbox');                                    //08
+    Route::post('harvesting/inbox', 'harvestingInbox');                         //08
+    Route::post('harvesting/outbox', 'harvestingOutbox');                       //09
+    Route::post('harvesting/next-level', 'postNextLevel');                      //10
+    Route::post('harvesting/approval-rejection', 'postNextLevel');
   });
 
   /**

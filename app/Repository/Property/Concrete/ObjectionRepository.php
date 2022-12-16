@@ -565,7 +565,7 @@ class ObjectionRepository implements iObjectionRepository
     {
         try {
             // Check if the Current User is Finisher or Not
-            $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
+            $getFinisherQuery = $this->getFinisherId($req->workflowId);                 // Get Finisher using Trait
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
             if ($refGetFinisher->role_id != $req->roleId) {
                 return responseMsg(false, "Forbidden Access", "");
@@ -927,7 +927,7 @@ class ObjectionRepository implements iObjectionRepository
     //moving function to location
     public function moveFile($docName, $file)
     {
-        $name = time() . $docName . $file->getClientOriginalExtension();
+        $name = time() . $docName . '.' . $file->getClientOriginalExtension();
         $path = storage_path('app/public/objection/' . $docName . '/');
         $file->move($path, $name);
 
