@@ -11,6 +11,7 @@ use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
+use App\Models\Water\WaterLevelpending;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterPropertyTypeMstr;
@@ -26,6 +27,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use League\CommonMark\Node\Block\Document;
+use Symfony\Component\CssSelector\Node\FunctionNode;
 
 use function PHPUnit\Framework\isNull;
 
@@ -48,6 +50,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var ulbId 
      * | @var ward
      * | Operation : data fetched by table ulb_ward_masters 
+        | Serial No :01
      */
     public function getWardNo()
     {
@@ -66,6 +69,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var ownerType 
      * | #request null
      * | Operation : data fetched by table water_owner_type_mstrs 
+        | Serila No : 02
      */
     public function getOwnerType()
     {
@@ -84,6 +88,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var connectionTypes 
      * | #request null
      * | Operation : data fetched by table water_connection_type_mstrs 
+        | Serila No : 03
      */
     public function getConnectionType()
     {
@@ -103,6 +108,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var connectionThrough 
      * | #request null
      * | Operation : data fetched by table water_connection_through_mstrs 
+         | Serila No : 04
      */
     public function getConnectionThrough()
     {
@@ -121,6 +127,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var propertyType 
      * | #request null
      * | Operation : data fetched by table water_property_type_mstrs 
+        | Serila No : 05
      */
     public function getPropertyType()
     {
@@ -142,6 +149,7 @@ class NewConnectionRepository implements iNewConnection
      * | post the value in Water Applicants table by loop
      * ------------------------------------------------------------------------------------
      * | Generating the demand amount for the applicant in Water Connection Charges Table 
+        | Serila No : 06
      */
     public function store(Request $req)
     {
@@ -154,7 +162,7 @@ class NewConnectionRepository implements iNewConnection
             $ulbWorkflowObj = new WfWorkflow();
             $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID,$ulbId);
 
-            # Generating Demand and reflecting on water connection charges table
+            # Generating Demand 
             $objCall = new WaterNewConnection();
             $newConnectionCharges = $objCall->calWaterConCharge($req);
             $installment = $newConnectionCharges['installment_amount'];
@@ -281,7 +289,7 @@ class NewConnectionRepository implements iNewConnection
 
     /**
      * | ----------------- Document verification processs ------------------------------- |
-     * | @param Req <------------------------- (rourte)
+     * | @param Req <------------------------- (route)
      * | @var userId
      * | @var docStatus
      */
@@ -290,7 +298,7 @@ class NewConnectionRepository implements iNewConnection
         try {
             $userId = auth()->user()->id;
 
-            $docStatus = WaterApplicantDoc::find($req->id);
+            $docStatus = WaterApplicantDoc::find($req->documentId);
             $docStatus->remarks = $req->docRemarks;
             $docStatus->verified_by_emp_id = $userId;
             $docStatus->verified_on = Carbon::now();
@@ -342,4 +350,163 @@ class NewConnectionRepository implements iNewConnection
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
+
+
+
+    /**
+     * |--------------------------------------------- water Inbox -------------------------------------|
+     * | @param 
+     * | @var auth
+     * | @var userId
+        | Serila No : 
+        | Working
+     */
+    public Function waterInbox()
+    {
+        try {
+            $auth = auth()->user();
+            $userId = $auth->id;
+            $ulbId = $auth->ulb_id;
+            $wardId = $this->getWardByUserId($userId);
+
+            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
+                return $ward->ward_id;
+            });
+
+            $roles = $this->getRoleIdByUserId($userId);
+
+            $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
+                return $role->wf_role_id;
+            });
+
+            $waterList = $this->getWaterApplicatioList($ulbId)
+                ->whereIn('water_applications.current_role', $roleId)
+                ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->orderByDesc('water_applications.id')
+                ->get();
+            return responseMsgs(true, "Inbox List Details!", remove_null($waterList), '', '01', '', 'Post', '');
+        } catch (Exception $error) {
+            return responseMsg(false, $error->getMessage(), "");
+        }
+    }
+
+
+
+    /**
+     * |----------------------------------------- Water Outbox ------------------------------------------------|
+     * | @param
+     * | @var 
+        | Serial No :
+        | Working 
+     */
+    public function waterOutbox()
+    {
+        try {
+            $auth = auth()->user();
+            $userId = $auth->id;
+            $ulbId = $auth->ulb_id;
+
+            $workflowRoles = $this->getRoleIdByUserId($userId);
+            $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
+                return $value->wf_role_id;
+            });
+
+            $refWard = $this->getWardByUserId($userId);                                     // Get Ward List by user Id
+            $occupiedWards = $refWard->map(function ($value, $key) {
+                return $value->ward_id;
+            });
+
+            $waterList = $this->getWaterApplicatioList($ulbId)
+                ->whereNotIn('water_applications.current_role', $roleId)
+                ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->orderByDesc('water_applications.id')
+                ->get();
+
+            return responseMsgs(true, "Outbox List", remove_null($waterList), '', '01', '.ms', 'Post', '');
+        } catch (Exception $error) {
+            return responseMsg(false, $error->getMessage(), "");
+        }
+    }
+
+
+
+    /**
+     * |------------------------------------------- Water Application List -------------------------------|
+     * | @param request
+     * | @var 
+        | Serial No : 
+        | Working
+     */
+    public function getWaterApplicatioList($ulbId)
+    {
+        return WaterApplication::
+        // DB::table('prop_active_concessions')
+            select(
+                'water_applications.id',
+                'water_applications.applicant_name as owner_name',
+                'water_applications.holding_no',
+                'a.ward_mstr_id',
+                'u.ward_name as ward_no',    
+                'a.prop_type_mstr_id',
+                'p.property_type',
+                'water_applications.workflow_id',
+                'water_applications.current_role as role_id'
+            )
+            ->leftJoin('prop_properties as a', 'a.id', '=', 'water_applications.property_id')
+            ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
+            ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
+            ->where('water_applications.status', 1)
+            ->where('water_applications.ulb_id', $ulbId);
+    }
+
+
+    /**
+     * |------------------------------------------ Post Application to the next level ---------------------------------------|
+     * | @param 
+     * | @var 
+        | Serial No :
+        | Working
+     */
+    public function postNextLevel($req)
+    {
+        try {
+            DB::beginTransaction();
+            // previous level pending verification enabling
+            $preLevelPending = WaterLevelpending::where('water_application_id', $req->waterApplicationId)
+                ->orderByDesc('id')
+                ->limit(1)
+                ->first();
+            $preLevelPending->verification_status = '1';
+            $preLevelPending->save();
+
+            $levelPending = new WaterLevelpending();
+            $levelPending->water_application_id = $req->waterApplicationId;
+            $levelPending->sender_role_id = $req->senderRoleId;
+            $levelPending->receiver_role_id = $req->receiverRoleId;
+            $levelPending->sender_user_id = auth()->user()->id;
+            $levelPending->save();
+
+            // Water Application Update Current Role
+            $concession = WaterApplication::find($req->concessionId);
+            $concession->current_role = $req->receiverRoleId;
+            $concession->save();
+
+            // Add Comment On Prop Level Pending
+            $receiverLevelPending = new WaterLevelpending();
+            $commentOnlevel = $receiverLevelPending->getReceiverLevel($req->concessionId, $req->senderRoleId);
+            $commentOnlevel->remarks = $req->comment;
+            $commentOnlevel->receiver_role_id = auth()->user()->id;
+            $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
+            $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
+            $commentOnlevel->save();
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
 }

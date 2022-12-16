@@ -124,20 +124,6 @@ class NewConnectionController extends Controller
         return $this->newConnection->getUserWaterConnectionCharges($req);
     }
 
-    /**
-     * | Water Payment 
-     */
-    public function waterPayment(Request $req)
-    {
-        return $this->newConnection->waterPayment($req);
-    }
-
-    // Applicant Document Upload
-    public function applicantDocumentUpload(Request $req)
-    {
-        return $this->newConnection->applicantDocumentUpload($req);
-    }
-
     // Citizen View Water Screen For Mobile
     // Get connection type / water
     public function getConnectionType()
