@@ -295,12 +295,26 @@ return [
         "1" => "_main",
         "2" => "_main",
         "3" => "_other",
+        // RuleSet 3 Circle Rate Road
+        "2022-04-01" => [
+            "1" => "_main",
+            "2" => "_other",
+            "3" => "_other",
+        ]
     ],
     "CIRCALE-RATE-PROP" => [
         "0" => "_apt",
         "1" => "_pakka",
         "2" => "_pakka",
         "3" => "_kuccha",
+
+        // Ruleset3 Circle Rate Construction Type
+        "2022-04-01" => [
+            "0" => "_apt",
+            "1" => "_pakka",
+            "2" => "_kuccha",
+            "3" => "_kuccha",
+        ]
     ],
     "CIRCALE-RATE-USAGE" => [
         "1" => "res",

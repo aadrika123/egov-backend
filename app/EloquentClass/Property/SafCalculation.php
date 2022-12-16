@@ -275,12 +275,12 @@ class SafCalculation
             $col1 = Config::get("PropertyConstaint.CIRCALE-RATE-USAGE.$readPropertyType");
 
             $readRoadType = $this->_readRoadType[$this->_effectiveDateRule3];
-            $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$readRoadType");
+            $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$this->_effectiveDateRule3.$readRoadType");
 
             $capitalValue = collect($readFloors)->map(function ($readfloor) use ($col1, $col3) {
 
                 $readConstructionType = $readfloor['constructionType'];
-                $col2 = Config::get("PropertyConstaint.CIRCALE-RATE-PROP.$readConstructionType");
+                $col2 = Config::get("PropertyConstaint.CIRCALE-RATE-PROP.$this->_effectiveDateRule3.$readConstructionType");
                 $column = $col1 . $col2 . $col3;
 
                 $capitalValueRate = json_decode(Redis::get('propMCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-col-' . $column));
@@ -444,7 +444,7 @@ class SafCalculation
             $dateTo = Carbon::now();
             $readRuleSet = $this->readRuleSet($dateFrom, $key);
             $carbonDateFrom = Carbon::parse($dateFrom)->format('Y-m-d');
-            $carbonDateUpto = $dateTo->format('Y-m-d');
+            $carbonDateUpto = readFinancialDueQuarter($dateTo);
         }
 
         if (is_numeric($key)) {                                                 // i.e. Floors
@@ -453,11 +453,13 @@ class SafCalculation
             $arrayRuleSet = [];
 
             $carbonDateFrom = Carbon::parse($readDateFrom)->format('Y-m-d');
-            $carbonDateUpto = Carbon::parse($readDateUpto)->format('Y-m-d');
 
             if ($readDateUpto == null) {
-                $readDateUpto = Carbon::now()->format('Y-m-d');
+                $readDateUpto = Carbon::now();
+                $readDateUpto = readFinancialDueQuarter($readDateUpto);
             }
+
+            $carbonDateUpto = Carbon::parse($readDateUpto)->format('Y-m-d');
 
             if ($readDateFrom >= $this->_virtualDate) {
                 $dateFrom = $readDateFrom;
@@ -661,7 +663,7 @@ class SafCalculation
 
         // Tax Calculation Quaterly
         $tax = [
-            "arv" => roundFigure($arv / 4),
+            "arv" => roundFigure($arv),
             "calculationPercFactor" => $arvCalcPercFactor,
             "rentalValue" => $readRentalValue->rate,
             "holdingTax" => roundFigure($holdingTax / 4),
@@ -799,7 +801,7 @@ class SafCalculation
         $onePercPenaltyTax = ($totalTax * $onePercPenalty) / 100;
         // All Taxes Quaterly
         $tax = [
-            "arv" => roundFigure($arv / 4),
+            "arv" => roundFigure($tempArv),
             "carpetArea" => $carpetArea,
             "multiFactor" => $multiFactor,
             "rentalRate" => roundFigure($rentalRate),
@@ -921,7 +923,7 @@ class SafCalculation
 
         // Tax Calculation Quaterly
         $tax = [
-            "arv" => roundFigure($calculatePropertyTax / 4),
+            "arv" => roundFigure($calculatePropertyTax),
             "circleRate" => $readCircleRate,
             "buildupArea" => $readBuildupArea,
             "occupancyFactor" => $paramOccupancyFactor,
