@@ -2135,6 +2135,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                                 $file_ext = $data["exten"] = $file->getClientOriginalExtension();
                                 $fileName = "saf_doc/$newFileName.$file_ext";
                                 $filePath = $this->uplodeFile($file, $fileName);
+                                $app_doc_dtl_id->doc_path =  $filePath;
+                                $app_doc_dtl_id->doc_mstr_id = $request->$doc_mstr_id;                                
                                 $app_doc_dtl_id->update();
 
                             }

@@ -4032,7 +4032,7 @@ class Trade implements ITrade
                             ->where("expire_licences.ulb_id",$refUlbId);
             $final = $licence->union($expireLicence)
                         ->get();
-            return responseMsg(true,"" ,$final);
+            return responseMsg(true,"" ,remove_null($final));
         }
         catch(Exception $e)
         {

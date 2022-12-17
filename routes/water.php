@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Water\NewConnectionController;
 use App\Http\Controllers\water\WaterApplication;
+use App\Http\Controllers\Water\WaterConsumer;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -66,4 +67,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 Route::controller(WaterApplication::class)->group(function () {    
     Route::get('paymentRecipt/{id}/{transectionId}', 'paymentRecipt');
     Route::post('cargeCal', 'calWaterConCharge');
+    Route::post('consumerChargeCal', 'calConsumerDemand');
+});
+Route::controller(WaterConsumer::class)->group(function () { 
+    Route::post('consumerChargeCal', 'calConsumerDemand');
 });
