@@ -62,6 +62,8 @@ use App\Repository\Property\Interfaces\iDocumentOperationRepo;
 use App\Repository\Property\Interfaces\IPropertyBifurcation;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use App\Repository\Property\Interfaces\iSafDemandRepo;
+use App\Repository\Water\Concrete\Consumer;
+use App\Repository\Water\Interfaces\IConsumer;
 use App\Repository\Workflow\Concrete\WorkflowRepository;
 use App\Repository\Workflow\Interface\iWorkflowRepo;
 use App\Repository\Workflow\Interface\iWorkflowRepository;
@@ -86,6 +88,7 @@ class RepositoryServiceProvider extends ServiceProvider
         #------water module----------
         $this->app->bind(iNewConnection::class, NewConnectionRepository::class);
         $this->app->bind(IWaterNewConnection::class, WaterNewConnection::class);
+        $this->app->bind(IConsumer::class, Consumer::class);
 
         // Property
         $this->app->bind(iSafRepository::class, SafRepository::class);
