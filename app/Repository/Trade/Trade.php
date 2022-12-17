@@ -222,10 +222,10 @@ class Trade implements ITrade
             {
 
                 $data['userType']          = $mUserType;
-                $data["firmTypeList"]       = $this->getFirmTypeList();
-                $data["ownershipTypeList"]  = $this->getOwnershipTypeList();
-                $data["categoryTypeList"]   = $this->getCategoryList();
-                $data["natureOfBusiness"]   = $this->getItemsList(true);
+                $data["firmTypeList"]       = TradeParamFirmType::List();
+                $data["ownershipTypeList"]  = TradeParamOwnershipType::List();
+                $data["categoryTypeList"]   = TradeParamCategoryType::List();
+                $data["natureOfBusiness"]   = TradeParamItemType::List(true);
                 if(isset($request->id) && $request->id  && $mApplicationTypeId !=1)
                 {
                     $refOldLicece = $this->getLicenceById($request->id); // recieving olde lisense id from url
@@ -734,10 +734,10 @@ class Trade implements ITrade
             $data["licenceDtl"]         =  $refOldLicece;
             $data["ownerDtl"]           = $refOldOwneres;
             $data['userType']           = $mUserType;
-            $data["firmTypeList"]       = $this->getFirmTypeList();
-            $data["ownershipTypeList"]  = $this->getOwnershipTypeList();
-            $data["categoryTypeList"]   = $this->getCategoryList();
-            $data["natureOfBusiness"]   = $this->getItemsList(true);
+            $data["firmTypeList"]       = TradeParamFirmType::List();
+            $data["ownershipTypeList"]  = TradeParamOwnershipType::List();
+            $data["categoryTypeList"]   = TradeParamCategoryType::List();
+            $data["natureOfBusiness"]   = TradeParamItemType::List(true);
             return responseMsg(true,"",remove_null($data));
         }   
         catch(Exception $e)
@@ -930,7 +930,7 @@ class Trade implements ITrade
      * | @var refUlbName     = explode(' ',refUlbDtl->ulb_name)
      * | @var refLecenceData  = model object(active_licences)
      * | @var licenceId   = request->licenceId
-     * | @var refLevelData = $this->getLevelData(licenceId)
+     * | @var refLevelData = TradeLevelPending::getLevelData(licenceId)
      * |   
      * | @var mUserData      = this->_parent->getUserRoll(refUserId, refUlbId,refWorkflowId)
      * | @var mUserType      = this->_parent->userType()
@@ -946,7 +946,7 @@ class Trade implements ITrade
      * |
      * |  mUserData      = this->_parent->getUserRoll(refUserId, refUlbId,refWorkflowId)
      * |  mUserType      = $this->_parent->userType(refWorkflowId)
-     * |  refLevelData   = $this->getLevelData(licenceId)
+     * |  refLevelData   = TradeLevelPending::getLevelData(licenceId)
      * |  refNoticeDetails = this->readNotisDtl(refLecenceData->id)
      * |  chargeData    = this->cltCharge(args)
      * |  this->updateStatusFine(refDenialId, chargeData['notice_amount'], licenceId,1)
@@ -1046,7 +1046,7 @@ class Trade implements ITrade
             }
             $refLecenceData = ActiveLicence::find($request->licenceId);
             $licenceId = $request->licenceId;
-            $refLevelData = $this->getLevelData($licenceId);
+            $refLevelData = TradeLevelPending::getLevelData($licenceId);
             if(!$refLecenceData)
             {
                 throw new Exception("Licence Data Not Found !!!!!");
@@ -1218,7 +1218,7 @@ class Trade implements ITrade
             $refLecenceData = ActiveLicence::find($request->licenceId);
             $licenceId = $request->licenceId;
             $licenceId = $request->licenceId;
-            $refLevelData = $this->getLevelData($licenceId);
+            $refLevelData = TradeLevelPending::getLevelData($licenceId);
             if(!$refLecenceData)
             {
                 throw new Exception("Licence Data Not Found !!!!!");
@@ -1337,7 +1337,7 @@ class Trade implements ITrade
             }
             $refLecenceData = ActiveLicence::find($args["id"]);
             $licenceId = $args["id"];
-            $refLevelData = $this->getLevelData($licenceId);
+            $refLevelData = TradeLevelPending::getLevelData($licenceId);
             if(!$refLecenceData)
             {
                 throw new Exception("Licence Data Not Found !!!!!");
@@ -2188,7 +2188,7 @@ class Trade implements ITrade
                 if ($validator->fails()) {
                     return responseMsg(false, $validator->errors(),$request->all());
                 }
-                $level_data = $this->getLevelData($licenceId);
+                $level_data = TradeLevelPending::getLevelData($licenceId);
                 if(!$level_data || $level_data->receiver_user_type_id != $roll_id)
                 {
                     throw new Exception("You Are Not Authorized For This Action");
@@ -2218,7 +2218,7 @@ class Trade implements ITrade
      * | @var refApplication = this->getLicenceById(id)  | read application dtl
      * | @var items          = this->getLicenceItemsById(refApplication->nature_of_bussiness) | read trade licence Items
      * | @var refOwnerDtl    = this->getOwnereDtlByLId(id)  | read owner dtl
-     * | @var refTransactionDtl  = this->readTranDtl(id)    | read Transaction Dtl
+     * | @var refTransactionDtl  = TradeTransaction::listByLicId(id)    | read Transaction Dtl
      * | @var refTimeLine    = this->getTimelin(id)      | read Level remarks
      * | @var refUploadDocuments = this->getLicenceDocuments(id)    | read upload Documents
      */  
@@ -2258,14 +2258,14 @@ class Trade implements ITrade
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
             $refOwnerDtl                = $this->getOwnereDtlByLId($id);
-            $refTransactionDtl          = $this->readTranDtl($id);
+            $refTransactionDtl          = TradeTransaction::listByLicId($id);
             $refTimeLine                = $this->getTimelin($id);
             $refUploadDocuments         = $this->getLicenceDocuments($id)->map(function($val){
                                                 $val->document_path = !empty(trim($val->document_path))? $this->readDocumentPath($val->document_path):"";
                                                 return $val;
                                             });
             $pendingAt  = $init_finish['initiator']['id'];
-            $mlevelData = $this->getLevelData($id);
+            $mlevelData = TradeLevelPending::getLevelData($id);
             if($mlevelData)
             {
                 $pendingAt = $mlevelData->receiver_user_type_id;                
@@ -2997,7 +2997,7 @@ class Trade implements ITrade
                throw new Exception("Initator Can Not send Back The Application");
             }
             $licenc_data = ActiveLicence::find($request->licenceId);            
-            $level_data = $this->getLevelData($request->licenceId);
+            $level_data = TradeLevelPending::getLevelData($request->licenceId);
             if(!$licenc_data)
             {
                 throw new Exception("Data Not Found");
@@ -4081,14 +4081,14 @@ class Trade implements ITrade
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
             $refOwnerDtl                = $this->getAllOwnereDtlByLId($id);
-            $refTransactionDtl          = $this->readTranDtl($id);
+            $refTransactionDtl          = TradeTransaction::listByLicId($id);
             $refTimeLine                = $this->getTimelin($id);
             $refUploadDocuments         = $this->getLicenceDocuments($id,$tbl)->map(function($val){
                                                 $val->document_path = !empty(trim($val->document_path))? $this->readDocumentPath($val->document_path):"";
                                                 return $val;
                                             });
             $pendingAt  = $init_finish['initiator']['id'];
-            $mlevelData = $this->getLevelData($id);
+            $mlevelData = TradeLevelPending::getLevelData($id);
             if($mlevelData)
             {
                 $pendingAt = $mlevelData->receiver_user_type_id;                
@@ -4301,7 +4301,7 @@ class Trade implements ITrade
         }
           
     }
-    function getDenialAmountTrade($notice_date=null,$current_date=null)
+    public function getDenialAmountTrade($notice_date=null,$current_date=null)
     {
         $notice_date=$notice_date?Carbon::createFromFormat("Y-m-d",$notice_date)->format("Y-m-d"):Carbon::now()->format('Y-m-d');
         $current_date=$current_date?Carbon::createFromFormat("Y-m-d",$current_date)->format("Y-m-d"):Carbon::now()->format('Y-m-d');
@@ -4311,66 +4311,8 @@ class Trade implements ITrade
         $denialAmount=100+(($totalDays)*10);
     
         return $denialAmount;
-    }    
-    public function getCategoryList()
-    {
-        try{
-            return TradeParamCategoryType::select("id","category_type")
-                ->where("status",1)
-                ->get();
-        }
-        catch (Exception $e)
-        {
-            echo $e->getMessage();
-        }
-    }
-    public function getFirmTypeList()
-    {
-        try{
-            return TradeParamFirmType::select("id","firm_type")
-                ->where("status",1)
-                ->get();
-        }
-        catch (Exception $e)
-        {
-            echo $e->getMessage();
-        }
-    }
-    public function getOwnershipTypeList()
-    {
-        try{
-            return TradeParamOwnershipType::select("id","ownership_type")
-                ->where("status",1)
-                ->get();
-        }
-        catch (Exception $e)
-        {
-            echo $e->getMessage();
-        }
-    }
-    public function getItemsList($all=false)
-    {
-        try{
-            if($all)
-            {
-                return TradeParamItemType::select("id","trade_item","trade_code")
-                    ->where("status",1)
-                    ->where("id","<>",187)
-                    ->get();
-            }
-            else
-            {
-                return TradeParamItemType::select("id","trade_item","trade_code")
-                    ->where("status",1)
-                    ->get();
-
-            }
-        }
-        catch (Exception $e)
-        {
-            echo $e->getMessage();
-        }
-    }
+    } 
+    
     public function getIndipendentComment($licenceId)
     {
         try{
@@ -4709,21 +4651,6 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-    public function readTranDtl($id)
-    {
-        try{
-            $transection   = TradeTransaction::select("*")
-                            ->where("related_id",$id)
-                            ->whereIn("status",[1,2])
-                            ->get();
-            return $transection;
-        }
-        catch(Exception $e)
-        {
-            echo $e->getMessage();
-        }
-        
-    }
     public function getTimelin($id)
     {
         try{
@@ -4828,35 +4755,6 @@ class Trade implements ITrade
         
     }
 
-    public function getLevelData(int $licenceId)
-    {
-        try{
-            $data = TradeLevelPending::select("*")
-                    ->where("licence_id",$licenceId)
-                    ->where("status",1)
-                    ->where("verification_status",0)
-                    ->orderBy("id","DESC")
-                    ->first();
-            return $data;
-        }
-        catch(Exception $e)
-        {
-            echo $e->getMessage();
-        }
-    }
-    public function getTransactionDtlByLicenceId($licenceId)
-    {
-        try{
-            $data = TradeTransaction::select("*")
-                    ->where("related_id",$licenceId)
-                    ->whereIn('status', [1, 2])
-                    ->first();
-           
-            return $data;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
     public function uplodeFile($file,$custumFileName)
     {
         $filePath = $file->storeAs('uploads/Trade', $custumFileName, 'public');
@@ -5029,21 +4927,19 @@ class Trade implements ITrade
                         ->where("related_id",$licenceId)
                         ->orderBy("id","DESC")
                         ->first();
-        $level = $this->getLevelData($licenceId);
+        $level = TradeLevelPending::getLevelData($licenceId);
         $status = "";        
         if($application->pending_status==5)
         {
             $status="License Created Successfully";
         }
         elseif($application->pending_status==3)
-        {
-            $level = $this->getLevelData($licenceId);            
+        {           
             $rols  = WfRole::find($level->sender_user_type_id);           
             $status="Application back to citizen by ".$rols->role_name;
         }
         elseif($application->pending_status==2)
         {
-            $level = $this->getLevelData($licenceId);
             $rols  = WfRole::find($level->receiver_user_type_id);
             $status="Application pending at ".$rols->role_name;
         }
