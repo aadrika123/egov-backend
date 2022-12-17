@@ -1194,31 +1194,11 @@ class Trade implements ITrade
         try{
             #------------------------ Declaration-----------------------
             $refUser            = Auth()->user();
-            $refUserId          = $refUser->id;
-            $refUlbId           = $refUser->ulb_id;
-            $refUlbDtl          = UlbMaster::find($refUlbId);
-            $refUlbName         = explode(' ',$refUlbDtl->ulb_name);
             $refNoticeDetails   = null;
             $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $refWorkflows       = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
-
-            $redis              = new Redis;
-            $mDenialAmount      = 0; 
-            $mUserData          = json_decode($redis::get('user:' . $refUserId), true);
-            $mUserType          = $this->_parent->userType($refWorkflowId); 
-            $mShortUlbName      = "";
-            $mApplicationTypeId = null;
-            $mNowdate           = Carbon::now()->format('Y-m-d'); 
-            $mTimstamp          = Carbon::now()->format('Y-m-d H:i:s'); 
             $mNoticeDate        = null;
-            $mProprtyId         = null;
-            $mnaturOfBusiness   = null;
-            $rollId             =  $mUserData['role_id']??($this->_parent->getUserRoll($refUserId, $refUlbId,$refWorkflowId)->role_id??-1);
             #------------------------End Declaration-----------------------
             $refLecenceData = ActiveLicence::find($request->licenceId);
-            $licenceId = $request->licenceId;
-            $licenceId = $request->licenceId;
-            $refLevelData = TradeLevelPending::getLevelData($licenceId);
             if(!$refLecenceData)
             {
                 throw new Exception("Licence Data Not Found !!!!!");
@@ -1237,14 +1217,8 @@ class Trade implements ITrade
             }
             if($refNoticeDetails = $this->readNotisDtl($refLecenceData->id))
             { 
-                $refDenialId = $refNoticeDetails->dnialid;
                 $mNoticeDate = date('Y-m-d',strtotime($refNoticeDetails['created_on'])); //notice date 
             }
-
-            $ward_no = UlbWardMaster::select("ward_name")
-                        ->where("id",$refLecenceData->ward_mstr_id)
-                        ->first();
-            $mWardNo = $ward_no['ward_name']; 
 
             #-----------End valication-------------------
             #-------------Calculation-----------------------------                
@@ -1475,7 +1449,6 @@ class Trade implements ITrade
     public function readPaymentRecipt($id, $transectionId) # unauthorised  function
     { 
         try{
-            // DB::enableQueryLog();
             $application = ActiveLicence::select("application_no","provisional_license_no","license_no",
                                                 "firm_name","holding_no","address",
                                             "owner.owner_name","owner.guardian_name","owner.mobile",
@@ -1500,7 +1473,6 @@ class Trade implements ITrade
                                             })
                             ->where('active_licences.id',$id)
                             ->first();
-                            // dd(DB::getQueryLog());
             if(!$application)
             {
                 $application = ExpireLicence::select("application_no","provisional_license_no","license_no",
@@ -1641,8 +1613,6 @@ class Trade implements ITrade
             foreach($mDocumentsList as $val)
             {                  
                 $doc = (array) null; 
-                // $data["documentsList"]["docList"][$val->doc_for] = $this->getDocumentList($val->doc_for,$refLicence->application_type_id,$val->show);
-                // $data["documentsList"]["isMedetory"][$val->doc_for] = $val->is_mandatory;
                 $doc['docName'] = $val->doc_for;
                 $doc['isMadatory'] = $val->is_mandatory;
                 $doc['docVal'] = $this->getDocumentList($val->doc_for,$refLicence->application_type_id,$val->show);
@@ -1688,7 +1658,6 @@ class Trade implements ITrade
                     if(isset($refOwneres[$key]["Identity Proof"]["document_path"]))
                     {
                         $path = $this->readDocumentPath($refOwneres[$key]["Identity Proof"]["document_path"]);
-                        // $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["Identity Proof"]["document_path"]):null;
                         $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?$path:null;
                         $doc['uploadDoc']["document_path"] = $path;
                     }
@@ -1704,7 +1673,6 @@ class Trade implements ITrade
                     if(isset( $refOwneres[$key]["image"]["document_path"]))
                     {
                         $path = $this->readDocumentPath($refOwneres[$key]["image"]["document_path"]);
-                        $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["image"]["document_path"]):null;
                         $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"]))?$path:null;
                         $doc2['uploadDoc']["document_path"] = $path;
                     }
@@ -2099,12 +2067,12 @@ class Trade implements ITrade
         $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
         $workflows = $this->_parent->iniatorFinisher($user_id,$ulb_id,$workflow_id);   
         $roll_id =  $this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??null;
-        $apply_from = $this->_parent->userType($workflow_id);  
+        $mUserType = $this->_parent->userType($workflow_id);  
         $licenceId = $request->licenceId;
         $rules = [];
         $message = [];
         try{
-            if(!$roll_id || strtoupper($apply_from)!="DA")
+            if(!$roll_id || strtoupper($mUserType)!="DA")
             {
                 throw new Exception("You are Not Authorized For Document Verify");
             }
@@ -2300,7 +2268,6 @@ class Trade implements ITrade
     {
         $data = (array)null;
         $refUser = Auth()->user();
-        $refUserId = $refUser->id;
         $refUlbId = $refUser->ulb_id;
         $mNoticeNo = null;
         $mNowDate = Carbon::now()->format('Y-m-d'); // todays date
@@ -2465,7 +2432,6 @@ class Trade implements ITrade
     {
         try{
             $refUser    = Auth()->user();
-            $refUserId  = $refUser->id;
             $refUlbId   = $refUser->ulb_id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
@@ -2517,10 +2483,6 @@ class Trade implements ITrade
            {
                 throw new Exception("No Data Found");
            }
-            //    elseif($application_type_id==3 && $data->application_type_id != 4)
-            //    {
-            //         throw new Exception("Please Apply Surrender Before Amendment");
-            //    }
            elseif($data->valid_upto > $mNextMonth && $mApplicationTypeId!=4)
            {
                 throw new Exception("Licence Valid Upto ".$data->valid_upto);
@@ -2568,8 +2530,7 @@ class Trade implements ITrade
             if ($validator->fails()) 
             {
                 return responseMsg(false, $validator->errors(),$request->all());
-            }   
-            // DB::enableQueryLog();          
+            }          
             $licence = ActiveLicence::select("active_licences.id",
                                             "active_licences.application_no",
                                             "active_licences.provisional_license_no",
@@ -2733,7 +2694,7 @@ class Trade implements ITrade
             {
                 throw new Exception("You Are Not Authorized For This Action");
             } 
-            if($mRole->is_initiator )    //|| in_array(strtoupper($apply_from),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"])
+            if($mRole->is_initiator )    //|| in_array(strtoupper($mUserType),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"])
             {
                 $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
                     $val->ward_no = $val->ward_name;
@@ -2848,14 +2809,14 @@ class Trade implements ITrade
             {
                 throw new Exception("Workflow Not Available");
             }
-            $apply_from = $this->_parent->userType($refWorkflowId);
+            $mUserType = $this->_parent->userType($refWorkflowId);
             $ward_permission = $this->_parent->WardPermission($user_id);
             $role = $this->_parent->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);           
             if (!$role) 
             {
                 throw new Exception("You Are Not Authorized");
             }
-            if($role->is_initiator || in_array(strtoupper($apply_from),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
+            if($role->is_initiator || in_array(strtoupper($mUserType),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
             {
                 $joins = "leftjoin";
                 $ward_permission = $this->_modelWard->getAllWard($ulb_id)->map(function($val){
@@ -2977,7 +2938,7 @@ class Trade implements ITrade
                 throw new Exception("You Are Not Authorized");
             }
             $role_id = $role->role_id;
-            $apply_from = $this->_parent->userType($refWorkflowId);            
+            $mUserType = $this->_parent->userType($refWorkflowId);            
             $rules = [
                 "btn" => "required|in:btc,forward,backward",
                 "licenceId" => "required|digits_between:1,9223372036854775807",
@@ -3031,7 +2992,7 @@ class Trade implements ITrade
                 throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
             }
             
-            // dd($role);
+            
             if($request->btn=="forward" && !$role->is_finisher && !$role->is_initiator)
             {
                 $sms ="Application Forwarded To ".$role->forword_name;
@@ -3125,7 +3086,7 @@ class Trade implements ITrade
                     // }                
                 }
             }           
-            if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
+            if($request->btn=="forward" && in_array(strtoupper($mUserType),["DA"]))
             {
                 $docs = $this->getLicenceDocuments($request->licenceId);
                 if(!$docs)
@@ -3263,7 +3224,7 @@ class Trade implements ITrade
             {
                 $licenc_data->document_upload_status = 1;
             }
-            if($request->btn=="forward" && in_array(strtoupper($apply_from),["DA"]))
+            if($request->btn=="forward" && in_array(strtoupper($mUserType),["DA"]))
             {   
                 $nowdate = Carbon::now()->format('Y-m-d');            
                 $licenc_data->doc_verify_date = $nowdate;
@@ -3750,7 +3711,7 @@ class Trade implements ITrade
      * |+ @var ulb_id login user ULBID
      * |+ @var workflow_id owrflow id 19 for trade **Config::get('workflow-constants.TRADE_WORKFLOW_ID')
      * |+ @var role_id login user ROLEID **this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??-1
-     * | @var apply_from login user sort role name **$this->_parent->userType(workflow_id)
+     * | @var mUserType login user sort role name **$this->_parent->userType(workflow_id)
      * |
      * |+ @var denial_details  apply denial detail **this->getDenialDetailsByID($id,$ulb_id)
      * |+ @var denialID =  denial_details->id
@@ -4312,7 +4273,7 @@ class Trade implements ITrade
     
         return $denialAmount;
     } 
-    
+
     public function getIndipendentComment($licenceId)
     {
         try{
