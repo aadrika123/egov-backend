@@ -177,9 +177,11 @@ class Consumer implements IConsumer
                         $consumer_tax['effective_from'] = $i;           
                         // $consumer_tax_id = $this->consumer_tax_model->insertData($consumer_tax);
                         $Tdemands =(array)null;
+                        $Tconter = $conter;
                         if($i < $val['effective_date'])
-                        {
-                            $response["consumer_tax"][$conter]=$consumer_tax;
+                        {  
+                            $response["consumer_tax"][$conter]=$consumer_tax;                           
+                            $conter++;
                         }
                         while ($i < $val['effective_date']) 
                         {
@@ -219,15 +221,12 @@ class Consumer implements IConsumer
                                 $consumer_demand['penalty']     = 0;
                                 $consumer_demand['connection_type'] = 'Fixed';
                                 $Tdemands[] = $consumer_demand;
-                                // $this->consumer_demand_model->insertData($consumer_demand);
-
                                 $i = date('Y-m-d', strtotime($demand_upto . "+1 days"));
                             }
-                            $response["consumer_tax"][$conter]["consumer_demand"] = $Tdemands;
+                            $response["consumer_tax"][$Tconter]["consumer_demand"] = $Tdemands;
                         }  
                         $fixed_amount = $val['amount'];
-                        $j++;
-                        $conter++;
+                        $j++;                       
                     }
                 } 
                 else 
@@ -247,7 +246,6 @@ class Consumer implements IConsumer
                     $consumer_tax['amount'] = $fixed_amount;
                     $consumer_tax['effective_from'] = $i;
                     $response["consumer_tax"][$conter]=$consumer_tax;
-                    // $consumer_tax_id = $this->consumer_tax_model->insertData($consumer_tax);
                     while ($i < $to_date) 
                     {
                         $last_date_of_current_month = date('Y-m-t', strtotime($i));
@@ -293,7 +291,7 @@ class Consumer implements IConsumer
                 throw new Exception("Invalid Rule Sete Called");
             }
             $response["status"] = true;
-            return $response;
+            return collect($response);
         }
         catch(Exception $e)
         {
