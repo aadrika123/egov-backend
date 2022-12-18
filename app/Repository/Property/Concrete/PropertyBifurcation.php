@@ -1810,7 +1810,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                         "remarks",
                         "verify_status",
                         DB::raw("CASE WHEN ref_prop_docs_required.id ISNULL AND prop_active_safs_docs.saf_owner_dtl_id NOTNULL THEN CONCAT(prop_active_safs_owners.owner_name, ' (Applicant Image)')
-                                      WHEN ref_prop_docs_required.id ISNULL AND prop_active_safs_docs.saf_owner_dtl_id NOTNULL THEN CONCAT(prop_active_safs_owners.owner_name, ' (doc_type)')
+                                      WHEN ref_prop_docs_required.id NOTNULL AND prop_active_safs_docs.saf_owner_dtl_id NOTNULL THEN CONCAT(prop_active_safs_owners.owner_name, ' (',doc_type,')')
                                       ELSE doc_type 
                                 END AS doc_type"
                             )
@@ -1993,7 +1993,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $doc = (array) null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
-                $doc['docName']     = "Applicant Image";
+                $doc['docName']     = "Photo";
                 $doc['isMadatory']  = 1;
                 $doc['docVal'][]      = ["id"=>0,"doc_name" => "Photo"];
                 $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id, $val->id,"Photo",0);
@@ -2069,11 +2069,11 @@ class PropertyBifurcation implements IPropertyBifurcation
             $data["owners"]         = $mOwneres;
             $data["uploadDocument"] = $mUploadDocument;
             if ($request->getMethod() == "GET") 
-            {
+            { 
                 return responseMsg(true, "", remove_null($data));
             }
             if ($request->getMethod() == "POST") 
-            {
+            { 
                 DB::beginTransaction();
                 $rules = [];
                 $message = [];
@@ -2093,6 +2093,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 {
                     return responseMsg(false, $validator->errors(), $request->all());
                 }
+                // dd($request->safId,"saf");
                 $ids = [0];
                 $doc_type = "Photo";
                 if(in_array($request->$doc_for,objToArray(collect($mDocumentsList)->pluck("doc_type"))))
@@ -2200,7 +2201,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     } 
                     else 
                     {
-                        return responseMsg(false, "something errors in Document Uploades", $request->all());
+                        throw new Exception("something errors in Document Uploades");
                     }
                 }
                 # Upload Owner Document Gender Document
@@ -2293,7 +2294,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     } 
                     else 
                     {
-                        return responseMsg(false, "something errors in Document Uploades", $request->all());
+                        throw new Exception("something errors in Document Uploades");
                     }
                 }
                 # Upload Owner Document DOB Document
@@ -2386,7 +2387,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     } 
                     else 
                     {
-                        return responseMsg(false, "something errors in Document Uploades", $request->all());
+                        throw new Exception("something errors in Document Uploades");
                     }
                 }
                 # Upload Owner Document is_armfors
@@ -2480,7 +2481,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     } 
                     else 
                     {
-                        return responseMsg(false, "something errors in Document Uploades", $request->all());
+                        throw new Exception("something errors in Document Uploades");
                     }
                 }
                 # Upload Owner Document is_handicap
@@ -2510,7 +2511,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $doc_mstr_id = "doc_mstr_id$cnt";
                     if ($file->IsValid() && in_array($request->$doc_mstr_id,$ids)) 
                     {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId, $request->owner_id, $doc_type)) 
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($refSafs->id, $request->owner_id, $doc_type)) 
                         {
                             if($app_doc_dtl_id->verify_status==0)
                             {
@@ -2575,12 +2576,12 @@ class PropertyBifurcation implements IPropertyBifurcation
                     } 
                     else 
                     {
-                        return responseMsg(false, "something errors in Document Uploades", $request->all());
+                        throw new Exception("something errors in Document Uploades");
                     }
                 }
                 # owner image upload hear 
                 elseif (isset($request->btn_doc) && isset($request->$doc_for) && $request->$doc_for == "Photo") 
-                {
+                {                  
                     $rules = [
                         'doc' . $cnt => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'doc_for' . $cnt => "required|string",
@@ -2604,8 +2605,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                     }
                     $file = $request->file('doc' . $cnt);
                     if ($file->IsValid() && in_array($request->$doc_mstr_id,$ids)) 
-                    {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId, $request->owner_id, $doc_type,$request->$doc_mstr_id)) 
+                    { 
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($refSafs->id, $request->owner_id, $doc_type,$request->$doc_mstr_id)) 
                         {
                             if($app_doc_dtl_id->verify_status==0)
                             {
@@ -2662,12 +2663,14 @@ class PropertyBifurcation implements IPropertyBifurcation
                             $propDocs->update();
                             $sms = "Photo Of " . $woner_id['owner_name'] . " Upload Successfully";
                         }
-                    } else {
-                        return responseMsg(false, "something errors in Document Uploades", $request->all());
+                    } 
+                    else 
+                    {
+                        throw new Exception("something errors in Document Uploades");
                     }
                 }
                 else
-                {
+                { 
                     throw new Exception("Invalid Document type Passe");
                 }
                 DB::commit();
