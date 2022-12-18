@@ -1758,11 +1758,11 @@ class PropertyBifurcation implements IPropertyBifurcation
             }
             $doc = PropActiveSafsDoc::select(
                 "prop_active_safs_docs.id",
-                "doc_type",
                 "prop_active_safs_docs.verify_status",
                 "prop_active_safs_docs.remarks",
                 "prop_active_safs_docs.doc_path",
-                "doc_mstr_id"
+                "doc_mstr_id",
+                DB::raw("CASE WHEN ref_prop_docs_required.id ISNULL THEN 'Applicant Image' ELSE doc_type END AS doc_type")
             )
             ->$joins("ref_prop_docs_required", function($join)use($doc_for){
                 $join->on("ref_prop_docs_required.id", "prop_active_safs_docs.doc_mstr_id")
@@ -1805,17 +1805,22 @@ class PropertyBifurcation implements IPropertyBifurcation
         try {
 
             $time_line =  PropActiveSafsDoc::select(
-                "prop_active_safs_docs.id",
-                "doc_type",
-                "doc_path",
-                "remarks",
-                "verify_status"
-            )
-                ->leftjoin("ref_prop_docs_required", "ref_prop_docs_required.id", "prop_active_safs_docs.doc_mstr_id")
-                ->where('prop_active_safs_docs.saf_id', $id)
-                ->where('prop_active_safs_docs.status', 1)
-                ->orderBy('prop_active_safs_docs.id', 'desc')
-                ->get();
+                        "prop_active_safs_docs.id",
+                        "doc_path",
+                        "remarks",
+                        "verify_status",
+                        DB::raw("CASE WHEN ref_prop_docs_required.id ISNULL AND prop_active_safs_docs.saf_owner_dtl_id NOTNULL THEN CONCAT(prop_active_safs_owners.owner_name, ' (Applicant Image)')
+                                      WHEN ref_prop_docs_required.id ISNULL AND prop_active_safs_docs.saf_owner_dtl_id NOTNULL THEN CONCAT(prop_active_safs_owners.owner_name, ' (doc_type)')
+                                      ELSE doc_type 
+                                END AS doc_type"
+                            )
+                    )
+                    ->leftjoin("ref_prop_docs_required", "ref_prop_docs_required.id", "prop_active_safs_docs.doc_mstr_id")
+                    ->leftjoin("prop_active_safs_owners","prop_active_safs_owners.id","prop_active_safs_docs.saf_owner_dtl_id")
+                    ->where('prop_active_safs_docs.saf_id', $id)
+                    ->where('prop_active_safs_docs.status', 1)
+                    ->orderBy('prop_active_safs_docs.id', 'desc')
+                    ->get();
             return $time_line;
         } catch (Exception $e) {
             echo $e->getMessage();
