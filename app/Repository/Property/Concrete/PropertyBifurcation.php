@@ -1991,6 +1991,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             foreach ($mOwneres as $key => $val) 
             { 
                 $doc = (array) null;
+                $uploadDoc =(array)null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
                 $doc['docName']     = "Photo";
@@ -2003,6 +2004,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
                 }
                 array_push($ownersDoc, $doc);
+                array_push($uploadDoc,$doc["uploadDoc"]);
                 $doc = (array) null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
@@ -2015,6 +2017,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
                     $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
                 }
+                array_push($uploadDoc,$doc["uploadDoc"]);
                 array_push($ownersDoc, $doc);
                 $doc = (array) null;
                 $doc["ownerId"]     = $val->id;
@@ -2028,6 +2031,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
                     $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
                 }
+                array_push($uploadDoc,$doc["uploadDoc"]);
                 array_push($ownersDoc, $doc);
                 if ($val->is_armed_force) 
                 {
@@ -2044,6 +2048,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                         $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
                     }
                     array_push($ownersDoc, $doc);
+                    array_push($uploadDoc,$doc["uploadDoc"]);
                 }
                 if ($val->is_specially_abled) 
                 {
@@ -2061,7 +2066,9 @@ class PropertyBifurcation implements IPropertyBifurcation
                         $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
                     }
                     array_push($ownersDoc, $doc);
+                    array_push($uploadDoc,$doc["uploadDoc"]);
                 }
+                $mOwneres[$key]["uploadoc"]=collect($uploadDoc);
             }
             $data["documentsList"]  = $requiedDocs;
             $data["ownersDocList"]  = $ownersDoc;
@@ -2684,7 +2691,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $data["uploadDocument"] = $mUploadDocument;
                 return responseMsg(true, $sms, $data["uploadDocument"]);
             }
-        } catch (Exception $e) {
+        } catch (Exception $e) {dd($e->getline(),$e->getFile());
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
