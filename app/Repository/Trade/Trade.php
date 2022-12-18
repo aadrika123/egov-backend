@@ -383,7 +383,7 @@ class Trade implements ITrade
                         throw new Exception($temp->original["message"]);
                     }
                     $res['transactionId']   = $temp->original["data"]["transactionId"];
-                    $res['paymentRecipt']   = $temp->original["data"]["paymentRecipt"];
+                    $res['paymentReceipt']   = $temp->original["data"]["paymentReceipt"];
                     
                 }
                 elseif($refNoticeDetails)
@@ -885,7 +885,7 @@ class Trade implements ITrade
             #----------End transaction------------------------
             #----------Response------------------------------
             $res['transactionId'] = $transaction_id;
-            $res['paymentRecipt']= config('app.url')."/api/trade/paymentReceipt/".$licenceId."/".$transaction_id;
+            $res['paymentReceipt']= config('app.url')."/api/trade/paymentReceipt/".$licenceId."/".$transaction_id;
             return responseMsg(true,"",$res);            
             
         }
