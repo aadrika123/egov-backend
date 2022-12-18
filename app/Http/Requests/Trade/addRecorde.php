@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests\Trade;
 
+use App\Exceptions\CustomRequestException;
 use App\Repository\Common\CommonFunction;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Config;
 use Carbon\Carbon;
 
@@ -51,7 +54,7 @@ class addRecorde extends FormRequest
             $rules["firmDetails.businessDescription"]="required|regex:$mRegex"; 
             $rules["firmDetails.firmEstdDate"]="required|date"; 
             $rules["firmDetails.firmName"]="required|regex:$mFramNameRegex";
-            $rules["firmDetails.premisesOwner"]="required|regex:$mRegex";
+            $rules["firmDetails.premisesOwner"]="required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\., \s]+$/";
             $rules["firmDetails.natureOfBusiness"]="required|array";
             $rules["firmDetails.natureOfBusiness.*.id"]="required|digits_between:1,9223372036854775807";
             $rules["firmDetails.newWardNo"]="required|digits_between:1,9223372036854775807";
@@ -179,5 +182,18 @@ class addRecorde extends FormRequest
             }
         }
         return $rules;
+    }
+    protected function failedValidation(Validator $validator)
+    { 
+        throw new HttpResponseException(
+            response()->json(
+                [
+                    'status' => false,
+                    'message' => 'The given data was invalid',
+                    'errors' => $validator->errors()
+                ], 
+                422)
+        );
+        
     }
 }
