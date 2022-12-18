@@ -277,7 +277,7 @@ class SafRepository implements iSafRepository
             // Property SAF Label Pendings
             $labelPending = new PropLevelPending();
             $labelPending->saf_id = $saf->id;
-            $labelPending->receiver_role_id = $initiatorRoleId[0]->role_id;
+            $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
             $labelPending->save();
 
             // Insert Tax

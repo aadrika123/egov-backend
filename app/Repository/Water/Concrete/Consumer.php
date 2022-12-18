@@ -33,13 +33,19 @@ class Consumer implements IConsumer
             $mNowDate             = Carbon::now()->format('Y-m-d');
             $rules = [
                 'consumerId'       =>"required|digits_between:1,9223372036854775807",
-                "demandUpto"       =>"nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate"
+                "demandUpto"       =>"nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate",
+                'finalRading'      =>"nullable|numeric",
             ];                         
             $validator = Validator::make($request->all(), $rules,);                    
             if ($validator->fails()) {                        
                 return responseMsg(false, $validator->errors(),$request->all());
             }
-            $tax= $this->generate_demand($request->consumerId,date("Y-m-d"));
+            $demandUpto = Carbon::now()->format("Y-m-d");
+            if($request->demandUpto)
+            {
+                $demandUpto = $request->demandUpto;
+            }
+            $tax= $this->generate_demand($request->consumerId,$demandUpto,$request->finalRading);
             return $tax;
         }
         catch(Exception $e)
@@ -50,7 +56,7 @@ class Consumer implements IConsumer
         }
     }
     public function generate_demand($consumer_id, $upto_date=null, $final_reading = 0)
-    {
+    { 
         try{  
             $refLastDemandDetails = $this->getConsumerLastDemad($consumer_id);
             $refConsumerDetails   = $this->getConsumrerDtlById($consumer_id);
@@ -61,7 +67,10 @@ class Consumer implements IConsumer
             $mAreaSqmt            = $refConsumerDetails->area_sqmt;
             $mPropertyTypeId      = $refConsumerDetails->property_type_id;
             $mCategory            = !empty(trim($refConsumerDetails->category))?trim($refConsumerDetails->category):"APL";            
-            
+            if(!$refConsumerDetails)
+            {
+                throw new Exception("Consumer not Found..");
+            }
             if ((!empty($refLastDemandDetails) && $mLastDemandUpto == "") || $mPropertyTypeId <= 0 || $refConsumerDetails->area_sqmt <= 0) 
             {
                 throw new Exception ( "Update your area or property type!!!");
@@ -69,6 +78,10 @@ class Consumer implements IConsumer
             if(empty($refMeterStatus) || $refMeterStatus->connection_date=='')
             {
                 throw new Exception ("Connection Date Not Found!!!");
+            }
+            if(in_array($refMeterStatus->connection_type,[1,2]) && $final_reading==0)
+            {
+                throw new Exception ("Please Enter Valide Meter Reading!!!");
             }
             if ($mLastDemandUpto == "") 
             {
@@ -90,7 +103,7 @@ class Consumer implements IConsumer
             }
             elseif(in_array($refMeterStatus->connection_type,[1,2]) && $refMeterStatus->meter_status=="1")
             {
-                return $this->meterDemand($refConsumerDetails,$refLastDemandDetails,$refMeterStatus,$demand_from,$upto_date,1626);
+                return $this->meterDemand($refConsumerDetails,$refLastDemandDetails,$refMeterStatus,$demand_from,$upto_date,$final_reading);
             }
             else
             {
@@ -174,7 +187,9 @@ class Consumer implements IConsumer
                         $consumer_tax['charge_type'] = 'Fixed';
                         $consumer_tax['rate_id'] = $val['id'];
                         $consumer_tax['amount'] = $fixed_amount;
-                        $consumer_tax['effective_from'] = $i;           
+                        $consumer_tax['effective_from'] = $i; 
+                        $consumer_tax['initial_reading'] = 0;
+                        $consumer_tax['final_reading'] = 0;          
                         // $consumer_tax_id = $this->consumer_tax_model->insertData($consumer_tax);
                         $Tdemands =(array)null;
                         $Tconter = $conter;
@@ -245,6 +260,8 @@ class Consumer implements IConsumer
                     $consumer_tax['rate_id'] = $refFixedRateDetail->id;
                     $consumer_tax['amount'] = $fixed_amount;
                     $consumer_tax['effective_from'] = $i;
+                    $consumer_tax['initial_reading'] = 0;
+                    $consumer_tax['final_reading'] = 0;
                     $response["consumer_tax"][$conter]=$consumer_tax;
                     while ($i < $to_date) 
                     {
@@ -319,6 +336,13 @@ class Consumer implements IConsumer
             $mCategory            = !empty(trim($refConsumerDetails->category))?trim($refConsumerDetails->category):"APL";
             $to_date ="";
             $mConsumerId         = $refConsumerDetails->id;
+                        
+            $get_initial_reading = $this->getLastMeterReading($mConsumerId);
+            $initial_reading = $get_initial_reading->initial_reading??0;
+            if($final_reading<=$initial_reading)
+            {
+                throw new Exception("Final Reading Should be Greatr than Previuse Reading");
+            }
             if ($refMeterStatus->connection_type == 1 || $refMeterStatus->connection_type == 2) 
             {
                 if ($upto_date == "") 
@@ -328,10 +352,7 @@ class Consumer implements IConsumer
                 else 
                 {
                     $to_date = $upto_date;
-                }
-                $get_initial_reading = $this->getLastMeterReading($mConsumerId);
-
-                $initial_reading = $get_initial_reading->initial_reading??0;            
+                }            
                 $diff_reading = $final_reading - $initial_reading;
 
                 if ($mPropertyTypeId == 1) 
@@ -409,6 +430,7 @@ class Consumer implements IConsumer
                     $consumer_tax = array();
                     $consumer_tax['charge_type'] = 'Meter';
                     $consumer_tax['rate_id'] = $meter_rate_id;
+                    $consumer_tax['effective_from']=$demand_from;
                     $consumer_tax['initial_reading'] = $initial_reading;
                     $consumer_tax['final_reading'] = $final_reading;
                     $consumer_tax['amount'] = $total_amount;
@@ -441,50 +463,6 @@ class Consumer implements IConsumer
             $response["status"] = false;
             $response["errors"] = $e->getMessage();
             return collect($response); 
-        }
-    }
-    public function getMeterArrvg($refConsumerDetails,$refLastDemandDetails,$upto_date=null)
-    {
-        try{
-            $consumer_id = $refConsumerDetails->id;
-            $get_initial_reading   = $this->getLastMeterReading($consumer_id);
-            $secondLastReading     = $this->get2ndLastMeterReading($consumer_id, $get_initial_reading['id']??0);
-            $lastDemand = $refLastDemandDetails;
-            
-            if ($upto_date == "") 
-            {
-                $to_date = date('Y-m-d');
-            } 
-            else 
-            {
-                $to_date = $upto_date;
-            }
-            $date1= date_create($lastDemand['demand_upto']);
-            $date2=date_create($lastDemand['demand_from']);
-            $date3 = date_create($to_date);
-            $diff=date_diff($date2,$date1);
-            $no_diff = $diff->format("%a");            
-            $current_diff = date_diff($date3,$date1)->format("%a");
-            $reading = ($get_initial_reading['initial_reading']??0) - ($secondLastReading['initial_reading']??0);
-            $arvg = $no_diff!=0 ? round(($reading / $no_diff),2) : 1 ;
-            $current_reading = ( $current_diff * $arvg);
-    
-            return [
-                "priv_demand_from"=> $lastDemand['demand_from'],
-                "priv_demand_upto"=> $lastDemand['demand_upto'],
-                "demand_from"=> $lastDemand['demand_upto'],
-                "demand_upto" => $to_date,
-                "priv_day_diff"=> $no_diff,
-                "current_day_diff"=> $current_diff ,
-                "last_reading" => $reading,
-                "current_reading"=>$current_reading,
-                "arvg" =>$arvg ,
-            ];
-
-        }
-        catch(Exception $e)
-        { 
-            return[];
         }
     }
     public function averageBulling($refConsumerDetails, $refLastDemandDetails, $refMeterStatus,$demand_from,$upto_date=null,$final_reading=0)
@@ -622,7 +600,11 @@ class Consumer implements IConsumer
                 $args = $this->getMeterArrvg($refConsumerDetails,$refLastDemandDetails,$to_date);
             
                 $get_initial_reading = $this->getLastMeterReading($mConsumerId);
-                $initial_reading = $get_initial_reading->initial_reading??0;            
+                $initial_reading = $get_initial_reading->initial_reading??0; 
+                if($final_reading<=$initial_reading)  
+                {
+                    throw new Exception("Final Reading Should be Grater than Priviuse Reading!!!");
+                }         
                 $diff_reading = $final_reading - $initial_reading;            
                 if(!$args)
                 {
@@ -743,6 +725,51 @@ class Consumer implements IConsumer
             return collect($response); 
         }
     }
+    public function getMeterArrvg($refConsumerDetails,$refLastDemandDetails,$upto_date=null)
+    {
+        try{
+            $consumer_id = $refConsumerDetails->id;
+            $get_initial_reading   = $this->getLastMeterReading($consumer_id);
+            $secondLastReading     = $this->get2ndLastMeterReading($consumer_id, $get_initial_reading['id']??0);
+            $lastDemand = $refLastDemandDetails;
+            
+            if ($upto_date == "") 
+            {
+                $to_date = date('Y-m-d');
+            } 
+            else 
+            {
+                $to_date = $upto_date;
+            }
+            $date1= date_create($lastDemand['demand_upto']);
+            $date2=date_create($lastDemand['demand_from']);
+            $date3 = date_create($to_date);
+            $diff=date_diff($date2,$date1);
+            $no_diff = $diff->format("%a");            
+            $current_diff = date_diff($date3,$date1)->format("%a");
+            $reading = ($get_initial_reading['initial_reading']??0) - ($secondLastReading['initial_reading']??0);
+            $arvg = $no_diff!=0 ? round(($reading / $no_diff),2) : 1 ;
+            $current_reading = ( $current_diff * $arvg);
+    
+            return [
+                "priv_demand_from"=> $lastDemand['demand_from'],
+                "priv_demand_upto"=> $lastDemand['demand_upto'],
+                "demand_from"=> $lastDemand['demand_upto'],
+                "demand_upto" => $to_date,
+                "priv_day_diff"=> $no_diff,
+                "current_day_diff"=> $current_diff ,
+                "last_reading" => $reading,
+                "current_reading"=>$current_reading,
+                "arvg" =>$arvg ,
+            ];
+
+        }
+        catch(Exception $e)
+        { 
+            return[];
+        }
+    }
+    
 
     #------------------- core function ---------------------------------
     public function getFixedRateCharge($property_type_id,$area_sqmt,$demand_from)

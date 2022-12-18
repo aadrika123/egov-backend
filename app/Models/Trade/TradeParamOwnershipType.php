@@ -9,4 +9,11 @@ class TradeParamOwnershipType extends Model
 {
     use HasFactory;
     public $timestamps=false;
+
+    public Static function List()
+    {
+         return self::select("id","ownership_type")
+                ->where("status",1)
+                ->get();
+    }
 }
