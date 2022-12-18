@@ -1984,7 +1984,20 @@ class PropertyBifurcation implements IPropertyBifurcation
                 array_push($requiedDocs, $doc);
             }
             foreach ($mOwneres as $key => $val) 
-            {
+            { 
+                $doc = (array) null;
+                $doc["ownerId"]     = $val->id;
+                $doc["ownerName"]   = $val->owner_name;
+                $doc['docName']     = "Applicant Image";
+                $doc['isMadatory']  = 1;
+                $doc['docVal'][]      = ["id"=>0,"doc_name" => "Photo"];
+                $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id, $val->id,"Photo",0);
+                if (isset($doc["uploadDoc"]["doc_path"])) 
+                {
+                    $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
+                    $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
+                }
+                array_push($ownersDoc, $doc);
                 $doc = (array) null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
@@ -2587,7 +2600,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $file = $request->file('doc' . $cnt);
                     if ($file->IsValid() && in_array($request->$doc_mstr_id,$ids)) 
                     {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId, $request->owner_id, $doc_type)) 
+                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($request->safId, $request->owner_id, $doc_type,$request->$doc_mstr_id)) 
                         {
                             if($app_doc_dtl_id->verify_status==0)
                             {
