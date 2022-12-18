@@ -66,7 +66,7 @@ class ApplyApplication extends Controller
             {
                 throw new Exception("Finisher Not Available"); 
             }
-            if (in_array($mApplicationTypeId, ["2", "3","4"]) && !$request->id) 
+            if (in_array($mApplicationTypeId, ["2", "3","4"]) && (!$request->id || !is_numeric($request->id))) 
             {
                 throw new Exception ("Old licence Id Requird");
             }  
@@ -85,11 +85,11 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->isvalidateHolding($request);
     }
-    public function paymentRecipt(Request $request)
+    public function paymentReceipt(Request $request)
     {
         $id = $request->id;
         $transectionId =  $request->transectionId;
-        return $this->Repository->readPaymentRecipt($id,$transectionId);
+        return $this->Repository->readPaymentReceipt($id,$transectionId);
     }
     public function updateLicenseBo(requpdateBasicDtl $request)
     {

@@ -31,7 +31,7 @@ interface ITrade
     public function readLicenceDtl($id);
     public function readDenialdtlbyNoticno(Request $request);
     public function getPaybleAmount(Request $request);
-    public function readPaymentRecipt($id, $transectionId);
+    public function readPaymentReceipt($id, $transectionId);
     public function getAllApplicationType();
     public function inbox(Request $request);
     public function outbox(Request $request);

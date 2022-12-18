@@ -4,7 +4,8 @@ namespace App\Http\Requests\Trade;
 
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
-
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 class paymentCounter extends FormRequest
 {
     /**
@@ -38,5 +39,18 @@ class paymentCounter extends FormRequest
             $rules["branchName"] ="required|regex:$mRegex";
         } 
         return $rules;
+    }
+    protected function failedValidation(Validator $validator)
+    { 
+        throw new HttpResponseException(
+            response()->json(
+                [
+                    'status' => false,
+                    'message' => 'The given data was invalid',
+                    'errors' => $validator->errors()
+                ], 
+                422)
+        );
+        
     }
 }

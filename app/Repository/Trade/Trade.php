@@ -1373,7 +1373,7 @@ class Trade implements ITrade
         }
     }
     
-    public function readPaymentRecipt($id, $transectionId) # unauthorised  function
+    public function readPaymentReceipt($id, $transectionId) # unauthorised  function
     { 
         try{
             $application = ActiveLicence::select("application_no","provisional_license_no","license_no",

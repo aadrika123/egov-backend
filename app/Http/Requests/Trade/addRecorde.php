@@ -194,6 +194,5 @@ class addRecorde extends FormRequest
                 ], 
                 422)
         );
-        
     }
 }
