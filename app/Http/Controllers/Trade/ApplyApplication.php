@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Trade;
 
 use App\Http\Controllers\Controller;
+use App\EloquentModels\Common\ModelWard;
+use App\Repository\Common\CommonFunction;
 use App\Repository\Trade\ITrade;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
@@ -12,6 +14,7 @@ use App\Http\Requests\Trade\paymentCounter;
 use App\Http\Requests\Trade\reqPaybleAmount;
 use App\Http\Requests\Trade\reqInbox;
 use App\Http\Requests\Trade\requpdateBasicDtl;
+use Exception;
 
 class ApplyApplication extends Controller
 {
@@ -25,20 +28,54 @@ class ApplyApplication extends Controller
 
     // Initializing function for Repository
     private $Repository;
+    protected $_modelWard;
+    protected $_parent;
     public function __construct(ITrade $TradeRepository)
     {
-        // $this->middleware(function ($request, $next) use($TradeRepository) {          
-        //     $virtualRole = User::first();
-        //     $user = auth()->user() ?? $virtualRole;
-        //     $TradeRepository->__construct($user);
-        //     $this->Repository = $TradeRepository ;
-        //     return $next($request);
-        // });
         $this->Repository = $TradeRepository ;
+        $this->_modelWard = new ModelWard();
+        $this->_parent = new CommonFunction();
     }
     public function applyApplication(addRecorde $request)
-    {        
-        return $this->Repository->addRecord($request);
+    {   
+        $refUser            = Auth()->user();
+        $refUserId          = $refUser->id;
+        $refUlbId           = $refUser->ulb_id;
+        $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID'); 
+        $mUserType          = $this->_parent->userType($refWorkflowId);
+        $refWorkflows       = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);        
+        $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);
+        try{     
+            if(!in_array(strtoupper($mUserType),["ONLINE","JSK","UTC","TC","SUPER ADMIN","TL"]))
+            {
+                throw new Exception("You Are Not Authorized For This Action !");
+            }            
+            if(!$mApplicationTypeId)
+            {
+                throw new Exception("Invalide Application Type");
+            }
+            if (!$refWorkflows) 
+            {
+                throw new Exception("Workflow Not Available");
+            } 
+            if(!$refWorkflows['initiator'])
+            {
+                throw new Exception("Initiator Not Available"); 
+            }
+            if(!$refWorkflows['finisher'])
+            {
+                throw new Exception("Finisher Not Available"); 
+            }
+            if (in_array($mApplicationTypeId, ["2", "3","4"]) && !$request->id) 
+            {
+                throw new Exception ("Old licence Id Requird");
+            }  
+            return $this->Repository->addRecord($request);
+        }   
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$request->all());
+        } 
     }
     public function paybleAmount(reqPaybleAmount $request)
     {      
