@@ -885,7 +885,7 @@ class Trade implements ITrade
             #----------End transaction------------------------
             #----------Response------------------------------
             $res['transactionId'] = $transaction_id;
-            $res['paymentRecipt']= config('app.url')."/api/trade/paymentRecipt/".$licenceId."/".$transaction_id;
+            $res['paymentRecipt']= config('app.url')."/api/trade/paymentReceipt/".$licenceId."/".$transaction_id;
             return responseMsg(true,"",$res);            
             
         }
@@ -1363,7 +1363,7 @@ class Trade implements ITrade
             #----------End transaction------------------------
             #----------Response------------------------------
             $res['transactionId'] = $transaction_id;
-            $res['paymentRecipt']= config('app.url')."/api/trade/paymentRecipt/".$licenceId."/".$transaction_id;
+            $res['paymentReceipt']= config('app.url')."/api/trade/paymentReceipt/".$licenceId."/".$transaction_id;
             return responseMsg(true,"",$res); 
         }
         catch(Exception $e)
@@ -1473,7 +1473,7 @@ class Trade implements ITrade
                      "transaction"=>$transaction,
                      "penalty"    =>$penalty
             ];
-            $data['paymentRecipt']= config('app.url')."/api/trade/paymentRecipt/".$id."/".$transectionId;
+            $data['paymentReceipt']= config('app.url')."/api/trade/paymentReceipt/".$id."/".$transectionId;
             $data = remove_null($data);
             return responseMsg(true,"", $data);
 
