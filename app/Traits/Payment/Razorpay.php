@@ -175,7 +175,7 @@ trait Razorpay
      * | this -> naming
      * | here -> variable
         | Serial No : 03
-        | Flag : department Id will be replaced / switch case / the checking of the payment is success (keys:amount,orderid,departmentid,status)
+        | Flag : department Id will be replaced / switch case / the checking of the payment is success (keys:amount,orderid,departmentid,status) / razorpay verification 
      */
     public function collectWebhookDetails($request)
     {

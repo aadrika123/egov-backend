@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Cluster\ClusterController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
@@ -17,7 +16,7 @@ use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\Property\SafDemandController;
 use App\Http\Controllers\Property\DocumentController;
 use App\Http\Controllers\CustomController;
-
+use App\Http\Controllers\property\ClusterController;
 /**
  * | ---------------------------------------------------------------------------
  * | Property API Routes
@@ -228,6 +227,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
        | Serial No : 12
    */
   Route::controller(ClusterController::class)->group(function () {
+    
     #cluster data entry / Master
     Route::get('cluster/get-all-clusters', 'getAllClusters');
     Route::post('cluster/get-cluster-by-id', 'getClusterById');

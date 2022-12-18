@@ -8,8 +8,6 @@ use App\Repository\Menu\Interface\iMenuRepo;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
-use Razorpay\Api\Request;
-use stdClass;
 
 use function PHPUnit\Framework\isJson;
 
@@ -188,7 +186,6 @@ class MenuRepo implements iMenuRepo
             });
 
             $data = (objToArray($data));
-
             $itemsByReference = array();
 
             foreach ($data as $key => &$item) {

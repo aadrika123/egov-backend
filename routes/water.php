@@ -28,7 +28,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     Route::controller(NewConnectionController::class)->group(function () {
         Route::post('user-water-connection-charges', 'getUserWaterConnectionCharges');                           // Get Water Connection Charges of Logged In User
-        Route::post('user-water-connection-charges', 'getUserWaterConnectionCharges');                           // Get Water Connection Charges of Logged In User
         Route::post('applicant-document-upload', 'applicantDocumentUpload');                                     // User Document Upload
         Route::post('water-payment', 'waterPayment');                                                            // Water Payment
     });
@@ -67,7 +66,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 Route::controller(WaterApplication::class)->group(function () {    
     Route::get('paymentRecipt/{id}/{transectionId}', 'paymentRecipt');
     Route::post('cargeCal', 'calWaterConCharge');
-    Route::post('consumerChargeCal', 'calConsumerDemand');
+    // Route::post('consumerChargeCal', 'calConsumerDemand');
 });
 Route::controller(WaterConsumer::class)->group(function () { 
     Route::post('consumerChargeCal', 'calConsumerDemand');
