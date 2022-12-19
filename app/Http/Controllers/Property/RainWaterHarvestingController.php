@@ -71,7 +71,7 @@ class RainWaterHarvestingController extends Controller
             'workflowId' => 'required',
             'roleId' => 'required',
             'harvestingId' => 'required',
-            // 'senderRoleId' => 'required',
+            'status' => 'required',
             // 'receiverRoleId' => 'required',
             // 'comment' => 'required'
         ]);

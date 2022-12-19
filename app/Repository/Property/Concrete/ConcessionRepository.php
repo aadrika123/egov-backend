@@ -68,6 +68,9 @@ class ConcessionRepository implements iConcessionRepository
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
+            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId = DB::select($refFinisherRoleId);
+
             if ($userType == "JSK") {
                 $obj  = new SafRepository();
                 $data = $obj->getPropByHoldingNo($request);
@@ -97,6 +100,8 @@ class ConcessionRepository implements iConcessionRepository
             $concession->ulb_id = $ulbId;
             $concession->workflow_id = $ulbWorkflowId->id;
             $concession->current_role = collect($initiatorRoleId)->first()->role_id;
+            $concession->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
+            $concession->finisher_role_id = collect($finisherRoleId)->first()->role_id;
             $concession->created_at = Carbon::now();
             $concession->date = Carbon::now();
             $concession->save();
