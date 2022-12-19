@@ -86,18 +86,17 @@ class ActiveSafController extends Controller
     {
         try {
             $mWfRoleUser = new WfRoleusermap();
-            $mWFWardUser = new WfWardUser();
+            $mWfWardUser = new WfWardUser();
 
             $mUserId = authUser()->id;
             $mUlbId = authUser()->ulb_id;
-            $readWards = $mWFWardUser->getWardByUserId($mUserId);               // Model function to get ward list
 
-            $occupiedWardsId = collect($readWards)->map(function ($ward) {      // Collection filteration
+            $readWards = $mWfWardUser->getWardsByUserId($mUserId);                  // Model function to get ward list
+            $occupiedWardsId = collect($readWards)->map(function ($ward) {              // Collection filteration
                 return $ward->ward_id;
             });
 
-            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);             // Model function to get Role By User Id
-
+            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);                 // Model function to get Role By User Id
             $roleIds = $readRoles->map(function ($role, $key) {
                 return $role->wf_role_id;
             });
@@ -145,6 +144,11 @@ class ActiveSafController extends Controller
     // Post Independent Comment
     public function commentIndependent(Request $request)
     {
+        $request->validate([
+            'comment' => 'required',
+            'safId' => 'required'
+        ]);
+
         return $this->Repository->commentIndependent($request);
     }
 

@@ -97,9 +97,9 @@ trait SAF
     }
 
     // Trait SAF Owner
-    public function tApplySafOwner($owner, $saf, $owner_details)
+    public function tApplySafOwner($owner, $safId, $owner_details)
     {
-        $owner->saf_id = $saf->id;
+        $owner->saf_id = $safId;
         $owner->owner_name = $owner_details['ownerName'] ?? null;
         $owner->guardian_name = $owner_details['guardianName'] ?? null;
         $owner->relation_type = $owner_details['relation'] ?? null;
@@ -114,9 +114,9 @@ trait SAF
     }
 
     // Trait SAF Floors
-    public function tApplySafFloor($floor, $saf, $floor_details)
+    public function tApplySafFloor($floor, $safId, $floor_details)
     {
-        $floor->saf_id = $saf->id;
+        $floor->saf_id = $safId;
         $floor->floor_mstr_id = $floor_details['floorNo'] ?? null;
         $floor->usage_type_mstr_id = $floor_details['useType'] ?? null;
         $floor->const_type_mstr_id = $floor_details['constructionType'] ?? null;
