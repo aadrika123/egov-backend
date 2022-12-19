@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWardUser;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Property\SAF;
@@ -40,7 +41,10 @@ class ActiveSafController extends Controller
     //  Function for applying SAF
     public function applySaf(Request $request)
     {
-        // return $request->all();
+        $request->validate([
+            'ulbId' => 'required|integer'
+        ]);
+
         return $this->Repository->applySaf($request);
     }
 
@@ -82,15 +86,17 @@ class ActiveSafController extends Controller
     {
         try {
             $mWfRoleUser = new WfRoleusermap();
+            $mWFWardUser = new WfWardUser();
+
             $mUserId = authUser()->id;
             $mUlbId = authUser()->ulb_id;
-            $readWards = $this->getWardByUserId($mUserId);
+            $readWards = $mWFWardUser->getWardByUserId($mUserId);               // Model function to get ward list
 
-            $occupiedWardsId = collect($readWards)->map(function ($ward) {
+            $occupiedWardsId = collect($readWards)->map(function ($ward) {      // Collection filteration
                 return $ward->ward_id;
             });
 
-            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);                                 // Trait get Role By User Id
+            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);             // Model function to get Role By User Id
 
             $roleIds = $readRoles->map(function ($role, $key) {
                 return $role->wf_role_id;

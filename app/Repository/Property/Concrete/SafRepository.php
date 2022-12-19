@@ -198,7 +198,7 @@ class SafRepository implements iSafRepository
     {
         try {
             $user_id = auth()->user()->id;
-            $ulb_id = auth()->user()->ulb_id;
+            $ulb_id = $request->ulbId;
             $demand = array();
             $assessmentTypeId = $request->assessmentType;
             if ($request->assessmentType == 1) {                                                    // New Assessment 
