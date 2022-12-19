@@ -89,7 +89,7 @@ class SafRepository implements iSafRepository
     {
         $this->_redis = Redis::connection();
         $this->_todayDate = Carbon::now();
-        $this->_workflowIds = [3, 4, 5];
+        $this->_workflowIds = Config::get('PropertyConstaint.SAF_WORKFLOWS');
     }
 
     /**
@@ -304,109 +304,6 @@ class SafRepository implements iSafRepository
     }
 
     /**
-     * ---------------------- Saf Workflow Inbox --------------------
-     * | Initialization
-     * -----------------
-     * | @var userId > logged in user id
-     * | @var ulbId > Logged In user ulb Id
-     * | @var refWorkflowId > Workflow ID 
-     * | @var workflowId > SAF Wf Workflow ID 
-     * | @var query > Contains the Pg Sql query
-     * | @var workflow > get the Data in laravel Collection
-     * | @var checkDataExisting > check the fetched data collection in array
-     * | @var roleId > Fetch all the Roles for the Logged In user
-     * | @var data > all the Saf data of current logged roleid 
-     * | @var occupiedWard > get all Permitted Ward Of current logged in user id
-     * | @var wardId > filtered Ward Id from the data collection
-     * | @var safInbox > Final returned Data
-     * | @return response #safInbox
-     * | Status-Closed
-     * | Query Cost-327ms 
-     * | Rating-3
-     * ---------------------------------------------------------------
-     */
-    #Inbox
-    public function inbox()
-    {
-        try {
-            $mWfRoleUser = new WfRoleusermap();
-            $mWfWardUser = new WfWardUser();
-
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
-            $readWards = $mWfWardUser->getWardsByUserId($userId);                                  // Trait get Occupied Wards of Current User
-
-            $occupiedWards = collect($readWards)->map(function ($ward) {
-                return $ward->ward_id;
-            });
-
-            $readRoles = $mWfRoleUser->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
-
-            $roleIds = $readRoles->map(function ($role, $key) {
-                return $role->wf_role_id;
-            });
-
-            $data = $this->getSaf($this->_workflowIds)                                  // Global SAF 
-                ->where('parked', false)
-                ->where('prop_active_safs.ulb_id', $ulbId)
-                ->where('prop_active_safs.status', 1)
-                ->whereIn('current_role', $roleIds)
-                ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
-                ->get();
-
-            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
-
-            return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", "339ms", "POST", "");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Saf Outbox
-     * | @var userId authenticated user id
-     * | @var ulbId authenticated user Ulb Id
-     * | @var workflowRoles get All Roles of the user id
-     * | @var roles filteration of roleid from collections
-     * | Status-Closed
-     * | Query Cost-369ms 
-     * | Rating-4
-     */
-    #OutBox
-    public function outbox()
-    {
-        try {
-            $mWfRoleUser = new WfRoleusermap();
-            $mWfWardUser = new WfWardUser();
-
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
-
-            $workflowRoles = $mWfRoleUser->getRoleIdByUserId($userId);
-            $roles = $workflowRoles->map(function ($value, $key) {
-                return $value->wf_role_id;
-            });
-
-            $refWard = $mWfWardUser->getWardsByUserId($userId);
-            $wardId = $refWard->map(function ($value, $key) {
-                return $value->ward_id;
-            });
-
-            $safData = $this->getSaf($this->_workflowIds)
-                ->where('prop_active_safs.ulb_id', $ulbId)
-                ->whereNotIn('current_role', $roles)
-                ->whereIn('ward_mstr_id', $wardId)
-                ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
-                ->get();
-            return responseMsgs(true, "Data Fetched", remove_null($safData->values()), "010104", "1.0", "274ms", "POST", "");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
      * @param \Illuminate\Http\Request $req
      * @return \Illuminate\Http\JsonResponse
      * desc This function get the application brief details 
@@ -543,42 +440,6 @@ class SafRepository implements iSafRepository
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
-
-    /**
-     * | @var ulbId authenticated user id
-     * | @var ulbId authenticated ulb Id
-     * | @var occupiedWard get ward by user id using trait
-     * | @var wardId Filtered Ward ID from the collections
-     * | @var safData SAF Data List
-     * | @return
-     * | @var \Illuminate\Support\Collection $safData
-     * | Status-Closed
-     * | Query Costing-336ms 
-     * | Rating-2 
-     */
-    #Inbox  special category
-    public function specialInbox()
-    {
-        try {
-            $mWfWardUser = new WfWardUser();
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
-            $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
-            $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
-                return $item->ward_id;
-            });
-            $safData = $this->getSaf($this->_workflowIds)
-                ->where('is_escalate', 1)
-                ->where('prop_active_safs.ulb_id', $ulbId)
-                ->whereIn('ward_mstr_id', $wardId)
-                ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type')
-                ->get();
-            return responseMsgs(true, "Data Fetched", remove_null($safData), "010107", "1.0", "251ms", "POST", "");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
         }
     }
 

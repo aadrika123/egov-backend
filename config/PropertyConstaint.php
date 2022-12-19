@@ -12,6 +12,9 @@ return [
     "EFFECTIVE_DATE_RULE3" => "2022-04-01",
     "VACANT_PROPERTY_TYPE" => "4",
 
+    // Mutation Reassessment and New Assessment Workflows
+    "SAF_WORKFLOWS" => [3, 4, 5],
+
     "OBJECTION" => [
         "2"     => "RainHarvesting",
         "3"     => "RoadWidth",
@@ -367,6 +370,6 @@ return [
     "PENALTIES" => [
         "RWH_PENALTY_ID" => 1,
         "LATE_ASSESSMENT_ID" => 2
-    ]
+    ],
 
 ];
