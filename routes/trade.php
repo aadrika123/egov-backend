@@ -50,7 +50,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 });
 Route::controller(ApplyApplication::class)->group(function () {    
-    Route::get('paymentRecipt/{id}/{transectionId}', 'paymentRecipt');
+    Route::get('paymentReceipt/{id}/{transectionId}', 'paymentReceipt');
     Route::get('provisionalCertificate/{id}', 'provisionalCertificate');
     Route::get('licenceCertificate/{id}', 'licenceCertificate');
 });

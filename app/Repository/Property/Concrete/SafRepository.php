@@ -36,6 +36,8 @@ use App\Models\Property\RefPropOwnershipType;
 use App\Models\Property\RefPropTransferMode;
 use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
+use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
@@ -87,7 +89,7 @@ class SafRepository implements iSafRepository
     {
         $this->_redis = Redis::connection();
         $this->_todayDate = Carbon::now();
-        $this->_workflowIds = [3, 4, 5];
+        $this->_workflowIds = Config::get('PropertyConstaint.SAF_WORKFLOWS');
     }
 
     /**
@@ -197,9 +199,11 @@ class SafRepository implements iSafRepository
     public function applySaf($request)
     {
         try {
+            $mApplyDate = Carbon::now()->format("Y-m-d");
             $user_id = auth()->user()->id;
-            $ulb_id = auth()->user()->ulb_id;
+            $ulb_id = $request->ulbId;
             $demand = array();
+            $metaReqs = array();
             $assessmentTypeId = $request->assessmentType;
             if ($request->assessmentType == 1) {                                                    // New Assessment 
                 $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
@@ -232,8 +236,6 @@ class SafRepository implements iSafRepository
             $safCalculation = new SafCalculation();
             $safTaxes = $safCalculation->calculateTax($request);
 
-            return $safTaxes;
-
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
@@ -241,25 +243,26 @@ class SafRepository implements iSafRepository
             $finisherRoleId = DB::select($refFinisherRoleId);
 
             DB::beginTransaction();
-            // dd($request->ward);
             $safNo = $this->safNo($request->ward, $assessmentTypeId, $ulb_id);
             $saf = new PropActiveSaf();
-            $this->tApplySaf($saf, $request, $safNo, $roadWidthType);                                       // Trait SAF Apply
-            // workflows
-            $saf->user_id = $user_id;
-            $saf->workflow_id = $ulbWorkflowId->id;
-            $saf->ulb_id = $ulb_id;
-            $saf->current_role = collect($initiatorRoleId)->first()->role_id;
-            $saf->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
-            $saf->finisher_role_id = collect($finisherRoleId)->first()->role_id;
-            $saf->save();
+
+            $metaReqs['safNo'] = $safNo;
+            $metaReqs['roadWidthType'] = $roadWidthType;
+            $metaReqs['userId'] = $user_id;
+            $metaReqs['workflowId'] = $ulbWorkflowId->id;
+            $metaReqs['ulbId'] = $ulb_id;
+            $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->role_id;;
+            $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
+
+            $request->request->add($metaReqs);
+            $safId = $saf->store($request);                                             // Store SAF Using Model function 
 
             // SAF Owner Details
             if ($request['owner']) {
                 $owner_detail = $request['owner'];
                 foreach ($owner_detail as $owner_details) {
                     $owner = new PropActiveSafsOwner();
-                    $this->tApplySafOwner($owner, $saf, $owner_details);                                    // Trait Owner Details
+                    $this->tApplySafOwner($owner, $safId, $owner_details);                                    // Trait Owner Details
                     $owner->save();
                 }
             }
@@ -269,14 +272,14 @@ class SafRepository implements iSafRepository
                 $floor_detail = $request['floor'];
                 foreach ($floor_detail as $floor_details) {
                     $floor = new PropActiveSafsFloor();
-                    $this->tApplySafFloor($floor, $saf, $floor_details);
+                    $this->tApplySafFloor($floor, $safId, $floor_details);
                     $floor->save();
                 }
             }
 
             // Property SAF Label Pendings
             $labelPending = new PropLevelPending();
-            $labelPending->saf_id = $saf->id;
+            $labelPending->saf_id = $safId;
             $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
             $labelPending->save();
 
@@ -290,110 +293,13 @@ class SafRepository implements iSafRepository
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
-                "applyDate" => $saf->application_date,
-                "safId" => $saf->id,
+                "applyDate" => $mApplyDate,
+                "safId" => $safId,
                 "demand" => $demand
             ], "010102", "1.0", "1s", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return $e;
-        }
-    }
-
-
-    /**
-     * ---------------------- Saf Workflow Inbox --------------------
-     * | Initialization
-     * -----------------
-     * | @var userId > logged in user id
-     * | @var ulbId > Logged In user ulb Id
-     * | @var refWorkflowId > Workflow ID 
-     * | @var workflowId > SAF Wf Workflow ID 
-     * | @var query > Contains the Pg Sql query
-     * | @var workflow > get the Data in laravel Collection
-     * | @var checkDataExisting > check the fetched data collection in array
-     * | @var roleId > Fetch all the Roles for the Logged In user
-     * | @var data > all the Saf data of current logged roleid 
-     * | @var occupiedWard > get all Permitted Ward Of current logged in user id
-     * | @var wardId > filtered Ward Id from the data collection
-     * | @var safInbox > Final returned Data
-     * | @return response #safInbox
-     * | Status-Closed
-     * | Query Cost-327ms 
-     * | Rating-3
-     * ---------------------------------------------------------------
-     */
-    #Inbox
-    public function inbox()
-    {
-        try {
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
-            $wardId = $this->getWardByUserId($userId);                                  // Trait get Occupied Wards of Current User
-
-            $occupiedWards = collect($wardId)->map(function ($ward) {
-                return $ward->ward_id;
-            });
-
-            $roles = $this->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
-
-            $roleId = $roles->map(function ($item, $key) {
-                return $item->wf_role_id;
-            });
-
-            $data = $this->getSaf($this->_workflowIds)                                                     // Global SAF 
-                ->where('prop_active_safs.ulb_id', $ulbId)
-                ->where('prop_active_safs.status', 1)
-                ->whereIn('current_role', $roleId)
-                ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
-                ->get();
-
-            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
-
-            return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", "339ms", "POST", "");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Saf Outbox
-     * | @var userId authenticated user id
-     * | @var ulbId authenticated user Ulb Id
-     * | @var workflowRoles get All Roles of the user id
-     * | @var roles filteration of roleid from collections
-     * | Status-Closed
-     * | Query Cost-369ms 
-     * | Rating-4
-     */
-    #OutBox
-    public function outbox()
-    {
-        try {
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
-
-            $workflowRoles = $this->getRoleIdByUserId($userId);
-            $roles = $workflowRoles->map(function ($value, $key) {
-                return $value->wf_role_id;
-            });
-
-            $refWard = $this->getWardByUserId($userId);
-            $wardId = $refWard->map(function ($value, $key) {
-                return $value->ward_id;
-            });
-
-            $safData = $this->getSaf($this->_workflowIds)
-                ->where('prop_active_safs.ulb_id', $ulbId)
-                ->whereNotIn('current_role', $roles)
-                ->whereIn('ward_mstr_id', $wardId)
-                ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
-                ->get();
-            return responseMsgs(true, "Data Fetched", remove_null($safData->values()), "010104", "1.0", "274ms", "POST", "");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -538,41 +444,6 @@ class SafRepository implements iSafRepository
     }
 
     /**
-     * | @var ulbId authenticated user id
-     * | @var ulbId authenticated ulb Id
-     * | @var occupiedWard get ward by user id using trait
-     * | @var wardId Filtered Ward ID from the collections
-     * | @var safData SAF Data List
-     * | @return
-     * | @var \Illuminate\Support\Collection $safData
-     * | Status-Closed
-     * | Query Costing-336ms 
-     * | Rating-2 
-     */
-    #Inbox  special category
-    public function specialInbox()
-    {
-        try {
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
-            $occupiedWard = $this->getWardByUserId($userId);                        // Get All Occupied Ward By user id using trait
-            $wardId = $occupiedWard->map(function ($item, $key) {                   // Filter All ward_id in an array using laravel collections
-                return $item->ward_id;
-            });
-            $safData = $this->getSaf($this->_workflowIds)
-                ->where('is_escalate', 1)
-                ->where('prop_active_safs.ulb_id', $ulbId)
-                ->whereIn('ward_mstr_id', $wardId)
-                ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type')
-                ->get();
-            return responseMsgs(true, "Data Fetched", remove_null($safData), "010107", "1.0", "251ms", "POST", "");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
      * | Post Independent Comment
      * | @param mixed $request
      * | @var userId Logged In user Id
@@ -585,10 +456,6 @@ class SafRepository implements iSafRepository
     public function commentIndependent($request)
     {
         try {
-            $request->validate([
-                'comment' => 'required',
-                'safId' => 'required'
-            ]);
             $propLevelPending = new PropLevelPending();
             $userId = auth()->user()->id;
             DB::beginTransaction();

@@ -3,15 +3,19 @@
 namespace App\Http\Controllers\Trade;
 
 use App\Http\Controllers\Controller;
+use App\EloquentModels\Common\ModelWard;
+use App\Repository\Common\CommonFunction;
 use App\Repository\Trade\ITrade;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
-use App\Http\Requests\Trade\addRecorde;
+use App\Http\Requests\Trade\ReqAddRecorde;
 use App\Http\Requests\Trade\paymentCounter;
-use App\Http\Requests\Trade\reqPaybleAmount;
-use App\Http\Requests\Trade\reqInbox;
-use App\Http\Requests\Trade\requpdateBasicDtl;
+use App\Http\Requests\Trade\ReqPaybleAmount;
+use App\Http\Requests\Trade\ReqInbox;
+use App\Http\Requests\Trade\ReqPostNextLevel;
+use App\Http\Requests\Trade\ReqUpdateBasicDtl;
+use Exception;
 
 class ApplyApplication extends Controller
 {
@@ -25,22 +29,56 @@ class ApplyApplication extends Controller
 
     // Initializing function for Repository
     private $Repository;
+    protected $_modelWard;
+    protected $_parent;
     public function __construct(ITrade $TradeRepository)
     {
-        // $this->middleware(function ($request, $next) use($TradeRepository) {          
-        //     $virtualRole = User::first();
-        //     $user = auth()->user() ?? $virtualRole;
-        //     $TradeRepository->__construct($user);
-        //     $this->Repository = $TradeRepository ;
-        //     return $next($request);
-        // });
         $this->Repository = $TradeRepository ;
+        $this->_modelWard = new ModelWard();
+        $this->_parent = new CommonFunction();
     }
-    public function applyApplication(addRecorde $request)
-    {        
-        return $this->Repository->addRecord($request);
+    public function applyApplication(ReqAddRecorde $request)
+    {   
+        $refUser            = Auth()->user();
+        $refUserId          = $refUser->id;
+        $refUlbId           = $refUser->ulb_id;
+        $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID'); 
+        $mUserType          = $this->_parent->userType($refWorkflowId);
+        $refWorkflows       = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);        
+        $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);
+        try{     
+            if(!in_array(strtoupper($mUserType),["ONLINE","JSK","UTC","TC","SUPER ADMIN","TL"]))
+            {
+                throw new Exception("You Are Not Authorized For This Action !");
+            }            
+            if(!$mApplicationTypeId)
+            {
+                throw new Exception("Invalide Application Type");
+            }
+            if (!$refWorkflows) 
+            {
+                throw new Exception("Workflow Not Available");
+            } 
+            if(!$refWorkflows['initiator'])
+            {
+                throw new Exception("Initiator Not Available"); 
+            }
+            if(!$refWorkflows['finisher'])
+            {
+                throw new Exception("Finisher Not Available"); 
+            }
+            if (in_array($mApplicationTypeId, ["2", "3","4"]) && (!$request->id || !is_numeric($request->id))) 
+            {
+                throw new Exception ("Old licence Id Requird");
+            }  
+            return $this->Repository->addRecord($request);
+        }   
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$request->all());
+        } 
     }
-    public function paybleAmount(reqPaybleAmount $request)
+    public function paybleAmount(ReqPaybleAmount $request)
     {      
         return $this->Repository->getPaybleAmount($request);
     }
@@ -48,17 +86,17 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->isvalidateHolding($request);
     }
-    public function paymentRecipt(Request $request)
+    public function paymentReceipt(Request $request)
     {
         $id = $request->id;
         $transectionId =  $request->transectionId;
-        return $this->Repository->readPaymentRecipt($id,$transectionId);
+        return $this->Repository->readPaymentReceipt($id,$transectionId);
     }
-    public function updateLicenseBo(requpdateBasicDtl $request)
+    public function updateLicenseBo(ReqUpdateBasicDtl $request)
     {
         return $this->Repository->updateLicenseBo($request);
     }
-    public function updateBasicDtl(requpdateBasicDtl $request)
+    public function updateBasicDtl(ReqUpdateBasicDtl $request)
     {
         return $this->Repository->updateBasicDtl($request);
     }
@@ -95,7 +133,7 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->postEscalate($request);
     }
-    public function inbox(reqInbox $request)
+    public function inbox(ReqInbox $request)
     {
         return $this->Repository->inbox($request);
     }
@@ -103,9 +141,32 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->outbox($request);
     }
-    public function postNextLevel(Request $request)
+    public function postNextLevel(ReqPostNextLevel $request)
     {
-        return $this->Repository->postNextLevel($request);
+        try{ 
+            $refUser = Auth()->user();
+            $user_id = $refUser->id;
+            $ulb_id = $refUser->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $init_finish = $this->_parent->iniatorFinisher($user_id,$ulb_id,$refWorkflowId);
+            if(!$init_finish)
+            {
+                throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
+            }
+            if(!$init_finish["initiator"])
+            {
+                throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
+            }
+            if(!$init_finish["finisher"])
+            {
+                throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
+            }
+            return $this->Repository->postNextLevel($request);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }       
     }
     public function addIndependentComment(Request $request)
     {
