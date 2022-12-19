@@ -4,7 +4,8 @@ namespace App\Http\Controllers\WorkflowMaster;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Repository\WorkflowMaster\Interface\iWorkflowRoleMapRepository;
+use App\Models\Workflows\WfWorkflowrolemap;
+use Exception;
 
 /**
  * Created On-14-10-2022 
@@ -13,52 +14,79 @@ use App\Repository\WorkflowMaster\Interface\iWorkflowRoleMapRepository;
 
 class WorkflowRoleMapController extends Controller
 {
-    protected $eloquentRoleMap;
-    // Initializing Construct function
 
-    public function __construct(iWorkflowRoleMapRepository $eloquentRoleMap)
+    //create master
+    public function createRoleMap(Request $req)
     {
-        $this->EloquentRoleMap = $eloquentRoleMap;
+        try {
+            $req->validate([
+                'workflowId' => 'required',
+                'wfRoleId' => 'required',
+                'forwardRoleId' => 'required',
+                'backwardRoleId' => 'required',
+            ]);
+
+            $create = new WfWorkflowrolemap();
+            $create->addRoleMap($req);
+
+            return responseMsg(true, "Successfully Saved", "");
+        } catch (Exception $e) {
+            return response()->json(false, $e->getMessage());
+        }
     }
 
-    //list all rolemap
-    public function index()
+    //update master
+    public function updateRoleMap(Request $req)
     {
-        return $this->EloquentRoleMap->list();
+        try {
+            $update = new WfWorkflowrolemap();
+            $list  = $update->updateRoleMap($req);
+
+            return responseMsg(true, "Successfully Updated", $list);
+        } catch (Exception $e) {
+            return response()->json(false, $e->getMessage());
+        }
+    }
+
+    //master list by id
+    public function roleMapbyId(Request $req)
+    {
+        try {
+
+            $listById = new WfWorkflowrolemap();
+            $list  = $listById->listbyId($req);
+
+            return responseMsg(true, "Role Map List", $list);
+        } catch (Exception $e) {
+            return response()->json(false, $e->getMessage());
+        }
+    }
+
+    //all master list
+    public function getAllRoleMap()
+    {
+        try {
+
+            $list = new WfWorkflowrolemap();
+            $masters = $list->roleMaps();
+
+            return responseMsg(true, "All Role Map List", $masters);
+        } catch (Exception $e) {
+            return response()->json(false, $e->getMessage());
+        }
     }
 
 
-    public function create()
+    //delete master
+    public function deleteRoleMap(Request $req)
     {
-        //
-    }
+        try {
+            $delete = new WfWorkflowrolemap();
+            $delete->deleteRoleMap($req);
 
-    // create 
-    public function store(Request $request)
-    {
-        return $this->EloquentRoleMap->create($request);
-    }
-
-    //
-    public function show($id)
-    {
-        return $this->EloquentRoleMap->view($id);
-    }
-
-    public function edit($id)
-    {
-        //
-    }
-
-    // update
-    public function update(Request $request, $id)
-    {
-        return $this->EloquentRoleMap->update($request, $id);
-    }
-
-    //delete
-    public function destroy($id)
-    {
-        return $this->EloquentRoleMap->delete($id);
+            return responseMsg(true, "Data Deleted", '');
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
     }
 }

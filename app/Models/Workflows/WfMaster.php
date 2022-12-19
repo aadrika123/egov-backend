@@ -27,12 +27,9 @@ class WfMaster extends Model
     ///update master list
     public function updateMaster($req)
     {
-        $createdBy = Auth()->user()->id;
         $data = WfMaster::find($req->id);
         $data->workflow_name = $req->workflowName;
         $data->is_suspended = $req->isSuspended;
-        $data->created_by = $createdBy;
-        $data->updated_at = Carbon::now();
         $data->save();
     }
 
@@ -42,7 +39,6 @@ class WfMaster extends Model
     {
         $list = WfMaster::where('id', $req->id)
             ->where('is_suspended', false)
-            ->where('status', 1)
             ->get();
         return $list;
     }
@@ -51,7 +47,6 @@ class WfMaster extends Model
     public function listMaster()
     {
         $list = WfMaster::where('is_suspended', false)
-            ->where('status', 1)
             ->orderByDesc('id')
             ->get();
         return $list;
