@@ -11,7 +11,7 @@ class PropActiveSaf extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['has_previous_holding_no', 'saf_no'];
+    protected $fillable = ['has_previous_holding_no', 'saf_no', 'previous_ward_mstr_id'];
     // Store
     public function store($req)
     {
@@ -74,7 +74,7 @@ class PropActiveSaf extends Model
             'prop_state' => $req->propState,
             'corr_state' => $req->corrState,
             'holding_type' => $req->holdingType,
-            'ip_address' => $req->ipAddress,
+            'ip_address' => getClientIpAddress(),
             'new_ward_mstr_id' => $req->newWard,
             'percentage_of_property_transfer' => $req->percOfPropertyTransfer,
             'apartment_details_id' => $req->apartmentDetail,
@@ -91,8 +91,41 @@ class PropActiveSaf extends Model
     }
 
     // Update
-    public function edit($req, $id)
+    public function edit($req)
     {
+        $saf = PropActiveSaf::find($req->id);
+
+        $reqs = [
+            'previous_ward_mstr_id' => $req->previousWard,
+            'zone_mstr_id' => $req->zone,
+            'no_electric_connection' => $req->electricityConnection,
+            'elect_consumer_no' => $req->electricityCustNo,
+            'elect_acc_no' => $req->electricityAccNo,
+            'elect_bind_book_no' => $req->electricityBindBookNo,
+            'elect_cons_category' => $req->electricityConsCategory,
+            'building_plan_approval_no' => $req->buildingPlanApprovalNo,
+            'building_plan_approval_date' => $req->buildingPlanApprovalDate,
+            'water_conn_no' => $req->waterConnNo,
+            'water_conn_date' => $req->waterConnDate,
+            'khata_no' => $req->khataNo,
+            'plot_no' => $req->plotNo,
+            'village_mauja_name' => $req->villageMaujaName,
+            'prop_address' => $req->propAddress,
+            'prop_city' => $req->propCity,
+            'prop_dist' => $req->propDist,
+            'prop_pin_code' => $req->propPinCode,
+            'is_corr_add_differ' => $req->isCorrAddDiffer,
+            'corr_address' => $req->corrAddress,
+            'corr_city' => $req->corrCity,
+            'corr_dist' => $req->corrDist,
+            'corr_pin_code' => $req->corrPinCode,
+
+            'prop_state' => $req->propState,
+            'corr_state' => $req->corrState,
+            'new_ward_mstr_id' => $req->newWard
+        ];
+
+        return $saf->update($reqs);
     }
 
     /**

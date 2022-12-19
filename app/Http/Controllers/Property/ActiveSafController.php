@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsDoc;
+use App\Models\Property\PropActiveSafsFloor;
+use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use Illuminate\Http\Request;
@@ -11,6 +14,7 @@ use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class ActiveSafController extends Controller
 {
@@ -46,6 +50,35 @@ class ActiveSafController extends Controller
         ]);
 
         return $this->Repository->applySaf($request);
+    }
+
+    /**
+     * | Edit Applied Saf by SAF Id for BackOffice
+     */
+    public function editSaf(Request $req)
+    {
+        $req->validate([
+            'id' => 'required|integer'
+        ]);
+
+        try {
+            $mPropSaf = new PropActiveSaf();
+            $mPropSafOwners = new PropActiveSafsOwner();
+            $mOwners = $req->owner;
+
+            DB::beginTransaction();
+            $updStatus = $mPropSaf->edit($req);                     // Updation SAF Basic Details
+
+            collect($mOwners)->map(function ($owner, $key) use ($mPropSafOwners) {
+                $mPropSafOwners->edit($owner);
+            });
+
+            DB::commit();
+            return responseMsg($updStatus, "Successfully Updated the Data", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "");
+        }
     }
 
     // Document Upload By Citizen Or JSK
