@@ -27,4 +27,13 @@ class TradeParamItemType extends Model
 
         }
     }
+    public Static function itemsById($id)
+    {
+        $id = explode(",",$id);
+        $items = self::select("*")
+            ->whereIn("id",$id)
+            ->get();
+        return $items;
+               
+    }
 }

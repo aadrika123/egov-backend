@@ -81,6 +81,7 @@ class Trade implements ITrade
         $this->_modelWard = new ModelWard();
         $this->_parent = new CommonFunction();
     }
+    # Serial No : 01
     /**
      * | Apply Of Application
      * | --------------------descriptin------------------------------------
@@ -126,8 +127,8 @@ class Trade implements ITrade
      * |    this->getCategoryList()                               |   read Category Type                   
      * |    this->getItemsList(true)                               |    read Trade Item List without tomacco item
      * |    this->getLicenceById(request->id)                           |    only for applicationType(2,3,4)  |  read Old Licence Dtl
-     * |    this->getOwnereDtlByLId($request->id)                       |    only for applicationType(2,3,4)  |  read Old Licence Owner Dtl
-     * |    this->getLicenceItemsById(refOldLicece->nature_of_bussiness)|    only for applicationType(2,3,4)  |  read Old Licence Trade Items
+     * |    ActiveLicenceOwner::owneresByLId($request->id)                       |    only for applicationType(2,3,4)  |  read Old Licence Owner Dtl
+     * |    TradeParamItemType::itemsById(refOldLicece->nature_of_bussiness)|    only for applicationType(2,3,4)  |  read Old Licence Trade Items
      * 
      * |    this->transferExpire(mOldLicenceId,licenceId)               |    only for applicationType(2,3,4)  | transfer Aclive Licence To Expire Licence
      * |    this->createApplicationNo(mWardNo,licenceId)                |    Create the Application no
@@ -196,8 +197,8 @@ class Trade implements ITrade
                     {
                         throw new Exception("No Priviuse Licence Found");
                     }
-                    $refOldOwneres =$this->getOwnereDtlByLId($request->id);
-                    $mnaturOfBusiness = $this->getLicenceItemsById($refOldLicece->nature_of_bussiness);
+                    $refOldOwneres =ActiveLicenceOwner::owneresByLId($request->id);
+                    $mnaturOfBusiness = TradeParamItemType::itemsById($refOldLicece->nature_of_bussiness);
                     $natur = array();
                     foreach($mnaturOfBusiness as $val)
                     {
@@ -411,6 +412,7 @@ class Trade implements ITrade
         }
     }
 
+    # Serial No : 01.01
     public function newLicense($refActiveLicense,$request)
     {
         $refActiveLicense->firm_type_id        = $request->initialBusinessDetails['firmType'];
@@ -442,6 +444,7 @@ class Trade implements ITrade
         $refActiveLicense->update_status       = 0;
         $refActiveLicense->tobacco_status      = $request->firmDetails['tocStatus'];
     }
+    # Serial No : 01.02
     public function amedmentLicense($refActiveLicense,$refOldLicece,$request)
     {
         $refActiveLicense->firm_type_id        = $request->initialBusinessDetails['firmType'];
@@ -475,6 +478,8 @@ class Trade implements ITrade
         $refActiveLicense->license_no          = $refOldLicece->license_no;
         $refActiveLicense->tobacco_status      = $refOldLicece->tobacco_status;
     }
+
+    # Serial No : 01.03
     public function renewalAndSurenderLicense($refActiveLicense,$refOldLicece,$request)
     {
         $refActiveLicense->firm_type_id        = $refOldLicece->firm_type_id;
@@ -506,6 +511,8 @@ class Trade implements ITrade
         $refActiveLicense->license_no          = $refOldLicece->license_no;
         $refActiveLicense->tobacco_status      = $refOldLicece->tobacco_status;
     }
+
+    # Serial No : 01.04
     public function addNewOwners($refOwner,$owners)
     {
         $refOwner->owner_name      = $owners['businessOwnerName'];
@@ -517,6 +524,8 @@ class Trade implements ITrade
         $refOwner->state           = $owners['state']??null;
         $refOwner->emailid         = $owners['email']??null;
     }
+
+    # Serial No : 01.05
     public function transerOldOwneres($refOwner,$owners)
     {
         $refOwner->owner_name      = $owners->owner_name;
@@ -528,6 +537,8 @@ class Trade implements ITrade
         $refOwner->state           = $owners->state;
         $refOwner->emailid         = $owners->emailid;
     }
+
+    # Serial No : 01.06
     public function transferExpire(int $licenceId,$new_licence_id)
     {
         try{
@@ -895,7 +906,7 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
-
+    # Serial No : 02
     public function updateLicenseBo(Request $request)
     {
         try{
@@ -922,8 +933,8 @@ class Trade implements ITrade
             {
                 throw new Exception("No Licence Found");
             }
-            $refOldOwneres =$this->getOwnereDtlByLId($mLicenceId);
-            $mnaturOfBusiness = $this->getLicenceItemsById($refOldLicece->nature_of_bussiness);
+            $refOldOwneres =ActiveLicenceOwner::owneresByLId($mLicenceId);
+            $mnaturOfBusiness = TradeParamItemType::itemsById($refOldLicece->nature_of_bussiness);
             $natur = array();
             foreach($mnaturOfBusiness as $val)
             {
@@ -1116,6 +1127,7 @@ class Trade implements ITrade
         }
     }
     
+    # Serial No : 03
     public function handeRazorPay(Request $request)
     {
         try{
@@ -1372,7 +1384,8 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$args);
         }
     }
-    
+
+    # Serial No : 04
     public function readPaymentReceipt($id, $transectionId) # unauthorised  function
     { 
         try{
@@ -1483,7 +1496,8 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),'');
         }
     }
-    
+
+    # Serial No : 05
     public function documentUpload(Request $request)
     {
         $refUser = Auth()->user();
@@ -1514,7 +1528,7 @@ class Trade implements ITrade
             }
             if($refLicence->nature_of_bussiness)
             {
-                $items = $this->getLicenceItemsById($refLicence->nature_of_bussiness);                
+                $items = TradeParamItemType::itemsById($refLicence->nature_of_bussiness);                
                 foreach($items as $val)
                 {
                     $mItemName .= $val->trade_item.",";
@@ -1525,7 +1539,7 @@ class Trade implements ITrade
             }
             $refLicence->items = $mItemName;
             $refLicence->items_code = $mCods;
-            $refOwneres = $this->getOwnereDtlByLId($licenceId);
+            $refOwneres = ActiveLicenceOwner::owneresByLId($licenceId);
             $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function($val){
                 if(isset($val["document_path"]))
                 {
@@ -1952,6 +1966,8 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),$request->all());
         }
     }
+
+    # Serial No : 06
     public function getUploadDocuments(Request $request)
     {
         try{
@@ -1984,6 +2000,8 @@ class Trade implements ITrade
         }
 
     }
+
+    # Serial No : 07
     public function documentVirify(Request $request)
     {
         $user = Auth()->user();
@@ -2016,7 +2034,7 @@ class Trade implements ITrade
             $cods = "";
             if($licence->nature_of_bussiness)
             {
-                $items = $this->getLicenceItemsById($licence->nature_of_bussiness);                
+                $items = TradeParamItemType::itemsById($licence->nature_of_bussiness);                
                 foreach($items as $val)
                 {
                     $item_name .= $val->trade_item.",";
@@ -2027,7 +2045,7 @@ class Trade implements ITrade
             }
             $licence->items = $item_name;
             $licence->items_code = $cods;
-            $owneres = $this->getOwnereDtlByLId($licenceId);
+            $owneres = ActiveLicenceOwner::owneresByLId($licenceId);
             $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function($val){
                 if(isset($val["document_path"]))
                 {
@@ -2105,14 +2123,16 @@ class Trade implements ITrade
         {
             return responseMsg(false,$e->getMessage(),$request->all());
         }
-    }  
+    }
+
+    # Serial No : 08 
     /**
      * | Get License All Dtl
      * |-------------------------------------------------------------------------
      * | @var mUserType      = this->_parent->userType() | login user Role Name
      * | @var refApplication = this->getLicenceById(id)  | read application dtl
-     * | @var items          = this->getLicenceItemsById(refApplication->nature_of_bussiness) | read trade licence Items
-     * | @var refOwnerDtl    = this->getOwnereDtlByLId(id)  | read owner dtl
+     * | @var items          = TradeParamItemType::itemsById(refApplication->nature_of_bussiness) | read trade licence Items
+     * | @var refOwnerDtl    = ActiveLicenceOwner::owneresByLId(id)  | read owner dtl
      * | @var refTransactionDtl  = TradeTransaction::listByLicId(id)    | read Transaction Dtl
      * | @var refTimeLine    = this->getTimelin(id)      | read Level remarks
      * | @var refUploadDocuments = this->getLicenceDocuments(id)    | read upload Documents
@@ -2141,7 +2161,7 @@ class Trade implements ITrade
             $mCods          = "";
             if($refApplication->nature_of_bussiness)
             {
-                $items = $this->getLicenceItemsById($refApplication->nature_of_bussiness);                
+                $items = TradeParamItemType::itemsById($refApplication->nature_of_bussiness);                
                 foreach($items as $val)
                 {
                     $mItemName  .= $val->trade_item.",";
@@ -2152,7 +2172,7 @@ class Trade implements ITrade
             }
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
-            $refOwnerDtl                = $this->getOwnereDtlByLId($id);
+            $refOwnerDtl                = ActiveLicenceOwner::owneresByLId($id);
             $refTransactionDtl          = TradeTransaction::listByLicId($id);
             $refTimeLine                = $this->getTimelin($id);
             $refUploadDocuments         = $this->getLicenceDocuments($id)->map(function($val){
@@ -2188,6 +2208,8 @@ class Trade implements ITrade
             return responseMsg(false,$e->getMessage(),'');
         }
     }
+
+    # Serial No : 09 
     /**
      * | Get Notice Data
      */
@@ -2231,6 +2253,7 @@ class Trade implements ITrade
         
     }
 
+    # Serial No : 10 
     /**
      * | @var data = this->cltCharge(data) | get the calculated Charge
      */
@@ -2268,6 +2291,7 @@ class Trade implements ITrade
         }        
     }
 
+    # Serial No : 11 
     public function isvalidateSaf(Request $request)
     {
         $ferUser = Auth()->user();
@@ -2300,6 +2324,7 @@ class Trade implements ITrade
         return json_encode($response);
     }
 
+    # Serial No : 12 
     public function isvalidateHolding(Request $request)
     {
         $refUser = Auth()->user();
@@ -2334,6 +2359,7 @@ class Trade implements ITrade
         return responseMsg($response['status'],$response["message"],remove_null($response["data"]));
     }
 
+    # Serial No : 13 
     /**
      * | Validate The Licence No Befor Apply(reniwal/surrend/amendment)
         query cost(***)
@@ -2430,6 +2456,7 @@ class Trade implements ITrade
         }        
     }
 
+    # Serial No : 14
     /**
      * | Get 10 Application List Only
          query cost(**)
@@ -2543,6 +2570,8 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    # Serial No : 15
     public function postEscalate(Request $request)
     {
         try {
@@ -2575,6 +2604,7 @@ class Trade implements ITrade
         }
     }
 
+    # Serial No : 16
     /**
      * | Trade module WorkFlow Inbox 
      * |
@@ -2722,6 +2752,8 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    # Serial No : 17
     public function outbox(Request $request)
     {
         try {
@@ -2840,20 +2872,21 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    # Serial No : 18
     public function postNextLevel(Request $request)
     {
-        try{
+        try{ 
             $receiver_user_type_id="";
             $sms = "";
             $licence_pending=2;
-            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\-, \s]+$/';
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
             $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
-                ->where('ulb_id', $ulb_id)
-                ->first();
+                            ->where('ulb_id', $ulb_id)
+                            ->first();
             if (!$workflowId) 
             {
                 throw new Exception("Workflow Not Available");
@@ -2866,20 +2899,7 @@ class Trade implements ITrade
             }
             $role_id = $role->role_id;
             $mUserType = $this->_parent->userType($refWorkflowId);            
-            $rules = [
-                "btn" => "required|in:btc,forward,backward",
-                "licenceId" => "required|digits_between:1,9223372036854775807",
-                "comment" => "required|min:10|regex:$regex",
-            ];
-            $message = [
-                "btn.in"=>"Button Value must be In BTC,FORWARD,BACKWARD",
-                "comment.required" => "Comment Is Required",
-                "comment.min" => "Comment Length can't be less than 10 charecters",
-            ];
-            $validator = Validator::make($request->all(), $rules, $message);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
-            }
+            
             if($role->is_initiator && in_array($request->btn,['btc','backward']))
             {
                throw new Exception("Initator Can Not send Back The Application");
@@ -2890,35 +2910,22 @@ class Trade implements ITrade
             {
                 throw new Exception("Data Not Found");
             }
-            elseif($licenc_data->pending_status==5)
+            if($licenc_data->pending_status==5)
             {
                 throw new Exception("Licence Is Already Approved");
             }
-            elseif(!$role->is_initiator && isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
+            if(!$role->is_initiator && isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
             {
                 throw new Exception("You are not authorised for this action");
             }
-            elseif(!$role->is_initiator && ! $level_data)
+            if(!$role->is_initiator && ! $level_data)
             {
                 throw new Exception("Data Not Found On Level. Please Contact Admin!!!...");
             }  
-            elseif(isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
+            if(isset($level_data->receiver_user_type_id) && $level_data->receiver_user_type_id != $role->role_id)
             {
                 throw new Exception("You Have Already Taken The Action On This Application");
-            }           
-            if(!$init_finish)
-            {
-                throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
-            }
-            elseif(!$init_finish["initiator"])
-            {
-                throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
-            }
-            elseif(!$init_finish["finisher"])
-            {
-                throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
-            }
-            
+            } 
             
             if($request->btn=="forward" && !$role->is_finisher && !$role->is_initiator)
             {
@@ -2959,7 +2966,7 @@ class Trade implements ITrade
             if($request->btn=="forward" && $role->is_initiator)
             {
                 $doc = (array) null;
-                $owneres = $this->getOwnereDtlByLId($licenc_data->id);
+                $owneres = ActiveLicenceOwner::owneresByLId($licenc_data->id);
                 $documentsList = $this->getDocumentTypeList($licenc_data);  
                 if($licenc_data->payment_status!=1)
                 {
@@ -3043,13 +3050,12 @@ class Trade implements ITrade
             DB::beginTransaction();
             if($level_data)
             {
-                
                 $level_data->verification_status = 1;
                 $level_data->receiver_user_id =$user_id;
                 $level_data->remarks =$request->comment;
                 $level_data->forward_date =Carbon::now()->format('Y-m-d');
                 $level_data->forward_time =Carbon::now()->format('H:s:i');
-                $level_data->save();
+                $level_data->update();
             }
             if(!$role->is_finisher || in_array($request->btn,["backward","btc"]))
             {                
@@ -3158,7 +3164,7 @@ class Trade implements ITrade
                 $licenc_data->doc_verify_emp_details_id = $user_id;
             }
             $licenc_data->pending_status = $licence_pending;            
-            $licenc_data->save();            
+            $licenc_data->update();            
             DB::commit();
             return responseMsg(true, $sms, "");
 
@@ -3168,6 +3174,8 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    # Serial No : 19
     public function provisionalCertificate($id) # unauthorised  function
     {
         try{
@@ -3273,6 +3281,8 @@ class Trade implements ITrade
         }
 
     }
+
+    # Serial No : 20
     public function licenceCertificate($id) # unauthorised  function
     {
         try{
@@ -3344,7 +3354,7 @@ class Trade implements ITrade
             $cods = "";
             if($application->nature_of_bussiness)
             {
-                $items = $this->getLicenceItemsById($application->nature_of_bussiness);                
+                $items = TradeParamItemType::itemsById($application->nature_of_bussiness);                
                 foreach($items as $val)
                 {
                     $item_name .= $val->trade_item.",";
@@ -3365,6 +3375,8 @@ class Trade implements ITrade
         }
 
     }
+
+    # Serial No : 21
     public function addDenail(Request $request)
     {
         $user = Auth()->user();
@@ -3484,6 +3496,8 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    # Serial No : 22
     public function addIndependentComment(Request $request)
     {
         try {    
@@ -3530,6 +3544,8 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    # Serial No : 23
     public function readIndipendentComment(Request $request)
     {
         try { 
@@ -3550,6 +3566,7 @@ class Trade implements ITrade
     /**
      * Only for EO (Exicutive Officer)
      */
+    # Serial No : 24
     public function denialInbox(Request $request)
 	{
         try
@@ -3630,6 +3647,7 @@ class Trade implements ITrade
         }
         
 	}
+    # Serial No : 25
     /**
      * Apply Denail View Data And (Approve Or Reject) By EO
      * | @var data local data storage
@@ -3757,6 +3775,7 @@ class Trade implements ITrade
 
     } 
     
+    # Serial No : 26
     public function approvedApplication(Request $request)
     {
         try
@@ -3850,6 +3869,7 @@ class Trade implements ITrade
         }
     }
 
+    # Serial No : 27
     public function citizenApplication()
     {
         try{
@@ -3927,6 +3947,8 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(),"");
         }
     }
+
+    # Serial No : 28
     public function readCitizenLicenceDtl($id)
     {
         try{
@@ -3957,7 +3979,7 @@ class Trade implements ITrade
             $mCods          = "";
             if($refApplication->nature_of_bussiness)
             {
-                $items = $this->getLicenceItemsById($refApplication->nature_of_bussiness);                
+                $items = TradeParamItemType::itemsById($refApplication->nature_of_bussiness);                
                 foreach($items as $val)
                 {
                     $mItemName  .= $val->trade_item.",";
@@ -4397,35 +4419,7 @@ class Trade implements ITrade
         }
         
     }
-    public function getLicenceItemsById($id)
-    {
-        try{
-            $id = explode(",",$id);
-            $items = TradeParamItemType::select("*")
-                ->whereIn("id",$id)
-                ->get();
-            return $items;
-        }
-        catch(Exception $e)
-        {
-            echo $e->getMessage();
-        }        
-    }
-    public function getOwnereDtlByLId($id)
-    {
-        try{
-            $ownerDtl   = ActiveLicenceOwner::select("*")
-                            ->where("licence_id",$id)
-                            ->where("status",1)
-                            ->get();
-            return $ownerDtl;
-        }
-        catch(Exception $e)
-        {
-            echo $e->getMessage();
-        }
-        
-    }
+    
     public function getAllOwnereDtlByLId($id)
     {
         try{
@@ -4592,14 +4586,14 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
-    public function getDocumentTypeList(ActiveLicence $application)
+    public function getDocumentTypeList($refLicense)
     {
         try
         {
             $show='1';
-            if($application->application_type_id==1)
+            if($refLicense->application_type_id==1)
             {
-                if($application->ownership_type_id==1)
+                if($refLicense->ownership_type_id==1)
                 {
                     $show .=','.'2';  
                 }
@@ -4608,22 +4602,22 @@ class Trade implements ITrade
                     $show .=','.'3';  
                 }
 
-                if($application->firm_type_id==2)
+                if($refLicense->firm_type_id==2)
                 {
                     $show .=','.'4';  
                 }
-                elseif($application->firm_type_id ==3 || $application->firm_type_id==4)
+                elseif($refLicense->firm_type_id ==3 || $refLicense->firm_type_id==4)
                 {
                     $show .=','.'5';  
                 }
-                if($application->category_type_id==2)
+                if($refLicense->category_type_id==2)
                 {
                     $show .=','.'6';  
                 }
             }
             $show = explode(",",$show);
             $data = TradeParamDocumentType::select("doc_for","is_mandatory","show")
-                    ->where("application_type_id",$application->application_type_id)
+                    ->where("application_type_id",$refLicense->application_type_id)
                     ->where("status",1)
                     ->whereIn("show",$show)
                     ->groupBy("doc_for","is_mandatory","show")
