@@ -22,6 +22,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     /**
      * | Created On-07-10-2022 
      * | Created by-Anshu Kumar
+     * | Updated by-Sam kerketta
      * | ------------------- Apply New Water Connection ------------------------ |
      */
     Route::resource('crud/new-connection', NewConnectionController::class);

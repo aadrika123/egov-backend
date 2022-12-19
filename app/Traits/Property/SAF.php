@@ -97,9 +97,9 @@ trait SAF
     }
 
     // Trait SAF Owner
-    public function tApplySafOwner($owner, $saf, $owner_details)
+    public function tApplySafOwner($owner, $safId, $owner_details)
     {
-        $owner->saf_id = $saf->id;
+        $owner->saf_id = $safId;
         $owner->owner_name = $owner_details['ownerName'] ?? null;
         $owner->guardian_name = $owner_details['guardianName'] ?? null;
         $owner->relation_type = $owner_details['relation'] ?? null;
@@ -114,9 +114,9 @@ trait SAF
     }
 
     // Trait SAF Floors
-    public function tApplySafFloor($floor, $saf, $floor_details)
+    public function tApplySafFloor($floor, $safId, $floor_details)
     {
-        $floor->saf_id = $saf->id;
+        $floor->saf_id = $safId;
         $floor->floor_mstr_id = $floor_details['floorNo'] ?? null;
         $floor->usage_type_mstr_id = $floor_details['useType'] ?? null;
         $floor->const_type_mstr_id = $floor_details['constructionType'] ?? null;
@@ -320,9 +320,11 @@ trait SAF
                 'w.ward_name as new_ward_no',
                 'o.ownership_type',
                 'p.property_type',
-                'r.road_type as road_type_master'
+                'r.road_type as road_type_master',
+                'wr.role_name as current_role_name'
             )
             ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
+            ->join('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
             ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
             ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.property_assessment_id')

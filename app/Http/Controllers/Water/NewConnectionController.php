@@ -124,7 +124,10 @@ class NewConnectionController extends Controller
         return $this->newConnection->getUserWaterConnectionCharges($req);
     }
 
-    // Citizen View Water Screen For Mobile
+    /**
+     * |---------------------------------------- Citizen View Water Screen For Mobile -------------------------------------------|
+     */ 
+
     // Get connection type / water
     public function getConnectionType()
     {

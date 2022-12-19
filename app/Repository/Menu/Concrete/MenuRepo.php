@@ -9,8 +9,6 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
-use function PHPUnit\Framework\isJson;
-
 /**
  * | Created On-23-11-2022 
  * | Created By-Anshu Kumar
@@ -25,37 +23,21 @@ class MenuRepo implements iMenuRepo
     {
         $this->_redis = Redis::connection();
     }
-    /**
-     * |------------------------------- fetching the details of Menues from table  ---------------------------------|
-     * | @var menuMaster/ Obj
-     * | @var menues
-        | Serial No : 01
-     */
-    public function getAllMenues()
-    {
-        try {
-            $menuMaster = new MenuMaster();
-            $menues = $menuMaster->fetchAllMenues();
-            return responseMsg(true, "Menu Masters", remove_null($menues));
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 
     /**
      * |-------------------------------------------- Get All the Menu By Roles ---------------------------------------------------------|
      * | @param req
-     * | @var query
+     * | @var query : raw querry for the role wise menu
      * | @var menues
+     * | @return menues
      * | Query Time - 343ms 
      * | status-Closed
      * | rating-2
-        |  Serial No : 02
+        |  Serial No : 
      */
     public function getMenuByRoles($req)
     {
-        try {
-            $query = "SELECT 
+        $mQuery = "SELECT 
                             m.id AS menu_id,
                             m.serial,
                             m.description, 
@@ -70,13 +52,10 @@ class MenuRepo implements iMenuRepo
                             FROM menu_masters AS m
                     
                     LEFT JOIN (SELECT * FROM wf_rolemenus WHERE role_id=$req->roleId AND status=1) AS r ON r.menu_id=m.id";
-            $menues = DB::select($query);
-            $this->_redis->set('menu-by-role-' . $req->roleId, json_encode($menues));               // Caching the data should be flush while adding new menu to the role
+        $menues = DB::select($mQuery);
+        $this->_redis->set('menu-by-role-' . $req->roleId, json_encode($menues));               // Caching the data should be flush while adding new menu to the role
 
-            return responseMsg(true, "Permission Menues", remove_null($menues));
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
+        return responseMsg(true, "Permission Menues", remove_null($menues));
     }
 
 
@@ -88,38 +67,33 @@ class MenuRepo implements iMenuRepo
      * | Query Time - 366 ms 
      * | Status-Closed 
      * | Rating-2
-        |  Serial No : 03
+        |  Serial No : 
      */
     public function updateMenuByRole($req)
     {
-        try {
-            $roleMenus = new WfRolemenu();                               // Flush Key of the User Role Permission
+        $mRoleMenus = new WfRolemenu();                                                          // Flush Key of the User Role Permission
+        $mReadRoleMenus = $mRoleMenus->getMenues($req);
 
-            $readRoleMenus = $roleMenus->getMenues($req);
-
-            if ($readRoleMenus) {                                                           // If Data Already Existing
-                switch ($req->status) {
-                    case 1;
-                        $readRoleMenus->status = 1;
-                        $readRoleMenus->save();
-                        return responseMsg(true, "Successfully Enabled the Menu Permission for the Role", "");
-                        break;
-                    case 0;
-                        $readRoleMenus->status = 0;
-                        $readRoleMenus->save();
-                        return responseMsg(true, "Successfully Disabled the Menu Permission for the Role", "");
-                        break;
-                }
+        if ($mReadRoleMenus) {                                                                   // If Data Already Existing
+            switch ($req->status) {
+                case 1;
+                    $mReadRoleMenus->status = 1;
+                    $mReadRoleMenus->save();
+                    return responseMsg(true, "Successfully Enabled the Menu Permission for the Role", "");
+                    break;
+                case 0;
+                    $mReadRoleMenus->status = 0;
+                    $mReadRoleMenus->save();
+                    return responseMsg(true, "Successfully Disabled the Menu Permission for the Role", "");
+                    break;
             }
-
-            $roleMenus->role_id = $req->roleId;
-            $roleMenus->menu_id = $req->menuId;
-            $roleMenus->save();
-
-            return responseMsg(true, "Successfully Enabled the Menu Permission for the Role", "");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
         }
+
+        $mReadRoleMenus->role_id = $req->roleId;
+        $mReadRoleMenus->menu_id = $req->menuId;
+        $mReadRoleMenus->save();
+
+        return responseMsg(true, "Successfully Enabled the Menu Permission for the Role", "");
     }
 
     /**
@@ -128,31 +102,27 @@ class MenuRepo implements iMenuRepo
      * | Query Time = 328ms 
      * | Status- Closed
      * | Rating- 2 
-        | Serial No : 04
+        | Serial No : 
      */
     public function getRoleWiseMenu()
     {
-        try {
-            $userId = auth()->user()->id;
-            $menuDetails = WfRolemenu::select(
-                'menu_masters.menu_string AS menuName',
-                'menu_masters.route',
-            )
-                ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_rolemenus.role_id')
-                ->join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
-                ->join('wf_roles', 'wf_roles', '=', 'wf_rolemenus.role_id')
-                ->where('wf_roleusermaps.user_id', $userId)
-                ->where('wf_rolemenus.is_suspended', false)
-                ->where('wf_roleusermaps.is_suspended', false)
-                ->get();
+        $mUserId = auth()->user()->id;
+        $mMenuDetails = WfRolemenu::select(
+            'menu_masters.menu_string AS menuName',
+            'menu_masters.route',
+        )
+            ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_rolemenus.role_id')
+            ->join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
+            ->join('wf_roles', 'wf_roles', '=', 'wf_rolemenus.role_id')
+            ->where('wf_roleusermaps.user_id', $mUserId)
+            ->where('wf_rolemenus.is_suspended', false)
+            ->where('wf_roleusermaps.is_suspended', false)
+            ->get();
 
-            if (!empty($menuDetails['0'])) {
-                return responseMsg(true, "Data according to roles", $menuDetails);
-            }
-            return responseMsg(false, "Data not Found!", "");
-        } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
+        if (!empty($mMenuDetails['0'])) {
+            return responseMsg(true, "Data according to roles", $mMenuDetails);
         }
+        return responseMsg(false, "Data not Found!", "");
     }
 
 
@@ -166,88 +136,42 @@ class MenuRepo implements iMenuRepo
      * | @var item
      * | Query Time = 308ms 
      * | Rating- 4
-     * | Status- Closed
-        | Serial No : 05  
+     * | Status- Working
+        | Serial No :   
      */
     public function generateMenuTree($req)
     {
-        try {
+        $mMenuMaster = new MenuMaster();
+        $mMenues = $mMenuMaster->fetchAllMenues();
 
-            $menuMaster = new MenuMaster();
-            $menues = $menuMaster->fetchAllMenues();
+        $data = collect($mMenues)->map(function ($value, $key) {
+            $return = array();
+            $return['id'] = $value['id'];
+            $return['parentId'] = $value['parent_serial'];
+            $return['name'] = $value['menu_string'];
+            $return['children'] = array();
+            return ($return);
+        });
 
-            $data = collect($menues)->map(function ($value, $key) {
-                $return = array();
-                $return['id'] = $value['id'];
-                $return['parentId'] = $value['parent_serial'];
-                $return['name'] = $value['menu_string'];
-                $return['children'] = array();
-                return ($return);
-            });
+        $data = (objToArray($data));
+        $itemsByReference = array();
 
-            $data = (objToArray($data));
-            $itemsByReference = array();
-
-            foreach ($data as $key => &$item) {
-                $itemsByReference[$item['id']] = &$item;
-            }
-
-            # looping for the generation of child nodes / operation will end if the parentId is not match to id 
-            foreach ($data as $key => &$item)
-                if ($item['id'] && isset($itemsByReference[$item['parentId']]))
-                    $itemsByReference[$item['parentId']]['children'][] = &$item;
-
-            # this loop is to remove the external loop of the child node ie. not allowing the child node to create its own treee
-            foreach ($data as $key => &$item) {
-                if ($item['parentId'] && isset($itemsByReference[$item['parentId']]))
-                    unset($data[$key]);
-            }
-            $data = collect($data)->values();
-            return responseMsgs(true, "OPERATION OK!", $data, "", "01", "308.ms", "POST", $req->deviceId);
-        } catch (Exception $error) {
-            return responseMsgs(false, $error->getMessage(), $error->getLine(), "", "01", ".ms", "POST", $req->deviceId);
+        foreach ($data as $key => &$item) {
+            $itemsByReference[$item['id']] = &$item;
         }
-    }
 
+        # looping for the generation of child nodes / operation will end if the parentId is not match to id 
+        foreach ($data as $key => &$item)
+            if ($item['id'] && isset($itemsByReference[$item['parentId']]))
+                $itemsByReference[$item['parentId']]['children'][] = &$item;
 
-    /**
-     * |-------------------------------- Adding new menu in menu master ---------------------------------------|
-     * | @param request
-     * | @var menuMaster
-     * |
-     * | Query Time = 308ms 
-     * | Rating- 1
-     * | Status- Closed
-        | Serial No : 06
-     */
-    public function addNewMenues($request)
-    {
-        try {
-            $menuMaster = new MenuMaster();
-            return $menuMaster->putNewMenues($request);
-        } catch (Exception $error) {
-            return responseMsg(false, $error->getMessage(), "");
+        # this loop is to remove the external loop of the child node ie. not allowing the child node to create its own treee
+        foreach ($data as $key => &$item) {
+            if ($item['parentId'] && isset($itemsByReference[$item['parentId']]))
+                unset($data[$key]);
         }
-    }
 
-
-    /**
-     * |------------------------------------ Soft Delition of the Menu in Menu Master --------------------------|
-     * | @param request
-     * | @var menuDeletion
-     * |
-     * | Query time - .ms
-     * | Rating - 1
-     * | state - Open 
-        | Serilal No : 07
-     */
-    public function deleteMenuesDetails($request)
-    {
-        try {
-            $menuDeletion = new MenuMaster();
-            return $menuDeletion->softDeleteMenues($request);
-        } catch (Exception $error) {
-            return responseMsg(false, $error->getMessage(), "");
-        }
+        $data = collect($data)->values();
+        return responseMsgs(true, "OPERATION OK!", $data, "", "01", "308.ms", "POST", $req->deviceId);
     }
 }

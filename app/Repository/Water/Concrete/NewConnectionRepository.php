@@ -184,6 +184,8 @@ class NewConnectionRepository implements iNewConnection
 
             $ulbWorkflowObj = new WfWorkflow();
             $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID,$ulbId);
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
+            $initiatorRoleId = DB::select($refInitiatorRoleId);
 
             # Generating Demand 
             $objCall = new WaterNewConnection();
@@ -232,10 +234,6 @@ class NewConnectionRepository implements iNewConnection
             $newApplication->elec_category = $req->elecCategory;
             $newApplication->connection_through = $req->connection_through;
             $newApplication->apply_date = date('Y-m-d H:i:s');
-      
-            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
-            $initiatorRoleId = DB::select($refInitiatorRoleId);
-
             $newApplication->workflow_id = $ulbWorkflowId->id;
             $newApplication->current_role = collect($initiatorRoleId)->first()->role_id;
             $newApplication->initiator = collect($initiatorRoleId)->first()->role_id;
@@ -277,8 +275,7 @@ class NewConnectionRepository implements iNewConnection
                 $applicant->save();
             }
 
-            # Generating Demand and reflecting on water connection charges table
-
+            # Generating Demand reflecting on water connection charges table
             if (!is_null($installment)) {
                 foreach ($installment as $installments) {
                     $quaters = new WaterPenaltyInstallment();

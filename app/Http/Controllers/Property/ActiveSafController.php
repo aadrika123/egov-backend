@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsDoc;
+use App\Models\Property\PropActiveSafsFloor;
+use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use Illuminate\Http\Request;
@@ -11,6 +14,8 @@ use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
 use Exception;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 
 class ActiveSafController extends Controller
 {
@@ -29,7 +34,7 @@ class ActiveSafController extends Controller
     public function __construct(iSafRepository $saf_repository)
     {
         $this->Repository = $saf_repository;
-        $this->_workflowIds = [3, 4, 5];
+        $this->_workflowIds = Config::get('PropertyConstaint.SAF_WORKFLOWS');;
     }
 
     // Get All master data in saf
@@ -46,6 +51,36 @@ class ActiveSafController extends Controller
         ]);
 
         return $this->Repository->applySaf($request);
+    }
+
+    /**
+     * | Edit Applied Saf by SAF Id for BackOffice
+     * | @param request $req
+     */
+    public function editSaf(Request $req)
+    {
+        $req->validate([
+            'id' => 'required|integer'
+        ]);
+
+        try {
+            $mPropSaf = new PropActiveSaf();
+            $mPropSafOwners = new PropActiveSafsOwner();
+            $mOwners = $req->owner;
+
+            DB::beginTransaction();
+            $mPropSaf->edit($req);                                                      // Updation SAF Basic Details
+
+            collect($mOwners)->map(function ($owner) use ($mPropSafOwners) {            // Updation of Owner Basic Details
+                $mPropSafOwners->edit($owner);
+            });
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+        }
     }
 
     // Document Upload By Citizen Or JSK
@@ -66,11 +101,64 @@ class ActiveSafController extends Controller
         return $this->Repository->verifyDoc($req);
     }
 
-    // Inbox list
+    /**
+     * ---------------------- Saf Workflow Inbox --------------------
+     * | Initialization
+     * -----------------
+     * | @var userId > logged in user id
+     * | @var ulbId > Logged In user ulb Id
+     * | @var refWorkflowId > Workflow ID 
+     * | @var workflowId > SAF Wf Workflow ID 
+     * | @var query > Contains the Pg Sql query
+     * | @var workflow > get the Data in laravel Collection
+     * | @var checkDataExisting > check the fetched data collection in array
+     * | @var roleId > Fetch all the Roles for the Logged In user
+     * | @var data > all the Saf data of current logged roleid 
+     * | @var occupiedWard > get all Permitted Ward Of current logged in user id
+     * | @var wardId > filtered Ward Id from the data collection
+     * | @var safInbox > Final returned Data
+     * | @return response #safInbox
+     * | Status-Closed
+     * | Query Cost-327ms 
+     * | Rating-3
+     * ---------------------------------------------------------------
+     */
+    #Inbox
     public function inbox()
     {
-        $data = $this->Repository->inbox();
-        return $data;
+        try {
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWardUser = new WfWardUser();
+
+            $userId = auth()->user()->id;
+            $ulbId = auth()->user()->ulb_id;
+            $readWards = $mWfWardUser->getWardsByUserId($userId);                       // Model () to get Occupied Wards of Current User
+
+            $occupiedWards = collect($readWards)->map(function ($ward) {
+                return $ward->ward_id;
+            });
+
+            $readRoles = $mWfRoleUser->getRoleIdByUserId($userId);                      // Model to () get Role By User Id
+
+            $roleIds = $readRoles->map(function ($role, $key) {
+                return $role->wf_role_id;
+            });
+
+            $data = $this->getSaf($this->_workflowIds)                                  // Global SAF 
+                ->where('parked', false)
+                ->where('prop_active_safs.ulb_id', $ulbId)
+                ->where('prop_active_safs.status', 1)
+                ->whereIn('current_role', $roleIds)
+                ->orderByDesc('id')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->get();
+
+            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
+
+            return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", "339ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     /**
@@ -86,18 +174,18 @@ class ActiveSafController extends Controller
     {
         try {
             $mWfRoleUser = new WfRoleusermap();
-            $mWFWardUser = new WfWardUser();
+            $mWfWardUser = new WfWardUser();
 
             $mUserId = authUser()->id;
             $mUlbId = authUser()->ulb_id;
-            $readWards = $mWFWardUser->getWardByUserId($mUserId);               // Model function to get ward list
+            $mDeviceId = $req->deviceId ?? "";
 
-            $occupiedWardsId = collect($readWards)->map(function ($ward) {      // Collection filteration
+            $readWards = $mWfWardUser->getWardsByUserId($mUserId);                  // Model function to get ward list
+            $occupiedWardsId = collect($readWards)->map(function ($ward) {              // Collection filteration
                 return $ward->ward_id;
             });
 
-            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);             // Model function to get Role By User Id
-
+            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);                 // Model function to get Role By User Id
             $roleIds = $readRoles->map(function ($role, $key) {
                 return $role->wf_role_id;
             });
@@ -112,17 +200,91 @@ class ActiveSafController extends Controller
                 ->get();
 
             $safInbox = $data->whereIn('ward_mstr_id', $occupiedWardsId);
-            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, "271ms", "POST", $req->deviceId);
+            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, "271ms", "POST", $mDeviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
         }
     }
 
-    public function outbox(Request $request)
+    /**
+     * | Saf Outbox
+     * | @var userId authenticated user id
+     * | @var ulbId authenticated user Ulb Id
+     * | @var workflowRoles get All Roles of the user id
+     * | @var roles filteration of roleid from collections
+     * | Status-Closed
+     * | Query Cost-369ms 
+     * | Rating-4
+     */
+
+    public function outbox()
     {
-        $data = $this->Repository->outbox($request);
-        return $data;
+        try {
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWardUser = new WfWardUser();
+
+            $userId = auth()->user()->id;
+            $ulbId = auth()->user()->ulb_id;
+
+            $workflowRoles = $mWfRoleUser->getRoleIdByUserId($userId);
+            $roles = $workflowRoles->map(function ($value, $key) {
+                return $value->wf_role_id;
+            });
+
+            $refWard = $mWfWardUser->getWardsByUserId($userId);
+            $wardId = $refWard->map(function ($value, $key) {
+                return $value->ward_id;
+            });
+
+            $safData = $this->getSaf($this->_workflowIds)
+                ->where('prop_active_safs.ulb_id', $ulbId)
+                ->whereNotIn('current_role', $roles)
+                ->whereIn('ward_mstr_id', $wardId)
+                ->orderByDesc('id')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->get();
+            return responseMsgs(true, "Data Fetched", remove_null($safData->values()), "010104", "1.0", "274ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
+
+    /**
+     * | @var ulbId authenticated user id
+     * | @var ulbId authenticated ulb Id
+     * | @var occupiedWard get ward by user id using trait
+     * | @var wardId Filtered Ward ID from the collections
+     * | @var safData SAF Data List
+     * | @return
+     * | @var \Illuminate\Support\Collection $safData
+     * | Status-Closed
+     * | Query Costing-336ms 
+     * | Rating-2 
+     */
+    public function specialInbox()
+    {
+        try {
+            $mWfWardUser = new WfWardUser();
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+            $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
+            $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
+                return $item->ward_id;
+            });
+            $safData = $this->getSaf($this->_workflowIds)
+                ->where('is_escalate', 1)
+                ->where('prop_active_safs.ulb_id', $ulbId)
+                ->whereIn('ward_mstr_id', $wardId)
+                ->orderByDesc('id')
+                ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type')
+                ->get();
+            return responseMsgs(true, "Data Fetched", remove_null($safData), "010107", "1.0", "251ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
     public function details(Request $request)
     {
         $data = $this->Repository->details($request);
@@ -135,16 +297,15 @@ class ActiveSafController extends Controller
         $data = $this->Repository->postEscalate($request);
         return $data;
     }
-    // SAF special Inbox
-    public function specialInbox()
-    {
-        $data = $this->Repository->specialInbox();
-        return $data;
-    }
 
     // Post Independent Comment
     public function commentIndependent(Request $request)
     {
+        $request->validate([
+            'comment' => 'required',
+            'safId' => 'required'
+        ]);
+
         return $this->Repository->commentIndependent($request);
     }
 

@@ -117,7 +117,7 @@ class SafCalculation
         $todayDate = Carbon::now();
         $this->_virtualDate = $todayDate->subYears(12)->format('Y-m-d');
         $this->_floors = $propertyDetails['floor'];
-        $this->_ulbId = ($propertyDetails['ulb_id']) ?? auth()->user()->ulb_id;
+        $this->_ulbId = ($propertyDetails['ulbId']) ?? auth()->user()->ulb_id;
 
         $this->_vacantPropertyTypeId = Config::get("PropertyConstaint.VACANT_PROPERTY_TYPE");               // Vacant Property Type Id
 

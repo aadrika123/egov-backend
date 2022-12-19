@@ -12,11 +12,8 @@ interface iSafRepository
 {
     public function masterSaf();                            // Get all master data while applying Saf
     public function applySaf($request);                     // Apply For SAF
-    public function inbox();                                // Saf Inbox
-    public function outbox();                               // Saf Outbox
     public function details($request);                      // Get SAF By ID
-    public function postEscalate($request);                 // Adding SAF application to special Category 
-    public function specialInbox();                         // Special Inbox applications
+    public function postEscalate($request);                 // Adding SAF application to special Category
     public function commentIndependent($request);           // Comment For the SAF Application
     public function postNextLevel($request);                // Forward Or Backward to next Level
     public function approvalRejectionSaf($req);             // Approve or Reject The Application
