@@ -2,17 +2,18 @@
 
 namespace App\Repository\Cluster\Interfaces;
 
-use Illuminate\Http\Request;
-
+/**
+ * | Property Cluster
+ * | Created By - Sam kerketta
+ * | Created On- 23-11-2022 
+ * | Interface Calling Cluster Repo_
+ */
 
 interface iCluster
 {
-    public function getAllClusters();
-    public function getClusterById($request);
-    public function deleteClusterData($request);
-
+    public function getClusterById($request);                   // Fetch Cluster Detail Accordinfg to Cluster Id
     # cluster maping
-    public function detailsByHolding($request); //<---------- remark 
-    public function holdingByCluster($request);
-    public function saveHoldingInCluster($request);
+    public function detailsByHolding($request);                 // Fetch Property Detail Accordinfg to Holding  
+    public function holdingByCluster($request);                 // Fetch Property Detail Accordinfg to Cluster
+    public function saveHoldingInCluster($request);             // Save the Holdings to respective Cluster
 }

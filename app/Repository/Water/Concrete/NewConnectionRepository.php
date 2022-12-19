@@ -46,10 +46,11 @@ class NewConnectionRepository implements iNewConnection
     use Razorpay;
 
     /**
-     * | ----------------- Get Owner Type / Water ------------------------------- |
+     * | ---------------------------- Get Owner Type / Water ------------------------------- |
      * | @var ulbId 
      * | @var ward
-     * | Operation : data fetched by table ulb_ward_masters 
+     * | @return ward : return the list of ward according to ulbID.
+     * | Operation : data fetched by table ulb_ward_masters / Calling(->getAllWards($ulbID) on Model) for the list of ward
         | Serial No :01
      */
     public function getWardNo()
@@ -65,16 +66,16 @@ class NewConnectionRepository implements iNewConnection
 
 
     /**
-     * | ----------------- Get Owner Type / Water ------------------------------- |
+     * | ------------------------------------- Get Owner Type / Water ------------------------------- |
      * | @var ownerType 
-     * | #request null
+     * | @return ownerType : return the master data of the owner type for Water. 
      * | Operation : data fetched by table water_owner_type_mstrs 
         | Serila No : 02
      */
     public function getOwnerType()
     {
         try {
-            $ownerType = new WaterOwnerTypeMstr();  //<---------------- make object
+            $ownerType = new WaterOwnerTypeMstr(); 
             $ownerType = $ownerType->getallOwnwers();
             return response()->json(['status' => true, 'message' => 'data of the ownerType', 'data' => $ownerType]);
         } catch (Exception $error) {
@@ -86,7 +87,7 @@ class NewConnectionRepository implements iNewConnection
     /**
      * | ----------------- Get Connection Type / Water ------------------------------- |
      * | @var connectionTypes 
-     * | #request null
+     * | @return connectionType : return the master data of the connectin type for  Water.
      * | Operation : data fetched by table water_connection_type_mstrs 
         | Serila No : 03
      */
@@ -106,7 +107,7 @@ class NewConnectionRepository implements iNewConnection
     /**
      * | ----------------- Get Connection Through / Water ------------------------------- |
      * | @var connectionThrough 
-     * | #request null
+     * | @return connectionThrough : return the master data of the connection through for water.
      * | Operation : data fetched by table water_connection_through_mstrs 
          | Serila No : 04
      */
@@ -125,7 +126,7 @@ class NewConnectionRepository implements iNewConnection
     /**
      * | ----------------- Get Property Type / Water ------------------------------- |
      * | @var propertyType 
-     * | #request null
+     * | @return propertyType : return the master data of the property type for Water
      * | Operation : data fetched by table water_property_type_mstrs 
         | Serila No : 05
      */
@@ -142,9 +143,31 @@ class NewConnectionRepository implements iNewConnection
 
 
     /**
-     * | -------------  Apply for the new Application for Water Application ------------- |
-     * | Edited by Sam Kerketta
-     * | @param Request $req
+     * | -------------------------  Apply for the new Application for Water Application --------------------- |
+     * | @param req
+     * | @var vacantLand
+     * | @var workflowID
+     * | @var ulbId
+     * | @var ulbWorkflowObj : object for the model (WfWorkflow)
+     * | @var ulbWorkflowId : calling the function on model:WfWorkflow 
+     * | @var objCall : object for the model (WaterNewConnection)
+     * | @var newConnectionCharges :
+     * | @var
+     * | @var
+     * | @var
+     * | @var
+     * | @var
+     * | @var
+     * | @var
+     * | @var
+     * | @var
+     * | @var
+     * | @var
+     * | @var
+     * | @var
+     * | @var
+     * | @var
+     * | @var
      * | Post the value in Water Application table
      * | post the value in Water Applicants table by loop
      * ------------------------------------------------------------------------------------
@@ -287,37 +310,7 @@ class NewConnectionRepository implements iNewConnection
     }
 
 
-    /**
-     * | ----------------- Document verification processs ------------------------------- |
-     * | @param Req <------------------------- (route)
-     * | @var userId
-     * | @var docStatus
-     */
-    public function waterDocStatus($req)
-    {
-        try {
-            $userId = auth()->user()->id;
-
-            $docStatus = WaterApplicantDoc::find($req->documentId);
-            $docStatus->remarks = $req->docRemarks;
-            $docStatus->verified_by_emp_id = $userId;
-            $docStatus->verified_on = Carbon::now();
-            $docStatus->updated_at = Carbon::now();
-
-            if ($req->docStatus == 'Verified') {                        //<------------ (here data type small int)        
-                $docStatus->verify_status = 1;
-            }
-            if ($req->docStatus == 'Rejected') {                        //<------------ (here data type small int)
-                $docStatus->verify_status = 2;
-            }
-
-            $docStatus->save();
-
-            return responseMsg(true, "Successfully Done", '');
-        } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
-        }
-    }
+    
 
 
     /**
@@ -325,6 +318,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param Req
      * | @var userId
      * | @var connections
+        | Serial No : 
      */
     public function getUserWaterConnectionCharges(Request $req)
     {
@@ -351,13 +345,22 @@ class NewConnectionRepository implements iNewConnection
         }
     }
 
+    /**
+     * |--------------------------------------------------------- water Workflow Functions Listed Below -------------------------------------------------------------------------------------------------------|
+     */
 
 
     /**
-     * |--------------------------------------------- water Inbox -------------------------------------|
-     * | @param 
+     * |------------------------------------------ water Inbox -------------------------------------|
      * | @var auth
      * | @var userId
+     * | @var ulbId
+     * | @var occupiedWards 
+     * | @var roleId
+     * | @var waterList : using the function to fetch the list of the respective water application details according to (ulbId, roleId and ward) 
+     * | @var wardId : using the Workflow trait's function (getWardUserId($userId)) for respective wardId.
+     * | @var roles : using the Workflow trait's function (getRoleIdByUserId($userID)) for  respective roles.
+     * | @return waterList : Details to be displayed in the inbox of the offices in water workflow. 
         | Serila No : 
         | Working
      */
@@ -394,8 +397,13 @@ class NewConnectionRepository implements iNewConnection
 
     /**
      * |----------------------------------------- Water Outbox ------------------------------------------------|
-     * | @param
-     * | @var 
+     * | @var auth
+     * | @var userId
+     * | @var ulbId
+     * | @var workflowRoles : using the function to fetch the list of the respective water application details according to (ulbId, roleId and ward) 
+     * | @var wardId : using the Workflow trait's function (getWardUserId($userId)) for respective wardId.
+     * | @var roles : using the Workflow trait's function (getRoleIdByUserId($userID)) for  respective roles.
+     * | @return waterList : Details to be displayed in the inbox of the offices in water workflow. 
         | Serial No :
         | Working 
      */
@@ -405,8 +413,8 @@ class NewConnectionRepository implements iNewConnection
             $auth = auth()->user();
             $userId = $auth->id;
             $ulbId = $auth->ulb_id;
-
             $workflowRoles = $this->getRoleIdByUserId($userId);
+
             $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
                 return $value->wf_role_id;
             });
@@ -508,5 +516,71 @@ class NewConnectionRepository implements iNewConnection
         }
     }
 
+
+    /**
+     * |---------------------------------------------- Special Inbox -----------------------------------------|
+     * | 
+        | Serial No : 
+        | Working
+     */
+    public function waterSpecialInbox()
+    {
+        try {
+            $auth = auth()->user();
+            $userId = $auth->id;
+            $ulbId = $auth->ulb_id;
+            $wardId = $this->getWardByUserId($userId);
+
+            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
+                return $ward->ward_id;
+            });
+
+            $waterList = $this->getWaterApplicatioList($ulbId)                                         // Get Concessions
+                ->where('water_applications.is_escalate', true)
+                ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->orderByDesc('water_applications.id')
+                ->get();
+
+            return responseMsg(true, "Inbox List", remove_null($waterList), "", "", '01', '.ms', 'Post', '');
+        } catch (Exception $error) {
+            return responseMsg(false, $error->getMessage(), "");
+        }
+    }
+
+
+
+    /**
+     * | ----------------- Document verification processs ------------------------------- |
+     * | @param Req 
+     * | @var userId
+     * | @var docStatus
+        | Serial No :
+        | working
+     */
+    public function waterDocStatus($req)
+    {
+        try {
+            $userId = auth()->user()->id;
+
+            $docStatus = WaterApplicantDoc::find($req->documentId);
+            $docStatus->remarks = $req->docRemarks;
+            $docStatus->verified_by_emp_id = $userId;
+            $docStatus->verified_on = Carbon::now();
+            $docStatus->updated_at = Carbon::now();
+
+            if ($req->docStatus == 'Verified') {                        //<------------ (here data type small int)        
+                $docStatus->verify_status = 1;
+            }
+            if ($req->docStatus == 'Rejected') {                        //<------------ (here data type small int)
+                $docStatus->verify_status = 2;
+            }
+
+            $docStatus->save();
+
+            return responseMsg(true, "Successfully Done", '');
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
 
 }

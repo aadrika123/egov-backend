@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Cluster\ClusterController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
@@ -17,6 +16,7 @@ use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\Property\SafDemandController;
 use App\Http\Controllers\Property\DocumentController;
 use App\Http\Controllers\CustomController;
+use App\Http\Controllers\property\ClusterController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -48,6 +48,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::get('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf(1)
     Route::post('saf/apply', 'applySaf');                                                               // Applying Saf Route(2)
     Route::get('saf/inbox', 'inbox');                                                                   // Saf Inbox(3)
+    Route::post('saf/btc-inbox', 'btcInbox');                                                           // Saf Inbox for Back To citizen(23)
     Route::get('saf/outbox', 'outbox');                                                                 // Saf Workflow Outbox and Outbox By search key(4)
     Route::post('saf-details', 'details');                                                              // Saf Workflow safDetails and safDetails By ID(5)
     Route::post('saf/escalate', 'postEscalate');                                                        // Saf Workflow special and safDetails By id(6)
@@ -228,6 +229,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
        | Serial No : 12
    */
   Route::controller(ClusterController::class)->group(function () {
+
     #cluster data entry / Master
     Route::get('cluster/get-all-clusters', 'getAllClusters');
     Route::post('cluster/get-cluster-by-id', 'getClusterById');

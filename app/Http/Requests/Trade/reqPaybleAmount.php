@@ -2,19 +2,8 @@
 
 namespace App\Http\Requests\Trade;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class reqPaybleAmount extends FormRequest
+class ReqPaybleAmount extends TradeRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
-    public function authorize()
-    {
-        return true;
-    }
 
     /**
      * Get the validation rules that apply to the request.
@@ -44,5 +33,5 @@ class reqPaybleAmount extends FormRequest
         $message["firmEstdDate.required"]       = "firmEstdDate is Required";
         $message["licenseFor.required"]         = "license For year is Required";
         return $message;
-    }
+    }    
 }

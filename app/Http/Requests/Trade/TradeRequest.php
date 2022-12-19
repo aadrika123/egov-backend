@@ -2,11 +2,11 @@
 
 namespace App\Http\Requests\Trade;
 
-use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
-class paymentCounter extends FormRequest
+
+class TradeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,20 +25,9 @@ class paymentCounter extends FormRequest
      */
     public function rules()
     {
-        $mRegex         = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
-        $mNowDate       = Carbon::now()->format('Y-m-d'); 
-        $rules["paymentMode"]="required|alpha";
-        $rules["licenceId"]="required||digits_between:1,9223372036854775807"; 
-        $rules["licenseFor"]="required|int";
-        $rules["totalCharge"] = "required|numeric";               
-        if(isset($this->paymentMode) && $this->paymentMode!="CASH")
-        {
-            $rules["chequeNo"] ="required";
-            $rules["chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$mNowDate";
-            $rules["bankName"] ="required|regex:$mRegex";
-            $rules["branchName"] ="required|regex:$mRegex";
-        } 
-        return $rules;
+        return [
+            //
+        ];
     }
     protected function failedValidation(Validator $validator)
     { 
@@ -51,6 +40,5 @@ class paymentCounter extends FormRequest
                 ], 
                 422)
         );
-        
     }
 }

@@ -1,30 +1,12 @@
 <?php
 
 namespace App\Http\Requests\Trade;
-
 use App\Repository\Common\CommonFunction;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Config;
 use Carbon\Carbon;
 
-class addRecorde extends FormRequest
+class ReqAddRecorde extends TradeRequest
 {
-    
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
-    public function authorize()
-    {
-        return true;
-    }
-
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array
-     */
     public function rules()
     { 
         if($this->getMethod()=='GET')
@@ -51,7 +33,7 @@ class addRecorde extends FormRequest
             $rules["firmDetails.businessDescription"]="required|regex:$mRegex"; 
             $rules["firmDetails.firmEstdDate"]="required|date"; 
             $rules["firmDetails.firmName"]="required|regex:$mFramNameRegex";
-            $rules["firmDetails.premisesOwner"]="required|regex:$mRegex";
+            $rules["firmDetails.premisesOwner"]="required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\., \s]+$/";
             $rules["firmDetails.natureOfBusiness"]="required|array";
             $rules["firmDetails.natureOfBusiness.*.id"]="required|digits_between:1,9223372036854775807";
             $rules["firmDetails.newWardNo"]="required|digits_between:1,9223372036854775807";

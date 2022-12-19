@@ -4,11 +4,18 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveSafsDoc;
+use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWardUser;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iSafRepository;
+use App\Traits\Property\SAF;
+use App\Traits\Workflow\Workflow;
+use Exception;
 
 class ActiveSafController extends Controller
 {
+    use Workflow;
+    use SAF;
     /**
      * | Created On-08-08-2022 
      * | Created By-Anshu Kumar
@@ -16,11 +23,13 @@ class ActiveSafController extends Controller
      * | Controller regarding with SAF Module
      */
 
+    private $_workflowIds;
     // Initializing function for Repository
     protected $saf_repository;
     public function __construct(iSafRepository $saf_repository)
     {
         $this->Repository = $saf_repository;
+        $this->_workflowIds = [3, 4, 5];
     }
 
     // Get All master data in saf
@@ -32,7 +41,10 @@ class ActiveSafController extends Controller
     //  Function for applying SAF
     public function applySaf(Request $request)
     {
-        // return $request->all();
+        $request->validate([
+            'ulbId' => 'required|integer'
+        ]);
+
         return $this->Repository->applySaf($request);
     }
 
@@ -60,6 +72,52 @@ class ActiveSafController extends Controller
         $data = $this->Repository->inbox();
         return $data;
     }
+
+    /**
+     * | Inbox for the Back To Citizen parked true
+     * | @var mUserId authenticated user id
+     * | @var mUlbId authenticated user ulb id
+     * | @var readWards get all the wards of the user id
+     * | @var occupiedWardsId get all the wards id of the user id
+     * | @var readRoles get all the roles of the user id
+     * | @var roleIds get all the logged in user role ids
+     */
+    public function btcInbox(Request $req)
+    {
+        try {
+            $mWfRoleUser = new WfRoleusermap();
+            $mWFWardUser = new WfWardUser();
+
+            $mUserId = authUser()->id;
+            $mUlbId = authUser()->ulb_id;
+            $readWards = $mWFWardUser->getWardByUserId($mUserId);               // Model function to get ward list
+
+            $occupiedWardsId = collect($readWards)->map(function ($ward) {      // Collection filteration
+                return $ward->ward_id;
+            });
+
+            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);             // Model function to get Role By User Id
+
+            $roleIds = $readRoles->map(function ($role, $key) {
+                return $role->wf_role_id;
+            });
+
+            $data = $this->getSaf($this->_workflowIds)                                       // Global SAF 
+                ->where('parked', true)
+                ->where('prop_active_safs.ulb_id', $mUlbId)
+                ->where('prop_active_safs.status', 1)
+                ->whereIn('current_role', $roleIds)
+                ->orderByDesc('id')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->get();
+
+            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWardsId);
+            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, "271ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $req->deviceId);
+        }
+    }
+
     public function outbox(Request $request)
     {
         $data = $this->Repository->outbox($request);

@@ -12,8 +12,11 @@ use Illuminate\Http\Request;
 
 interface iNewConnection
 {
-   public function store(Request $req);
-   public function getUserWaterConnectionCharges(Request $req);
+   public function store(Request $req);                                 // Apply for new water connection
+   public function getUserWaterConnectionCharges(Request $req);         // 
+   public Function waterInbox();                                        // Inbox for water
+   public function waterOutbox();                                       // Outbox for water
+   public function postNextLevel($req);                                 // Approval in the workflow level
    
    // Citizen View Water Screen for Mobile
    public function getConnectionType();
