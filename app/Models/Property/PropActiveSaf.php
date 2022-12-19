@@ -11,7 +11,36 @@ class PropActiveSaf extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['has_previous_holding_no', 'saf_no', 'previous_ward_mstr_id'];
+    protected $fillable = [
+        'has_previous_holding_no',
+        'saf_no',
+        'previous_ward_mstr_id',
+        'zone_mstr_id',
+        'no_electric_connection',
+        'elect_consumer_no',
+        'elect_acc_no',
+        'elect_bind_book_no',
+        'elect_cons_category',
+        'building_plan_approval_no',
+        'building_plan_approval_date',
+        'water_conn_no',
+        'water_conn_date',
+        'khata_no',
+        'plot_no',
+        'village_mauja_name',
+        'prop_address',
+        'prop_city',
+        'prop_dist',
+        'prop_pin_code',
+        'is_corr_add_differ',
+        'corr_address',
+        'corr_city',
+        'corr_dist',
+        'corr_pin_code',
+        'prop_state',
+        'corr_state',
+        'new_ward_mstr_id'
+    ];
     // Store
     public function store($req)
     {

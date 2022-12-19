@@ -54,6 +54,7 @@ class ActiveSafController extends Controller
 
     /**
      * | Edit Applied Saf by SAF Id for BackOffice
+     * | @param request $req
      */
     public function editSaf(Request $req)
     {
@@ -67,17 +68,17 @@ class ActiveSafController extends Controller
             $mOwners = $req->owner;
 
             DB::beginTransaction();
-            $updStatus = $mPropSaf->edit($req);                     // Updation SAF Basic Details
+            $updStatus = $mPropSaf->edit($req);                                         // Updation SAF Basic Details
 
-            collect($mOwners)->map(function ($owner, $key) use ($mPropSafOwners) {
+            collect($mOwners)->map(function ($owner, $key) use ($mPropSafOwners) {      // Updation of Owner Basic Details
                 $mPropSafOwners->edit($owner);
             });
 
             DB::commit();
-            return responseMsg($updStatus, "Successfully Updated the Data", "");
+            return responseMsgs($updStatus, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         }
     }
 
