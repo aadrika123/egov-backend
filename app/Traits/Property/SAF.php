@@ -145,7 +145,8 @@ trait SAF
                 DB::raw("string_agg(o.owner_name,',') as owner_name"),
                 'p.property_type',
                 'prop_active_safs.assessment_type as assessment',
-                'prop_active_safs.application_date as apply_date'
+                'prop_active_safs.application_date as apply_date',
+                'prop_active_safs.parked'
             )
             ->whereIn('workflow_id', $workflowIds);
         return $data;

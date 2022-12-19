@@ -327,22 +327,23 @@ class SafRepository implements iSafRepository
         try {
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
-            $wardId = $this->getWardByUserId($userId);                                  // Trait get Occupied Wards of Current User
+            $readWards = $this->getWardByUserId($userId);                                  // Trait get Occupied Wards of Current User
 
-            $occupiedWards = collect($wardId)->map(function ($ward) {
+            $occupiedWards = collect($readWards)->map(function ($ward) {
                 return $ward->ward_id;
             });
 
-            $roles = $this->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
+            $readRoles = $this->getRoleIdByUserId($userId);                                 // Trait get Role By User Id
 
-            $roleId = $roles->map(function ($item, $key) {
-                return $item->wf_role_id;
+            $roleIds = $readRoles->map(function ($role, $key) {
+                return $role->wf_role_id;
             });
 
-            $data = $this->getSaf($this->_workflowIds)                                                     // Global SAF 
+            $data = $this->getSaf($this->_workflowIds)                                  // Global SAF 
+                ->where('parked', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->where('prop_active_safs.status', 1)
-                ->whereIn('current_role', $roleId)
+                ->whereIn('current_role', $roleIds)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
