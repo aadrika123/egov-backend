@@ -178,6 +178,7 @@ class ActiveSafController extends Controller
 
             $mUserId = authUser()->id;
             $mUlbId = authUser()->ulb_id;
+            $mDeviceId = $req->deviceId ?? "";
 
             $readWards = $mWfWardUser->getWardsByUserId($mUserId);                  // Model function to get ward list
             $occupiedWardsId = collect($readWards)->map(function ($ward) {              // Collection filteration
@@ -199,9 +200,9 @@ class ActiveSafController extends Controller
                 ->get();
 
             $safInbox = $data->whereIn('ward_mstr_id', $occupiedWardsId);
-            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, "271ms", "POST", $req->deviceId);
+            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, "271ms", "POST", $mDeviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
         }
     }
 
