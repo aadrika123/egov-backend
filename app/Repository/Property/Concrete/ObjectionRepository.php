@@ -52,19 +52,6 @@ class ObjectionRepository implements iObjectionRepository
     }
 
 
-    //get owner details
-    public function ownerDetails($request)
-    {
-        try {
-            $ownerDetails = PropOwner::select('owner_name as name', 'mobile_no as mobileNo', 'prop_address as address')
-                ->where('prop_properties.id', $request->propId)
-                ->join('prop_properties', 'prop_properties.id', '=', 'prop_owners.property_id')
-                ->first();
-            return responseMsg(true, "Successfully Retrieved", $ownerDetails);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 
     //apply objection
     public function applyObjection($request)
@@ -84,6 +71,9 @@ class ObjectionRepository implements iObjectionRepository
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
+            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);              // Get Finisher ID
+            $finisherRoleId = DB::select($refFinisherRoleId);
+
             if ($objectionFor == "Clerical Mistake") {
                 DB::beginTransaction();
 
@@ -98,6 +88,8 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->created_at = Carbon::now();
                 $objection->workflow_id = $ulbWorkflowId->id;
                 $objection->current_role = $initiatorRoleId[0]->role_id;
+                $objection->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
+                $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
                 $objection->save();
 
                 //objection No generation in model
@@ -126,7 +118,6 @@ class ObjectionRepository implements iObjectionRepository
                     $objectionDoc->objection_id = $objection->id;
                     $this->citizenDocUpload($objectionDoc, $name, $docName);
                 }
-
 
                 // //address document 
                 if ($file = $request->file('addressDoc')) {
@@ -375,6 +366,22 @@ class ObjectionRepository implements iObjectionRepository
             }
         } catch (Exception $e) {
             echo $e->getMessage();
+        }
+    }
+
+    /**
+     * | Get owner details
+     */
+    public function ownerDetails($request)
+    {
+        try {
+            $ownerDetails = PropOwner::select('owner_name as name', 'mobile_no as mobileNo', 'prop_address as address')
+                ->where('prop_properties.id', $request->propId)
+                ->join('prop_properties', 'prop_properties.id', '=', 'prop_owners.property_id')
+                ->first();
+            return responseMsg(true, "Successfully Retrieved", $ownerDetails);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -746,10 +753,10 @@ class ObjectionRepository implements iObjectionRepository
     {
         try {
             $validator = Validator::make($req->all(), [
-                'nameDoc' => 'max:2000',
-                'addressDoc' => 'max:2000',
-                'safMemberDoc' => 'max:2000',
-                'objectionFormDoc' => 'max:2000',
+                // 'nameDoc' => 'max:2000',
+                // 'addressDoc' => 'max:2000',
+                // 'safMemberDoc' => 'max:2000',
+                // 'objectionFormDoc' => 'max:2000',
             ]);
 
             if ($validator->fails()) {

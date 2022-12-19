@@ -15,8 +15,8 @@ use App\Http\Controllers\Workflows\WorkflowTrackController;
 use App\Http\Controllers\Ward\WardController;
 use App\Http\Controllers\Ward\WardUserController;
 use App\Http\Controllers\WcController;
+use App\Http\Controllers\WorkflowMaster\MasterController;
 use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
-use App\Http\Controllers\WorkflowMaster\WorkflowMasterController;
 use App\Http\Controllers\WorkflowMaster\WfWorkflowController;
 use App\Http\Controllers\WorkflowMaster\WorkflowMap;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleController;
@@ -244,8 +244,10 @@ Route::group(['middleware' => ['json.response', 'request_logger']], function () 
 
 
 /**
- * Creation Date:-06-10-2022
- * Created By:- Mrinal Kumar
+ * Creation Date: 06-10-2022
+ * Created By:-   Mrinal Kumar
+ * Modified On :- 17-12-2022
+ * Modified By :- Mrinal Kumar
  */
 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
@@ -253,13 +255,28 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     /**
      * workflow Master CRUD operation
      */
-    Route::apiResource("master", WorkflowMasterController::class);
+
+    Route::controller(MasterController::class)->group(function () {
+        Route::post('workflow/master/save', 'createMaster');                     // Save Master
+        Route::post('workflow/master/edit', 'updateMaster');                     // Edit Master 
+        Route::post('workflow/master/byId', 'masterbyId');                       // Get Master By Id
+        Route::post('workflow/master/list', 'getAllMaster');                     // Get All Master
+        Route::post('workflow/master/delete', 'deleteMaster');                   // Delete Master
+    });
 
 
     /**
-     * workflow workflow CRUD operation
+     * Wf workflow CRUD operation
      */
     Route::apiResource("workflow", WfWorkflowController::class);
+
+    Route::controller(MasterController::class)->group(function () {
+        Route::post('workflow/wfworkflow/save', 'createWorkflow');                     // Save Workflow
+        Route::post('workflow/wfworkflow/edit', 'updateWorkflow');                     // Edit Workflow 
+        Route::post('workflow/wfworkflow/byId', 'workflowbyId');                       // Get Workflow By Id
+        Route::post('workflow/wfworkflow/list', 'getAllWorkflow');                     // Get All Workflow
+        Route::post('workflow/wfworkflow/delete', 'deleteWorkflow');                   // Delete Workflow
+    });
 
 
     /**

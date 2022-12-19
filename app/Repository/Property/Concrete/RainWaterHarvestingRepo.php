@@ -31,11 +31,13 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     use Ward;
     private $_todayDate;
     private $_bifuraction;
+    private $_workflowId;
 
     public function __construct()
     {
         $this->_todayDate = Carbon::now();
         $this->_bifuraction = new PropertyBifurcation();
+        $this->_workflowId  = Config::get('workflow-constants.RAIN_WATER_HARVESTING_ID');
     }
 
     /**
@@ -61,9 +63,10 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     /**
      * |----------------------- postWaterHarvestingApplication 1 --------------------------
      * |  Query cost => 350 - 490 ms 
-     * |@param request
-     * |@var ulbId
-     * |@var wardList
+     * | @param request
+     * | @var ulbId
+     * | @var wardList
+     * | request : propertyId, isWaterHarvestingBefore , dateOfCompletion
      * | Rating :2
      */
     public function waterHarvestingApplication($request)
@@ -72,30 +75,14 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
 
-            return  $this->waterApplicationSave($request, $ulbId, $userId);
-        } catch (Exception $error) {
-            return responseMsg(false, "Error!", $error->getMessage());
-        }
-    }
-
-
-    /**
-     * |----------------------- function for the savindg the application details 1.1 --------------------------
-     * |@param waterHaravesting
-     * |@param request
-     * |@param ulbId
-     * |@param userId
-     * |@var applicationNo
-     * | Rating : 1
-     */
-    public function waterApplicationSave($request, $ulbId, $userId)
-    {
-        try {
-            $ulbWorkflowId = WfWorkflow::where('wf_master_id', Config::get('workflow-constants.RAIN_WATER_HARVESTING_ID'))
+            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
                 ->first();
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
+
+            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId = DB::select($refFinisherRoleId);
 
             $waterHaravesting = new PropActiveHarvesting();
             $waterHaravesting->property_id = $request->propertyId;
@@ -103,6 +90,8 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             $waterHaravesting->date_of_completion  =  $request->dateOfCompletion;
             $waterHaravesting->workflow_id = $ulbWorkflowId->id;
             $waterHaravesting->current_role = collect($initiatorRoleId)->first()->role_id;
+            $waterHaravesting->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
+            $waterHaravesting->finisher_role_id = collect($finisherRoleId)->first()->role_id;
             $waterHaravesting->user_id = $userId;
             $waterHaravesting->ulb_id = $ulbId;
 
@@ -139,9 +128,10 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             }
             return responseMsg(true, "Application applied!", $applicationNo);
         } catch (Exception $error) {
-            return responseMsg(false, "Data not saved", $error->getMessage());
+            return responseMsg(false, "Error!", $error->getMessage());
         }
     }
+
 
     /**
      * |----------------------- function for generating application no 1.1.1 --------------------------
@@ -188,7 +178,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
                 ->orderByDesc('prop_active_harvestings.id')
                 ->get();
 
-            return responseMsg(true, "Inbox List", remove_null($harvesting));
+            return responseMsgs(true, "Inbox List", remove_null($harvesting), '011108', 01, '364ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -225,7 +215,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
                 ->orderByDesc('prop_active_harvestings.id')
                 ->get();
 
-            return responseMsg(true, "Outbox List", remove_null($harvesting));
+            return responseMsg(true, "Outbox List", remove_null($harvesting), '011109', 01, '446ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -322,6 +312,8 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     /**
      * |------------------------------------- Post Next Level Application(forward or backward application) ------------------------------------------------|
      * | Rating-
+     * | Status - Closed
+     * | Query Cost - 446ms
      */
     public function postNextLevel($req)
     {
@@ -358,7 +350,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             $commentOnlevel->save();
 
             DB::commit();
-            return responseMsg(true, "Successfully Forwarded The Application!!", "");
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '011110', 01, '446ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -369,12 +361,13 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     /**
      * |-------------------------------------  Rejection of the Harvesting ------------------------------------------------|
      * | Rating-
+     * | Status - open
      */
     public function rejectionOfHarvesting($req)
     {
         try {
             $userId = authUser()->id;
-            $getRole = $this->getRoleIdByUserId($userId);
+            return  $getRole = $this->getRoleIdByUserId($userId);
             $roleId = $getRole->map(function ($value, $key) {                         // Get user Workflow Roles
                 return $value->wf_role_id;
             });
@@ -393,7 +386,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             $rejectedHarvesting->save();
             $activeHarvesting->delete();
 
-            return responseMsg(true, "Application Rejected !!", "");
+            return responseMsgs(true, "Application Rejected !!", "", '011112', 01, '348ms', 'Post', $req->deviceId);
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
@@ -401,15 +394,16 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
 
 
     /**
-     * |------------------------------------- Fina Approval and Rejection of the Application ------------------------------------------------|
+     * |------------------------------------- Final Approval and Rejection of the Application ------------------------------------------------|
      * | Rating-
+     * | Status- Closed
      */
     public function finalApprovalRejection($req)
     {
         try {
             // Check if the Current User is Finisher or Not                                                                                 
             $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
-            return $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
+            $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
             if ($refGetFinisher->role_id != $req->roleId) {
                 return responseMsg(false, " Access Forbidden", "");
             }
@@ -445,7 +439,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
                 $msg = "Application Successfully Rejected !!";
             }
             DB::commit();
-            return responseMsg(true, $msg, "");
+            return responseMsgs(true, $msg, "", '011111', 01, '391ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -456,12 +450,6 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //applied harvesting list
     public function waterHarvestingList()
     {
-        $apiId = '011103';
-        $version = 01;
-        $queryRunTime = '300ms - 359ms';
-        $action = 'Post';
-        $deviceId = '';
-
         try {
             $list = PropActiveHarvesting::select(
                 'prop_active_harvestings.id',
@@ -479,7 +467,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
                 ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
                 ->get();
 
-            return responseMsgs(true, "Success", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true, "Success", $list, '011103', 01, '300ms - 359ms', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -488,11 +476,6 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //applied harvesting list by id
     public function harvestingListById($req)
     {
-        $apiId = '011104';
-        $version = 01;
-        $queryRunTime = '315ms - 342ms';
-        $action = 'Post';
-        $deviceId = '';
         try {
             $list = PropActiveHarvesting::select(
                 'prop_active_harvestings.*',
@@ -513,7 +496,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             if (is_null($list)) {
                 return responseMsg(false, "No Data Found", '');
             } else
-                return responseMsgs(true, "Success", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+                return responseMsgs(true, "Success", $list, '011104', 01, '315ms - 342ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -522,11 +505,6 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //harvesting document list
     public function harvestingDocList($req)
     {
-        $apiId = '011105';
-        $version = 01;
-        $queryRunTime = '311ms - 379ms';
-        $action = 'Post';
-        $deviceId = '';
         try {
             $list = PropHarvestingDoc::select(
                 'id',
@@ -549,7 +527,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             if ($list == Null) {
                 return responseMsg(false, "No Data Found", '');
             } else
-                return responseMsgs(true, "Success", remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
+                return responseMsgs(true, "Success", remove_null($list), '011105', 01, '311ms - 379ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -558,11 +536,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //doc upload
     public function docUpload($req)
     {
-        $apiId = '011106';
-        $version = 01;
-        $queryRunTime = '313ms - 354ms';
-        $action = 'Post';
-        $deviceId = '';
+
         try {
             if ($file = $req->file('rwhImage')) {
                 $docName = "rwhImage";
@@ -603,7 +577,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
                     $this->citizenDocUpload($harvestingDoc, $name, $docName);
                 }
             }
-            return responseMsgs(true, "Successfully Uploaded", '', $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true, "Successfully Uploaded", '', '011106', 01, '313ms - 354ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -612,11 +586,6 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
     //doc status
     public function docStatus($req)
     {
-        $apiId = '011107';
-        $version = 01;
-        $queryRunTime = '290ms - 342ms';
-        $action = 'Post';
-        $deviceId = '';
         try {
             $userId = auth()->user()->id;
 
@@ -635,7 +604,7 @@ class RainWaterHarvestingRepo implements iRainWaterHarvesting
             }
             $docStatus->save();
 
-            return responseMsgs(true, "Successfully Verified", '', $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true, "Successfully Verified", '', '011107', 01, '290ms - 342ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             echo $e->getMessage();
         }

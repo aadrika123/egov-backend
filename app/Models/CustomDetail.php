@@ -22,7 +22,17 @@ class CustomDetail extends Model
     public function getCustomDetails($request)
     {
         try {
-            $customDetails = CustomDetail::select('id', 'ref_id', 'ref_type', 'document', 'remarks', 'type', 'created_at as date', 'ref_type as customFor')
+            $customDetails = CustomDetail::select(
+                'id',
+                'ref_id',
+                'ref_type',
+                'relative_path',
+                'doc_name as docUrl',
+                'remarks',
+                'type',
+                'created_at as date',
+                'ref_type as customFor'
+            )
                 ->orderBy("id", 'desc')
                 ->where('ref_id', $request->id)
                 ->where('ref_type', $request->customFor)
@@ -44,37 +54,36 @@ class CustomDetail extends Model
         try {
             $customFor = $request->customFor;
             $customDetails = new CustomDetail;
-            $filepath = NULL;
+            $filename = NULL;
 
             if ($file = $request->file('document')) {
                 $filename = time() .  '.' . $file->getClientOriginalExtension();
                 $path = storage_path('app/public/custom');
                 $file->move($path, $filename);
-                $filepath = storage_path('app/public/custom' . '/' . $filename);
             }
 
             $customDetails = new CustomDetail;
             if ($customFor == 'Concession') {
                 $customDetails->ref_type = 'Concession';
-                $this->saveCustomDetail($request, $filepath, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails);
                 $customDetails->save();
             }
 
             if ($customFor == 'SAF') {
                 $customDetails->ref_type = 'SAF';
-                $this->saveCustomDetail($request, $filepath, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails);
                 $customDetails->save();
             }
 
             if ($customFor == 'Objection') {
                 $customDetails->ref_type = 'Objection';
-                $this->saveCustomDetail($request, $filepath, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails);
                 $customDetails->save();
             }
 
             if ($customFor == 'Harvesting') {
                 $customDetails->ref_type = 'Harvesting';
-                $this->saveCustomDetail($request, $filepath, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails);
                 $customDetails->save();
             }
 
@@ -85,18 +94,20 @@ class CustomDetail extends Model
     }
 
     // save custom details
-    public function saveCustomDetail($request, $filepath, $customDetails)
+    public function saveCustomDetail($request, $filename, $customDetails)
     {
         if ($request->remarks && $request->document) {
 
             $customDetails->ref_id = $request->id;
-            $customDetails->document = $filepath;
+            $customDetails->doc_name = $filename;
             $customDetails->remarks = $request->remarks;
+            $customDetails->relative_path = '/custom/';
             $customDetails->type = "both";
         } elseif ($request->document) {
 
             $customDetails->ref_id = $request->id;
-            $customDetails->document = $filepath;
+            $customDetails->doc_name = $filename;
+            $customDetails->relative_path = '/custom/';
             $customDetails->type = "file";
         } elseif ($request->remarks) {
 
