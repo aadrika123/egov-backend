@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Workflows\WfRoleusermap;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Razorpay\Api\Collection;
 
 /**
  * Trait for saving and editing the Users and Citizen register also
@@ -201,12 +202,17 @@ trait Auth
     }
 
     /**
-     * |------------------------ Get User Details According to token ---------------------------
+     * |------------------------ Get User Details According to token / user ---------------------------
      * |@param emailInfo
+     * |@var citizen : static variable 
      * |@var userInfo
      * |@var userId
      * |@var menuDetails
+     * |@var menuRoleDetails
+     * |@var roleId
+     * |@var roleBasedMenu
      * |@var collection
+     * |@return collection[] : returning the user details 
          | Under Modification Remarks:(Split the functions/costant inetilization/collide the collection:line-248,253)
      * | Remark (CAUTION) -> make the join for the user name and remove the user serch in USER table
      */
@@ -221,17 +227,18 @@ trait Auth
             )
             ->get();
 
-        $collection['userName'] = $userInfo['0']->name;
-        $collection['userType'] = $userInfo['0']->userType;
-        $userId = $userInfo['0']->id;
+        $collection['userName'] = collect($userInfo)->first()->name;
+        $collection['userType'] = collect($userInfo)->first()->userType;
+        $userId = collect($userInfo)->first()->id;
 
-        if (($userInfo['0']->userType) == $citizen) {
+        if ($collection['userType'] == $citizen) {
             $collection['userName'];
             $collection['userType'];
             return $collection;
         }
 
         # may call another function for below database serch
+        # collecting the roles for respective user
         $menuRoleDetails = WfRoleusermap::leftJoin('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_role_id')
             ->where('wf_roleusermaps.user_id', $userId)
             ->where('wf_roleusermaps.is_suspended', false)
@@ -241,8 +248,8 @@ trait Auth
             )
             ->get();
 
-        if (empty($menuRoleDetails['0'])) {
-            return ("No Roles!");
+        if (empty(collect($menuRoleDetails)->first())) {
+            return ("User has No Roles!");
         }
 
         $collection['role'] = collect($menuRoleDetails)->map(function ($value, $key) {
@@ -256,6 +263,7 @@ trait Auth
         });
 
         # may call another function for below database serch
+        # representing the menu details for each role
         foreach ($roleId as $roleIds) {
             $roleBasedMenu[] = WfRolemenu::join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
                 ->where('wf_rolemenus.role_id', $roleIds)
