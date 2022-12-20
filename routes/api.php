@@ -13,16 +13,17 @@ use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\Workflows\WorkflowController;
 use App\Http\Controllers\Workflows\WorkflowTrackController;
 use App\Http\Controllers\Ward\WardController;
-use App\Http\Controllers\Ward\WardUserController;
 use App\Http\Controllers\WcController;
 use App\Http\Controllers\WorkflowMaster\MasterController;
+use App\Http\Controllers\WorkflowMaster\RoleController;
+use App\Http\Controllers\WorkflowMaster\WardUserController;
 use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
-use App\Http\Controllers\WorkflowMaster\WfWorkflowController;
 use App\Http\Controllers\WorkflowMaster\WorkflowMap;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleController;
 use App\Http\Controllers\WorkflowMaster\WorkflowWardUserController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleUserMapController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleMapController;
+use App\Http\Controllers\WorkflowMaster\WorkflowController as WfController;
 
 
 
@@ -225,14 +226,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-ulb-ward/{id}', 'getUlbWardByID');       // Get Ulb Ward Details by ID
         Route::get('get-all-ulb-wards', 'getAllUlbWards');       // Get All Ulb Wards
     });
-
-    /**
-     * | Created On-20-08-2022 
-     * | Created By-Anshu Kumar
-     * | Ward Users Masters Operations
-     */
-    Route::resource('ward/masters/ward-user', WardUserController::class);
 });
+
 
 // Routes used where authentication not required
 Route::group(['middleware' => ['json.response', 'request_logger']], function () {
@@ -269,9 +264,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     /**
      * Wf workflow CRUD operation
      */
-    Route::apiResource("workflow", WfWorkflowController::class);
 
-    Route::controller(MasterController::class)->group(function () {
+    Route::controller(WfController::class)->group(function () {
         Route::post('workflow/wfworkflow/save', 'createWorkflow');                     // Save Workflow
         Route::post('workflow/wfworkflow/edit', 'updateWorkflow');                     // Edit Workflow 
         Route::post('workflow/wfworkflow/byId', 'workflowbyId');                       // Get Workflow By Id
@@ -285,7 +279,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(WorkflowRoleController::class)->group(function () {
         Route::post('crud/roles/save-role', 'create');                      // Save Role
-        Route::put('crud/roles/edit-role', 'editRole');                     // edit Role 
+        Route::put('crud/roles/edit-role', 'editRole');                     // edit Role
         Route::post('crud/roles/get-role', 'getRole');                      // Get Role By Id
         Route::get('crud/roles/get-all-roles', 'getAllRoles');              // Get All Roles
         Route::delete('crud/roles/delete-role', 'deleteRole');              // Delete Role
@@ -293,9 +287,31 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
 
     /**
+     * ============== To be replaced with upper api  =================
+     */
+    Route::controller(RoleController::class)->group(function () {
+        Route::post('workflow/roles/save', 'createRole');                   // Save Role
+        Route::post('workflow/roles/edit', 'editRole');                     // edit Role
+        Route::post('workflow/roles/get', 'getRole');                       // Get Role By Id
+        Route::post('workflow/roles/list', 'getAllRoles');                  //Get All Roles          
+        Route::post('workflow/roles/delete', 'deleteRole');                 // Delete Role
+    });
+    /**
+     * ===================================================================
+     */
+
+
+    /**
      * Ward User CRUD operation
      */
-    Route::apiResource("warduser", WorkflowWardUserController::class);
+    Route::controller(WardUserController::class)->group(function () {
+        Route::post('workflow/ward-user/save', 'createWardUser');                     // Save Workflow
+        Route::post('workflow/ward-user/edit', 'updateWardUser');                     // Edit Workflow 
+        Route::post('workflow/ward-user/byId', 'WardUserbyId');                       // Get Workflow By Id
+        Route::post('workflow/ward-user/list', 'getAllWardUser');                     // Get All Workflow
+        Route::post('workflow/ward-user/delete', 'deleteWardUser');                   // Delete Workflow
+    });
+
 
     /**
      * Role User Map CRUD operation
@@ -314,7 +330,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * Workflow Role Map CRUD operation
      */
 
-    Route::apiResource("rolemap", WorkflowRoleMapController::class);
+    Route::controller(WorkflowRoleMapController::class)->group(function () {
+        Route::post('workflow/role-map/save', 'createRoleMap');                     // Save Workflow
+        Route::post('workflow/role-map/edit', 'updateRoleMap');                     // Edit Workflow 
+        Route::post('workflow/role-map/byId', 'roleMapbyId');                       // Get Workflow By Id
+        Route::post('workflow/role-map/list', 'getAllRoleMap');                     // Get All Workflow
+        Route::post('workflow/role-map/delete', 'deleteRoleMap');                   // Delete Workflow
+    });
 
 
 
@@ -373,7 +395,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('finisher', 'finisherId');
     });
 });
-
 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
 

@@ -44,10 +44,10 @@ class RouteServiceProvider extends ServiceProvider
                 ->group(base_path('routes/api.php'));
 
             // // Workflow Api
-            Route::prefix('api/workflow')
-                ->middleware('api')
-                ->namespace($this->namespace)
-                ->group(base_path('routes/workflow.php'));
+            // Route::prefix('api/workflow')
+            //     ->middleware('api')
+            //     ->namespace($this->namespace)
+            //     ->group(base_path('routes/workflow.php'));
 
 
             Route::prefix('api/water')
