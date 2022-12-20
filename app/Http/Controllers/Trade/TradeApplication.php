@@ -11,13 +11,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use App\Http\Requests\Trade\ReqAddRecorde;
 use App\Http\Requests\Trade\paymentCounter;
+use App\Http\Requests\Trade\ReqApplyDenail;
 use App\Http\Requests\Trade\ReqPaybleAmount;
 use App\Http\Requests\Trade\ReqInbox;
 use App\Http\Requests\Trade\ReqPostNextLevel;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
+use App\Models\Workflows\WfWorkflow;
 use Exception;
 
-class ApplyApplication extends Controller
+class TradeApplication extends Controller
 {
 
     /**
@@ -192,13 +194,62 @@ class ApplyApplication extends Controller
     {
         return $this->Repository->licenceCertificate($request->id);
     }
-    public function applyDenail(Request $request)
+    public function applyDenail(ReqApplyDenail $request)
     {
-        return $this->Repository->addDenail($request);
+        try{
+            $user = Auth()->user();
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                    ->where('ulb_id', $ulbId)
+                    ->first();
+            if (!$workflowId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $role = $this->_parent->getUserRoll($userId,$ulbId,$workflowId->wf_master_id); 
+            if (!$role) 
+            {
+                throw new Exception("You Are Not Authorized");
+            }
+            $userType = $this->_parent->userType($refWorkflowId);
+            if(!in_array(strtoupper($userType),["TC","UTC"]))
+            {
+                throw new Exception("You Are Not Authorize For Apply Denial");
+            }
+            if($request->getMethod()=='GET')
+            {
+                $data['wardList'] = $this->_parent->WardPermission($userId);
+                return  responseMsg(true,"",$data);
+            }
+            return $this->Repository->addDenail($request);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }        
     }
     public function denialInbox(Request $request)
     {
-        return $this->Repository->denialInbox($request);
+        try{
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $workflow_id = Config::get('workflow-constants.TRADE_NOTICE_ID');
+            $role = $this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id) ;
+            $role_id = $role->role_id??-1;
+            if( !$role  || !in_array($role_id,[10]))
+            {
+                throw new Exception("You Are Not Authorized");
+            }
+            return $this->Repository->denialInbox($request);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+        
     }
     public function denialview(Request $request)
     {

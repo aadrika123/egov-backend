@@ -1,7 +1,7 @@
 <?php 
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Trade\ApplyApplication;
+use App\Http\Controllers\Trade\TradeApplication;
 
 /**
  * | Created On-06-10-2022 
@@ -18,7 +18,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * Created By- Sandeep Bara
      *  
      */
-    Route::controller(ApplyApplication::class)->group(function () {        
+    Route::controller(TradeApplication::class)->group(function () {        
         Route::match(["get", "post"], 'apply/{applicationType}/{id?}', 'applyApplication');
         Route::post('getCharge', 'paybleAmount');
         Route::post('getPropertyByHolding', 'validateHoldingNo');
@@ -49,7 +49,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('citizenApplication/{id}', 'readCitizenLicenceDtl');
     });
 });
-Route::controller(ApplyApplication::class)->group(function () {    
+Route::controller(TradeApplication::class)->group(function () {    
     Route::get('paymentReceipt/{id}/{transectionId}', 'paymentReceipt');
     Route::get('provisionalCertificate/{id}', 'provisionalCertificate');
     Route::get('licenceCertificate/{id}', 'licenceCertificate');

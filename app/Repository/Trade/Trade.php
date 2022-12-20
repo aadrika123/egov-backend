@@ -3378,65 +3378,22 @@ class Trade implements ITrade
 
     # Serial No : 21
     public function addDenail(Request $request)
-    {
+    { 
         $user = Auth()->user();
         $userId = $user->id;
         $ulbId = $user->ulb_id;
-        $nowdate = Carbon::now()->format('Y-m-d'); 
-        $timstamp = Carbon::now()->format('Y-m-d H:i:s');                
-        $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
-        $alphaNumCommaSlash='/^[a-zA-Z0-9- ]+$/i';
-        $alphaSpace ='/^[a-zA-Z ]+$/i';
-        $alphaNumhyphen ='/^[a-zA-Z0-9- ]+$/i';
-        $numDot = '/^\d+(?:\.\d+)+$/i';
-        $dateFormatYYYMMDD ='/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))+$/i';
-        $dateFormatYYYMM='/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';        
         try{
             $data = array();
-            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
             $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
                 ->where('ulb_id', $ulbId)
                 ->first();
-            if (!$workflowId) 
-            {
-                throw new Exception("Workflow Not Available");
-            }
-            $role = $this->_parent->getUserRoll($userId,$ulbId,$workflowId->wf_master_id); 
-            if (!$role) 
-            {
-                throw new Exception("You Are Not Authorized");
-            } 
-            $role_id = $role->role_id;  
-            $userType = $this->_parent->userType($refWorkflowId);
-            if(!in_array(strtoupper($userType),["TC","UTC"]))
-            {
-                throw new Exception("You Are Not Authorize For Apply Denial");
-            }
-            if($request->getMethod()=='GET')
-            {
-                $data['wardList'] = $this->_parent->WardPermission($userId);
-                return  responseMsg(true,"",$data);
-            }
+            
+            $role = $this->_parent->getUserRoll($userId,$ulbId,$workflowId->wf_master_id);
+            $role_id = $role->role_id;
+            $mForwardRoleId = $role->forward_role_id  ;     
             if($request->getMethod()=='POST')
             {
-                
-                $rules = [];
-                $message = [];
-                $rules["firmName"]="required|regex:$regex";
-                $rules["ownerName"]="required|regex:$regex";
-                $rules["wardNo"]="required|int";
-                $rules["holdingNo"]="required";
-                $rules["address"]="required|regex:$regex";
-                $rules["landmark"]="required|regex:$regex";
-                $rules["city"]="required|regex:$regex";
-                $rules["pinCode"]="required|digits:6";
-                $rules["mobileNo"]="digits:10";
-                $rules["comment"]="required|regex:$regex|min:10";
-                $rules["document"]="required|mimes:pdf,jpg,jpeg,png|max:2048";
-                $validator = Validator::make($request->all(), $rules, $message);
-                if ($validator->fails()) {
-                    return responseMsg(false, $validator->errors(),$request->all());
-                }
                 DB::beginTransaction();
                 $denialConsumer = new TradeDenialConsumerDtl;
                 $denialConsumer->firm_name  =$request->firmName;
@@ -3466,21 +3423,17 @@ class Trade implements ITrade
                 if($denial_id)
                 {   
                     $file = $request->file("document");
-                    $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+                    $file_ext =  $file->getClientOriginalExtension();
                     $fileName = "denial_image/$denial_id.$file_ext";
                     $filePath = $this->uplodeFile($file,$fileName);
-                    $data["filePath"] =  $filePath;
-                    $data["file_url"]=config('file.url');
-                    $data["upload_url"] = storage_path('app/public/' . $filePath);
-                    
                     $denialConsumer->file_name = $filePath ;
-                    $denialConsumer->save();
+                    $denialConsumer->update();
                     
                     $tradeMail = new TradeDenialMailDtl;
                     $tradeMail->denial_consumer_id = $denial_id;
                     $tradeMail->sender_id = $userId;
                     $tradeMail->sender_user_type_id = $role_id;
-                    $tradeMail->receiver_user_type_id = 10; 
+                    $tradeMail->receiver_user_type_id = $mForwardRoleId; 
                     $tradeMail->remarks     = $request->comment;
                     $tradeMail->save();
                 
@@ -3514,10 +3467,11 @@ class Trade implements ITrade
             $rules["comments"] = "required|min:10|regex:$mRegex";
             $rules["licenceId"]="required||digits_between:1,9223372036854775807";
             $validator = Validator::make($request->all(), $rules,);
-            if ($validator->fails()) {
+            if ($validator->fails()) 
+            {
                 return responseMsg(false, $validator->errors(),$request->all());
             }
-            // SAF Details
+
             $refLicense = ActiveLicence::find($request->licenceId);
             if(!$refLicense)
             {
@@ -3562,6 +3516,27 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+    # Serial No : 23.01
+    public function getIndipendentComment($licenceId)
+    {
+        try{
+            $data = WorkflowTrack::select("workflow_tracks.*","users.user_name",
+                        DB::raw("CASE WHEN wf_roles.id ISNULL THEN 'Citizen' ELSE wf_roles.role_name END AS role_name")
+                    )
+                    ->join("users","users.id","workflow_tracks.citizen_id")
+                    ->leftjoin("wf_roles","wf_roles.id","workflow_tracks.commented_by")
+                    ->where("workflow_tracks.ref_table_dot_id","active_licences")
+                    ->where("workflow_tracks.ref_table_id_value",$licenceId)
+                    ->where("workflow_tracks.module_id",Config::get('TradeConstant.MODULE-ID'))
+                    ->orderBy("workflow_tracks.track_date")
+                    ->get();
+            return $data;
+        }
+        catch (Exception $e)
+        {            
+            return[];
+        }
+    }
 
     /**
      * Only for EO (Exicutive Officer)
@@ -3575,11 +3550,11 @@ class Trade implements ITrade
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $role_id = $this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??-1;
-            $mUserType = $this->_parent->userType($workflow_id);
-            //dd($role_id);
-            if(!in_array($role_id,[10]))
+            $workflow_id = Config::get('workflow-constants.TRADE_NOTICE_ID');
+            $role = $this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id) ;
+            $role_id = $role->role_id??-1;
+            $mUserType = $this->_parent->userType($workflow_id); 
+            if( !$role  || !in_array($role_id,[10]))
             {
                 throw new Exception("You Are Not Authorized");
             }
@@ -3669,7 +3644,7 @@ class Trade implements ITrade
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $workflow_id = Config::get('workflow-constants.TRADE_NOTICE_ID');
             $role_id = $this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??-1;
             $mUserType = $this->_parent->userType($workflow_id);
 
@@ -4222,27 +4197,6 @@ class Trade implements ITrade
     
         return $denialAmount;
     } 
-
-    public function getIndipendentComment($licenceId)
-    {
-        try{
-            $data = WorkflowTrack::select("workflow_tracks.*","users.user_name",
-                        DB::raw("CASE WHEN wf_roles.id ISNULL THEN 'Citizen' ELSE wf_roles.role_name END AS role_name")
-                    )
-                    ->join("users","users.id","workflow_tracks.citizen_id")
-                    ->leftjoin("wf_roles","wf_roles.id","workflow_tracks.commented_by")
-                    ->where("workflow_tracks.ref_table_dot_id","active_licences")
-                    ->where("workflow_tracks.ref_table_id_value",$licenceId)
-                    ->where("workflow_tracks.module_id",Config::get('TradeConstant.MODULE-ID'))
-                    ->orderBy("workflow_tracks.track_date")
-                    ->get();
-            return $data;
-        }
-        catch (Exception $e){
-            echo $e->getMessage();die;
-            return[];
-        }
-    }
     public function getAllApplicationType()
     {
         try
