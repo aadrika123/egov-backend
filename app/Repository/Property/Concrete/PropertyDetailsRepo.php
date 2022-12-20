@@ -10,18 +10,16 @@ use App\Models\Property\PropProperty;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use Exception;
 
+/**
+ * | Created On-26-11-2022 
+ * | Created By-Sam kerkettta
+ * --------------------------------------------------------------------------------------
+ * | Controller regarding with Propery Module (Property Details)
+ */
+
+
 class PropertyDetailsRepo implements iPropertyDetailsRepo
 {
-    /**
-     * | Created On-26-11-2022 
-     * | Created By-Sam kerkettta
-     * --------------------------------------------------------------------------------------
-     * | Controller regarding with Propery Module (Property Details)
-     */
-
-
-
-
     /**
      * |--------------------------------------- filtring the details of Property / returning-----------------------------------------------
      * | @param request
@@ -40,27 +38,27 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
         try {
             $requestDetails = $request->filteredBy;
             switch ($requestDetails) {
-                case ("HoldingNo"): {
-                        $filterByHolding = $this->searchByHolding($request);
-                        if (empty($filterByHolding['0'])) {
-                            return responseMsg(false, "Data Not Found!", $request->search);
-                        }
-                        return responseMsg(true, "Data According to Holding!", remove_null($filterByHolding));
+                case ("HoldingNo"):
+                    $filterByHolding = $this->searchByHolding($request);
+                    if (empty($filterByHolding['0'])) {
+                        return responseMsg(false, "Data Not Found!", $request->search);
                     }
-                case ("OwnerDetail"): {
-                        $filterByOwner = $this->searchByOwner($request);
-                        if (empty($filterByOwner['0'])) {
-                            return responseMsg(false, "Data Not Found!", $request->search);
-                        }
-                        return responseMsg(true, "Data According to Owner!", remove_null($filterByOwner));
+                    return responseMsg(true, "Data According to Holding!", remove_null($filterByHolding));
+                    break;
+                case ("OwnerDetail"):
+                    $filterByOwner = $this->searchByOwner($request);
+                    if (empty($filterByOwner['0'])) {
+                        return responseMsg(false, "Data Not Found!", $request->search);
                     }
-                case ("Address"): {
-                        $filterByAddress = $this->searchByAddress($request);
-                        if (empty($filterByAddress['0'])) {
-                            return responseMsg(false, "Data Not Found!", $request->search);
-                        }
-                        return responseMsg(true, "Data According to Address!", remove_null($filterByAddress));
+                    return responseMsg(true, "Data According to Owner!", remove_null($filterByOwner));
+                    break;
+                case ("Address"):
+                    $filterByAddress = $this->searchByAddress($request);
+                    if (empty($filterByAddress['0'])) {
+                        return responseMsg(false, "Data Not Found!", $request->search);
                     }
+                    return responseMsg(true, "Data According to Address!", remove_null($filterByAddress));
+                    break;
                 default:
                     return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", "");
             }
@@ -136,7 +134,6 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
      */
     public function searchByAddress($request)
     {
-        // return $request->wardId;
         if (($request->wardId) == 0) {
             return PropProperty::select(
                 'prop_properties.id AS id',
@@ -191,6 +188,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         $waterHarvesting = new PropActiveHarvesting();  //<---------- May change
                         return $waterHarvesting->allRwhDetails($request);
                     }
+                    break;
                 case ("concession"): {
                         $filterByConcession = $this->searchByConcession($request);
                         if (empty($filterByConcession['0'])) {
@@ -198,6 +196,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         }
                         return responseMsg(true, "Data According to Concession!", remove_null($filterByConcession));
                     }
+                    break;
                 case ("objection"): {
                         $filterByObjestion = $this->searchByObjection($request);
                         if (empty($filterByObjestion['0'])) {
@@ -205,6 +204,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         }
                         return responseMsg(true, "Data According to Objection!", remove_null($filterByObjestion));
                     }
+                    break;
                 case ("mutation"): {
                         $filterByMutation = $this->searchByMutation($request);
                         if (empty($filterByMutation['0'])) {
@@ -212,6 +212,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         }
                         return responseMsg(true, "Data According to Mutation!", remove_null($filterByMutation));
                     }
+                    break;
                 case ("reAssisment"): {
                         $filterByReAssisment = $this->searchByReAssisment($request);
                         if (empty($filterByReAssisment['0'])) {
@@ -219,6 +220,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         }
                         return responseMsg(true, "Data According to ReAssisment!", remove_null($filterByReAssisment));
                     }
+                    break;
                 case ("newAssisment"): {
                         $filterByNewAssisment = $this->searchByNewAssisment($request);
                         if (empty($filterByNewAssisment['0'])) {
@@ -226,6 +228,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         }
                         return responseMsg(true, "Data According to NewAssisment!", remove_null($filterByNewAssisment));
                     }
+                    break;
                 default:
                     return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", $request->filteredBy);
             }
@@ -237,6 +240,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
     /**
      * |-------------------------- details of Active Concillation  2.1 -----------------------------------------------
      * | @param request
+     * | Operation : serch applicants by ward/ cncession Id
      */
     public function searchByConcession($request)
     {
@@ -266,6 +270,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
     /**
      * |-------------------------- details of Active Objection  2.2 -----------------------------------------------
      * | @param request
+     * | Operation : serch Objection applicants by ward / objectionId
      */
     public function searchByObjection($request)
     {
@@ -295,6 +300,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
     /**
      * |-------------------------- details of Active Mutation 2.3 -----------------------------------------------
      * | @param request
+     * | Opertion : serch mutation applicant by ward / mutationId
      */
     public function searchByMutation($request)
     {
@@ -325,6 +331,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
     /**
      * |-------------------------- details of Active Re Assisment 2.4-----------------------------------------------
      * | @param request
+     * | Operation : serch applicants by ward / reassisment details
      */
     public function searchByReAssisment($request)
     {
@@ -355,6 +362,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
     /**
      * |-------------------------- details of Active New Assisment 2.5-----------------------------------------------
      * | @param request
+     * | Opration : serch applicants by ward / newAssisment details
      */
     public function searchByNewAssisment($request)
     {
@@ -414,6 +422,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         }
                         return responseMsg(true, "Data of RainWaterHarvesting!", remove_null($mWaterHarvesting));
                     }
+                    break;
                 case ("concession"): {
                         $concession = new PropActiveConcession();
                         $mConcession = $concession->allConcession($request);
@@ -422,6 +431,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         }
                         return responseMsg(true, "Data of Concesion!", remove_null($mConcession));
                     }
+                    break;
                 case ("objection"): {
                         $objection = new PropActiveObjection();
                         $mObjection = $objection->allObjection($request);
@@ -430,6 +440,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         }
                         return responseMsg(true, "Data of Objection!", remove_null($mObjection));
                     }
+                    break;
                 case ("mutation"): {
                         $mutation = new PropActiveSaf();
                         $mMutation = $mutation->allMutation($request);
@@ -438,6 +449,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         }
                         return responseMsg(true, "Data of Mutation!", remove_null($mMutation));
                     }
+                    break;
                 case ("reAssisment"): {
                         $reAssisment = new PropActiveSaf();
                         $mReAssisment = $reAssisment->allReAssisment($request);
@@ -446,6 +458,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         }
                         return responseMsg(true, "Data of ReAssisment!", remove_null($mReAssisment));
                     }
+                    break;
                 case ("newAssisment"): {
                         $newAssisment = new PropActiveSaf();
                         $mNewAssisment = $newAssisment->allNewAssisment($request);
@@ -454,6 +467,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         }
                         return responseMsg(true, "Data of NewAssisment!", remove_null($mNewAssisment));
                     }
+                    break;
                 default:
                     return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", $request->filterBy);
             }

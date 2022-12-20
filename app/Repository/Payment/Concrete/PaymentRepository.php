@@ -350,26 +350,32 @@ class PaymentRepository implements iPayment
                     $reconciliationTypeWise = $this->reconciliationTypeWise($request);
                     return $reconciliationTypeWise;
                 }
+                break;
             case (null == ($request->chequeDdNo) && null == ($request->verificationType) && !null == ($request->paymentMode)): {
                     $reconciliationModeWise = $this->reconciliationModeWise($request);
                     return $reconciliationModeWise;
                 }
+                break;
             case (null == ($request->chequeDdNo) && null == ($request->verificationType) && null == ($request->paymentMode)): {
                     $reconciliationDateWise = $this->reconciliationDateWise($request);
                     return $reconciliationDateWise;
                 }
+                break;
             case (!null == ($request->chequeDdNo) && null == ($request->verificationType) && null == ($request->paymentMode)): {
                     $reconciliationOnlyTranWise = $this->reconciliationOnlyTranWise($request);
                     return $reconciliationOnlyTranWise;
                 }
+                break;
             case (!null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode) && !null == ($request->fromDate)): {
                     $reconciliationWithAll = $this->reconciliationWithAll($request);
                     return $reconciliationWithAll;
                 }
+                break;
             case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode)): {
                     $reconciliationModeType = $this->reconciliationModeType($request);
                     return $reconciliationModeType;
                 }
+                break;
             default:
                 return ("Some error RENETR the details!");
         }

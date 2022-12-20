@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * |-------------------------------- Razorpay Payments ------------------------------------------|
+ * | used for testing Razorpay Paymentgateway
+    | FLAG : only use for testing purpuse
+ */
 
 class RazorpayPaymentController extends Controller
 {

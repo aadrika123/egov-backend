@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
  * | Created On-14-11-2022 
  * | Created By- sam kerketta
  * | Payment Master for Testing Payment Gateways
+    | FLAG : removal of some function / use for testing
  */
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     Route::controller(RazorpayPaymentController::class)->group(function () {
@@ -28,7 +29,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get-paymentgateway-byrequests', 'getPaymentgatewayByrequests');                // returning payment gateway data according to the request data condition
         Route::post('get-pg-details', 'getPgDetails');                                              // returning the payment gateway details accordin to the request data condition
         Route::get('get-webhook-details', 'getWebhookDetails');                                     // returning all the webhook details 
-        Route::post('get-order-id', 'getTraitOrderId'); //<----------------- here (INVALID)
         Route::post('verify-payment-status', 'verifyPaymentStatus');                                // verifiying the payment status and saving both success, fails, suspeciousdata  
         Route::post('get-transaction-no-details', 'getTransactionNoDetails');                       // geting details of the transaction according to the orderId, paymentId and payment status
         Route::get('all-module-transaction', 'allModuleTransaction');                                // all details of payments according to user Id 
