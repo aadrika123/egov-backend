@@ -11,6 +11,7 @@ return [
     "EFFECTIVE_DATE_RULE2" => "2016-04-01",
     "EFFECTIVE_DATE_RULE3" => "2022-04-01",
     "VACANT_PROPERTY_TYPE" => "4",
+    "SAF_TOWARDS" => "Holding Tax and Others",
 
     // Mutation Reassessment and New Assessment Workflows
     "SAF_WORKFLOWS" => [3, 4, 5],

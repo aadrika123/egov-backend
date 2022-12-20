@@ -1009,10 +1009,10 @@ class SafRepository implements iSafRepository
             $transaction = new PropTransaction();
             $propPenalties = new PropPenalty();
             $mOnePercPenaltyId = Config::get('PropertyConstaint.PENALTIES.LATE_ASSESSMENT_ID');
+            $mTowards = Config::get('PropertyConstaints.SAF_TOWARDS');
 
-            $applicationIds = $paymentData->getApplicationId($req->paymentId);
-            $safId = json_decode($applicationIds)->applicationId;
-            // $safId = $req->safId;
+            $applicationDtls = $paymentData->getApplicationId($req->paymentId);
+            $safId = json_decode($applicationDtls)->applicationId;
 
             $reqSafId = new Request(['id' => $safId]);
             $demands = $propSafsDemand->getDemandBySafId($safId);
@@ -1050,12 +1050,17 @@ class SafRepository implements iSafRepository
                 "chequeDate" => "",
                 "noOfFlats" => "",
                 "monthlyRate" => "",
+                "onePercPenalty" => roundFigure($mOnePercPenalty),
                 "demandAmount" => $propTrans->amount,
                 "paidAmount" => $propTrans->amount,
-                "onePercPenalty" => roundFigure($mOnePercPenalty),
+                "paidAmountInWords" => getIndianCurrency($propTrans->amount),
                 "remainingAmount" => 0,
                 "tcName" => "",
-                "tcMobile" => ""
+                "tcMobile" => "",
+                "ulbId" => $activeSafDetails->original['data']['ulb_id'],
+                "oldWardNo" => $activeSafDetails->original['data']['old_ward_no'],
+                "newWardNo" => $activeSafDetails->original['data']['new_ward_no'],
+                "towards" => $mTowards
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "451ms", "POST", $req->deviceId);
         } catch (Exception $e) {
