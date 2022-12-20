@@ -91,11 +91,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     /**
      * Routes for User 
      * Created By-Anshu Kumar
+     * Updated By-Sam Kerketta
      * Created On-20-06-2022 
      * Modified On-27-06-2022 
      */
     Route::controller(UserController::class)->group(function () {
-        Route::post('authorised-register', 'authorizeStore');             // authorised user adding user // Sam
+        Route::post('authorised-register', 'authorizeStore');             // authorised user adding user // 
         Route::get('test', 'testing');
         Route::post('logout', 'logOut');
         Route::post('change-password', 'changePass');
