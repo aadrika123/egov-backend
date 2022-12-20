@@ -11,13 +11,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use App\Http\Requests\Trade\ReqAddRecorde;
 use App\Http\Requests\Trade\paymentCounter;
+use App\Http\Requests\Trade\ReqApplyDenail;
 use App\Http\Requests\Trade\ReqPaybleAmount;
 use App\Http\Requests\Trade\ReqInbox;
 use App\Http\Requests\Trade\ReqPostNextLevel;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
+use App\Models\Workflows\WfWorkflow;
 use Exception;
 
-class ApplyApplication extends Controller
+class TradeApplication extends Controller
 {
 
     /**
@@ -37,6 +39,7 @@ class ApplyApplication extends Controller
         $this->_modelWard = new ModelWard();
         $this->_parent = new CommonFunction();
     }
+    # Serial No : 01
     public function applyApplication(ReqAddRecorde $request)
     {   
         $refUser            = Auth()->user();
@@ -78,69 +81,94 @@ class ApplyApplication extends Controller
             return responseMsg(false,$e->getMessage(),$request->all());
         } 
     }
-    public function paybleAmount(ReqPaybleAmount $request)
-    {      
-        return $this->Repository->getPaybleAmount($request);
-    }
-    public function validateHoldingNo(Request $request)
+    public function paymentCounter(paymentCounter $request)
     {
-        return $this->Repository->isvalidateHolding($request);
+        return $this->Repository->paymentCounter($request);
     }
+    # Serial No : 02
+    public function updateLicenseBo(ReqUpdateBasicDtl $request)
+    {
+        return $this->Repository->updateLicenseBo($request);
+    }
+    
+    public function updateBasicDtl(ReqUpdateBasicDtl $request)
+    {
+        return $this->Repository->updateBasicDtl($request);
+    }
+    # Serial No : 03
+    public function handeRazorPay(Request $request)
+    {
+        return $this->Repository->handeRazorPay($request);
+    }
+    # Serial No : 04
     public function paymentReceipt(Request $request)
     {
         $id = $request->id;
         $transectionId =  $request->transectionId;
         return $this->Repository->readPaymentReceipt($id,$transectionId);
     }
-    public function updateLicenseBo(ReqUpdateBasicDtl $request)
-    {
-        return $this->Repository->updateLicenseBo($request);
-    }
-    public function updateBasicDtl(ReqUpdateBasicDtl $request)
-    {
-        return $this->Repository->updateBasicDtl($request);
-    }
+    # Serial No : 05
     public function documentUpload(Request $request)
     {
         return $this->Repository->documentUpload($request);
     }
+     # Serial No : 06
     public function getUploadDocuments(Request $request)
     {
         return $this->Repository->getUploadDocuments($request);
     }
-    
+     # Serial No : 07
     public function documentVirify(Request $request)
     {
         return $this->Repository->documentVirify($request);
     }
+    # Serial No : 08 
     public function getLicenceDtl(Request $request)
     {
         return $this->Repository->readLicenceDtl($request->id);
     }
+    # Serial No : 09 
     public function getDenialDetails(Request $request)
     {
         return $this->Repository->readDenialdtlbyNoticno($request);
     }
+     # Serial No : 10 
+    public function paybleAmount(ReqPaybleAmount $request)
+    {      
+        return $this->Repository->getPaybleAmount($request);
+    }
+
+    # Serial No : 12 
+    public function validateHoldingNo(Request $request)
+    {
+        return $this->Repository->isvalidateHolding($request);
+    }
+    # Serial No : 13 
     public function searchLicence(Request $request)
     {
         return $this->Repository->searchLicenceByNo($request);
     }
+    # Serial No : 14
     public function readApplication(Request $request)
     {
         return $this->Repository->readApplication($request);
     }
+    # Serial No : 15
     public function postEscalate(Request $request)
     {
         return $this->Repository->postEscalate($request);
     }
+    # Serial No : 16
     public function inbox(ReqInbox $request)
     {
         return $this->Repository->inbox($request);
     }
+    # Serial No : 17
     public function outbox(Request $request)
     {
         return $this->Repository->outbox($request);
     }
+    # Serial No : 18
     public function postNextLevel(ReqPostNextLevel $request)
     {
         try{ 
@@ -168,58 +196,111 @@ class ApplyApplication extends Controller
             return responseMsg(false, $e->getMessage(), $request->all());
         }       
     }
-    public function addIndependentComment(Request $request)
-    {
-        return $this->Repository->addIndependentComment($request);
-    }
-    public function readIndipendentComment(Request $request)
-    {
-        return $this->Repository->readIndipendentComment($request);
-    }
-    public function paymentCounter(paymentCounter $request)
-    {
-        return $this->Repository->paymentCounter($request);
-    }
-    public function handeRazorPay(Request $request)
-    {
-        return $this->Repository->handeRazorPay($request);
-    }
+    # Serial No : 19
     public function provisionalCertificate(Request $request)
     {
         return $this->Repository->provisionalCertificate($request->id);
     }
+    # Serial No : 20
     public function licenceCertificate(Request $request)
     {
         return $this->Repository->licenceCertificate($request->id);
     }
-    public function applyDenail(Request $request)
+    # Serial No : 21
+    public function applyDenail(ReqApplyDenail $request)
     {
-        return $this->Repository->addDenail($request);
+        try{
+            $user = Auth()->user();
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                    ->where('ulb_id', $ulbId)
+                    ->first();
+            if (!$workflowId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $role = $this->_parent->getUserRoll($userId,$ulbId,$workflowId->wf_master_id); 
+            if (!$role) 
+            {
+                throw new Exception("You Are Not Authorized");
+            }
+            $userType = $this->_parent->userType($refWorkflowId);
+            if(!in_array(strtoupper($userType),["TC","UTC"]))
+            {
+                throw new Exception("You Are Not Authorize For Apply Denial");
+            }
+            if($request->getMethod()=='GET')
+            {
+                $data['wardList'] = $this->_parent->WardPermission($userId);
+                return  responseMsg(true,"",$data);
+            }
+            return $this->Repository->addDenail($request);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }        
     }
+    # Serial No : 22
+    public function addIndependentComment(Request $request)
+    {
+        return $this->Repository->addIndependentComment($request);
+    }
+    # Serial No : 23
+    public function readIndipendentComment(Request $request)
+    {
+        return $this->Repository->readIndipendentComment($request);
+    }
+    # Serial No : 24
     public function denialInbox(Request $request)
     {
-        return $this->Repository->denialInbox($request);
+        try{
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $workflow_id = Config::get('workflow-constants.TRADE_NOTICE_ID');
+            $role = $this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id) ;
+            $role_id = $role->role_id??-1;
+            if( !$role  || !in_array($role_id,[10]))
+            {
+                throw new Exception("You Are Not Authorized");
+            }
+            return $this->Repository->denialInbox($request);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+        
     }
+    # Serial No : 25
     public function denialview(Request $request)
     {
         $id = $request->id;
         $mailID = $request->mailID;
         return $this->Repository->denialView($id,$mailID,$request);
     }
+    # Serial No : 26
     public function approvedApplication(Request $request)
     {
         return $this->Repository->approvedApplication($request);
     }
-    public function reports(Request $request)
-    {
-        return $this->Repository->reports($request);
-    }
+    # Serial No : 27
     public function citizenApplication(Request $request)
     {
         return $this->Repository->citizenApplication();
     }
+    # Serial No : 28
     public function readCitizenLicenceDtl($id)
     {
         return $this->Repository->readCitizenLicenceDtl($id);
     }
+    
+    public function reports(Request $request)
+    {
+        return $this->Repository->reports($request);
+    }
+    
 }
