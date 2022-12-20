@@ -23,6 +23,7 @@ use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropLevelPending;
+use App\Models\Property\PropPenalty;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropSafVerification;
@@ -288,7 +289,7 @@ class SafRepository implements iSafRepository
             $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
 
             $tax = new InsertTax();
-            $tax->insertTax($saf->id, $user_id, $safTaxes);                                         // Insert SAF Tax
+            $tax->insertTax($safId, $user_id, $safTaxes);                                               // Insert SAF Tax
 
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
@@ -383,7 +384,7 @@ class SafRepository implements iSafRepository
                     'u.user_name as citizenName'
                 )
                 ->where('ref_table_id_value', $data['id'])
-                ->join('users as u', 'u.id', '=', 'workflow_tracks.commented_by')
+                ->join('users as u', 'u.id', '=', 'workflow_tracks.user_id')
                 ->get();
 
             $data['citizenComment'] = $citizenComment;
@@ -841,6 +842,7 @@ class SafRepository implements iSafRepository
             $rebates = $calculateSafById['data']['rebates'];
             $totalAmount = $demands['payableAmount'];
             $lateAssessPenalty = $calculateSafById['data']['demand']['lateAssessmentPenalty'];
+
             // Check Requested amount is matching with the generated amount or not
             // if ($req->amount == $totalAmount) {
             $orderDetails = $this->saveGenerateOrderid($req);       //<---------- Generate Order ID Trait
@@ -1003,10 +1005,13 @@ class SafRepository implements iSafRepository
     {
         try {
             $paymentData = new WebhookPaymentData();
-            $applicationIds = $paymentData->getApplicationId($req->paymentId);
-            $safId = json_decode($applicationIds)->applicationId;
-            $reqSafId = new Request(['id' => $safId]);
             $propSafsDemand = new PropSafsDemand();
+            $transaction = new PropTransaction();
+            $propPenalties = new PropPenalty();
+
+            $applicationIds = $paymentData->getApplicationId($req->paymentId);
+            $safId = json_decode($applicationIds)->applicationId ?? $req->safId;
+            $reqSafId = new Request(['id' => $safId]);
             $demands = $propSafsDemand->getDemandBySafId($safId);
 
             $fromFinYear = $demands->first()['fyear'];
@@ -1015,10 +1020,14 @@ class SafRepository implements iSafRepository
             $upToFinQtr = $demands->last()['qtr'];
             $activeSafDetails = $this->details($reqSafId);
 
-            $transaction = new PropTransaction();
+            // Get PropertyTransactions
             $propTrans = $transaction->getPropTransactions($safId, "saf_id");
             $propTrans = collect($propTrans)->last();
 
+
+            // Get Property Penalties against property transaction
+            $propPenalties = $propPenalties->getPenalties('tran_id', $propTrans->id);
+            return $propPenalties;
             // Response Return Data
             $responseData = [
                 "transactionDate" => $propTrans->tran_date,
