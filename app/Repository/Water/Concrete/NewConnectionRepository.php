@@ -152,22 +152,6 @@ class NewConnectionRepository implements iNewConnection
      * | @var ulbWorkflowId : calling the function on model:WfWorkflow 
      * | @var objCall : object for the model (WaterNewConnection)
      * | @var newConnectionCharges :
-     * | @var
-     * | @var
-     * | @var
-     * | @var
-     * | @var
-     * | @var
-     * | @var
-     * | @var
-     * | @var
-     * | @var
-     * | @var
-     * | @var
-     * | @var
-     * | @var
-     * | @var
-     * | @var
      * | Post the value in Water Application table
      * | post the value in Water Applicants table by loop
      * ------------------------------------------------------------------------------------

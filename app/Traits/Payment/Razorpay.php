@@ -50,7 +50,7 @@ trait Razorpay
     {
         try {
             $mUserID = auth()->user()->id;
-            $mUlbID = $request["ulb_id"];                                           // user Id
+            $mUlbID = $request["ulbId"];                                           // user Id
             $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
             $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
             $mReciptId = Str::random(10);                                           // (STATIC) recipt ID
