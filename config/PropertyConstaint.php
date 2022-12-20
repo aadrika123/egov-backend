@@ -369,7 +369,7 @@ return [
     // Penalties
     "PENALTIES" => [
         "RWH_PENALTY_ID" => 1,
-        "LATE_ASSESSMENT_ID" => 2
+        "LATE_ASSESSMENT_ID" => 2       // One Perc Penalty
     ],
 
 ];

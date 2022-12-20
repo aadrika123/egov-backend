@@ -1008,9 +1008,11 @@ class SafRepository implements iSafRepository
             $propSafsDemand = new PropSafsDemand();
             $transaction = new PropTransaction();
             $propPenalties = new PropPenalty();
+            $mOnePercPenaltyId = Config::get('PropertyConstaint.PENALTIES.LATE_ASSESSMENT_ID');
 
             $applicationIds = $paymentData->getApplicationId($req->paymentId);
-            $safId = json_decode($applicationIds)->applicationId ?? $req->safId;
+            // $safId = json_decode($applicationIds)->applicationId;
+            $safId = $req->safId;
             $reqSafId = new Request(['id' => $safId]);
             $demands = $propSafsDemand->getDemandBySafId($safId);
 
@@ -1027,7 +1029,7 @@ class SafRepository implements iSafRepository
 
             // Get Property Penalties against property transaction
             $propPenalties = $propPenalties->getPenalties('tran_id', $propTrans->id);
-            return $propPenalties;
+            $mOnePercPenalty = collect($propPenalties)->where('penalty_type_id', $mOnePercPenaltyId)->sum('amount');
             // Response Return Data
             $responseData = [
                 "transactionDate" => $propTrans->tran_date,
@@ -1049,6 +1051,7 @@ class SafRepository implements iSafRepository
                 "monthlyRate" => "",
                 "demandAmount" => $propTrans->amount,
                 "paidAmount" => $propTrans->amount,
+                "onePercPenalty" => roundFigure($mOnePercPenalty),
                 "remainingAmount" => 0,
                 "tcName" => "",
                 "tcMobile" => ""
