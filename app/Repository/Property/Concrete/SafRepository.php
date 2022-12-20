@@ -1036,6 +1036,7 @@ class SafRepository implements iSafRepository
                 "transactionDate" => $propTrans->tran_date,
                 "transactionNo" => $propTrans->tran_no,
                 "transactionTime" => $propTrans->created_at->format('H:i:s'),
+                "applicationNo" => $activeSafDetails->original['data']['saf_no'],
                 "customerName" => $activeSafDetails->original['data']['applicant_name'],
                 "receiptWard" => $activeSafDetails->original['data']['new_ward_no'],
                 "address" => $activeSafDetails->original['data']['prop_address'],
