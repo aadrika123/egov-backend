@@ -46,7 +46,6 @@ class PropActiveSaf extends Model
     {
         $reqs = [
             'has_previous_holding_no' => $req->hasPreviousHoldingNo,
-            'previous_holding_id' => $req->previousHoldingId,
             'previous_ward_mstr_id' => $req->previousWard,
             'is_owner_changed' => $req->isOwnerChanged,
             'transfer_mode_mstr_id' => $req->transferModeId,

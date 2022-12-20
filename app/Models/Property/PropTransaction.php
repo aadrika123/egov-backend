@@ -10,6 +10,10 @@ class PropTransaction extends Model
 {
     use HasFactory;
 
+    /***
+     * | @param id 
+     * | @param key saf id or property id
+     */
     public function getPropTransactions($id, $key)
     {
         return PropTransaction::where("$key", $id)
