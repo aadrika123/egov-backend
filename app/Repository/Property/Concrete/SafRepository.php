@@ -1011,8 +1011,9 @@ class SafRepository implements iSafRepository
             $mOnePercPenaltyId = Config::get('PropertyConstaint.PENALTIES.LATE_ASSESSMENT_ID');
 
             $applicationIds = $paymentData->getApplicationId($req->paymentId);
-            // $safId = json_decode($applicationIds)->applicationId;
-            $safId = $req->safId;
+            $safId = json_decode($applicationIds)->applicationId;
+            // $safId = $req->safId;
+
             $reqSafId = new Request(['id' => $safId]);
             $demands = $propSafsDemand->getDemandBySafId($safId);
 
