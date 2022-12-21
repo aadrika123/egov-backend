@@ -53,14 +53,12 @@ class NewConnectionController extends Controller
                 'areaSqft'           => 'required',
                 'landmark'           => 'required',
                 'pin'                => 'required',
-                'flatCount'          => 'required',
                 'elecKNo'            => 'required',
                 'elecBindBookNo'     => 'required',
                 'elecAccountNo'      => 'required',
                 'elecCategory'       => 'required',
                 'connection_through' => 'required',
                 'owners'             => 'required',
-                'category'           => 'required',
             ]
         );
 

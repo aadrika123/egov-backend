@@ -184,25 +184,11 @@ class NewConnectionRepository implements iNewConnection
             $now = Carbon::now();
             $applicationNo = 'APP' . $now->getTimeStamp();
 
-            # check the property type by saf no
-            if ($req->saf_no != null) {
-                $readPropetySafCheck = PropActiveSaf::select('prop_active_safs.prop_type_mstr_id')
-                    ->where('prop_active_safs.saf_no', $req->saf_no)
-                    ->get()
-                    ->first();
-                if ($readPropetySafCheck->prop_type_mstr_id == $vacantLand) {
-                    return responseMsg(false, "water cannot be applied on Vacant land!", "");
-                }
-            }
-
-            # check the property type by holding no  
-            elseif ($req->holdingNo != null) {
-                $readpropetyHoldingCheck = PropProperty::select('prop_properties.prop_type_mstr_id')
-                    ->where('prop_properties.new_holding_no', $req->holdingNo)
-                    ->get()
-                    ->first();
-                if ($readpropetyHoldingCheck->prop_type_mstr_id == $vacantLand) {
-                    return responseMsg(false, "water cannot be applied on Vacant land!", "");
+            # check the property type on vacant land
+            if ($req->connection_through != '3') {
+                $checkResponse = $this->checkVacantLand($req, $vacantLand);
+                if ($checkResponse) {
+                    return $checkResponse;
                 }
             }
 
@@ -234,6 +220,48 @@ class NewConnectionRepository implements iNewConnection
             return responseMsg(false, $error->getLine(), $error->getMessage());
         }
     }
+
+
+    /**
+     * |--------------------------------- Check property for the vacant land ------------------------------|
+     * | @param req
+     * | @param vacantLand
+     * | @var readPropetySafCheck
+     * | @var readpropetyHoldingCheck
+     * | Operation : check if the applied application is in vacant land 
+     */
+    public function checkVacantLand($req, $vacantLand)
+    {
+        if ($req->saf_no) {
+            $readPropetySafCheck = PropActiveSaf::select('prop_type_mstr_id')
+                ->where('saf_no', $req->saf_no)
+                ->get()
+                ->first();
+            if ($readPropetySafCheck->prop_type_mstr_id == $vacantLand) {
+                return responseMsg(false, "water cannot be applied on Vacant land!", "");
+            }
+        }
+
+        # check the property type by holding no  
+        elseif ($req->holdingNo) {
+            $readpropetyHoldingCheck = PropProperty::select('prop_type_mstr_id')
+                ->where('new_holding_no', $req->holdingNo)
+                ->get()
+                ->first();
+            if ($readpropetyHoldingCheck->prop_type_mstr_id == $vacantLand) {
+                return responseMsg(false, "water cannot be applied on Vacant land!", "");
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
 
 
 

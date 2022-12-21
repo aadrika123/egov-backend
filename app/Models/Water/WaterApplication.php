@@ -18,7 +18,7 @@ class WaterApplication extends Model
      * | 
         |
      */
-    public function saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo ,$waterFeeId)
+    public function saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId)
     {
         $saveNewApplication = new WaterApplication();
         $saveNewApplication->connection_type_id     = $req->connectionTypeId;
@@ -43,8 +43,8 @@ class WaterApplication extends Model
         $saveNewApplication->current_role           = collect($initiatorRoleId)->first()->role_id;
         $saveNewApplication->initiator              = collect($initiatorRoleId)->first()->role_id;
         $saveNewApplication->finisher               = collect($finisherRoleId)->first()->role_id;
-        $saveNewApplication->holding_no             = $req->holdingNo;
-        $saveNewApplication->saf_no                 = $req->saf_no;
+
+
 
         # condition entry 
         if ($req->connection_through == 3) {
@@ -54,11 +54,13 @@ class WaterApplication extends Model
             $propertyId = new PropProperty();
             $propertyId = $propertyId->getPropertyId($req->holdingNo);
             $saveNewApplication->prop_id = $propertyId->id;
+            $saveNewApplication->holding_no = $req->holdingNo;
         }
         if (!is_null($req->saf_no)) {
             $safId = new PropActiveSaf();
             $safId = $safId->getSafId($req->saf_no);
             $saveNewApplication->saf_id = $safId->id;
+            $saveNewApplication->saf_no = $req->saf_no;
         }
 
         $saveNewApplication->application_no = $applicationNo;
