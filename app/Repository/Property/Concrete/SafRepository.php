@@ -1088,29 +1088,13 @@ class SafRepository implements iSafRepository
             'Education Cess' => $checkOtherTaxes->education_cess,
             'Latrine Tax' => $checkOtherTaxes->latrine_tax
         ];
-        $filtered = collect($taxes)->map(function ($tax, $key) {
+        $filtered = collect($taxes)->filter(function ($tax, $key) {
             if ($tax > 0) {
                 return $key;
             }
         });
 
-        return $filtered;
-
-        if ((int)$checkOtherTaxes->water_tax != 0) {
-            $description = [
-                'Holding Tax',
-                'Water Tax',
-                'Education Cess',
-                'Latrine Tax',
-            ];
-        }
-
-        if ((int)$checkOtherTaxes->water_tax == 0) {
-            $description = [
-                'Holding Tax'
-            ];
-        }
-        return $description;
+        return $filtered->keys();
     }
     /**
      * | Read Penalty Tax Details with Penalties and final payable amount(1.2)
