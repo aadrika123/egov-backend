@@ -236,7 +236,7 @@ class SafRepository implements iSafRepository
 
             $safCalculation = new SafCalculation();
             $safTaxes = $safCalculation->calculateTax($request);
-
+            $mLateAssessPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
 
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
@@ -248,6 +248,7 @@ class SafRepository implements iSafRepository
             $safNo = $this->safNo($request->ward, $assessmentTypeId, $ulb_id);
             $saf = new PropActiveSaf();
 
+            $metaReqs['lateAssessPenalty'] = $mLateAssessPenalty;
             $metaReqs['safNo'] = $safNo;
             $metaReqs['roadWidthType'] = $roadWidthType;
             $metaReqs['userId'] = $user_id;
@@ -1009,12 +1010,13 @@ class SafRepository implements iSafRepository
             $propSafsDemand = new PropSafsDemand();
             $transaction = new PropTransaction();
             $propPenalties = new PropPenalty();
+
             $mOnePercPenaltyId = Config::get('PropertyConstaint.PENALTIES.LATE_ASSESSMENT_ID');
             $mTowards = Config::get('PropertyConstaints.SAF_TOWARDS');
 
             $applicationDtls = $paymentData->getApplicationId($req->paymentId);
+            // Saf Payment
             $safId = json_decode($applicationDtls)->applicationId;
-
             $reqSafId = new Request(['id' => $safId]);
             $demands = $propSafsDemand->getDemandBySafId($safId);
 
@@ -1052,6 +1054,7 @@ class SafRepository implements iSafRepository
                 "chequeDate" => "",
                 "noOfFlats" => "",
                 "monthlyRate" => "",
+                "lateAssessmentPenalty" => $activeSafDetails->original['data']['late_assess_penalty'],
                 "onePercPenalty" => roundFigure($mOnePercPenalty),
                 "demandAmount" => $propTrans->amount,
                 "paidAmount" => $propTrans->amount,
