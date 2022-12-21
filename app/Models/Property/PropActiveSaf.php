@@ -116,6 +116,7 @@ class PropActiveSaf extends Model
             'current_role' => $req->initiatorRoleId,
             'initiator_role_id' => $req->initiatorRoleId,
             'finisher_role_id' => $req->finisherRoleId,
+            'late_assess_penalty' => $req->lateAssessPenalty
         ];
         return PropActiveSaf::insertGetId($reqs);
     }
@@ -225,6 +226,16 @@ class PropActiveSaf extends Model
         return PropActiveSaf::where('saf_no', $safNo)
             ->select('id')
             ->get()
+            ->first();
+    }
+
+    /**
+     * | Get late Assessment by SAF id
+     */
+    public function getLateAssessBySafId($safId)
+    {
+        return PropActiveSaf::select('late_assess_penalty')
+            ->where('id', $safId)
             ->first();
     }
 }
