@@ -12,6 +12,7 @@ return [
     "EFFECTIVE_DATE_RULE3" => "2022-04-01",
     "VACANT_PROPERTY_TYPE" => "4",
     "SAF_TOWARDS" => "Holding Tax and Others",
+    "DEPARTMENT_SECTION" => "Revenue Section",
 
     // Mutation Reassessment and New Assessment Workflows
     "SAF_WORKFLOWS" => [3, 4, 5],

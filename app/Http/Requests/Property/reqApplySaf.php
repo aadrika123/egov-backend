@@ -82,7 +82,7 @@ class reqApplySaf extends FormRequest
                 $rules["owner.*.gender"]              =   "required|int|in:1,2,3";
                 $rules["owner.*.dob"]                 =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
                 $rules["owner.*.guardianName"]        =   "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-                $rules["owner.*.relation"]            =   "required|string|in:S/O,W/O,D/O";
+                $rules["owner.*.relation"]            =   "required|string|in:S/O,W/O,D/O,C/O";
                 $rules["owner.*.mobileNo"]            =   "required|digits:10|regex:/[0-9]{10}/";
                 $rules["owner.*.email"]               =   "email|nullable";
                 $rules["owner.*.pan"]                 =   "string|nullable";

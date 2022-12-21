@@ -998,7 +998,7 @@ class SafRepository implements iSafRepository
     }
 
     /**
-     * | Generate Payment Receipt
+     * | Generate Payment Receipt(1)
      * | @param request req
      * | Status-Closed
      * | Query Cost-3
@@ -1012,30 +1012,39 @@ class SafRepository implements iSafRepository
             $propPenalties = new PropPenalty();
 
             $mOnePercPenaltyId = Config::get('PropertyConstaint.PENALTIES.LATE_ASSESSMENT_ID');
-            $mTowards = Config::get('PropertyConstaints.SAF_TOWARDS');
+            $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
+            $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
 
             $applicationDtls = $paymentData->getApplicationId($req->paymentId);
             // Saf Payment
-            $safId = json_decode($applicationDtls)->applicationId;
+            // $safId = json_decode($applicationDtls)->applicationId;
+            $safId = $req->safId;
             $reqSafId = new Request(['id' => $safId]);
+            $activeSafDetails = $this->details($reqSafId);
             $demands = $propSafsDemand->getDemandBySafId($safId);
+            $calDemandAmt = collect($demands)->sum('amount');
+            $checkOtherTaxes = collect($demands)->first();
+
+            $mDescriptions = $this->readDescriptions($checkOtherTaxes);      // Check the Taxes are Only Holding or Not
 
             $fromFinYear = $demands->first()['fyear'];
             $fromFinQtr = $demands->first()['qtr'];
             $upToFinYear = $demands->last()['fyear'];
             $upToFinQtr = $demands->last()['qtr'];
-            $activeSafDetails = $this->details($reqSafId);
+
 
             // Get PropertyTransactions
             $propTrans = $transaction->getPropTransactions($safId, "saf_id");
             $propTrans = collect($propTrans)->last();
 
-
             // Get Property Penalties against property transaction
             $propPenalties = $propPenalties->getPenalties('tran_id', $propTrans->id);
             $mOnePercPenalty = collect($propPenalties)->where('penalty_type_id', $mOnePercPenaltyId)->sum('amount');
+
+            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails->original['data']['late_assess_penalty'], $mOnePercPenalty, $propTrans->amount);
             // Response Return Data
             $responseData = [
+                "departmentSection" => $mDepartmentSection,
                 "transactionDate" => $propTrans->tran_date,
                 "transactionNo" => $propTrans->tran_no,
                 "transactionTime" => $propTrans->created_at->format('H:i:s'),
@@ -1054,23 +1063,73 @@ class SafRepository implements iSafRepository
                 "chequeDate" => "",
                 "noOfFlats" => "",
                 "monthlyRate" => "",
-                "lateAssessmentPenalty" => $activeSafDetails->original['data']['late_assess_penalty'],
-                "onePercPenalty" => roundFigure($mOnePercPenalty),
-                "demandAmount" => $propTrans->amount,
-                "paidAmount" => $propTrans->amount,
-                "paidAmountInWords" => getIndianCurrency($propTrans->amount),
-                "remainingAmount" => 0,
-                "tcName" => "",
-                "tcMobile" => "",
+                "demandAmount" => roundFigure($calDemandAmt),
+                "taxDetails" => $taxDetails,
                 "ulbId" => $activeSafDetails->original['data']['ulb_id'],
                 "oldWardNo" => $activeSafDetails->original['data']['old_ward_no'],
                 "newWardNo" => $activeSafDetails->original['data']['new_ward_no'],
-                "towards" => $mTowards
+                "towards" => $mTowards,
+                "description" => $mDescriptions
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "451ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+    /**
+     * | Read Taxes Descriptions(1.1)
+     * | @param checkOtherTaxes first collection from the details
+     */
+    public function readDescriptions($checkOtherTaxes)
+    {
+        $taxes = [
+            'Holding Tax' => $checkOtherTaxes->holding_tax,
+            'Water Tax' => $checkOtherTaxes->water_tax,
+            'Education Cess' => $checkOtherTaxes->education_cess,
+            'Latrine Tax' => $checkOtherTaxes->latrine_tax
+        ];
+        $filtered = collect($taxes)->map(function ($tax, $key) {
+            if ($tax > 0) {
+                return $key;
+            }
+        });
+
+        return $filtered;
+
+        if ((int)$checkOtherTaxes->water_tax != 0) {
+            $description = [
+                'Holding Tax',
+                'Water Tax',
+                'Education Cess',
+                'Latrine Tax',
+            ];
+        }
+
+        if ((int)$checkOtherTaxes->water_tax == 0) {
+            $description = [
+                'Holding Tax'
+            ];
+        }
+        return $description;
+    }
+    /**
+     * | Read Penalty Tax Details with Penalties and final payable amount(1.2)
+     */
+    public function readPenalyPmtAmts($lateAssessPenalty = 0, $onePercPenalty = 0, $amount)
+    {
+        $amount = [
+            "lateAssessmentPenalty" => $lateAssessPenalty,
+            "onePercPenalty" => roundFigure($onePercPenalty),
+            "paidAmount" => $amount,
+            "paidAmountInWords" => getIndianCurrency($amount),
+            "remainingAmount" => 0,
+        ];
+
+        $filtered = collect($amount)->filter(function ($value, $key) {
+            return $value > 0;
+        });
+
+        return $filtered;
     }
 
     /**
