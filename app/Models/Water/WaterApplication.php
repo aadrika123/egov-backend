@@ -18,7 +18,7 @@ class WaterApplication extends Model
      * | 
         |
      */
-    public function saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo)
+    public function saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo ,$waterFeeId)
     {
         $saveNewApplication = new WaterApplication();
         $saveNewApplication->connection_type_id     = $req->connectionTypeId;
@@ -39,6 +39,7 @@ class WaterApplication extends Model
         $saveNewApplication->connection_through     = $req->connection_through;
         $saveNewApplication->apply_date             = date('Y-m-d H:i:s');
         $saveNewApplication->workflow_id            = $ulbWorkflowId->id;
+        $saveNewApplication->connection_fee_id      = $waterFeeId;
         $saveNewApplication->current_role           = collect($initiatorRoleId)->first()->role_id;
         $saveNewApplication->initiator              = collect($initiatorRoleId)->first()->role_id;
         $saveNewApplication->finisher               = collect($finisherRoleId)->first()->role_id;

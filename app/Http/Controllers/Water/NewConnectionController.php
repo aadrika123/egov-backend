@@ -49,7 +49,6 @@ class NewConnectionController extends Controller
                 'connectionTypeId'   => 'required',
                 'propertyTypeId'     => 'required',
                 'ownerType'          => 'required',
-                'pipelineTypeId'     => 'required',
                 'wardId'             => 'required',
                 'areaSqft'           => 'required',
                 'landmark'           => 'required',

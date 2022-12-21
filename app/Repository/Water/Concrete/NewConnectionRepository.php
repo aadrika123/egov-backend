@@ -178,6 +178,7 @@ class NewConnectionRepository implements iNewConnection
             $objCall = new WaterNewConnection();
             $newConnectionCharges = $objCall->calWaterConCharge($req);
             $installment = $newConnectionCharges['installment_amount'];
+            $waterFeeId = $newConnectionCharges['water_fee_mstr_id'];
 
             # Generating Application No
             $now = Carbon::now();
@@ -208,7 +209,7 @@ class NewConnectionRepository implements iNewConnection
             DB::beginTransaction();
 
             $objNewApplication = new WaterApplication();
-            $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo);
+            $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId);
 
             $owner = $req['owners'];
             foreach ($owner as $owners) {
