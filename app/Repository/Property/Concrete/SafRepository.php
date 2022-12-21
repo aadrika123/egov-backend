@@ -231,7 +231,7 @@ class SafRepository implements iSafRepository
                 $roadWidthType = 3;
             elseif ($request->roadType >= 20 && $request->roadType <= 39)
                 $roadWidthType = 2;
-            elseif ($request->roadType > 40)
+            elseif ($request->roadType >= 40)
                 $roadWidthType = 1;
 
             $safCalculation = new SafCalculation();
@@ -302,7 +302,7 @@ class SafRepository implements iSafRepository
             ], "010102", "1.0", "1s", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return $e;
+            return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", "1s", "POST", $request->deviceId);
         }
     }
 
@@ -1032,7 +1032,6 @@ class SafRepository implements iSafRepository
             $fromFinQtr = $demands->first()['qtr'];
             $upToFinYear = $demands->last()['fyear'];
             $upToFinQtr = $demands->last()['qtr'];
-
 
             // Get PropertyTransactions
             $propTrans = $transaction->getPropTransactions($safId, "saf_id");
