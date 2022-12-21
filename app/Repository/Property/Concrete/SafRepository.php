@@ -1013,6 +1013,7 @@ class SafRepository implements iSafRepository
 
             $mOnePercPenaltyId = Config::get('PropertyConstaint.PENALTIES.LATE_ASSESSMENT_ID');
             $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
+            $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
 
             $applicationDtls = $paymentData->getApplicationId($req->paymentId);
@@ -1045,6 +1046,7 @@ class SafRepository implements iSafRepository
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
+                "accountDescription" => $mAccDescription,
                 "transactionDate" => $propTrans->tran_date,
                 "transactionNo" => $propTrans->tran_no,
                 "transactionTime" => $propTrans->created_at->format('H:i:s'),

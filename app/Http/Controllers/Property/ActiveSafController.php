@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Property;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
 use App\Models\Property\PropActiveSaf;
-use App\Models\Property\PropActiveSafsDoc;
-use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
