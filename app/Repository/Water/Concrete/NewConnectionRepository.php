@@ -176,7 +176,11 @@ class NewConnectionRepository implements iNewConnection
 
             # Generating Demand 
             $objCall = new WaterNewConnection();
-            $newConnectionCharges = $objCall->calWaterConCharge($req);
+            $newConnectionCharges = objToArray($objCall->calWaterConCharge($req));
+            if (!$newConnectionCharges['status']) {
+                throw new Exception($newConnectionCharges['errors']
+                );
+            }
             $installment = $newConnectionCharges['installment_amount'];
             $waterFeeId = $newConnectionCharges['water_fee_mstr_id'];
 
