@@ -17,23 +17,21 @@ trait WorkflowTrack
 
     public function refQuery()
     {
-        $query = "SELECT t.id,
-                    t.user_id,
-                    u.user_name,
-                    t.citizen_id,
-                    t.module_id,
-                    m.module_name,
-                    t.ref_table_dot_id,
-                    t.ref_table_id_value,
-                    t.message,
-                    t.track_date,
-                    t.forwarded_to,
-                    uu.user_name as forwarded_user
+        $query = "SELECT 
+                    workflow_tracks.id,
+                    workflow_tracks.user_id,
+                    workflow_tracks.citizen_id,
+                    workflow_tracks.module_id,
+                    module_masters.module_name,
+                    workflow_tracks.ref_table_dot_id,
+                    workflow_tracks.ref_table_id_value,
+                    workflow_tracks.message,
+                    workflow_tracks.track_date,
+                    users.user_name
                     
-            FROM workflow_tracks t
-            LEFT JOIN users u on u.id=t.user_id
-            LEFT JOIN module_masters m on m.id=t.module_id
-            LEFT JOIN users uu on uu.id=t.forwarded_to ";
+            FROM workflow_tracks 
+            LEFT JOIN users  on users.id=workflow_tracks.user_id
+            LEFT JOIN module_masters on module_masters.id=workflow_tracks.module_id";
         return $query;
     }
 
@@ -51,8 +49,6 @@ trait WorkflowTrack
             $val['ref_table_id_value'] = $tracks->ref_table_id_value ?? '';
             $val['message'] = $tracks->message ?? '';
             $val['track_date'] = $tracks->track_date ?? '';
-            $val['forwarded_to'] = $tracks->forwarded_to ?? '';
-            $val['forwarded_user'] = $tracks->forwarded_user ?? '';
             array_push($arr, $val);
         }
         return response()->json($arr, 200);

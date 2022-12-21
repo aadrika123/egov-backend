@@ -185,80 +185,6 @@ class ConcessionRepository implements iConcessionRepository
     }
 
     /**
-     * | Property Concession Inbox List
-     * | @var auth autheticated user data
-     * | Query Costing-293ms 
-     * | Rating-3
-     * | Status-Closed
-     */
-    public function inbox()
-    {
-        try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-            $wardId = $this->getWardByUserId($userId);
-
-            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
-                return $ward->ward_id;
-            });
-
-            $roles = $this->getRoleIdByUserId($userId);
-
-            $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
-                return $role->wf_role_id;
-            });
-
-            return $concessions = $this->getConcessionList($ulbId)
-                ->whereIn('prop_active_concessions.current_role', $roleId)
-                ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_concessions.id')
-                ->get();
-            return responseMsgs(true, "Inbox List", remove_null($concessions), '010703', '01', '326ms-478ms', 'Post', '');
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Outbox List
-     * | @var auth authenticated user list
-     * | @var ulbId authenticated user ulb
-     * | @var userid authenticated user id
-     * | Query Costing-309 
-     * | Rating-3
-     * | Status-Closed
-     */
-    public function outbox()
-    {
-        try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-
-            $workflowRoles = $this->getRoleIdByUserId($userId);
-            $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
-                return $value->wf_role_id;
-            });
-
-            $refWard = $this->getWardByUserId($userId);                                     // Get Ward List by user Id
-            $occupiedWards = $refWard->map(function ($value, $key) {
-                return $value->ward_id;
-            });
-
-            $concessions = $this->getConcessionList($ulbId)
-                ->whereNotIn('prop_active_concessions.current_role', $roleId)
-                ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_concessions.id')
-                ->get();
-
-            return responseMsgs(true, "Outbox List", remove_null($concessions), '010704', '01', '355ms-419ms', 'Post', '');
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
      * | Get Concession Details by Concession ID
      * | Query Costing-320 ms 
      * | Rating-3
@@ -268,16 +194,15 @@ class ConcessionRepository implements iConcessionRepository
     {
         try {
             $details = array();
-            $details = DB::table('prop_active_concessions')
-                ->select(
-                    'prop_active_concessions.*',
-                    'prop_active_concessions.applicant_name as owner_name',
-                    's.holding_no',
-                    's.ward_mstr_id',
-                    'u.ward_name as ward_no',
-                    's.prop_type_mstr_id',
-                    'p.property_type'
-                )
+            $details = PropActiveConcession::select(
+                'prop_active_concessions.*',
+                'prop_active_concessions.applicant_name as owner_name',
+                's.holding_no',
+                's.ward_mstr_id',
+                'u.ward_name as ward_no',
+                's.prop_type_mstr_id',
+                'p.property_type'
+            )
                 ->join('prop_properties as s', 's.id', '=', 'prop_active_concessions.property_id')
                 ->join('ulb_ward_masters as u', 'u.id', '=', 's.ward_mstr_id')
                 ->join('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
@@ -285,17 +210,16 @@ class ConcessionRepository implements iConcessionRepository
                 ->first();
             $details = json_decode(json_encode($details), true);
 
-            $levelComments = DB::table('prop_concession_levelpendings')
-                ->select(
-                    'prop_concession_levelpendings.id',
-                    'prop_concession_levelpendings.receiver_role_id as commentedByRoleId',
-                    'r.role_name as commentedByRoleName',
-                    'prop_concession_levelpendings.remarks',
-                    'prop_concession_levelpendings.forward_date',
-                    'prop_concession_levelpendings.forward_time',
-                    'prop_concession_levelpendings.verification_status',
-                    'prop_concession_levelpendings.created_at as received_at'
-                )
+            $levelComments = PropConcessionLevelPending::select(
+                'prop_concession_levelpendings.id',
+                'prop_concession_levelpendings.receiver_role_id as commentedByRoleId',
+                'r.role_name as commentedByRoleName',
+                'prop_concession_levelpendings.remarks',
+                'prop_concession_levelpendings.forward_date',
+                'prop_concession_levelpendings.forward_time',
+                'prop_concession_levelpendings.verification_status',
+                'prop_concession_levelpendings.created_at as received_at'
+            )
                 ->where('prop_concession_levelpendings.concession_id', $req->id)
                 ->where('prop_concession_levelpendings.status', 1)
                 ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_concession_levelpendings.receiver_role_id')
@@ -305,66 +229,6 @@ class ConcessionRepository implements iConcessionRepository
             $details['levelComments'] = $levelComments;
 
             return responseMsgs(true, "Concession Details", remove_null($details), '010705', '01', '326ms-408ms', 'Post', '');
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Escalate application
-     * | @param req request parameters
-     * | Query Costing-400ms 
-     * | Rating-2
-     * | Status-Closed
-     */
-    public function escalateApplication($req)
-    {
-        try {
-            $userId = auth()->user()->id;
-            if ($req->escalateStatus == 1) {
-                $concession = PropActiveConcession::find($req->id);
-                $concession->is_escalate = 1;
-                $concession->escalated_by = $userId;
-                $concession->save();
-                return responseMsgs(true, "Successfully Escalated the application", "", '010706', '01', '400ms', 'Post', '');
-            }
-            if ($req->escalateStatus == 0) {
-                $concession = PropActiveConcession::find($req->id);
-                $concession->is_escalate = 0;
-                $concession->escalated_by = null;
-                $concession->save();
-                return responseMsgs(true, "Successfully De-Escalated the application", "", '010706', '01', '400ms', 'Post', '');
-            }
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Special Inbox (Escalated Applications)
-     * | Query Costing-303 ms 
-     * | Rating-2
-     * | Status-Closed
-     */
-    public function specialInbox()
-    {
-        try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-            $wardId = $this->getWardByUserId($userId);
-
-            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
-                return $ward->ward_id;
-            });
-
-            $concessions = $this->getConcessionList($ulbId)                                         // Get Concessions
-                ->where('prop_active_concessions.is_escalate', true)
-                ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_concessions.id')
-                ->get();
-
-            return responseMsg(true, "Inbox List", remove_null($concessions), "", '010707', '01', '303ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -542,87 +406,6 @@ class ConcessionRepository implements iConcessionRepository
         }
     }
 
-
-    //concession list
-    public function concessionList()
-    {
-        try {
-            $list = PropActiveConcession::select(
-                'prop_active_concessions.id',
-                'prop_active_concessions.applicant_name as ownerName',
-                'holding_no as holdingNo',
-                'ward_name as wardId',
-                'property_type as propertyType'
-
-            )
-                ->where('prop_active_concessions.status', 1)
-                ->orderByDesc('prop_active_concessions.id')
-                ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
-                ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
-                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-                ->get();
-
-            return responseMsgs(true, "Successfully Done", $list, "", '010712', '01', '308ms-396ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
-    //get concession list by id
-    public function concessionByid($req)
-    {
-        try {
-            $list = PropActiveConcession::select(
-                'prop_active_concessions.id',
-                'prop_active_concessions.applicant_name as ownerName',
-                'holding_no as holdingNo',
-                'ward_name as wardId',
-                'property_type as propertyType',
-                'dob',
-                'gender',
-                'is_armed_force as armedForce',
-                'is_specially_abled as speciallyAbled'
-            )
-                ->where('prop_active_concessions.id', $req->id)
-                ->where('prop_active_concessions.status', 1)
-                ->orderByDesc('prop_active_concessions.id')
-                ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
-                ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
-                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-                ->first();
-
-            return responseMsgs(true, "Successfully Done", $list, "", '010713', '01', '312ms-389ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
-    //get concession list
-    public function concessionDocList($req)
-    {
-        try {
-            $list = PropConcessionDocDtl::select(
-                'id',
-                'doc_type as docName',
-                'relative_path',
-                'doc_name as docUrl',
-                'verify_status as docStatus',
-                'remarks as docRemarks'
-            )
-                // ->select(DB::raw("CONCAT(relative_path,doc_name) AS url", "id"))
-                ->where('prop_concession_doc_dtls.concession_id', $req->id)
-                ->get();
-            $list = $list->map(function ($val) {
-                $path = $this->_bifuraction->readDocumentPath($val->relative_path . $val->docUrl);
-                $val->docUrl = $path;
-                return $val;
-            });
-            return responseMsgs(true, "Successfully Done", remove_null($list), "", '010714', '01', '314ms-451ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
     //concession document upload
     public function concessionDocUpload($req)
     {
@@ -713,32 +496,6 @@ class ConcessionRepository implements iConcessionRepository
         }
     }
 
-
-    //post concession status
-    public function concessionDocStatus($req)
-    {
-        try {
-            $userId = auth()->user()->id;
-
-            $docStatus = PropConcessionDocDtl::find($req->id);
-            $docStatus->remarks = $req->docRemarks;
-            $docStatus->verified_by_emp_id = $userId;
-            $docStatus->verified_on = Carbon::now();
-            $docStatus->updated_at = Carbon::now();
-
-            if ($req->docStatus == 'Verified') {
-                $docStatus->verify_status = 1;
-            }
-            if ($req->docStatus == 'Rejected') {
-                $docStatus->verify_status = 2;
-            }
-            $docStatus->save();
-
-            return responseMsgs(true, "Successfully Done", '', "", '010716', '01', '308ms-431ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
 
     //citizen doc upload
     public function citizenDocUpload($concessionDoc, $name, $docName)
