@@ -28,7 +28,7 @@ if (!function_exists("responseMsgs")) {
                 'apiId' => $apiId,
                 'version' => $version,
                 'queryRunTime' => $queryRunTime,
-                'timeInPoch' => Carbon::now()->format('Y-m-d H:i:m'),
+                'timeEpoch' => Carbon::now()->format('Y-m-d H:i:m'),
                 'action' => $action,
                 'deviceId' => $deviceId
             ],

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Property\reqApplySaf;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Property\PropActiveSafsFloor;
@@ -44,12 +45,17 @@ class ActiveSafController extends Controller
     }
 
     //  Function for applying SAF
-    public function applySaf(Request $request)
+    public function applySaf(reqApplySaf $request)
     {
-        $request->validate([
-            'ulbId' => 'required|integer'
-        ]);
-
+        // $request->validate([
+        //     'ulbId' => 'required|integer',
+        //     'assessmentType' => 'required|integer',
+        //     'ward' => 'required|integer',
+        //     'propertyType' => 'required|integer',
+        //     'ownershipType' => 'required|integer',
+        //     'roadType' => 'required|integer',
+        //     'areaOfPlot' => 'required|integer',
+        // ]);
         return $this->Repository->applySaf($request);
     }
 

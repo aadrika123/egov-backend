@@ -256,7 +256,7 @@ class SafRepository implements iSafRepository
             $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->role_id;;
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
 
-            $request->request->add($metaReqs);
+            $request->merge($metaReqs);
             $safId = $saf->store($request);                                             // Store SAF Using Model function 
 
             // SAF Owner Details
