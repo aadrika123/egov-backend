@@ -114,5 +114,7 @@ class WebhookPaymentData extends Model
         # transaction id generation and saving
         $webhookData->payment_transaction_id = $actualTransactionNo;
         $webhookData->save();
+
+        return $webhookData;
     }
 }

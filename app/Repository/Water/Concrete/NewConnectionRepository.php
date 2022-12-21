@@ -75,7 +75,7 @@ class NewConnectionRepository implements iNewConnection
     public function getOwnerType()
     {
         try {
-            $ownerType = new WaterOwnerTypeMstr(); 
+            $ownerType = new WaterOwnerTypeMstr();
             $ownerType = $ownerType->getallOwnwers();
             return response()->json(['status' => true, 'message' => 'data of the ownerType', 'data' => $ownerType]);
         } catch (Exception $error) {
@@ -161,20 +161,27 @@ class NewConnectionRepository implements iNewConnection
     public function store(Request $req)
     {
         try {
-
+            # ref variables
             $vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
             $workflowID = Config::get('workflow-constants.WATER_MASTER_ID');
             $ulbId = auth()->user()->ulb_id;
 
+            # get initiater and finisher
             $ulbWorkflowObj = new WfWorkflow();
-            $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID,$ulbId);
+            $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $ulbId);
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
+            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId = DB::select($refFinisherRoleId);
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
             # Generating Demand 
             $objCall = new WaterNewConnection();
             $newConnectionCharges = $objCall->calWaterConCharge($req);
             $installment = $newConnectionCharges['installment_amount'];
+
+            # Generating Application No
+            $now = Carbon::now();
+            $applicationNo = 'APP' . $now->getTimeStamp();
 
             # check the property type by saf no
             if ($req->saf_no != null) {
@@ -200,87 +207,24 @@ class NewConnectionRepository implements iNewConnection
 
             DB::beginTransaction();
 
-            $newApplication = new WaterApplication();
-            $newApplication->connection_type_id = $req->connectionTypeId;
-            $newApplication->property_type_id = $req->propertyTypeId;
-            $newApplication->owner_type = $req->ownerType;
-            $newApplication->category = $req->category;
-            $newApplication->pipeline_type_id = $req->pipelineTypeId;
-            $newApplication->ward_id = $req->wardId;
-            $newApplication->area_sqft = $req->areaSqft;
-            $newApplication->address = $req->address;
-            $newApplication->landmark = $req->landmark;
-            $newApplication->pin = $req->pin;
-            $newApplication->flat_count = $req->flatCount;
-            $newApplication->elec_k_no = $req->elecKNo;
-            $newApplication->elec_bind_book_no = $req->elecBindBookNo;
-            $newApplication->elec_account_no = $req->elecAccountNo;
-            $newApplication->elec_category = $req->elecCategory;
-            $newApplication->connection_through = $req->connection_through;
-            $newApplication->apply_date = date('Y-m-d H:i:s');
-            $newApplication->workflow_id = $ulbWorkflowId->id;
-            $newApplication->current_role = collect($initiatorRoleId)->first()->role_id;
-            $newApplication->initiator = collect($initiatorRoleId)->first()->role_id;
-            $newApplication->holding_no = $req->holdingNo;
-            $newApplication->saf_no = $req->saf_no;
+            $objNewApplication = new WaterApplication();
+            $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo);
 
-            # condition entry 
-            if ($req->connection_through == 3) {
-                $newApplication->id_proof = 3;
-            }
-            if (!is_null($req->holdingNo)) {
-                $propertyId = new PropProperty();
-                $propertyId = $propertyId->getPropertyId($req->holdingNo);
-                $newApplication->prop_id = $propertyId->id;
-            }
-            if (!is_null($req->saf_no)) {
-                $safId = new PropActiveSaf();
-                $safId = $safId->getSafId($req->saf_no);
-                $newApplication->saf_id = $safId->id;
-            }
-
-            # Generating Application No 
-            $now = Carbon::now();
-            $applicationNo = 'APP' . $now->getTimeStamp();
-            $newApplication->application_no = $applicationNo;
-            $newApplication->ulb_id = $ulbId;
-            $newApplication->user_id = auth()->user()->id;
-            $newApplication->save();
-
-            # Water Applicants Owners
             $owner = $req['owners'];
             foreach ($owner as $owners) {
-                $applicant = new WaterApplicant();
-                $applicant->application_id = $newApplication->id;
-                $applicant->applicant_name = $owners['ownerName'];
-                $applicant->guardian_name = $owners['guardianName'];
-                $applicant->mobile_no = $owners['mobileNo'];
-                $applicant->email = $owners['email'];
-                $applicant->save();
+                $objApplicant = new WaterApplicant();
+                $objApplicant->saveWaterApplicant($applicationId, $owners);
             }
 
-            # Generating Demand reflecting on water connection charges table
             if (!is_null($installment)) {
                 foreach ($installment as $installments) {
-                    $quaters = new WaterPenaltyInstallment();
-                    $quaters->apply_connection_id = $newApplication->id;
-                    $quaters->installment_amount = $installments['installment_amount'];
-                    $quaters->penalty_head = $installments['penalty_head'];
-                    $quaters->balance_amount = $installments['balance_amount'];
-                    $quaters->save();
+                    $objQuaters = new WaterPenaltyInstallment();
+                    $objQuaters->saveWaterPenelty($applicationId, $installments);
                 }
             }
-        
+
             $charges = new WaterConnectionCharge();
-            $charges->application_id = $newApplication->id;
-            $charges->charge_category = $req->connectionTypeId;
-            $charges->paid_status = 0;
-            $charges->status = 1;
-            $charges->penalty = $newConnectionCharges['conn_fee_charge']['penalty'];
-            $charges->conn_fee = $newConnectionCharges['conn_fee_charge']['conn_fee'];
-            $charges->amount = $newConnectionCharges['conn_fee_charge']['amount'];
-            $charges->rule_set = $newConnectionCharges['ruleSete'];
-            $charges->save();
+            $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
 
             DB::commit();
             return responseMsg(true, "Successfully Saved!", $applicationNo);
@@ -291,7 +235,7 @@ class NewConnectionRepository implements iNewConnection
     }
 
 
-    
+
 
 
     /**
@@ -345,7 +289,7 @@ class NewConnectionRepository implements iNewConnection
         | Serila No : 
         | Working
      */
-    public Function waterInbox()
+    public function waterInbox()
     {
         try {
             $auth = auth()->user();
@@ -429,13 +373,13 @@ class NewConnectionRepository implements iNewConnection
     public function getWaterApplicatioList($ulbId)
     {
         return WaterApplication::
-        // DB::table('prop_active_concessions')
+            // DB::table('prop_active_concessions')
             select(
                 'water_applications.id',
                 'water_applications.applicant_name as owner_name',
                 'water_applications.holding_no',
                 'a.ward_mstr_id',
-                'u.ward_name as ward_no',    
+                'u.ward_name as ward_no',
                 'a.prop_type_mstr_id',
                 'p.property_type',
                 'water_applications.workflow_id',
@@ -563,5 +507,4 @@ class NewConnectionRepository implements iNewConnection
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
-
 }

@@ -187,11 +187,6 @@ trait Razorpay
             #captured
             $captured = $webhookEntity['captured'];
 
-            #transaction Details
-            $transTransferDetails['paymentId'] = $webhookEntity['id'];
-            $transTransferDetails['orderId'] = $webhookEntity['order_id'];
-            $transTransferDetails['status'] = $status;
-
             #data to be saved in card detail table                                                                         
             $aCard = $webhookEntity['card_id'];
             if (!is_null($aCard)) {
@@ -202,9 +197,9 @@ trait Razorpay
             }
 
             # data to be stored in the database 
-            $actualTransactionNo = $this->generatingTransactionId($transTransferDetails);
+            $actualTransactionNo = $this->generatingTransactionId();
             $webhookData = new WebhookPaymentData();
-            $webhookData->saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity);
+            $webhookData = $webhookData->saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity);
 
             # data transfer to the respective module dataBase 
             $transfer['paymentMode'] = $webhookData->payment_method;
@@ -257,14 +252,8 @@ trait Razorpay
      * | Rating : 1
         | Serial No : 04
      */
-    public function generatingTransactionId($request)
+    public function generatingTransactionId()
     {
-        $id = WebhookPaymentData::select('id')
-            ->where('payment_id', $request['paymentId'])
-            ->where('payment_order_id', $request['orderId'])
-            ->where('payment_status', $request['status'])
-            ->get();
-        $idDetails = collect($id)->first()->id;
-        return Carbon::createFromDate()->milli . $idDetails . carbon::now()->diffInMicroseconds();
+        return Carbon::createFromDate()->milli . carbon::now()->diffInMicroseconds();
     }
 }

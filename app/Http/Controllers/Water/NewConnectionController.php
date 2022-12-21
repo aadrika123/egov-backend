@@ -46,22 +46,22 @@ class NewConnectionController extends Controller
         $validateUser = Validator::make(
             $request->all(),
             [
-                'connectionTypeId'   => 'required|integer',
-                'propertyTypeId'     => 'required|integer',
+                'connectionTypeId'   => 'required',
+                'propertyTypeId'     => 'required',
                 'ownerType'          => 'required',
-                // 'pipelineTypeId'     => 'required|integer',
-                'wardId'             => 'required|integer',
-                'areaSqft'           => 'required|integer',
-                // 'address'            => 'required',
+                'pipelineTypeId'     => 'required',
+                'wardId'             => 'required',
+                'areaSqft'           => 'required',
                 'landmark'           => 'required',
-                'pin'                => 'required|integer',
-                // 'flatCount'          => 'required|integer',
+                'pin'                => 'required',
+                'flatCount'          => 'required',
                 'elecKNo'            => 'required',
                 'elecBindBookNo'     => 'required',
                 'elecAccountNo'      => 'required',
                 'elecCategory'       => 'required',
-                'connection_through' => 'required|integer',
-                'owners'          => 'required',
+                'connection_through' => 'required',
+                'owners'             => 'required',
+                'category'           => 'required',
             ]
         );
 
