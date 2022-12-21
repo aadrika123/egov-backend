@@ -47,15 +47,6 @@ class ActiveSafController extends Controller
     //  Function for applying SAF
     public function applySaf(reqApplySaf $request)
     {
-        // $request->validate([
-        //     'ulbId' => 'required|integer',
-        //     'assessmentType' => 'required|integer',
-        //     'ward' => 'required|integer',
-        //     'propertyType' => 'required|integer',
-        //     'ownershipType' => 'required|integer',
-        //     'roadType' => 'required|integer',
-        //     'areaOfPlot' => 'required|integer',
-        // ]);
         return $this->Repository->applySaf($request);
     }
 
@@ -66,7 +57,16 @@ class ActiveSafController extends Controller
     public function editSaf(Request $req)
     {
         $req->validate([
-            'id' => 'required|integer'
+            'id' => 'required|integer',
+            'zone' => 'required|integer',
+            'owner' => 'array',
+            'owner.*.ownerId' => 'required|integer',
+            'owner.*.ownerName' => 'required',
+            'owner.*.guardianName' => 'required',
+            'owner.*.relation' => 'required',
+            'owner.*.mobileNo' => 'numeric|string|digits:10',
+            'owner.*.aadhar' => 'numeric|string|digits:12|nullable',
+            'owner.*.email' => 'email|nullable',
         ]);
 
         try {

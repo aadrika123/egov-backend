@@ -9,15 +9,7 @@ use Illuminate\Http\Request;
 class PropActiveSafsOwner extends Model
 {
     use HasFactory;
-    protected $fillable = [
-        'owner_name',
-        'guardian_name',
-        'relation_type',
-        'mobile_no',
-        'aadhar_no',
-        'pan_no',
-        'email'
-    ];
+    protected $guarded = [];
 
     /**
      * | Update Owner Basic Details

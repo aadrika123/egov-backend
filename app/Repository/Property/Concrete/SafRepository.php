@@ -1041,7 +1041,7 @@ class SafRepository implements iSafRepository
             $propPenalties = $propPenalties->getPenalties('tran_id', $propTrans->id);
             $mOnePercPenalty = collect($propPenalties)->where('penalty_type_id', $mOnePercPenaltyId)->sum('amount');
 
-            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails->original['data']['late_assess_penalty'], $mOnePercPenalty, $propTrans->amount);
+            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails->original['data']['late_assess_penalty'], $mOnePercPenalty, $propTrans->amount);   // Get Holding Tax Dtls
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
