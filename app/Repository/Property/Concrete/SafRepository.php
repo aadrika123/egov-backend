@@ -1017,8 +1017,8 @@ class SafRepository implements iSafRepository
 
             $applicationDtls = $paymentData->getApplicationId($req->paymentId);
             // Saf Payment
-            // $safId = json_decode($applicationDtls)->applicationId;
-            $safId = $req->safId;
+            $safId = json_decode($applicationDtls)->applicationId;
+
             $reqSafId = new Request(['id' => $safId]);
             $activeSafDetails = $this->details($reqSafId);
             $demands = $propSafsDemand->getDemandBySafId($safId);
