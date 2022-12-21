@@ -39,7 +39,8 @@ class PropActiveSaf extends Model
         'corr_pin_code',
         'prop_state',
         'corr_state',
-        'new_ward_mstr_id'
+        'new_ward_mstr_id',
+        'holding_no'
     ];
     // Store
     public function store($req)
@@ -50,6 +51,7 @@ class PropActiveSaf extends Model
             'is_owner_changed' => $req->isOwnerChanged,
             'transfer_mode_mstr_id' => $req->transferModeId,
             'saf_no' => $req->safNo,
+            'holding_no' => $req->holdingNo,
             'ward_mstr_id' => $req->ward,
             'ownership_type_mstr_id' => $req->ownershipType,
             'prop_type_mstr_id' => $req->propertyType,

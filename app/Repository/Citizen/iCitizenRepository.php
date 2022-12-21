@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
  */
 interface iCitizenRepository
 {
-    public function citizenRegister(Request $request);
 
     public function getCitizenByID($id);
 

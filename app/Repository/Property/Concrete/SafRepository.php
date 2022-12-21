@@ -256,7 +256,7 @@ class SafRepository implements iSafRepository
             $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->role_id;;
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
 
-            $request->request->add($metaReqs);
+            $request->merge($metaReqs);
             $safId = $saf->store($request);                                             // Store SAF Using Model function 
 
             // SAF Owner Details
@@ -292,7 +292,7 @@ class SafRepository implements iSafRepository
             $tax = new InsertTax();
             $tax->insertTax($safId, $user_id, $safTaxes);                                               // Insert SAF Tax
 
-            DB::commit();
+            // DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
                 "applyDate" => $mApplyDate,

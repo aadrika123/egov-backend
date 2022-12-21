@@ -10,8 +10,7 @@ class ActiveCitizen extends Model
 {
     use HasFactory;
 
-    protected $fillable = ["*"];
-
+    protected $guarded = [];
     // Citizen Registration
     public function citizenRegister($request)
     {
