@@ -276,7 +276,7 @@ trait SAF
                     'qtr' => $collection->first()['qtr'],
                     'dueDate' => $collection->first()['dueDate'],
                     'rwhPenalty' => $collection->sum('rwhPenalty'),
-                    'onePercPenaltyTax' => $collection->sum('onePercPenaltyTax'),
+                    'onePercPenaltyTax' => roundFigure($collection->sum('onePercPenaltyTax')),
                     'arv' => $collection->sum('arv'),
                     'holdingTax' => $collection->sum('holdingTax'),
                     'waterTax' => $collection->sum('waterTax'),
@@ -285,7 +285,7 @@ trait SAF
                     'latrineTax' => $collection->sum('latrineTax'),
                     'additionTax' => $collection->sum('additionalTax'),
                     'latrineTax' => $collection->sum('latrineTax'),
-                    'totalTax' => $collection->sum('totalTax')
+                    'totalTax' => roundFigure($collection->sum('totalTax'))
                 ]);
             });
         });

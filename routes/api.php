@@ -84,6 +84,7 @@ Route::controller(CitizenController::class)->group(function () {
  */
 Route::controller(UlbController::class)->group(function () {
     Route::get('get-all-ulb', 'getAllUlb');
+    Route::post('city/state/ulb-id', 'getCityStateByUlb');
 });
 
 // Inside Middleware Routes with API Authenticate 

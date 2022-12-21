@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Masters\MCity;
 use Illuminate\Http\Request;
 use App\Repository\Ulbs\EloquentUlbRepository;
+use Exception;
 
 /**
  * Created On-02-07-2022 
@@ -48,5 +50,21 @@ class UlbController extends Controller
     public function deleteUlb($id)
     {
         return $this->EloquentUlb->deleteUlb($id);
+    }
+
+    // Get City State by Ulb Id
+    public function getCityStateByUlb(Request $req)
+    {
+        $req->validate([
+            'ulbId' => 'required|integer'
+        ]);
+
+        try {
+            $mCity = new MCity();
+            $data = $mCity->getCityStateByUlb($req->ulbId);
+            return responseMsgs(true, "", remove_null($data));
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
+        }
     }
 }
