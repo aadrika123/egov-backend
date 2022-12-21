@@ -814,7 +814,8 @@ class WaterNewConnection implements IWaterNewConnection
                 ->orderBy("effect_date", "DESC")
                 ->orderBy("id", "ASC")
                 ->first();
-            //dd(DB::getQueryLog());
+            // dd(DB::getyQueryLog());
+
             $response["water_fee_mstr_id"] = $waterConFee->id;
             $response["water_fee_mstr"] = $waterConFee;
             $conneFee   = $waterConFee->reg_fee + $waterConFee->proc_fee + $waterConFee->app_fee + $waterConFee->sec_fee + $waterConFee->conn_fee;
