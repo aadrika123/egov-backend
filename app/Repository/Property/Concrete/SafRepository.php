@@ -1104,11 +1104,11 @@ class SafRepository implements iSafRepository
     public function readPenalyPmtAmts($lateAssessPenalty = 0, $onePercPenalty = 0, $amount)
     {
         $amount = [
-            "lateAssessmentPenalty" => $lateAssessPenalty,
-            "onePercPenalty" => roundFigure($onePercPenalty),
-            "paidAmount" => $amount,
-            "paidAmountInWords" => getIndianCurrency($amount),
-            "remainingAmount" => 0,
+            "Late Assessment Fine(Rule 14.1)" => $lateAssessPenalty,
+            "1% Monthly Penalty" => roundFigure($onePercPenalty),
+            "Total Paid Amount" => $amount,
+            "Paid Amount In Words" => getIndianCurrency($amount),
+            "Remaining Amount" => 0,
         ];
 
         $filtered = collect($amount)->filter(function ($value, $key) {
