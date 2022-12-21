@@ -4,53 +4,86 @@ namespace App\Http\Controllers\Workflows;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Repository\WorkflowTrack\EloquentWorkflowTrack;
+use App\Models\WorkflowTrack;
+use App\Traits\WorkflowTrack as TrackTrait;
+use Exception;
+
+/**
+ * Created On-21-12-2022 
+ * Created By-Anshu Kumar
+ * ---------------------------------------------------------------------------------------------
+ * Saving, Fetching the workflow track messages
+ */
 
 class WorkflowTrackController extends Controller
 {
-    /**
-     * Created On-18-07-2022 
-     * Created By-Anshu Kumar
-     * ---------------------------------------------------------------------------------------------
-     * Saving, Fetching the workflow track messages
-     */
+
+    use TrackTrait;
 
     /**
-     * Initializing Repository
-     */
-
-    protected $eloquentWorkflowTrack;
-
-    public function __construct(EloquentWorkflowTrack $eloquentWorkflowTrack)
-    {
-        $this->EloquentWorkflowTrack = $eloquentWorkflowTrack;
-    }
-
-    /**
-     * Store Workflow Track
+     * Save workflow Track
      */
     public function store(Request $request)
     {
-        return $this->EloquentWorkflowTrack->store($request);
+        try {
+            $request->validate([
+                'message' => 'required',
+            ]);
+
+            $track = new WorkflowTrack;
+            $track->saveTrack($request);
+
+            return responseMsg(true, 'Successfully Saved The Remarks', '');
+        } catch (Exception $e) {
+            return response()->json($e, 400);
+        }
     }
 
-    // Get Workflow Track by Workflow Track Id
-    public function getWorkflowTrackByID($id)
+    /**
+     *| Get Workflow Track by its Id
+     *| @param WorkflowTrackId $id
+     *| @return response
+     */
+    public function getWorkflowTrackByID(Request $req)
     {
-        return $this->EloquentWorkflowTrack->getWorkflowTrackByID($id);
+        $detail = new WorkflowTrack();
+        $list =  $detail->detailById($req);
+        return responseMsg(true, 'Data retrieved', $list);
     }
 
-    // Get Workflow Track By RefTableID and Value
-    public function getWorkflowTrackByTableIDValue($ref_table_id, $ref_table_value)
+
+    /**
+     *| Get WorkflowTrack By Reference Table ID and Reference Table Value
+     *| @param ReferenceTableID $ref_table_id
+     *| @param ReferenceTableValue $refereceTableValue
+     */
+    public function getWorkflowTrackByTableIDValue(Request $req)
     {
-        return $this->EloquentWorkflowTrack->getWorkflowTrackByTableIDValue($ref_table_id, $ref_table_value);
+        $detail = new WorkflowTrack();
+        $list =  $detail->detailByrefId($req);
+
+        return responseMsg(true, 'Data retrieved', $list);
     }
 
-    //changes by Mrinal
-    //Date:12/11/2022
+
     //notification by citixen id
     public function getNotificationByCitizenId(Request $request)
     {
-        return $this->EloquentWorkflowTrack->getNotificationByCitizenId($request);
+        $citizen_id = Auth()->user()->id;
+        $notification  = WorkflowTrack::select(
+            'workflow_id',
+            'module_id',
+            'ref_table_dot_id',
+            'ref_table_id_value',
+            'message',
+            'workflow_tracks.created_at as track_date',
+            'user_name'
+        )
+            ->join('users', 'users.id', '=', 'workflow_tracks.user_id')
+            ->where('citizen_id', $citizen_id)
+            ->where('workflow_id', $request->workflowId)
+            ->where('ref_table_id_value', $request->id)
+            ->get();
+        return responseMsg(true, "Data Retrived", $notification);
     }
 }

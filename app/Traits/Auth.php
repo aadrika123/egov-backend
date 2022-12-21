@@ -14,6 +14,7 @@ use Razorpay\Api\Collection;
  * Created for reducing the duplication for the Saving and editing codes
  * --------------------------------------------------------------------------------------------------------
  * Created by-Anshu Kumar
+ * Updated by-Sam kerketta
  * Created On-16-07-2022 
  * --------------------------------------------------------------------------------------------------------
  */
@@ -85,7 +86,7 @@ trait Auth
      */
     public function tResponseSuccess($token, $emailInfo)
     {
-        $userDetails = $this->getUserDetails($emailInfo); //<------------ calling
+        $userDetails = $this->getUserDetails($emailInfo);                           //<------------ calling user details
         $response = ['status' => true, 'message' => 'You Have Logged In!!', 'data' => ["token" => $token, 'userDetails' => $userDetails]];
         return $response;
     }
@@ -213,8 +214,8 @@ trait Auth
      * |@var roleBasedMenu
      * |@var collection
      * |@return collection[] : returning the user details 
-         | Under Modification Remarks:(Split the functions/costant inetilization/collide the collection:line-248,253)
-     * | Remark (CAUTION) -> make the join for the user name and remove the user serch in USER table
+         |line-(248,253) Working
+     * | Remark : use collect in place of foreach.
      */
     public function getUserDetails($emailInfo)
     {
