@@ -52,42 +52,42 @@ class CitizenRepository implements iCitizenRepository
     public function citizenRegister(Request $request)
     {
 
-        $validator = Validator::make(request()->all(), [
-            'name'     => 'required',
-            'mobile' => 'required',
-            'email' => 'required|unique:users',
-            'password' => [
-                'required',
-                'min:6',
-                'max:255',
-                'regex:/[a-z]/',      // must contain at least one lowercase letter
-                'regex:/[A-Z]/',      // must contain at least one uppercase letter
-                'regex:/[0-9]/',      // must contain at least one digit
-                'regex:/[@$!%*#?&]/'  // must contain a special character
-            ],
-            'ulb' => 'required|integer'
-        ]);
+        // $validator = Validator::make(request()->all(), [
+        //     'name'     => 'required',
+        //     'mobile' => 'required',
+        //     'email' => 'required|unique:users',
+        //     'password' => [
+        //         'required',
+        //         'min:6',
+        //         'max:255',
+        //         'regex:/[a-z]/',      // must contain at least one lowercase letter
+        //         'regex:/[A-Z]/',      // must contain at least one uppercase letter
+        //         'regex:/[0-9]/',      // must contain at least one digit
+        //         'regex:/[@$!%*#?&]/'  // must contain a special character
+        //     ],
+        //     'ulb' => 'required|integer'
+        // ]);
 
-        if ($validator->fails()) {
-            return response()->json(
-                $validator->errors(),
-                Response::HTTP_BAD_REQUEST
-            );
-        }
+        // if ($validator->fails()) {
+        //     return response()->json(
+        //         $validator->errors(),
+        //         Response::HTTP_BAD_REQUEST
+        //     );
+        // }
 
-        try {
-            $citizen = new User;
-            $citizen->user_name = $request->name;
-            $citizen->mobile = $request->mobile;
-            $citizen->email = $request->email;
-            $citizen->password = Hash::make($request->password);
-            $citizen->user_type = "Citizen";
-            $citizen->ulb_id = $request->ulb;
-            $citizen->save();
-            return responseMsg(true, "Succesfully Registered", "");
-        } catch (Exception $e) {
-            return response()->json($e, 400);
-        }
+        // try {
+        //     $citizen = new User;
+        //     $citizen->user_name = $request->name;
+        //     $citizen->mobile = $request->mobile;
+        //     $citizen->email = $request->email;
+        //     $citizen->password = Hash::make($request->password);
+        //     $citizen->user_type = "Citizen";
+        //     $citizen->ulb_id = $request->ulb;
+        //     $citizen->save();
+        //     return responseMsg(true, "Succesfully Registered", "");
+        // } catch (Exception $e) {
+        //     return response()->json($e, 400);
+        // }
     }
 
     /**

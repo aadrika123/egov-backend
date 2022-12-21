@@ -237,6 +237,7 @@ class SafRepository implements iSafRepository
             $safCalculation = new SafCalculation();
             $safTaxes = $safCalculation->calculateTax($request);
 
+
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 

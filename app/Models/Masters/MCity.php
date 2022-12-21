@@ -20,6 +20,6 @@ class MCity extends Model
             ->join("m_cities as c", 'c.id', '=', 'ulb_masters.city_id')
             ->join("m_states as s", "s.id", '=', 'c.state_id')
             ->where("ulb_masters.id", $ulbId)
-            ->get();
+            ->first();
     }
 }
