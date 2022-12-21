@@ -20,25 +20,25 @@ use Illuminate\Support\Facades\Route;
  */
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     Route::controller(RazorpayPaymentController::class)->group(function () {
-        Route::post('store-payment', 'storePayment');                                               // Store Payment in payment Masters
-        Route::get('get-payment-by-id/{id}', 'getPaymentByID');                                     // Get Payment by Id
-        Route::get('get-all-payments', 'getAllPayments');                                           // Get All Payments
+        Route::post('store-payment', 'storePayment');                                               // 01 Store Payment in payment Masters
+        Route::get('get-payment-by-id/{id}', 'getPaymentByID');                                     // 02 Get Payment by Id
+        Route::get('get-all-payments', 'getAllPayments');                                           // 03 Get All Payments
 
         # razorpay PG
-        Route::post('get-department-byulb', 'getDepartmentByulb');                                  // returning department data according to ulbd 
-        Route::post('get-paymentgateway-byrequests', 'getPaymentgatewayByrequests');                // returning payment gateway data according to the request data condition
-        Route::post('get-pg-details', 'getPgDetails');                                              // returning the payment gateway details accordin to the request data condition
-        Route::get('get-webhook-details', 'getWebhookDetails');                                     // returning all the webhook details 
-        Route::post('verify-payment-status', 'verifyPaymentStatus');                                // verifiying the payment status and saving both success, fails, suspeciousdata  
-        Route::post('get-transaction-no-details', 'getTransactionNoDetails');                       // geting details of the transaction according to the orderId, paymentId and payment status
-        Route::get('all-module-transaction', 'allModuleTransaction');                                // all details of payments according to user Id 
+        Route::post('get-department-byulb', 'getDepartmentByulb');                                  // 04 returning department data according to ulbd 
+        Route::post('get-paymentgateway-byrequests', 'getPaymentgatewayByrequests');                // 05 returning payment gateway data according to the request data condition
+        Route::post('get-pg-details', 'getPgDetails');                                              // 06 returning the payment gateway details accordin to the request data condition
+        Route::get('get-webhook-details', 'getWebhookDetails');                                     // 07 returning all the webhook details 
+        Route::post('verify-payment-status', 'verifyPaymentStatus');                                // 08 verifiying the payment status and saving both success, fails, suspeciousdata  
+        Route::post('get-transaction-no-details', 'getTransactionNoDetails');                       // 09 geting details of the transaction according to the orderId, paymentId and payment status
+        Route::get('all-module-transaction', 'allModuleTransaction');                               // 10 all details of payments according to user Id 
 
         # Payment Reconciliation
-        Route::get('get-reconcillation-details', 'getReconcillationDetails');
-        Route::post('search-reconciliation-details', 'searchReconciliationDetails');
-        Route::post('update-reconciliation-details', 'updateReconciliationDetails');
+        Route::get('get-reconcillation-details', 'getReconcillationDetails');                       // 11 
+        Route::post('search-reconciliation-details', 'searchReconciliationDetails');                // 12
+        Route::post('update-reconciliation-details', 'updateReconciliationDetails');                // 13
     });
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {
-    Route::post('razerpay-webhook', 'gettingWebhookDetails');                                           // collecting the all data provided by the webhook and updating the related database
+    Route::post('razerpay-webhook', 'gettingWebhookDetails');                                       // 14 collecting the all data provided by the webhook and updating the related database
 });

@@ -25,12 +25,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | Updated by-Sam kerketta
      * | ------------------- Apply New Water Connection ------------------------ |
      */
-    Route::resource('crud/new-connection', NewConnectionController::class);
+    Route::resource('crud/new-connection', NewConnectionController::class);                             //01
 
     Route::controller(NewConnectionController::class)->group(function () {
-        Route::post('user-water-connection-charges', 'getUserWaterConnectionCharges');                           // Get Water Connection Charges of Logged In User
-        Route::post('applicant-document-upload', 'applicantDocumentUpload');                                     // User Document Upload
-        Route::post('water-payment', 'waterPayment');                                                            // Water Payment
+        Route::post('user-water-connection-charges', 'getUserWaterConnectionCharges');                  //02                           // Get Water Connection Charges of Logged In User
+        Route::post('applicant-document-upload', 'applicantDocumentUpload');                            //03        // User Document Upload
+        Route::post('water-payment', 'waterPayment');                                                   //04         // Water Payment
     });
 
     /**
@@ -40,12 +40,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
 
     // Citizen View Water Screen For Mobile 
-    Route::controller(NewConnectionController::class)->group(function () {
-        Route::get('get-connection-type', 'getConnectionType');                                                 // Get Water Connection Type Details mstr
-        Route::get('get-connection-through', 'getConnectionThrough');                                           // Get Water Connection Through Details mstr
-        Route::get('get-property-type', 'getPropertyType');                                                     // Get Property Type Details mstr
-        Route::get('get-owner-type', 'getOwnerType');                                                           // Get Owner Type Details mstr
-        Route::get('get-ward-no', 'getWardNo');                                                                 // Get Ward No According to Saf or Holding Details mstr
+    Route::controller(NewConnectionController::class)->group(function () {          
+        Route::get('get-connection-type', 'getConnectionType');                                         //05         // Get Water Connection Type Details mstr
+        Route::get('get-connection-through', 'getConnectionThrough');                                   //06        // Get Water Connection Through Details mstr
+        Route::get('get-property-type', 'getPropertyType');                                             //07        // Get Property Type Details mstr
+        Route::get('get-owner-type', 'getOwnerType');                                                   //08        // Get Owner Type Details mstr
+        Route::get('get-ward-no', 'getWardNo');                                                         //09        // Get Ward No According to Saf or Holding Details mstr
     });
 });
 /**
@@ -56,19 +56,19 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     Route::controller(WaterApplication::class)->group(function () {  
         // Route::match(["get", "post"], 'apply', 'applyApplication');
-        Route::get('citizenApplications', 'getCitizenApplication');
-        Route::post('Razorpay-Orderid', 'handeRazorPay');
-        Route::post('getTranNo', 'readTransectionAndApl');
-        Route::post('documentUpload', 'documentUpload');
-        Route::post('getUploadedDoc', 'getUploadDocuments');
+        Route::get('citizenApplications', 'getCitizenApplication');                                     //10
+        Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11
+        Route::post('getTranNo', 'readTransectionAndApl');                                              //12
+        Route::post('documentUpload', 'documentUpload');                                                //13
+        Route::post('getUploadedDoc', 'getUploadDocuments');                                            //14
     });
 
 });
 Route::controller(WaterApplication::class)->group(function () {    
-    Route::get('paymentRecipt/{id}/{transectionId}', 'paymentRecipt');
-    Route::post('cargeCal', 'calWaterConCharge');
-    Route::post('consumerChargeCal', 'calConsumerDemand');
+    Route::get('paymentRecipt/{id}/{transectionId}', 'paymentRecipt');                                  //15
+    Route::post('cargeCal', 'calWaterConCharge');                                                       //16
+    Route::post('consumerChargeCal', 'calConsumerDemand');                                              //17
 });
 Route::controller(WaterConsumer::class)->group(function () { 
-    Route::post('consumerChargeCal', 'calConsumerDemand');
+    Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18        
 });

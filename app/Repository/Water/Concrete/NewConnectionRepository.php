@@ -58,7 +58,7 @@ class NewConnectionRepository implements iNewConnection
         try {
             $ulbId = auth()->user()->ulb_id;
             $ward = $this->getAllWard($ulbId);
-            return responseMsg(true, "Ward List!", $ward);
+            return responseMsgs(true, "Ward List!", $ward,);
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
@@ -143,7 +143,7 @@ class NewConnectionRepository implements iNewConnection
 
 
     /**
-     * | -------------------------  Apply for the new Application for Water Application --------------------- |
+     * | -------------------------  Apply for the new Application for Water Application  --------------------- |
      * | @param req
      * | @var vacantLand
      * | @var workflowID
@@ -154,6 +154,9 @@ class NewConnectionRepository implements iNewConnection
      * | @var newConnectionCharges :
      * | Post the value in Water Application table
      * | post the value in Water Applicants table by loop
+     * | 
+     * | time : 
+     * | rating : 5 
      * ------------------------------------------------------------------------------------
      * | Generating the demand amount for the applicant in Water Connection Charges Table 
         | Serila No : 06
@@ -197,7 +200,6 @@ class NewConnectionRepository implements iNewConnection
             }
 
             DB::beginTransaction();
-
             $objNewApplication = new WaterApplication();
             $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId);
 
@@ -216,8 +218,8 @@ class NewConnectionRepository implements iNewConnection
 
             $charges = new WaterConnectionCharge();
             $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
-
             DB::commit();
+
             return responseMsg(true, "Successfully Saved!", $applicationNo);
         } catch (Exception $error) {
             DB::rollBack();
@@ -233,6 +235,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var readPropetySafCheck
      * | @var readpropetyHoldingCheck
      * | Operation : check if the applied application is in vacant land 
+        | Serial No : 06.1
      */
     public function checkVacantLand($req, $vacantLand)
     {
@@ -259,50 +262,6 @@ class NewConnectionRepository implements iNewConnection
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-    /**
-     * |--------- Get the Water Connection charges Details for Logged In user ------------ |
-     * | @param Req
-     * | @var userId
-     * | @var connections
-        | Serial No : 
-     */
-    public function getUserWaterConnectionCharges(Request $req)
-    {
-        try {
-            $userId = auth()->user()->id;
-            $connections = WaterApplication::join('water_connection_charges', 'water_applications.id', '=', 'water_connection_charges.application_id')
-                ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
-                ->select(
-                    'water_connection_charges.application_id AS applicationId',
-                    'water_applications.application_no',
-                    'water_applicants.applicant_name AS appplicantName',
-                    'water_connection_charges.amount',
-                    'water_connection_charges.paid_status',
-                    'water_connection_charges.status',
-                    'water_connection_charges.penalty',
-                    'water_connection_charges.conn_fee',
-                )
-                ->where('water_applications.user_id', '=', $userId)
-                ->orwhere('water_applications.id', $req->applicationId)
-                ->get();
-            return responseMsg(true, "", $connections);
-        } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
-        }
-    }
-
     /**
      * |--------------------------------------------------------- water Workflow Functions Listed Below -------------------------------------------------------------------------------------------------------|
      */
@@ -319,7 +278,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var wardId : using the Workflow trait's function (getWardUserId($userId)) for respective wardId.
      * | @var roles : using the Workflow trait's function (getRoleIdByUserId($userID)) for  respective roles.
      * | @return waterList : Details to be displayed in the inbox of the offices in water workflow. 
-        | Serila No : 
+        | Serila No : 07
         | Working
      */
     public function waterInbox()
@@ -362,7 +321,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var wardId : using the Workflow trait's function (getWardUserId($userId)) for respective wardId.
      * | @var roles : using the Workflow trait's function (getRoleIdByUserId($userID)) for  respective roles.
      * | @return waterList : Details to be displayed in the inbox of the offices in water workflow. 
-        | Serial No :
+        | Serial No : 08
         | Working 
      */
     public function waterOutbox()
@@ -400,7 +359,7 @@ class NewConnectionRepository implements iNewConnection
      * |------------------------------------------- Water Application List -------------------------------|
      * | @param request
      * | @var 
-        | Serial No : 
+        | Serial No : 09
         | Working
      */
     public function getWaterApplicatioList($ulbId)
@@ -431,7 +390,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param 
      * | @var 
         | Serial No :
-        | Working
+        | Flag : change
      */
     public function postNextLevel($req)
     {
