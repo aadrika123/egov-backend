@@ -2,20 +2,36 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\EloquentClass\Property\InsertTax;
+use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\Property\ReqSiteVerification;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropLevelPending;
+use App\Models\Property\RefPropConstructionType;
+use App\Models\Property\RefPropFloor;
+use App\Models\Property\RefPropOccupancyType;
+use App\Models\Property\RefPropOwnershipType;
+use App\Models\Property\RefPropTransferMode;
+use App\Models\Property\RefPropType;
+use App\Models\Property\RefPropUsageType;
+use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
+use App\Models\Workflows\WfWorkflow;
+use App\Models\WorkflowTrack;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class ActiveSafController extends Controller
 {
@@ -28,25 +44,226 @@ class ActiveSafController extends Controller
      * | Controller regarding with SAF Module
      */
 
-    private $_workflowIds;
+    protected $user_id;
+    protected $_redis;
+    protected $_todayDate;
+    protected $_workflowIds;
     // Initializing function for Repository
     protected $saf_repository;
     public function __construct(iSafRepository $saf_repository)
     {
         $this->Repository = $saf_repository;
-        $this->_workflowIds = Config::get('PropertyConstaint.SAF_WORKFLOWS');;
+        $this->_workflowIds = Config::get('PropertyConstaint.SAF_WORKFLOWS');
     }
 
-    // Get All master data in saf
+    /**
+     * | Master data in Saf Apply
+     * | @var ulbId Logged In User Ulb 
+     * | Status-Closed
+     * | Query Costing-369ms 
+     * | Rating-3
+     */
     public function masterSaf()
     {
-        return $this->Repository->masterSaf();
+        try {
+            $redisConn = Redis::connection();
+            $data = [];
+            $ulbId = auth()->user()->ulb_id;
+            $ulbWardMaster = new UlbWardMaster();
+            $refPropOwnershipType = new RefPropOwnershipType();
+            $refPropType = new RefPropType();
+            $refPropFloor = new RefPropFloor();
+            $refPropUsageType = new RefPropUsageType();
+            $refPropOccupancyType = new RefPropOccupancyType();
+            $refPropConstructionType = new RefPropConstructionType();
+            $refPropTransferMode = new RefPropTransferMode();
+
+            // Getting Masters from Redis Cache
+            $wardMaster = json_decode(Redis::get('wards-ulb-' . $ulbId));
+            $ownershipTypes = json_decode(Redis::get('prop-ownership-types'));
+            $propertyType = json_decode(Redis::get('property-types'));
+            $floorType = json_decode(Redis::get('property-floors'));
+            $usageType = json_decode(Redis::get('property-usage-types'));
+            $occupancyType = json_decode(Redis::get('property-occupancy-types'));
+            $constructionType = json_decode(Redis::get('property-construction-types'));
+            $transferModuleType = json_decode(Redis::get('property-transfer-modes'));
+
+            // Ward Masters
+            if (!$wardMaster) {
+                $wardMaster = $ulbWardMaster->getWardByUlbId($ulbId);   // <----- Get Ward by Ulb ID By Model Function
+                $redisConn->set('wards-ulb-' . $ulbId, json_encode($wardMaster));            // Caching
+            }
+
+            $data['ward_master'] = $wardMaster;
+
+            // Ownership Types
+            if (!$ownershipTypes) {
+                $ownershipTypes = $refPropOwnershipType->getPropOwnerTypes();   // <--- Get Property OwnerShip Types
+                $redisConn->set('prop-ownership-types', json_encode($ownershipTypes));
+            }
+
+            $data['ownership_types'] = $ownershipTypes;
+
+            // Property Types
+            if (!$propertyType) {
+                $propertyType = $refPropType->propPropertyType();
+                $redisConn->set('property-types', json_encode($propertyType));
+            }
+
+            $data['property_type'] = $propertyType;
+
+            // Property Floors
+            if (!$floorType) {
+                $floorType = $refPropFloor->getPropTypes();
+                $redisConn->set('propery-floors', json_encode($floorType));
+            }
+
+            $data['floor_type'] = $floorType;
+
+            // Property Usage Types
+            if (!$usageType) {
+                $usageType = $refPropUsageType->propUsageType();
+                $redisConn->set('property-usage-types', json_encode($usageType));
+            }
+
+            $data['usage_type'] = $usageType;
+
+            // Property Occupancy Types
+            if (!$occupancyType) {
+                $occupancyType = $refPropOccupancyType->propOccupancyType();
+                $redisConn->set('property-occupancy-types', json_encode($occupancyType));
+            }
+
+            $data['occupancy_type'] = $occupancyType;
+
+            // property construction types
+            if (!$constructionType) {
+                $constructionType = $refPropConstructionType->propConstructionType();
+                $redisConn->set('property-construction-types', json_encode($constructionType));
+            }
+
+            $data['construction_type'] = $constructionType;
+
+            // property transfer modes
+            if (!$transferModuleType) {
+                $transferModuleType = $refPropTransferMode->getTransferModes();
+                $redisConn->set('property-transfer-modes', json_encode($transferModuleType));
+            }
+
+            $data['transfer_mode'] = $transferModuleType;
+
+            return responseMsgs(true, 'Property Masters', $data, "010101", "1.0", "317ms", "GET", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
-    //  Function for applying SAF
+    /**
+     * | Apply for New Application
+     * | Status-Closed
+     * | Query Costing-500 ms
+     * | Rating-5
+     */
     public function applySaf(reqApplySaf $request)
     {
-        return $this->Repository->applySaf($request);
+        try {
+            $mApplyDate = Carbon::now()->format("Y-m-d");
+            $user_id = auth()->user()->id;
+            $ulb_id = $request->ulbId;
+            $demand = array();
+            $metaReqs = array();
+            $assessmentTypeId = $request->assessmentType;
+            if ($request->assessmentType == 1) {                                                    // New Assessment 
+                $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+                $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.1');
+            }
+
+            if ($request->assessmentType == 2) {                                                    // Reassessment
+                $workflow_id = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
+                $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
+            }
+
+            if ($request->assessmentType == 3) {                                                    // Mutation
+                $workflow_id = Config::get('workflow-constants.SAF_MUTATION_ID');
+                $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.3');
+            }
+
+            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+
+            $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
+
+            $safCalculation = new SafCalculation();
+            $safTaxes = $safCalculation->calculateTax($request);
+            $mLateAssessPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
+
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
+            $initiatorRoleId = DB::select($refInitiatorRoleId);
+
+            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId = DB::select($refFinisherRoleId);
+
+            DB::beginTransaction();
+            $safNo = $this->safNo($request->ward, $assessmentTypeId, $ulb_id);
+            $saf = new PropActiveSaf();
+
+            $metaReqs['lateAssessPenalty'] = $mLateAssessPenalty;
+            $metaReqs['safNo'] = $safNo;
+            $metaReqs['roadWidthType'] = $roadWidthType;
+            $metaReqs['userId'] = $user_id;
+            $metaReqs['workflowId'] = $ulbWorkflowId->id;
+            $metaReqs['ulbId'] = $ulb_id;
+            $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->role_id;;
+            $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
+
+            $request->merge($metaReqs);
+            $safId = $saf->store($request);                                             // Store SAF Using Model function 
+
+            // SAF Owner Details
+            if ($request['owner']) {
+                $owner_detail = $request['owner'];
+                foreach ($owner_detail as $owner_details) {
+                    $owner = new PropActiveSafsOwner();
+                    $this->tApplySafOwner($owner, $safId, $owner_details);                                    // Trait Owner Details
+                    $owner->save();
+                }
+            }
+
+            // Floor Details
+            if ($request['floor']) {
+                $floor_detail = $request['floor'];
+                foreach ($floor_detail as $floor_details) {
+                    $floor = new PropActiveSafsFloor();
+                    $this->tApplySafFloor($floor, $safId, $floor_details);
+                    $floor->save();
+                }
+            }
+
+            // Property SAF Label Pendings
+            $labelPending = new PropLevelPending();
+            $labelPending->saf_id = $safId;
+            $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
+            $labelPending->save();
+
+            // Insert Tax
+            $demand['amounts'] = $safTaxes->original['data']['demand'];
+            $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
+
+            $tax = new InsertTax();
+            $tax->insertTax($safId, $user_id, $safTaxes);                                               // Insert SAF Tax
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
+                "safNo" => $safNo,
+                "applyDate" => $mApplyDate,
+                "safId" => $safId,
+                "demand" => $demand
+            ], "010102", "1.0", "1s", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", "1s", "POST", $request->deviceId);
+        }
     }
 
     /**
@@ -296,11 +513,38 @@ class ActiveSafController extends Controller
         return $data;
     }
 
-    // postEscalate
+    /**
+     * @var userId Logged In User Id
+     * desc This function set OR remove application on special category
+     * request : escalateStatus (required, int type), safId(required)
+     * -----------------Tables---------------------
+     *  active_saf_details
+     * ============================================
+     * active_saf_details.is_escalate <- request->escalateStatus 
+     * active_saf_details.escalate_by <- request->escalateStatus 
+     * ============================================
+     * #message -> return response 
+     * Status-Closed
+     * | Query Cost-353ms 
+     * | Rating-1
+     */
     public function postEscalate(Request $request)
     {
-        $data = $this->Repository->postEscalate($request);
-        return $data;
+        $request->validate([
+            "escalateStatus" => "required|int",
+            "safId" => "required|int",
+        ]);
+        try {
+            $userId = auth()->user()->id;
+            $saf_id = $request->safId;
+            $data = PropActiveSaf::find($saf_id);
+            $data->is_escalate = $request->escalateStatus;
+            $data->escalate_by = $userId;
+            $data->save();
+            return responseMsgs(true, $request->escalateStatus == 1 ? 'Saf is Escalated' : "Saf is removed from Escalated", '', "010106", "1.0", "353ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
     }
 
     // Post Independent Comment
@@ -308,10 +552,50 @@ class ActiveSafController extends Controller
     {
         $request->validate([
             'comment' => 'required',
-            'safId' => 'required'
+            'safId' => 'required|integer'
         ]);
 
-        return $this->Repository->commentIndependent($request);
+        try {
+            $propLevelPending = new PropLevelPending();
+            $workflowTrack = new WorkflowTrack();
+            $userId = auth()->user()->id;
+            $saf = PropActiveSaf::find($request->safId);                // SAF Details
+            $mSafWorkflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs = array();
+            DB::beginTransaction();
+
+            $levelPending = $propLevelPending->getLevelBySafReceiver($request->safId, $userId);     // <---- Get level Pending by Model Function
+
+            if (is_null($levelPending)) {
+                $levelPending = $propLevelPending->getLastLevelBySafId($request->safId);            // <---- Get Last Level By SAf id by Model function
+                if (is_null($levelPending)) {
+                    return responseMsg(false, "SAF Not Found", "");
+                }
+            }
+            $levelPending->remarks = $request->comment;
+            $levelPending->receiver_user_id = $userId;
+            $levelPending->save();
+
+            // Save On Workflow Track
+            $metaReqs = [
+                'workflowId' => $mSafWorkflowId,
+                'userId' => $saf->user_id,
+                'moduleId' => $mModuleId,
+                'workflowId' => $mSafWorkflowId,
+                'refTableDotId' => "active_safs.id",
+                'refTableIdValue' => $saf->id,
+                'message' => $request->comment
+            ];
+            $request->request->add($metaReqs);
+            $workflowTrack->saveTrack($request);
+
+            DB::commit();
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "427ms", "POST", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     // Forward to Next Level

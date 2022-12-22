@@ -38,6 +38,7 @@ use App\Http\Controllers\property\ClusterController;
  * ----------------------------------------------------------------------------------------
  */
 
+
 // Inside Middleware Routes with API Authenticate 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
   /**
