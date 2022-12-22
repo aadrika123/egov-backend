@@ -709,44 +709,6 @@ class SafRepository implements iSafRepository
     }
 
     /**
-     * | Get Property Transactions
-     * | @param req requested parameters
-     * | @var userId authenticated user id
-     * | @var propTrans Property Transaction details of the Logged In User
-     * | @return responseMsg
-     * | Status-Closed
-     * | Run time Complexity-346ms
-     * | Rating - 3
-     */
-    public function getPropTransactions($req)
-    {
-        $propTransaction = new PropTransaction();
-        $userId = auth()->user()->id;
-
-        $propTrans = json_decode(Redis::get('property-transactions-user-' . $userId));                      // Should Be Deleted SAF Payment
-        if (!$propTrans) {
-            $propTrans = $propTransaction->getPropTransByUserId($userId);
-            $this->_redis->set('property-transactions-user-' . $userId, json_encode($propTrans));
-        }
-        return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", "265ms", "POST", $req->deviceId);
-    }
-
-    /**
-     * | Get Transactions by Property id or SAF id
-     * | @param Request $req
-     */
-    public function getTransactionBySafPropId($req)
-    {
-        $propTransaction = new PropTransaction();
-        if ($req->safId)                                                // Get By SAF Id
-            $propTrans = $propTransaction->getPropTransBySafId($req->safId);
-        if ($req->propertyId)                                           // Get by Property Id
-            $propTrans = $propTransaction->getPropTransByPropId($req->propertyId);
-
-        return responseMsg(true, "Property Transactions", remove_null($propTrans));
-    }
-
-    /**
      * | Get Property Details by Property Holding No
      * | Rating - 2
      * | Run Time Complexity-500 ms

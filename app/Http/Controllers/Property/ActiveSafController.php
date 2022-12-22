@@ -11,6 +11,7 @@ use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropLevelPending;
+use App\Models\Property\PropTransaction;
 use App\Models\Property\RefPropConstructionType;
 use App\Models\Property\RefPropFloor;
 use App\Models\Property\RefPropOccupancyType;
@@ -45,7 +46,6 @@ class ActiveSafController extends Controller
      */
 
     protected $user_id;
-    protected $_redis;
     protected $_todayDate;
     protected $_workflowIds;
     // Initializing function for Repository
@@ -755,16 +755,51 @@ class ActiveSafController extends Controller
         return $this->Repository->generatePaymentReceipt($req);
     }
 
-    // Get Property Transactions
+    /**
+     * | Get Property Transactions
+     * | @param req requested parameters
+     * | @var userId authenticated user id
+     * | @var propTrans Property Transaction details of the Logged In User
+     * | @return responseMsg
+     * | Status-Closed
+     * | Run time Complexity-346ms
+     * | Rating - 3
+     */
     public function getPropTransactions(Request $req)
     {
-        return $this->Repository->getPropTransactions($req);
+        try {
+            $redis = Redis::connection();
+            $propTransaction = new PropTransaction();
+            $userId = auth()->user()->id;
+
+            $propTrans = json_decode(Redis::get('property-transactions-user-' . $userId));                      // Should Be Deleted SAF Payment
+            if (!$propTrans) {
+                $propTrans = $propTransaction->getPropTransByUserId($userId);
+                $redis->set('property-transactions-user-' . $userId, json_encode($propTrans));
+            }
+            return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", "265ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010117", "1.0", "265ms", "POST", $req->deviceId);
+        }
     }
 
-    // Get Transactions by prop id or safid
+    /**
+     * | Get Transactions by Property id or SAF id
+     * | @param Request $req
+     */
     public function getTransactionBySafPropId(Request $req)
     {
-        return $this->Repository->getTransactionBySafPropId($req);
+        try {
+            $propTransaction = new PropTransaction();
+            if ($req->safId)                                                // Get By SAF Id
+                $propTrans = $propTransaction->getPropTransBySafId($req->safId);
+            if ($req->propertyId)                                           // Get by Property Id
+                $propTrans = $propTransaction->getPropTransByPropId($req->propertyId);
+
+            return responseMsg(true, "Property Transactions", remove_null($propTrans));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     // Get Property by Holding No
