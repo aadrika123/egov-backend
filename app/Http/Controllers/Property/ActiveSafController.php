@@ -4,9 +4,8 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
+use App\Http\Requests\Property\ReqSiteVerification;
 use App\Models\Property\PropActiveSaf;
-use App\Models\Property\PropActiveSafsDoc;
-use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
@@ -318,6 +317,13 @@ class ActiveSafController extends Controller
     // Forward to Next Level
     public function postNextLevel(Request $request)
     {
+        $request->validate([
+            'safId' => 'required|integer',
+            'senderRoleId' => 'required|integer',
+            'receiverRoleId' => 'required|integer',
+            'comment' => 'required',
+        ]);
+
         $data = $this->Repository->postNextLevel($request);
         return $data;
     }
@@ -400,15 +406,8 @@ class ActiveSafController extends Controller
     }
 
     // Site Verification
-    public function siteVerification(Request $req)
+    public function siteVerification(ReqSiteVerification $req)
     {
-        $req->validate([
-            'safId' => 'required|integer',
-            'verificationStatus' => 'required|bool',
-            'propertyType' => 'required|integer',
-            'roadTypeId' => 'required|integer',
-            'wardId' => 'required|integer'
-        ]);
         return $this->Repository->siteVerification($req);
     }
 

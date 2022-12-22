@@ -231,7 +231,7 @@ class SafRepository implements iSafRepository
                 $roadWidthType = 3;
             elseif ($request->roadType >= 20 && $request->roadType <= 39)
                 $roadWidthType = 2;
-            elseif ($request->roadType > 40)
+            elseif ($request->roadType >= 40)
                 $roadWidthType = 1;
 
             $safCalculation = new SafCalculation();
@@ -302,7 +302,7 @@ class SafRepository implements iSafRepository
             ], "010102", "1.0", "1s", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return $e;
+            return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", "1s", "POST", $request->deviceId);
         }
     }
 
@@ -1013,6 +1013,7 @@ class SafRepository implements iSafRepository
 
             $mOnePercPenaltyId = Config::get('PropertyConstaint.PENALTIES.LATE_ASSESSMENT_ID');
             $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
+            $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
 
             $applicationDtls = $paymentData->getApplicationId($req->paymentId);
@@ -1032,7 +1033,6 @@ class SafRepository implements iSafRepository
             $upToFinYear = $demands->last()['fyear'];
             $upToFinQtr = $demands->last()['qtr'];
 
-
             // Get PropertyTransactions
             $propTrans = $transaction->getPropTransactions($safId, "saf_id");
             $propTrans = collect($propTrans)->last();
@@ -1045,6 +1045,7 @@ class SafRepository implements iSafRepository
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
+                "accountDescription" => $mAccDescription,
                 "transactionDate" => $propTrans->tran_date,
                 "transactionNo" => $propTrans->tran_no,
                 "transactionTime" => $propTrans->created_at->format('H:i:s'),
@@ -1102,11 +1103,11 @@ class SafRepository implements iSafRepository
     public function readPenalyPmtAmts($lateAssessPenalty = 0, $onePercPenalty = 0, $amount)
     {
         $amount = [
-            "lateAssessmentPenalty" => $lateAssessPenalty,
-            "onePercPenalty" => roundFigure($onePercPenalty),
-            "paidAmount" => $amount,
-            "paidAmountInWords" => getIndianCurrency($amount),
-            "remainingAmount" => 0,
+            "Late Assessment Fine(Rule 14.1)" => $lateAssessPenalty,
+            "1% Monthly Penalty" => roundFigure($onePercPenalty),
+            "Total Paid Amount" => $amount,
+            "Paid Amount In Words" => getIndianCurrency($amount),
+            "Remaining Amount" => 0,
         ];
 
         $filtered = collect($amount)->filter(function ($value, $key) {
