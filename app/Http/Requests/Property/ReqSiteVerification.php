@@ -44,7 +44,6 @@ class ReqSiteVerification extends FormRequest
             'userId' => 'required|integer',
             'currentRoleId' => 'required|integer',
             'floorDetails' => 'required|array',
-            'floorDetails.*.floorVerifyId' => 'required|integer',
             'floorDetails.*.floorId' => 'required|integer',
             'floorDetails.*.floorMstrId' => 'required|integer',
             'floorDetails.*.usageType' => 'required|integer',
