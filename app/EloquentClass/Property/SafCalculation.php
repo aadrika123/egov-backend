@@ -784,7 +784,7 @@ class SafCalculation
                 ->where('construction_types_id', $this->_floors[$key]['constructionType'])
                 ->where('effective_date', $this->_effectiveDateRule2)
                 ->first();
-            $rentalRate = $rentalRates->rate * $paramRentalRate;
+            $rentalRate = round($rentalRates->rate * $paramRentalRate);
         }
 
         $rwhPenalty = 0;
