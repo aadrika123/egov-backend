@@ -23,11 +23,12 @@ class WorkflowTrack extends Model
         $track->ref_table_dot_id = $request->refTableDotId;
         $track->ref_table_id_value = $request->refTableIdValue;
         $track->track_date = $mTrackDate;
-        $track->forward_date = $request->forwardDate ?? null;
-        $track->forward_time = $request->forwardTime ?? null;
+        $track->forward_date = Carbon::now()->format('Y-m-d') ?? null;
+        $track->forward_time = Carbon::now()->format('H:i:s') ?? null;
         $track->message = $request->message;
         $track->sender_role_id = $request->senderRoleId ?? null;
         $track->receiver_role_id = $request->receiverRoleId ?? null;
+        $track->verification_status = $request->verificationStatus;
         $track->user_id = $userId;
         $track->save();
     }
