@@ -792,7 +792,9 @@ class ActiveSafController extends Controller
         try {
             $propTransaction = new PropTransaction();
             if ($req->safId)                                                // Get By SAF Id
+            {
                 $propTrans = $propTransaction->getPropTransBySafId($req->safId);
+            }
             if ($req->propertyId)                                           // Get by Property Id
                 $propTrans = $propTransaction->getPropTransByPropId($req->propertyId);
 

@@ -200,6 +200,14 @@ class PropActiveSaf extends Model
             ->first();
     }
 
+    // Get SAF No
+    public function getSafNo($safId)
+    {
+        return PropActiveSaf::select('saf_no')
+            ->where('id', $safId)
+            ->first();
+    }
+
     /**
      * | Get late Assessment by SAF id
      */

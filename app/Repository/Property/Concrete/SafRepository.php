@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
+use App\Http\Requests\Property\reqApplySaf;
 use App\MicroServices\DocUpload;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenalty;
@@ -91,6 +92,108 @@ class SafRepository implements iSafRepository
         $this->_redis = Redis::connection();
         $this->_todayDate = Carbon::now();
         $this->_workflowIds = Config::get('PropertyConstaint.SAF_WORKFLOWS');
+    }
+
+    public function applySaf(reqApplySaf $request)
+    {
+        try {
+            $mApplyDate = Carbon::now()->format("Y-m-d");
+            $user_id = auth()->user()->id;
+            $ulb_id = $request->ulbId;
+            $demand = array();
+            $metaReqs = array();
+            $assessmentTypeId = $request->assessmentType;
+            if ($request->assessmentType == 1) {                                                    // New Assessment 
+                $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+                $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.1');
+            }
+
+            if ($request->assessmentType == 2) {                                                    // Reassessment
+                $workflow_id = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
+                $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
+            }
+
+            if ($request->assessmentType == 3) {                                                    // Mutation
+                $workflow_id = Config::get('workflow-constants.SAF_MUTATION_ID');
+                $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.3');
+            }
+
+            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+
+            $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
+
+            $safCalculation = new SafCalculation();
+            $safTaxes = $safCalculation->calculateTax($request);
+            $mLateAssessPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
+
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
+            $initiatorRoleId = DB::select($refInitiatorRoleId);
+
+            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId = DB::select($refFinisherRoleId);
+
+            DB::beginTransaction();
+            $safNo = $this->safNo($request->ward, $assessmentTypeId, $ulb_id);
+            $saf = new PropActiveSaf();
+
+            $metaReqs['lateAssessPenalty'] = $mLateAssessPenalty;
+            $metaReqs['safNo'] = $safNo;
+            $metaReqs['roadWidthType'] = $roadWidthType;
+            $metaReqs['userId'] = $user_id;
+            $metaReqs['workflowId'] = $ulbWorkflowId->id;
+            $metaReqs['ulbId'] = $ulb_id;
+            $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->role_id;;
+            $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
+
+            $request->merge($metaReqs);
+            $safId = $saf->store($request);                                             // Store SAF Using Model function 
+
+            // SAF Owner Details
+            if ($request['owner']) {
+                $owner_detail = $request['owner'];
+                foreach ($owner_detail as $owner_details) {
+                    $owner = new PropActiveSafsOwner();
+                    $this->tApplySafOwner($owner, $safId, $owner_details);                                    // Trait Owner Details
+                    $owner->save();
+                }
+            }
+
+            // Floor Details
+            if ($request['floor']) {
+                $floor_detail = $request['floor'];
+                foreach ($floor_detail as $floor_details) {
+                    $floor = new PropActiveSafsFloor();
+                    $this->tApplySafFloor($floor, $safId, $floor_details);
+                    $floor->save();
+                }
+            }
+
+            // Property SAF Label Pendings
+            $labelPending = new PropLevelPending();
+            $labelPending->saf_id = $safId;
+            $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
+            $labelPending->save();
+
+            // Insert Tax
+            $demand['amounts'] = $safTaxes->original['data']['demand'];
+            $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
+
+            $tax = new InsertTax();
+            $tax->insertTax($safId, $user_id, $safTaxes);                                               // Insert SAF Tax
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
+                "safNo" => $safNo,
+                "applyDate" => $mApplyDate,
+                "safId" => $safId,
+                "demand" => $demand
+            ], "010102", "1.0", "1s", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", "1s", "POST", $request->deviceId);
+        }
     }
 
     /**
