@@ -317,7 +317,7 @@ trait SAF
                 'prop_active_safs.*',
                 'prop_active_safs.assessment_type as assessment',
                 'w.ward_name as old_ward_no',
-                'w.ward_name as new_ward_no',
+                'nw.ward_name as new_ward_no',
                 'o.ownership_type',
                 'p.property_type',
                 'r.road_type as road_type_master',
@@ -366,5 +366,22 @@ trait SAF
             ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
             ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
             ->where('prop_properties.status', 1);
+    }
+
+    /**
+     * | Read Road Width Types
+     */
+    public function readRoadWidthType($roadWidth)
+    {
+        if ($roadWidth <= 0)
+            $roadWidthType = 4;
+        elseif ($roadWidth > 0 && $roadWidth < 20)
+            $roadWidthType = 3;
+        elseif ($roadWidth >= 20 && $roadWidth <= 39)
+            $roadWidthType = 2;
+        elseif ($roadWidth >= 40)
+            $roadWidthType = 1;
+
+        return $roadWidthType;
     }
 }

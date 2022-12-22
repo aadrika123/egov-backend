@@ -60,7 +60,7 @@ class NewConnectionController extends Controller
                     'wardId'             => 'required|integer',
                     'areaSqft'           => 'required',
                     'landmark'           => 'required',
-                    'pin'                => 'required|integer',
+                    'pin'                => 'required|numeric|max:8',
                     'elecKNo'            => 'required',
                     'elecBindBookNo'     => 'required',
                     'elecAccountNo'      => 'required',

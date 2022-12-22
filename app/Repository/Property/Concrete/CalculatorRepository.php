@@ -41,20 +41,17 @@ class CalculatorRepository implements iCalculatorRepository
     public function __construct()
     {
         $this->calculation = new SafCalculation();
-        
     }
 
 
     public function safCalculator($request)
     {
-        
-
         try {
             $calculateArr = array();
             $mobileTower = array();
             $hordingBoard = array();
             $petrolPump = array();
-            
+
             $mobileTower['area'] = $request->mobileTowerArea;
             $mobileTower['dateFrom'] = $request->mobileTowerDate;
 
@@ -64,16 +61,17 @@ class CalculatorRepository implements iCalculatorRepository
             $petrolPump['area'] = $request->petrolPumpArea;
             $petrolPump['dateFrom'] = $request->petrolPumpDate;
 
-            $calculateArr['isMobileTower'] = ($request->mobileTowerArea)? 1 : 0;
+            $calculateArr['ulbId'] = $request->ulbId;
+            $calculateArr['isMobileTower'] = ($request->mobileTowerArea) ? 1 : 0;
             $calculateArr['mobileTower'] = $mobileTower;
-            $calculateArr['isHoardingBoard'] = ($request->hoardingArea)? 1 : 0;
+            $calculateArr['isHoardingBoard'] = ($request->hoardingArea) ? 1 : 0;
             $calculateArr['hoardingBoard'] = $hordingBoard;
-            $calculateArr['isPetrolPump'] = ($request->petrolPumpArea)? 1 : 0;
+            $calculateArr['isPetrolPump'] = ($request->petrolPumpArea) ? 1 : 0;
             $calculateArr['petrolPump'] = $petrolPump;
-            
-            
+
+
             $request->request->add($calculateArr);
-            
+
             $response = $this->calculation->calculateTax($request);
             $fetchDetails = collect($response->original['data']['details'])->groupBy('ruleSet');
             $finalResponse['demand'] = $response->original['data']['demand'];
@@ -86,10 +84,8 @@ class CalculatorRepository implements iCalculatorRepository
 
     public function getDashboardData($request)
     {
-        try
-        {
-            if(isset($request->fromDate) && isset($request->toDate))
-            {
+        try {
+            if (isset($request->fromDate) && isset($request->toDate)) {
                 $user_id = auth()->user()->id;
                 $ulb_id = auth()->user()->ulb_id;
                 $fromDate = Carbon::create($request->fromDate)->format('Y-m-d');
@@ -102,62 +98,62 @@ class CalculatorRepository implements iCalculatorRepository
                 $rejectedApplication = PropActiveSaf::where('ulb_id', $ulb_id)->whereBetween('application_date', [$fromDate, $toDate])->count();
 
 
-                $val['type'] = 'New Assessment' ;
+                $val['type'] = 'New Assessment';
                 $val['applied'] = 400;
                 $val['approved'] = 200;
                 $val['rejected'] = 200;
                 $val['pending'] = 200;
                 $applicationList[] = $val;
 
-                $val['type'] = 'Re-Assessment' ;
+                $val['type'] = 'Re-Assessment';
                 $val['applied'] = 400;
                 $val['approved'] = 200;
                 $val['rejected'] = 200;
                 $val['pending'] = 200;
                 $applicationList[] = $val;
 
-                $val['type'] = 'Mutation' ;
+                $val['type'] = 'Mutation';
                 $val['applied'] = 400;
                 $val['approved'] = 200;
                 $val['rejected'] = 200;
                 $val['pending'] = 200;
                 $applicationList[] = $val;
 
-                $val['type'] = 'Bifercation' ;
+                $val['type'] = 'Bifercation';
                 $val['applied'] = 400;
                 $val['approved'] = 200;
                 $val['rejected'] = 200;
                 $val['pending'] = 200;
                 $applicationList[] = $val;
 
-                $val['type'] = 'Amalgamation' ;
+                $val['type'] = 'Amalgamation';
                 $val['applied'] = 400;
                 $val['approved'] = 200;
                 $val['rejected'] = 200;
                 $val['pending'] = 200;
                 $applicationList[] = $val;
 
-                $val['type'] = 'Objection' ;
+                $val['type'] = 'Objection';
                 $val['applied'] = 400;
                 $val['approved'] = 200;
                 $val['rejected'] = 200;
                 $val['pending'] = 200;
                 $applicationList[] = $val;
 
-                $val['type'] = 'Concession' ;
+                $val['type'] = 'Concession';
                 $val['applied'] = 400;
                 $val['approved'] = 200;
                 $val['rejected'] = 200;
                 $val['pending'] = 200;
                 $applicationList[] = $val;
 
-                $val['type'] = 'Water-Harvesting' ;
+                $val['type'] = 'Water-Harvesting';
                 $val['applied'] = 400;
                 $val['approved'] = 200;
                 $val['rejected'] = 200;
                 $val['pending'] = 200;
                 $applicationList[] = $val;
-                
+
                 $response['totalAppliedApplication'] = 5000;
                 $response['totalApprovedApplication'] = 2000;
                 $response['totalRejectedApplication'] = 500;
@@ -165,10 +161,10 @@ class CalculatorRepository implements iCalculatorRepository
                 $response['applicationList'] = $applicationList;
 
                 return responseMsg(true, "", $response);
-            }else{
+            } else {
                 return responseMsg(true, "Undefined parameter supply", "");
             }
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -12,7 +13,6 @@ class WorkflowTrack extends Model
 {
     use HasFactory;
     use SoftDeletes;
-
 
     public function saveTrack($request)
     {
@@ -25,8 +25,8 @@ class WorkflowTrack extends Model
         $track->ref_table_dot_id = $request->refTableDotId;
         $track->ref_table_id_value = $request->refTableIdValue;
         $track->track_date = $mTrackDate;
-        $track->forward_date = Carbon::now()->format('Y-m-d');
-        $track->forward_time = Carbon::now()->format('H:i:s');
+        $track->forward_date = $request->forwardDate ?? null;
+        $track->forward_time = $request->forwardTime ?? null;
         $track->message = $request->message;
         $track->sender_role_id = $request->senderRoleId ?? null;
         $track->receiver_role_id = $request->receiverRoleId ?? null;

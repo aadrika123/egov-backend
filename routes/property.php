@@ -38,8 +38,17 @@ use App\Http\Controllers\property\ClusterController;
  * ----------------------------------------------------------------------------------------
  */
 
+
 // Inside Middleware Routes with API Authenticate 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+
+  /**
+   * | Route Outside the Middleware
+   | Serial No : 
+   */
+  Route::controller(CalculatorController::class)->group(function () {
+    Route::post('calculatePropertyTax', 'calculator');
+  });
   /**
    * | SAF
        | Serial No : 01
@@ -273,12 +282,4 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::get('get-list-saf', 'getListOfSaf');
     Route::post('active-application/get-user-details', 'getUserDetails');
   });
-});
-
-/**
- * | Route Outside the Middleware
-   | Serial No : 
- */
-Route::controller(CalculatorController::class)->group(function () {
-  Route::post('calculatePropertyTax', 'calculator');
 });

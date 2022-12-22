@@ -143,7 +143,7 @@ class NewConnectionRepository implements iNewConnection
                         return responseMsg(false, "water cannot be applied on Vacant land!", "");
                     }
                 } else {
-                    return responseMsg(false, "saf Not Exist!", $req->saf_no);
+                    return responseMsg(false, "Saf Not Exist!", $req->saf_no);
                 }
                 break;
             case (!is_null($req->holdingNo)):
@@ -157,7 +157,7 @@ class NewConnectionRepository implements iNewConnection
                         return responseMsg(false, "water cannot be applied on Vacant land!", "");
                     }
                 } else {
-                    return responseMsg(false, "holding Don't Exist!", "");
+                    return responseMsg(false, "Holding Not Exist!",$req->holdingNo);
                 }
                 break;
         }
