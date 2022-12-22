@@ -50,6 +50,9 @@ use App\Http\Controllers\WorkflowMaster\WorkflowController as WfController;
  */
 
 // Route Used for Login and Register the User
+/**
+ * | Updated By- Sam kerketta
+ */
 Route::controller(UserController::class)->group(function () {
     Route::post('login', 'loginAuth')->middleware('request_logger');
     Route::post('register', 'store');
