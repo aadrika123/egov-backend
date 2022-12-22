@@ -257,7 +257,7 @@ class PaymentRepository implements iPayment
      * |
      * | Rating :
      * | Time:
-        | Flag
+        | Working
      */
     public function getTransactionNoDetails(Request $request)
     {
@@ -631,11 +631,10 @@ class PaymentRepository implements iPayment
                 )
                 ->where('user_id', $userId)
                 ->get();
-            if (!empty($transaction['0'])) {
-                return $transaction;
+            if (!empty(collect($transaction)->first())) {
+                return responseMsgs(true, "All transaction for the respective id", $transaction);
             }
-            return ("No Data!");
-            return responseMsg(true, "All transaction for the respective id", $transaction);
+            return responseMsg(false, "No Data!", "");
         } catch (Exception $error) {
             return responseMsg(false, "", $error->getMessage());
         }

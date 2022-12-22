@@ -15,12 +15,14 @@ class ActiveCitizen extends Model
     public function citizenRegister($request)
     {
         $reqs = [
-            'name' => $request->name,
+            'user_name' => $request->name,
             'email' => $request->email,
             'mobile' => $request->mobile,
             'password' => Hash::make($request->password)
         ];
 
         ActiveCitizen::create($reqs);
+        
+        User::create($reqs);
     }
 }
