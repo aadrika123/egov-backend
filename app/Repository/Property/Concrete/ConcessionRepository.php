@@ -282,61 +282,6 @@ class ConcessionRepository implements iConcessionRepository
         }
     }
 
-    /**
-     * | Concession Application Approval or Rejected 
-     * | @param req
-     * | Status-closed
-     * | Query Costing-376 ms
-     * | Rating-2
-     * | Status-Closed
-     */
-    public function approvalRejection($req)
-    {
-        try {
-            // Check if the Current User is Finisher or Not
-            $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
-            $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
-            if ($refGetFinisher->role_id != $req->roleId) {
-                return responseMsg(false, "Forbidden Access", "");
-            }
-
-            DB::beginTransaction();
-            // Approval
-            if ($req->status == 1) {
-                // Concession Application replication
-                $activeConcession = PropActiveConcession::query()
-                    ->where('id', $req->concessionId)
-                    ->first();
-
-                $approvedConcession = $activeConcession->replicate();
-                $approvedConcession->setTable('prop_concessions');
-                $approvedConcession->id = $activeConcession->id;
-                $approvedConcession->save();
-                $activeConcession->delete();
-
-                $msg = "Application Successfully Approved !!";
-            }
-            // Rejection
-            if ($req->status == 0) {
-                // Concession Application replication
-                $activeConcession = PropActiveConcession::query()
-                    ->where('id', $req->concessionId)
-                    ->first();
-
-                $approvedConcession = $activeConcession->replicate();
-                $approvedConcession->setTable('prop_rejected_concessions');
-                $approvedConcession->id = $activeConcession->id;
-                $approvedConcession->save();
-                $activeConcession->delete();
-                $msg = "Application Successfully Rejected !!";
-            }
-            DB::commit();
-            return responseMsgs(true, $msg, "", "", '010709', '01', '376ms', 'Post', '');
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 
     /**
      * | Back to Citizen
@@ -380,29 +325,6 @@ class ConcessionRepository implements iConcessionRepository
             return responseMsgs(true, "Successfully Done", "", "", '010710', '01', '358ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-
-    // get owner details by propId
-    public function getOwnerDetails($request)
-    {
-        try {
-            $ownerDetails = PropProperty::select('applicant_name as ownerName',  'id as ownerId')
-                ->where('prop_properties.id', $request->propId)
-                ->first();
-
-            $checkExisting = PropActiveConcession::where('property_id', $request->propId)
-                ->where('status', 1)
-                ->first();
-            if ($checkExisting) {
-                $checkExisting->property_id = $request->propId;
-                $checkExisting->save();
-                return responseMsgs(1, "User Already Applied", $ownerDetails, "", '010711', '01', '303ms-406ms', 'Post', '');
-            } else return responseMsgs(0, "User Not Exist", $ownerDetails, "", '010711', '01', '303ms-406ms', 'Post', '');
-            // return responseMsg(true, '', remove_null($ownerDetails));
-        } catch (Exception $e) {
-            echo $e->getMessage();
         }
     }
 

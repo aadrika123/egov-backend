@@ -7,6 +7,7 @@ use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropHarvestingDoc;
 use App\Models\Property\PropHarvestingLevelpending;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Http\Request;
 use App\Traits\Property\SAF;
@@ -71,6 +72,8 @@ class RainWaterHarvestingController extends Controller
     public function waterHarvestingApplication(Request $request)
     {
         try {
+            $citizenId = '';
+            $moduleId = 2;
             $request->validate([
                 'isWaterHarvestingBefore' => 'required',
                 'dateOfCompletion' => 'required|date',
@@ -82,13 +85,14 @@ class RainWaterHarvestingController extends Controller
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
                 ->first();
-            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
-            $initiatorRoleId = DB::select($refInitiatorRoleId);
-
-            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
-            $finisherRoleId = DB::select($refFinisherRoleId);
 
             $applicationNo = $this->generateApplicationNo($ulbId, $userId);
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
+            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId = DB::select($refFinisherRoleId);
+            $initiatorRoleId = DB::select($refInitiatorRoleId);
+
+
 
             $save = new PropActiveHarvesting();
             $waterHaravestingId  = $save->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $applicationNo);
@@ -114,11 +118,21 @@ class RainWaterHarvestingController extends Controller
             //level pending
             if (isset($applicationNo)) {
 
-                $labelPending = new PropHarvestingLevelpending();
-                $labelPending->harvesting_id = $waterHaravestingId;
-                $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
-                $labelPending->sender_user_id = $userId;
-                $labelPending->save();
+                // $labelPending = new PropHarvestingLevelpending();
+                // $labelPending->harvesting_id = $waterHaravestingId;
+                // $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
+                // $labelPending->sender_user_id = $userId;
+                // $labelPending->save();
+
+                $track = new WorkflowTrack();
+                $metaReqs['workflowId'] = $ulbWorkflowId->id;
+                $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
+                $metaReqs['refTableIdValue'] = $waterHaravestingId;
+                $metaReqs['citizenId'] = $citizenId;
+                $metaReqs['moduleId'] = $moduleId;
+
+                $request->request->add($metaReqs);
+                return $track->saveTrack($request);
             }
             return responseMsg(true, "Application applied!", $applicationNo);
         } catch (Exception $error) {

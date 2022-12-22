@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Property;
 use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropConcessionDocDtl;
+use App\Models\Property\PropProperty;
 use App\Repository\Property\Interfaces\iConcessionRepository;
 use Illuminate\Http\Request;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Traits\Property\Concession;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Exception;
 
@@ -152,21 +154,11 @@ class ConcessionController extends Controller
                 'id' => 'required',
                 'escalateStatus' => 'required'
             ]);
-            $userId = auth()->user()->id;
-            if ($req->escalateStatus == 1) {
-                $concession = PropActiveConcession::find($req->id);
-                $concession->is_escalate = 1;
-                $concession->escalated_by = $userId;
-                $concession->save();
-                return responseMsgs(true, "Successfully Escalated the application", "", '010706', '01', '400ms', 'Post', '');
-            }
-            if ($req->escalateStatus == 0) {
-                $concession = PropActiveConcession::find($req->id);
-                $concession->is_escalate = 0;
-                $concession->escalated_by = null;
-                $concession->save();
-                return responseMsgs(true, "Successfully De-Escalated the application", "", '010706', '01', '400ms', 'Post', '');
-            }
+
+            $escalate = new PropActiveConcession();
+            $msg = $escalate->escalate($req);
+
+            return responseMsgs(true, $msg, "", '010706', '01', '400ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -214,14 +206,65 @@ class ConcessionController extends Controller
         return $this->Repository->postNextLevel($req);
     }
 
-    // Application Approval Rejection
+    /**
+     * | Concession Application Approval or Rejected 
+     * | @param req
+     * | Status-closed
+     * | Query Costing-376 ms
+     * | Rating-2
+     * | Status-Closed
+     */
     public function approvalRejection(Request $req)
     {
-        $req->validate([
-            "concessionId" => "required",
-            "status" => "required"
-        ]);
-        return $this->Repository->approvalRejection($req);
+        try {
+            $req->validate([
+                "concessionId" => "required",
+                "status" => "required"
+            ]);
+            // Check if the Current User is Finisher or Not
+            $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
+            $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
+            if ($refGetFinisher->role_id != $req->roleId) {
+                return responseMsg(false, "Forbidden Access", "");
+            }
+            DB::beginTransaction();
+
+            // Approval
+            if ($req->status == 1) {
+                // Concession Application replication
+                $activeConcession = PropActiveConcession::query()
+                    ->where('id', $req->concessionId)
+                    ->first();
+
+                $approvedConcession = $activeConcession->replicate();
+                $approvedConcession->setTable('prop_concessions');
+                $approvedConcession->id = $activeConcession->id;
+                $approvedConcession->save();
+                $activeConcession->delete();
+
+                $msg =  "Application Successfully Approved !!";
+            }
+            // Rejection
+            if ($req->status == 0) {
+                // Concession Application replication
+                $activeConcession = PropActiveConcession::query()
+                    ->where('id', $req->concessionId)
+                    ->first();
+
+                $approvedConcession = $activeConcession->replicate();
+                $approvedConcession->setTable('prop_rejected_concessions');
+                $approvedConcession->id = $activeConcession->id;
+                $approvedConcession->save();
+                $activeConcession->delete();
+                $msg =  "Application Successfully Rejected !!";
+            }
+
+            DB::commit();
+            return responseMsgs(true, $msg, "", "", '010709', '01', '376ms', 'Post', '');
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     // Application back To citizen
@@ -237,10 +280,26 @@ class ConcessionController extends Controller
     // get owner details by propId
     public function getOwnerDetails(Request $request)
     {
-        $request->validate([
-            'propId' => "required"
-        ]);
-        return $this->Repository->getOwnerDetails($request);
+        try {
+            $request->validate([
+                'propId' => "required"
+            ]);
+            $ownerDetails = PropProperty::select('applicant_name as ownerName',  'id as ownerId')
+                ->where('prop_properties.id', $request->propId)
+                ->first();
+
+            $checkExisting = PropActiveConcession::where('property_id', $request->propId)
+                ->where('status', 1)
+                ->first();
+
+            if ($checkExisting) {
+                $checkExisting->property_id = $request->propId;
+                $checkExisting->save();
+                return responseMsgs(1, "User Already Applied", $ownerDetails, "", '010711', '01', '303ms-406ms', 'Post', '');
+            } else return responseMsgs(0, "User Not Exist", $ownerDetails, "", '010711', '01', '303ms-406ms', 'Post', '');
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
     }
 
     //concesssion list
@@ -254,11 +313,11 @@ class ConcessionController extends Controller
                 'ward_name as wardId',
                 'property_type as propertyType'
             )
-                ->where('prop_active_concessions.status', 1)
-                ->orderByDesc('prop_active_concessions.id')
                 ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
                 ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+                ->where('prop_active_concessions.status', 1)
+                ->orderByDesc('prop_active_concessions.id')
                 ->get();
 
             return responseMsgs(true, "Successfully Done", $list, "", '010712', '01', '308ms-396ms', 'Post', '');
@@ -284,10 +343,10 @@ class ConcessionController extends Controller
             )
                 ->where('prop_active_concessions.id', $req->id)
                 ->where('prop_active_concessions.status', 1)
-                ->orderByDesc('prop_active_concessions.id')
                 ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
                 ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+                ->orderByDesc('prop_active_concessions.id')
                 ->first();
 
             return responseMsgs(true, "Successfully Done", $list, "", '010713', '01', '312ms-389ms', 'Post', '');
@@ -308,7 +367,6 @@ class ConcessionController extends Controller
                 'verify_status as docStatus',
                 'remarks as docRemarks'
             )
-                // ->select(DB::raw("CONCAT(relative_path,doc_name) AS url", "id"))
                 ->where('prop_concession_doc_dtls.concession_id', $req->id)
                 ->get();
             $list = $list->map(function ($val) {
@@ -332,21 +390,8 @@ class ConcessionController extends Controller
     public function concessionDocStatus(Request $req)
     {
         try {
-            $userId = auth()->user()->id;
-
-            $docStatus = PropConcessionDocDtl::find($req->id);
-            $docStatus->remarks = $req->docRemarks;
-            $docStatus->verified_by_emp_id = $userId;
-            $docStatus->verified_on = Carbon::now();
-            $docStatus->updated_at = Carbon::now();
-
-            if ($req->docStatus == 'Verified') {
-                $docStatus->verify_status = 1;
-            }
-            if ($req->docStatus == 'Rejected') {
-                $docStatus->verify_status = 2;
-            }
-            $docStatus->save();
+            $docStatus = new PropConcessionDocDtl();
+            $docStatus->docVerify($req);
 
             return responseMsgs(true, "Successfully Done", '', "", '010716', '01', '308ms-431ms', 'Post', '');
         } catch (Exception $e) {
