@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
+use App\Http\Requests\Property\ReqSiteVerification;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfRoleusermap;
@@ -398,15 +399,8 @@ class ActiveSafController extends Controller
     }
 
     // Site Verification
-    public function siteVerification(Request $req)
+    public function siteVerification(ReqSiteVerification $req)
     {
-        $req->validate([
-            'safId' => 'required|integer',
-            'verificationStatus' => 'required|bool',
-            'propertyType' => 'required|integer',
-            'roadTypeId' => 'required|integer',
-            'wardId' => 'required|integer'
-        ]);
         return $this->Repository->siteVerification($req);
     }
 
