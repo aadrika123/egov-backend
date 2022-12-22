@@ -26,10 +26,10 @@ class SafDemandRepo implements iSafDemandRepo
         try {
             $demand = array();
             $transaction = new PropTransaction();
-            $demand['amounts'] = $transaction->getPropTransactions($req->id, "saf_id");
+            $demand['amounts'] = $transaction->getPropTransactions($req->safId, "saf_id");
 
             $propSafDemand = new PropSafsDemand();
-            $demand['details'] = $propSafDemand->getDemandBySafId($req->id);
+            $demand['details'] = $propSafDemand->getDemandBySafId($req->safId);
 
             return responseMsg(true, "All Demands", remove_null($demand));
         } catch (Exception $e) {

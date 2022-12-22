@@ -45,7 +45,7 @@ class PropTransaction extends Model
         return $this->getPropTransTrait()
             ->where('prop_transactions.saf_id', $safId)
             ->orderByDesc('prop_transactions.id')
-            ->get();
+            ->first();
     }
 
     // Get Property Transaction by Property ID
@@ -54,6 +54,6 @@ class PropTransaction extends Model
         return $this->getPropTransTrait()
             ->where('prop_transactions.property_id', $propId)
             ->orderByDesc('prop_transactions.id')
-            ->get();
+            ->first();
     }
 }

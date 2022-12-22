@@ -11,7 +11,7 @@ class RefPropOccupancyType extends Model
 
     public function propOccupancyType()
     {
-        return RefPropOccupancyType::select('id', 'occupancy_type as occupancyType')
+        return RefPropOccupancyType::select('id', 'occupancy_type')
             ->where('status', 1)
             ->get();
     }
