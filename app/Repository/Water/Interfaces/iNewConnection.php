@@ -16,11 +16,4 @@ interface iNewConnection
    public Function waterInbox();                                        // Inbox for water
    public function waterOutbox();                                       // Outbox for water
    public function postNextLevel($req);                                 // Approval in the workflow level
-   
-   // Citizen View Water Screen for Mobile
-   public function getConnectionType();
-   public function getConnectionThrough();
-   public function getPropertyType();
-   public function getOwnerType();
-   public function getWardNo();
 }
