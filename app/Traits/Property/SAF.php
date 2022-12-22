@@ -317,7 +317,7 @@ trait SAF
                 'prop_active_safs.*',
                 'prop_active_safs.assessment_type as assessment',
                 'w.ward_name as old_ward_no',
-                'w.ward_name as new_ward_no',
+                'nw.ward_name as new_ward_no',
                 'o.ownership_type',
                 'p.property_type',
                 'r.road_type as road_type_master',

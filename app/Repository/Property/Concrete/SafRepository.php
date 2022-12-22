@@ -185,111 +185,6 @@ class SafRepository implements iSafRepository
     }
 
     /**
-     * | Post Independent Comment
-     * | @param mixed $request
-     * | @var userId Logged In user Id
-     * | @var levelPending The Level Pending Data of the Saf Id
-     * | @return responseMsg
-     * | Status-Closed
-     * | Query Costing-427ms 
-     * | Rating-2
-     */
-    public function commentIndependent($request)
-    {
-        try {
-            $propLevelPending = new PropLevelPending();
-            $userId = auth()->user()->id;
-            DB::beginTransaction();
-
-            $levelPending = $propLevelPending->getLevelBySafReceiver($request->safId, $userId);     // <---- Get level Pending by Model Function
-
-            if (is_null($levelPending)) {
-                $levelPending = $propLevelPending->getLastLevelBySafId($request->safId);            // <---- Get Last Level By SAf id by Model function
-                if (is_null($levelPending)) {
-                    return responseMsg(false, "SAF Not Found", "");
-                }
-            }
-            $levelPending->remarks = $request->comment;
-            $levelPending->receiver_user_id = $userId;
-            $levelPending->save();
-
-            // SAF Details
-            $saf = PropActiveSaf::find($request->safId);
-
-            // Save On Workflow Track
-            $workflowTrack = new WorkflowTrack();
-            $workflowTrack->workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-            $workflowTrack->citizen_id = $saf->user_id;
-            $workflowTrack->module_id = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $workflowTrack->ref_table_dot_id = "active_safs.id";
-            $workflowTrack->ref_table_id_value = $saf->id;
-            $workflowTrack->message = $request->comment;
-            $workflowTrack->commented_by = $userId;
-            $workflowTrack->save();
-
-            DB::commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "427ms", "POST", "");
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | @param mixed $request
-     * | @var preLevelPending Get the Previous level pending data for the saf id
-     * | @var levelPending new Level Pending to be add
-     * | Status-Closed
-     * | Query Costing-348ms 
-     * | Rating-3 
-     */
-    # postNextLevel
-    public function postNextLevel($request)
-    {
-        try {
-            // SAF Application Update Current Role Updation
-            DB::beginTransaction();
-            $saf = PropActiveSaf::find($request->safId);
-            if ($request->senderRoleId == $saf->initiator_role_id) {                                // Initiator Role Id
-                $saf->doc_upload_status = 1;
-            }
-            // Check if the application is in case of BTC
-            if ($saf->parked == true) {
-                $levelPending = new PropLevelPending();
-                $lastLevelEntry = $levelPending->getLastLevelBySafId($request->safId);              // Send Last Level Current Role
-                $saf->parked = false;                                                               // Disable BTC
-                $saf->current_role = $lastLevelEntry->sender_role_id;
-            } else
-                $saf->current_role = $request->receiverRoleId;
-            $saf->save();
-
-            // previous level pending verification enabling
-            $levelPending = new PropLevelPending();
-            $levelPending->saf_id = $request->safId;
-            $levelPending->sender_role_id = $request->senderRoleId;
-            $levelPending->receiver_role_id = $request->receiverRoleId;
-            $levelPending->sender_user_id = auth()->user()->id;
-            $levelPending->save();
-
-            // Add Comment On Prop Level Pending
-            $propLevelPending = new PropLevelPending();
-            $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->senderRoleId);    //<-----Get SAF level Pending By safid and current role ID
-            $commentOnlevel->remarks = $request->comment;
-            $commentOnlevel->verification_status = 1;
-            $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
-            $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
-            $commentOnlevel->verification_status = 1;
-            $commentOnlevel->save();
-
-            DB::commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
-
-    /**
      * | Approve or Reject The SAF Application
      * --------------------------------------------------
      * | ----------------- Initialization ---------------
@@ -503,8 +398,8 @@ class SafRepository implements iSafRepository
     public function backToCitizen($req)
     {
         try {
-            DB::beginTransaction();
             $saf = PropActiveSaf::find($req->safId);
+            DB::beginTransaction();
             $initiatorRoleId = $saf->initiator_role_id;
             $saf->current_role = $initiatorRoleId;
             $saf->parked = true;                        //<------ SAF Pending Status true
