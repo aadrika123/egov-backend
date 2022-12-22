@@ -54,6 +54,7 @@ class ActiveSafController extends Controller
     {
         $this->Repository = $saf_repository;
         $this->_workflowIds = Config::get('PropertyConstaint.SAF_WORKFLOWS');
+        $this->_todayDate = Carbon::now();
     }
 
     /**
@@ -598,7 +599,14 @@ class ActiveSafController extends Controller
         }
     }
 
-    // Forward to Next Level
+    /**
+     * | @param mixed $request
+     * | @var preLevelPending Get the Previous level pending data for the saf id
+     * | @var levelPending new Level Pending to be add
+     * | Status-Closed
+     * | Query Costing-348ms 
+     * | Rating-3 
+     */
     public function postNextLevel(Request $request)
     {
         $request->validate([
@@ -608,8 +616,47 @@ class ActiveSafController extends Controller
             'comment' => 'required',
         ]);
 
-        $data = $this->Repository->postNextLevel($request);
-        return $data;
+        try {
+            // SAF Application Update Current Role Updation
+            DB::beginTransaction();
+            $saf = PropActiveSaf::find($request->safId);
+            if ($request->senderRoleId == $saf->initiator_role_id) {                                // Initiator Role Id
+                $saf->doc_upload_status = 1;
+            }
+            // Check if the application is in case of BTC
+            if ($saf->parked == true) {
+                $levelPending = new PropLevelPending();
+                $lastLevelEntry = $levelPending->getLastLevelBySafId($request->safId);              // Send Last Level Current Role
+                $saf->parked = false;                                                               // Disable BTC
+                $saf->current_role = $lastLevelEntry->sender_role_id;
+            } else
+                $saf->current_role = $request->receiverRoleId;
+            $saf->save();
+
+            // previous level pending verification enabling
+            $levelPending = new PropLevelPending();
+            $levelPending->saf_id = $request->safId;
+            $levelPending->sender_role_id = $request->senderRoleId;
+            $levelPending->receiver_role_id = $request->receiverRoleId;
+            $levelPending->sender_user_id = auth()->user()->id;
+            $levelPending->save();
+
+            // Add Comment On Prop Level Pending
+            $propLevelPending = new PropLevelPending();
+            $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->senderRoleId);    //<-----Get SAF level Pending By safid and current role ID
+            $commentOnlevel->remarks = $request->comment;
+            $commentOnlevel->verification_status = 1;
+            $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
+            $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
+            $commentOnlevel->verification_status = 1;
+            $commentOnlevel->save();
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
     }
 
     // Saf Application Approval Or Reject
@@ -625,7 +672,15 @@ class ActiveSafController extends Controller
         return $this->Repository->approvalRejectionSaf($req);
     }
 
-    // Back to Citizen
+    /**
+     * | Back to Citizen
+     * | @param Request $req
+     * | @var redis Establishing Redis Connection
+     * | @var workflowId Workflow id of the SAF 
+     * | Status-Closed
+     * | Query Costing-401ms
+     * | Rating-1 
+     */
     public function backToCitizen(Request $req)
     {
         $req->validate([
@@ -634,7 +689,36 @@ class ActiveSafController extends Controller
             'currentRoleId' => 'required|integer',
             'comment' => 'required|string'
         ]);
-        return $this->Repository->backToCitizen($req);
+
+        try {
+            $saf = PropActiveSaf::find($req->safId);
+            $propLevelPending = new PropLevelPending();
+            DB::beginTransaction();
+            $initiatorRoleId = $saf->initiator_role_id;
+            $saf->current_role = $initiatorRoleId;
+            $saf->parked = true;                        //<------ SAF Pending Status true
+            $saf->save();
+
+            $preLevelPending = $propLevelPending->getLevelBySafReceiver($req->safId, $req->currentRoleId);
+            $preLevelPending->remarks = $req->comment;
+            $preLevelPending->forward_date = $this->_todayDate->format('Y-m-d');
+            $preLevelPending->forward_time = $this->_todayDate->format('H:i:m');
+            $preLevelPending->save();
+
+            $levelPending = new PropLevelPending();
+            $levelPending->saf_id = $req->safId;
+            $levelPending->sender_role_id = $req->currentRoleId;
+            $levelPending->receiver_role_id = $initiatorRoleId;
+            $levelPending->user_id = authUser()->id;
+            $levelPending->sender_user_id = authUser()->id;
+            $levelPending->save();
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     // Calculate SAF by saf ID
