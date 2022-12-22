@@ -387,48 +387,6 @@ class SafRepository implements iSafRepository
     }
 
     /**
-     * | Back to Citizen
-     * | @param Request $req
-     * | @var redis Establishing Redis Connection
-     * | @var workflowId Workflow id of the SAF 
-     * | Status-Closed
-     * | Query Costing-401ms
-     * | Rating-1 
-     */
-    public function backToCitizen($req)
-    {
-        try {
-            $saf = PropActiveSaf::find($req->safId);
-            DB::beginTransaction();
-            $initiatorRoleId = $saf->initiator_role_id;
-            $saf->current_role = $initiatorRoleId;
-            $saf->parked = true;                        //<------ SAF Pending Status true
-            $saf->save();
-
-            $propLevelPending = new PropLevelPending();
-            $preLevelPending = $propLevelPending->getLevelBySafReceiver($req->safId, $req->currentRoleId);
-            $preLevelPending->remarks = $req->comment;
-            $preLevelPending->forward_date = $this->_todayDate->format('Y-m-d');
-            $preLevelPending->forward_time = $this->_todayDate->format('H:i:m');
-            $preLevelPending->save();
-
-            $levelPending = new PropLevelPending();
-            $levelPending->saf_id = $req->safId;
-            $levelPending->sender_role_id = $req->currentRoleId;
-            $levelPending->receiver_role_id = $initiatorRoleId;
-            $levelPending->user_id = authUser()->id;
-            $levelPending->sender_user_id = authUser()->id;
-            $levelPending->save();
-
-            DB::commit();
-            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
      * | Calculate SAF by Saf ID
      * | @param req request saf id
      * | @var array contains all the details for the saf id
