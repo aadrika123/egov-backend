@@ -17,7 +17,7 @@ class PropTransaction extends Model
     public function getPropTransactions($id, $key)
     {
         return PropTransaction::where("$key", $id)
-            ->first();
+            ->get();
     }
 
     // getPropTrans as trait function on current object
