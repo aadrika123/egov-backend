@@ -1303,7 +1303,7 @@ class Trade implements ITrade
             DB::beginTransaction();
 
             $RazorPayResponse = new TradeRazorPayResponse;
-            $RazorPayResponse->licence_id   = $RazorPayRequest->related_id;
+            $RazorPayResponse->licence_id   = $RazorPayRequest->licence_id;                    
             $RazorPayResponse->request_id   = $RazorPayRequest->id;
             $RazorPayResponse->amount       = $args['amount'];
             $RazorPayResponse->merchant_id  = $args['merchantId']??null;

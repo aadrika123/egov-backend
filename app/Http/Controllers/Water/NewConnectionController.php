@@ -60,7 +60,7 @@ class NewConnectionController extends Controller
                     'wardId'             => 'required|integer',
                     'areaSqft'           => 'required',
                     'landmark'           => 'required',
-                    'pin'                => 'required|numeric|max:8',
+                    'pin'                => 'required',
                     'elecKNo'            => 'required',
                     'elecBindBookNo'     => 'required',
                     'elecAccountNo'      => 'required',
@@ -208,6 +208,16 @@ class NewConnectionController extends Controller
     {
         try {
             return $this->newConnection->waterOutbox();
+        } catch (Exception $error) {
+            return responseMsg(false, $error->getMessage(), "");
+        }
+    }
+
+    // Post Next Level
+    public function postNextLevel(Request $request)
+    {
+        try {
+            return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
