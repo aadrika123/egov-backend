@@ -20,6 +20,7 @@ use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
 use App\Models\PropActiveObjectionDocdtl;
+use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Support\Facades\Validator;
 
@@ -410,12 +411,21 @@ class ObjectionRepository implements iObjectionRepository
         try {
             DB::beginTransaction();
 
-            $levelPending = new PropObjectionLevelpending();
-            $levelPending->objection_id = $req->objectionId;
-            $levelPending->sender_role_id = $req->senderRoleId;
-            $levelPending->receiver_role_id = $req->receiverRoleId;
-            $levelPending->sender_user_id = auth()->user()->id;
-            $levelPending->save();
+            // $levelPending = new PropObjectionLevelpending();
+            // $levelPending->objection_id = $req->objectionId;
+            // $levelPending->sender_role_id = $req->senderRoleId;
+            // $levelPending->receiver_role_id = $req->receiverRoleId;
+            // $levelPending->sender_user_id = auth()->user()->id;
+            // $levelPending->save();
+
+            $track = new WorkflowTrack();
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
+            $metaReqs['refTableDotId'] = 'prop_active_objections.id';
+            $metaReqs['refTableIdValue'] = $req->objectionId;
+
+            $req->request->add($metaReqs);
+            $track->saveTrack($req);
 
             // objection Application Update Current Role Updation
             $objection = PropActiveObjection::find($req->objectionId);
@@ -423,12 +433,12 @@ class ObjectionRepository implements iObjectionRepository
             $objection->save();
 
             // Add Comment On Prop Level Pending  and Verification Status true
-            $ObjLevelPending = new PropObjectionLevelpending();
-            $commentOnlevel = $ObjLevelPending->getCurrentObjByReceiver($req->objectionId, $req->senderRoleId);
+            // $ObjLevelPending = new PropObjectionLevelpending();
+            // $commentOnlevel = $ObjLevelPending->getCurrentObjByReceiver($req->objectionId, $req->senderRoleId);
 
-            $commentOnlevel->remarks = $req->comment;
-            $commentOnlevel->verification_status = 1;
-            $commentOnlevel->save();
+            // $commentOnlevel->remarks = $req->comment;
+            // $commentOnlevel->verification_status = 1;
+            // $commentOnlevel->save();
 
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', '474ms-573', 'Post', '');

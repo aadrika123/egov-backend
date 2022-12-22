@@ -72,7 +72,6 @@ class RainWaterHarvestingController extends Controller
     public function waterHarvestingApplication(Request $request)
     {
         try {
-            $citizenId = '';
             $moduleId = 2;
             $request->validate([
                 'isWaterHarvestingBefore' => 'required',
@@ -115,6 +114,9 @@ class RainWaterHarvestingController extends Controller
                 $harvestingDoc->citizenDocUpload($harvestingDoc, $name, $docName);
             }
 
+            /**
+             to be removed
+             */
             //level pending
             if (isset($applicationNo)) {
 
@@ -128,11 +130,10 @@ class RainWaterHarvestingController extends Controller
                 $metaReqs['workflowId'] = $ulbWorkflowId->id;
                 $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
                 $metaReqs['refTableIdValue'] = $waterHaravestingId;
-                $metaReqs['citizenId'] = $citizenId;
                 $metaReqs['moduleId'] = $moduleId;
 
                 $request->request->add($metaReqs);
-                return $track->saveTrack($request);
+                $track->saveTrack($request);
             }
             return responseMsg(true, "Application applied!", $applicationNo);
         } catch (Exception $error) {
@@ -299,7 +300,6 @@ class RainWaterHarvestingController extends Controller
      * | Rating-
      * | Status - Closed
      * | Query Cost - 446ms
-        | Function will be removed
      */
     public function postNextLevel(Request $req)
     {
@@ -308,24 +308,39 @@ class RainWaterHarvestingController extends Controller
                 'harvestingId' => 'required',
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
-                'comment' => 'required'
+                'message' => 'required'
             ]);
             DB::beginTransaction();
 
-            // previous level pending verification enabling
-            $preLevelPending = PropHarvestingLevelpending::where('harvesting_id', $req->harvestingId)
-                ->orderByDesc('id')
-                ->limit(1)
-                ->first();
-            $preLevelPending->verification_status = '1';
-            $preLevelPending->save();
+            $track = new WorkflowTrack();
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = Config::get('workflow-constants.RAIN_WATER_HARVESTING_ID');
+            $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
+            $metaReqs['refTableIdValue'] = $req->harvestingId;
+            // $metaReqs['senderRoleId'] = $req->senderRoleId;
+            // $metaReqs['receiverRoleId'] = $req->receiverRoleId;
+            // $metaReqs['verificationStatus'] = $req->verificationStatus;
+            // $metaReqs['message'] = $req->message;
 
-            $levelPending = new PropHarvestingLevelpending();
-            $levelPending->harvesting_id = $req->harvestingId;
-            $levelPending->sender_role_id = $req->senderRoleId;
-            $levelPending->receiver_role_id = $req->receiverRoleId;
-            $levelPending->sender_user_id = auth()->user()->id;
-            $levelPending->save();
+            // return $metaReqs;
+            $req->request->add($metaReqs);
+            $track->saveTrack($req);
+
+
+            // previous level pending verification enabling
+            // $preLevelPending = PropHarvestingLevelpending::where('harvesting_id', $req->harvestingId)
+            //     ->orderByDesc('id')
+            //     ->limit(1)
+            //     ->first();
+            // $preLevelPending->verification_status = '1';
+            // $preLevelPending->save();
+
+            // $levelPending = new PropHarvestingLevelpending();
+            // $levelPending->harvesting_id = $req->harvestingId;
+            // $levelPending->sender_role_id = $req->senderRoleId;
+            // $levelPending->receiver_role_id = $req->receiverRoleId;
+            // $levelPending->sender_user_id = auth()->user()->id;
+            // $levelPending->save();
 
             // harvesting Application Update Current Role Updation
             $harvesting = PropActiveHarvesting::find($req->harvestingId);
@@ -333,13 +348,13 @@ class RainWaterHarvestingController extends Controller
             $harvesting->save();
 
             // Add Comment On Prop Level Pending
-            $receiverLevelPending = new PropHarvestingLevelpending();
-            $commentOnlevel = $receiverLevelPending->getReceiverLevel($req->harvestingId, $req->senderRoleId);
-            $commentOnlevel->remarks = $req->comment;
-            $commentOnlevel->receiver_user_id = auth()->user()->id;
-            $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
-            $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
-            $commentOnlevel->save();
+            // $receiverLevelPending = new PropHarvestingLevelpending();
+            // $commentOnlevel = $receiverLevelPending->getReceiverLevel($req->harvestingId, $req->senderRoleId);
+            // $commentOnlevel->remarks = $req->comment;
+            // $commentOnlevel->receiver_user_id = auth()->user()->id;
+            // $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
+            // $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
+            // $commentOnlevel->save();
 
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", '011110', 01, '446ms', 'Post', $req->deviceId);
