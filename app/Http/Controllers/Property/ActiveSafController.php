@@ -317,6 +317,13 @@ class ActiveSafController extends Controller
     // Forward to Next Level
     public function postNextLevel(Request $request)
     {
+        $request->validate([
+            'safId' => 'required|integer',
+            'senderRoleId' => 'required|integer',
+            'receiverRoleId' => 'required|integer',
+            'comment' => 'required',
+        ]);
+
         $data = $this->Repository->postNextLevel($request);
         return $data;
     }
