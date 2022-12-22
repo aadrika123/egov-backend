@@ -11,45 +11,18 @@ class PropActiveSaf extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'has_previous_holding_no',
-        'saf_no',
-        'previous_ward_mstr_id',
-        'zone_mstr_id',
-        'no_electric_connection',
-        'elect_consumer_no',
-        'elect_acc_no',
-        'elect_bind_book_no',
-        'elect_cons_category',
-        'building_plan_approval_no',
-        'building_plan_approval_date',
-        'water_conn_no',
-        'water_conn_date',
-        'khata_no',
-        'plot_no',
-        'village_mauja_name',
-        'prop_address',
-        'prop_city',
-        'prop_dist',
-        'prop_pin_code',
-        'is_corr_add_differ',
-        'corr_address',
-        'corr_city',
-        'corr_dist',
-        'corr_pin_code',
-        'prop_state',
-        'corr_state',
-        'new_ward_mstr_id'
-    ];
+    protected $guarded = [];
     // Store
     public function store($req)
     {
         $reqs = [
             'has_previous_holding_no' => $req->hasPreviousHoldingNo,
+            'previous_holding_id' => $req->previousHoldingId,
             'previous_ward_mstr_id' => $req->previousWard,
             'is_owner_changed' => $req->isOwnerChanged,
             'transfer_mode_mstr_id' => $req->transferModeId,
             'saf_no' => $req->safNo,
+            'holding_no' => $req->holdingNo,
             'ward_mstr_id' => $req->ward,
             'ownership_type_mstr_id' => $req->ownershipType,
             'prop_type_mstr_id' => $req->propertyType,
@@ -114,6 +87,7 @@ class PropActiveSaf extends Model
             'current_role' => $req->initiatorRoleId,
             'initiator_role_id' => $req->initiatorRoleId,
             'finisher_role_id' => $req->finisherRoleId,
+            'late_assess_penalty' => $req->lateAssessPenalty
         ];
         return PropActiveSaf::insertGetId($reqs);
     }
@@ -223,6 +197,16 @@ class PropActiveSaf extends Model
         return PropActiveSaf::where('saf_no', $safNo)
             ->select('id')
             ->get()
+            ->first();
+    }
+
+    /**
+     * | Get late Assessment by SAF id
+     */
+    public function getLateAssessBySafId($safId)
+    {
+        return PropActiveSaf::select('late_assess_penalty')
+            ->where('id', $safId)
             ->first();
     }
 }

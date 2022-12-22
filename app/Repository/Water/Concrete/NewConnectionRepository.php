@@ -2,34 +2,27 @@
 
 namespace App\Repository\Water\Concrete;
 
-use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplicantDoc;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
-use App\Models\Water\WaterConnectionThroughMstrs;
-use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterLevelpending;
-use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterPenaltyInstallment;
-use App\Models\Water\WaterPropertyTypeMstr;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\WorkflowTrack;
 use App\Repository\Water\Interfaces\iNewConnection;
-use App\Traits\Payment\Razorpay;
 use App\Traits\Ward;
 use App\Traits\Workflow\Workflow;
 use App\Traits\Property\SAF;
+use App\Traits\Water\WaterTrait;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use League\CommonMark\Node\Block\Document;
-use Symfony\Component\CssSelector\Node\FunctionNode;
-
-use function PHPUnit\Framework\isNull;
+use Illuminate\Validation\Rules\Exists;
 
 /**
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
@@ -43,107 +36,10 @@ class NewConnectionRepository implements iNewConnection
     use SAF;
     use Workflow;
     use Ward;
-    use Razorpay;
+    use WaterTrait;
 
     /**
-     * | ---------------------------- Get Owner Type / Water ------------------------------- |
-     * | @var ulbId 
-     * | @var ward
-     * | @return ward : return the list of ward according to ulbID.
-     * | Operation : data fetched by table ulb_ward_masters / Calling(->getAllWards($ulbID) on Model) for the list of ward
-        | Serial No :01
-     */
-    public function getWardNo()
-    {
-        try {
-            $ulbId = auth()->user()->ulb_id;
-            $ward = $this->getAllWard($ulbId);
-            return responseMsg(true, "Ward List!", $ward);
-        } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
-        }
-    }
-
-
-    /**
-     * | ------------------------------------- Get Owner Type / Water ------------------------------- |
-     * | @var ownerType 
-     * | @return ownerType : return the master data of the owner type for Water. 
-     * | Operation : data fetched by table water_owner_type_mstrs 
-        | Serila No : 02
-     */
-    public function getOwnerType()
-    {
-        try {
-            $ownerType = new WaterOwnerTypeMstr();
-            $ownerType = $ownerType->getallOwnwers();
-            return response()->json(['status' => true, 'message' => 'data of the ownerType', 'data' => $ownerType]);
-        } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
-        }
-    }
-
-
-    /**
-     * | ----------------- Get Connection Type / Water ------------------------------- |
-     * | @var connectionTypes 
-     * | @return connectionType : return the master data of the connectin type for  Water.
-     * | Operation : data fetched by table water_connection_type_mstrs 
-        | Serila No : 03
-     */
-    public function getConnectionType()
-    {
-        try {
-            $connectionTypes = new WaterConnectionTypeMstr();       //<---------------- make object
-            $connectionTypes = $connectionTypes->getConnectionType();
-            return response()->json(['status' => true, 'message' => 'data of the connectionType', 'data' => $connectionTypes]);
-        } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
-        }
-    }
-
-
-
-    /**
-     * | ----------------- Get Connection Through / Water ------------------------------- |
-     * | @var connectionThrough 
-     * | @return connectionThrough : return the master data of the connection through for water.
-     * | Operation : data fetched by table water_connection_through_mstrs 
-         | Serila No : 04
-     */
-    public function getConnectionThrough()
-    {
-        try {
-            $connectionThrough = new WaterConnectionThroughMstrs();     //<---------------- make object
-            $connectionThrough = $connectionThrough->getAllThrough();
-            return response()->json(['status' => true, 'message' => 'data of the connectionThrough', 'data' => $connectionThrough]);
-        } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
-        }
-    }
-
-
-    /**
-     * | ----------------- Get Property Type / Water ------------------------------- |
-     * | @var propertyType 
-     * | @return propertyType : return the master data of the property type for Water
-     * | Operation : data fetched by table water_property_type_mstrs 
-        | Serila No : 05
-     */
-    public function getPropertyType()
-    {
-        try {
-            $propertyType = new WaterPropertyTypeMstr();        //<---------------- make object
-            $propertyType = $propertyType->getAllPropertyType();
-            return response()->json(['status' => true, 'message' => 'data of the propertyType', 'data' => $propertyType]);
-        } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
-        }
-    }
-
-
-    /**
-     * | -------------------------  Apply for the new Application for Water Application --------------------- |
+     * | -------------------------  Apply for the new Application for Water Application  --------------------- |
      * | @param req
      * | @var vacantLand
      * | @var workflowID
@@ -154,71 +50,73 @@ class NewConnectionRepository implements iNewConnection
      * | @var newConnectionCharges :
      * | Post the value in Water Application table
      * | post the value in Water Applicants table by loop
+     * | 
+     * | time : 
+     * | rating : 5
      * ------------------------------------------------------------------------------------
      * | Generating the demand amount for the applicant in Water Connection Charges Table 
-        | Serila No : 06
+        | Serila No : 01
      */
     public function store(Request $req)
     {
-        try {
-            # ref variables
-            $vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
-            $workflowID = Config::get('workflow-constants.WATER_MASTER_ID');
-            $ulbId = auth()->user()->ulb_id;
+        # ref variables
+        $vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
+        $workflowID = Config::get('workflow-constants.WATER_MASTER_ID');
+        $owner = $req['owners'];
+        $ulbId = auth()->user()->ulb_id;
 
-            # get initiater and finisher
-            $ulbWorkflowObj = new WfWorkflow();
-            $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $ulbId);
-            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
-            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
-            $finisherRoleId = DB::select($refFinisherRoleId);
-            $initiatorRoleId = DB::select($refInitiatorRoleId);
+        # get initiater and finisher
+        $ulbWorkflowObj = new WfWorkflow();
+        $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $ulbId);
+        $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
+        $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+        $finisherRoleId = DB::select($refFinisherRoleId);
+        $initiatorRoleId = DB::select($refInitiatorRoleId);
 
-            # Generating Demand 
-            $objCall = new WaterNewConnection();
-            $newConnectionCharges = $objCall->calWaterConCharge($req);
-            $installment = $newConnectionCharges['installment_amount'];
-            $waterFeeId = $newConnectionCharges['water_fee_mstr_id'];
-
-            # Generating Application No
-            $now = Carbon::now();
-            $applicationNo = 'APP' . $now->getTimeStamp();
-
-            # check the property type on vacant land
-            if ($req->connection_through != '3') {
-                $checkResponse = $this->checkVacantLand($req, $vacantLand);
-                if ($checkResponse) {
-                    return $checkResponse;
-                }
-            }
-
-            DB::beginTransaction();
-
-            $objNewApplication = new WaterApplication();
-            $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId);
-
-            $owner = $req['owners'];
-            foreach ($owner as $owners) {
-                $objApplicant = new WaterApplicant();
-                $objApplicant->saveWaterApplicant($applicationId, $owners);
-            }
-
-            if (!is_null($installment)) {
-                foreach ($installment as $installments) {
-                    $objQuaters = new WaterPenaltyInstallment();
-                    $objQuaters->saveWaterPenelty($applicationId, $installments);
-                }
-            }
-
-            $charges = new WaterConnectionCharge();
-            $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
-
-            DB::commit();
-            return responseMsg(true, "Successfully Saved!", $applicationNo);
-        } catch (Exception $error) {
-            DB::rollBack();
-            return responseMsg(false, $error->getLine(), $error->getMessage());
+        # Generating Demand 
+        $objCall = new WaterNewConnection();
+        $newConnectionCharges = objToArray($objCall->calWaterConCharge($req));
+        if (!$newConnectionCharges['status']) {
+            throw new Exception(
+                $newConnectionCharges['errors']
+            );
         }
+        $installment = $newConnectionCharges['installment_amount'];
+        $waterFeeId = $newConnectionCharges['water_fee_mstr_id'];
+
+        # Generating Application No
+        $now = Carbon::now();
+        $applicationNo = 'APP' . $now->getTimeStamp();
+
+        # check the property type on vacant land
+        if ($req->connection_through != '3') {
+            $checkResponse = $this->checkVacantLand($req, $vacantLand);
+            if ($checkResponse) {
+                return $checkResponse;
+            }
+        }
+
+        DB::beginTransaction();
+        $objNewApplication = new WaterApplication();
+        $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId);
+
+        foreach ($owner as $owners) {
+            $objApplicant = new WaterApplicant();
+            $objApplicant->saveWaterApplicant($applicationId, $owners);
+        }
+
+        if (!is_null($installment)) {
+            foreach ($installment as $installments) {
+                $objQuaters = new WaterPenaltyInstallment();
+                $objQuaters->saveWaterPenelty($applicationId, $installments);
+            }
+        }
+
+        $charges = new WaterConnectionCharge();
+        $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
+        DB::commit();
+
+        return responseMsgs(true, "Successfully Saved!", $applicationNo, "", "02", "", "POST", "");
     }
 
 
@@ -229,78 +127,79 @@ class NewConnectionRepository implements iNewConnection
      * | @var readPropetySafCheck
      * | @var readpropetyHoldingCheck
      * | Operation : check if the applied application is in vacant land 
+        | Serial No : 01.1
      */
     public function checkVacantLand($req, $vacantLand)
     {
+        switch ($req) {
+            case (!is_null($req->saf_no)):
+                $isExist = $this->checkPropertyExist($req);
+                if ($isExist) {
+                    $propetySafCheck = PropActiveSaf::select('prop_type_mstr_id')
+                        ->where('saf_no', $req->saf_no)
+                        ->get()
+                        ->first();
+                    if ($propetySafCheck->prop_type_mstr_id == $vacantLand) {
+                        return responseMsg(false, "water cannot be applied on Vacant land!", "");
+                    }
+                } else {
+                    return responseMsg(false, "saf Not Exist!", $req->saf_no);
+                }
+                break;
+            case (!is_null($req->holdingNo)):
+                $isExist = $this->checkPropertyExist($req);
+                if ($isExist) {
+                    $propetyHoldingCheck = PropProperty::select('prop_type_mstr_id')
+                        ->where('new_holding_no', $req->holdingNo)
+                        ->get()
+                        ->first();
+                    if ($propetyHoldingCheck->prop_type_mstr_id == $vacantLand) {
+                        return responseMsg(false, "water cannot be applied on Vacant land!", "");
+                    }
+                } else {
+                    return responseMsg(false, "holding Don't Exist!", "");
+                }
+                break;
+        }
+    }
+
+
+    /**
+     * |---------------------------------------- check if the porperty ie,(saf/holdin) Exist ------------------------------------------------|
+     * | @param req
+     * | @var safCheck
+     * | @var holdingCheck
+        | Serial No : 01.1.1
+     */
+    public function checkPropertyExist($req)
+    {
         if ($req->saf_no) {
-            $readPropetySafCheck = PropActiveSaf::select('prop_type_mstr_id')
+            $safCheck = PropActiveSaf::select(
+                'saf_no'
+            )
                 ->where('saf_no', $req->saf_no)
                 ->get()
                 ->first();
-            if ($readPropetySafCheck->prop_type_mstr_id == $vacantLand) {
-                return responseMsg(false, "water cannot be applied on Vacant land!", "");
+            if ($safCheck) {
+                return true;
             }
-        }
-
-        # check the property type by holding no  
-        elseif ($req->holdingNo) {
-            $readpropetyHoldingCheck = PropProperty::select('prop_type_mstr_id')
+        } elseif ($req->holdingNo) {
+            $holdingCheck = PropProperty::select(
+                'new_holding_no'
+            )
                 ->where('new_holding_no', $req->holdingNo)
                 ->get()
                 ->first();
-            if ($readpropetyHoldingCheck->prop_type_mstr_id == $vacantLand) {
-                return responseMsg(false, "water cannot be applied on Vacant land!", "");
+            if ($holdingCheck) {
+                return true;
             }
         }
     }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
     /**
-     * |--------- Get the Water Connection charges Details for Logged In user ------------ |
-     * | @param Req
-     * | @var userId
-     * | @var connections
-        | Serial No : 
-     */
-    public function getUserWaterConnectionCharges(Request $req)
-    {
-        try {
-            $userId = auth()->user()->id;
-            $connections = WaterApplication::join('water_connection_charges', 'water_applications.id', '=', 'water_connection_charges.application_id')
-                ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
-                ->select(
-                    'water_connection_charges.application_id AS applicationId',
-                    'water_applications.application_no',
-                    'water_applicants.applicant_name AS appplicantName',
-                    'water_connection_charges.amount',
-                    'water_connection_charges.paid_status',
-                    'water_connection_charges.status',
-                    'water_connection_charges.penalty',
-                    'water_connection_charges.conn_fee',
-                )
-                ->where('water_applications.user_id', '=', $userId)
-                ->orwhere('water_applications.id', $req->applicationId)
-                ->get();
-            return responseMsg(true, "", $connections);
-        } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
-        }
-    }
-
-    /**
-     * |--------------------------------------------------------- water Workflow Functions Listed Below -------------------------------------------------------------------------------------------------------|
+     * |----------------------------------------- water Workflow Functions Listed Below ------------------------------------------------------------|
      */
 
 
@@ -315,36 +214,32 @@ class NewConnectionRepository implements iNewConnection
      * | @var wardId : using the Workflow trait's function (getWardUserId($userId)) for respective wardId.
      * | @var roles : using the Workflow trait's function (getRoleIdByUserId($userID)) for  respective roles.
      * | @return waterList : Details to be displayed in the inbox of the offices in water workflow. 
-        | Serila No : 
+        | Serila No : 02
         | Working
      */
     public function waterInbox()
     {
-        try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-            $wardId = $this->getWardByUserId($userId);
+        $auth = auth()->user();
+        $userId = $auth->id;
+        $ulbId = $auth->ulb_id;
+        $wardId = $this->getWardByUserId($userId);
 
-            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
-                return $ward->ward_id;
-            });
+        $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
+            return $ward->ward_id;
+        });
 
-            $roles = $this->getRoleIdByUserId($userId);
+        $roles = $this->getRoleIdByUserId($userId);
 
-            $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
-                return $role->wf_role_id;
-            });
+        $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
+            return $role->wf_role_id;
+        });
 
-            $waterList = $this->getWaterApplicatioList($ulbId)
-                ->whereIn('water_applications.current_role', $roleId)
-                ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('water_applications.id')
-                ->get();
-            return responseMsgs(true, "Inbox List Details!", remove_null($waterList), '', '01', '', 'Post', '');
-        } catch (Exception $error) {
-            return responseMsg(false, $error->getMessage(), "");
-        }
+        $waterList = $this->getWaterApplicatioList($ulbId)
+            ->whereIn('water_applications.current_role', $roleId)
+            ->whereIn('a.ward_mstr_id', $occupiedWards)
+            ->orderByDesc('water_applications.id')
+            ->get();
+        return responseMsgs(true, "Inbox List Details!", remove_null($waterList), '', '02', '', 'Post', '');
     }
 
 
@@ -358,7 +253,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var wardId : using the Workflow trait's function (getWardUserId($userId)) for respective wardId.
      * | @var roles : using the Workflow trait's function (getRoleIdByUserId($userID)) for  respective roles.
      * | @return waterList : Details to be displayed in the inbox of the offices in water workflow. 
-        | Serial No :
+        | Serial No : 03
         | Working 
      */
     public function waterOutbox()
@@ -391,50 +286,19 @@ class NewConnectionRepository implements iNewConnection
     }
 
 
-
-    /**
-     * |------------------------------------------- Water Application List -------------------------------|
-     * | @param request
-     * | @var 
-        | Serial No : 
-        | Working
-     */
-    public function getWaterApplicatioList($ulbId)
-    {
-        return WaterApplication::
-            // DB::table('prop_active_concessions')
-            select(
-                'water_applications.id',
-                'water_applications.applicant_name as owner_name',
-                'water_applications.holding_no',
-                'a.ward_mstr_id',
-                'u.ward_name as ward_no',
-                'a.prop_type_mstr_id',
-                'p.property_type',
-                'water_applications.workflow_id',
-                'water_applications.current_role as role_id'
-            )
-            ->leftJoin('prop_properties as a', 'a.id', '=', 'water_applications.property_id')
-            ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
-            ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
-            ->where('water_applications.status', 1)
-            ->where('water_applications.ulb_id', $ulbId);
-    }
-
-
     /**
      * |------------------------------------------ Post Application to the next level ---------------------------------------|
-     * | @param 
+     * | @param req
      * | @var 
-        | Serial No :
-        | Working
+        | Serial No : 04
+        | Flag : change
      */
     public function postNextLevel($req)
     {
         try {
             DB::beginTransaction();
             // previous level pending verification enabling
-            $preLevelPending = WaterLevelpending::where('water_application_id', $req->waterApplicationId)
+            $preLevelPending = WorkflowTrack::where('water_application_id', $req->waterApplicationId)
                 ->orderByDesc('id')
                 ->limit(1)
                 ->first();
@@ -473,8 +337,14 @@ class NewConnectionRepository implements iNewConnection
 
     /**
      * |---------------------------------------------- Special Inbox -----------------------------------------|
-     * | 
-        | Serial No : 
+     * | @var auth
+     * | @var userId
+     * | @var wardID
+     * | @var ulbId
+     * | @var occupiedWards
+     * | @var waterList
+     * |
+        | Serial No : 05
         | Working
      */
     public function waterSpecialInbox()
@@ -485,11 +355,11 @@ class NewConnectionRepository implements iNewConnection
             $ulbId = $auth->ulb_id;
             $wardId = $this->getWardByUserId($userId);
 
-            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
+            $occupiedWards = collect($wardId)->map(function ($ward) {                                   // Get Occupied Ward of the User
                 return $ward->ward_id;
             });
 
-            $waterList = $this->getWaterApplicatioList($ulbId)                                         // Get Concessions
+            $waterList = $this->getWaterApplicatioList($ulbId)                                          // Get Concessions
                 ->where('water_applications.is_escalate', true)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('water_applications.id')
@@ -508,7 +378,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param Req 
      * | @var userId
      * | @var docStatus
-        | Serial No :
+        | Serial No : 06
         | working
      */
     public function waterDocStatus($req)

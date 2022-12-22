@@ -43,8 +43,9 @@ class WaterApplication extends Model
         $saveNewApplication->current_role           = collect($initiatorRoleId)->first()->role_id;
         $saveNewApplication->initiator              = collect($initiatorRoleId)->first()->role_id;
         $saveNewApplication->finisher               = collect($finisherRoleId)->first()->role_id;
-
-
+        $saveNewApplication->application_no         = $applicationNo;
+        $saveNewApplication->ulb_id                 = $ulbId;
+        $saveNewApplication->user_id                = auth()->user()->id;
 
         # condition entry 
         if ($req->connection_through == 3) {
@@ -63,9 +64,6 @@ class WaterApplication extends Model
             $saveNewApplication->saf_no = $req->saf_no;
         }
 
-        $saveNewApplication->application_no = $applicationNo;
-        $saveNewApplication->ulb_id = $ulbId;
-        $saveNewApplication->user_id = auth()->user()->id;
         $saveNewApplication->save();
 
         return $saveNewApplication->id;

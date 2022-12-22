@@ -28,11 +28,8 @@ use Exception;
 
 class PaymentRepository implements iPayment
 {
+    # traits
     use Razorpay;
-
-    private $refRazorpayId = "rzp_test_3MPOKRI8WOd54p";
-    private $refRazorpayKey = "k23OSfMevkBszuPY5ZtZwutU";
-
 
     /**
      * | Get Department By Ulb
@@ -132,12 +129,12 @@ class PaymentRepository implements iPayment
 
     /**
      * | Get Payment details by readind the webhook table
-     * | @param req request from the frontend
-     * | @param error collecting the operation error
-     * | @var mReadPayment collecting data from the table WebhookPaymentData
+     * | @var mReadPayment : collect webhook payment details
+     * | @return mCollection
      * | 
      * | Rating :
      * | Time :
+        | Working
      */
     public function getWebhookDetails()
     {
@@ -149,7 +146,9 @@ class PaymentRepository implements iPayment
                 'payment_amount AS amount',
                 'payment_status AS status',
                 'created_at AS date',
-            )->get();
+            )
+                ->orderByDesc('id')
+                ->get();
 
             $mCollection = collect($mReadPayment)->map(function ($value, $key) {
                 $decode = WebhookPaymentData::select('payment_notes AS userDetails')
@@ -157,7 +156,7 @@ class PaymentRepository implements iPayment
                     ->where('payment_order_id', $value['orderId'])
                     ->where('payment_status', $value['status'])
                     ->get();
-                $details = json_decode($decode['0']->userDetails);
+                $details = json_decode(collect($decode)->first()->userDetails);
                 $value['userDetails'] = (object)$details;
                 return $value;
             });
@@ -177,6 +176,7 @@ class PaymentRepository implements iPayment
      * | 
      * | Rating : 
      * | Time :
+        | flag : red
      */
     public function getTraitOrderId(Request $request)  //<------------------ here (INVALID)
     {
@@ -205,6 +205,7 @@ class PaymentRepository implements iPayment
      * |
      * | Rating :
      * | Time :
+        | USE
      */
     public function verifyPaymentStatus(Request $request)
     {
@@ -228,6 +229,7 @@ class PaymentRepository implements iPayment
      * |
      * | Rating :
      * | Time :
+        | Working
      */
     public function gettingWebhookDetails(Request $request)
     {
@@ -255,31 +257,13 @@ class PaymentRepository implements iPayment
      * |
      * | Rating :
      * | Time:
+        | Flag
      */
     public function getTransactionNoDetails(Request $request)
     {
         try {
-            $mReadTransactions =  WebhookPaymentData::select(
-                'payment_order_id AS orderId',
-                'payment_amount AS amount',
-                'payment_status AS status',
-                'payment_bank AS bank',
-                'payment_contact AS contact',
-                'payment_method AS method',
-                'payment_id AS paymentId',
-                'payment_transaction_id AS transactionNo',
-                'payment_acquirer_data_value AS paymentAcquirerDataValue',
-                'payment_acquirer_data_type AS paymentAcquirerDataType',
-                'payment_error_reason AS paymentErrorReason',
-                'payment_error_source AS paymentErrorSource',
-                'payment_error_description AS paymentErrorDescription',
-                'payment_error_code AS paymentErrorCode',
-                'payment_email AS emails',
-                'payment_vpa AS  paymentVpa',
-                'payment_wallet AS paymentWallet',
-                'payment_card_id AS paymentCardId'
-            )
-                ->where('payment_transaction_id', $request->transactionNo)
+            $objWebhookData = new WebhookPaymentData();
+            $mReadTransactions = $objWebhookData->webhookByTransaction($request)
                 ->get();
 
             $mCollection = collect($mReadTransactions)->map(function ($value, $key) {
@@ -288,14 +272,14 @@ class PaymentRepository implements iPayment
                     ->where('payment_order_id', $value['orderId'])
                     ->where('payment_status', $value['status'])
                     ->get();
-                $details = json_decode($decode['0']->userDetails);
-                $value['userDetails'] =  $details;
+                $details[] = json_decode(collect($decode)->first()->userDetails);
+                $value['userDetails'] = $details;
                 return $value;
             });
-            if (!empty($mCollection['0']) && $mCollection['0'] == !null) {
-                return responseMsg(true, "Data fetched!", $mCollection['0']);
+            if (empty(collect($mCollection)->first())) {
+                return responseMsg(false, "data not found!", "");
             }
-            return responseMsg(false, "data not found", "");
+            return responseMsgs(true, "Data fetched!", remove_null(collect($mCollection)->first()), "", "02", "618.ms", "POST", $request->deviceId);
         } catch (Exception $error) {
             return responseMsg(false, "Error listed below!", $error->getMessage());
         }
@@ -311,12 +295,14 @@ class PaymentRepository implements iPayment
      * | 
      * | Rating :
      * | Time : 
+        | Working
      */
     public function getReconcillationDetails()
     {
         try {
             $reconciliation = new PaymentReconciliation();
-            $reconciliation = $reconciliation->allReconciliation();
+            $reconciliation = $reconciliation->allReconciliationDetails()
+                ->get();
             return responseMsg(true, "Payment Reconciliation data!", $reconciliation);
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
@@ -338,6 +324,7 @@ class PaymentRepository implements iPayment
      * |
      * | Rating : 
      * | Time :
+        | Working
      */
     public function searchReconciliationDetails($request)
     {

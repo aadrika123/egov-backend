@@ -30,7 +30,6 @@ class PaymentReconciliation extends Model
             'bank_name AS bankName',
             'transaction_amount AS amount',
             'clearance_date AS clearanceDate'
-        )
-            ->get();
+        );
     }
 }
