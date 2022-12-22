@@ -367,4 +367,21 @@ trait SAF
             ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.property_assessment_id')
             ->where('prop_properties.status', 1);
     }
+
+    /**
+     * | Read Road Width Types
+     */
+    public function readRoadWidthType($roadWidth)
+    {
+        if ($roadWidth <= 0)
+            $roadWidthType = 4;
+        elseif ($roadWidth > 0 && $roadWidth < 20)
+            $roadWidthType = 3;
+        elseif ($roadWidth >= 20 && $roadWidth <= 39)
+            $roadWidthType = 2;
+        elseif ($roadWidth >= 40)
+            $roadWidthType = 1;
+
+        return $roadWidthType;
+    }
 }

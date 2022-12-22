@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -11,23 +12,23 @@ class WorkflowTrack extends Model
     use HasFactory;
     use SoftDeletes;
 
-
     public function saveTrack($request)
     {
-        $UserId = authUser()->id;
+        $userId = authUser()->id;
+        $mTrackDate = Carbon::now()->format('Y-m-d H:i:s');
         $track = new WorkflowTrack;
         $track->workflow_id = $request->workflowId;
         $track->citizen_id = $request->citizenId;
         $track->module_id = $request->moduleId;
         $track->ref_table_dot_id = $request->refTableDotId;
         $track->ref_table_id_value = $request->refTableIdValue;
-        $track->track_date = date('Y-m-d H:i:s');
-        // $track->forward_date = $request->forwardDate;
-        // $track->forward_time = $request->forwardTime;
-        // $track->message = $request->message;
-        $track->sender_role_id = $request->senderRoleId;
-        $track->receiver_role_id = $request->receiverRoleId;
-        $track->user_id = $UserId;
+        $track->track_date = $mTrackDate;
+        $track->forward_date = $request->forwardDate ?? null;
+        $track->forward_time = $request->forwardTime ?? null;
+        $track->message = $request->message;
+        $track->sender_role_id = $request->senderRoleId ?? null;
+        $track->receiver_role_id = $request->receiverRoleId ?? null;
+        $track->user_id = $userId;
         $track->save();
     }
 
