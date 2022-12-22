@@ -272,7 +272,7 @@ class PaymentRepository implements iPayment
                     ->where('payment_order_id', $value['orderId'])
                     ->where('payment_status', $value['status'])
                     ->get();
-                $details[] = json_decode(collect($decode)->first()->userDetails);
+                $details = json_decode(collect($decode)->first()->userDetails);
                 $value['userDetails'] = $details;
                 return $value;
             });
@@ -364,7 +364,7 @@ class PaymentRepository implements iPayment
                 }
                 break;
             default:
-                return ("Some error RENETR the details!");
+                return ("Some Error try again !");
         }
     }
 
@@ -378,6 +378,7 @@ class PaymentRepository implements iPayment
      * | 
      * | Rating :
      * | Time :
+        | Flag move to model
      */
     public function updateReconciliationDetails($request)
     {
@@ -395,7 +396,7 @@ class PaymentRepository implements iPayment
         }
     }
 
-    #____________________________________( Reconciliation - START)___________________________________________#
+    #____________________________________(Search Reconciliation - START)___________________________________________#
 
     /**
      * |--------- reconciliationDateWise 1.1----------
@@ -404,7 +405,6 @@ class PaymentRepository implements iPayment
      */
     public function reconciliationDateWise($request)
     {
-        try {
             $reconciliationDetails = PaymentReconciliation::select(
                 'ulb_id AS ulbId',
                 'department_id AS dpartmentId',
@@ -422,13 +422,10 @@ class PaymentRepository implements iPayment
                 ->whereBetween('date', [$request->fromDate, $request->toDate])
                 ->get();
 
-            if (!empty($reconciliationDetails['0'])) {
+            if (!empty(collect($reconciliationDetails)->first())) {
                 return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
             }
             return responseMsg(false, "data not found!", "");
-        } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
-        }
     }
 
     /**
@@ -457,7 +454,7 @@ class PaymentRepository implements iPayment
                 ->where('payment_mode', $request->paymentMode)
                 ->get();
 
-            if (!empty($reconciliationDetails['0'])) {
+            if (!empty(collect($reconciliationDetails)->first())) {
                 return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
             }
             return responseMsg(false, "data not found!", "");
@@ -492,7 +489,7 @@ class PaymentRepository implements iPayment
                 ->where('status', $request->verificationType)
                 ->get();
 
-            if (!empty($reconciliationDetails['0'])) {
+            if (!empty(collect($reconciliationDetails)->first())) {
                 return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
             }
             return responseMsg(false, "data not found!", "");
@@ -526,7 +523,7 @@ class PaymentRepository implements iPayment
                 ->where('cheque_no', $request->chequeDdNo)
                 ->get();
 
-            if (!empty($reconciliationDetails['0'])) {
+            if (!empty(collect($reconciliationDetails)->first())) {
                 return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
             }
             return responseMsg(false, "data not found!", "");
@@ -563,7 +560,7 @@ class PaymentRepository implements iPayment
                 ->where('cheque_no', $request->chequeDdNo)
                 ->get();
 
-            if (!empty($reconciliationDetails['0'])) {
+            if (!empty(collect($reconciliationDetails)->first())) {
                 return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
             }
             return responseMsg(false, "data not found!", "");
@@ -599,7 +596,7 @@ class PaymentRepository implements iPayment
                 ->where('status', $request->verificationType)
                 ->get();
 
-            if (!empty($reconciliationDetails['0'])) {
+            if (!empty(collect($reconciliationDetails)->first())) {
                 return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
             }
             return responseMsg(false, "data not found!", "");
@@ -620,8 +617,7 @@ class PaymentRepository implements iPayment
     {
         try {
             $userId = auth()->user()->id;
-            $transaction = WebhookPaymentData::join('department_masters', 'department_masters.id', '=', 'webhook_payment_data.department_id')
-                ->select(
+            $transaction = WebhookPaymentData::select(
                     'webhook_payment_data.payment_transaction_id AS transactionNo',
                     'webhook_payment_data.created_at AS dateOfTransaction',
                     'webhook_payment_data.payment_method AS paymentMethod',
@@ -629,6 +625,7 @@ class PaymentRepository implements iPayment
                     'webhook_payment_data.payment_status AS paymentStatus',
                     'department_masters.department_name AS modueName'
                 )
+                ->join('department_masters', 'department_masters.id', '=', 'webhook_payment_data.department_id')
                 ->where('user_id', $userId)
                 ->get();
             if (!empty(collect($transaction)->first())) {
