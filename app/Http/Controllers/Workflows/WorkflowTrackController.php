@@ -54,7 +54,6 @@ class WorkflowTrackController extends Controller
         return responseMsg(true, 'Data retrieved', $list);
     }
 
-
     /**
      *| Get WorkflowTrack By Reference Table ID and Reference Table Value
      *| @param ReferenceTableID $ref_table_id

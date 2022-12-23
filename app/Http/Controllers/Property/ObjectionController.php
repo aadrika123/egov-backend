@@ -11,7 +11,9 @@ use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Traits\Property\Objection;
 use App\Models\Property\RefPropObjectionType;
 use App\Models\Property\PropOwner;
+use App\Models\WorkflowTrack;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Config;
 use Exception;
 
 class ObjectionController extends Controller
@@ -101,7 +103,7 @@ class ObjectionController extends Controller
     /**
      * | Get the Objection Outbox
      */
-    public function outbox(Request $request)
+    public function outbox()
     {
         try {
             $auth = auth()->user();
@@ -198,7 +200,19 @@ class ObjectionController extends Controller
             'comment' => 'required'
         ]);
 
-        return $this->Repository->postNextLevel($req);
+        $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $metaReqs['workflowId'] = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
+        $metaReqs['refTableDotId'] = 'prop_active_objections.id';
+        $metaReqs['refTableIdValue'] = $req->objectionId;
+        $req->request->add($metaReqs);
+
+        $track = new WorkflowTrack();
+        $track->saveTrack($req);
+
+        // objection Application Update Current Role Updation
+        $objection = PropActiveObjection::find($req->objectionId);
+        $objection->current_role = $req->receiverRoleId;
+        $objection->save();
     }
 
     /**

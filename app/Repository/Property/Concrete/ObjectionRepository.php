@@ -417,14 +417,13 @@ class ObjectionRepository implements iObjectionRepository
             // $levelPending->receiver_role_id = $req->receiverRoleId;
             // $levelPending->sender_user_id = auth()->user()->id;
             // $levelPending->save();
-
-            $track = new WorkflowTrack();
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
             $metaReqs['refTableDotId'] = 'prop_active_objections.id';
             $metaReqs['refTableIdValue'] = $req->objectionId;
-
             $req->request->add($metaReqs);
+
+            $track = new WorkflowTrack();
             $track->saveTrack($req);
 
             // objection Application Update Current Role Updation
