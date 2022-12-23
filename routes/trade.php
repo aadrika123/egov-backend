@@ -47,6 +47,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         #------------citizenApplication---------------------
         Route::get('citizenApplication', 'citizenApplication');
         Route::get('citizenApplication/{id}', 'readCitizenLicenceDtl');
+        Route::post('conformRazorPayTran', 'conformRazorPayTran');
     });
 });
 Route::controller(TradeApplication::class)->group(function () {    

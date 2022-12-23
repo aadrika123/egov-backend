@@ -47,4 +47,5 @@ interface ITrade
     public function reports(Request $request);
     public function citizenApplication();
     public function readCitizenLicenceDtl($id);
+    public function conformRazorPayTran(Request $request);
 }
