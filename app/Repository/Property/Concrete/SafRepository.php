@@ -764,7 +764,9 @@ class SafRepository implements iSafRepository
                 "oldWardNo" => $activeSafDetails->original['data']['old_ward_no'],
                 "newWardNo" => $activeSafDetails->original['data']['new_ward_no'],
                 "towards" => $mTowards,
-                "description" => $mDescriptions
+                "description" => $mDescriptions,
+                "totalPaidAmount" => $propTrans->amount,
+                "paidAmtInWords" => getIndianCurrency($propTrans->amount),
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "451ms", "POST", $req->deviceId);
         } catch (Exception $e) {
