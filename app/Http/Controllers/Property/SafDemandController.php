@@ -27,7 +27,7 @@ class SafDemandController extends Controller
     public function getDemandBySafId(Request $req)
     {
         $req->validate([
-            'id' => 'required|integer'
+            'safId' => 'required|integer'
         ]);
 
         return $this->_repo->getDemandBySafId($req);

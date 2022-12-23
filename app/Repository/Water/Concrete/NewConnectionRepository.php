@@ -291,42 +291,25 @@ class NewConnectionRepository implements iNewConnection
      * | @param req
      * | @var 
         | Serial No : 04
-        | Flag : change
+        | Working
      */
     public function postNextLevel($req)
     {
         try {
-            DB::beginTransaction();
-            // previous level pending verification enabling
-            $preLevelPending = WorkflowTrack::where('water_application_id', $req->waterApplicationId)
-                ->orderByDesc('id')
-                ->limit(1)
-                ->first();
-            $preLevelPending->verification_status = '1';
-            $preLevelPending->save();
+            $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
+            $metaReqs['workflowId'] = Config::get('workflow-constants.WATER_WORKFLOW_ID');
+            $metaReqs['refTableDotId'] = 'water_applications.id';
+            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $req->request->add($metaReqs);
 
-            $levelPending = new WaterLevelpending();
-            $levelPending->water_application_id = $req->waterApplicationId;
-            $levelPending->sender_role_id = $req->senderRoleId;
-            $levelPending->receiver_role_id = $req->receiverRoleId;
-            $levelPending->sender_user_id = auth()->user()->id;
-            $levelPending->save();
+            $objTrack = new WorkflowTrack();
+            $objTrack->saveTrack($req);
 
-            // Water Application Update Current Role
-            $concession = WaterApplication::find($req->concessionId);
-            $concession->current_role = $req->receiverRoleId;
-            $concession->save();
+            // objection Application Update Current Role Updation
+            $objection = WaterApplication::find($req->applicationId);
+            $objection->current_role = $req->receiverRoleId;
+            $objection->save(); 
 
-            // Add Comment On Prop Level Pending
-            $receiverLevelPending = new WaterLevelpending();
-            $commentOnlevel = $receiverLevelPending->getReceiverLevel($req->concessionId, $req->senderRoleId);
-            $commentOnlevel->remarks = $req->comment;
-            $commentOnlevel->receiver_role_id = auth()->user()->id;
-            $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
-            $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
-            $commentOnlevel->save();
-
-            DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
@@ -345,7 +328,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var waterList
      * |
         | Serial No : 05
-        | Working
+        | Unchecked
      */
     public function waterSpecialInbox()
     {
@@ -379,7 +362,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var userId
      * | @var docStatus
         | Serial No : 06
-        | working
+        | Unchecked
      */
     public function waterDocStatus($req)
     {

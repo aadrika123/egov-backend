@@ -49,6 +49,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         # water Workflow
         Route::post('water-inbox', 'waterInbox');                                                        // 
         Route::post('water-outbox', 'waterOutbox');                                                      //
+        Route::post('post-next-level','postNextLevel');                                                  //
     });
 });
 

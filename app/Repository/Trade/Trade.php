@@ -1303,7 +1303,7 @@ class Trade implements ITrade
             DB::beginTransaction();
 
             $RazorPayResponse = new TradeRazorPayResponse;
-            $RazorPayResponse->licence_id   = $RazorPayRequest->related_id;
+            $RazorPayResponse->licence_id   = $RazorPayRequest->licence_id;                    
             $RazorPayResponse->request_id   = $RazorPayRequest->id;
             $RazorPayResponse->amount       = $args['amount'];
             $RazorPayResponse->merchant_id  = $args['merchantId']??null;
@@ -4885,6 +4885,66 @@ class Trade implements ITrade
             
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    public function conformRazorPayTran(Request $request)
+    {
+        $this->_metaData["apiId"] = "c5";
+        $this->_metaData["queryRunTime"] = 4.00;
+        $this->_metaData["action"]    = $request->getMethod();
+        $this->_metaData["deviceId"] = $request->ip();
+        try{
+            $refUser        = Auth()->user();
+            $application = null;
+            $transection = null;
+            $path = "/api/trade/paymentReceipt/";
+            $rules = [
+                'orderId'    => 'required|string',
+                'paymentId'  => 'required|string',
+            ];
+            $validator = Validator::make($request->all(), $rules,);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), $request->all());
+            }
+            $TradeRazorPayResponse = TradeRazorPayResponse::select("trade_razor_pay_responses.*","trade_razor_pay_requests.payment_from")
+                ->join("trade_razor_pay_requests", "trade_razor_pay_requests.id", "trade_razor_pay_responses.request_id")
+                ->where("trade_razor_pay_responses.order_id", $request->orderId)
+                ->where("trade_razor_pay_responses.payment_id", $request->paymentId)
+                ->where("trade_razor_pay_requests.status", 1)
+                ->first();
+            if (!$TradeRazorPayResponse) 
+            {
+                throw new Exception("Not Transection Found...");
+            }
+            $application = ActiveLicence::find($TradeRazorPayResponse->licence_id);
+            $transection = TradeTransaction::select("*")
+                ->where("related_id", $TradeRazorPayResponse->licence_id)
+                ->first();
+            
+            if (!$application) 
+            {
+                throw new Exception("Application Not Found....");
+            }
+            if (!$transection) 
+            {
+                throw new Exception("Not Transection Data Found....");
+            }
+            $data["amount"]            = $TradeRazorPayResponse->amount;
+            $data["applicationId"]     = $TradeRazorPayResponse->licence_id;
+            $data["applicationNo"]     = $application->application_no;
+            $data["tranType"]          = $TradeRazorPayResponse->payment_from;
+            $data["transectionId"]     = $transection->id;
+            $data["transectionNo"]     = $transection->transaction_no;
+            $data["transectionDate"]   = $transection->transaction_date;
+            $data['paymentRecipt']     = config('app.url') . $path . $TradeRazorPayResponse->licence_id . "/" . $transection->id;
+            return responseMsg(true,"",$data,
+            );
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$request->all(),
+            ); 
         }
     }
     /** Incomplite End code */
