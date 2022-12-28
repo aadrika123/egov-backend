@@ -17,7 +17,6 @@ interface ITrade
     public function __construct();
     public function addRecord(Request $request);
     public function paymentCounter(Request $request);
-    public function handeRazorPay(Request $request);
     public function isvalidateHolding(Request $request);
     public function searchLicenceByNo(Request $request);
     public function searchLicence(string $licence_no,$ulb_id);
@@ -45,6 +44,4 @@ interface ITrade
     public function denialView($id,$mailID,Request $request);
     public function approvedApplication(Request $request);
     public function reports(Request $request);
-    public function citizenApplication();
-    public function readCitizenLicenceDtl($id);
 }

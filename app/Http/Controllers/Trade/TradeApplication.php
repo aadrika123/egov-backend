@@ -21,7 +21,7 @@ use Exception;
 
 class TradeApplication extends Controller
 {
-
+    
     /**
      * | Created On-01-10-2022 
      * | Created By-Sandeep Bara
@@ -31,8 +31,8 @@ class TradeApplication extends Controller
 
     // Initializing function for Repository
     private $Repository;
-    protected $_modelWard;
-    protected $_parent;
+    private $_modelWard;
+    private $_parent;
     public function __construct(ITrade $TradeRepository)
     {
         $this->Repository = $TradeRepository ;
@@ -42,9 +42,13 @@ class TradeApplication extends Controller
     # Serial No : 01
     public function applyApplication(ReqAddRecorde $request)
     {   
-        $refUser            = Auth()->user();
+        $refUser            = Auth()->user(); 
         $refUserId          = $refUser->id;
         $refUlbId           = $refUser->ulb_id;
+        if($refUser->user_type==Config::get("TradeConstant.CITIZEN"))
+        {
+            $refUlbId = $request->ulbId??0;
+        }
         $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID'); 
         $mUserType          = $this->_parent->userType($refWorkflowId);
         $refWorkflows       = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);        
@@ -77,7 +81,7 @@ class TradeApplication extends Controller
             return $this->Repository->addRecord($request);
         }   
         catch(Exception $e)
-        {
+        { 
             return responseMsg(false,$e->getMessage(),$request->all());
         } 
     }
@@ -94,12 +98,7 @@ class TradeApplication extends Controller
     public function updateBasicDtl(ReqUpdateBasicDtl $request)
     {
         return $this->Repository->updateBasicDtl($request);
-    }
-    # Serial No : 03
-    public function handeRazorPay(Request $request)
-    {
-        return $this->Repository->handeRazorPay($request);
-    }
+    }    
     # Serial No : 04
     public function paymentReceipt(Request $request)
     {
@@ -287,16 +286,7 @@ class TradeApplication extends Controller
     {
         return $this->Repository->approvedApplication($request);
     }
-    # Serial No : 27
-    public function citizenApplication(Request $request)
-    {
-        return $this->Repository->citizenApplication();
-    }
-    # Serial No : 28
-    public function readCitizenLicenceDtl($id)
-    {
-        return $this->Repository->readCitizenLicenceDtl($id);
-    }
+    
     
     public function reports(Request $request)
     {
