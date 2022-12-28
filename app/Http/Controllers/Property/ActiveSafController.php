@@ -16,6 +16,7 @@ use App\Models\Property\RefPropConstructionType;
 use App\Models\Property\RefPropFloor;
 use App\Models\Property\RefPropOccupancyType;
 use App\Models\Property\RefPropOwnershipType;
+use App\Models\Property\RefPropRoadType;
 use App\Models\Property\RefPropTransferMode;
 use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
@@ -78,6 +79,7 @@ class ActiveSafController extends Controller
             $refPropOccupancyType = new RefPropOccupancyType();
             $refPropConstructionType = new RefPropConstructionType();
             $refPropTransferMode = new RefPropTransferMode();
+            $refPropRoadType = new RefPropRoadType();
 
             // Getting Masters from Redis Cache
             $wardMaster = json_decode(Redis::get('wards-ulb-' . $ulbId));
@@ -88,6 +90,7 @@ class ActiveSafController extends Controller
             $occupancyType = json_decode(Redis::get('property-occupancy-types'));
             $constructionType = json_decode(Redis::get('property-construction-types'));
             $transferModuleType = json_decode(Redis::get('property-transfer-modes'));
+            $roadType = json_decode(Redis::get('property-road-type'));
 
             // Ward Masters
             if (!$wardMaster) {
@@ -152,6 +155,14 @@ class ActiveSafController extends Controller
             }
 
             $data['transfer_mode'] = $transferModuleType;
+
+            // road type master
+            if (!$roadType) {
+                $roadType = $refPropRoadType->propRoadType();
+                $redisConn->set('property-road-type', json_encode($roadType));
+            }
+
+            $data['road_type'] = $roadType;
 
             return responseMsgs(true, 'Property Masters', $data, "010101", "1.0", "317ms", "GET", "");
         } catch (Exception $e) {

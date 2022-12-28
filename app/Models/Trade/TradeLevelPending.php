@@ -11,14 +11,14 @@ class TradeLevelPending extends Model
     public $timestamps=false;
 
 
-    public static function getLevelData($licenceId)
-    {
-        return  TradeLevelPending::select("*")
-                    ->where("licence_id",$licenceId)
-                    ->where("status",1)
-                    ->where("verification_status",0)
-                    ->orderBy("id","DESC")
-                    ->first();
+    // public static function getLevelData($licenceId)
+    // {
+    //     return  TradeLevelPending::select("*")
+    //                 ->where("licence_id",$licenceId)
+    //                 ->where("status",1)
+    //                 ->where("verification_status",0)
+    //                 ->orderBy("id","DESC")
+    //                 ->first();
             
-    }
+    // }
 }

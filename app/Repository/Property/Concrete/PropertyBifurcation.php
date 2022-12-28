@@ -1950,6 +1950,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             $finalData       = (array)null;
             $requiedDocs     = (array) null;
             $ownersDoc       = (array) null;
+            $testOwnersDoc   = (array)null;
             $safId           = $request->id;
             if (!$safId) 
             {
@@ -1992,6 +1993,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             { 
                 $doc = (array) null;
                 $uploadDoc =(array)null;
+                $testOwnersDoc[$key] = (array) null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
                 $doc['docName']     = "Photo";
@@ -2002,9 +2004,10 @@ class PropertyBifurcation implements IPropertyBifurcation
                 {
                     $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
                     $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
+                    array_push($uploadDoc,$doc["uploadDoc"]);
                 }
                 array_push($ownersDoc, $doc);
-                array_push($uploadDoc,$doc["uploadDoc"]);
+                array_push($testOwnersDoc[$key], $doc);
                 $doc = (array) null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
@@ -2016,9 +2019,10 @@ class PropertyBifurcation implements IPropertyBifurcation
                 {
                     $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
                     $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
+                    array_push($uploadDoc,$doc["uploadDoc"]);
                 }
-                array_push($uploadDoc,$doc["uploadDoc"]);
                 array_push($ownersDoc, $doc);
+                array_push($testOwnersDoc[$key], $doc);
                 $doc = (array) null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
@@ -2030,9 +2034,10 @@ class PropertyBifurcation implements IPropertyBifurcation
                 {
                     $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
                     $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
+                    array_push($uploadDoc,$doc["uploadDoc"]);
                 }
-                array_push($uploadDoc,$doc["uploadDoc"]);
                 array_push($ownersDoc, $doc);
+                array_push($testOwnersDoc[$key], $doc);
                 if ($val->is_armed_force) 
                 {
                     $doc = (array) null;
@@ -2046,9 +2051,10 @@ class PropertyBifurcation implements IPropertyBifurcation
                     {
                         $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
                         $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
+                        array_push($uploadDoc,$doc["uploadDoc"]);
                     }
                     array_push($ownersDoc, $doc);
-                    array_push($uploadDoc,$doc["uploadDoc"]);
+                    array_push($testOwnersDoc[$key], $doc);
                 }
                 if ($val->is_specially_abled) 
                 {
@@ -2064,14 +2070,15 @@ class PropertyBifurcation implements IPropertyBifurcation
                     {
                         $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
                         $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
+                        array_push($uploadDoc,$doc["uploadDoc"]);
                     }
                     array_push($ownersDoc, $doc);
-                    array_push($uploadDoc,$doc["uploadDoc"]);
+                    array_push($testOwnersDoc[$key], $doc);
                 }
                 $mOwneres[$key]["uploadoc"]=collect($uploadDoc);
             }
             $data["documentsList"]  = $requiedDocs;
-            $data["ownersDocList"]  = $ownersDoc;
+            $data["ownersDocList"]  = $testOwnersDoc;
             $data["safDtl"]         = $refSafs;
             $data["owners"]         = $mOwneres;
             $data["uploadDocument"] = $mUploadDocument;
