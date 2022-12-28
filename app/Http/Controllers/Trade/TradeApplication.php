@@ -291,10 +291,6 @@ class TradeApplication extends Controller
     public function reports(Request $request)
     {
         return $this->Repository->reports($request);
-    }
-    public function conformRazorPayTran(Request $request)
-    {
-        return $this->Repository->conformRazorPayTran($request);
-    }
+    }    
     
 }
