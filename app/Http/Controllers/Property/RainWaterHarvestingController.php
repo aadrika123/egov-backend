@@ -181,7 +181,6 @@ class RainWaterHarvestingController extends Controller
             });
 
             $harvestingList = new PropActiveHarvesting();
-
             $harvesting = $harvestingList->getHarvestingList($ulbId)
                 ->whereIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)

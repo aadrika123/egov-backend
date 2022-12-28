@@ -127,7 +127,8 @@ class EloquentAuthRepository implements AuthRepository
             $validator = $request->validated();
             $email = $request->email;
             // checking user is existing or not
-            $emailInfo = User::where('email', $request->email)->first();
+            $emailInfo = User::where('email', $request->email)
+                ->first();
             if (!$emailInfo) {
                 $msg = "Oops! Given email does not exist";
                 return responseMsg(false, $msg, "");

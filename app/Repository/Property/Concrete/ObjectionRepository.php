@@ -45,7 +45,11 @@ class ObjectionRepository implements iObjectionRepository
     private $_workflow_id_forgery;
 
     public function __construct()
+
     {
+        /**
+         | change the underscore for the reference var
+         */
         $this->_bifuraction = new PropertyBifurcation();
         $this->_workflow_id_clerical = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
         $this->_workflow_id_assesment = Config::get('workflow-constants.PROPERTY_OBJECTION_ASSESSMENT');
@@ -70,15 +74,15 @@ class ObjectionRepository implements iObjectionRepository
                 ->first();
 
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
-            $initiatorRoleId = DB::select($refInitiatorRoleId);
-
             $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);              // Get Finisher ID
+            $initiatorRoleId = DB::select($refInitiatorRoleId);
             $finisherRoleId = DB::select($refFinisherRoleId);
 
             if ($objectionFor == "Clerical Mistake") {
                 DB::beginTransaction();
 
                 //saving objection details
+                # Flag : call model <----------
                 $objection = new PropActiveObjection();
                 $objection->ulb_id = $ulbId;
                 $objection->user_id = $userId;
@@ -101,6 +105,7 @@ class ObjectionRepository implements iObjectionRepository
                     ->update(['objection_no' => $objectionNo]);
 
                 //saving objection owner details
+                # Flag : call model <----------
                 $objectionOwner = new PropActiveObjectionOwner();
                 $objectionOwner->objection_id = $objection->id;
                 $objectionOwner->name = $request->name;
@@ -111,6 +116,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objectionOwner->save();
 
                 //name document
+                # call a funcion for the file uplode 
                 if ($file = $request->file('nameDoc')) {
                     $docName = "nameDoc";
                     $name = $this->moveFile($docName, $file);
