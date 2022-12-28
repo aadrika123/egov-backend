@@ -28,6 +28,7 @@ class reqApplySaf extends FormRequest
         $mNowDate     = Carbon::now()->format("Y-m-d");
         $mNowDateYm   = Carbon::now()->format("Y-m");
 
+        $rules['ulbId'] = "required|int";
         $rules['assessmentType'] = "required|int|in:1,2,3";
         if (isset($this->assessmentType) && $this->assessmentType == 3) {
             $rules['transferModeId'] = "required";
@@ -71,7 +72,6 @@ class reqApplySaf extends FormRequest
         }
         $rules['isWaterHarvesting'] = "required|bool";
         if (isset($this->assessmentType) && $this->assessmentType != 1) {
-            $rules['previousHoldingId'] = "required|digits_between:1,9223372036854775807";
             $rules['holdingNo']         = "required|string";
         }
         $rules['zone']           = "required|int|in:1,2";

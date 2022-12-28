@@ -50,6 +50,9 @@ use App\Http\Controllers\WorkflowMaster\WorkflowController as WfController;
  */
 
 // Route Used for Login and Register the User
+/**
+ * | Updated By- Sam kerketta
+ */
 Route::controller(UserController::class)->group(function () {
     Route::post('login', 'loginAuth')->middleware('request_logger');
     Route::post('register', 'store');
@@ -353,7 +356,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('workflow/getWorkflowNameByUlb', 'getWorkflowNameByUlb');
         Route::post('workflow/getRoleByUlb', 'getRoleByUlb');
         Route::post('workflow/getWardByUlb', 'getWardByUlb');
-        Route::post('workflow/getRoleByWorkflowId', 'getRoleByWorkflowId');
         Route::post('workflow/getUserByRole', 'getUserByRole');
 
         //mapping

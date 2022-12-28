@@ -47,10 +47,12 @@ class WorkflowTrackController extends Controller
     public function getWorkflowTrackByID(Request $req)
     {
         $detail = new WorkflowTrack();
-        $list =  $detail->detailById($req);
+        $list =  $detail->details()
+            ->where('workflow_tracks.id', $req->id)
+            ->first();
+
         return responseMsg(true, 'Data retrieved', $list);
     }
-
 
     /**
      *| Get WorkflowTrack By Reference Table ID and Reference Table Value
@@ -60,7 +62,10 @@ class WorkflowTrackController extends Controller
     public function getWorkflowTrackByTableIDValue(Request $req)
     {
         $detail = new WorkflowTrack();
-        $list =  $detail->detailByrefId($req);
+        $list =  $detail->details()
+            ->where('workflow_tracks.ref_table_dot_id', $req->refTableId)
+            ->where('workflow_tracks.ref_table_id_value', $req->refTableValue)
+            ->get();
 
         return responseMsg(true, 'Data retrieved', $list);
     }

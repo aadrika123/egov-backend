@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
+use App\Http\Requests\Property\reqApplySaf;
 use App\MicroServices\DocUpload;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenalty;
@@ -93,111 +94,7 @@ class SafRepository implements iSafRepository
         $this->_workflowIds = Config::get('PropertyConstaint.SAF_WORKFLOWS');
     }
 
-    /**
-     * | Master data in Saf Apply
-     * | @var ulbId Logged In User Ulb 
-     * | Status-Closed
-     * | Query Costing-369ms 
-     * | Rating-3
-     */
-    public function masterSaf()
-    {
-        $data = [];
-        $ulbId = auth()->user()->ulb_id;
-        $ulbWardMaster = new UlbWardMaster();
-        $refPropOwnershipType = new RefPropOwnershipType();
-        $refPropType = new RefPropType();
-        $refPropFloor = new RefPropFloor();
-        $refPropUsageType = new RefPropUsageType();
-        $refPropOccupancyType = new RefPropOccupancyType();
-        $refPropConstructionType = new RefPropConstructionType();
-        $refPropTransferMode = new RefPropTransferMode();
-
-        // Getting Masters from Redis Cache
-        $wardMaster = json_decode(Redis::get('wards-ulb-' . $ulbId));
-        $ownershipTypes = json_decode(Redis::get('prop-ownership-types'));
-        $propertyType = json_decode(Redis::get('property-types'));
-        $floorType = json_decode(Redis::get('property-floors'));
-        $usageType = json_decode(Redis::get('property-usage-types'));
-        $occupancyType = json_decode(Redis::get('property-occupancy-types'));
-        $constructionType = json_decode(Redis::get('property-construction-types'));
-        $transferModuleType = json_decode(Redis::get('property-transfer-modes'));
-
-        // Ward Masters
-        if (!$wardMaster) {
-            $wardMaster = $ulbWardMaster->getWardByUlbId($ulbId);   // <----- Get Ward by Ulb ID By Model Function
-            $this->_redis->set('wards-ulb-' . $ulbId, json_encode($wardMaster));            // Caching
-        }
-
-        $data['ward_master'] = $wardMaster;
-
-        // Ownership Types
-        if (!$ownershipTypes) {
-            $ownershipTypes = $refPropOwnershipType->getPropOwnerTypes();   // <--- Get Property OwnerShip Types
-            $this->_redis->set('prop-ownership-types', json_encode($ownershipTypes));
-        }
-
-        $data['ownership_types'] = $ownershipTypes;
-
-        // Property Types
-        if (!$propertyType) {
-            $propertyType = $refPropType->propPropertyType();
-            $this->_redis->set('property-types', json_encode($propertyType));
-        }
-
-        $data['property_type'] = $propertyType;
-
-        // Property Floors
-        if (!$floorType) {
-            $floorType = $refPropFloor->getPropTypes();
-            $this->_redis->set('propery-floors', json_encode($floorType));
-        }
-
-        $data['floor_type'] = $floorType;
-
-        // Property Usage Types
-        if (!$usageType) {
-            $usageType = $refPropUsageType->propUsageType();
-            $this->_redis->set('property-usage-types', json_encode($usageType));
-        }
-
-        $data['usage_type'] = $usageType;
-
-        // Property Occupancy Types
-        if (!$occupancyType) {
-            $occupancyType = $refPropOccupancyType->propOccupancyType();
-            $this->_redis->set('property-occupancy-types', json_encode($occupancyType));
-        }
-
-        $data['occupancy_type'] = $occupancyType;
-
-        // property construction types
-        if (!$constructionType) {
-            $constructionType = $refPropConstructionType->propConstructionType();
-            $this->_redis->set('property-construction-types', json_encode($constructionType));
-        }
-
-        $data['construction_type'] = $constructionType;
-
-        // property transfer modes
-        if (!$transferModuleType) {
-            $transferModuleType = $refPropTransferMode->getTransferModes();
-            $this->_redis->set('property-transfer-modes', json_encode($transferModuleType));
-        }
-
-        $data['transfer_mode'] = $transferModuleType;
-
-        return responseMsgs(true, 'Property Masters', $data, "010101", "1.0", "317ms", "GET", "");
-    }
-
-    /**
-     * | Apply for New Application
-     * | Status-Closed
-     * | Query Costing-500 ms
-     * | Rating-5
-     */
-
-    public function applySaf($request)
+    public function applySaf(reqApplySaf $request)
     {
         try {
             $mApplyDate = Carbon::now()->format("Y-m-d");
@@ -225,14 +122,7 @@ class SafRepository implements iSafRepository
                 ->where('ulb_id', $ulb_id)
                 ->first();
 
-            if ($request->roadType <= 0)
-                $roadWidthType = 4;
-            elseif ($request->roadType > 0 && $request->roadType < 20)
-                $roadWidthType = 3;
-            elseif ($request->roadType >= 20 && $request->roadType <= 39)
-                $roadWidthType = 2;
-            elseif ($request->roadType >= 40)
-                $roadWidthType = 1;
+            $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
 
             $safCalculation = new SafCalculation();
             $safTaxes = $safCalculation->calculateTax($request);
@@ -394,160 +284,6 @@ class SafRepository implements iSafRepository
             return responseMsgs(true, 'Data Fetched', remove_null($data), "010104", "1.0", "303ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * @var userId Logged In User Id
-     * desc This function set OR remove application on special category
-     * request : escalateStatus (required, int type), safId(required)
-     * -----------------Tables---------------------
-     *  active_saf_details
-     * ============================================
-     * active_saf_details.is_escalate <- request->escalateStatus 
-     * active_saf_details.escalate_by <- request->escalateStatus 
-     * ============================================
-     * #message -> return response 
-     * Status-Closed
-     * | Query Cost-353ms 
-     * | Rating-1
-     */
-    #Add Inbox  special category
-    public function postEscalate($request)
-    {
-        DB::beginTransaction();
-        try {
-            $userId = auth()->user()->id;
-            // Validation Rule
-            $rules = [
-                "escalateStatus" => "required|int",
-                "safId" => "required",
-            ];
-            // Validation Message
-            $message = [
-                "escalateStatus.required" => "Escalate Status Is Required",
-                "safId.required" => "Saf Id Is Required",
-            ];
-            $validator = Validator::make($request->all(), $rules, $message);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
-            }
-
-            $saf_id = $request->safId;
-            $data = PropActiveSaf::find($saf_id);
-            $data->is_escalate = $request->escalateStatus;
-            $data->escalate_by = $userId;
-            $data->save();
-            DB::commit();
-            return responseMsgs(true, $request->escalateStatus == 1 ? 'Saf is Escalated' : "Saf is removed from Escalated", '', "010106", "1.0", "353ms", "POST", $request->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
-
-    /**
-     * | Post Independent Comment
-     * | @param mixed $request
-     * | @var userId Logged In user Id
-     * | @var levelPending The Level Pending Data of the Saf Id
-     * | @return responseMsg
-     * | Status-Closed
-     * | Query Costing-427ms 
-     * | Rating-2
-     */
-    public function commentIndependent($request)
-    {
-        try {
-            $propLevelPending = new PropLevelPending();
-            $userId = auth()->user()->id;
-            DB::beginTransaction();
-
-            $levelPending = $propLevelPending->getLevelBySafReceiver($request->safId, $userId);     // <---- Get level Pending by Model Function
-
-            if (is_null($levelPending)) {
-                $levelPending = $propLevelPending->getLastLevelBySafId($request->safId);            // <---- Get Last Level By SAf id by Model function
-                if (is_null($levelPending)) {
-                    return responseMsg(false, "SAF Not Found", "");
-                }
-            }
-            $levelPending->remarks = $request->comment;
-            $levelPending->receiver_user_id = $userId;
-            $levelPending->save();
-
-            // SAF Details
-            $saf = PropActiveSaf::find($request->safId);
-
-            // Save On Workflow Track
-            $workflowTrack = new WorkflowTrack();
-            $workflowTrack->workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-            $workflowTrack->citizen_id = $saf->user_id;
-            $workflowTrack->module_id = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $workflowTrack->ref_table_dot_id = "active_safs.id";
-            $workflowTrack->ref_table_id_value = $saf->id;
-            $workflowTrack->message = $request->comment;
-            $workflowTrack->commented_by = $userId;
-            $workflowTrack->save();
-
-            DB::commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "427ms", "POST", "");
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | @param mixed $request
-     * | @var preLevelPending Get the Previous level pending data for the saf id
-     * | @var levelPending new Level Pending to be add
-     * | Status-Closed
-     * | Query Costing-348ms 
-     * | Rating-3 
-     */
-    # postNextLevel
-    public function postNextLevel($request)
-    {
-        try {
-            DB::beginTransaction();
-            // SAF Application Update Current Role Updation
-            $saf = PropActiveSaf::find($request->safId);
-            if ($request->senderRoleId == $saf->initiator_role_id) {                                // Initiator Role Id
-                $saf->doc_upload_status = 1;
-            }
-            // Check if the application is in case of BTC
-            if ($saf->parked == true) {
-                $levelPending = new PropLevelPending();
-                $lastLevelEntry = $levelPending->getLastLevelBySafId($request->safId);              // Send Last Level Current Role
-                $saf->parked = false;                                                               // Disable BTC
-                $saf->current_role = $lastLevelEntry->sender_role_id;
-            } else
-                $saf->current_role = $request->receiverRoleId;
-            $saf->save();
-
-            // previous level pending verification enabling
-            $levelPending = new PropLevelPending();
-            $levelPending->saf_id = $request->safId;
-            $levelPending->sender_role_id = $request->senderRoleId;
-            $levelPending->receiver_role_id = $request->receiverRoleId;
-            $levelPending->sender_user_id = auth()->user()->id;
-            $levelPending->save();
-
-            // Add Comment On Prop Level Pending
-            $propLevelPending = new PropLevelPending();
-            $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->senderRoleId);    //<-----Get SAF level Pending By safid and current role ID
-            $commentOnlevel->remarks = $request->comment;
-            $commentOnlevel->verification_status = 1;
-            $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
-            $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
-            $commentOnlevel->verification_status = 1;
-            $commentOnlevel->save();
-
-            DB::commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
 
@@ -747,48 +483,6 @@ class SafRepository implements iSafRepository
 
             DB::commit();
             return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Back to Citizen
-     * | @param Request $req
-     * | @var redis Establishing Redis Connection
-     * | @var workflowId Workflow id of the SAF 
-     * | Status-Closed
-     * | Query Costing-401ms
-     * | Rating-1 
-     */
-    public function backToCitizen($req)
-    {
-        try {
-            DB::beginTransaction();
-            $saf = PropActiveSaf::find($req->safId);
-            $initiatorRoleId = $saf->initiator_role_id;
-            $saf->current_role = $initiatorRoleId;
-            $saf->parked = true;                        //<------ SAF Pending Status true
-            $saf->save();
-
-            $propLevelPending = new PropLevelPending();
-            $preLevelPending = $propLevelPending->getLevelBySafReceiver($req->safId, $req->currentRoleId);
-            $preLevelPending->remarks = $req->comment;
-            $preLevelPending->forward_date = $this->_todayDate->format('Y-m-d');
-            $preLevelPending->forward_time = $this->_todayDate->format('H:i:m');
-            $preLevelPending->save();
-
-            $levelPending = new PropLevelPending();
-            $levelPending->saf_id = $req->safId;
-            $levelPending->sender_role_id = $req->currentRoleId;
-            $levelPending->receiver_role_id = $initiatorRoleId;
-            $levelPending->user_id = authUser()->id;
-            $levelPending->sender_user_id = authUser()->id;
-            $levelPending->save();
-
-            DB::commit();
-            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1070,7 +764,9 @@ class SafRepository implements iSafRepository
                 "oldWardNo" => $activeSafDetails->original['data']['old_ward_no'],
                 "newWardNo" => $activeSafDetails->original['data']['new_ward_no'],
                 "towards" => $mTowards,
-                "description" => $mDescriptions
+                "description" => $mDescriptions,
+                "totalPaidAmount" => $propTrans->amount,
+                "paidAmtInWords" => getIndianCurrency($propTrans->amount),
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "451ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -1115,44 +811,6 @@ class SafRepository implements iSafRepository
         });
 
         return $filtered;
-    }
-
-    /**
-     * | Get Property Transactions
-     * | @param req requested parameters
-     * | @var userId authenticated user id
-     * | @var propTrans Property Transaction details of the Logged In User
-     * | @return responseMsg
-     * | Status-Closed
-     * | Run time Complexity-346ms
-     * | Rating - 3
-     */
-    public function getPropTransactions($req)
-    {
-        $propTransaction = new PropTransaction();
-        $userId = auth()->user()->id;
-
-        $propTrans = json_decode(Redis::get('property-transactions-user-' . $userId));                      // Should Be Deleted SAF Payment
-        if (!$propTrans) {
-            $propTrans = $propTransaction->getPropTransByUserId($userId);
-            $this->_redis->set('property-transactions-user-' . $userId, json_encode($propTrans));
-        }
-        return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", "265ms", "POST", $req->deviceId);
-    }
-
-    /**
-     * | Get Transactions by Property id or SAF id
-     * | @param Request $req
-     */
-    public function getTransactionBySafPropId($req)
-    {
-        $propTransaction = new PropTransaction();
-        if ($req->safId)                                                // Get By SAF Id
-            $propTrans = $propTransaction->getPropTransBySafId($req->safId);
-        if ($req->propertyId)                                           // Get by Property Id
-            $propTrans = $propTransaction->getPropTransByPropId($req->propertyId);
-
-        return responseMsg(true, "Property Transactions", remove_null($propTrans));
     }
 
     /**

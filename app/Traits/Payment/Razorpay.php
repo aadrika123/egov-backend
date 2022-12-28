@@ -16,9 +16,9 @@ use App\Repository\Trade\Trade;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
-// use Illuminate\Support\Facades\Http;
-// use Illuminate\Support\Facades\DB;
-// use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Trait for Razorpay
@@ -50,7 +50,7 @@ trait Razorpay
     {
         try {
             $mUserID = auth()->user()->id;
-            $mUlbID = $request["ulbId"];                                           // user Id
+            $mUlbID = $request["ulbId"] ?? "2";                                            // user Id
             $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
             $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
             $mReciptId = Str::random(10);                                           // (STATIC) recipt ID
@@ -63,7 +63,7 @@ trait Razorpay
                 'payment_capture' => 1
             ));
 
-            $mReturndata = [
+            $Returndata = [
                 'orderId' => $mOrder['id'],
                 'amount' => $request->all()['amount'],
                 'currency' => 'INR',
@@ -76,9 +76,9 @@ trait Razorpay
             ];
 
             $saveRequestObj = new PaymentRequest();
-            $saveRequestObj->saveRazorpayRequest($mUserID, $mUlbID, $mReturndata['orderId'], $request);
+            $saveRequestObj->saveRazorpayRequest($mUserID, $mUlbID, $Returndata['orderId'], $request);
 
-            return $mReturndata;
+            return $Returndata;
         } catch (Exception $error) {
             return responseMsg(false, "Error Listed Below!", $error->getMessage());
         }
@@ -131,7 +131,7 @@ trait Razorpay
                 try {
                     $successData = new PaymentSuccess();
                     $successData->saveSuccessDetails($request);
-                    return responseMsg(true, "Payment Success!", "");
+                    return responseMsg(true, "Payment Clear to Procede!", "");
                 } catch (Exception $exception) {
                     return responseMsg(false, "Error listed below!", $exception->getMessage());
                 }
@@ -139,7 +139,7 @@ trait Razorpay
             # Update database with error data
             $rejectData = new PaymentReject();
             $rejectData->saveRejectedData($request);
-            return responseMsg(true, "Failer data saved!", $error);
+            return responseMsg(true, "There is Some error!", $error);
         } catch (Exception $exception) {
             return responseMsg(false, "Exception occured of whole function", $exception->getMessage());
         }
@@ -166,38 +166,28 @@ trait Razorpay
             # Variable Defining Section
             $webhookEntity = $request->payload['payment']['entity'];
 
-            #contains
             $contains = json_encode($request->contains);
-
-            #notes
             $notes = json_encode($webhookEntity['notes']);
+
             $depatmentId = $webhookEntity['notes']['departmentId']; // ModuleId
-
-            #amount/ actualAmount
-            $amount = $webhookEntity['amount'];
-            $actulaAmount = $amount / 100;
-
-            #accquireData/ Its key Valaue
-            $arrayInAquirer = $webhookEntity['acquirer_data'];
-            $firstKey = array_key_first($arrayInAquirer);
-
-            #status
             $status = $webhookEntity['status'];
-
-            #captured
             $captured = $webhookEntity['captured'];
-
-            #data to be saved in card detail table                                                                         
             $aCard = $webhookEntity['card_id'];
+            $amount = $webhookEntity['amount'];
+            $arrayInAquirer = $webhookEntity['acquirer_data'];
+
+            $actulaAmount = $amount / 100;
+            $firstKey = array_key_first($arrayInAquirer);
+            $actualTransactionNo = $this->generatingTransactionId();
+
             if (!is_null($aCard)) {
 
                 $webhookCardDetails = $webhookEntity['card'];
-                $card = new CardDetail();
-                $card->saveCardDetails($webhookCardDetails);
+                $objcard = new CardDetail();
+                $objcard->saveCardDetails($webhookCardDetails);
             }
 
             # data to be stored in the database 
-            $actualTransactionNo = $this->generatingTransactionId();
             $webhookData = new WebhookPaymentData();
             $webhookData = $webhookData->saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity);
 
@@ -238,7 +228,7 @@ trait Razorpay
             }
             return responseMsg(true, "Webhook Data Collected!", $request->event);
         } catch (Exception $e) {
-            return responseMsg(false, "error occured", $e->getLine());
+            return responseMsg(false, $e->getMessage(), $e->getLine());
         }
     }
 
@@ -250,7 +240,7 @@ trait Razorpay
      * | @return idDetails
      * | Operation : this function generate a random and unique transactionID
      * | Rating : 1
-        | Serial No : 04
+        | Serial No : 03.1
      */
     public function generatingTransactionId()
     {

@@ -117,4 +117,36 @@ class WebhookPaymentData extends Model
 
         return $webhookData;
     }
+
+
+    /**
+     * |----------------------------------- Get Webhook Details By transactionId --------------------------------|
+     * | @param req : transaction Id
+     * 
+     */
+    public function webhookByTransaction($req)
+    {
+       return WebhookPaymentData::select(
+            'payment_order_id AS orderId',
+            'payment_amount AS amount',
+            'payment_status AS status',
+            'payment_bank AS bank',
+            'payment_contact AS contact',
+            'payment_method AS method',
+            'payment_id AS paymentId',
+            'payment_transaction_id AS transactionNo',
+            'payment_acquirer_data_value AS paymentAcquirerDataValue',
+            'payment_acquirer_data_type AS paymentAcquirerDataType',
+            'payment_error_reason AS paymentErrorReason',
+            'payment_error_source AS paymentErrorSource',
+            'payment_error_description AS paymentErrorDescription',
+            'payment_error_code AS paymentErrorCode',
+            'payment_email AS emails',
+            'payment_vpa AS  paymentVpa',
+            'payment_wallet AS paymentWallet',
+            'payment_card_id AS paymentCardId'
+        )
+            ->where('payment_transaction_id', $req->transactionNo)
+            ->orderByDesc('id');
+    }
 }

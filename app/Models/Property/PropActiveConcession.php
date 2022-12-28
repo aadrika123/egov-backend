@@ -4,6 +4,7 @@ namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Exception;
 
 class PropActiveConcession extends Model
@@ -34,6 +35,26 @@ class PropActiveConcession extends Model
             return $concessionNo;
         } catch (Exception $e) {
             echo $e->getMessage();
+        }
+    }
+
+
+    public function escalate($req)
+    {
+        $userId = auth()->user()->id;
+        if ($req->escalateStatus == 1) {
+            $concession = PropActiveConcession::find($req->id);
+            $concession->is_escalate = 1;
+            $concession->escalated_by = $userId;
+            $concession->save();
+            return "Successfully Escalated the application";
+        }
+        if ($req->escalateStatus == 0) {
+            $concession = PropActiveConcession::find($req->id);
+            $concession->is_escalate = 0;
+            $concession->escalated_by = null;
+            $concession->save();
+            return "Successfully De-Escalated the application";
         }
     }
 }

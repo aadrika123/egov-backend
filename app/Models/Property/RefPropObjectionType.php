@@ -13,13 +13,9 @@ class RefPropObjectionType extends Model
     //objection type master data
     public function objectionType()
     {
-        try {
-            $objectionType = RefPropObjectionType::where('status', 1)
-                ->select('id', 'type')
-                ->get();
-            return $objectionType;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
+        $objectionType = RefPropObjectionType::where('status', 1)
+            ->select('id', 'type')
+            ->get();
+        return $objectionType;
     }
 }

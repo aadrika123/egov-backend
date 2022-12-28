@@ -13,20 +13,20 @@ use Illuminate\Http\Request;
 interface iPayment
 {
     # payment Gateway (RAZORPAY/Property)
-    public function getDepartmentByulb(Request $req);
-    public function getPaymentgatewayByrequests(Request $req);
-    public function getPgDetails(Request $req);
-    public function getWebhookDetails();
-    public function getTraitOrderId(Request $request); //<--------------- here(INVALID) 
-    public function verifyPaymentStatus(Request $request);
-    public function gettingWebhookDetails(Request $request);
-    public function getTransactionNoDetails(Request $request);
+    public function getDepartmentByulb(Request $req);                               //01
+    public function getPaymentgatewayByrequests(Request $req);                      //02
+    public function getPgDetails(Request $req);                                     //03
+    public function getWebhookDetails();                                            //04
+    public function getTraitOrderId(Request $request);                              //<--------------- here(INVALID) 
+    public function verifyPaymentStatus(Request $request);                          // 05
+    public function gettingWebhookDetails(Request $request);                        // 06
+    public function getTransactionNoDetails(Request $request);                      // 07
 
     # Payment Reconciliation
-    public function getReconcillationDetails();
-    public function searchReconciliationDetails($request);
-    public function updateReconciliationDetails($request);
+    public function getReconcillationDetails();                                     // 08
+    public function searchReconciliationDetails($request);                          // 09
+    public function updateReconciliationDetails($request);                          // 10
 
     # Common Payments details
-    public function allModuleTransaction();
+    public function allModuleTransaction();                                         // 11
 }

@@ -12,7 +12,7 @@ class RefPropConstructionType extends Model
 
     public function propConstructionType()
     {
-        return RefPropConstructionType::select('id', "construction_type as constructionType")
+        return RefPropConstructionType::select('id', "construction_type")
             ->where('status', 1)
             ->get();
     }

@@ -120,25 +120,6 @@ class WorkflowMap implements iWorkflowMapRepository
         return responseMsg(true, "Data Retrived", $workkFlow);
     }
 
-    // get role by workflow id
-    // provide ulb id
-    public function getRoleByWorkflowId(Request $request)
-    {
-        //validating
-        $request->validate([
-            'ulbId' => 'required|int'
-        ]);
-
-        $roles = WfWorkflow::where('ulb_id', $request->ulbId)
-            ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.workflow_id', '=', 'wf_workflows.id')
-            ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
-            ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_roles.id')
-            ->select('wf_roles.*')
-            // ->join('users', 'users.id', '=', 'wf_roleusermaps.user_id')
-            ->get();
-        return responseMsg(true, "Data Retrived", remove_null($roles));
-    }
-
     // table = 6 & 7
     //role_id -> users
     //users in a role

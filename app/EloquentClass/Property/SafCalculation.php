@@ -784,7 +784,7 @@ class SafCalculation
                 ->where('construction_types_id', $this->_floors[$key]['constructionType'])
                 ->where('effective_date', $this->_effectiveDateRule2)
                 ->first();
-            $rentalRate = $rentalRates->rate * $paramRentalRate;
+            $rentalRate = round($rentalRates->rate * $paramRentalRate);
         }
 
         $rwhPenalty = 0;
@@ -938,7 +938,7 @@ class SafCalculation
             "educationTax" => 0,
 
             "rwhPenalty" => roundFigure($rwhPenalty / 4),
-            "totalTax" => roundFigure($totalTax / 4),
+            "totalTax" => roundFigure($calculatePropertyTax / 4) + roundFigure($rwhPenalty / 4),
             "onePercPenalty" => $onePercPenalty,
             "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
         ];
