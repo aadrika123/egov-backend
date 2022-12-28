@@ -31,4 +31,12 @@ class PropActiveSafsOwner extends Model
 
         $owner->update($reqs);
     }
+
+    /**
+     * | Get Owners by SAF Id
+     */
+    public function getOwnersBySafId($safId)
+    {
+        return PropActiveSafsOwner::where('saf_id', $safId)->get();
+    }
 }

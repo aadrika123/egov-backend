@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class PropActiveSaf extends Model
 {
@@ -128,6 +129,28 @@ class PropActiveSaf extends Model
         ];
 
         return $saf->update($reqs);
+    }
+
+    // Get Active SAF Details
+    public function getActiveSafDtls()
+    {
+        return DB::table('prop_active_safs')
+            ->select(
+                'prop_active_safs.*',
+                'prop_active_safs.assessment_type as assessment',
+                'w.ward_name as old_ward_no',
+                'nw.ward_name as new_ward_no',
+                'o.ownership_type',
+                'p.property_type',
+                'r.road_type as road_type_master',
+                'wr.role_name as current_role_name'
+            )
+            ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
+            ->join('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
+            ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
+            ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+            ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
+            ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id');
     }
 
     /**

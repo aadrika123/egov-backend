@@ -53,4 +53,23 @@ class WorkflowTrack extends Model
             ->join('users', 'users.id', 'workflow_tracks.user_id')
             ->join('module_masters', 'module_masters.id', 'workflow_tracks.module_id');
     }
+
+    /**
+     * | Get Tracks by Ref Table Id
+     */
+    public function getTracksByRefId($mRefTable, $tableId)
+    {
+        return DB::table('workflow_tracks')
+            ->select(
+                'workflow_tracks.ref_table_dot_id',
+                'workflow_tracks.message',
+                'workflow_tracks.track_date',
+                'u.email as citizenEmail',
+                'u.user_name as citizenName'
+            )
+            ->where('ref_table_dot_id', $mRefTable)
+            ->where('ref_table_id_value', $tableId)
+            ->join('users as u', 'u.id', '=', 'workflow_tracks.user_id')
+            ->get();
+    }
 }

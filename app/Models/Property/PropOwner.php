@@ -4,6 +4,7 @@ namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class PropOwner extends Model
 {
@@ -20,5 +21,13 @@ class PropOwner extends Model
             ->join('prop_properties', 'prop_properties.id', '=', 'prop_owners.property_id')
             ->where('prop_properties.id', $request->propId)
             ->first();
+    }
+
+    // Get Owners by Property Id
+    public function getOwnersByPropId($propertyId)
+    {
+        return DB::table('prop_owners')
+            ->where('property_id', $propertyId)
+            ->get();
     }
 }
