@@ -2778,14 +2778,14 @@ class Trade implements ITrade
                 }
                 if($doc)
                 {   
-                    // if(sizeOf($doc)>1)
-                    // {
-                    //     throw new Exception("All Documernt Are Not Uploaded");
-                    // }
-                    // else
-                    // {
-                    //     throw new Exception($doc[0]);
-                    // }                
+                    if(sizeOf($doc)>1)
+                    {
+                        throw new Exception("All Documernt Are Not Uploaded");
+                    }
+                    else
+                    {
+                        throw new Exception($doc[0]);
+                    }                
                 }
             }           
             if($request->btn=="forward" && in_array(strtoupper($mUserType),["DA"]))
@@ -2802,10 +2802,10 @@ class Trade implements ITrade
                         return True;
                      }
                 });
-                // if($test)
-                // {
-                //     throw new Exception("All Document Are Not Verified");
-                // }
+                if($test)
+                {
+                    throw new Exception("All Document Are Not Verified");
+                }
 
                 
             }
