@@ -370,6 +370,7 @@ class WaterNewConnection implements IWaterNewConnection
             $mDocumentsList     = (array)null;
             $requiedDocs        = (array)null;
             $ownersDoc          = (array)null;
+            $testOwnersDoc      = (array)null;
             $data               = (array)null;
             $sms                = "";
 
@@ -382,7 +383,8 @@ class WaterNewConnection implements IWaterNewConnection
             }
             $connectionId = $request->applicationId;
             $refApplication = WaterApplication::where("status", 1)->find($connectionId);
-            if (!$refApplication) {
+            if (!$refApplication) 
+            {
                 throw new Exception("Application Not Found.....");
             }
             // elseif($refApplication->doc_verify_status)
@@ -391,7 +393,8 @@ class WaterNewConnection implements IWaterNewConnection
             // }
             $requiedDocType = $this->getDocumentTypeList($refApplication);  # get All Related Document Type List
             $refOwneres = $this->getOwnereDtlByLId($refApplication->id);    # get Owneres List
-            foreach ($requiedDocType as $val) {
+            foreach ($requiedDocType as $val) 
+            {
                 $doc = (array) null;
                 $doc['docName'] = $val->doc_for;
                 $doc['isMadatory'] = $val->is_mandatory;
@@ -403,8 +406,10 @@ class WaterNewConnection implements IWaterNewConnection
                 }
                 array_push($requiedDocs, $doc);
             }
-            foreach ($refOwneres as $key => $val) {
+            foreach ($refOwneres as $key => $val) 
+            {
                 $doc = (array) null;
+                $testOwnersDoc[$key] = (array) null;
                 $doc["ownerId"] = $val->id;
                 $doc["ownerName"] = $val->applicant_name;
                 $doc["docName"]   = "ID Proof";
@@ -412,12 +417,14 @@ class WaterNewConnection implements IWaterNewConnection
                 $doc['docVal'] = $this->getDocumentList("ID Proof");
                 $refOwneres[$key]["ID Proof"] = $this->check_doc_exist_owner($refApplication->id, $val->id); # check Owners ID Proof Documents             
                 $doc['uploadDoc'] = $refOwneres[$key]["ID Proof"];
-                if (isset($refOwneres[$key]["ID Proof"]["document_path"])) {
+                if (isset($refOwneres[$key]["ID Proof"]["document_path"])) 
+                {
                     $path = $this->readDocumentPath($refOwneres[$key]["ID Proof"]["document_path"]);
                     $refOwneres[$key]["ID Proof"]["document_path"] = !empty(trim($refOwneres[$key]["ID Proof"]["document_path"])) ? $path : null;
                     $doc['uploadDoc']["document_path"] = $path;
                 }
                 array_push($ownersDoc, $doc);
+                array_push($testOwnersDoc[$key], $doc);
                 $doc2 = (array) null;
                 $doc2["ownerId"] = $val->id;
                 $doc2["ownerName"] = $val->owner_name;
@@ -426,17 +433,20 @@ class WaterNewConnection implements IWaterNewConnection
                 $doc2['docVal'][] = ["id" => 0, "doc_name" => "Photo"];
                 $refOwneres[$key]["image"] = $this->check_doc_exist_owner($refApplication->id, $val->id, 0);
                 $doc2['uploadDoc'] = $refOwneres[$key]["image"];
-                if (isset($refOwneres[$key]["image"]["document_path"])) {
+                if (isset($refOwneres[$key]["image"]["document_path"])) 
+                {
                     $path = $this->readDocumentPath($refOwneres[$key]["image"]["document_path"]);
                     $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"])) ? storage_path('app/public/' . $refOwneres[$key]["image"]["document_path"]) : null;
                     $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"])) ? $path : null;
                     $doc2['uploadDoc']["document_path"] = $path;
                 }
-                array_push($ownersDoc, $doc2);
+                array_push($ownersDoc, $doc);
+                array_push($testOwnersDoc[$key], $doc);
             }
 
             #---------- upload the documents--------------
-            if (isset($request->docFor)) {
+            if (isset($request->docFor))
+            {
                 #connection Doc
                 if (in_array($request->docFor, objToArray($requiedDocType->pluck("doc_for")))) {
                     $rules = [
@@ -509,7 +519,8 @@ class WaterNewConnection implements IWaterNewConnection
                     }
                 }
                 #owners Doc
-                elseif (in_array($request->docFor, objToArray(collect($ownersDoc)->pluck("docName")))) {
+                elseif (in_array($request->docFor, objToArray(collect($ownersDoc)->pluck("docName")))) 
+                {
                     $rules = [
                         'docPath'        => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'docMstrId'      => 'required|digits_between:1,9223372036854775807',
@@ -595,7 +606,7 @@ class WaterNewConnection implements IWaterNewConnection
                 return responseMsg(true, $sms, "");
             }
             $data["documentsList"]  = $requiedDocs;
-            $data["ownersDocList"]  = $ownersDoc;
+            $data["ownersDocList"]  = $testOwnersDoc;
             return responseMsg(true, $sms, $data);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());

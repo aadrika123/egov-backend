@@ -6,8 +6,9 @@
  * | For Trade Licence
  */
 
-return [
+return [    
     "MODULE-ID"     =>  "5",
+    "CITIZEN"       => "Citizen",
     "APPLICATION-TYPE"=>
     [
         "NEWLICENSE"    =>  "1",
