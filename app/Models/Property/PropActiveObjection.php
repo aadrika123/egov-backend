@@ -32,6 +32,7 @@ class PropActiveObjection extends Model
     /**
      * This code is for generating the appliction number of Objection 
      * | @param id
+        | remove try catch
      */
 
     public function objectionNo($id)

@@ -312,6 +312,17 @@ class SafRepository implements iSafRepository
                 return responseMsg(false, "Forbidden Access", "");
             }
             $reAssessment = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
+
+            $activeSaf = PropActiveSaf::query()
+                ->where('id', $req->safId)
+                ->first();
+            $ownerDetails = PropActiveSafsOwner::query()
+                ->where('saf_id', $req->safId)
+                ->get();
+            $floorDetails = PropActiveSafsFloor::query()
+                ->where('saf_id', $req->safId)
+                ->get();
+
             DB::beginTransaction();
             // Approval
             if ($req->status == 1) {
@@ -326,16 +337,6 @@ class SafRepository implements iSafRepository
                 $safDetails->save();
 
                 // SAF Application replication
-                $activeSaf = PropActiveSaf::query()
-                    ->where('id', $req->safId)
-                    ->first();
-                $ownerDetails = PropActiveSafsOwner::query()
-                    ->where('saf_id', $req->safId)
-                    ->get();
-                $floorDetails = PropActiveSafsFloor::query()
-                    ->where('saf_id', $req->safId)
-                    ->get();
-
                 $toBeProperties = PropActiveSaf::query()
                     ->where('id', $req->safId)
                     ->select(
@@ -441,18 +442,6 @@ class SafRepository implements iSafRepository
             }
             // Rejection
             if ($req->status == 0) {
-                $activeSaf = PropActiveSaf::query()
-                    ->where('id', $req->safId)
-                    ->first();
-
-                $ownerDetails = PropActiveSafsOwner::query()
-                    ->where('saf_id', $req->safId)
-                    ->get();
-
-                $floorDetails = PropActiveSafsFloor::query()
-                    ->where('saf_id', $req->safId)
-                    ->get();
-
                 // Rejected SAF Application replication
                 $rejectedSaf = $activeSaf->replicate();
                 $rejectedSaf->setTable('prop_rejected_safs');
