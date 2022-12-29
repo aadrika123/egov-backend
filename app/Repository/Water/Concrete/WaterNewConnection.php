@@ -420,8 +420,8 @@ class WaterNewConnection implements IWaterNewConnection
                     $refOwneres[$key]["ID Proof"]["document_path"] = !empty(trim($refOwneres[$key]["ID Proof"]["document_path"])) ? $path : null;
                     $doc['uploadDoc']["document_path"] = $path;
                 }
-                array_push($ownersDoc, $doc);
-                array_push($testOwnersDoc[$key], $doc);
+                // array_push($ownersDoc, $doc);
+                // array_push($testOwnersDoc[$key], $doc);
                 $doc2 = (array) null;
                 $doc2["ownerId"] = $val->id;
                 $doc2["ownerName"] = $val->owner_name;
