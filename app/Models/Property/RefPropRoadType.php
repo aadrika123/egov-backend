@@ -13,13 +13,9 @@ class RefPropRoadType extends Model
 
     public function propRoadType()
     {
-        try {
-            $constType = RefPropRoadType::select('id', 'road_type as roadType')
-                ->where('status', '1')
-                ->get();
-            return responseMsg(true, "Successfully Retrieved", $constType);
-        } catch (Exception $e) {
-            return response()->json($e, 400);
-        }
+
+        return RefPropRoadType::select('id', 'road_type')
+            ->where('status', '1')
+            ->get();
     }
 }

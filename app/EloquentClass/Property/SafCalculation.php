@@ -938,7 +938,7 @@ class SafCalculation
             "educationTax" => 0,
 
             "rwhPenalty" => roundFigure($rwhPenalty / 4),
-            "totalTax" => roundFigure($totalTax / 4),
+            "totalTax" => roundFigure($calculatePropertyTax / 4) + roundFigure($rwhPenalty / 4),
             "onePercPenalty" => $onePercPenalty,
             "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
         ];

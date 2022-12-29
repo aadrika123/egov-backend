@@ -20,6 +20,7 @@ use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
 use App\Models\PropActiveObjectionDocdtl;
+use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Support\Facades\Validator;
 
@@ -44,7 +45,11 @@ class ObjectionRepository implements iObjectionRepository
     private $_workflow_id_forgery;
 
     public function __construct()
+
     {
+        /**
+         | change the underscore for the reference var
+         */
         $this->_bifuraction = new PropertyBifurcation();
         $this->_workflow_id_clerical = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
         $this->_workflow_id_assesment = Config::get('workflow-constants.PROPERTY_OBJECTION_ASSESSMENT');
@@ -69,15 +74,15 @@ class ObjectionRepository implements iObjectionRepository
                 ->first();
 
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
-            $initiatorRoleId = DB::select($refInitiatorRoleId);
-
             $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);              // Get Finisher ID
+            $initiatorRoleId = DB::select($refInitiatorRoleId);
             $finisherRoleId = DB::select($refFinisherRoleId);
 
             if ($objectionFor == "Clerical Mistake") {
                 DB::beginTransaction();
 
                 //saving objection details
+                # Flag : call model <----------
                 $objection = new PropActiveObjection();
                 $objection->ulb_id = $ulbId;
                 $objection->user_id = $userId;
@@ -100,6 +105,7 @@ class ObjectionRepository implements iObjectionRepository
                     ->update(['objection_no' => $objectionNo]);
 
                 //saving objection owner details
+                # Flag : call model <----------
                 $objectionOwner = new PropActiveObjectionOwner();
                 $objectionOwner->objection_id = $objection->id;
                 $objectionOwner->name = $request->name;
@@ -110,6 +116,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objectionOwner->save();
 
                 //name document
+                # call a funcion for the file uplode 
                 if ($file = $request->file('nameDoc')) {
                     $docName = "nameDoc";
                     $name = $this->moveFile($docName, $file);
@@ -370,88 +377,6 @@ class ObjectionRepository implements iObjectionRepository
     }
 
     /**
-     * | Get owner details
-     */
-    public function ownerDetails($request)
-    {
-        try {
-            $ownerDetails = PropOwner::select('owner_name as name', 'mobile_no as mobileNo', 'prop_address as address')
-                ->where('prop_properties.id', $request->propId)
-                ->join('prop_properties', 'prop_properties.id', '=', 'prop_owners.property_id')
-                ->first();
-            return responseMsg(true, "Successfully Retrieved", $ownerDetails);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Get Inbox List of Objection Workflow
-     */
-    public function inbox()
-    {
-        try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-            $wards = $this->getWardByUserId($userId);
-
-            $occupiedWards = collect($wards)->map(function ($ward) {                               // Get Occupied Ward of the User
-                return $ward->ward_id;
-            });
-
-            $roles = $this->getRoleIdByUserId($userId);
-
-            $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
-                return $role->wf_role_id;
-            });
-
-            $objection = $this->getObjectionList($ulbId)                                            // Objection List
-                ->whereIn('prop_active_objections.current_role', $roleId)
-                ->whereIn('p.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_objections.id')
-                ->get();
-
-            return responseMsgs(true, "", remove_null($objection), '010805', '01', '474ms-573ms', 'Post', '');
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Get the Objection Outbox
-     */
-    public function outbox()
-    {
-        try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-
-            $workflowRoles = $this->getRoleIdByUserId($userId);                             // Get all The roles of the Users
-
-            $roleId = $workflowRoles->map(function ($value) {                               // Get user Workflow Roles
-                return $value->wf_role_id;
-            });
-
-            $refWard = $this->getWardByUserId($userId);                                     // Get Ward List by user Id
-            $occupiedWards = $refWard->map(function ($value) {
-                return $value->ward_id;
-            });
-
-            $objections = $this->getObjectionList($ulbId)                                   // Get Outbox Objection List
-                ->whereNotIn('prop_active_objections.current_role', $roleId)
-                ->whereIn('p.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_objections.id')
-                ->get();
-
-            return responseMsgs(true, "Outbox List", remove_null($objections), '010806', '01', '336ms-420ms', 'Post', '');
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
      * | Get Objection Details by Id
      * | @param request $req
      */
@@ -484,50 +409,6 @@ class ObjectionRepository implements iObjectionRepository
     }
 
     /**
-     * | Post Escalate the Applications
-     * | @param req $req
-     */
-    public function postEscalate($req)
-    {
-        try {
-            DB::beginTransaction();
-            $userId = authUser()->id;
-            $objId = $req->objectionId;
-            $data = PropActiveObjection::find($objId);
-            $data->is_escalated = $req->escalateStatus;
-            $data->escalated_by = $userId;
-            $data->save();
-            DB::commit();
-            return responseMsgs(true, $req->escalateStatus == 1 ? 'Objection is Escalated' : "Objection is removed from Escalated", '', '010808', '01', '474ms-573', 'Post', '');
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Special Inbox
-     */
-    public function specialInbox()
-    {
-        try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
-            $occupiedWard = $this->getWardByUserId($userId);                        // Get All Occupied Ward By user id using trait
-            $wardId = $occupiedWard->map(function ($item, $key) {                   // Filter All ward_id in an array using laravel collections
-                return $item->ward_id;
-            });
-            $safData = $this->getObjectionList($ulbId)
-                ->where('prop_active_objections.is_escalated', true)
-                ->whereIn('p.ward_mstr_id', $wardId)
-                ->get();
-            return responseMsgs(true, "Data Fetched", remove_null($safData), '010809', '01', '474ms-573', 'Post', '');
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
      * | Forward Or BackWard Application
      * | @param $req
      */
@@ -536,12 +417,20 @@ class ObjectionRepository implements iObjectionRepository
         try {
             DB::beginTransaction();
 
-            $levelPending = new PropObjectionLevelpending();
-            $levelPending->objection_id = $req->objectionId;
-            $levelPending->sender_role_id = $req->senderRoleId;
-            $levelPending->receiver_role_id = $req->receiverRoleId;
-            $levelPending->sender_user_id = auth()->user()->id;
-            $levelPending->save();
+            // $levelPending = new PropObjectionLevelpending();
+            // $levelPending->objection_id = $req->objectionId;
+            // $levelPending->sender_role_id = $req->senderRoleId;
+            // $levelPending->receiver_role_id = $req->receiverRoleId;
+            // $levelPending->sender_user_id = auth()->user()->id;
+            // $levelPending->save();
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
+            $metaReqs['refTableDotId'] = 'prop_active_objections.id';
+            $metaReqs['refTableIdValue'] = $req->objectionId;
+            $req->request->add($metaReqs);
+
+            $track = new WorkflowTrack();
+            $track->saveTrack($req);
 
             // objection Application Update Current Role Updation
             $objection = PropActiveObjection::find($req->objectionId);
@@ -549,69 +438,15 @@ class ObjectionRepository implements iObjectionRepository
             $objection->save();
 
             // Add Comment On Prop Level Pending  and Verification Status true
-            $ObjLevelPending = new PropObjectionLevelpending();
-            $commentOnlevel = $ObjLevelPending->getCurrentObjByReceiver($req->objectionId, $req->senderRoleId);
+            // $ObjLevelPending = new PropObjectionLevelpending();
+            // $commentOnlevel = $ObjLevelPending->getCurrentObjByReceiver($req->objectionId, $req->senderRoleId);
 
-            $commentOnlevel->remarks = $req->comment;
-            $commentOnlevel->verification_status = 1;
-            $commentOnlevel->save();
+            // $commentOnlevel->remarks = $req->comment;
+            // $commentOnlevel->verification_status = 1;
+            // $commentOnlevel->save();
 
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', '474ms-573', 'Post', '');
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Objection Application approval Rejection
-     * | @param request $req
-     */
-    public function approvalRejection($req)
-    {
-        try {
-            // Check if the Current User is Finisher or Not
-            $getFinisherQuery = $this->getFinisherId($req->workflowId);                 // Get Finisher using Trait
-            $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
-            if ($refGetFinisher->role_id != $req->roleId) {
-                return responseMsg(false, "Forbidden Access", "");
-            }
-
-            DB::beginTransaction();
-
-            // Approval
-            if ($req->status == 1) {
-                // Objection Application replication
-                $activeObjection = PropActiveObjection::query()
-                    ->where('id', $req->objectionId)
-                    ->first();
-
-                $approvedObjection = $activeObjection->replicate();
-                $approvedObjection->setTable('prop_objections');
-                $approvedObjection->id = $activeObjection->id;
-                $approvedObjection->save();
-                $activeObjection->delete();
-
-                $msg = "Application Successfully Approved !!";
-            }
-            // Rejection
-
-            if ($req->status == 0) {
-                // Objection Application replication
-                $activeObjection = PropActiveObjection::query()
-                    ->where('id', $req->objectionId)
-                    ->first();
-
-                $approvedObjection = $activeObjection->replicate();
-                $approvedObjection->setTable('prop_rejected_objections');
-                $approvedObjection->id = $activeObjection->id;
-                $approvedObjection->save();
-                $activeObjection->delete();
-                $msg = "Application Successfully Rejected !!";
-            }
-            DB::commit();
-            return responseMsgs(true, $msg, "", '010811', '01', '474ms-573', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -704,13 +539,13 @@ class ObjectionRepository implements iObjectionRepository
                 'gender',
 
             )
-                ->where('prop_active_objections.id', $req->id)
-                ->where('prop_active_objections.status', 1)
-                ->orderByDesc('prop_active_objections.id')
                 ->join('prop_properties', 'prop_properties.id', 'prop_active_objections.property_id')
                 ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                 ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+                ->where('prop_active_objections.id', $req->id)
+                ->where('prop_active_objections.status', 1)
+                ->orderByDesc('prop_active_objections.id')
                 ->first();
 
             return responseMsgs(true, "Successfully Done", $list, '010814', '01', '315ms-352ms', 'Post', '');
@@ -852,33 +687,6 @@ class ObjectionRepository implements iObjectionRepository
                 }
             }
             return responseMsgs(true, "Document Successfully Uploaded!", '', '010816', '01', '364ms-389ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
-
-    //post objection status
-    public function objectionDocStatus($req)
-    {
-        try {
-            $userId = auth()->user()->id;
-
-            $docStatus = PropActiveObjectionDocdtl::find($req->id);
-            $docStatus->remarks = $req->docRemarks;
-            $docStatus->verified_by_emp_id = $userId;
-            $docStatus->verified_on = Carbon::now();
-            $docStatus->updated_at = Carbon::now();
-
-            if ($req->docStatus == 'Verified') {
-                $docStatus->verify_status = 1;
-            }
-            if ($req->docStatus == 'Rejected') {
-                $docStatus->verify_status = 2;
-            }
-            $docStatus->save();
-
-            return responseMsgs(true, "Successfully Done", '', '010817', '01', '302ms-356ms', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }

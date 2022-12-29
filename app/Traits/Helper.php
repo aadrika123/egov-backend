@@ -59,4 +59,11 @@ trait Helper
    " . $change_words[$amount_after_decimal % 10]) . ' Paise' : '';
         return ($implode_to_Rupees ? $implode_to_Rupees . 'Rupees ' : '') . $get_paise;
     }
+
+    //this function is for read document path
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url') . '/api/getImageLink?path=' . $path);
+        return $path;
+    }
 }

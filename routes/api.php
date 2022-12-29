@@ -356,7 +356,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('workflow/getWorkflowNameByUlb', 'getWorkflowNameByUlb');
         Route::post('workflow/getRoleByUlb', 'getRoleByUlb');
         Route::post('workflow/getWardByUlb', 'getWardByUlb');
-        Route::post('workflow/getRoleByWorkflowId', 'getRoleByWorkflowId');
         Route::post('workflow/getUserByRole', 'getUserByRole');
 
         //mapping

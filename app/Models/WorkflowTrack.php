@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class WorkflowTrack extends Model
 {
@@ -33,44 +35,41 @@ class WorkflowTrack extends Model
         $track->save();
     }
 
-    public function detailById($req)
+    public function details()
     {
-        return WorkflowTrack::select(
-            'workflow_tracks.id',
-            'workflow_tracks.user_id',
-            'workflow_tracks.citizen_id',
-            'workflow_tracks.module_id',
-            'module_masters.module_name',
-            'workflow_tracks.ref_table_dot_id',
-            'workflow_tracks.ref_table_id_value',
-            'workflow_tracks.message',
-            'workflow_tracks.track_date',
-            'users.user_name'
-        )
+        return  DB::table('workflow_tracks')
+            ->select(
+                'workflow_tracks.id',
+                'workflow_tracks.user_id',
+                'workflow_tracks.citizen_id',
+                'workflow_tracks.module_id',
+                'module_masters.module_name',
+                'workflow_tracks.ref_table_dot_id',
+                'workflow_tracks.ref_table_id_value',
+                'workflow_tracks.message',
+                'workflow_tracks.track_date',
+                'users.user_name'
+            )
             ->join('users', 'users.id', 'workflow_tracks.user_id')
-            ->join('module_masters', 'module_masters.id', 'workflow_tracks.module_id')
-            ->where('workflow_tracks.id', $req->id)
-            ->first();
+            ->join('module_masters', 'module_masters.id', 'workflow_tracks.module_id');
     }
 
-    public function detailByrefId($req)
+    /**
+     * | Get Tracks by Ref Table Id
+     */
+    public function getTracksByRefId($mRefTable, $tableId)
     {
-        return WorkflowTrack::select(
-            'workflow_tracks.id',
-            'workflow_tracks.user_id',
-            'workflow_tracks.citizen_id',
-            'workflow_tracks.module_id',
-            'module_masters.module_name',
-            'workflow_tracks.ref_table_dot_id',
-            'workflow_tracks.ref_table_id_value',
-            'workflow_tracks.message',
-            'workflow_tracks.track_date',
-            'users.user_name'
-        )
-            ->join('users', 'users.id', 'workflow_tracks.user_id')
-            ->join('module_masters', 'module_masters.id', 'workflow_tracks.module_id')
-            ->where('workflow_tracks.ref_table_dot_id', $req->refTableId)
-            ->where('workflow_tracks.ref_table_id_value', $req->refTableValue)
+        return DB::table('workflow_tracks')
+            ->select(
+                'workflow_tracks.ref_table_dot_id',
+                'workflow_tracks.message',
+                'workflow_tracks.track_date',
+                'u.email as citizenEmail',
+                'u.user_name as citizenName'
+            )
+            ->where('ref_table_dot_id', $mRefTable)
+            ->where('ref_table_id_value', $tableId)
+            ->join('users as u', 'u.id', '=', 'workflow_tracks.user_id')
             ->get();
     }
 }

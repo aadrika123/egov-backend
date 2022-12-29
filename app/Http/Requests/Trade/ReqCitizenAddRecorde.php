@@ -3,30 +3,32 @@
 namespace App\Http\Requests\Trade;
 
 use App\Repository\Common\CommonFunction;
-use Illuminate\Support\Facades\Config;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 
-class ReqAddRecorde extends TradeRequest
+class ReqCitizenAddRecorde extends TradeRequest
 {
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array
+     */
     public function rules()
     {
-        if ($this->getMethod() == 'GET')
-            return [];
         $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE." . $this->applicationType);
         $mNowdate = Carbon::now()->format('Y-m-d');
-        $mTimstamp = Carbon::now()->format('Y-m-d H:i:s');
         $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
         $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.&\s]+$/';
-        $mAlphaNumCommaSlash = '/^[a-zA-Z0-9- ]+$/i';
-        $mAlphaSpace = '/^[a-zA-Z ]+$/i';
-        $mAlphaNumhyphen = '/^[a-zA-Z0-9- ]+$/i';
-        $mNumDot = '/^\d+(?:\.\d+)+$/i';
-        $mDateFormatYYYMMDD = '/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))+$/i';
-        $mDateFormatYYYMM = '/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';
         $reftrade = new CommonFunction();
         $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
         $mUserType = $reftrade->userType($refWorkflowId);
         $rules = [];
+        $rules["ulbId"]="required|digits_between:1,92";
+        $rules["applicationType"]="required|string|in:NEWLICENSE,RENEWAL,AMENDMENT,SURRENDER";
+        if($this->applicationType!="NEWLICENSE")
+        {
+            $rules["id"] ="required|digits_between:1,9223372036854775807";
+        }
         if (in_array($mApplicationTypeId, [1])) 
         {
             $rules["firmDetails.areaSqft"] = "required|numeric";
@@ -44,14 +46,13 @@ class ReqAddRecorde extends TradeRequest
             $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
             $rules["firmDetails.bind_book_no"] = "regex:$mRegex";
             $rules["firmDetails.account_no"] = "regex:$mRegex";
-            if (strtoupper($mUserType) == "ONLINE") {
-                $rules["firmDetails.pincode"] = "digits:6|regex:/[0-9]{6}/";
-            }
+            $rules["firmDetails.pincode"] = "digits:6|regex:/[0-9]{6}/";
 
             $rules["initialBusinessDetails.applyWith"] = "required|digits_between:1,9223372036854775807";
             $rules["initialBusinessDetails.firmType"] = "required|digits_between:1,9223372036854775807";
             $rules["initialBusinessDetails.categoryTypeId"] = "digits_between:1,9223372036854775807";
-            if (isset($this->initialBusinessDetails['firmType']) && $this->initialBusinessDetails['firmType'] == 5) {
+            if (isset($this->initialBusinessDetails['firmType']) && $this->initialBusinessDetails['firmType'] == 5) 
+            {
                 $rules["initialBusinessDetails.otherFirmType"] = "required|regex:$mRegex";
             }
             $rules["initialBusinessDetails.ownershipType"] = "required|digits_between:1,9223372036854775807";
@@ -63,12 +64,15 @@ class ReqAddRecorde extends TradeRequest
             if ($mApplicationTypeId != 4 && strtoupper($mUserType) != "ONLINE") {
                 $rules["licenseDetails.totalCharge"] = "required|numeric";
             }
-            if (isset($this->firmDetails["tocStatus"]) && $this->firmDetails["tocStatus"]) {
+            if (isset($this->firmDetails["tocStatus"]) && $this->firmDetails["tocStatus"]) 
+            {
                 $rules["licenseDetails.licenseFor"] = "required|int|max:1";
             }
-            if (in_array(strtoupper($mUserType), ["JSK", "UTC", "TC", "SUPER ADMIN", "TL"])) {
+            if (in_array(strtoupper($mUserType), ["JSK", "UTC", "TC", "SUPER ADMIN", "TL"])) 
+            {
                 $rules["licenseDetails.paymentMode"] = "required|alpha";
-                if (isset($this->licenseDetails['paymentMode']) && $this->licenseDetails['paymentMode'] != "CASH") {
+                if (isset($this->licenseDetails['paymentMode']) && $this->licenseDetails['paymentMode'] != "CASH") 
+                {
                     $rules["licenseDetails.chequeNo"] = "required";
                     $rules["licenseDetails.chequeDate"] = "required|date|date_format:Y-m-d|after_or_equal:$mNowdate";
                     $rules["licenseDetails.bankName"] = "required|regex:$mRegex";

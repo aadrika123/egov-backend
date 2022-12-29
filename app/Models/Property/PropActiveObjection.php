@@ -4,6 +4,7 @@ namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Exception;
 
 class PropActiveObjection extends Model
@@ -31,6 +32,7 @@ class PropActiveObjection extends Model
     /**
      * This code is for generating the appliction number of Objection 
      * | @param id
+        | remove try catch
      */
 
     public function objectionNo($id)

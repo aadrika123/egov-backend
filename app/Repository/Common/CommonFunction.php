@@ -213,12 +213,12 @@ class CommonFunction implements ICommonFunction
             echo $e->getMessage();
         }
     }
-    public function userType($refWorkflowId):string
+    public function userType($refWorkflowId,$ulb_id=null):string
     {
         $user = Auth()->user();
         $user_id = $user->id;
-        $ulb_id = $user->ulb_id;
-        $user_data = $this->getUserRoll($user_id, $ulb_id,$refWorkflowId); 
+        $ulb_id = $user->ulb_id??$ulb_id;
+        $user_data = $this->getUserRoll($user_id, $ulb_id,$refWorkflowId);
         $roll_id =  $user_data->role_id??-1;      
         if($roll_id != -1)
         {
