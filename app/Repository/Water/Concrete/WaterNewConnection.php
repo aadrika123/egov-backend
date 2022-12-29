@@ -66,7 +66,8 @@ class WaterNewConnection implements IWaterNewConnection
         try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
-            $refUlbId           = $refUser->ulb_id;
+            // $refUlbId           = $request->ulbId;
+            // AND water_applications.ulb_id = $refUlbId (btw line 95 96)
             $connection         = WaterApplication::select(
                 "water_applications.id",
                 "water_applications.application_no",
@@ -92,7 +93,6 @@ class WaterNewConnection implements IWaterNewConnection
                                                     OR water_connection_charges.status ISNULL  
                                                 )
                                         WHERE water_applications.user_id = $refUserId
-                                            AND water_applications.ulb_id = $refUlbId
                                         GROUP BY water_applications.id
                                         ) AS charges
                                     "),
@@ -102,7 +102,8 @@ class WaterNewConnection implements IWaterNewConnection
                 )
                 // ->whereNotIn("status",[0,6,7])
                 ->where("water_applications.user_id", $refUserId)
-                ->where("water_applications.ulb_id", $refUlbId)
+                // ->where("water_applications.ulb_id", $refUlbId)
+                ->orderbydesc('id')
                 ->get();
             return responseMsg(true, "", $connection);
         } catch (Exception $e) {
