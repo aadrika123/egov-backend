@@ -63,7 +63,7 @@ class NewConnectionRepository implements iNewConnection
         $vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
         $workflowID = Config::get('workflow-constants.WATER_MASTER_ID');
         $owner = $req['owners'];
-        $ulbId = auth()->user()->ulb_id;
+        $ulbId = $req->ulbId;
 
         # get initiater and finisher
         $ulbWorkflowObj = new WfWorkflow();

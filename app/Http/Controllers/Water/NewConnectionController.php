@@ -67,6 +67,7 @@ class NewConnectionController extends Controller
                     'elecCategory'       => 'required',
                     'connection_through' => 'required|integer',
                     'owners'             => 'required',
+                    'ulbId'              => 'required'
                 ]
             );
 
