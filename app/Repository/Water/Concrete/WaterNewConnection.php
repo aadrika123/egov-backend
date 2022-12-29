@@ -16,6 +16,7 @@ use App\Models\Water\WaterRazorPayResponse;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Water\Interfaces\IWaterNewConnection;
 use App\Traits\Auth;
@@ -271,6 +272,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $val->paid_status = true;
                 $val->update();
             }
+            
             $application->payment_status = true;
             $application->update();
             DB::commit();
@@ -422,6 +424,7 @@ class WaterNewConnection implements IWaterNewConnection
                 }
                 // array_push($ownersDoc, $doc);
                 // array_push($testOwnersDoc[$key], $doc);
+                # use of doc2
                 $doc2 = (array) null;
                 $doc2["ownerId"] = $val->id;
                 $doc2["ownerName"] = $val->owner_name;
