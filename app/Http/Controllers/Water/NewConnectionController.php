@@ -67,6 +67,7 @@ class NewConnectionController extends Controller
                     'elecCategory'       => 'required',
                     'connection_through' => 'required|integer',
                     'owners'             => 'required',
+                    'ulbId'              => 'required'
                 ]
             );
 
@@ -220,6 +221,19 @@ class NewConnectionController extends Controller
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
+        }
+    }
+
+    // Water Application details for the view in workflow
+    public function getApplicationsDetails(Request $request)
+    {
+        try {
+            $request->validate([
+                'id' => 'required'
+            ]);
+            return $this->newConnection->getApplicationsDetails($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }

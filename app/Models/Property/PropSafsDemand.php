@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PropSafsDemand extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     // Get Demand By SAF id
     public function getDemandBySafId($safId)
@@ -30,5 +31,22 @@ class PropSafsDemand extends Model
             ->where('qtr', $qtr)
             ->where('saf_id', $safId)
             ->first();
+    }
+
+    /**
+     * | Save SAF Demand
+     */
+    public function saveSafDemands($req)
+    {
+        $metaReqs = [
+            'waterTax' => $req->waterTax,
+            'educationTax' => $req->educationTax,
+            'healthCess' => $req->healthCess,
+            'latrineTax' => $req->latrineTax,
+            'additionTax' => $req->additionTax,
+            'holdingTax' => $req->holdingTax,
+            'totalTax' => $req->totalTax
+        ];
+        PropSafsDemand::create($metaReqs);
     }
 }

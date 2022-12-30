@@ -2,6 +2,7 @@
 
 namespace App\Models\Property;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 class PropTransaction extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     /***
      * | @param id 
@@ -55,5 +57,20 @@ class PropTransaction extends Model
             ->where('prop_transactions.property_id', $propId)
             ->orderByDesc('prop_transactions.id')
             ->first();
+    }
+
+    // Save Property Transactions
+    public function store($req)
+    {
+        $tranDate = Carbon::now()->format('Y-m-d');
+        $metaReqs = [
+            'saf_id' => $req->id,
+            'amount' => $req->amount,
+            'tran_date' => $tranDate,
+            'tran_no' => $req->transactionNo,
+            'payment_mode' => $req->paymentMode,
+            'user_id' => $req->userId,
+        ];
+        return PropTransaction::insertGetId($metaReqs);
     }
 }

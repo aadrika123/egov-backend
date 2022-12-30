@@ -37,7 +37,6 @@ class WaterApplication extends Model
         $saveNewApplication->elec_account_no        = $req->elecAccountNo;
         $saveNewApplication->elec_category          = $req->elecCategory;
         $saveNewApplication->connection_through     = $req->connection_through;
-        $saveNewApplication->apply_date             = date('Y-m-d H:i:s');
         $saveNewApplication->workflow_id            = $ulbWorkflowId->id;
         $saveNewApplication->connection_fee_id      = $waterFeeId;
         $saveNewApplication->current_role           = collect($initiatorRoleId)->first()->role_id;
@@ -45,6 +44,7 @@ class WaterApplication extends Model
         $saveNewApplication->finisher               = collect($finisherRoleId)->first()->role_id;
         $saveNewApplication->application_no         = $applicationNo;
         $saveNewApplication->ulb_id                 = $ulbId;
+        $saveNewApplication->apply_date             = date('Y-m-d H:i:s');
         $saveNewApplication->user_id                = auth()->user()->id;
 
         # condition entry 
@@ -64,7 +64,7 @@ class WaterApplication extends Model
             $saveNewApplication->saf_no = $req->saf_no;
         }
 
-        $saveNewApplication->save();
+       $saveNewApplication->save();
 
         return $saveNewApplication->id;
     }

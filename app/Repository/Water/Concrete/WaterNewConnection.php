@@ -16,6 +16,7 @@ use App\Models\Water\WaterRazorPayResponse;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Water\Interfaces\IWaterNewConnection;
 use App\Traits\Auth;
@@ -45,11 +46,13 @@ class WaterNewConnection implements IWaterNewConnection
     protected $_modelWard;
     protected $_parent;
     protected $_shortUlbName;
+    private $_dealingAssistent;
 
     public function __construct()
     {
         $this->_modelWard = new ModelWard();
         $this->_parent = new CommonFunction();
+        $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
     }
     /**
      * | Search the Citizen Related Water Application
@@ -66,13 +69,16 @@ class WaterNewConnection implements IWaterNewConnection
         try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
-            $refUlbId           = $refUser->ulb_id;
+            // $refUlbId           = $request->ulbId;
+            // AND water_applications.ulb_id = $refUlbId (btw line 95 96)
             $connection         = WaterApplication::select(
                 "water_applications.id",
                 "water_applications.application_no",
                 "water_applications.address",
                 "water_applications.payment_status",
                 "water_applications.doc_status",
+                "water_applications.ward_id",
+                "ulb_ward_masters.ward_name",
                 "charges.amount",
                 DB::raw("'connection' AS type,
                                         water_applications.apply_date::date AS apply_date")
@@ -92,7 +98,6 @@ class WaterNewConnection implements IWaterNewConnection
                                                     OR water_connection_charges.status ISNULL  
                                                 )
                                         WHERE water_applications.user_id = $refUserId
-                                            AND water_applications.ulb_id = $refUlbId
                                         GROUP BY water_applications.id
                                         ) AS charges
                                     "),
@@ -101,8 +106,10 @@ class WaterNewConnection implements IWaterNewConnection
                     }
                 )
                 // ->whereNotIn("status",[0,6,7])
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
                 ->where("water_applications.user_id", $refUserId)
-                ->where("water_applications.ulb_id", $refUlbId)
+                // ->where("water_applications.ulb_id", $refUlbId)
+                ->orderbydesc('id')
                 ->get();
             return responseMsg(true, "", $connection);
         } catch (Exception $e) {
@@ -270,6 +277,12 @@ class WaterNewConnection implements IWaterNewConnection
                 $val->paid_status = true;
                 $val->update();
             }
+
+            WaterApplication::where('id', $applicationId)
+                ->update([
+                    'current_role' => $this->_dealingAssistent
+                ]);
+
             $application->payment_status = true;
             $application->update();
             DB::commit();
@@ -383,8 +396,7 @@ class WaterNewConnection implements IWaterNewConnection
             }
             $connectionId = $request->applicationId;
             $refApplication = WaterApplication::where("status", 1)->find($connectionId);
-            if (!$refApplication) 
-            {
+            if (!$refApplication) {
                 throw new Exception("Application Not Found.....");
             }
             // elseif($refApplication->doc_verify_status)
@@ -393,8 +405,7 @@ class WaterNewConnection implements IWaterNewConnection
             // }
             $requiedDocType = $this->getDocumentTypeList($refApplication);  # get All Related Document Type List
             $refOwneres = $this->getOwnereDtlByLId($refApplication->id);    # get Owneres List
-            foreach ($requiedDocType as $val) 
-            {
+            foreach ($requiedDocType as $val) {
                 $doc = (array) null;
                 $doc['docName'] = $val->doc_for;
                 $doc['isMadatory'] = $val->is_mandatory;
@@ -406,8 +417,7 @@ class WaterNewConnection implements IWaterNewConnection
                 }
                 array_push($requiedDocs, $doc);
             }
-            foreach ($refOwneres as $key => $val) 
-            {
+            foreach ($refOwneres as $key => $val) {
                 $doc = (array) null;
                 $testOwnersDoc[$key] = (array) null;
                 $doc["ownerId"] = $val->id;
@@ -417,14 +427,14 @@ class WaterNewConnection implements IWaterNewConnection
                 $doc['docVal'] = $this->getDocumentList("ID Proof");
                 $refOwneres[$key]["ID Proof"] = $this->check_doc_exist_owner($refApplication->id, $val->id); # check Owners ID Proof Documents             
                 $doc['uploadDoc'] = $refOwneres[$key]["ID Proof"];
-                if (isset($refOwneres[$key]["ID Proof"]["document_path"])) 
-                {
+                if (isset($refOwneres[$key]["ID Proof"]["document_path"])) {
                     $path = $this->readDocumentPath($refOwneres[$key]["ID Proof"]["document_path"]);
                     $refOwneres[$key]["ID Proof"]["document_path"] = !empty(trim($refOwneres[$key]["ID Proof"]["document_path"])) ? $path : null;
                     $doc['uploadDoc']["document_path"] = $path;
                 }
-                array_push($ownersDoc, $doc);
-                array_push($testOwnersDoc[$key], $doc);
+                // array_push($ownersDoc, $doc);
+                // array_push($testOwnersDoc[$key], $doc);
+                # use of doc2
                 $doc2 = (array) null;
                 $doc2["ownerId"] = $val->id;
                 $doc2["ownerName"] = $val->owner_name;
@@ -433,8 +443,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $doc2['docVal'][] = ["id" => 0, "doc_name" => "Photo"];
                 $refOwneres[$key]["image"] = $this->check_doc_exist_owner($refApplication->id, $val->id, 0);
                 $doc2['uploadDoc'] = $refOwneres[$key]["image"];
-                if (isset($refOwneres[$key]["image"]["document_path"])) 
-                {
+                if (isset($refOwneres[$key]["image"]["document_path"])) {
                     $path = $this->readDocumentPath($refOwneres[$key]["image"]["document_path"]);
                     $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"])) ? storage_path('app/public/' . $refOwneres[$key]["image"]["document_path"]) : null;
                     $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"])) ? $path : null;
@@ -445,8 +454,7 @@ class WaterNewConnection implements IWaterNewConnection
             }
 
             #---------- upload the documents--------------
-            if (isset($request->docFor))
-            {
+            if (isset($request->docFor)) {
                 #connection Doc
                 if (in_array($request->docFor, objToArray($requiedDocType->pluck("doc_for")))) {
                     $rules = [
@@ -519,8 +527,7 @@ class WaterNewConnection implements IWaterNewConnection
                     }
                 }
                 #owners Doc
-                elseif (in_array($request->docFor, objToArray(collect($ownersDoc)->pluck("docName")))) 
-                {
+                elseif (in_array($request->docFor, objToArray(collect($ownersDoc)->pluck("docName")))) {
                     $rules = [
                         'docPath'        => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
                         'docMstrId'      => 'required|digits_between:1,9223372036854775807',
@@ -606,7 +613,7 @@ class WaterNewConnection implements IWaterNewConnection
                 return responseMsg(true, $sms, "");
             }
             $data["documentsList"]  = $requiedDocs;
-            $data["ownersDocList"]  = $testOwnersDoc;
+            $data["ownersDocList"]  = collect($testOwnersDoc)->first();
             return responseMsg(true, $sms, $data);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());

@@ -21,6 +21,6 @@ return [
     // workflow master
     "WATER_MASTER_ID"   => "3",
     "TRADE_NOTICE_ID"      =>"120",
-    "WATER_WORKFLOW_ID" =>"16"
-   
+    "WATER_WORKFLOW_ID" =>"16",
+    "DEALING_ASSISTENT_WF_ID" =>"6"
 ];

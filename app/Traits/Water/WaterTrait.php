@@ -23,18 +23,22 @@ trait WaterTrait
     {
         return WaterApplication::select(
             'water_applications.id',
-            'a.applicant_name as owner_name',
-            'water_applications.holding_no',
-            'a.ward_mstr_id',
+            'water_applications.application_no',
+            'water_applicants.id as owner_id',
+            'water_applicants.applicant_name as owner_name',
+            'water_applications.ward_id',
+            'water_connection_through_mstrs.connection_through',
+            'water_connection_type_mstrs.connection_type',
             'u.ward_name as ward_no',
-            'a.prop_type_mstr_id',
-            'p.property_type',
             'water_applications.workflow_id',
-            'water_applications.current_role as role_id'
+            'water_applications.current_role as role_id',
+            'water_applications.apply_date',
         )
             ->leftJoin('prop_properties as a', 'a.id', '=', 'water_applications.prop_id')
-            ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
-            ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
+            ->join('ulb_ward_masters as u', 'u.id', '=', 'water_applications.ward_id')
+            ->join('water_applicants','water_applicants.application_id','=','water_applications.id')
+            ->join('water_connection_through_mstrs','water_connection_through_mstrs.id','=','water_applications.connection_through')
+            ->join('water_connection_type_mstrs','water_connection_type_mstrs.id','=','water_applications.connection_type_id')
             ->where('water_applications.status', 1)
             ->where('water_applications.ulb_id', $ulbId);
     }

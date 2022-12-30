@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 class PropSafVerification extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     public function getVerificationsData($safId)
     {
@@ -20,5 +21,33 @@ class PropSafVerification extends Model
             ->where('prop_saf_verifications.saf_id', $safId)
             ->where('prop_saf_verifications.agency_verification', true)
             ->first();
+    }
+
+    // Store
+    public function store($req)
+    {
+        $metaReqs = [
+            'saf_id' => $req->safId,
+            'agency_verification' => $req->agencyVerification ?? null,
+            'ulb_verification' => $req->ulbVerification ?? null,
+            'prop_type_id' => $req->propertyType,
+            'road_type_id' => $req->roadTypeId,
+            'area_of_plot' => $req->areaOfPlot,
+            'ward_id' => $req->wardId,
+            'has_mobile_tower' => $req->isMobileTower,
+            'tower_area' => $req->mobileTowerArea,
+            'tower_installation_date' => $req->mobileTowerDate,
+            'has_hoarding' => $req->isHoardingBoard,
+            'hoarding_area' => $req->hoardingArea,
+            'hoarding_installation_date' => $req->hoardingDate,
+            'is_petrol_pump' => $req->isPetrolPump,
+            'underground_area' => $req->petrolPumpUndergroundArea,
+            'petrol_pump_completion_date' => $req->petrolPumpDate,
+            'has_water_harvesting' => $req->isHarvesting,
+            'zone_id' => $req->zone,
+            'user_id' => $req->userId
+        ];
+
+        return PropSafVerification::create($metaReqs)->id;
     }
 }

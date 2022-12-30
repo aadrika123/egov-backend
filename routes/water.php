@@ -47,9 +47,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-ward-no', 'getWardNo');                                                         //09        // Get Ward No According to Saf or Holding Details mstr
 
         # water Workflow
-        Route::post('water-inbox', 'waterInbox');                                                        // 
-        Route::post('water-outbox', 'waterOutbox');                                                      //
-        Route::post('post-next-level','postNextLevel');                                                  //
+        Route::post('water-inbox', 'waterInbox');                                                       // 
+        Route::post('water-outbox', 'waterOutbox');                                                     //
+        Route::post('post-next-level','postNextLevel');                                                 //
+        Route::post('get-applications-details','getApplicationsDetails');                               //
     });
 });
 

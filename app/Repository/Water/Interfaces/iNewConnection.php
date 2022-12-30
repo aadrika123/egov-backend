@@ -16,4 +16,5 @@ interface iNewConnection
    public Function waterInbox();                                        // Inbox for water
    public function waterOutbox();                                       // Outbox for water
    public function postNextLevel($req);                                 // Approval in the workflow level
+   public function getApplicationsDetails($request);                    // Get the application list for the workflow
 }
