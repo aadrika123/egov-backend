@@ -431,7 +431,6 @@ class NewConnectionRepository implements iNewConnection
             ->get()
             ->first();
         if ($applicationDetails) {
-            return collect($applicationDetails)->id;
             return responseMsgs(true, "listed Data!", $applicationDetails, "", "02", ".ms", "POST", "");
         }
         return responseMsg(false, "Data Not Found!", $request->id);
