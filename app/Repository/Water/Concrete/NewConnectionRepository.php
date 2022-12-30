@@ -411,6 +411,8 @@ class NewConnectionRepository implements iNewConnection
             'water_applications.application_no',
             'water_connection_type_mstrs.connection_type',
             'water_property_type_mstrs.property_type',
+            'water_applications.flat_count',
+            'water_applications.owner_type',
             'water_applications.category',
             'water_applications.area_sqft',
             'water_applications.address',
@@ -431,7 +433,7 @@ class NewConnectionRepository implements iNewConnection
             ->get()
             ->first();
         if ($applicationDetails) {
-            return responseMsgs(true, "listed Data!", $applicationDetails, "", "02", ".ms", "POST", "");
+            return responseMsgs(true, "listed Data!", remove_null($applicationDetails), "", "02", ".ms", "POST", "");
         }
         return responseMsg(false, "Data Not Found!", $request->id);
     }
