@@ -119,11 +119,12 @@ class WorkflowMap implements iWorkflowMapRepository
         $workkFlow = UlbWardMaster::select(
             'id',
             'ulb_id',
-
+            'ward_name',
+            'old_ward_name'
         )
             ->where('ulb_id', $request->ulbId)
             ->get();
-        return responseMsg(true, "Data Retrived", $workkFlow);
+        return responseMsg(true, "Data Retrived", remove_null($workkFlow));
     }
 
     // table = 6 & 7
