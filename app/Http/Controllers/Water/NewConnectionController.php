@@ -227,14 +227,13 @@ class NewConnectionController extends Controller
     // Water Application details for the view in workflow
     public function getApplicationsDetails(Request $request)
     {
-        try{
+        try {
             $request->validate([
                 'id' => 'required'
             ]);
             return $this->newConnection->getApplicationsDetails($request);
-        }catch(Exception $e)
-        {
-            return responseMsg(false,$e->getMessage(),"");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }

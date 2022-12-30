@@ -420,6 +420,7 @@ class NewConnectionRepository implements iNewConnection
             'water_applications.elec_category',
             'water_applications.elec_bind_book_no',
             'water_applications.apply_date',
+            'water_applications.current_role'
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
@@ -430,6 +431,7 @@ class NewConnectionRepository implements iNewConnection
             ->get()
             ->first();
         if ($applicationDetails) {
+            return collect($applicationDetails)->id;
             return responseMsgs(true, "listed Data!", $applicationDetails, "", "02", ".ms", "POST", "");
         }
         return responseMsg(false, "Data Not Found!", $request->id);
