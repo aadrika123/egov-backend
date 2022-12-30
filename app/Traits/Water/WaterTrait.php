@@ -23,6 +23,7 @@ trait WaterTrait
     {
         return WaterApplication::select(
             'water_applications.id',
+            'water_applications.application_no',
             'a.id as owner_id',
             'a.applicant_name as owner_name',
             'water_applications.ward_id',
