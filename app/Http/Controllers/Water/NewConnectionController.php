@@ -228,6 +228,9 @@ class NewConnectionController extends Controller
     public function getApplicationsDetails(Request $request)
     {
         try{
+            $request->validate([
+                'id' => 'required'
+            ]);
             return $this->newConnection->getApplicationsDetails($request);
         }catch(Exception $e)
         {

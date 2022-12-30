@@ -424,11 +424,14 @@ class NewConnectionRepository implements iNewConnection
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
-            ->join('water_property_type_mstrs','water_property_type_mstrs.id','=','water_applications.property_type_id')
+            ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_applications.property_type_id')
             ->where('water_applications.id', $request->id)
             ->where('water_applications.status', 1)
             ->get()
             ->first();
-        return responseMsgs(true, "listed Data!", $applicationDetails, "", "02", ".ms", "POST", "");
+        if ($applicationDetails) {
+            return responseMsgs(true, "listed Data!", $applicationDetails, "", "02", ".ms", "POST", "");
+        }
+        return responseMsg(false, "Data Not Found!", $request->id);
     }
 }
