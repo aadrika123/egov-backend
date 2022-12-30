@@ -125,7 +125,7 @@ class EloquentUlbRepository implements UlbRepository
     public function getAllUlb()
     {
         $ulb = UlbMaster::orderByDesc('id')->get();
-        return $ulb;
+        return responseMsgs(true, "", remove_null($ulb));
     }
 
     /**

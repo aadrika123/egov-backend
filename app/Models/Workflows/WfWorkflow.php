@@ -47,7 +47,6 @@ class WfWorkflow extends Model
         $data->ulb_id = $req->ulbId;
         $data->alt_name = $req->altName;
         $data->is_doc_required = $req->isDocRequired;
-        $data->is_suspended = $req->isSuspended;
         $data->save();
     }
 
@@ -56,15 +55,19 @@ class WfWorkflow extends Model
     {
         $data = WfWorkflow::where('id', $req->id)
             ->where('is_suspended', false)
-            ->get();
+            ->first();
         return $data;
     }
 
     //All workflow list
     public function listWorkflow()
     {
-        $data = WfWorkflow::where('is_suspended', false)
-            ->orderByDesc('id')->get();
+        $data = WfWorkflow::select('wf_workflows.*', 'wf_masters.workflow_name', 'ulb_masters.ulb_name')
+            ->join('wf_masters', 'wf_masters.id', 'wf_workflows.wf_master_id')
+            ->join('ulb_masters', 'ulb_masters.id', 'wf_workflows.ulb_id')
+            ->where('wf_workflows.is_suspended', false)
+            ->orderByDesc('wf_workflows.id')
+            ->get();
         return $data;
     }
 

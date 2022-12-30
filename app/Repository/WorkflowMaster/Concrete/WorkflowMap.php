@@ -49,7 +49,7 @@ class WorkflowMap implements iWorkflowMapRepository
     }
 
 
-    //getting data of user & ulb  by selecting  id
+    //getting data of user & ulb  by selecting  ward user id
     //m_users && m_ulb_wards  && wf_ward_users
 
     public function getUserById(Request $request)
@@ -105,6 +105,7 @@ class WorkflowMap implements iWorkflowMapRepository
         }
     }
 
+    //workking
     //table = ulb_ward_master
     //ulbId->WardName
     //wards in ulb
@@ -115,8 +116,13 @@ class WorkflowMap implements iWorkflowMapRepository
             'ulbId' => 'required|int'
         ]);
 
-        $workkFlow = UlbWardMaster::where('ulb_id', $request->ulbId)
-            ->get('ward_name');
+        $workkFlow = UlbWardMaster::select(
+            'id',
+            'ulb_id',
+
+        )
+            ->where('ulb_id', $request->ulbId)
+            ->get();
         return responseMsg(true, "Data Retrived", $workkFlow);
     }
 
@@ -261,13 +267,14 @@ class WorkflowMap implements iWorkflowMapRepository
         return responseMsg(true, "Data Retrived", $users);
     }
 
-
+    //working
     //workflow in ulb
     public function getWorkflowInUlb(Request $request)
     {
-        $users = WfWorkflow::where('ulb_id', $request->ulbId)
-            ->join('wf_workflows', 'wf_workflows.wf_matser_id', '=', 'wf_masters.id')
-            ->get('wf_masters.workflow_name');
+        $users = WfWorkflow::select('wf_masters.workflow_name', 'wf_workflows.id')
+            ->join('wf_masters', 'wf_masters.id', '=', 'wf_workflows.wf_master_id')
+            ->where('wf_workflows.ulb_id', $request->ulbId)
+            ->get();
         return responseMsg(true, "Data Retrived", $users);
     }
 

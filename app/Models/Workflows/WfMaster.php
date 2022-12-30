@@ -29,7 +29,6 @@ class WfMaster extends Model
     {
         $data = WfMaster::find($req->id);
         $data->workflow_name = $req->workflowName;
-        $data->is_suspended = $req->isSuspended;
         $data->save();
     }
 
@@ -57,7 +56,6 @@ class WfMaster extends Model
     public function deleteMaster($req)
     {
         $data = WfMaster::find($req->id);
-        $data->status = 0;
         $data->is_suspended = "true";
         $data->save();
     }
