@@ -417,14 +417,18 @@ class NewConnectionRepository implements iNewConnection
             'water_applications.area_sqft',
             'water_applications.address',
             'water_applications.landmark',
+            'water_applications.pipeline_type_id',
             'water_applications.pin',
             'water_applications.elec_k_no',
             'water_applications.elec_category',
             'water_applications.elec_bind_book_no',
+            'water_applications.elec_account_no',
             'water_applications.apply_date',
-            'water_applications.current_role'
+            'water_applications.current_role',
+            'water_connection_through_mstrs.connection_through'
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
+            ->join('water_connection_through_mstrs','water_connection_through_mstrs.id','=','water_applications.connection_through')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_applications.property_type_id')
