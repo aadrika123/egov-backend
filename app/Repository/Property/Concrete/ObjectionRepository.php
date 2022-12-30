@@ -170,18 +170,24 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->save();
 
                 //objection_form
-                if ($file = $request->file('objectionForm')) {
+                if ($file = $request->file('objFormDoc')) {
                     $docName = "objectionForm";
                     $name = $this->moveFile($docName, $file);
 
+                    $objectionDoc = new PropActiveObjectionDocdtl;
+                    $objectionDoc->objection_id = $objection->id;
+                    $objectionDoc->remarks = $request->objRemarks;
                     $this->citizenDocUpload($objectionDoc, $name, $docName);
                 }
 
                 //Evidence Doc
-                if ($file = $request->file('evidenceDoc')) {
+                if ($file = $request->file('objEvidenceDoc')) {
                     $docName = "evidenceDoc";
                     $name = $this->moveFile($docName, $file);
 
+                    $objectionDoc = new PropActiveObjectionDocdtl;
+                    $objectionDoc->objection_id = $objection->id;
+                    $objectionDoc->remarks = $request->objRemarks;
                     $this->citizenDocUpload($objectionDoc, $name, $docName);
                 }
                 return responseMsg(true, "Successfully Saved", '');
@@ -189,7 +195,7 @@ class ObjectionRepository implements iObjectionRepository
 
             // objection against assesment
             if ($objectionFor == 'Assessment Error') {
-
+                // return $request;
                 $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflow_id_assesment)
                     ->where('ulb_id', $ulbId)
                     ->first();
@@ -208,60 +214,64 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->current_role = $initiatorRoleId[0]->role_id;
                 $objection->save();
 
-                $assessmentData = collect($request->assessmentData);
-                $assessmentData = collect($assessmentData)->map(function ($value, $key) {
-                    $details['id'] = $value["id"];
-                    $details['value'] = $value['value'];
-                    return $details;
-                });
+                $abc =  json_decode($request->assessmentData);
+                $a = collect($abc);
 
-                foreach ($assessmentData as $otid) {
+                // return $request;
+                foreach ($a as $otid) {
 
                     $assement_error = new PropActiveObjectionDtl;
                     $assement_error->objection_id = $objection->id;
-                    $assement_error->objection_type_id = $otid["id"];
+                    $assement_error->objection_type_id = $otid->id;
+                    $assement_error->applicant_data =  $otid->value;
 
                     $assesmentDetail = $this->assesmentDetails($request);
                     $assesmentData = collect($assesmentDetail);
 
-                    //RWH
-                    if ($otid["id"] == 2) {
+                    if ($otid->id == 2) {
                         $assement_error->data_ref_type = 'boolean';
                         $objection->objection_type_id = 2;
                         $assement_error->assesment_data = collect($assesmentData['original']['data']['isWaterHarvesting']);
                     }
                     //road width
-                    if ($otid["id"] == 3) {
+                    if ($otid->id == 3) {
                         $assement_error->data_ref_type = 'ref_prop_road_types.id';
                         $objection->objection_type_id = 3;
                         $assement_error->assesment_data = collect($assesmentData['original']['data']['road_type_mstr_id']);
                     }
                     //property_types
-                    if ($otid["id"] == 4) {
+                    if ($otid->id == 4) {
                         $assement_error->data_ref_type = 'ref_prop_types.id';
                         $objection->objection_type_id = 4;
                         $assement_error->assesment_data = collect($assesmentData['original']['data']['prop_type_mstr_id']);
                     }
                     //area off plot
-                    if ($otid["id"] == 5) {
+                    if ($otid->id == 5) {
                         $assement_error->data_ref_type = 'area';
                         $objection->objection_type_id = 5;
                         $assement_error->assesment_data = collect($assesmentData['original']['data']['areaOfPlot']);
                     }
                     //mobile tower
-                    if ($otid["id"] == 6) {
+                    if ($otid->id == 6) {
                         $assement_error->data_ref_type = 'boolean';
                         $objection->objection_type_id = 6;
                         $assement_error->assesment_data = collect($assesmentData['original']['data']['isMobileTower']);
+                        // $assement_error->applicant_area = $otid->area;
+                        // $assement_error->applicant_date = $otid->date;
                     }
                     //hoarding board
-                    if ($otid["id"] == 7) {
+                    if ($otid->id == 7) {
                         $assement_error->data_ref_type = 'boolean';
                         $objection->objection_type_id = 7;
                         $assement_error->assesment_data = collect($assesmentData['original']['data']['isHoarding']);
+                        // $assement_error->applicant_area = $otid->area;
+                        // $assement_error->applicant_date = $otid->date;
                     }
 
-                    $assement_error->applicant_data =  $otid["value"];
+                    if (isset($otid->area) && ($otid->date)) {
+                        $assement_error->applicant_area = $otid->area;
+                        $assement_error->applicant_date = $otid->date;
+                    }
                     $assement_error->save();
                 }
 
@@ -280,29 +290,35 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor->property_id = $request->propId;
                     $assement_floor->objection_id = $objection->id;
                     $assement_floor->prop_floor_id = $request->propFloorId;
-                    $assement_floor->floor_mstr_id = $floors['floorNo'];
-                    $assement_floor->usage_type_mstr_id = $floors['usageType'];
-                    $assement_floor->occupancy_type_mstr_id = $floors['occupancyType'];
-                    $assement_floor->const_type_mstr_id = $floors['constructionType'];
-                    $assement_floor->builtup_area = $floors['buildupArea'];
-                    $assement_floor->date_from = $floors['dateFrom'];
-                    $assement_floor->date_upto = $floors['dateUpto'];
+                    $assement_floor->floor_mstr_id = $floors->floorNo;
+                    $assement_floor->usage_type_mstr_id = $floors->usageType;
+                    $assement_floor->occupancy_type_mstr_id = $floors->occupancyType;
+                    $assement_floor->const_type_mstr_id = $floors->constructionType;
+                    $assement_floor->builtup_area = $floors->buildupArea;
+                    $assement_floor->date_from = $floors->dateFrom;
+                    $assement_floor->date_upto = $floors->dateUpto;
                     $assement_floor->save();
                 }
 
                 //objection_form
-                if ($file = $request->file('objectionForm')) {
+                if ($file = $request->file('objFormDoc')) {
                     $docName = "objectionForm";
                     $name = $this->moveFile($docName, $file);
 
+                    $objectionDoc = new PropActiveObjectionDocdtl;
+                    $objectionDoc->objection_id = $objection->id;
+                    $objectionDoc->remarks = $request->objRemarks;
                     $this->citizenDocUpload($objectionDoc, $name, $docName);
                 }
 
                 //Evidence Doc
-                if ($file = $request->file('evidenceDoc')) {
+                if ($file = $request->file('objEvidenceDoc')) {
                     $docName = "evidenceDoc";
                     $name = $this->moveFile($docName, $file);
 
+                    $objectionDoc = new PropActiveObjectionDocdtl;
+                    $objectionDoc->objection_id = $objection->id;
+                    $objectionDoc->remarks = $request->objRemarks;
                     $this->citizenDocUpload($objectionDoc, $name, $docName);
                 }
             }
@@ -700,7 +716,6 @@ class ObjectionRepository implements iObjectionRepository
         $objectionDoc->doc_type = $docName;
         $objectionDoc->relative_path = ('/objection/' . $docName . '/');
         $objectionDoc->doc_name = $name;
-        $objectionDoc->status = 1;
         $objectionDoc->user_id = $userId;
         $objectionDoc->date = Carbon::now();
         $objectionDoc->created_at = Carbon::now();

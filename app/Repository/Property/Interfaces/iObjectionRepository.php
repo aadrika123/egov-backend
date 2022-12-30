@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 interface iObjectionRepository
 {
     public function applyObjection($request);
-    public function assesmentDetails($request);
 
     public function getDetailsById($req);                       // Get Objection Details By ID
     public function postNextLevel($req);

@@ -5,6 +5,7 @@ namespace App\Models\Workflows;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class WfWorkflowrolemap extends Model
 {
@@ -23,6 +24,8 @@ class WfWorkflowrolemap extends Model
         $data->backward_role_id = $req->backwardRoleId;
         $data->is_initiator = $req->isInitiator;
         $data->is_finisher = $req->isFinisher;
+        $data->show_full_list = $req->showFullList;
+        $data->escalation = $req->escalation;
         $data->created_by = $createdBy;
         $data->stamp_date_time = Carbon::now();
         $data->created_at = Carbon::now();
@@ -41,7 +44,8 @@ class WfWorkflowrolemap extends Model
         $data->backward_role_id = $req->backwardRoleId;
         $data->is_initiator = $req->isInitiator;
         $data->is_finisher = $req->isFinisher;
-        $data->is_suspended = $req->isSuspended;
+        $data->show_full_list = $req->showFullList;
+        $data->escalation = $req->escalation;
         $data->save();
     }
 
@@ -50,9 +54,13 @@ class WfWorkflowrolemap extends Model
      */
     public function listbyId($req)
     {
-        $data = WfWorkflowrolemap::where('id', $req->id)
-            ->where('is_suspended', false)
-            ->get();
+        $data = WfWorkflowrolemap::select('*')
+            ->join('wf_workflows', 'wf_workflows.id', 'wf_workflowrolemaps.workflow_id')
+            ->join('wf_masters', 'wf_masters.id', 'wf_workflows.wf_master_id')
+            ->join('wf_roles', 'wf_roles.id', 'wf_workflowrolemaps.wf_role_id')
+            ->where('wf_workflowrolemaps.is_suspended', false)
+            ->where('wf_workflowrolemaps.id', $req->id)
+            ->first();
         return $data;
     }
 
@@ -61,8 +69,23 @@ class WfWorkflowrolemap extends Model
      */
     public function roleMaps()
     {
-        $data = WfWorkflowrolemap::where('is_suspended', false)
-            ->orderByDesc('id')
+        $data = DB::table('wf_workflowrolemaps')
+            ->select(
+                'wf_workflowrolemaps.*',
+                'r.role_name as forward_role_name',
+                'rr.role_name as backward_role_name',
+                'wf_roles.role_name',
+                'wf_masters.workflow_name',
+                'ulb_name'
+            )
+            ->join('wf_workflows', 'wf_workflows.id', 'wf_workflowrolemaps.workflow_id')
+            ->join('wf_masters', 'wf_masters.id', 'wf_workflows.wf_master_id')
+            ->leftJoin('wf_roles as r', 'wf_workflowrolemaps.forward_role_id', '=', 'r.id')
+            ->leftJoin('wf_roles as rr', 'wf_workflowrolemaps.backward_role_id', '=', 'rr.id')
+            ->join('wf_roles', 'wf_roles.id', 'wf_workflowrolemaps.wf_role_id')
+            ->leftjoin('ulb_masters', 'ulb_masters.id', 'wf_workflows.ulb_id')
+            ->where('wf_workflowrolemaps.is_suspended', false)
+            ->orderByDesc('wf_workflowrolemaps.id')
             ->get();
         return $data;
     }
