@@ -24,11 +24,12 @@ trait WaterTrait
         return WaterApplication::select(
             'water_applications.id',
             'water_applications.application_no',
-            'a.id as owner_id',
+            'water_applicants.id as owner_id',
             'water_applicants.applicant_name as owner_name',
             'water_applications.ward_id',
+            'water_connection_through_mstrs.connection_through',
+            'water_connection_type_mstrs.connection_type',
             'u.ward_name as ward_no',
-            'a.prop_type_mstr_id',
             'water_applications.workflow_id',
             'water_applications.current_role as role_id',
             'water_applications.apply_date',
@@ -36,6 +37,8 @@ trait WaterTrait
             ->leftJoin('prop_properties as a', 'a.id', '=', 'water_applications.prop_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'water_applications.ward_id')
             ->join('water_applicants','water_applicants.application_id','=','water_applications.id')
+            ->join('water_connection_through_mstrs','water_connection_through_mstrs.id','=','water_applications.connection_through')
+            ->join('water_connection_type_mstrs','water_connection_type_mstrs.id','=','water_applications.connection_type_id')
             ->where('water_applications.status', 1)
             ->where('water_applications.ulb_id', $ulbId);
     }
