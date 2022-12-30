@@ -90,10 +90,6 @@ Route::controller(UlbController::class)->group(function () {
     Route::post('city/state/ulb-id', 'getCityStateByUlb');
 });
 
-Route::controller(WorkflowMap::class)->group(function(){
-    Route::post('workflow/getWardByUlb', 'getWardByUlb');
-});
-
 // Inside Middleware Routes with API Authenticate 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     /**
@@ -359,7 +355,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('workflow/getUserById', 'getUserById');
         Route::post('workflow/getWorkflowNameByUlb', 'getWorkflowNameByUlb');
         Route::post('workflow/getRoleByUlb', 'getRoleByUlb');
-        
+        Route::post('workflow/getWardByUlb', 'getWardByUlb');
         Route::post('workflow/getUserByRole', 'getUserByRole');
 
         //mapping
