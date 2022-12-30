@@ -116,7 +116,11 @@ class WorkflowMap implements iWorkflowMapRepository
             'ulbId' => 'required|int'
         ]);
 
-        $workkFlow = UlbWardMaster::select('*')
+        $workkFlow = UlbWardMaster::select(
+            'id',
+            'ulb_id',
+
+        )
             ->where('ulb_id', $request->ulbId)
             ->get();
         return responseMsg(true, "Data Retrived", $workkFlow);
