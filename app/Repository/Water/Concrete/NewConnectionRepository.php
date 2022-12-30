@@ -39,13 +39,13 @@ class NewConnectionRepository implements iNewConnection
     use Workflow;
     use Ward;
     use WaterTrait;
-    private $_executiveOfficer;
+    private $_dealingAssistent;
     private $_vacantLand;
     private $_waterWorkflowId;
 
     public function __construct()
     {
-        $this->_executiveOfficer = Config::get('workflow-constants.EXECUTIVE_OFFICER_WF_ID');
+        $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
         $this->_vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
         $this->_waterWorkflowId = Config::get('workflow-constants.WATER_MASTER_ID');
     }
@@ -76,7 +76,6 @@ class NewConnectionRepository implements iNewConnection
         $workflowID = $this->_waterWorkflowId;
         $owner = $req['owners'];
         $ulbId = $req->ulbId;
-        $userType = authUser()->user_type;
 
         # get initiater and finisher
         $ulbWorkflowObj = new WfWorkflow();
@@ -84,14 +83,8 @@ class NewConnectionRepository implements iNewConnection
         $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
         $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
         $finisherRoleId = DB::select($refFinisherRoleId);
-        switch ($userType) {
-            case ("Citizen"):
-                $initiatorRoleId = $this->_executiveOfficer;
-                break;
-            default:
-                $initiator = DB::select($refInitiatorRoleId);
-                $initiatorRoleId = collect($initiator)->first()->role_id;
-        }
+        $initiator = DB::select($refInitiatorRoleId);
+        $initiatorRoleId = collect($initiator)->first()->role_id;
 
         # Generating Demand 
         $objCall = new WaterNewConnection();
@@ -257,7 +250,7 @@ class NewConnectionRepository implements iNewConnection
 
         $waterList = $this->getWaterApplicatioList($ulbId,)
             ->whereIn('water_applications.current_role', $roleIds)
-            ->whereIn('a.ward_mstr_id', $occupiedWards)
+            ->whereIn('water_applications.ward_id', $occupiedWards)
             ->orderByDesc('water_applications.id')
             ->get();
 
@@ -280,28 +273,28 @@ class NewConnectionRepository implements iNewConnection
      */
     public function waterOutbox()
     {
-            $mWfRoleUser = new WfRoleusermap();
-            $mWfWardUser = new WfWardUser();
+        $mWfRoleUser = new WfRoleusermap();
+        $mWfWardUser = new WfWardUser();
 
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
-            $workflowRoles = $this->getRoleIdByUserId($userId);
-            $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
-                return $value->wf_role_id;
-            });
+        $userId = auth()->user()->id;
+        $ulbId = auth()->user()->ulb_id;
+        $workflowRoles = $this->getRoleIdByUserId($userId);
+        $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
+            return $value->wf_role_id;
+        });
 
-            $refWard = $mWfWardUser->getWardsByUserId($userId);
-            $wardId = $refWard->map(function ($value, $key) {
-                return $value->ward_id;
-            });
+        $refWard = $mWfWardUser->getWardsByUserId($userId);
+        $wardId = $refWard->map(function ($value, $key) {
+            return $value->ward_id;
+        });
 
-            $waterList = $this->getWaterApplicatioList($ulbId)
-                ->whereNotIn('water_applications.current_role', $roleId)
-                ->whereIn('a.ward_mstr_id', $wardId)
-                ->orderByDesc('water_applications.id')
-                ->get();
+        $waterList = $this->getWaterApplicatioList($ulbId)
+            ->whereNotIn('water_applications.current_role', $roleId)
+            ->whereIn('a.ward_mstr_id', $wardId)
+            ->orderByDesc('water_applications.id')
+            ->get();
 
-            return responseMsgs(true, "Outbox List", remove_null($waterList), '', '01', '.ms', 'Post', '');
+        return responseMsgs(true, "Outbox List", remove_null($waterList), '', '01', '.ms', 'Post', '');
     }
 
 
@@ -324,7 +317,7 @@ class NewConnectionRepository implements iNewConnection
             $objTrack = new WorkflowTrack();
             $objTrack->saveTrack($req);
 
-            // objection Application Update Current Role Updation
+            # objection Application Update Current Role Updation
             $objection = WaterApplication::find($req->applicationId);
             $objection->current_role = $req->receiverRoleId;
             $objection->save();

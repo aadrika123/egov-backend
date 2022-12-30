@@ -46,11 +46,13 @@ class WaterNewConnection implements IWaterNewConnection
     protected $_modelWard;
     protected $_parent;
     protected $_shortUlbName;
+    private $_dealingAssistent;
 
     public function __construct()
     {
         $this->_modelWard = new ModelWard();
         $this->_parent = new CommonFunction();
+        $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
     }
     /**
      * | Search the Citizen Related Water Application
@@ -272,7 +274,12 @@ class WaterNewConnection implements IWaterNewConnection
                 $val->paid_status = true;
                 $val->update();
             }
-            
+
+            WaterApplication::where('id', $applicationId)
+                ->update([
+                    'current_role' => $this->_dealingAssistent
+                ]);
+
             $application->payment_status = true;
             $application->update();
             DB::commit();
