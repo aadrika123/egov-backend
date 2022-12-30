@@ -77,6 +77,7 @@ class WaterNewConnection implements IWaterNewConnection
                 "water_applications.address",
                 "water_applications.payment_status",
                 "water_applications.doc_status",
+                "water_applications.ward_id",
                 "charges.amount",
                 DB::raw("'connection' AS type,
                                         water_applications.apply_date::date AS apply_date")

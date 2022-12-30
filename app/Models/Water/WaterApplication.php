@@ -64,7 +64,7 @@ class WaterApplication extends Model
             $saveNewApplication->saf_no = $req->saf_no;
         }
 
-        $saveNewApplication->save();
+       $saveNewApplication->save();
 
         return $saveNewApplication->id;
     }
