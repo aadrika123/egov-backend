@@ -83,8 +83,7 @@ class NewConnectionRepository implements iNewConnection
         $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
         $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
         $finisherRoleId = DB::select($refFinisherRoleId);
-        $initiator = DB::select($refInitiatorRoleId);
-        $initiatorRoleId = collect($initiator)->first()->role_id;
+        $initiatorRoleId = DB::select($refInitiatorRoleId);
 
         # Generating Demand 
         $objCall = new WaterNewConnection();
