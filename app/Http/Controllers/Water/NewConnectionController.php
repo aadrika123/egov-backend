@@ -223,4 +223,15 @@ class NewConnectionController extends Controller
             return responseMsg(false, $error->getMessage(), "");
         }
     }
+
+    // Water Application details for the view in workflow
+    public function getApplicationsDetails(Request $request)
+    {
+        try{
+            return $this->newConnection->getApplicationsDetails($request);
+        }catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),"");
+        }
+    }
 }

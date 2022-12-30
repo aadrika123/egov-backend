@@ -107,7 +107,7 @@ class NewConnectionRepository implements iNewConnection
                 return $checkResponse;
             }
         }
-        
+
         $objNewApplication = new WaterApplication();
         $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId);
 
@@ -397,5 +397,38 @@ class NewConnectionRepository implements iNewConnection
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
+    }
+
+
+    /**
+     * |------------------------------ Get Application details --------------------------------|
+     */
+    public function getApplicationsDetails($request)
+    {
+        $applicationDetails = WaterApplication::select(
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name',
+            'water_applications.application_no',
+            'water_connection_type_mstrs.connection_type',
+            'water_property_type_mstrs.property_type',
+            'water_applications.category',
+            'water_applications.area_sqft',
+            'water_applications.address',
+            'water_applications.landmark',
+            'water_applications.pin',
+            'water_applications.elec_k_no',
+            'water_applications.elec_category',
+            'water_applications.elec_bind_book_no',
+            'water_applications.apply_date',
+        )
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
+            ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
+            ->join('water_property_type_mstrs','water_property_type_mstrs.id','=','water_applications.property_type_id')
+            ->where('water_applications.id', $request->id)
+            ->where('water_applications.status', 1)
+            ->get()
+            ->first();
+        return responseMsgs(true, "listed Data!", $applicationDetails, "", "02", ".ms", "POST", "");
     }
 }
