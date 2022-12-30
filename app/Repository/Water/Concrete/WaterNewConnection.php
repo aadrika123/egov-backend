@@ -78,6 +78,7 @@ class WaterNewConnection implements IWaterNewConnection
                 "water_applications.payment_status",
                 "water_applications.doc_status",
                 "water_applications.ward_id",
+                "ulb_ward_masters.ward_name",
                 "charges.amount",
                 DB::raw("'connection' AS type,
                                         water_applications.apply_date::date AS apply_date")
@@ -105,6 +106,7 @@ class WaterNewConnection implements IWaterNewConnection
                     }
                 )
                 // ->whereNotIn("status",[0,6,7])
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
                 ->where("water_applications.user_id", $refUserId)
                 // ->where("water_applications.ulb_id", $refUlbId)
                 ->orderbydesc('id')
