@@ -421,6 +421,7 @@ class NewConnectionRepository implements iNewConnection
             'water_applications.elec_k_no',
             'water_applications.elec_category',
             'water_applications.elec_bind_book_no',
+            'water_applications.elec_account_no',
             'water_applications.apply_date',
             'water_applications.current_role'
         )
