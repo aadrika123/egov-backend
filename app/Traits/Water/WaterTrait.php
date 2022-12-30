@@ -25,7 +25,7 @@ trait WaterTrait
             'water_applications.id',
             'water_applications.application_no',
             'a.id as owner_id',
-            'a.applicant_name as owner_name',
+            'water_applicants.applicant_name as owner_name',
             'water_applications.ward_id',
             'u.ward_name as ward_no',
             'a.prop_type_mstr_id',
@@ -35,6 +35,7 @@ trait WaterTrait
         )
             ->leftJoin('prop_properties as a', 'a.id', '=', 'water_applications.prop_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'water_applications.ward_id')
+            ->join('water_applicants','water_applicants.application_id','=','water_applications.id')
             ->where('water_applications.status', 1)
             ->where('water_applications.ulb_id', $ulbId);
     }
