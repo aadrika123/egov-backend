@@ -407,7 +407,10 @@ class NewConnectionRepository implements iNewConnection
     public function getApplicationsDetails($request)
     {
         $ownerDetails = WaterApplication::select(
-            'water_applicants.applicant_name as owner_name'
+            'water_applicants.applicant_name as owner_name',
+            'guardian_name',
+            'mobile_no',
+            'email'
         )
             ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
             ->where('water_applications.id', $request->id)
@@ -415,12 +418,8 @@ class NewConnectionRepository implements iNewConnection
             ->get();
 
         $applicantDetails = collect($ownerDetails)->map(function ($value, $key) {
-            return $value['owner_name'];
+            return $value;
         });
-
-        if (!$ownerDetails) {
-            return responseMsg(false, "Ownere Not Found!", $request->id);
-        }
 
         $applicationDetails = WaterApplication::select(
             'ulb_ward_masters.ward_name',
@@ -452,11 +451,12 @@ class NewConnectionRepository implements iNewConnection
             ->where('water_applications.id', $request->id)
             ->where('water_applications.status', 1)
             ->get();
-        if ($applicationDetails) {
-            (collect($applicationDetails)->first())['owner_name'] = $applicantDetails;
-            $returnDetails = collect($applicationDetails)->first();
-            return responseMsgs(true, "listed Data!", remove_null($returnDetails), "", "02", ".ms", "POST", "");
+
+        if (collect($applicationDetails)->first() == null) {
+            return responseMsg(false, "Data Not found!", $request->id);
         }
-        return responseMsg(false, "Data Not found!", $request->id);
+        (collect($applicationDetails)->first())['owner_details'] = $applicantDetails;
+        $returnDetails = collect($applicationDetails)->first();
+        return responseMsgs(true, "listed Data!", remove_null($returnDetails), "", "02", ".ms", "POST", "");
     }
 }
