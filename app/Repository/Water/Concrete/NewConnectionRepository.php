@@ -454,8 +454,8 @@ class NewConnectionRepository implements iNewConnection
             ->get();
         if ($applicationDetails) {
             (collect($applicationDetails)->first())['owner_name'] = $applicantDetails;
-            return collect($applicationDetails);
-            return responseMsgs(true, "listed Data!", remove_null($applicationDetails), "", "02", ".ms", "POST", "");
+            $returnDetails = collect($applicationDetails)->first();
+            return responseMsgs(true, "listed Data!", remove_null($returnDetails), "", "02", ".ms", "POST", "");
         }
         return responseMsg(false, "Data Not found!", $request->id);
     }
