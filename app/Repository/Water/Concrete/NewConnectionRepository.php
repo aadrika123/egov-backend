@@ -25,6 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Exists;
+use Razorpay\Api\Collection;
 
 /**
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
@@ -405,6 +406,21 @@ class NewConnectionRepository implements iNewConnection
      */
     public function getApplicationsDetails($request)
     {
+        $ownerDetails = WaterApplication::select(
+            'water_applicants.applicant_name as owner_name',
+            'guardian_name',
+            'mobile_no',
+            'email'
+        )
+            ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
+            ->where('water_applications.id', $request->id)
+            ->where('water_applications.status', 1)
+            ->get();
+
+        $applicantDetails = collect($ownerDetails)->map(function ($value, $key) {
+            return $value;
+        });
+
         $applicationDetails = WaterApplication::select(
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
@@ -425,20 +441,22 @@ class NewConnectionRepository implements iNewConnection
             'water_applications.elec_account_no',
             'water_applications.apply_date',
             'water_applications.current_role',
-            'water_connection_through_mstrs.connection_through'
+            'water_connection_through_mstrs.connection_through',
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
-            ->join('water_connection_through_mstrs','water_connection_through_mstrs.id','=','water_applications.connection_through')
+            ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_applications.property_type_id')
             ->where('water_applications.id', $request->id)
             ->where('water_applications.status', 1)
-            ->get()
-            ->first();
-        if ($applicationDetails) {
-            return responseMsgs(true, "listed Data!", remove_null($applicationDetails), "", "02", ".ms", "POST", "");
+            ->get();
+
+        if (collect($applicationDetails)->first() == null) {
+            return responseMsg(false, "Data Not found!", $request->id);
         }
-        return responseMsg(false, "Data Not Found!", $request->id);
+        (collect($applicationDetails)->first())['owner_details'] = $applicantDetails;
+        $returnDetails = collect($applicationDetails)->first();
+        return responseMsgs(true, "listed Data!", remove_null($returnDetails), "", "02", ".ms", "POST", "");
     }
 }
