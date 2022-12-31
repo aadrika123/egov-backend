@@ -340,30 +340,46 @@ class NewConnectionRepository implements iNewConnection
         | Serial No : 05
         | Unchecked
      */
-    public function waterSpecialInbox()
+    public function waterSpecialInbox($request)
     {
-        try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-            $wardId = $this->getWardByUserId($userId);
+        $mWfWardUser = new WfWardUser();
+        $userId = authUser()->id;
+        $ulbId = $request->ulb_id;
 
-            $occupiedWards = collect($wardId)->map(function ($ward) {                                   // Get Occupied Ward of the User
-                return $ward->ward_id;
-            });
-
-            $waterList = $this->getWaterApplicatioList($ulbId)                                          // Get Concessions
-                ->where('water_applications.is_escalate', true)
-                ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('water_applications.id')
-                ->get();
-
-            return responseMsg(true, "Inbox List", remove_null($waterList), "", "", '01', '.ms', 'Post', '');
-        } catch (Exception $error) {
-            return responseMsg(false, $error->getMessage(), "");
-        }
+        $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
+        $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
+            return $item->ward_id;
+        });
+        $safData = $this->getWaterApplicatioList($ulbId)                      // Repository function to get SAF Details
+            ->where('water_applications.is_escalate', 1)
+            ->whereIn('ward_mstr_id', $wardId)
+            ->orderByDesc('id')
+            ->get();
+        return responseMsgs(true, "Data Fetched", remove_null($safData), "010107", "1.0", "251ms", "POST", "");
     }
 
+
+    /**
+     * |--------------------------- post Escalate -----------------------------|
+     * | @param request
+     * | @var userId
+     * | @var applicationNo
+     * | @var 
+     */
+    public function postEscalate($request)
+    {
+        try {
+            $userId = auth()->user()->id;
+            $applicationNo = $request->applicationNo;
+            $applicationsData = WaterApplication::find($applicationNo);
+            $applicationsData->is_escalate = $request->escalateStatus;
+            $applicationsData->escalate_by = $userId;
+            $applicationsData->save();
+            return responseMsgs(true, $request->escalateStatus == 1 ? 'Saf is Escalated' : "Saf is removed from Escalated", '', "", "1.0", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
 
 
     /**
