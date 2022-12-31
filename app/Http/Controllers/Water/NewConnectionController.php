@@ -218,6 +218,13 @@ class NewConnectionController extends Controller
     public function postNextLevel(Request $request)
     {
         try {
+            $request->validate([
+                'applicationId' => 'required',
+                'senderRoleId' => 'required',
+                'receiverRoleId' => 'required',
+                'verificationStatus' => 'required',
+                
+            ]);
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");

@@ -403,6 +403,13 @@ class NewConnectionRepository implements iNewConnection
 
     /**
      * |------------------------------ Get Application details --------------------------------|
+     * | @param request
+     * | @var ownerDetails
+     * | @var applicantDetails
+     * | @var applicationDetails
+     * | @var returnDetails
+     * | @return returnDetails : list of individual applications
+        | Serial No : 07
      */
     public function getApplicationsDetails($request)
     {
@@ -442,6 +449,8 @@ class NewConnectionRepository implements iNewConnection
             'water_applications.apply_date',
             'water_applications.current_role',
             'water_connection_through_mstrs.connection_through',
+            'water_applications.holding_no',
+            'water_applications.saf_no'
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
