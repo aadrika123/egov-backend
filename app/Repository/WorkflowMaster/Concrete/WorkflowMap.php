@@ -275,6 +275,8 @@ class WorkflowMap implements iWorkflowMapRepository
         $users = WfWorkflow::select('wf_masters.workflow_name', 'wf_workflows.id')
             ->join('wf_masters', 'wf_masters.id', '=', 'wf_workflows.wf_master_id')
             ->where('wf_workflows.ulb_id', $request->ulbId)
+            ->where('wf_masters.is_suspended',  false)
+            ->where('wf_workflows.is_suspended',  false)
             ->get();
         return responseMsg(true, "Data Retrived", $users);
     }
