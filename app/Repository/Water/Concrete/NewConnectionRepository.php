@@ -316,7 +316,7 @@ class NewConnectionRepository implements iNewConnection
             $objTrack->saveTrack($req);
 
             # objection Application Update Current Role Updation
-            $objection = WaterApplication::find($req->applicationId);
+            $objection = WaterApplication::find($req->appId);
             $objection->current_role = $req->receiverRoleId;
             $objection->save();
 
