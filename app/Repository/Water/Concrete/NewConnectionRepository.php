@@ -365,6 +365,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var userId
      * | @var applicationNo
      * | @var 
+        | Serial No : 00 / Route
      */
     public function postEscalate($request)
     {
@@ -418,6 +419,54 @@ class NewConnectionRepository implements iNewConnection
 
 
     /**
+     * |------------------------------ Approval Rejection Water -------------------------------|
+     * | @param request 
+        | Serial No : 00 / Route
+     */
+    public function approvalRejectionWater($request)
+    {
+        $waterDetails = WaterApplication::find($request->applicationNo);
+        if ($waterDetails->finisher_role_id != $request->roleId) {
+            return responseMsg(false, "Forbidden Access!", "");
+        }
+        DB::beginTransaction();
+            // Approval
+            if ($request->status == 1) {
+                // Harvesting Application replication
+                $approvedWater = WaterApplication::query()
+                    ->where('id', $request->applicationNo)
+                    ->first();
+
+                $approvedWater = $approvedWater->replicate();
+                $approvedWater->setTable('water_approval_application_details');
+                $approvedWater->id = $approvedWater->id;
+                $approvedWater->save();
+                $approvedWater->delete();
+
+                $msg = "Application Successfully Approved !!";
+            }
+            // Rejection
+            if ($request->status == 0) {
+                // Harvesting Application replication
+                $rejectedWater = WaterApplication::query()
+                    ->where('id', $request->harvestingId)
+                    ->first();
+
+                $rejectedWater = $rejectedWater->replicate();
+                $rejectedWater->setTable('water_rejection_application_details');
+                $rejectedWater->id = $rejectedWater->id;
+                $rejectedWater->save();
+                $rejectedWater->delete();
+                $msg = "Application Successfully Rejected !!";
+            }
+            DB::commit();
+            return responseMsgs(true, $msg, "", '', 01, '.ms', 'Post', $request->deviceId);
+    }
+
+
+
+
+    /**
      * |------------------------------ Get Application details --------------------------------|
      * | @param request
      * | @var ownerDetails
@@ -445,29 +494,15 @@ class NewConnectionRepository implements iNewConnection
         });
 
         $applicationDetails = WaterApplication::select(
+            'water_applications.*',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
-            'water_applications.application_no',
             'water_connection_type_mstrs.connection_type',
             'water_property_type_mstrs.property_type',
-            'water_applications.flat_count',
-            'water_applications.owner_type',
-            'water_applications.category',
-            'water_applications.area_sqft',
-            'water_applications.address',
-            'water_applications.landmark',
-            'water_applications.pipeline_type_id',
-            'water_applications.pin',
-            'water_applications.elec_k_no',
-            'water_applications.elec_category',
-            'water_applications.elec_bind_book_no',
-            'water_applications.elec_account_no',
-            'water_applications.apply_date',
-            'water_applications.current_role',
             'water_connection_through_mstrs.connection_through',
-            'water_applications.holding_no',
-            'water_applications.saf_no'
+            'wf_roles.role_name AS current_role_name'
         )
+            ->join('wf_roles','wf_roles.id','=','water_applications.current_role')
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
