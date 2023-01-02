@@ -53,6 +53,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get-applications-details','getApplicationsDetails');                               //
         Route::post('water-special-inbox','waterSpecialInbox');                                         //
         Route::post('post-escalate','postEscalate');                                                    //
+        Route::post('get-water-doc-details','getWaterDocDetails');                                      //
     });
 });
 

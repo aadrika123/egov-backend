@@ -430,37 +430,37 @@ class NewConnectionRepository implements iNewConnection
             return responseMsg(false, "Forbidden Access!", "");
         }
         DB::beginTransaction();
-            // Approval
-            if ($request->status == 1) {
-                // Harvesting Application replication
-                $approvedWater = WaterApplication::query()
-                    ->where('id', $request->applicationNo)
-                    ->first();
+        // Approval
+        if ($request->status == 1) {
+            // Harvesting Application replication
+            $approvedWater = WaterApplication::query()
+                ->where('id', $request->applicationNo)
+                ->first();
 
-                $approvedWater = $approvedWater->replicate();
-                $approvedWater->setTable('water_approval_application_details');
-                $approvedWater->id = $approvedWater->id;
-                $approvedWater->save();
-                $approvedWater->delete();
+            $approvedWater = $approvedWater->replicate();
+            $approvedWater->setTable('water_approval_application_details');
+            $approvedWater->id = $approvedWater->id;
+            $approvedWater->save();
+            $approvedWater->delete();
 
-                $msg = "Application Successfully Approved !!";
-            }
-            // Rejection
-            if ($request->status == 0) {
-                // Harvesting Application replication
-                $rejectedWater = WaterApplication::query()
-                    ->where('id', $request->harvestingId)
-                    ->first();
+            $msg = "Application Successfully Approved !!";
+        }
+        // Rejection
+        if ($request->status == 0) {
+            // Harvesting Application replication
+            $rejectedWater = WaterApplication::query()
+                ->where('id', $request->harvestingId)
+                ->first();
 
-                $rejectedWater = $rejectedWater->replicate();
-                $rejectedWater->setTable('water_rejection_application_details');
-                $rejectedWater->id = $rejectedWater->id;
-                $rejectedWater->save();
-                $rejectedWater->delete();
-                $msg = "Application Successfully Rejected !!";
-            }
-            DB::commit();
-            return responseMsgs(true, $msg, "", '', 01, '.ms', 'Post', $request->deviceId);
+            $rejectedWater = $rejectedWater->replicate();
+            $rejectedWater->setTable('water_rejection_application_details');
+            $rejectedWater->id = $rejectedWater->id;
+            $rejectedWater->save();
+            $rejectedWater->delete();
+            $msg = "Application Successfully Rejected !!";
+        }
+        DB::commit();
+        return responseMsgs(true, $msg, "", '', 01, '.ms', 'Post', $request->deviceId);
     }
 
 
@@ -502,7 +502,7 @@ class NewConnectionRepository implements iNewConnection
             'water_connection_through_mstrs.connection_through',
             'wf_roles.role_name AS current_role_name'
         )
-            ->join('wf_roles','wf_roles.id','=','water_applications.current_role')
+            ->join('wf_roles', 'wf_roles.id', '=', 'water_applications.current_role')
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
@@ -518,5 +518,72 @@ class NewConnectionRepository implements iNewConnection
         (collect($applicationDetails)->first())['owner_details'] = $applicantDetails;
         $returnDetails = collect($applicationDetails)->first();
         return responseMsgs(true, "listed Data!", remove_null($returnDetails), "", "02", ".ms", "POST", "");
+    }
+
+
+    /**
+     * |-------------------------------- get the document details ---------------------------|
+     * |
+     */
+    public function getWaterDocDetails($request)
+    {
+        try {
+            $applicationNo = null;
+            $mUploadDocument = (array)null;
+            $applicationNo   = $request->applicationNo;
+
+            $refApplicationNo = WaterApplication::where('application_no', $applicationNo)->get();
+            if (!$refApplicationNo) {
+                throw new Exception("Data Not Found");
+            }
+
+            $refApplicationId = collect($refApplicationNo)->first();
+            $mUploadDocument = $this->getWaterDocuments($refApplicationId->id)
+                ->map(function ($val) {
+                    if (isset($val["doc_name"])) {
+                        $path = $this->readDocumentPath($val["doc_name"]);
+                        $val["doc_path"] = !empty(trim($val["doc_name"])) ? $path : null;
+                    }
+                    return $val;
+                });
+            $data["uploadDocument"] = $mUploadDocument;
+            return responseMsg(true, "", $data);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+
+    /**
+     * |
+     */
+    public function getWaterDocuments($request)
+    {
+        $docDetails = WaterApplicantDoc::select(
+            "water_applicant_docs.id",
+            "water_applicant_docs.doc_name",
+            "water_applicant_docs.doc_for",
+            "water_applicant_docs.remarks",
+            "water_applicant_docs.document_id",
+            "water_applicant_docs.verify_status",
+            'water_param_document_types.document_name',
+
+        )
+            ->join('water_param_document_types', 'water_param_document_types.id', '=', 'water_applicant_docs.document_id')
+            ->where('water_applicant_docs.application_id', $request)
+            ->where('water_applicant_docs.status', 1)
+            ->where('water_param_document_types.status', 1)
+            ->orderBy('water_applicant_docs.id', 'desc')
+            ->get();
+        return remove_null($docDetails);
+    }
+
+    /**
+     * |
+     */
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url') . '/api/getImageLink?path=' . $path);
+        return $path;
     }
 }

@@ -267,4 +267,17 @@ class NewConnectionController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    // View Uploaded Documents
+    public function getWaterDocDetails(Request $request)
+    {
+        try {
+            $request->validate([
+                "applicationNo" => "required",
+            ]);
+            return $this->newConnection->getWaterDocDetails($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 }

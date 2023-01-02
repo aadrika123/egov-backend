@@ -19,4 +19,5 @@ interface iNewConnection
    public function getApplicationsDetails($request);                    // Get the application list for the workflow
    public function waterSpecialInbox($request);                         // Weter Specilal inbox
    public function postEscalate($request);
+   public function getWaterDocDetails($request);
 }
