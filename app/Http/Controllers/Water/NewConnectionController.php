@@ -223,7 +223,7 @@ class NewConnectionController extends Controller
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
                 'verificationStatus' => 'required',
-
+                'comment' => "required"
             ]);
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
