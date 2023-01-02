@@ -218,6 +218,13 @@ class NewConnectionController extends Controller
     public function postNextLevel(Request $request)
     {
         try {
+            $request->validate([
+                'applicationId' => 'required',
+                'senderRoleId' => 'required',
+                'receiverRoleId' => 'required',
+                'verificationStatus' => 'required',
+
+            ]);
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
@@ -232,6 +239,30 @@ class NewConnectionController extends Controller
                 'id' => 'required'
             ]);
             return $this->newConnection->getApplicationsDetails($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Water Special Inbox
+    public function waterSpecialInbox(Request $request)
+    {
+        try {
+            return $this->newConnection->waterSpecialInbox($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // post escalated
+    public function postEscalate(Request $request)
+    {
+        try {
+            $request->validate([
+                "escalateStatus" => "required|int",
+                "applicationNo" => "required|int",
+            ]);
+            return $this->newConnection->postEscalate($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
