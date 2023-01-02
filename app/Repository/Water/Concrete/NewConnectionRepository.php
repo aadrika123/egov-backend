@@ -338,7 +338,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var waterList
      * |
         | Serial No : 05
-        | Unchecked
+        | Unchecked 
      */
     public function waterSpecialInbox($request)
     {
@@ -365,7 +365,8 @@ class NewConnectionRepository implements iNewConnection
      * | @var userId
      * | @var applicationNo
      * | @var 
-        | Serial No : 00 / Route
+        | Serial No : 00 
+        | Unchecked
      */
     public function postEscalate($request)
     {
@@ -396,22 +397,25 @@ class NewConnectionRepository implements iNewConnection
         try {
             $userId = auth()->user()->id;
 
-            $docStatus = WaterApplicantDoc::find($req->documentId);
-            $docStatus->remarks = $req->docRemarks;
-            $docStatus->verified_by_emp_id = $userId;
-            $docStatus->verified_on = Carbon::now();
-            $docStatus->updated_at = Carbon::now();
-
             if ($req->docStatus == 'Verified') {                        //<------------ (here data type small int)        
-                $docStatus->verify_status = 1;
+                $docStatus = 1;
+                $msg = "Doc Status Verified!";
             }
             if ($req->docStatus == 'Rejected') {                        //<------------ (here data type small int)
-                $docStatus->verify_status = 2;
+                $docStatus = 2;
+                $msg = "Doc Status Rejected!";
             }
 
-            $docStatus->save();
+            WaterApplicantDoc::where('id', $req->id)
+                ->update([
+                    'remarks' => $req->docRemarks ?? null,
+                    'verify_by_emp_id' => $userId,
+                    'verified_on' =>  Carbon::now(),
+                    'updated_at' =>  Carbon::now(),
+                    'verify_status' => $docStatus
+                ]);
 
-            return responseMsg(true, "Successfully Done", '');
+            return responseMsg(true, $msg, '');
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
@@ -421,6 +425,7 @@ class NewConnectionRepository implements iNewConnection
     /**
      * |------------------------------ Approval Rejection Water -------------------------------|
      * | @param request 
+     * | @var waterDetails
         | Serial No : 00 / Route
      */
     public function approvalRejectionWater($request)
@@ -432,7 +437,6 @@ class NewConnectionRepository implements iNewConnection
         DB::beginTransaction();
         // Approval
         if ($request->status == 1) {
-            // Harvesting Application replication
             $approvedWater = WaterApplication::query()
                 ->where('id', $request->applicationNo)
                 ->first();
@@ -447,7 +451,6 @@ class NewConnectionRepository implements iNewConnection
         }
         // Rejection
         if ($request->status == 0) {
-            // Harvesting Application replication
             $rejectedWater = WaterApplication::query()
                 ->where('id', $request->harvestingId)
                 ->first();
@@ -475,6 +478,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var returnDetails
      * | @return returnDetails : list of individual applications
         | Serial No : 07
+        | Workinig
      */
     public function getApplicationsDetails($request)
     {
@@ -523,7 +527,15 @@ class NewConnectionRepository implements iNewConnection
 
     /**
      * |-------------------------------- get the document details ---------------------------|
-     * |
+     * | @param request
+     * | @var applicationNo
+     * | @var mUploadDocument
+     * | @var refApplicationNo
+     * | @var refApplicationId
+     * | @var data
+     * | @return data : document details
+        | Serial No : 09
+        | Working
      */
     public function getWaterDocDetails($request)
     {
@@ -534,7 +546,7 @@ class NewConnectionRepository implements iNewConnection
 
             $refApplicationNo = WaterApplication::where('application_no', $applicationNo)->get();
             if (!$refApplicationNo) {
-                throw new Exception("Data Not Found");
+                throw new Exception("Data Not Found!");
             }
 
             $refApplicationId = collect($refApplicationNo)->first();
@@ -547,7 +559,7 @@ class NewConnectionRepository implements iNewConnection
                     return $val;
                 });
             $data["uploadDocument"] = $mUploadDocument;
-            return responseMsg(true, "", $data);
+            return responseMsgs(true, "list Of Uploaded Doc!", $data, "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -555,9 +567,14 @@ class NewConnectionRepository implements iNewConnection
 
 
     /**
-     * |
+     * |---------------------------------- Calling function for the doc details from database -------------------------------|
+     * | @param applicationId
+     * | @var docDetails
+     * | @return docDetails : listed doc details according to application Id
+        | Serial No : 09.01
+        | Working
      */
-    public function getWaterDocuments($request)
+    public function getWaterDocuments($applicationId)
     {
         $docDetails = WaterApplicantDoc::select(
             "water_applicant_docs.id",
@@ -570,7 +587,7 @@ class NewConnectionRepository implements iNewConnection
 
         )
             ->join('water_param_document_types', 'water_param_document_types.id', '=', 'water_applicant_docs.document_id')
-            ->where('water_applicant_docs.application_id', $request)
+            ->where('water_applicant_docs.application_id', $applicationId)
             ->where('water_applicant_docs.status', 1)
             ->where('water_param_document_types.status', 1)
             ->orderBy('water_applicant_docs.id', 'desc')
@@ -579,11 +596,16 @@ class NewConnectionRepository implements iNewConnection
     }
 
     /**
-     * |
+     * |-------------------------------------- Calling function for the doc path -----------------------------------|
+     * | @param path
+     * | @var docPath
+     * | @return docPath : doc url
+        | Serial No : 09.02
+        | Working
      */
     public function readDocumentPath($path)
     {
-        $path = (config('app.url') . '/api/getImageLink?path=' . $path);
-        return $path;
+        $docPath = (config('app.url') . '/api/getImageLink?path=' . $path);
+        return $docPath;
     }
 }

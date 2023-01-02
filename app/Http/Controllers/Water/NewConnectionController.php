@@ -248,6 +248,9 @@ class NewConnectionController extends Controller
     public function waterSpecialInbox(Request $request)
     {
         try {
+            $request->validate([
+                'ulb_id' => 'required'
+            ]);
             return $this->newConnection->waterSpecialInbox($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -276,6 +279,20 @@ class NewConnectionController extends Controller
                 "applicationNo" => "required",
             ]);
             return $this->newConnection->getWaterDocDetails($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Check the document status
+    public function waterDocStatus(Request $request)
+    {
+        try {
+            $request->validate([
+                "id" => "required",
+                "docStatus" => "required"
+            ]);
+            return $this->newConnection->waterDocStatus($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

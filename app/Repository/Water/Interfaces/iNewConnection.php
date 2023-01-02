@@ -18,6 +18,8 @@ interface iNewConnection
    public function postNextLevel($req);                                 // Approval in the workflow level
    public function getApplicationsDetails($request);                    // Get the application list for the workflow
    public function waterSpecialInbox($request);                         // Weter Specilal inbox
-   public function postEscalate($request);
-   public function getWaterDocDetails($request);
+   public function postEscalate($request);                              // post the application to the level
+   public function getWaterDocDetails($request);                        // Get the applicant Uploaded doc 
+   public function waterDocStatus($request);                            // Change the doc status in the level
+   public function approvalRejectionWater($request);
 }
