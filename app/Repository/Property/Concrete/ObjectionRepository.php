@@ -424,50 +424,50 @@ class ObjectionRepository implements iObjectionRepository
         return responseMsgs(true, "Objection Details", remove_null($details), '010807', '01', '474ms-573', 'Post', '');
     }
 
-    /**
-     * | Forward Or BackWard Application
-     * | @param $req
-     */
-    public function postNextLevel($req)
-    {
-        try {
-            DB::beginTransaction();
+    // /**
+    //  * | Forward Or BackWard Application
+    //  * | @param $req
+    //  */
+    // public function postNextLevel($req)
+    // {
+    //     try {
+    //         DB::beginTransaction();
 
-            // $levelPending = new PropObjectionLevelpending();
-            // $levelPending->objection_id = $req->objectionId;
-            // $levelPending->sender_role_id = $req->senderRoleId;
-            // $levelPending->receiver_role_id = $req->receiverRoleId;
-            // $levelPending->sender_user_id = auth()->user()->id;
-            // $levelPending->save();
-            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs['workflowId'] = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
-            $metaReqs['refTableDotId'] = 'prop_active_objections.id';
-            $metaReqs['refTableIdValue'] = $req->objectionId;
-            $req->request->add($metaReqs);
+    //         // $levelPending = new PropObjectionLevelpending();
+    //         // $levelPending->objection_id = $req->objectionId;
+    //         // $levelPending->sender_role_id = $req->senderRoleId;
+    //         // $levelPending->receiver_role_id = $req->receiverRoleId;
+    //         // $levelPending->sender_user_id = auth()->user()->id;
+    //         // $levelPending->save();
+    //         $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+    //         $metaReqs['workflowId'] = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
+    //         $metaReqs['refTableDotId'] = 'prop_active_objections.id';
+    //         $metaReqs['refTableIdValue'] = $req->objectionId;
+    //         $req->request->add($metaReqs);
 
-            $track = new WorkflowTrack();
-            $track->saveTrack($req);
+    //         $track = new WorkflowTrack();
+    //         $track->saveTrack($req);
 
-            // objection Application Update Current Role Updation
-            $objection = PropActiveObjection::find($req->objectionId);
-            $objection->current_role = $req->receiverRoleId;
-            $objection->save();
+    //         // objection Application Update Current Role Updation
+    //         $objection = PropActiveObjection::find($req->objectionId);
+    //         $objection->current_role = $req->receiverRoleId;
+    //         $objection->save();
 
-            // Add Comment On Prop Level Pending  and Verification Status true
-            // $ObjLevelPending = new PropObjectionLevelpending();
-            // $commentOnlevel = $ObjLevelPending->getCurrentObjByReceiver($req->objectionId, $req->senderRoleId);
+    //         // Add Comment On Prop Level Pending  and Verification Status true
+    //         // $ObjLevelPending = new PropObjectionLevelpending();
+    //         // $commentOnlevel = $ObjLevelPending->getCurrentObjByReceiver($req->objectionId, $req->senderRoleId);
 
-            // $commentOnlevel->remarks = $req->comment;
-            // $commentOnlevel->verification_status = 1;
-            // $commentOnlevel->save();
+    //         // $commentOnlevel->remarks = $req->comment;
+    //         // $commentOnlevel->verification_status = 1;
+    //         // $commentOnlevel->save();
 
-            DB::commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', '474ms-573', 'Post', '');
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
+    //         DB::commit();
+    //         return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', '474ms-573', 'Post', '');
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
 
     /**
      * | Back to Citizen the Application
@@ -511,64 +511,6 @@ class ObjectionRepository implements iObjectionRepository
         }
     }
 
-
-    //objection list
-    public function objectionList()
-    {
-        try {
-            $list = PropActiveObjection::select(
-                'prop_active_objections.id',
-                'applicant_name as ownerName',
-                'holding_no as holdingNo',
-                'objection_for as objectionFor',
-                'ward_name as wardId',
-                'property_type as propertyType',
-                'dob',
-                'gender',
-            )
-                ->join('prop_properties', 'prop_properties.id', 'prop_active_objections.property_id')
-                ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
-                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-                ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
-                ->where('prop_active_objections.status', 1)
-                ->orderByDesc('prop_active_objections.id')
-                ->get();
-
-            return responseMsgs(true, "", $list, '010813', '01', '319ms-364ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
-    //get objection list by id
-    public function objectionByid($req)
-    {
-        try {
-            $list = PropActiveObjection::select(
-                'prop_active_objections.id',
-                'applicant_name as ownerName',
-                'holding_no as holdingNo',
-                'objection_for as objectionFor',
-                'ward_name as wardId',
-                'property_type as propertyType',
-                'dob',
-                'gender',
-
-            )
-                ->join('prop_properties', 'prop_properties.id', 'prop_active_objections.property_id')
-                ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
-                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-                ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
-                ->where('prop_active_objections.id', $req->id)
-                ->where('prop_active_objections.status', 1)
-                ->orderByDesc('prop_active_objections.id')
-                ->first();
-
-            return responseMsgs(true, "Successfully Done", $list, '010814', '01', '315ms-352ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
 
     //get objection list
     public function objectionDocList($req)

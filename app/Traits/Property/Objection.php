@@ -24,7 +24,7 @@ trait Objection
                 'p.ward_mstr_id as old_ward_id',
                 'u.ward_name as old_ward_no',
                 'p.new_ward_mstr_id',
-                'u1.ward_name as new_ward_no',
+                // 'u1.ward_name as new_ward_no',
                 'p.applicant_name',
                 'p.new_holding_no',
                 'p.application_date',
@@ -36,7 +36,7 @@ trait Objection
             ->join('prop_properties as p', 'p.id', '=', 'prop_active_objections.property_id')
             ->leftJoin('ref_prop_types as t', 't.id', '=', 'p.prop_type_mstr_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'p.ward_mstr_id')
-            ->leftJoin('ulb_ward_masters as u1', 'u.id', '=', 'p.new_ward_mstr_id')
+            // ->leftJoin('ulb_ward_masters as u1', 'u.id', '=', 'p.new_ward_mstr_id')
             ->where('prop_active_objections.ulb_id', $ulbId);
     }
 

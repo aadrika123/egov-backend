@@ -150,13 +150,12 @@ class WorkflowMap implements iWorkflowMapRepository
         $request->validate([
             'workflowId' => 'required|int'
         ]);
-        $users = WfWorkflowrolemap::where('workflow_id', $request->workflowId)
+        $roles = WfWorkflowrolemap::where('workflow_id', $request->workflowId)
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
             ->select('wf_roles.id as role_id', 'wf_roles.role_name')
             ->get();
-        // $roles=DB::table('wf_workflowrolemaps')
-        //             ->where('workflow_id',$request->workflowId)
-        return responseMsg(true, "Data Retrived", $users);
+
+        return responseMsg(true, "Data Retrived", $roles);
     }
 
     //get user by workflowId

@@ -326,34 +326,11 @@ class RainWaterHarvestingController extends Controller
             $track->saveTrack($req);
 
 
-            // previous level pending verification enabling
-            // $preLevelPending = PropHarvestingLevelpending::where('harvesting_id', $req->harvestingId)
-            //     ->orderByDesc('id')
-            //     ->limit(1)
-            //     ->first();
-            // $preLevelPending->verification_status = '1';
-            // $preLevelPending->save();
-
-            // $levelPending = new PropHarvestingLevelpending();
-            // $levelPending->harvesting_id = $req->harvestingId;
-            // $levelPending->sender_role_id = $req->senderRoleId;
-            // $levelPending->receiver_role_id = $req->receiverRoleId;
-            // $levelPending->sender_user_id = auth()->user()->id;
-            // $levelPending->save();
-
             // harvesting Application Update Current Role Updation
             $harvesting = PropActiveHarvesting::find($req->harvestingId);
             $harvesting->current_role = $req->receiverRoleId;
             $harvesting->save();
 
-            // Add Comment On Prop Level Pending
-            // $receiverLevelPending = new PropHarvestingLevelpending();
-            // $commentOnlevel = $receiverLevelPending->getReceiverLevel($req->harvestingId, $req->senderRoleId);
-            // $commentOnlevel->remarks = $req->comment;
-            // $commentOnlevel->receiver_user_id = auth()->user()->id;
-            // $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
-            // $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
-            // $commentOnlevel->save();
 
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", '011110', 01, '446ms', 'Post', $req->deviceId);
@@ -474,11 +451,11 @@ class RainWaterHarvestingController extends Controller
                 'a.prop_type_mstr_id',
                 'p.property_type',
             )
-                ->where('prop_active_harvestings.status', 1)
-                ->orderByDesc('prop_active_harvestings.id')
                 ->join('prop_properties as a', 'a.id', 'prop_active_harvestings.property_id')
                 ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
                 ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
+                ->where('prop_active_harvestings.status', 1)
+                ->orderByDesc('prop_active_harvestings.id')
                 ->get();
 
             return responseMsgs(true, "Success", $list, '011103', 01, '300ms - 359ms', 'Post', '');
@@ -500,11 +477,11 @@ class RainWaterHarvestingController extends Controller
                 'a.prop_type_mstr_id',
                 'p.property_type',
             )
-                ->where('prop_active_harvestings.status', 1)
-                ->where('prop_active_harvestings.id', $req->id)
                 ->join('prop_properties as a', 'a.id', 'prop_active_harvestings.property_id')
                 ->join('ref_prop_types as p', 'p.id', 'a.prop_type_mstr_id')
                 ->join('ulb_ward_masters as u', 'u.id', 'a.ward_mstr_id')
+                ->where('prop_active_harvestings.status', 1)
+                ->where('prop_active_harvestings.id', $req->id)
                 ->first();
 
             if (is_null($list)) {

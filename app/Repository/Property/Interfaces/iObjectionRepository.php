@@ -14,11 +14,8 @@ interface iObjectionRepository
     public function applyObjection($request);
 
     public function getDetailsById($req);                       // Get Objection Details By ID
-    public function postNextLevel($req);
     public function backTocitizen($req);
 
-    public function objectionList();
-    public function objectionByid($req);
     public function objectionDocList($req);
     public function objectionDocUpload($req);
 }

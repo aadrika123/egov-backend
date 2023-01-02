@@ -193,26 +193,36 @@ class ObjectionController extends Controller
     // Post Next Level Application
     public function postNextLevel(Request $req)
     {
-        $req->validate([
-            'objectionId' => 'required',
-            'senderRoleId' => 'required',
-            'receiverRoleId' => 'required',
-            'comment' => 'required'
-        ]);
+        try {
+            $req->validate([
+                'objectionId' => 'required',
+                'senderRoleId' => 'required',
+                'receiverRoleId' => 'required',
+                'comment' => 'required'
+            ]);
 
-        $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $metaReqs['workflowId'] = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
-        $metaReqs['refTableDotId'] = 'prop_active_objections.id';
-        $metaReqs['refTableIdValue'] = $req->objectionId;
-        $req->request->add($metaReqs);
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
+            $metaReqs['refTableDotId'] = 'prop_active_objections.id';
+            $metaReqs['refTableIdValue'] = $req->objectionId;
+            $req->request->add($metaReqs);
 
-        $track = new WorkflowTrack();
-        $track->saveTrack($req);
+            DB::beginTransaction();
+            $track = new WorkflowTrack();
+            $track->saveTrack($req);
 
-        // objection Application Update Current Role Updation
-        $objection = PropActiveObjection::find($req->objectionId);
-        $objection->current_role = $req->receiverRoleId;
-        $objection->save();
+            // objection Application Update Current Role Updation
+            $objection = PropActiveObjection::find($req->objectionId);
+            $objection->current_role = $req->receiverRoleId;
+            $objection->save();
+
+            DB::commit();
+
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', '474ms-573', 'Post', '');
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     /**
@@ -288,13 +298,31 @@ class ObjectionController extends Controller
     //objection list
     public function objectionList()
     {
-        return $this->Repository->objectionList();
+        try {
+            $list  = new PropActiveObjection();
+            $ojectionlist = $list->objectionList()
+                ->orderByDesc('prop_active_objections.id')
+                ->get();
+
+            return responseMsgs(true, "", remove_null($ojectionlist), '010813', '01', '319ms-364ms', 'Post', '');
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
     }
 
     //objection list  by id
     public function objectionByid(Request $req)
     {
-        return $this->Repository->objectionByid($req);
+        try {
+            $list  = new PropActiveObjection();
+            $ojectionlist = $list->objectionList()
+                ->where('prop_active_objections.id', $req->id)
+                ->get();
+
+            return responseMsgs(true, "", remove_null($ojectionlist), '010813', '01', '319ms-364ms', 'Post', '');
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
     }
 
     //get document status by id
