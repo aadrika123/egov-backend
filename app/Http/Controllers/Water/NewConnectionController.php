@@ -219,11 +219,11 @@ class NewConnectionController extends Controller
     {
         try {
             $request->validate([
-                'applicationId' => 'required',
+                'appId' => 'required',
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
                 'verificationStatus' => 'required',
-
+                'comment' => "required"
             ]);
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
@@ -248,6 +248,9 @@ class NewConnectionController extends Controller
     public function waterSpecialInbox(Request $request)
     {
         try {
+            $request->validate([
+                'ulb_id' => 'required'
+            ]);
             return $this->newConnection->waterSpecialInbox($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -265,6 +268,48 @@ class NewConnectionController extends Controller
             return $this->newConnection->postEscalate($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // View Uploaded Documents
+    public function getWaterDocDetails(Request $request)
+    {
+        try {
+            $request->validate([
+                "applicationNo" => "required",
+            ]);
+            return $this->newConnection->getWaterDocDetails($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Check the document status
+    public function waterDocStatus(Request $request)
+    {
+        try {
+            $request->validate([
+                "id" => "required",
+                "docStatus" => "required"
+            ]);
+            return $this->newConnection->waterDocStatus($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // final approval or rejection of the application
+    public function approvalRejectionWater(Request $request)
+    {
+        try{
+            $request->validate([
+                "applicationNo" => "required",
+                "status" => "required"
+            ]);
+            return $this->newConnection->approvalRejectionWater($request);
+        }catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),"");
         }
     }
 }

@@ -309,14 +309,14 @@ class NewConnectionRepository implements iNewConnection
             $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
             $metaReqs['workflowId'] = Config::get('workflow-constants.WATER_WORKFLOW_ID');
             $metaReqs['refTableDotId'] = 'water_applications.id';
-            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['refTableIdValue'] = $req->appId;
             $req->request->add($metaReqs);
 
             $objTrack = new WorkflowTrack();
             $objTrack->saveTrack($req);
 
             # objection Application Update Current Role Updation
-            $objection = WaterApplication::find($req->applicationId);
+            $objection = WaterApplication::find($req->appId);
             $objection->current_role = $req->receiverRoleId;
             $objection->save();
 
@@ -338,7 +338,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var waterList
      * |
         | Serial No : 05
-        | Unchecked
+        | Unchecked 
      */
     public function waterSpecialInbox($request)
     {
@@ -365,6 +365,8 @@ class NewConnectionRepository implements iNewConnection
      * | @var userId
      * | @var applicationNo
      * | @var 
+        | Serial No : 00 
+        | Unchecked
      */
     public function postEscalate($request)
     {
@@ -395,26 +397,76 @@ class NewConnectionRepository implements iNewConnection
         try {
             $userId = auth()->user()->id;
 
-            $docStatus = WaterApplicantDoc::find($req->documentId);
-            $docStatus->remarks = $req->docRemarks;
-            $docStatus->verified_by_emp_id = $userId;
-            $docStatus->verified_on = Carbon::now();
-            $docStatus->updated_at = Carbon::now();
-
             if ($req->docStatus == 'Verified') {                        //<------------ (here data type small int)        
-                $docStatus->verify_status = 1;
+                $docStatus = 1;
+                $msg = "Doc Status Verified!";
             }
             if ($req->docStatus == 'Rejected') {                        //<------------ (here data type small int)
-                $docStatus->verify_status = 2;
+                $docStatus = 2;
+                $msg = "Doc Status Rejected!";
             }
 
-            $docStatus->save();
+            WaterApplicantDoc::where('id', $req->id)
+                ->update([
+                    'remarks' => $req->docRemarks ?? null,
+                    'verify_by_emp_id' => $userId,
+                    'verified_on' =>  Carbon::now(),
+                    'updated_at' =>  Carbon::now(),
+                    'verify_status' => $docStatus
+                ]);
 
-            return responseMsg(true, "Successfully Done", '');
+            return responseMsg(true, $msg, '');
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
+
+
+    /**
+     * |------------------------------ Approval Rejection Water -------------------------------|
+     * | @param request 
+     * | @var waterDetails
+        | Serial No : 00 / Route
+     */
+    public function approvalRejectionWater($request)
+    {
+        $waterDetails = WaterApplication::find($request->applicationNo);
+        if ($waterDetails->finisher_role_id != $request->roleId) {
+            return responseMsg(false, "Forbidden Access!", "");
+        }
+        DB::beginTransaction();
+        // Approval
+        if ($request->status == 1) {
+            $approvedWater = WaterApplication::query()
+                ->where('id', $request->applicationNo)
+                ->first();
+
+            $approvedWater = $approvedWater->replicate();
+            $approvedWater->setTable('water_approval_application_details');
+            $approvedWater->id = $approvedWater->id;
+            $approvedWater->save();
+            $approvedWater->delete();
+
+            $msg = "Application Successfully Approved !!";
+        }
+        // Rejection
+        if ($request->status == 0) {
+            $rejectedWater = WaterApplication::query()
+                ->where('id', $request->applicationNo)
+                ->first();
+
+            $rejectedWater = $rejectedWater->replicate();
+            $rejectedWater->setTable('water_rejection_application_details');
+            $rejectedWater->id = $rejectedWater->id;
+            $rejectedWater->save();
+            $rejectedWater->delete();
+            $msg = "Application Successfully Rejected !!";
+        }
+        DB::commit();
+        return responseMsgs(true, $msg, "", '', 01, '.ms', 'Post', $request->deviceId);
+    }
+
+
 
 
     /**
@@ -426,6 +478,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var returnDetails
      * | @return returnDetails : list of individual applications
         | Serial No : 07
+        | Workinig
      */
     public function getApplicationsDetails($request)
     {
@@ -445,29 +498,15 @@ class NewConnectionRepository implements iNewConnection
         });
 
         $applicationDetails = WaterApplication::select(
+            'water_applications.*',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
-            'water_applications.application_no',
             'water_connection_type_mstrs.connection_type',
             'water_property_type_mstrs.property_type',
-            'water_applications.flat_count',
-            'water_applications.owner_type',
-            'water_applications.category',
-            'water_applications.area_sqft',
-            'water_applications.address',
-            'water_applications.landmark',
-            'water_applications.pipeline_type_id',
-            'water_applications.pin',
-            'water_applications.elec_k_no',
-            'water_applications.elec_category',
-            'water_applications.elec_bind_book_no',
-            'water_applications.elec_account_no',
-            'water_applications.apply_date',
-            'water_applications.current_role',
             'water_connection_through_mstrs.connection_through',
-            'water_applications.holding_no',
-            'water_applications.saf_no'
+            'wf_roles.role_name AS current_role_name'
         )
+            ->join('wf_roles', 'wf_roles.id', '=', 'water_applications.current_role')
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
@@ -483,5 +522,90 @@ class NewConnectionRepository implements iNewConnection
         (collect($applicationDetails)->first())['owner_details'] = $applicantDetails;
         $returnDetails = collect($applicationDetails)->first();
         return responseMsgs(true, "listed Data!", remove_null($returnDetails), "", "02", ".ms", "POST", "");
+    }
+
+
+    /**
+     * |-------------------------------- get the document details ---------------------------|
+     * | @param request
+     * | @var applicationNo
+     * | @var mUploadDocument
+     * | @var refApplicationNo
+     * | @var refApplicationId
+     * | @var data
+     * | @return data : document details
+        | Serial No : 09
+        | Working
+     */
+    public function getWaterDocDetails($request)
+    {
+        try {
+            $applicationNo = null;
+            $mUploadDocument = (array)null;
+            $applicationNo   = $request->applicationNo;
+
+            $refApplicationNo = WaterApplication::where('application_no', $applicationNo)->get();
+            if (!$refApplicationNo) {
+                throw new Exception("Data Not Found!");
+            }
+
+            $refApplicationId = collect($refApplicationNo)->first();
+            $mUploadDocument = $this->getWaterDocuments($refApplicationId->id)
+                ->map(function ($val) {
+                    if (isset($val["doc_name"])) {
+                        $path = $this->readDocumentPath($val["doc_name"]);
+                        $val["doc_path"] = !empty(trim($val["doc_name"])) ? $path : null;
+                    }
+                    return $val;
+                });
+            $data["uploadDocument"] = $mUploadDocument;
+            return responseMsgs(true, "list Of Uploaded Doc!", $data, "", "02", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+
+    /**
+     * |---------------------------------- Calling function for the doc details from database -------------------------------|
+     * | @param applicationId
+     * | @var docDetails
+     * | @return docDetails : listed doc details according to application Id
+        | Serial No : 09.01
+        | Working
+     */
+    public function getWaterDocuments($applicationId)
+    {
+        $docDetails = WaterApplicantDoc::select(
+            "water_applicant_docs.id",
+            "water_applicant_docs.doc_name",
+            "water_applicant_docs.doc_for",
+            "water_applicant_docs.remarks",
+            "water_applicant_docs.document_id",
+            "water_applicant_docs.verify_status",
+            'water_param_document_types.document_name',
+
+        )
+            ->join('water_param_document_types', 'water_param_document_types.id', '=', 'water_applicant_docs.document_id')
+            ->where('water_applicant_docs.application_id', $applicationId)
+            ->where('water_applicant_docs.status', 1)
+            ->where('water_param_document_types.status', 1)
+            ->orderBy('water_applicant_docs.id', 'desc')
+            ->get();
+        return remove_null($docDetails);
+    }
+
+    /**
+     * |-------------------------------------- Calling function for the doc path -----------------------------------|
+     * | @param path
+     * | @var docPath
+     * | @return docPath : doc url
+        | Serial No : 09.02
+        | Working
+     */
+    public function readDocumentPath($path)
+    {
+        $docPath = (config('app.url') . '/api/getImageLink?path=' . $path);
+        return $docPath;
     }
 }

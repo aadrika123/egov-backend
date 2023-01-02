@@ -51,8 +51,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('water-outbox', 'waterOutbox');                                                     //
         Route::post('post-next-level','postNextLevel');                                                 //
         Route::post('get-applications-details','getApplicationsDetails');                               //
-        Route::post('water-special-inbox','waterSpecialInbox');
-        Route::post('post-escalate','postEscalate');
+        Route::post('water-special-inbox','waterSpecialInbox');                                         //
+        Route::post('post-escalate','postEscalate');                                                    //
+        Route::post('get-water-doc-details','getWaterDocDetails');                                      //
+        Route::post('water-doc-status','waterDocStatus');                                               //
+        Route::post('approval-rejection-water','approvalRejectionWater');                               //
     });
 });
 
