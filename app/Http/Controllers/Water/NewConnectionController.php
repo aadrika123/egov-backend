@@ -219,7 +219,7 @@ class NewConnectionController extends Controller
     {
         try {
             $request->validate([
-                'applicationId' => 'required',
+                'appId' => 'required',
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
                 'verificationStatus' => 'required',
@@ -295,6 +295,21 @@ class NewConnectionController extends Controller
             return $this->newConnection->waterDocStatus($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // final approval or rejection of the application
+    public function approvalRejectionWater(Request $request)
+    {
+        try{
+            $request->validate([
+                "applicationNo" => "required",
+                "status" => "required"
+            ]);
+            return $this->newConnection->approvalRejectionWater($request);
+        }catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),"");
         }
     }
 }

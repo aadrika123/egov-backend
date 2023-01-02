@@ -309,7 +309,7 @@ class NewConnectionRepository implements iNewConnection
             $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
             $metaReqs['workflowId'] = Config::get('workflow-constants.WATER_WORKFLOW_ID');
             $metaReqs['refTableDotId'] = 'water_applications.id';
-            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['refTableIdValue'] = $req->appId;
             $req->request->add($metaReqs);
 
             $objTrack = new WorkflowTrack();
@@ -452,7 +452,7 @@ class NewConnectionRepository implements iNewConnection
         // Rejection
         if ($request->status == 0) {
             $rejectedWater = WaterApplication::query()
-                ->where('id', $request->harvestingId)
+                ->where('id', $request->applicationNo)
                 ->first();
 
             $rejectedWater = $rejectedWater->replicate();
