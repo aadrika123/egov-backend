@@ -264,19 +264,18 @@ class NewConnectionRepository implements iNewConnection
 
     /**
      * |----------------------------------------- Water Outbox ------------------------------------------------|
-     * | @var auth
      * | @var userId
      * | @var ulbId
      * | @var workflowRoles : using the function to fetch the list of the respective water application details according to (ulbId, roleId and ward) 
      * | @var wardId : using the Workflow trait's function (getWardUserId($userId)) for respective wardId.
-     * | @var roles : using the Workflow trait's function (getRoleIdByUserId($userID)) for  respective roles.
+     * | @var refWard
+     * | @var roleId : using the Workflow trait's function (getRoleIdByUserId($userID)) for  respective roles.
      * | @return waterList : Details to be displayed in the inbox of the offices in water workflow. 
         | Serial No : 03
         | Working 
      */
     public function waterOutbox()
     {
-        $mWfRoleUser = new WfRoleusermap();
         $mWfWardUser = new WfWardUser();
 
         $userId = auth()->user()->id;
@@ -349,7 +348,7 @@ class NewConnectionRepository implements iNewConnection
     {
         $mWfWardUser = new WfWardUser();
         $userId = authUser()->id;
-        $ulbId = $request->ulb_id;
+        $ulbId = authUser()->ulb_id;
 
         $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
         $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
@@ -368,24 +367,21 @@ class NewConnectionRepository implements iNewConnection
      * |--------------------------- post Escalate -----------------------------|
      * | @param request
      * | @var userId
-     * | @var applicationNo
+     * | @var applicationId
+     * | @var applicationsData
      * | @var 
         | Serial No : 06 
-        | Unchecked
+        | Unchecked / flag
      */
     public function postEscalate($request)
     {
-        try {
-            $userId = auth()->user()->id;
-            $applicationId = $request->applicationId;
-            $applicationsData = WaterApplication::find($applicationId);
-            $applicationsData->is_escalate = $request->escalateStatus;
-            $applicationsData->escalate_by = $userId;
-            $applicationsData->save();
-            return responseMsgs(true, $request->escalateStatus == 1 ? 'Saf is Escalated' : "Saf is removed from Escalated", '', "", "1.0", ".ms", "POST", $request->deviceId);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
+        $userId = auth()->user()->id;
+        $applicationId = $request->applicationId;
+        $applicationsData = WaterApplication::find($applicationId);
+        $applicationsData->is_escalate = $request->escalateStatus;
+        $applicationsData->escalate_by = $userId;
+        $applicationsData->save();
+        return responseMsgs(true, $request->escalateStatus == 1 ? 'Water is Escalated' : "Water is removed from Escalated", '', "", "1.0", ".ms", "POST", $request->deviceId);
     }
 
 
@@ -394,36 +390,34 @@ class NewConnectionRepository implements iNewConnection
      * | @param Req 
      * | @var userId
      * | @var docStatus
+     * | @var msg
+     * | @return msg : status
         | Serial No : 07
-        | Unchecked
+        | Unchecked / Flag
      */
     public function waterDocStatus($req)
     {
-        try {
-            $userId = auth()->user()->id;
+        $userId = auth()->user()->id;
 
-            if ($req->docStatus == 'Verified') {                        //<------------ (here data type small int)        
-                $docStatus = 1;
-                $msg = "Doc Status Verified!";
-            }
-            if ($req->docStatus == 'Rejected') {                        //<------------ (here data type small int)
-                $docStatus = 2;
-                $msg = "Doc Status Rejected!";
-            }
-
-            WaterApplicantDoc::where('id', $req->id)
-                ->update([
-                    'remarks' => $req->docRemarks ?? null,
-                    'verify_by_emp_id' => $userId,
-                    'verified_on' =>  Carbon::now(),
-                    'updated_at' =>  Carbon::now(),
-                    'verify_status' => $docStatus
-                ]);
-
-            return responseMsg(true, $msg, '');
-        } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
+        if ($req->docStatus == 'Verified') {                        //<------------ (here data type small int)        
+            $docStatus = 1;
+            $msg = "Doc Status Verified!";
         }
+        if ($req->docStatus == 'Rejected') {                        //<------------ (here data type small int)
+            $docStatus = 2;
+            $msg = "Doc Status Rejected!";
+        }
+
+        WaterApplicantDoc::where('id', $req->id)
+            ->update([
+                'remarks' => $req->docRemarks ?? null,
+                'verify_by_emp_id' => $userId,
+                'verified_on' =>  Carbon::now(),
+                'updated_at' =>  Carbon::now(),
+                'verify_status' => $docStatus
+            ]);
+
+        return responseMsg(true, $msg, '');
     }
 
 
@@ -439,11 +433,13 @@ class NewConnectionRepository implements iNewConnection
      */
     public function approvalRejectionWater($request)
     {
-        // return WaterApprovalApplicationDetail::get();
         $now = Carbon::now();
         $waterDetails = WaterApplication::find($request->id);
         if ($waterDetails->finisher != $request->roleId) {
             return responseMsg(false, "Forbidden Access!", "");
+        }
+        if ($waterDetails->current_role != $request->roleId) {
+            return responseMsg(false, "Access Forbiden!", "");
         }
         DB::beginTransaction();
         // Approval
@@ -490,7 +486,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var returnDetails
      * | @return returnDetails : list of individual applications
         | Serial No : 07
-        | Workinig
+        | Workinig / Flag
      */
     public function getApplicationsDetails($request)
     {
@@ -551,30 +547,26 @@ class NewConnectionRepository implements iNewConnection
      */
     public function getWaterDocDetails($request)
     {
-        try {
-            $applicationNo = null;
-            $mUploadDocument = (array)null;
-            $applicationNo   = $request->applicationNo;
+        $applicationNo = null;
+        $mUploadDocument = (array)null;
+        $applicationNo   = $request->applicationNo;
 
-            $refApplicationNo = WaterApplication::where('application_no', $applicationNo)->get();
-            if (!$refApplicationNo) {
-                throw new Exception("Data Not Found!");
-            }
-
-            $refApplicationId = collect($refApplicationNo)->first();
-            $mUploadDocument = $this->getWaterDocuments($refApplicationId->id)
-                ->map(function ($val) {
-                    if (isset($val["doc_name"])) {
-                        $path = $this->readDocumentPath($val["doc_name"]);
-                        $val["doc_path"] = !empty(trim($val["doc_name"])) ? $path : null;
-                    }
-                    return $val;
-                });
-            $data["uploadDocument"] = $mUploadDocument;
-            return responseMsgs(true, "list Of Uploaded Doc!", $data, "", "02", ".ms", "POST", $request->deviceId);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
+        $refApplicationNo = WaterApplication::where('application_no', $applicationNo)->get();
+        if (!$refApplicationNo) {
+            throw new Exception("Data Not Found!");
         }
+
+        $refApplicationId = collect($refApplicationNo)->first();
+        $mUploadDocument = $this->getWaterDocuments($refApplicationId->id)
+            ->map(function ($val) {
+                if (isset($val["doc_name"])) {
+                    $path = $this->readDocumentPath($val["doc_name"]);
+                    $val["doc_path"] = !empty(trim($val["doc_name"])) ? $path : null;
+                }
+                return $val;
+            });
+        $data["uploadDocument"] = $mUploadDocument;
+        return responseMsgs(true, "list Of Uploaded Doc!", $data, "", "02", ".ms", "POST", $request->deviceId);
     }
 
 
@@ -624,6 +616,11 @@ class NewConnectionRepository implements iNewConnection
     /**
      * |----------------------- comment Indipendent -----------------------|
      * | @param request
+     * | @var applicationId
+     * | @var workflowTrack
+     * | @var mSafWorkflowId
+     * | @var mModuleId
+     * | @var metaReqs
         | Serial No : 00
         | Unchecked
      */
@@ -634,6 +631,11 @@ class NewConnectionRepository implements iNewConnection
         $mSafWorkflowId = $this->_waterWorkId;
         $mModuleId =  $this->_waterModulId;
         $metaReqs = array();
+
+        if(!$applicationId)
+        {
+            throw new Exception("Application Don't Exist!");
+        }
 
         // Save On Workflow Track
         $metaReqs = [
