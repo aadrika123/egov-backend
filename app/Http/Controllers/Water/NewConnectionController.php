@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterOwnerTypeMstr;
@@ -62,7 +63,7 @@ class NewConnectionController extends Controller
                     'wardId'             => 'required|integer',
                     'areaSqft'           => 'required',
                     'landmark'           => 'required',
-                    'pin'                => 'required',
+                    'pin'                => 'required|digits:6',
                     'elecKNo'            => 'required',
                     'elecBindBookNo'     => 'required',
                     'elecAccountNo'      => 'required',
@@ -74,7 +75,7 @@ class NewConnectionController extends Controller
             );
 
             if ($validateUser->fails()) {
-                return response()->json(["status" => false, "message" => "Validation Error!", "data" => $validateUser->getMessageBag()], 400);
+                return responseMsg(false, "Validation Error!", $validateUser->getMessageBag());
             }
             return $this->newConnection->store($request);
         } catch (Exception $error) {
@@ -128,7 +129,7 @@ class NewConnectionController extends Controller
     }
 
     /**
-     * |---------------------------------------- Citizen View Water Screen For Mobile -------------------------------------------|
+     * |---------------------------------------- Citizen/ View Water Screen For Mobile -------------------------------------------|
      */
 
     // Get connection type / water
@@ -260,13 +261,13 @@ class NewConnectionController extends Controller
         }
     }
 
-    // post escalated
+    // Application's Post Escalated
     public function postEscalate(Request $request)
     {
         try {
             $request->validate([
                 "escalateStatus" => "required|int",
-                "applicationNo" => "required|int",
+                "applicationId" => "required|int",
             ]);
             return $this->newConnection->postEscalate($request);
         } catch (Exception $e) {
@@ -287,7 +288,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Check the document status
+    // Verification/Rejection of Document 
     public function waterDocStatus(Request $request)
     {
         try {
@@ -301,7 +302,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // final approval or rejection of the application
+    // final Approval or Rejection of the Application
     public function approvalRejectionWater(Request $request)
     {
         try {
@@ -327,9 +328,21 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 'comment' => 'required',
-                'applicationNo' => 'required|integer'
+                'id' => 'required|integer'
             ]);
             return $this->newConnection->commentIndependent($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Get Approved Water Appliction
+    public function approvedWaterApplications(Request $request)
+    {
+        try {
+            $obj = new WaterApprovalApplicationDetail();
+            $approvedWater = $obj->getApprovedApplications($request);
+            return responseMsgs(true, "List of Approved water Applications!", remove_null($approvedWater), "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
