@@ -107,10 +107,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         // User Profile APIs
         Route::get('my-profile-details', 'myProfileDetails');   // For get My profile Details
-        Route::put('edit-my-profile', 'editMyProfile');          // For Edit My profile Details
+        Route::post('edit-my-profile', 'editMyProfile');        // For Edit My profile Details ---->>edited by mrinal method changed from put to post
 
-        Route::put('edit-user/{id}', 'update');
-        Route::delete('delete-user', 'deleteUser');
+        Route::post('edit-user', 'update');
+        Route::post('delete-user', 'deleteUser');
         Route::get('get-user/{id}', 'getUser');
         Route::get('get-all-users', 'getAllUsers');
 
