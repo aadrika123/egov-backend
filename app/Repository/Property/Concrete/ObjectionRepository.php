@@ -282,9 +282,9 @@ class ObjectionRepository implements iObjectionRepository
                 PropActiveObjection::where('id', $objection->id)
                     ->update(['objection_no' => $objectionNo]);
 
-                $floorData = $request->floorData;
-                return   $floor = collect($floorData)->first();
-                // return $floor->floorNo;
+                return $floorData = $request->floorData;
+                $floor = collect($floorData);
+
                 foreach ($floor as $floors) {
                     $assement_floor = new PropActiveObjectionFloor;
                     $assement_floor->property_id = $request->propId;
