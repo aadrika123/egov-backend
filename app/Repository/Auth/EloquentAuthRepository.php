@@ -66,14 +66,15 @@ class EloquentAuthRepository implements AuthRepository
      * update using AuthTrait
      */
 
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-
         $request->validate([
+            "id" => 'required',
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255']
         ]);
         try {
+            $id = $request->id;
             $user = User::find($id);
             $stmt = $user->email == $request->email;
             if ($stmt) {
@@ -281,10 +282,11 @@ class EloquentAuthRepository implements AuthRepository
                     LEFT JOIN wf_roleusermaps ru ON ru.user_id=u.id AND ru.is_suspended=FALSE
                     LEFT JOIN wf_roles rm ON rm.id=ru.wf_role_id
                     WHERE u.user_type!='Citizen' AND u.ulb_id=$uUlbID
+                    AND u.suspended=false
                     GROUP BY u.id
                     ORDER BY u.id ASC";
         $users = DB::select($query);
-        return responseMsg(true, "Data Fetched", remove_null($users));
+        return responseMsg(true, "Data Fetched", $users);
     }
 
     /**
@@ -294,27 +296,26 @@ class EloquentAuthRepository implements AuthRepository
      */
     public function getUser($id)
     {
-        $user = DB::select("select u.id,
-                                u.user_name,
-                                u.mobile,
-                                u.email,
-                                u.user_type,
-                                u.roll_id,
-                                r.role_name,
-                                u.ulb_id,
-                                um.ulb_name,
-                                u.suspended,
-                                u.super_user,
-                                u.description,
-                                u.workflow_participant,
-                                u.created_at,
-                                u.updated_at
-                            from users u
-                            left join role_masters r on r.id=u.roll_id
-                            left join ulb_masters um on um.id=u.ulb_id
-                            where u.id=$id");
+        $user = DB::select("SELECT 
+        u.id,
+        u.user_name,
+        u.mobile,
+        u.email,
+        u.user_type,
+        u.suspended,
+        u.super_user,
+        u.workflow_participant,
+        string_agg(ru.wf_role_id::VARCHAR,',') AS role_id,
+        string_agg(rm.role_name::VARCHAR,',') AS role_name
+        
+        FROM users u
+        LEFT JOIN wf_roleusermaps ru ON ru.user_id=u.id AND ru.is_suspended=FALSE
+        LEFT JOIN wf_roles rm ON rm.id=ru.wf_role_id
+        where u.id=$id
+        AND u.suspended=false
+        GROUP BY u.id ");
         if ($user) {
-            return $user;
+            return responseMsg(true, "Successfully Retrieved", $user);
         } else {
             return response()->json('User Not Available for this Id', 404);
         }
@@ -401,6 +402,21 @@ class EloquentAuthRepository implements AuthRepository
     public function editMyProfile(Request $request)
     {
         $id = auth()->user()->id;
-        return $this->update($request, $id);
+        $ulb = auth()->user()->ulb_id;
+        $meta['id'] = $id;
+        $meta['ulb'] = $ulb;
+        $request->request->add($meta);
+        return $this->update($request);
+    }
+
+    /**
+     * |delete user 
+     */
+    public function deleteUser($request)
+    {
+        $data = User::find($request->id);
+        $data->suspended = "true";
+        $data->save();
+        return responseMsg(true, "Data Deleted", '');
     }
 }

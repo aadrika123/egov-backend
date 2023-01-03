@@ -45,9 +45,9 @@ class UserController extends Controller
     }
 
     // Update User Details
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        return $this->EloquentAuth->update($request, $id);
+        return $this->EloquentAuth->update($request);
     }
 
     // User Authentication
@@ -101,5 +101,11 @@ class UserController extends Controller
     public function editMyProfile(Request $request)
     {
         return $this->EloquentAuth->editMyProfile($request);
+    }
+
+    // Edit My Profile Details
+    public function deleteUser(Request $request)
+    {
+        return $this->EloquentAuth->deleteUser($request);
     }
 }
