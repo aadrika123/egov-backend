@@ -75,8 +75,8 @@ class WfWorkflow extends Model
         )
             ->join('wf_masters', 'wf_masters.id', 'wf_workflows.wf_master_id')
             ->join('ulb_masters', 'ulb_masters.id', 'wf_workflows.ulb_id')
-            ->join('wf_roles', 'wf_roles.id', 'wf_workflows.initiator_role_id')
-            ->join('wf_roles as frole', 'frole.id', 'wf_workflows.finisher_role_id')
+            ->leftJoin('wf_roles', 'wf_roles.id', 'wf_workflows.initiator_role_id')
+            ->leftJoin('wf_roles as frole', 'frole.id', 'wf_workflows.finisher_role_id')
             ->where('wf_workflows.is_suspended', false)
             ->orderByDesc('wf_workflows.id')
             ->get();
