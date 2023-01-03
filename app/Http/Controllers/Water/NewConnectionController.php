@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterOwnerTypeMstr;
@@ -11,6 +12,7 @@ use Illuminate\Http\Request;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Traits\Ward;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class NewConnectionController extends Controller
@@ -227,6 +229,7 @@ class NewConnectionController extends Controller
             ]);
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
+            DB::rollBack();
             return responseMsg(false, $error->getMessage(), "");
         }
     }
@@ -301,15 +304,34 @@ class NewConnectionController extends Controller
     // final approval or rejection of the application
     public function approvalRejectionWater(Request $request)
     {
-        try{
+        try {
             $request->validate([
-                "applicationNo" => "required",
+                "id" => "required",
+                "roleId" => "required",
                 "status" => "required"
             ]);
-            return $this->newConnection->approvalRejectionWater($request);
-        }catch(Exception $e)
-        {
-            return responseMsg(false,$e->getMessage(),"");
+            $waterDetails = WaterApplication::find($request->id);
+            if ($waterDetails) {
+                return $this->newConnection->approvalRejectionWater($request);
+            }
+            throw new Exception("Application dont exist!");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Indipendent Comment on the Water Applications
+    public function commentIndependent(Request $request)
+    {
+        try {
+            $request->validate([
+                'comment' => 'required',
+                'applicationNo' => 'required|integer'
+            ]);
+            return $this->newConnection->commentIndependent($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }

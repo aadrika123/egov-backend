@@ -7,6 +7,7 @@ use App\Models\Property\PropProperty;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplicantDoc;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterLevelpending;
 use App\Models\Water\WaterPenaltyInstallment;
@@ -25,7 +26,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Exists;
-use Razorpay\Api\Collection;
 
 /**
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
@@ -43,12 +43,16 @@ class NewConnectionRepository implements iNewConnection
     private $_dealingAssistent;
     private $_vacantLand;
     private $_waterWorkflowId;
+    private $_waterWorkId;
+    private $_waterModulId;
 
     public function __construct()
     {
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
         $this->_vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
         $this->_waterWorkflowId = Config::get('workflow-constants.WATER_MASTER_ID');
+        $this->_waterWorkId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
+        $this->_waterModulId = Config::get('module-constants.WATER_MODULE_ID');
     }
 
     /**
@@ -64,7 +68,6 @@ class NewConnectionRepository implements iNewConnection
      * | Post the value in Water Application table
      * | post the value in Water Applicants table by loop
      * | 
-     * | time : 
      * | rating : 5
      * ------------------------------------------------------------------------------------
      * | Generating the demand amount for the applicant in Water Connection Charges Table 
@@ -135,8 +138,9 @@ class NewConnectionRepository implements iNewConnection
      * |--------------------------------- Check property for the vacant land ------------------------------|
      * | @param req
      * | @param vacantLand
-     * | @var readPropetySafCheck
-     * | @var readpropetyHoldingCheck
+     * | @param isExist
+     * | @var propetySafCheck
+     * | @var propetyHoldingCheck
      * | Operation : check if the applied application is in vacant land 
         | Serial No : 01.1
      */
@@ -180,6 +184,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param req
      * | @var safCheck
      * | @var holdingCheck
+     * | @return value : true or nothing 
         | Serial No : 01.1.1
      */
     public function checkPropertyExist($req)
@@ -216,14 +221,14 @@ class NewConnectionRepository implements iNewConnection
 
     /**
      * |------------------------------------------ water Inbox -------------------------------------|
-     * | @var auth
      * | @var userId
      * | @var ulbId
      * | @var occupiedWards 
-     * | @var roleId
+     * | @var roleIds
+     * | @var readRoles
+     * | @var mWfWardUser
+     * | @var mWfRoleUser
      * | @var waterList : using the function to fetch the list of the respective water application details according to (ulbId, roleId and ward) 
-     * | @var wardId : using the Workflow trait's function (getWardUserId($userId)) for respective wardId.
-     * | @var roles : using the Workflow trait's function (getRoleIdByUserId($userID)) for  respective roles.
      * | @return waterList : Details to be displayed in the inbox of the offices in water workflow. 
         | Serila No : 02
         | Working
@@ -288,7 +293,7 @@ class NewConnectionRepository implements iNewConnection
 
         $waterList = $this->getWaterApplicatioList($ulbId)
             ->whereNotIn('water_applications.current_role', $roleId)
-            ->whereIn('a.ward_mstr_id', $wardId)
+            ->whereIn('water_applications.ward_id', $wardId)
             ->orderByDesc('water_applications.id')
             ->get();
 
@@ -299,43 +304,43 @@ class NewConnectionRepository implements iNewConnection
     /**
      * |------------------------------------------ Post Application to the next level ---------------------------------------|
      * | @param req
-     * | @var 
+     * | @var metaReqs
+     * | @var waterTrack
+     * | @var waterApplication
         | Serial No : 04
         | Working
      */
     public function postNextLevel($req)
     {
-        try {
-            $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
-            $metaReqs['workflowId'] = Config::get('workflow-constants.WATER_WORKFLOW_ID');
-            $metaReqs['refTableDotId'] = 'water_applications.id';
-            $metaReqs['refTableIdValue'] = $req->appId;
-            $req->request->add($metaReqs);
+        $metaReqs['moduleId'] =  $this->_waterModulId;
+        $metaReqs['workflowId'] = $this->_waterWorkId;
+        $metaReqs['refTableDotId'] = 'water_applications.id';
+        $metaReqs['refTableIdValue'] = $req->appId;
+        $req->request->add($metaReqs);
 
-            $objTrack = new WorkflowTrack();
-            $objTrack->saveTrack($req);
+        $waterTrack = new WorkflowTrack();
+        $waterTrack->saveTrack($req);
 
-            # objection Application Update Current Role Updation
-            $objection = WaterApplication::find($req->appId);
-            $objection->current_role = $req->receiverRoleId;
-            $objection->save();
+        # objection Application Update Current Role Updation
+        $waterApplication = WaterApplication::find($req->appId);
+        $waterApplication->current_role = $req->receiverRoleId;
+        $waterApplication->save();
 
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
+        return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
 
 
     /**
      * |---------------------------------------------- Special Inbox -----------------------------------------|
-     * | @var auth
+     * | @param request
+     * | @var mWfWardUser
      * | @var userId
      * | @var wardID
      * | @var ulbId
      * | @var occupiedWards
      * | @var waterList
+     * | @var waterData
+     * | @return waterData :
      * |
         | Serial No : 05
         | Unchecked 
@@ -350,12 +355,12 @@ class NewConnectionRepository implements iNewConnection
         $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
             return $item->ward_id;
         });
-        $safData = $this->getWaterApplicatioList($ulbId)                      // Repository function to get SAF Details
+        $waterData = $this->getWaterApplicatioList($ulbId)                      // Repository function to get SAF Details
             ->where('water_applications.is_escalate', 1)
             ->whereIn('ward_mstr_id', $wardId)
             ->orderByDesc('id')
             ->get();
-        return responseMsgs(true, "Data Fetched", remove_null($safData), "010107", "1.0", "251ms", "POST", "");
+        return responseMsgs(true, "Data Fetched", remove_null($waterData), "010107", "1.0", "251ms", "POST", "");
     }
 
 
@@ -365,15 +370,15 @@ class NewConnectionRepository implements iNewConnection
      * | @var userId
      * | @var applicationNo
      * | @var 
-        | Serial No : 00 
+        | Serial No : 06 
         | Unchecked
      */
     public function postEscalate($request)
     {
         try {
             $userId = auth()->user()->id;
-            $applicationNo = $request->applicationNo;
-            $applicationsData = WaterApplication::find($applicationNo);
+            $applicationId = $request->applicationId;
+            $applicationsData = WaterApplication::find($applicationId);
             $applicationsData->is_escalate = $request->escalateStatus;
             $applicationsData->escalate_by = $userId;
             $applicationsData->save();
@@ -389,7 +394,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param Req 
      * | @var userId
      * | @var docStatus
-        | Serial No : 06
+        | Serial No : 07
         | Unchecked
      */
     public function waterDocStatus($req)
@@ -426,25 +431,32 @@ class NewConnectionRepository implements iNewConnection
      * |------------------------------ Approval Rejection Water -------------------------------|
      * | @param request 
      * | @var waterDetails
-        | Serial No : 00 / Route
+     * | @var approvedWater
+     * | @var rejectedWater
+     * | @var msg
+        | Serial No : 08 
+        | Unchecked
      */
     public function approvalRejectionWater($request)
     {
-        $waterDetails = WaterApplication::find($request->applicationNo);
-        if ($waterDetails->finisher_role_id != $request->roleId) {
+        // return WaterApprovalApplicationDetail::get();
+        $now = Carbon::now();
+        $waterDetails = WaterApplication::find($request->id);
+        if ($waterDetails->finisher != $request->roleId) {
             return responseMsg(false, "Forbidden Access!", "");
         }
         DB::beginTransaction();
         // Approval
         if ($request->status == 1) {
             $approvedWater = WaterApplication::query()
-                ->where('id', $request->applicationNo)
+                ->where('id', $request->id)
                 ->first();
 
-            $approvedWater = $approvedWater->replicate();
-            $approvedWater->setTable('water_approval_application_details');
-            $approvedWater->id = $approvedWater->id;
-            $approvedWater->save();
+            $approvedWaterRep = $approvedWater->replicate();
+            $approvedWaterRep->setTable('water_approval_application_details');
+            $approvedWaterRep->id = $approvedWater->id;
+            $approvedWaterRep->consumer_no = 'CON' . $now->getTimeStamp();
+            $approvedWaterRep->save();
             $approvedWater->delete();
 
             $msg = "Application Successfully Approved !!";
@@ -452,13 +464,13 @@ class NewConnectionRepository implements iNewConnection
         // Rejection
         if ($request->status == 0) {
             $rejectedWater = WaterApplication::query()
-                ->where('id', $request->applicationNo)
+                ->where('id', $request->id)
                 ->first();
 
-            $rejectedWater = $rejectedWater->replicate();
-            $rejectedWater->setTable('water_rejection_application_details');
-            $rejectedWater->id = $rejectedWater->id;
-            $rejectedWater->save();
+            $rejectedWaterRep = $rejectedWater->replicate();
+            $rejectedWaterRep->setTable('water_rejection_application_details');
+            $rejectedWaterRep->id = $rejectedWater->id;
+            $rejectedWaterRep->save();
             $rejectedWater->delete();
             $msg = "Application Successfully Rejected !!";
         }
@@ -607,5 +619,32 @@ class NewConnectionRepository implements iNewConnection
     {
         $docPath = (config('app.url') . '/api/getImageLink?path=' . $path);
         return $docPath;
+    }
+
+    /**
+     * |----------------------- comment Indipendent -----------------------|
+     * | @param request
+        | Serial No : 00
+        | Unchecked
+     */
+    public function commentIndependent($request)
+    {
+        $applicationId = WaterApplication::find($request->id);
+        $workflowTrack = new WorkflowTrack();
+        $mSafWorkflowId = $this->_waterWorkId;
+        $mModuleId =  $this->_waterModulId;
+        $metaReqs = array();
+
+        // Save On Workflow Track
+        $metaReqs = [
+            'workflowId' => $mSafWorkflowId,
+            'moduleId' => $mModuleId,
+            'workflowId' => $mSafWorkflowId,
+            'refTableDotId' => "water_applications.id",
+            'refTableIdValue' => $applicationId->id
+        ];
+        $request->request->add($metaReqs);
+        $workflowTrack->saveTrack($request);
+        return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "427ms", "POST", "");
     }
 }
