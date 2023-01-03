@@ -252,9 +252,6 @@ class NewConnectionController extends Controller
     public function waterSpecialInbox(Request $request)
     {
         try {
-            $request->validate([
-                'ulb_id' => 'required'
-            ]);
             return $this->newConnection->waterSpecialInbox($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

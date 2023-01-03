@@ -348,7 +348,7 @@ class NewConnectionRepository implements iNewConnection
     {
         $mWfWardUser = new WfWardUser();
         $userId = authUser()->id;
-        $ulbId = $request->ulb_id;
+        $ulbId = authUser()->ulb_id;
 
         $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
         $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
