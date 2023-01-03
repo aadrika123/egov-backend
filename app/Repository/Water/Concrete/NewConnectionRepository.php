@@ -381,7 +381,7 @@ class NewConnectionRepository implements iNewConnection
         $applicationsData->is_escalate = $request->escalateStatus;
         $applicationsData->escalate_by = $userId;
         $applicationsData->save();
-        return responseMsgs(true, $request->escalateStatus == 1 ? 'Saf is Escalated' : "Saf is removed from Escalated", '', "", "1.0", ".ms", "POST", $request->deviceId);
+        return responseMsgs(true, $request->escalateStatus == 1 ? 'Water is Escalated' : "Water is removed from Escalated", '', "", "1.0", ".ms", "POST", $request->deviceId);
     }
 
 
