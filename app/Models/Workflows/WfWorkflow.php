@@ -70,8 +70,8 @@ class WfWorkflow extends Model
             'wf_workflows.*',
             'wf_masters.workflow_name',
             'ulb_masters.ulb_name',
-            'wf_roles.role_name as initiator_role',
-            'frole.role_name as finisher_role'
+            'wf_roles.role_name as initiator_role_name',
+            'frole.role_name as finisher_role_name'
         )
             ->join('wf_masters', 'wf_masters.id', 'wf_workflows.wf_master_id')
             ->join('ulb_masters', 'ulb_masters.id', 'wf_workflows.ulb_id')
