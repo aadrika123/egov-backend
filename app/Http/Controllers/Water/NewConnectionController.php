@@ -304,7 +304,8 @@ class NewConnectionController extends Controller
     {
         try {
             $request->validate([
-                "applicationNo" => "required",
+                "id" => "required",
+                "roleId" => "required",
                 "status" => "required"
             ]);
             return $this->newConnection->approvalRejectionWater($request);

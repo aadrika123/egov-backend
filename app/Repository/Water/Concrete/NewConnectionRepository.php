@@ -7,6 +7,7 @@ use App\Models\Property\PropProperty;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplicantDoc;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterLevelpending;
 use App\Models\Water\WaterPenaltyInstallment;
@@ -437,21 +438,24 @@ class NewConnectionRepository implements iNewConnection
      */
     public function approvalRejectionWater($request)
     {
-        $waterDetails = WaterApplication::find($request->applicationNo);
-        if ($waterDetails->finisher_role_id != $request->roleId) {
+        // return WaterApprovalApplicationDetail::get();
+        $now = Carbon::now();
+        $waterDetails = WaterApplication::find($request->id);
+        if ($waterDetails->finisher != $request->roleId) {
             return responseMsg(false, "Forbidden Access!", "");
         }
         DB::beginTransaction();
         // Approval
         if ($request->status == 1) {
             $approvedWater = WaterApplication::query()
-                ->where('id', $request->applicationNo)
+                ->where('id', $request->id)
                 ->first();
 
-            $approvedWater = $approvedWater->replicate();
-            $approvedWater->setTable('water_approval_application_details');
-            $approvedWater->id = $approvedWater->id;
-            $approvedWater->save();
+            $approvedWaterRep = $approvedWater->replicate();
+            $approvedWaterRep->setTable('water_approval_application_details');
+            $approvedWaterRep->id = $approvedWater->id;
+            $approvedWaterRep->consumer_no = 'CON' . $now->getTimeStamp();
+            $approvedWaterRep->save();
             $approvedWater->delete();
 
             $msg = "Application Successfully Approved !!";
@@ -459,13 +463,13 @@ class NewConnectionRepository implements iNewConnection
         // Rejection
         if ($request->status == 0) {
             $rejectedWater = WaterApplication::query()
-                ->where('id', $request->applicationNo)
+                ->where('id', $request->id)
                 ->first();
 
-            $rejectedWater = $rejectedWater->replicate();
-            $rejectedWater->setTable('water_rejection_application_details');
-            $rejectedWater->id = $rejectedWater->id;
-            $rejectedWater->save();
+            $rejectedWaterRep = $rejectedWater->replicate();
+            $rejectedWaterRep->setTable('water_rejection_application_details');
+            $rejectedWaterRep->id = $rejectedWater->id;
+            $rejectedWaterRep->save();
             $rejectedWater->delete();
             $msg = "Application Successfully Rejected !!";
         }
