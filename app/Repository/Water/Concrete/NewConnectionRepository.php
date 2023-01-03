@@ -25,7 +25,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Exists;
-use Razorpay\Api\Collection;
 
 /**
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
@@ -43,12 +42,16 @@ class NewConnectionRepository implements iNewConnection
     private $_dealingAssistent;
     private $_vacantLand;
     private $_waterWorkflowId;
+    private $_waterWorkId;
+    private $_waterModulId;
 
     public function __construct()
     {
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
         $this->_vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
         $this->_waterWorkflowId = Config::get('workflow-constants.WATER_MASTER_ID');
+        $this->_waterWorkId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
+        $this->_waterModulId = Config::get('module-constants.WATER_MODULE_ID');
     }
 
     /**
@@ -288,7 +291,7 @@ class NewConnectionRepository implements iNewConnection
 
         $waterList = $this->getWaterApplicatioList($ulbId)
             ->whereNotIn('water_applications.current_role', $roleId)
-            ->whereIn('a.ward_mstr_id', $wardId)
+            ->whereIn('water_applications.ward_id', $wardId)
             ->orderByDesc('water_applications.id')
             ->get();
 
@@ -306,8 +309,8 @@ class NewConnectionRepository implements iNewConnection
     public function postNextLevel($req)
     {
         try {
-            $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
-            $metaReqs['workflowId'] = Config::get('workflow-constants.WATER_WORKFLOW_ID');
+            $metaReqs['moduleId'] =  $this->_waterModulId;
+            $metaReqs['workflowId'] = $this->_waterWorkId;
             $metaReqs['refTableDotId'] = 'water_applications.id';
             $metaReqs['refTableIdValue'] = $req->appId;
             $req->request->add($metaReqs);
@@ -365,15 +368,15 @@ class NewConnectionRepository implements iNewConnection
      * | @var userId
      * | @var applicationNo
      * | @var 
-        | Serial No : 00 
+        | Serial No : 06 
         | Unchecked
      */
     public function postEscalate($request)
     {
         try {
             $userId = auth()->user()->id;
-            $applicationNo = $request->applicationNo;
-            $applicationsData = WaterApplication::find($applicationNo);
+            $applicationId = $request->applicationId;
+            $applicationsData = WaterApplication::find($applicationId);
             $applicationsData->is_escalate = $request->escalateStatus;
             $applicationsData->escalate_by = $userId;
             $applicationsData->save();
@@ -389,7 +392,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param Req 
      * | @var userId
      * | @var docStatus
-        | Serial No : 06
+        | Serial No : 07
         | Unchecked
      */
     public function waterDocStatus($req)
@@ -426,7 +429,11 @@ class NewConnectionRepository implements iNewConnection
      * |------------------------------ Approval Rejection Water -------------------------------|
      * | @param request 
      * | @var waterDetails
-        | Serial No : 00 / Route
+     * | @var approvedWater
+     * | @var rejectedWater
+     * | @var msg
+        | Serial No : 08 
+        | Unchecked
      */
     public function approvalRejectionWater($request)
     {
@@ -607,5 +614,32 @@ class NewConnectionRepository implements iNewConnection
     {
         $docPath = (config('app.url') . '/api/getImageLink?path=' . $path);
         return $docPath;
+    }
+
+    /**
+     * |----------------------- comment Indipendent -----------------------|
+     * | @param request
+        | Serial No : 00
+        | Unchecked
+     */
+    public function commentIndependent($request)
+    {
+        $applicationId = WaterApplication::find($request->id);
+        $workflowTrack = new WorkflowTrack();       
+        $mSafWorkflowId = $this->_waterWorkId;
+        $mModuleId =  $this->_waterModulId;
+        $metaReqs = array();
+       
+        // Save On Workflow Track
+        $metaReqs = [
+            'workflowId' => $mSafWorkflowId,
+            'moduleId' => $mModuleId,
+            'workflowId' => $mSafWorkflowId,
+            'refTableDotId' => "water_applications.id",
+            'refTableIdValue' => $applicationId->id
+        ];
+        $request->request->add($metaReqs);
+        $workflowTrack->saveTrack($request);
+        return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "427ms", "POST", "");
     }
 }

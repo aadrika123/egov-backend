@@ -56,6 +56,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get-water-doc-details','getWaterDocDetails');                                      //
         Route::post('water-doc-status','waterDocStatus');                                               //
         Route::post('approval-rejection-water','approvalRejectionWater');                               //
+        Route::post('comment-independent','commentIndependent');                                        //
     });
 });
 

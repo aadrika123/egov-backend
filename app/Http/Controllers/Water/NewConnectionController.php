@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Traits\Ward;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class NewConnectionController extends Controller
@@ -301,15 +302,29 @@ class NewConnectionController extends Controller
     // final approval or rejection of the application
     public function approvalRejectionWater(Request $request)
     {
-        try{
+        try {
             $request->validate([
                 "applicationNo" => "required",
                 "status" => "required"
             ]);
             return $this->newConnection->approvalRejectionWater($request);
-        }catch(Exception $e)
-        {
-            return responseMsg(false,$e->getMessage(),"");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Indipendent Comment on the Water Applications
+    public function commentIndependent(Request $request)
+    {
+        try {
+            $request->validate([
+                'comment' => 'required',
+                'applicationNo' => 'required|integer'
+            ]);
+            return $this->newConnection->commentIndependent($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }
