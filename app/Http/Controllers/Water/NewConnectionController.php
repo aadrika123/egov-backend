@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterOwnerTypeMstr;
@@ -228,6 +229,7 @@ class NewConnectionController extends Controller
             ]);
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
+            DB::rollBack();
             return responseMsg(false, $error->getMessage(), "");
         }
     }
@@ -308,7 +310,11 @@ class NewConnectionController extends Controller
                 "roleId" => "required",
                 "status" => "required"
             ]);
-            return $this->newConnection->approvalRejectionWater($request);
+            $waterDetails = WaterApplication::find($request->id);
+            if ($waterDetails) {
+                return $this->newConnection->approvalRejectionWater($request);
+            }
+            throw new Exception("Application dont exist!");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");

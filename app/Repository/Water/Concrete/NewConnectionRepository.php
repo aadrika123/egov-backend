@@ -68,7 +68,6 @@ class NewConnectionRepository implements iNewConnection
      * | Post the value in Water Application table
      * | post the value in Water Applicants table by loop
      * | 
-     * | time : 
      * | rating : 5
      * ------------------------------------------------------------------------------------
      * | Generating the demand amount for the applicant in Water Connection Charges Table 
@@ -139,8 +138,9 @@ class NewConnectionRepository implements iNewConnection
      * |--------------------------------- Check property for the vacant land ------------------------------|
      * | @param req
      * | @param vacantLand
-     * | @var readPropetySafCheck
-     * | @var readpropetyHoldingCheck
+     * | @param isExist
+     * | @var propetySafCheck
+     * | @var propetyHoldingCheck
      * | Operation : check if the applied application is in vacant land 
         | Serial No : 01.1
      */
@@ -184,6 +184,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param req
      * | @var safCheck
      * | @var holdingCheck
+     * | @return value : true or nothing 
         | Serial No : 01.1.1
      */
     public function checkPropertyExist($req)
@@ -220,14 +221,14 @@ class NewConnectionRepository implements iNewConnection
 
     /**
      * |------------------------------------------ water Inbox -------------------------------------|
-     * | @var auth
      * | @var userId
      * | @var ulbId
      * | @var occupiedWards 
-     * | @var roleId
+     * | @var roleIds
+     * | @var readRoles
+     * | @var mWfWardUser
+     * | @var mWfRoleUser
      * | @var waterList : using the function to fetch the list of the respective water application details according to (ulbId, roleId and ward) 
-     * | @var wardId : using the Workflow trait's function (getWardUserId($userId)) for respective wardId.
-     * | @var roles : using the Workflow trait's function (getRoleIdByUserId($userID)) for  respective roles.
      * | @return waterList : Details to be displayed in the inbox of the offices in water workflow. 
         | Serila No : 02
         | Working
@@ -303,43 +304,43 @@ class NewConnectionRepository implements iNewConnection
     /**
      * |------------------------------------------ Post Application to the next level ---------------------------------------|
      * | @param req
-     * | @var 
+     * | @var metaReqs
+     * | @var waterTrack
+     * | @var waterApplication
         | Serial No : 04
         | Working
      */
     public function postNextLevel($req)
     {
-        try {
-            $metaReqs['moduleId'] =  $this->_waterModulId;
-            $metaReqs['workflowId'] = $this->_waterWorkId;
-            $metaReqs['refTableDotId'] = 'water_applications.id';
-            $metaReqs['refTableIdValue'] = $req->appId;
-            $req->request->add($metaReqs);
+        $metaReqs['moduleId'] =  $this->_waterModulId;
+        $metaReqs['workflowId'] = $this->_waterWorkId;
+        $metaReqs['refTableDotId'] = 'water_applications.id';
+        $metaReqs['refTableIdValue'] = $req->appId;
+        $req->request->add($metaReqs);
 
-            $objTrack = new WorkflowTrack();
-            $objTrack->saveTrack($req);
+        $waterTrack = new WorkflowTrack();
+        $waterTrack->saveTrack($req);
 
-            # objection Application Update Current Role Updation
-            $objection = WaterApplication::find($req->appId);
-            $objection->current_role = $req->receiverRoleId;
-            $objection->save();
+        # objection Application Update Current Role Updation
+        $waterApplication = WaterApplication::find($req->appId);
+        $waterApplication->current_role = $req->receiverRoleId;
+        $waterApplication->save();
 
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
+        return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
 
 
     /**
      * |---------------------------------------------- Special Inbox -----------------------------------------|
-     * | @var auth
+     * | @param request
+     * | @var mWfWardUser
      * | @var userId
      * | @var wardID
      * | @var ulbId
      * | @var occupiedWards
      * | @var waterList
+     * | @var waterData
+     * | @return waterData :
      * |
         | Serial No : 05
         | Unchecked 
@@ -354,12 +355,12 @@ class NewConnectionRepository implements iNewConnection
         $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
             return $item->ward_id;
         });
-        $safData = $this->getWaterApplicatioList($ulbId)                      // Repository function to get SAF Details
+        $waterData = $this->getWaterApplicatioList($ulbId)                      // Repository function to get SAF Details
             ->where('water_applications.is_escalate', 1)
             ->whereIn('ward_mstr_id', $wardId)
             ->orderByDesc('id')
             ->get();
-        return responseMsgs(true, "Data Fetched", remove_null($safData), "010107", "1.0", "251ms", "POST", "");
+        return responseMsgs(true, "Data Fetched", remove_null($waterData), "010107", "1.0", "251ms", "POST", "");
     }
 
 
@@ -629,11 +630,11 @@ class NewConnectionRepository implements iNewConnection
     public function commentIndependent($request)
     {
         $applicationId = WaterApplication::find($request->id);
-        $workflowTrack = new WorkflowTrack();       
+        $workflowTrack = new WorkflowTrack();
         $mSafWorkflowId = $this->_waterWorkId;
         $mModuleId =  $this->_waterModulId;
         $metaReqs = array();
-       
+
         // Save On Workflow Track
         $metaReqs = [
             'workflowId' => $mSafWorkflowId,
