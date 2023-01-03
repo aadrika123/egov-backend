@@ -282,14 +282,15 @@ class ObjectionRepository implements iObjectionRepository
                 PropActiveObjection::where('id', $objection->id)
                     ->update(['objection_no' => $objectionNo]);
 
-                return $floorData = $request->floorData;
-                $floor = collect($floorData);
+                $floorData = $request->floorData;
+                $floor = json_decode($floorData);
+                $floor = collect($floor);
 
                 foreach ($floor as $floors) {
                     $assement_floor = new PropActiveObjectionFloor;
                     $assement_floor->property_id = $request->propId;
                     $assement_floor->objection_id = $objection->id;
-                    $assement_floor->prop_floor_id = $request->propFloorId;
+                    $assement_floor->prop_floor_id = $floors->propFloorId;
                     $assement_floor->floor_mstr_id = $floors->floorNo;
                     $assement_floor->usage_type_mstr_id = $floors->usageType;
                     $assement_floor->occupancy_type_mstr_id = $floors->occupancyType;
@@ -324,17 +325,7 @@ class ObjectionRepository implements iObjectionRepository
             }
             DB::commit();
 
-            if (isset($objectionFor) && $objectionNo) {
-                //level pending
-                $labelPending = new PropObjectionLevelpending();
-                $labelPending->objection_id = $objection->id;
-                $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
-                $labelPending->save();
-
-                return responseMsgs(true, "Successfully Saved", $objectionNo, '010801', '01', '382ms-547ms', 'Post', '');
-            } else {
-                return responseMsg(false, "Undefined parameter supply", "");
-            }
+            return responseMsgs(true, "Successfully Saved", $objectionNo, '010801', '01', '382ms-547ms', 'Post', '');
         } catch (Exception $e) {
             return response()->json($e->getMessage());
         }
