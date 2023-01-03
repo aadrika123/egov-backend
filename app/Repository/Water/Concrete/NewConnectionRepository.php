@@ -254,6 +254,7 @@ class NewConnectionRepository implements iNewConnection
         $waterList = $this->getWaterApplicatioList($ulbId,)
             ->whereIn('water_applications.current_role', $roleIds)
             ->whereIn('water_applications.ward_id', $occupiedWards)
+            ->where('water_applications.is_escalate', false)
             ->orderByDesc('water_applications.id')
             ->get();
 
@@ -276,6 +277,7 @@ class NewConnectionRepository implements iNewConnection
      */
     public function waterOutbox()
     {
+        $mWfRoleUser = new WfRoleusermap();
         $mWfWardUser = new WfWardUser();
 
         $userId = auth()->user()->id;
@@ -371,7 +373,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var applicationsData
      * | @var 
         | Serial No : 06 
-        | Unchecked / flag
+        | working
      */
     public function postEscalate($request)
     {
@@ -393,7 +395,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var msg
      * | @return msg : status
         | Serial No : 07
-        | Unchecked / Flag
+        | Working / Flag
      */
     public function waterDocStatus($req)
     {
@@ -429,7 +431,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var rejectedWater
      * | @var msg
         | Serial No : 08 
-        | Unchecked
+        | Working
      */
     public function approvalRejectionWater($request)
     {
@@ -547,11 +549,11 @@ class NewConnectionRepository implements iNewConnection
      */
     public function getWaterDocDetails($request)
     {
-        $applicationNo = null;
+        $applicationId = null;
         $mUploadDocument = (array)null;
-        $applicationNo   = $request->applicationNo;
+        $applicationId   = $request->id;
 
-        $refApplicationNo = WaterApplication::where('application_no', $applicationNo)->get();
+        $refApplicationNo = WaterApplication::where('id', $applicationId)->get();
         if (!$refApplicationNo) {
             throw new Exception("Data Not Found!");
         }
@@ -632,8 +634,7 @@ class NewConnectionRepository implements iNewConnection
         $mModuleId =  $this->_waterModulId;
         $metaReqs = array();
 
-        if(!$applicationId)
-        {
+        if (!$applicationId) {
             throw new Exception("Application Don't Exist!");
         }
 
@@ -648,5 +649,14 @@ class NewConnectionRepository implements iNewConnection
         $request->request->add($metaReqs);
         $workflowTrack->saveTrack($request);
         return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "427ms", "POST", "");
+    }
+
+    /**
+     * |------------------------------------- Back to Citizen ----------------------------------|
+     * | @param request
+     */
+    public function backToCitizen(Request $request)
+    {
+        $userId = auth()->user()->id;
     }
 }

@@ -277,7 +277,7 @@ class NewConnectionController extends Controller
     {
         try {
             $request->validate([
-                "applicationNo" => "required",
+                "id" => "required",
             ]);
             return $this->newConnection->getWaterDocDetails($request);
         } catch (Exception $e) {
