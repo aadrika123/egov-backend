@@ -339,15 +339,19 @@ class NewConnectionController extends Controller
     // Get Approved Water Appliction
     public function approvedWaterApplications(Request $request)
     {
+
         try {
             $userId = auth()->user()->id;
-            $obj = new WaterApprovalApplicationDetail();
-            $approvedWater = $obj->getApprovedApplications()
-                ->select(
-                    'id',
-                    'consumer_no',
-                    'address'
-                )
+            $approvedWater = WaterApprovalApplicationDetail::select(
+                'water_approval_application_details.id',
+                'consumer_no',
+                'water_approval_application_details.address',
+                'water_approval_application_details.ulb_id',
+                'water_approval_application_details.ward_id',
+                'ulb_ward_masters.ward_name'
+            )
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
+                ->orderByDesc('id')
                 ->where('user_id', $userId)
                 ->get();
             if ($approvedWater) {
@@ -362,8 +366,7 @@ class NewConnectionController extends Controller
                             ->get();
                         $owner = collect($owner)->first();
                         $user = collect($value);
-                        $merged = $user->merge($owner);
-                        return $merged;
+                        return $user->merge($owner);
                     }
                 );
                 return responseMsgs(true, "List of Approved water Applications!", remove_null($returnWater), "", "02", ".ms", "POST", $request->deviceId);
