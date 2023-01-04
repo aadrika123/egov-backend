@@ -341,6 +341,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('workflow/role-map/byId', 'roleMapbyId');                       // Get Workflow By Id
         Route::post('workflow/role-map/list', 'getAllRoleMap');                     // Get All Workflow
         Route::post('workflow/role-map/delete', 'deleteRoleMap');                   // Delete Workflow
+        Route::post('workflow/role-map/permission', 'permission');
     });
 
 
