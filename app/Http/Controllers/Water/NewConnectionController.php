@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionThroughMstrs;
@@ -340,9 +341,22 @@ class NewConnectionController extends Controller
             $userId = auth()->user()->id;
             $obj = new WaterApprovalApplicationDetail();
             $approvedWater = $obj->getApprovedApplications()
+                ->select(
+                    'id',
+                    'consumer_no',
+                    'address'
+                )
                 ->where('user_id', $userId)
                 ->first();
             if ($approvedWater) {
+                $owner = WaterApplicant::select(
+                    'applicant_name',
+                    'mobile_no',
+                    'email'
+                )
+                    ->where('application_id', $approvedWater->id)
+                    ->get();
+                $approvedWater['owner_details'] = $owner;
                 return responseMsgs(true, "List of Approved water Applications!", remove_null($approvedWater), "", "02", ".ms", "POST", $request->deviceId);
             }
             throw new Exception("Data Not Found!");

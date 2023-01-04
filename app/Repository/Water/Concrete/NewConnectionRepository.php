@@ -473,7 +473,7 @@ class NewConnectionRepository implements iNewConnection
             $msg = "Application Successfully Rejected !!";
         }
         DB::commit();
-        return responseMsgs(true, $msg, "", '', 01, '.ms', 'Post', $request->deviceId);
+        return responseMsgs(true, $msg, $approvedWaterRep->consumer_no ?? "Empty", '', 01, '.ms', 'Post', $request->deviceId);
     }
 
 
@@ -658,6 +658,5 @@ class NewConnectionRepository implements iNewConnection
     public function backToCitizen(Request $request)
     {
         $userId = auth()->user()->id;
-        
     }
 }
