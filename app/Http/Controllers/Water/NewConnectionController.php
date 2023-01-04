@@ -339,17 +339,17 @@ class NewConnectionController extends Controller
     // Get Approved Water Appliction
     public function approvedWaterApplications(Request $request)
     {
-
         try {
             $userId = auth()->user()->id;
             $approvedWater = WaterApprovalApplicationDetail::select(
                 'water_approval_application_details.id',
                 'consumer_no',
                 'water_approval_application_details.address',
-                'water_approval_application_details.ulb_id',
+                'ulb_masters.ulb_name',
                 'water_approval_application_details.ward_id',
                 'ulb_ward_masters.ward_name'
             )
+                ->join('ulb_masters', 'ulb_masters.id', '=', 'water_approval_application_details.ulb_id')
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
                 ->orderByDesc('id')
                 ->where('user_id', $userId)
@@ -364,6 +364,8 @@ class NewConnectionController extends Controller
                         )
                             ->where('application_id', $value['id'])
                             ->get();
+
+                        # remove in case of multiple owner
                         $owner = collect($owner)->first();
                         $user = collect($value);
                         return $user->merge($owner);
