@@ -24,4 +24,5 @@ interface iNewConnection
    public function waterDocStatus($request);                            // Change the doc status in the level
    public function approvalRejectionWater($request);                    // Final Approval and Rejection of water Applications
    public function commentIndependent($request);                        // Indipendent Commenting on the Application
+   public function getApprovedWater($request);
 }

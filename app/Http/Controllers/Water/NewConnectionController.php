@@ -340,18 +340,21 @@ class NewConnectionController extends Controller
     public function approvedWaterApplications(Request $request)
     {
         try {
+            if ($request->consumerNo) {
+                return $this->newConnection->getApprovedWater($request);
+            }
+
             $userId = auth()->user()->id;
-            $approvedWater = WaterApprovalApplicationDetail::select(
-                'water_approval_application_details.id',
-                'consumer_no',
-                'water_approval_application_details.address',
-                'ulb_masters.ulb_name',
-                'water_approval_application_details.ward_id',
-                'ulb_ward_masters.ward_name'
-            )
-                ->join('ulb_masters', 'ulb_masters.id', '=', 'water_approval_application_details.ulb_id')
-                ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
-                ->orderByDesc('id')
+            $obj = new WaterApprovalApplicationDetail();
+            $approvedWater = $obj->getApplicationRelatedDetails()
+                ->select(
+                    'water_approval_application_details.id',
+                    'consumer_no',
+                    'water_approval_application_details.address',
+                    'ulb_masters.ulb_name',
+                    'water_approval_application_details.ward_id',
+                    'ulb_ward_masters.ward_name'
+                )
                 ->where('user_id', $userId)
                 ->get();
             if ($approvedWater) {
@@ -377,5 +380,11 @@ class NewConnectionController extends Controller
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    // Get the water payment details and track details
+    public function getWaterPayment($request)
+    {
+        
     }
 }
