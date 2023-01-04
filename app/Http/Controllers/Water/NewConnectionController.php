@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionThroughMstrs;
@@ -13,8 +14,10 @@ use Illuminate\Http\Request;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Traits\Ward;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Ramsey\Collection\Collection as CollectionCollection;
 
 class NewConnectionController extends Controller
 {
@@ -277,7 +280,7 @@ class NewConnectionController extends Controller
     {
         try {
             $request->validate([
-                "applicationNo" => "required",
+                "id" => "required",
             ]);
             return $this->newConnection->getWaterDocDetails($request);
         } catch (Exception $e) {
@@ -337,11 +340,51 @@ class NewConnectionController extends Controller
     public function approvedWaterApplications(Request $request)
     {
         try {
+            if ($request->consumerNo) {
+                return $this->newConnection->getApprovedWater($request);
+            }
+
+            $userId = auth()->user()->id;
             $obj = new WaterApprovalApplicationDetail();
-            $approvedWater = $obj->getApprovedApplications($request);
-            return responseMsgs(true, "List of Approved water Applications!", remove_null($approvedWater), "", "02", ".ms", "POST", $request->deviceId);
+            $approvedWater = $obj->getApplicationRelatedDetails()
+                ->select(
+                    'water_approval_application_details.id',
+                    'consumer_no',
+                    'water_approval_application_details.address',
+                    'ulb_masters.ulb_name',
+                    'water_approval_application_details.ward_id',
+                    'ulb_ward_masters.ward_name'
+                )
+                ->where('user_id', $userId)
+                ->get();
+            if ($approvedWater) {
+                $returnWater = collect($approvedWater)->map(
+                    function ($value, $key) use ($approvedWater) {
+                        $owner = WaterApplicant::select(
+                            'applicant_name',
+                            'mobile_no',
+                            'email'
+                        )
+                            ->where('application_id', $value['id'])
+                            ->get();
+
+                        # remove in case of multiple owner
+                        $owner = collect($owner)->first();
+                        $user = collect($value);
+                        return $user->merge($owner);
+                    }
+                );
+                return responseMsgs(true, "List of Approved water Applications!", remove_null($returnWater), "", "02", ".ms", "POST", $request->deviceId);
+            }
+            throw new Exception("Data Not Found!");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    // Get the water payment details and track details
+    public function getWaterPayment($request)
+    {
+        
     }
 }
