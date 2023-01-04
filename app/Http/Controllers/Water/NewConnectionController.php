@@ -337,9 +337,15 @@ class NewConnectionController extends Controller
     public function approvedWaterApplications(Request $request)
     {
         try {
+            $userId = auth()->user()->id;
             $obj = new WaterApprovalApplicationDetail();
-            $approvedWater = $obj->getApprovedApplications($request);
-            return responseMsgs(true, "List of Approved water Applications!", remove_null($approvedWater), "", "02", ".ms", "POST", $request->deviceId);
+            $approvedWater = $obj->getApprovedApplications()
+                ->where('user_id', $userId)
+                ->first();
+            if ($approvedWater) {
+                return responseMsgs(true, "List of Approved water Applications!", remove_null($approvedWater), "", "02", ".ms", "POST", $request->deviceId);
+            }
+            throw new Exception("Data Not Found!");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
