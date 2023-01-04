@@ -14,8 +14,10 @@ use Illuminate\Http\Request;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Traits\Ward;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Ramsey\Collection\Collection as CollectionCollection;
 
 class NewConnectionController extends Controller
 {
@@ -347,17 +349,24 @@ class NewConnectionController extends Controller
                     'address'
                 )
                 ->where('user_id', $userId)
-                ->first();
+                ->get();
             if ($approvedWater) {
-                $owner = WaterApplicant::select(
-                    'applicant_name',
-                    'mobile_no',
-                    'email'
-                )
-                    ->where('application_id', $approvedWater->id)
-                    ->get();
-                $approvedWater['owner_details'] = $owner;
-                return responseMsgs(true, "List of Approved water Applications!", remove_null($approvedWater), "", "02", ".ms", "POST", $request->deviceId);
+                $returnWater = collect($approvedWater)->map(
+                    function ($value, $key) use ($approvedWater) {
+                        $owner = WaterApplicant::select(
+                            'applicant_name',
+                            'mobile_no',
+                            'email'
+                        )
+                            ->where('application_id', $value['id'])
+                            ->get();
+                        $owner = collect($owner)->first();
+                        $user = collect($value);
+                        $merged = $user->merge($owner);
+                        return $merged;
+                    }
+                );
+                return responseMsgs(true, "List of Approved water Applications!", remove_null($returnWater), "", "02", ".ms", "POST", $request->deviceId);
             }
             throw new Exception("Data Not Found!");
         } catch (Exception $e) {

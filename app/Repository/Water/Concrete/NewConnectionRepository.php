@@ -658,5 +658,6 @@ class NewConnectionRepository implements iNewConnection
     public function backToCitizen(Request $request)
     {
         $userId = auth()->user()->id;
+        
     }
 }
