@@ -15,7 +15,7 @@ class WaterApplicant extends Model
      * |
         |
      */
-    public function saveWaterApplicant($applicationId,$owners)
+    public function saveWaterApplicant($applicationId, $owners)
     {
         $applicant = new WaterApplicant();
         $applicant->application_id = $applicationId;
@@ -24,5 +24,17 @@ class WaterApplicant extends Model
         $applicant->mobile_no = $owners['mobileNo'];
         $applicant->email = $owners['email'];
         $applicant->save();
+    }
+
+    /**
+     * |----------------------------------- Owner Detail By ApplicationId / active applications ----------------------------|
+     * | @param request
+     */
+    public function ownerByApplication($request)
+    {
+        return WaterApplicant::join('water_applications', 'water_applications.id', '=', 'water_applicants.application_id')
+            ->where('water_applications.id', $request->id)
+            ->where('water_applications.status', 1)
+            ->where('water_applicants.status', 1);
     }
 }

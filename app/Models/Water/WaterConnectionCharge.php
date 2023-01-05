@@ -29,4 +29,14 @@ class WaterConnectionCharge extends Model
         $saveCharges->rule_set = $newConnectionCharges['ruleSete'];
         $saveCharges->save();
     }
+
+    /**
+     * |----------------------------------- Get Water Charges By ApplicationId ------------------------------|
+     * | @param request
+     */
+    public function getWatercharges($request)
+    {
+        return WaterConnectionCharge::where('application_id', $request->id)
+            ->where('water_connection_charges.status', 1);
+    }
 }
