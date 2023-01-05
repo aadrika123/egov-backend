@@ -200,4 +200,15 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    //role of logged in user
+    public function roleUser()
+    {
+        $userId = authUser()->id;
+        $role = WfRoleusermap::select('wf_roleusermaps.*')
+            ->where('user_id', $userId)
+            ->where('is_suspended', false)
+            ->get();
+        return $role;
+    }
 }
