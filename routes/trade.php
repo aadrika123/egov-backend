@@ -19,8 +19,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * Created By- Sandeep Bara
      *  
      */
-    Route::controller(TradeApplication::class)->group(function () {        
-        Route::match(["get", "post"], 'apply/{applicationType}/{id?}', 'applyApplication');
+    Route::controller(TradeApplication::class)->group(function () {      
+        Route::post("getApplyData","getApplyData");  
+        Route::match(["get", "post"], 'apply', 'applyApplication');
         Route::post('getCharge', 'paybleAmount');
         Route::post('getPropertyByHolding', 'validateHoldingNo');
         Route::post('updateApplicationById', 'updateLicenseBo');

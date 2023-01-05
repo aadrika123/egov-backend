@@ -16,8 +16,18 @@ use App\Http\Requests\Trade\ReqPaybleAmount;
 use App\Http\Requests\Trade\ReqInbox;
 use App\Http\Requests\Trade\ReqPostNextLevel;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
+use App\Models\Trade\ActiveTradeLicence;
+use App\Models\Trade\TradeLicence;
+use App\Models\Trade\TradeOwner;
+use App\Models\Trade\TradeParamCategoryType;
+use App\Models\Trade\TradeParamFirmType;
+use App\Models\Trade\TradeParamItemType;
+use App\Models\Trade\TradeParamOwnershipType;
+use App\Models\UlbMaster;
 use App\Models\Workflows\WfWorkflow;
+use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Validator;
 
 class TradeApplication extends Controller
 {
@@ -38,6 +48,89 @@ class TradeApplication extends Controller
         $this->Repository = $TradeRepository ;
         $this->_modelWard = new ModelWard();
         $this->_parent = new CommonFunction();
+    }
+    public function getApplyData(Request $request)
+    {
+        try{
+            $refUser            = Auth()->user();
+            $refUserId          = $refUser->id;
+            $refUlbId           = $refUser->ulb_id??$request->ulbId;
+            $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $mUserType          = $this->_parent->userType($refWorkflowId); 
+            $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);            
+            $mnaturOfBusiness   = null;
+            $data               = array() ;
+            $rules["applicationType"] = "required|string|in:NEWLICENSE,RENEWAL,AMENDMENT,SURRENDER";
+            if (!in_array($mApplicationTypeId, [1]))
+            {
+                $rules["licenseId"] = "required|digits_between:1,9223372036854775807";
+            }
+            $validator = Validator::make($request->all(), $rules, );
+            if ($validator->fails()) 
+            {
+                return responseMsg(false, $validator->errors(),$request->all());
+            }
+            #------------------------End Declaration-----------------------
+            if(in_array(strtoupper($mUserType),["ONLINE","JSK","SUPER ADMIN","TL"]))
+            {
+                $data['wardList'] = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $data['wardList'] = objToArray($data['wardList']);
+            }
+            else
+            {                
+                $data['wardList'] = $this->_parent->WardPermission($refUserId);
+            }
+            $data['userType']           = $mUserType;
+            $data["firmTypeList"]       = TradeParamFirmType::List();
+            $data["ownershipTypeList"]  = TradeParamOwnershipType::List();
+            $data["categoryTypeList"]   = TradeParamCategoryType::List();
+            $data["natureOfBusiness"]   = TradeParamItemType::List(true);
+            if(isset($request->licenseId) && $request->licenseId  && $mApplicationTypeId !=1)
+            {
+                $mOldLicenceId = $request->licenseId; 
+                $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+                $refOldLicece = TradeLicence::find($mOldLicenceId);
+                if(!$refOldLicece)
+                {
+                    throw new Exception("Old Licence Not Found");
+                }
+                if(!$refOldLicece->is_active)
+                {
+                    $newLicense = ActiveTradeLicence::where("license_no",$refOldLicece->license_no)
+                                ->orderBy("id")
+                                ->first();
+                    throw new Exception("Application Aready Apply Please Track  ".$newLicense->application_no);
+                }
+                if($refOldLicece->valid_upto > $nextMonth)
+                {
+                    throw new Exception("Licence Valice Upto ".$refOldLicece->valid_upto);
+                } 
+                if($refOldLicece->pending_status!=5)
+                {
+                    throw new Exception("Application Aready Apply Please Track  ".$refOldLicece->application_no);
+                }
+                $refOldOwneres =TradeOwner::owneresByLId($request->licenseId);
+                $mnaturOfBusiness = TradeParamItemType::itemsById($refOldLicece->nature_of_bussiness);
+                $natur = array();
+                foreach($mnaturOfBusiness as $val)
+                {
+                    $natur[]=["id"=>$val->id,
+                        "trade_item" =>"(". $val->trade_code.") ". $val->trade_item
+                    ];
+                }
+                $refOldLicece->nature_of_bussiness = $natur;
+                $data["licenceDtl"]     =  $refOldLicece;
+                $data["ownerDtl"]       = $refOldOwneres;
+            }
+            return responseMsg(true,"",remove_null($data));
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),$request->all());
+        }
     }
     # Serial No : 01
     public function applyApplication(ReqAddRecorde $request)
@@ -74,7 +167,7 @@ class TradeApplication extends Controller
             {
                 throw new Exception("Finisher Not Available"); 
             }
-            if (in_array($mApplicationTypeId, ["2", "3","4"]) && (!$request->id || !is_numeric($request->id))) 
+            if (in_array($mApplicationTypeId, ["2", "3","4"]) && (!$request->licenseId || !is_numeric($request->licenseId))) 
             {
                 throw new Exception ("Old licence Id Requird");
             }  
