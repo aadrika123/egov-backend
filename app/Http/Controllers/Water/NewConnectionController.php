@@ -10,6 +10,7 @@ use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterPropertyTypeMstr;
+use App\Models\WorkflowTrack;
 use Illuminate\Http\Request;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Traits\Ward;
@@ -359,16 +360,15 @@ class NewConnectionController extends Controller
                 ->get();
             if ($approvedWater) {
                 $returnWater = collect($approvedWater)->map(
-                    function ($value, $key) use ($approvedWater) {
+                    function ($value, $key) {
                         $owner = WaterApplicant::select(
                             'applicant_name',
+                            'guardian_name',
                             'mobile_no',
                             'email'
                         )
                             ->where('application_id', $value['id'])
                             ->get();
-
-                        # remove in case of multiple owner
                         $owner = collect($owner)->first();
                         $user = collect($value);
                         return $user->merge($owner);
@@ -383,8 +383,19 @@ class NewConnectionController extends Controller
     }
 
     // Get the water payment details and track details
-    public function getWaterPayment($request)
+    public function getWaterPayment(Request $request)
     {
-        
+        try {
+            $request->validate([
+                "id" => "required|int",
+            ]);
+            $a = auth()->user()->id;
+            $trackObj = new WorkflowTrack();
+            $mWaterRef = 'water_applications.id';
+            $responseData = $trackObj->getTracksByRefId($mWaterRef, $request->id);
+            return responseMsgs(true, "payment Details!", remove_null($responseData), "01", "", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }

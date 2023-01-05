@@ -41,7 +41,7 @@ class TradeApplication extends Controller
     }
     # Serial No : 01
     public function applyApplication(ReqAddRecorde $request)
-    {   
+    { 
         $refUser            = Auth()->user(); 
         $refUserId          = $refUser->id;
         $refUlbId           = $refUser->ulb_id;
@@ -156,6 +156,14 @@ class TradeApplication extends Controller
     public function postEscalate(Request $request)
     {
         return $this->Repository->postEscalate($request);
+    }
+    public function specialInbox(Request $request)
+    {
+        return $this->Repository->specialInbox($request);
+    }
+    public function btcInbox(Request $request)
+    {
+        return $this->Repository->btcInbox($request);
     }
     # Serial No : 16
     public function inbox(ReqInbox $request)

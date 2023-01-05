@@ -495,7 +495,8 @@ class NewConnectionRepository implements iNewConnection
     public function getApplicationsDetails($request)
     {
         # application details
-        $applicationDetails = WaterApplication::select(
+        $waterObj = new WaterApplication();
+        $applicationDetails = $waterObj->fullWaterDetails($request)->select(
             'water_applications.*',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
@@ -503,63 +504,36 @@ class NewConnectionRepository implements iNewConnection
             'water_property_type_mstrs.property_type',
             'water_connection_through_mstrs.connection_through',
             'wf_roles.role_name AS current_role_name',
-        )
-            ->join('wf_roles', 'wf_roles.id', '=', 'water_applications.current_role')
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
-            ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
-            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
-            ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
-            ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_applications.property_type_id')
-            ->where('water_applications.id', $request->id)
-            ->where('water_applications.status', 1)
-            ->get();
+        )->get();
 
         if (collect($applicationDetails)->first() == null) {
             return responseMsg(false, "Application Data Not found!", $request->id);
         }
 
         # owner Details
-        $ownerDetails = WaterApplication::select(
+        $ownerObj = new WaterApplicant();
+        $ownerDetails = $ownerObj->ownerByApplication($request)->select(
             'water_applicants.applicant_name as owner_name',
             'guardian_name',
             'mobile_no',
             'email'
-        )
-            ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
-            ->where('water_applications.id', $request->id)
-            ->where('water_applications.status', 1)
-            ->get();
+        )->get();
 
         $ownerDetails = collect($ownerDetails)->map(function ($value, $key) {
             return $value;
         });
 
-        # track details
-        $trackDetails = WorkflowTrack::select(
-            'workflow_tracks.message',
-            'workflow_tracks.module_id',
-            'workflow_tracks.user_id',
-            'workflow_tracks.sender_role_id'
-        )
-            ->where('workflow_tracks.ref_table_dot_id', 'water_applications.id')
-            ->where('workflow_tracks.ref_table_id_value', $request->id)
-            ->where('workflow_tracks.status', 1)
-            ->get();
-
         # connection Charges
-        $connectionCharge = WaterConnectionCharge::select(
+        $connectionObj = new WaterConnectionCharge();
+        $connectionCharge = $connectionObj->getWatercharges($request)->select(
             'amount',
             'charge_category',
             'penalty',
             'conn_fee',
             'rule_set'
-        )
-            ->where('application_id', $request->id)
-            ->where('water_connection_charges.status', 1)
-            ->get();
+        )->get();
 
         (collect($applicationDetails)->first())['owner_details'] = $ownerDetails;
-        (collect($applicationDetails)->first())['track_details'] = $trackDetails;
         (collect($applicationDetails)->first())['payment_details'] = $connectionCharge;
 
         $returnDetails = collect($applicationDetails)->first();
@@ -586,7 +560,7 @@ class NewConnectionRepository implements iNewConnection
         $applicationId   = $request->id;
 
         $refApplicationNo = WaterApplication::where('id', $applicationId)->get();
-        if (!$refApplicationNo) {
+        if (!collect($refApplicationNo)->first()) {
             throw new Exception("Data Not Found!");
         }
 
@@ -610,7 +584,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var docDetails
      * | @return docDetails : listed doc details according to application Id
         | Serial No : 09.01
-        | Working
+        | Working / Dhift to model
      */
     public function getWaterDocuments($applicationId)
     {
@@ -660,34 +634,23 @@ class NewConnectionRepository implements iNewConnection
      */
     public function commentIndependent($request)
     {
-        // $userId = auth()->user()->id; 
         $applicationId = WaterApplication::find($request->id);
         $workflowTrack = new WorkflowTrack();
         $mSafWorkflowId = $this->_waterWorkId;
         $mModuleId =  $this->_waterModulId;
-        $workflowID = $this->_waterWorkflowId;
         $metaReqs = array();
-
-        //     $ulbWorkflowObj = new WfWorkflow();
-        //    return $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $request->ulbId);
-
-        //     $obj = new WorkflowRoleUserMapRepository();
-        //     $transfer['userId'] = auth()->user()->id;
-        //     $metaReqs = new Request($transfer);
-        //    return  $roleId = $obj->getRolesByUserId($metaReqs);
 
         if (!$applicationId) {
             throw new Exception("Application Don't Exist!");
         }
 
-        // Save On Workflow Track
+        # Save On Workflow Track
         $metaReqs = [
             'workflowId' => $mSafWorkflowId,
             'moduleId' => $mModuleId,
             'workflowId' => $mSafWorkflowId,
             'refTableDotId' => "water_applications.id",
             'refTableIdValue' => $applicationId->id,
-            // 'senderRoleId'  => $roleId
         ];
         $request->request->add($metaReqs);
         $workflowTrack->saveTrack($request);
@@ -695,7 +658,15 @@ class NewConnectionRepository implements iNewConnection
     }
 
     /**
-     * |-----
+     * |-------------------------- Get Approved Application Details According to Consumer No -----------------------|
+     * | @param request
+     * | @var obj
+     * | @var approvedWater
+     * | @var applicationId
+     * | @var connectionCharge
+     * | @return connectionCharge : list of approved application by consumer Id
+        | Serial No :00
+        | Working / Flag
      */
     public function getApprovedWater($request)
     {
@@ -719,10 +690,20 @@ class NewConnectionRepository implements iNewConnection
             )
                 ->where('application_id', $applicationId)
                 ->where('water_connection_charges.status', 1)
+                ->first();
+
+            $owner = WaterApplicant::select(
+                'applicant_name',
+                'guardian_name',
+                'mobile_no',
+                'email'
+            )
+                ->where('application_id', $applicationId)
                 ->get();
 
             $approvedWater['payment'] = $connectionCharge;
-            return responseMsgs(true, "Consumer Details!", $approvedWater, "", "01", ".ms", "POST", $request->deviceId);
+            $approvedWater['owner_details'] = $owner;
+            return responseMsgs(true, "Consumer Details!", remove_null($approvedWater), "", "01", ".ms", "POST", $request->deviceId);
         }
         throw new Exception("Data Not Found!");
     }
