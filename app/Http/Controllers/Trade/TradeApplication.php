@@ -41,7 +41,7 @@ class TradeApplication extends Controller
     }
     # Serial No : 01
     public function applyApplication(ReqAddRecorde $request)
-    {   
+    { 
         $refUser            = Auth()->user(); 
         $refUserId          = $refUser->id;
         $refUlbId           = $refUser->ulb_id;

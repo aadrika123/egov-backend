@@ -159,6 +159,10 @@ class CommonFunction implements ICommonFunction
                                             wf_workflowrolemaps.is_initiator, wf_workflowrolemaps.is_finisher,
                                             wf_workflowrolemaps.forward_role_id,forword.role_name as forword_name,
                                             wf_workflowrolemaps.backward_role_id,backword.role_name as backword_name,
+                                            wf_workflowrolemaps.show_full_list,wf_workflowrolemaps.escalation,
+                                            wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
+                                            wf_workflowrolemaps.is_btda,wf_workflowrolemaps.upload_doc,
+                                            wf_workflowrolemaps.verify_doc,
                                             wf_masters.id as workflow_id,wf_masters.workflow_name,
                                             ulb_masters.id as ulb_id, ulb_masters.ulb_name,
                                             ulb_masters.ulb_type"

@@ -44,4 +44,5 @@ interface ITrade
     public function denialView($id,$mailID,Request $request);
     public function approvedApplication(Request $request);
     public function reports(Request $request);
+    public function getLicenceDocuments($id,$tbl="active_");
 }

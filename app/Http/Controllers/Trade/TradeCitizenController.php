@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Trade;
 use App\EloquentModels\Common\ModelWard;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Trade\ReqCitizenAddRecorde;
-use App\Models\Trade\ActiveLicence;
+use App\Models\Trade\ActiveTradeLicence;
 use App\Models\Trade\ExpireLicence;
 use App\Models\Trade\TradeFineRebetDetail;
 use App\Models\Trade\TradeRazorPayRequest;
@@ -342,7 +342,7 @@ class TradeCitizenController extends Controller
             {
                 throw new Exception("Not Transection Found...");
             }
-            $application = ActiveLicence::find($TradeRazorPayResponse->licence_id);
+            $application = ActiveTradeLicence::find($TradeRazorPayResponse->licence_id);
             $transection = TradeTransaction::select("*")
                 ->where("related_id", $TradeRazorPayResponse->licence_id)
                 ->first();
