@@ -32,6 +32,8 @@ interface ITrade
     public function getPaybleAmount(Request $request);
     public function readPaymentReceipt($id, $transectionId);
     public function getAllApplicationType();
+    public function specialInbox(Request $request);
+    public function btcInbox(Request $request);
     public function inbox(Request $request);
     public function outbox(Request $request);
     public function postNextLevel(Request $request);

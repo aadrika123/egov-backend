@@ -33,6 +33,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('searchLicense', 'searchLicence');
         Route::post('getApplicationList', 'readApplication');
         Route::post('escalate', 'postEscalate');
+        Route::post('specialInbox', 'specialInbox');
+        Route::post('btcInbox', 'btcInbox');
         Route::post('inbox', 'inbox');
         Route::post('outbox', 'outbox');
         Route::post('postNext', 'postNextLevel');

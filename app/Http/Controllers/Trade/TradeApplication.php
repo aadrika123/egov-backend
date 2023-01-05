@@ -157,6 +157,14 @@ class TradeApplication extends Controller
     {
         return $this->Repository->postEscalate($request);
     }
+    public function specialInbox(Request $request)
+    {
+        return $this->Repository->specialInbox($request);
+    }
+    public function btcInbox(Request $request)
+    {
+        return $this->Repository->btcInbox($request);
+    }
     # Serial No : 16
     public function inbox(ReqInbox $request)
     {
