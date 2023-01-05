@@ -89,4 +89,69 @@ class WorkflowRoleMapController extends Controller
             return response()->json($e, 400);
         }
     }
+
+    // tabs permission
+    public function permission(Request $req)
+    {
+        $moduleId = $req->moduleId;
+
+        switch ($moduleId) {
+            case (1):
+                switch ($req->workflowId) {
+                    case (3 | 4 | 5):
+                        $permission = WfWorkflowrolemap::select('wf_workflowrolemaps.*')
+                            ->join('prop_active_safs', 'prop_active_safs.current_role', 'wf_workflowrolemaps.wf_role_id')
+                            ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
+                            ->where('prop_active_safs.id', $req->applicationId)
+                            ->first();
+                        break;
+
+                        //concession
+                    case (106):
+                        $permission = WfWorkflowrolemap::select('wf_workflowrolemaps.*')
+                            ->join('prop_active_concessions', 'prop_active_concessions.current_role', 'wf_workflowrolemaps.wf_role_id')
+                            ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
+                            ->where('prop_active_concessions.id', $req->applicationId)
+                            ->first();
+                        break;
+                }
+                break;
+
+            case (2):
+                $permission = WfWorkflowrolemap::select('wf_workflowrolemaps.*')
+                    ->join('water_applications', 'water_applications.current_role', 'wf_workflowrolemaps.wf_role_id')
+                    ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
+                    ->where('water_applications.id', $req->applicationId)
+                    ->first();
+                break;
+
+            case (3):
+                break;
+
+            case (4):
+                break;
+        }
+
+
+
+
+        $data = [
+            'buttonEscalate' => $permission->escalation,
+            'buttonBTC' => $permission->is_btc,
+            'buttonBTD' => $permission->is_btda,
+            'tabWorkflowAction' => $permission->wf_action,
+            'tabViewDocument' => $permission->view_doc,
+            'tabUploadDocument' => $permission->upload_doc,
+            'tabVerifyDocument' => $permission->verify_doc,
+            'tabFreeCommunication' => $permission->communication_tab,
+            'buttonForward' => $permission->forward_btn,
+            'buttonBackward' => $permission->backward_btn,
+            'buttonApprove' => $permission->is_finisher,
+            'buttonReject' => $permission->is_finisher,
+            'tabsAllowed' => $permission->tab_allowed,
+
+        ];
+
+        return responseMsg(true, "Permission", remove_null($data));
+    }
 }

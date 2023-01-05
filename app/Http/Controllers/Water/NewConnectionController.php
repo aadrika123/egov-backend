@@ -3,17 +3,22 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterPropertyTypeMstr;
+use App\Models\WorkflowTrack;
 use Illuminate\Http\Request;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Traits\Ward;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Ramsey\Collection\Collection as CollectionCollection;
 
 class NewConnectionController extends Controller
 {
@@ -62,7 +67,7 @@ class NewConnectionController extends Controller
                     'wardId'             => 'required|integer',
                     'areaSqft'           => 'required',
                     'landmark'           => 'required',
-                    'pin'                => 'required',
+                    'pin'                => 'required|digits:6',
                     'elecKNo'            => 'required',
                     'elecBindBookNo'     => 'required',
                     'elecAccountNo'      => 'required',
@@ -74,7 +79,7 @@ class NewConnectionController extends Controller
             );
 
             if ($validateUser->fails()) {
-                return response()->json(["status" => false, "message" => "Validation Error!", "data" => $validateUser->getMessageBag()], 400);
+                return responseMsg(false, "Validation Error!", $validateUser->getMessageBag());
             }
             return $this->newConnection->store($request);
         } catch (Exception $error) {
@@ -128,7 +133,7 @@ class NewConnectionController extends Controller
     }
 
     /**
-     * |---------------------------------------- Citizen View Water Screen For Mobile -------------------------------------------|
+     * |---------------------------------------- Citizen/ View Water Screen For Mobile -------------------------------------------|
      */
 
     // Get connection type / water
@@ -251,22 +256,19 @@ class NewConnectionController extends Controller
     public function waterSpecialInbox(Request $request)
     {
         try {
-            $request->validate([
-                'ulb_id' => 'required'
-            ]);
             return $this->newConnection->waterSpecialInbox($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
-    // post escalated
+    // Application's Post Escalated
     public function postEscalate(Request $request)
     {
         try {
             $request->validate([
                 "escalateStatus" => "required|int",
-                "applicationNo" => "required|int",
+                "applicationId" => "required|int",
             ]);
             return $this->newConnection->postEscalate($request);
         } catch (Exception $e) {
@@ -279,7 +281,7 @@ class NewConnectionController extends Controller
     {
         try {
             $request->validate([
-                "applicationNo" => "required",
+                "id" => "required",
             ]);
             return $this->newConnection->getWaterDocDetails($request);
         } catch (Exception $e) {
@@ -287,7 +289,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Check the document status
+    // Verification/Rejection of Document 
     public function waterDocStatus(Request $request)
     {
         try {
@@ -301,7 +303,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // final approval or rejection of the application
+    // final Approval or Rejection of the Application
     public function approvalRejectionWater(Request $request)
     {
         try {
@@ -327,9 +329,71 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 'comment' => 'required',
-                'applicationNo' => 'required|integer'
+                'id' => 'required|integer'
             ]);
             return $this->newConnection->commentIndependent($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Get Approved Water Appliction
+    public function approvedWaterApplications(Request $request)
+    {
+        try {
+            if ($request->consumerNo) {
+                return $this->newConnection->getApprovedWater($request);
+            }
+
+            $userId = auth()->user()->id;
+            $obj = new WaterApprovalApplicationDetail();
+            $approvedWater = $obj->getApplicationRelatedDetails()
+                ->select(
+                    'water_approval_application_details.id',
+                    'consumer_no',
+                    'water_approval_application_details.address',
+                    'ulb_masters.ulb_name',
+                    'water_approval_application_details.ward_id',
+                    'ulb_ward_masters.ward_name'
+                )
+                ->where('user_id', $userId)
+                ->get();
+            if ($approvedWater) {
+                $returnWater = collect($approvedWater)->map(
+                    function ($value, $key) {
+                        $owner = WaterApplicant::select(
+                            'applicant_name',
+                            'guardian_name',
+                            'mobile_no',
+                            'email'
+                        )
+                            ->where('application_id', $value['id'])
+                            ->get();
+                        $owner = collect($owner)->first();
+                        $user = collect($value);
+                        return $user->merge($owner);
+                    }
+                );
+                return responseMsgs(true, "List of Approved water Applications!", remove_null($returnWater), "", "02", ".ms", "POST", $request->deviceId);
+            }
+            throw new Exception("Data Not Found!");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Get the water payment details and track details
+    public function getWaterPayment(Request $request)
+    {
+        try {
+            $request->validate([
+                "id" => "required|int",
+            ]);
+            $a = auth()->user()->id;
+            $trackObj = new WorkflowTrack();
+            $mWaterRef = 'water_applications.id';
+            $responseData = $trackObj->getTracksByRefId($mWaterRef, $request->id);
+            return responseMsgs(true, "payment Details!", remove_null($responseData), "01", "", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
