@@ -19,6 +19,7 @@ class WfMaster extends Model
         $data = new WfMaster;
         $data->workflow_name = $req->workflowName;
         $data->created_by = $createdBy;
+        $data->module_id = $req->moduleId;
         $data->stamp_date_time = Carbon::now();
         $data->created_at = Carbon::now();
         $data->save();
@@ -29,6 +30,7 @@ class WfMaster extends Model
     {
         $data = WfMaster::find($req->id);
         $data->workflow_name = $req->workflowName;
+        $data->module_id = $req->moduleId;
         $data->save();
     }
 
@@ -45,8 +47,15 @@ class WfMaster extends Model
     //all master list
     public function listMaster()
     {
-        $list = WfMaster::where('is_suspended', false)
-            ->orderByDesc('id')
+        $list = WfMaster::select(
+            'wf_masters.id',
+            'workflow_name',
+            'module_name',
+            'module_id'
+        )
+            ->leftJoin('module_masters', 'module_masters.id', 'wf_masters.module_id')
+            ->where('wf_masters.is_suspended', false)
+            ->orderByDesc('wf_masters.id')
             ->get();
         return $list;
     }
