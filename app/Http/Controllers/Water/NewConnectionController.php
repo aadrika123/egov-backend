@@ -363,6 +363,7 @@ class NewConnectionController extends Controller
                     function ($value, $key) {
                         $owner = WaterApplicant::select(
                             'applicant_name',
+                            'guardian_name',
                             'mobile_no',
                             'email'
                         )

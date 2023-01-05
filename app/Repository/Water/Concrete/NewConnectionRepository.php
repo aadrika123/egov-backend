@@ -560,7 +560,7 @@ class NewConnectionRepository implements iNewConnection
         $applicationId   = $request->id;
 
         $refApplicationNo = WaterApplication::where('id', $applicationId)->get();
-        if (!$refApplicationNo) {
+        if (!collect($refApplicationNo)->first()) {
             throw new Exception("Data Not Found!");
         }
 
@@ -694,6 +694,7 @@ class NewConnectionRepository implements iNewConnection
 
             $owner = WaterApplicant::select(
                 'applicant_name',
+                'guardian_name',
                 'mobile_no',
                 'email'
             )
