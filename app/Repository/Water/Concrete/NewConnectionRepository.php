@@ -690,7 +690,7 @@ class NewConnectionRepository implements iNewConnection
             )
                 ->where('application_id', $applicationId)
                 ->where('water_connection_charges.status', 1)
-                ->get();
+                ->first();
 
             $owner = WaterApplicant::select(
                 'applicant_name',
