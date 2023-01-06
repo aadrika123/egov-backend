@@ -126,6 +126,7 @@ class WorkflowRoleMapController extends Controller
             // pseudo users
             $a['pseudoUsers'] = $this->pseudoUser();
 
+            //inbox
             $inbox = $this->saf_repository;
             $ab = $inbox->inbox();
             collect($ab)['original']['data'];
