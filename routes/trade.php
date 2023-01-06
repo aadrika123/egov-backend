@@ -21,15 +21,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(TradeApplication::class)->group(function () {      
         Route::post("getApplyData","getApplyData");  
-        Route::match(["get", "post"], 'apply', 'applyApplication');
+        Route::post('apply', 'applyApplication');
         Route::post('getCharge', 'paybleAmount');
         Route::post('getPropertyByHolding', 'validateHoldingNo');
         Route::post('updateApplicationById', 'updateLicenseBo');
         Route::post('updateBasicDtl', 'updateBasicDtl');
         Route::match(["get", "post"],'documentUpload/{id}', 'documentUpload');
-        Route::get('getUploadDocuments/{id}', 'getUploadDocuments');
+        Route::post('getUploadDocuments', 'getUploadDocuments');
         Route::match(["get", "post"],'documentVerify/{licenceId}', 'documentVirify');
-        Route::get('getLicenceDtl/{id}', 'getLicenceDtl');
+        Route::post('getLicenceDtl', 'getLicenceDtl');
         Route::post('getDenialDetails',"getDenialDetails");
         Route::post('searchLicense', 'searchLicence');
         Route::post('getApplicationList', 'readApplication');

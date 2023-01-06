@@ -2266,15 +2266,6 @@ class Trade implements ITrade
             $refUser    = Auth()->user();
             $refUlbId   = $refUser->ulb_id;            
             $mInputs    = $request->all();
-            $rules =[
-                "entityValue"   =>  "required",
-                "entityName"    =>  "required",
-            ];
-            $validator = Validator::make($request->all(), $rules, );
-            if ($validator->fails()) 
-            {
-                return responseMsg(false, $validator->errors(),$request->all());
-            }          
             $licence = ActiveTradeLicence::select("active_trade_licences.id",
                                             "active_trade_licences.application_no",
                                             "active_trade_licences.provisional_license_no",
@@ -3134,15 +3125,14 @@ class Trade implements ITrade
             {
                 $licenc_data->current_role = $receiver_user_type_id;
             }
-            
-            $licenc_data->max_level_attained = $licenc_data->max_level_attained<$role->serial_no ? $role->serial_no : $licenc_data->max_level_attained; 
-            $licenc_data->pending_status = $licence_pending;            
-            $licenc_data->update(); 
-            // dd($sms,$licenc_data); 
             if($request->btn=="forward" && $licenc_data->is_parked)
             {
                 $licenc_data->is_parked = false;
             }
+            $licenc_data->max_level_attained = $licenc_data->max_level_attained<$role->serial_no ? $role->serial_no : $licenc_data->max_level_attained; 
+            $licenc_data->pending_status = $licence_pending;            
+            $licenc_data->update(); 
+            // dd($sms,$licenc_data);             
             if($role->is_finisher && $request->btn=="forward")
             {
                 $success = $this->transferActiveToTrade($licenc_data->id);
@@ -4725,7 +4715,7 @@ class Trade implements ITrade
             $application = RejectedTradeLicence::find($licenceId);
         }
         $status = "";        
-        if($application->current_role==$application->finisher_role && !$application->is_parked)
+        if($application->pending_status==5)
         {
             $status="License Created Successfully";
         }

@@ -217,6 +217,13 @@ class TradeApplication extends Controller
     # Serial No : 08 
     public function getLicenceDtl(Request $request)
     {
+        
+        $rules["id"] = "required|digits_between:1,9223372036854775807";
+        $validator = Validator::make($request->all(), $rules, );
+        if ($validator->fails()) 
+        {
+            return responseMsg(false, $validator->errors(),$request->all());
+        }
         return $this->Repository->readLicenceDtl($request->id);
     }
     # Serial No : 09 
@@ -243,6 +250,15 @@ class TradeApplication extends Controller
     # Serial No : 14
     public function readApplication(Request $request)
     {
+        $rules =[
+            "entityValue"   =>  "required",
+            "entityName"    =>  "required",
+        ];
+        $validator = Validator::make($request->all(), $rules, );
+        if ($validator->fails()) 
+        {
+            return responseMsg(false, $validator->errors(),$request->all());
+        }
         return $this->Repository->readApplication($request);
     }
     # Serial No : 15
