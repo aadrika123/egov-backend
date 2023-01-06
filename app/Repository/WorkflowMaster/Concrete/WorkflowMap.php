@@ -332,13 +332,14 @@ class WorkflowMap implements iWorkflowMapRepository
         }
     }
 
+    //working
     //get workflow by ulb and master id
     public function getWorkflow(Request $request)
     {
         try {
             $workflow = WfWorkflow::select('wf_workflows.*')
                 ->where('wf_workflows.ulb_id', $request->ulbId)
-                ->where('wf_workflows.id', $request->workflowMasterId)
+                ->where('wf_workflows.id', $request->workflowMstrId)
                 ->first();
             if ($workflow) {
                 return responseMsg(true, "Data Retrived", remove_null($workflow));

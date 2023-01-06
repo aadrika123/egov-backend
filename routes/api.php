@@ -376,7 +376,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('workflow/getRoleByUserUlbId', 'getRoleByUserUlbId');
         Route::post('workflow/getRoleByWardUlbId', 'getRoleByWardUlbId');
 
-        Route::post('workflow/getWorkflow', 'getWorkflow');
+        Route::post('workflow/get-ulb-workflow', 'getWorkflow');
     });
 
 
