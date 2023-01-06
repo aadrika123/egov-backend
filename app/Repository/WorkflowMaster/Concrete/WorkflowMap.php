@@ -339,7 +339,7 @@ class WorkflowMap implements iWorkflowMapRepository
         try {
             $workflow = WfWorkflow::select('wf_workflows.*')
                 ->where('wf_workflows.ulb_id', $request->ulbId)
-                ->where('wf_workflows.id', $request->workflowMstrId)
+                ->where('wf_workflows.wf_master_id', $request->workflowMstrId)
                 ->first();
             if ($workflow) {
                 return responseMsg(true, "Data Retrived", remove_null($workflow));
