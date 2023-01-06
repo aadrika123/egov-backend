@@ -19,7 +19,6 @@ use Exception;
 
 class WorkflowRoleMapController extends Controller
 {
-    protected $wfMap;
     //create master
     public function createRoleMap(Request $req)
     {
