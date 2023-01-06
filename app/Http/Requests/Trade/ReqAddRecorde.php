@@ -9,10 +9,13 @@ use Carbon\Carbon;
 class ReqAddRecorde extends TradeRequest
 {
     public function rules()
-    {
-        if ($this->getMethod() == 'GET')
-            return [];
+    {        
+        $rules["applicationType"] = "required|string|in:NEWLICENSE,RENEWAL,AMENDMENT,SURRENDER";
         $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE." . $this->applicationType);
+        if (!in_array($mApplicationTypeId, [1]))
+        {
+            $rules["licenseId"] = "required|digits_between:1,9223372036854775807";
+        }
         $mNowdate = Carbon::now()->format('Y-m-d');
         $mTimstamp = Carbon::now()->format('Y-m-d H:i:s');
         $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
