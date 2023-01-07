@@ -4,15 +4,23 @@ namespace App\Http\Controllers\WorkflowMaster;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Property\ActiveSafController;
+use App\Http\Controllers\Property\ConcessionController;
+use App\Http\Controllers\Property\ObjectionController;
+use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Models\User;
 use App\Models\Workflows\WfRoleusermap;
 use Illuminate\Http\Request;
 use App\Models\Workflows\WfWorkflowrolemap;
+use App\Repository\Property\Interfaces\iConcessionRepository;
+use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Repository\Property\Interfaces\iSafRepository;
+use App\Repository\Trade\Trade;
+use App\Repository\Water\Concrete\NewConnectionRepository;
 use App\Repository\WorkflowMaster\Interface\iWorkflowMapRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Repository\WorkflowMaster\Concrete\WorkflowRoleUserMapRepository;
 use Exception;
+use PhpParser\Node\Stmt\Break_;
 
 /**
  * Created On-14-10-2022 
@@ -23,10 +31,15 @@ class WorkflowRoleMapController extends Controller
 {
     //create master
     private $saf_repository;
-    public function __construct(iSafRepository $saf_repository)
+    private $concession;
+    private $objection;
+    public function __construct(iSafRepository $saf_repository, iConcessionRepository $concession, iObjectionRepository $objection)
     {
         $this->saf_repository = new ActiveSafController($saf_repository);
+        $this->concession = new ConcessionController($concession);
+        $this->objection = new ObjectionController($objection);
     }
+
     public function createRoleMap(Request $req)
     {
         try {
@@ -110,11 +123,6 @@ class WorkflowRoleMapController extends Controller
             $data = $data->getRoleByWorkflow($req);
             $a['members'] = collect($data)['original']['data'];
 
-            // $b = $a['member'] = collect($data)['original']['data'];
-            // $listRoles = collect($b)->map(function ($value) {
-            //     return $value->role_id;
-            // });
-
             //logged in user role
             $role = new WorkflowMap();
             $role = $role->getRole($req);
@@ -125,13 +133,57 @@ class WorkflowRoleMapController extends Controller
 
             // pseudo users
             $a['pseudoUsers'] = $this->pseudoUser();
-
+            // return $req->workflowId;
             //inbox
-            $inbox = $this->saf_repository;
-            $ab = $inbox->inbox();
-            collect($ab)['original']['data'];
+            switch ($req->workflowId) {
 
-            $a['inbox'] = collect($ab)['original']['data'];
+                    //Water
+                case (16):
+                    $inbox = new NewConnectionRepository;
+                    $ab = $inbox->waterInbox();
+                    collect($ab)['original']['data'];
+                    $a['inbox'] = collect($ab)['original']['data'];
+                    break;
+
+                    //Concession
+                case (106):
+                    $inbox = $this->concession;
+                    $ab = $inbox->inbox();
+                    $a['inbox'] = collect($ab);
+                    break;
+
+                    //objection for clerical
+                case (169):
+                    $inbox = $this->objection;
+                    $ab = $inbox->inbox();
+                    collect($ab)['original']['data'];
+                    $a['inbox'] = collect($ab)['original']['data'];
+                    break;
+
+                    //rain water harvesting
+                case (197):
+                    $inbox = new RainWaterHarvestingController;
+                    $ab = $inbox->harvestingInbox();
+                    collect($ab)['original']['data'];
+                    $a['inbox'] = collect($ab)['original']['data'];
+                    break;
+
+                    //trade
+                case (10):
+                    $inbox = new Trade();
+                    $ab = $inbox->inbox($req);
+                    collect($ab)['original']['data']['licence'];
+                    $a['inbox'] = collect($ab)['original']['data']['licence'];
+                    break;
+
+                    //SAF
+                case (3 || 4 || 5):
+                    $inbox = $this->saf_repository;
+                    $ab = $inbox->inbox();
+                    collect($ab)['original']['data'];
+                    $a['inbox'] = collect($ab)['original']['data'];
+                    break;
+            }
 
             return responseMsgs(true, "Workflow Information", remove_null($a));
         } catch (Exception $e) {
@@ -168,7 +220,6 @@ class WorkflowRoleMapController extends Controller
         //             ->get();
         //         break;
         // }
-        // break;
 
         $data = [
             'allow_full_list' => $permission->allow_full_list,

@@ -91,8 +91,6 @@ class RainWaterHarvestingController extends Controller
             $finisherRoleId = DB::select($refFinisherRoleId);
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
-
-
             $save = new PropActiveHarvesting();
             $waterHaravestingId  = $save->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $applicationNo);
 
@@ -412,12 +410,12 @@ class RainWaterHarvestingController extends Controller
                 'harvestingId' => 'required',
             ]);
             $userId = authUser()->id;
-            return  $getRole = $this->getRoleIdByUserId($userId);
+            $getRole = $this->getRoleIdByUserId($userId);
             $roleId = $getRole->map(function ($value, $key) {                         // Get user Workflow Roles
                 return $value->wf_role_id;
             });
 
-            if ($roleId != $req->roleId) {
+            if (collect($roleId)->first() != $req->roleId) {
                 return responseMsg(false, " Access Forbidden!", "");
             }
 

@@ -147,9 +147,8 @@ class CommonFunction implements ICommonFunction
             $curentUser = array_filter($data, function ($val) use ($role_id) {
                 return $val['id'] == $role_id;
             });
-            $curentUser = array_values($curentUser)[0]??[]; //dd($curentUser);
-            if($curentUser)
-            {
+            $curentUser = array_values($curentUser)[0] ?? []; //dd($curentUser);
+            if ($curentUser) {
                 $data = array_filter($data, function ($val) use ($curentUser, $all) { //dd();
                     if ($all) {
                         return (!in_array($val['id'], [$curentUser['forward_id'], $curentUser['backward_id']]) && $val['id'] != $curentUser['id'] && ($val['forward_id'] || $val['backward_id']));
@@ -162,25 +161,26 @@ class CommonFunction implements ICommonFunction
             echo $e->getMessage();
         }
     }
-    
-    public function getUserRoll($user_id,$ulb_id,$workflow_id)
-    { 
-        try{
+
+    public function getUserRoll($user_id, $ulb_id, $workflow_id)
+    {
+        try {
             // DB::enableQueryLog();
             $data = WfRole::select(
-                                    DB::raw("wf_roles.id as role_id,wf_roles.role_name,
+                DB::raw(
+                    "wf_roles.id as role_id,wf_roles.role_name,
                                             wf_workflowrolemaps.is_initiator, wf_workflowrolemaps.is_finisher,
                                             wf_workflowrolemaps.forward_role_id,forword.role_name as forword_name,
                                             wf_workflowrolemaps.backward_role_id,backword.role_name as backword_name,
-                                            wf_workflowrolemaps.show_full_list,wf_workflowrolemaps.escalation,
+                                            wf_workflowrolemaps.allow_full_list,wf_workflowrolemaps.can_escalate,
                                             wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
-                                            wf_workflowrolemaps.upload_doc,
-                                            wf_workflowrolemaps.verify_doc,
+                                            wf_workflowrolemaps.can_upload_document,
+                                            wf_workflowrolemaps.can_verify_document,
                                             wf_masters.id as workflow_id,wf_masters.workflow_name,
                                             ulb_masters.id as ulb_id, ulb_masters.ulb_name,
                                             ulb_masters.ulb_type"
-                                            )
                 )
+            )
                 ->join("wf_roleusermaps", function ($join) {
                     $join->on("wf_roleusermaps.wf_role_id", "=", "wf_roles.id")
                         ->where("wf_roleusermaps.is_suspended", "=", FALSE);
@@ -230,23 +230,20 @@ class CommonFunction implements ICommonFunction
             echo $e->getMessage();
         }
     }
-    public function userType($refWorkflowId,$ulb_id=null):string
+    public function userType($refWorkflowId, $ulb_id = null): string
     {
         $user = Auth()->user();
         $user_id = $user->id;
-        $ulb_id = $user->ulb_id??$ulb_id;
-        $user_data = $this->getUserRoll($user_id, $ulb_id,$refWorkflowId);
-        $roll_id =  $user_data->role_id??-1;      
-        if($roll_id != -1)
-        {
-            $user_type_sort = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.'.strtoupper($user_data->role_name));
-            if(!$user_type_sort)
-            {
+        $ulb_id = $user->ulb_id ?? $ulb_id;
+        $user_data = $this->getUserRoll($user_id, $ulb_id, $refWorkflowId);
+        $roll_id =  $user_data->role_id ?? -1;
+        if ($roll_id != -1) {
+            $user_type_sort = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.' . strtoupper($user_data->role_name));
+            if (!$user_type_sort) {
                 return "Online";
             }
             return $user_type_sort;
-        }
-        else
+        } else
             return "Online";
     }
 
@@ -254,16 +251,14 @@ class CommonFunction implements ICommonFunction
     {
         try {
             $data = $this->getWorkFlowRoles($user_id, $ulb_id, $work_flow_id);
-            if($all)
-            {
-                $data = array_filter($data, function ($val){ 
-                         if (($val['forward_id']) || $val['backward_id']) 
-                         {
-                             return true;
-                         }
-                     });
-                $data= array_values($data);
-            } 
+            if ($all) {
+                $data = array_filter($data, function ($val) {
+                    if (($val['forward_id']) || $val['backward_id']) {
+                        return true;
+                    }
+                });
+                $data = array_values($data);
+            }
             return ($data);
         } catch (Exception $e) {
             echo $e->getMessage();
@@ -271,7 +266,7 @@ class CommonFunction implements ICommonFunction
     }
     public function sortsWorkflowRols($roles)
     {
-        return(collect($roles)->sortBy('serial_no')->values()->all());
+        return (collect($roles)->sortBy('serial_no')->values()->all());
     }
     // public function sortsWorkflowRols($roles)
     // {
@@ -292,7 +287,7 @@ class CommonFunction implements ICommonFunction
 
     // public function maps(array $roles,$forward_id,$ids=array())
     // {
-        
+
     //     $rr = array_map(function($val)use($forward_id,$ids){                    
     //                 if($val['id']==$forward_id && (!in_array($val['id'],$ids)))
     //                 { 
