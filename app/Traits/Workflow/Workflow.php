@@ -168,6 +168,19 @@ trait Workflow
         return $occupiedWard;
     }
 
+    //logged in user role 
+    public function getRole($request)
+    {
+        $userId = authUser()->id;
+
+        $role = WfRoleusermap::select('wf_workflowrolemaps.*')
+            ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.wf_role_id', 'wf_roleusermaps.wf_role_id')
+            ->where('user_id', $userId)
+            ->where('wf_workflowrolemaps.workflow_id', $request->workflowId)
+            ->first();
+        return remove_null($role);
+    }
+
     /**
      * | Get Initiator Id While Sending to level Pending For the First Time
      * | @param mixed $wfWorkflowId > Workflow Id of Modules

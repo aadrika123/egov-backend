@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Models\Workflows\WfRoleusermap;
 use Illuminate\Http\Request;
 use App\Models\Workflows\WfWorkflowrolemap;
+use App\Repository\Property\Concrete\PropertyBifurcation;
+use App\Repository\Property\Concrete\PropertyDeactivate;
 use App\Repository\Property\Interfaces\iConcessionRepository;
 use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Repository\Property\Interfaces\iSafRepository;
@@ -20,7 +22,7 @@ use App\Repository\WorkflowMaster\Interface\iWorkflowMapRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Repository\WorkflowMaster\Concrete\WorkflowRoleUserMapRepository;
 use Exception;
-use PhpParser\Node\Stmt\Break_;
+use App\Traits\Workflow\Workflow;
 
 /**
  * Created On-14-10-2022 
@@ -29,6 +31,7 @@ use PhpParser\Node\Stmt\Break_;
 
 class WorkflowRoleMapController extends Controller
 {
+    use Workflow;
     //create master
     private $saf_repository;
     private $concession;
@@ -124,8 +127,8 @@ class WorkflowRoleMapController extends Controller
             $a['members'] = collect($data)['original']['data'];
 
             //logged in user role
-            $role = new WorkflowMap();
-            $role = $role->getRole($req);
+            // $role = new WorkflowMap();
+            $role = $this->getRole($req);
             $roleId  = collect($role)['wf_role_id'];
 
             //members permission
@@ -133,7 +136,7 @@ class WorkflowRoleMapController extends Controller
 
             // pseudo users
             $a['pseudoUsers'] = $this->pseudoUser();
-            // return $req->workflowId;
+
             //inbox
             switch ($req->workflowId) {
 
@@ -174,6 +177,22 @@ class WorkflowRoleMapController extends Controller
                     $ab = $inbox->inbox($req);
                     collect($ab)['original']['data']['licence'];
                     $a['inbox'] = collect($ab)['original']['data']['licence'];
+                    break;
+
+                    //deactivation
+                case (167):
+                    $inbox = new PropertyDeactivate();
+                    $ab = $inbox->inbox($req);
+                    collect($ab)['original']['data']['property'];
+                    $a['inbox'] = collect($ab)['original']['data']['property'];
+                    break;
+
+                    //bifurcation
+                case (182):
+                    $inbox = new PropertyBifurcation();
+                    $ab = $inbox->inbox($req);
+                    collect($ab)['original']['data'];
+                    $a['inbox'] = collect($ab)['original']['data']['applications'];
                     break;
 
                     //SAF

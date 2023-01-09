@@ -396,6 +396,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('workflow-initiator', 'workflowInitiatorData');
         Route::post('role-by-user', 'roleIdByUserId');
         Route::post('ward-by-user', 'wardByUserId');
+        Route::post('role-by-workflow', 'getRole');
         Route::post('initiator', 'initiatorId');
         Route::post('finisher', 'finisherId');
     });
