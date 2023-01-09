@@ -51,6 +51,14 @@ class WcController extends Controller
     }
 
     /*
+    * Get Role
+    */
+    public function getRole(Request $request)
+    {
+        return $this->_repo->getRole($request);
+    }
+
+    /*
     * Get Initiator
     */
     public function initiatorId(Request $request)

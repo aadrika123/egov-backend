@@ -24,11 +24,11 @@ if (!function_exists("responseMsgs")) {
         return response()->json([
             'status' => $status,
             'message' => $msg,
-            'metaData' => [
+            'meta-data' => [
                 'apiId' => $apiId,
                 'version' => $version,
-                'queryRunTime' => $queryRunTime,
-                'timeEpoch' => Carbon::now()->format('Y-m-d H:i:m'),
+                'responsetime' => $queryRunTime,
+                'epoch' => Carbon::now()->format('Y-m-d H:i:m'),
                 'action' => $action,
                 'deviceId' => $deviceId
             ],

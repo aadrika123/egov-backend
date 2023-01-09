@@ -4,6 +4,7 @@ namespace App\Repository\WorkflowMaster\Concrete;
 
 use App\Repository\WorkflowMaster\Interface\iWorkflowMapRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Workflows\WfRole;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
@@ -12,10 +13,6 @@ use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\UlbWardMaster;
 use App\Models\User;
 use Exception;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
-
 
 
 /**
@@ -33,15 +30,26 @@ class WorkflowMap implements iWorkflowMapRepository
     //get role details by 
     public function getRoleDetails(Request $request)
     {
+        $ulbId = auth()->user()->ulb_id;
         $request->validate([
             'workflowId' => 'required|int',
             'wfRoleId' => 'required|int'
 
         ]);
         $roleDetails = DB::table('wf_workflowrolemaps')
+            ->select(
+                'wf_workflowrolemaps.id',
+                'wf_workflowrolemaps.workflow_id',
+                'wf_workflowrolemaps.wf_role_id',
+                'wf_workflowrolemaps.forward_role_id',
+                'wf_workflowrolemaps.backward_role_id',
+                'wf_workflowrolemaps.is_initiator',
+                'wf_workflowrolemaps.is_finisher',
+                'r.role_name as forward_role_name',
+                'rr.role_name as backward_role_name'
+            )
             ->leftJoin('wf_roles as r', 'wf_workflowrolemaps.forward_role_id', '=', 'r.id')
             ->leftJoin('wf_roles as rr', 'wf_workflowrolemaps.backward_role_id', '=', 'rr.id')
-            ->select('wf_workflowrolemaps.*', 'r.role_name as forward_role_name', 'rr.role_name as backward_role_name')
             ->where('workflow_id', $request->workflowId)
             ->where('wf_role_id', $request->wfRoleId)
             ->first();
@@ -147,12 +155,16 @@ class WorkflowMap implements iWorkflowMapRepository
     //role in a workflow
     public function getRoleByWorkflow(Request $request)
     {
+        $ulbId = authUser()->ulb_id;
         $request->validate([
             'workflowId' => 'required|int'
         ]);
-        $roles = WfWorkflowrolemap::where('workflow_id', $request->workflowId)
+        $roles = WfWorkflowrolemap::select('wf_roles.id as role_id', 'wf_roles.role_name')
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
-            ->select('wf_roles.id as role_id', 'wf_roles.role_name')
+            ->join('wf_workflows', 'wf_workflows.id', 'wf_workflowrolemaps.workflow_id')
+            ->where('wf_workflows.ulb_id', $ulbId)
+            ->where('workflow_id', $request->workflowId)
+            ->orderBy('serial_no')
             ->get();
 
         return responseMsg(true, "Data Retrived", $roles);
@@ -320,19 +332,18 @@ class WorkflowMap implements iWorkflowMapRepository
         }
     }
 
-    //get workflow name by workflow
-    public function getWorkflownameByWorkflow(Request $request)
+    //working
+    //get workflow by ulb and master id
+    public function getWorkflow(Request $request)
     {
-        $request->validate([
-            'id' => 'required|int'
-        ]);
         try {
-            $workflow = WfWorkflow::select('workflow_name')
-                ->where('wf_workflows.id', $request->id)
-                ->join('wf_masters', 'wf_masters.id', '=', 'wf_workflows.wf_master_id')
+            $workflow = WfWorkflow::select('wf_workflows.*')
+                ->where('ulb_id', $request->ulbId)
+                ->where('wf_master_id', $request->workflowMstrId)
+                ->where('is_suspended', false)
                 ->first();
             if ($workflow) {
-                return responseMsg(true, "Data Retrived", $workflow);
+                return remove_null($workflow);
             }
             return responseMsg(false, "No Data available", "");
         } catch (Exception $e) {

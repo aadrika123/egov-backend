@@ -42,5 +42,5 @@ interface iWorkflowMapRepository
     public function getRoleByUserUlbId(Request $request);
     public function getRoleByWardUlbId(Request $request);
 
-    public function getWorkflownameByWorkflow(Request $request);
+    public function getWorkflow(Request $request);
 }

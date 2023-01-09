@@ -40,7 +40,7 @@ class CommonFunction implements ICommonFunction
         $redis = Redis::connection();
         $workflow_rolse = ""; //json_decode(Redis::get('WorkFlowRoles:' . $user_id.":".$work_flow_id),true)??null;
         if (!$workflow_rolse) {
-            //DB::enableQueryLog();
+            // DB::enableQueryLog();
             $workflow_rolse = WfMaster::select(
                 DB::raw(
                     "wf_roles.id ,wf_roles.role_name,
@@ -49,7 +49,12 @@ class CommonFunction implements ICommonFunction
                                         is_initiator,is_finisher,
                                         wf_masters.workflow_name,
                                         wf_masters.id as workflow_id,
-                                        wf_workflows.ulb_id"
+                                        wf_workflows.ulb_id,
+                                        wf_workflowrolemaps.show_full_list,wf_workflowrolemaps.escalation,
+                                        wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
+                                        wf_workflowrolemaps.upload_doc,
+                                        wf_workflowrolemaps.verify_doc
+                                        "
                 )
             )
                 ->join("wf_workflows", function ($join) {
@@ -58,10 +63,18 @@ class CommonFunction implements ICommonFunction
                 })
                 ->join(
                     DB::raw("(SELECT distinct(wf_role_id) as wf_role_id ,
-                                                workflow_id , forward_role_id , backward_role_id,is_initiator,is_finisher
+                                                workflow_id , forward_role_id , backward_role_id,is_initiator,is_finisher,
+                                                wf_workflowrolemaps.show_full_list,wf_workflowrolemaps.escalation,
+                                                wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
+                                                wf_workflowrolemaps.upload_doc,
+                                                wf_workflowrolemaps.verify_doc
                                             FROM wf_workflowrolemaps 
                                             WHERE  wf_workflowrolemaps.is_suspended = false 
-                                            GROUP BY workflow_id,wf_role_id , forward_role_id , backward_role_id, is_initiator, is_finisher
+                                            GROUP BY workflow_id,wf_role_id , forward_role_id , backward_role_id, is_initiator, is_finisher,
+                                                wf_workflowrolemaps.show_full_list,wf_workflowrolemaps.escalation,
+                                                wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
+                                                wf_workflowrolemaps.upload_doc,
+                                                wf_workflowrolemaps.verify_doc
                                             ) wf_workflowrolemaps "),
                     function ($join) use ($ulb_id) {
                         $join->on("wf_workflowrolemaps.workflow_id", "wf_workflows.id");
@@ -73,7 +86,7 @@ class CommonFunction implements ICommonFunction
                 ->where("wf_masters.is_suspended", false)
                 ->orderBy("wf_roles.id")
                 ->get();
-            //dd(DB::getQueryLog());
+            // dd(DB::getQueryLog());
             $workflow_rolse = objToArray($workflow_rolse);
             $this->WorkFlowRolesSet($redis, $user_id, $workflow_rolse, $work_flow_id);
         }
@@ -134,9 +147,8 @@ class CommonFunction implements ICommonFunction
             $curentUser = array_filter($data, function ($val) use ($role_id) {
                 return $val['id'] == $role_id;
             });
-            $curentUser = array_values($curentUser)[0]??[]; //dd($curentUser);
-            if($curentUser)
-            {
+            $curentUser = array_values($curentUser)[0] ?? []; //dd($curentUser);
+            if ($curentUser) {
                 $data = array_filter($data, function ($val) use ($curentUser, $all) { //dd();
                     if ($all) {
                         return (!in_array($val['id'], [$curentUser['forward_id'], $curentUser['backward_id']]) && $val['id'] != $curentUser['id'] && ($val['forward_id'] || $val['backward_id']));
@@ -149,25 +161,26 @@ class CommonFunction implements ICommonFunction
             echo $e->getMessage();
         }
     }
-    
-    public function getUserRoll($user_id,$ulb_id,$workflow_id)
-    { 
-        try{
+
+    public function getUserRoll($user_id, $ulb_id, $workflow_id)
+    {
+        try {
             // DB::enableQueryLog();
             $data = WfRole::select(
-                                    DB::raw("wf_roles.id as role_id,wf_roles.role_name,
+                DB::raw(
+                    "wf_roles.id as role_id,wf_roles.role_name,
                                             wf_workflowrolemaps.is_initiator, wf_workflowrolemaps.is_finisher,
                                             wf_workflowrolemaps.forward_role_id,forword.role_name as forword_name,
                                             wf_workflowrolemaps.backward_role_id,backword.role_name as backword_name,
-                                            wf_workflowrolemaps.show_full_list,wf_workflowrolemaps.escalation,
+                                            wf_workflowrolemaps.allow_full_list,wf_workflowrolemaps.can_escalate,
                                             wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
-                                            wf_workflowrolemaps.is_btda,wf_workflowrolemaps.upload_doc,
-                                            wf_workflowrolemaps.verify_doc,
+                                            wf_workflowrolemaps.can_upload_document,
+                                            wf_workflowrolemaps.can_verify_document,
                                             wf_masters.id as workflow_id,wf_masters.workflow_name,
                                             ulb_masters.id as ulb_id, ulb_masters.ulb_name,
                                             ulb_masters.ulb_type"
-                                            )
                 )
+            )
                 ->join("wf_roleusermaps", function ($join) {
                     $join->on("wf_roleusermaps.wf_role_id", "=", "wf_roles.id")
                         ->where("wf_roleusermaps.is_suspended", "=", FALSE);
@@ -217,23 +230,20 @@ class CommonFunction implements ICommonFunction
             echo $e->getMessage();
         }
     }
-    public function userType($refWorkflowId,$ulb_id=null):string
+    public function userType($refWorkflowId, $ulb_id = null): string
     {
         $user = Auth()->user();
         $user_id = $user->id;
-        $ulb_id = $user->ulb_id??$ulb_id;
-        $user_data = $this->getUserRoll($user_id, $ulb_id,$refWorkflowId);
-        $roll_id =  $user_data->role_id??-1;      
-        if($roll_id != -1)
-        {
-            $user_type_sort = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.'.strtoupper($user_data->role_name));
-            if(!$user_type_sort)
-            {
+        $ulb_id = $user->ulb_id ?? $ulb_id;
+        $user_data = $this->getUserRoll($user_id, $ulb_id, $refWorkflowId);
+        $roll_id =  $user_data->role_id ?? -1;
+        if ($roll_id != -1) {
+            $user_type_sort = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.' . strtoupper($user_data->role_name));
+            if (!$user_type_sort) {
                 return "Online";
             }
             return $user_type_sort;
-        }
-        else
+        } else
             return "Online";
     }
 
@@ -241,16 +251,14 @@ class CommonFunction implements ICommonFunction
     {
         try {
             $data = $this->getWorkFlowRoles($user_id, $ulb_id, $work_flow_id);
-            if($all)
-            {
-                $data = array_filter($data, function ($val){ 
-                         if (($val['forward_id']) || $val['backward_id']) 
-                         {
-                             return true;
-                         }
-                     });
-                $data= array_values($data);
-            } 
+            if ($all) {
+                $data = array_filter($data, function ($val) {
+                    if (($val['forward_id']) || $val['backward_id']) {
+                        return true;
+                    }
+                });
+                $data = array_values($data);
+            }
             return ($data);
         } catch (Exception $e) {
             echo $e->getMessage();
@@ -258,52 +266,56 @@ class CommonFunction implements ICommonFunction
     }
     public function sortsWorkflowRols($roles)
     {
-        $is_initiator = array_filter($roles,function($val){
-            return $val['is_initiator'];
-        });
-        $is_initiator = array_values($is_initiator)[0];
-        $forword = $is_initiator['forward_id'];
-        $maps = $this->maps($roles,$forword);
-        while($maps[sizeof($maps)-1]["forward_id"])
-        { 
-            $temp = $this->maps($roles,$maps[sizeof($maps)-1]["forward_id"]);
-            array_push($maps,$temp[0]);
-        }
-        array_unshift($maps,$is_initiator);
-        return($maps);
+        return (collect($roles)->sortBy('serial_no')->values()->all());
     }
+    // public function sortsWorkflowRols($roles)
+    // {
+    //     $is_initiator = array_filter($roles,function($val){
+    //         return $val['is_initiator'];
+    //     });
+    //     $is_initiator = array_values($is_initiator)[0];
+    //     $forword = $is_initiator['forward_id'];
+    //     $maps = $this->maps($roles,$forword);
+    //     while($maps[sizeof($maps)-1]["forward_id"])
+    //     { 
+    //         $temp = $this->maps($roles,$maps[sizeof($maps)-1]["forward_id"]);
+    //         array_push($maps,$temp[0]);
+    //     }
+    //     array_unshift($maps,$is_initiator);
+    //     return($maps);
+    // }
 
-    public function maps(array $roles,$forward_id,$ids=array())
-    {
-        
-        $rr = array_map(function($val)use($forward_id,$ids){                    
-                    if($val['id']==$forward_id && (!in_array($val['id'],$ids)))
-                    { 
-                        $forward_id = $val['forward_id'];                        
-                        return $val;
-                    }
-            },$roles); 
-        $rr = array_filter($rr, function ($val) {
-            return $val;
-        });
-        $rr = array_values($rr)??[];
-        if($rr)
-        {
-            array_push($ids,$rr[0]['id']);
-            $temp = $this->maps($roles,$forward_id,$ids);
-            if($temp){
-                $temp = array_filter($temp, function ($val) {
-                    return $val;
-                });
-                $temp = array_values($temp);
-                if($temp)
-                {
-                    array_push($rr,$temp);
-                }
-            }
-        }
-        else
-            return;                
-        return $rr;
-    }
+    // public function maps(array $roles,$forward_id,$ids=array())
+    // {
+
+    //     $rr = array_map(function($val)use($forward_id,$ids){                    
+    //                 if($val['id']==$forward_id && (!in_array($val['id'],$ids)))
+    //                 { 
+    //                     $forward_id = $val['forward_id'];                        
+    //                     return $val;
+    //                 }
+    //         },$roles); 
+    //     $rr = array_filter($rr, function ($val) {
+    //         return $val;
+    //     });
+    //     $rr = array_values($rr)??[];
+    //     if($rr)
+    //     {
+    //         array_push($ids,$rr[0]['id']);
+    //         $temp = $this->maps($roles,$forward_id,$ids);
+    //         if($temp){
+    //             $temp = array_filter($temp, function ($val) {
+    //                 return $val;
+    //             });
+    //             $temp = array_values($temp);
+    //             if($temp)
+    //             {
+    //                 array_push($rr,$temp);
+    //             }
+    //         }
+    //     }
+    //     else
+    //         return;                
+    //     return $rr;
+    // }
 }

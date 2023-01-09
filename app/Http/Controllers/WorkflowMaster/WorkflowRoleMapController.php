@@ -3,9 +3,26 @@
 namespace App\Http\Controllers\WorkflowMaster;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Property\ActiveSafController;
+use App\Http\Controllers\Property\ConcessionController;
+use App\Http\Controllers\Property\ObjectionController;
+use App\Http\Controllers\Property\RainWaterHarvestingController;
+use App\Models\User;
+use App\Models\Workflows\WfRoleusermap;
 use Illuminate\Http\Request;
 use App\Models\Workflows\WfWorkflowrolemap;
+use App\Repository\Property\Concrete\PropertyBifurcation;
+use App\Repository\Property\Concrete\PropertyDeactivate;
+use App\Repository\Property\Interfaces\iConcessionRepository;
+use App\Repository\Property\Interfaces\iObjectionRepository;
+use App\Repository\Property\Interfaces\iSafRepository;
+use App\Repository\Trade\Trade;
+use App\Repository\Water\Concrete\NewConnectionRepository;
+use App\Repository\WorkflowMaster\Interface\iWorkflowMapRepository;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
+use App\Repository\WorkflowMaster\Concrete\WorkflowRoleUserMapRepository;
 use Exception;
+use App\Traits\Workflow\Workflow;
 
 /**
  * Created On-14-10-2022 
@@ -14,8 +31,18 @@ use Exception;
 
 class WorkflowRoleMapController extends Controller
 {
-
+    use Workflow;
     //create master
+    private $saf_repository;
+    private $concession;
+    private $objection;
+    public function __construct(iSafRepository $saf_repository, iConcessionRepository $concession, iObjectionRepository $objection)
+    {
+        $this->saf_repository = new ActiveSafController($saf_repository);
+        $this->concession = new ConcessionController($concession);
+        $this->objection = new ObjectionController($objection);
+    }
+
     public function createRoleMap(Request $req)
     {
         try {
@@ -90,68 +117,161 @@ class WorkflowRoleMapController extends Controller
         }
     }
 
-    // tabs permission
-    public function permission(Request $req)
+    //Workflow Info
+    public function workflowInfo(Request $req)
     {
-        $moduleId = $req->moduleId;
+        try {
+            //workflow members
+            $data = new WorkflowMap();
+            $data = $data->getRoleByWorkflow($req);
+            $a['members'] = collect($data)['original']['data'];
 
-        switch ($moduleId) {
-            case (1):
-                switch ($req->workflowId) {
-                    case (3 | 4 | 5):
-                        $permission = WfWorkflowrolemap::select('wf_workflowrolemaps.*')
-                            ->join('prop_active_safs', 'prop_active_safs.current_role', 'wf_workflowrolemaps.wf_role_id')
-                            ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
-                            ->where('prop_active_safs.id', $req->applicationId)
-                            ->first();
-                        break;
+            //logged in user role
+            // $role = new WorkflowMap();
+            $role = $this->getRole($req);
+            $roleId  = collect($role)['wf_role_id'];
 
-                        //concession
-                    case (106):
-                        $permission = WfWorkflowrolemap::select('wf_workflowrolemaps.*')
-                            ->join('prop_active_concessions', 'prop_active_concessions.current_role', 'wf_workflowrolemaps.wf_role_id')
-                            ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
-                            ->where('prop_active_concessions.id', $req->applicationId)
-                            ->first();
-                        break;
-                }
-                break;
+            //members permission
+            $a['permissions'] = $this->permission($req, $roleId);
 
-            case (2):
-                $permission = WfWorkflowrolemap::select('wf_workflowrolemaps.*')
-                    ->join('water_applications', 'water_applications.current_role', 'wf_workflowrolemaps.wf_role_id')
-                    ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
-                    ->where('water_applications.id', $req->applicationId)
-                    ->first();
-                break;
+            // pseudo users
+            $a['pseudoUsers'] = $this->pseudoUser();
 
-            case (3):
-                break;
+            //inbox
+            switch ($req->workflowId) {
 
-            case (4):
-                break;
+                    //Water
+                case (16):
+                    $inbox = new NewConnectionRepository;
+                    $ab = $inbox->waterInbox();
+                    collect($ab)['original']['data'];
+                    $a['inbox'] = collect($ab)['original']['data'];
+                    break;
+
+                    //Concession
+                case (106):
+                    $inbox = $this->concession;
+                    $ab = $inbox->inbox();
+                    $a['inbox'] = collect($ab);
+                    break;
+
+                    //objection for clerical
+                case (169):
+                    $inbox = $this->objection;
+                    $ab = $inbox->inbox();
+                    collect($ab)['original']['data'];
+                    $a['inbox'] = collect($ab)['original']['data'];
+                    break;
+
+                    //rain water harvesting
+                case (197):
+                    $inbox = new RainWaterHarvestingController;
+                    $ab = $inbox->harvestingInbox();
+                    collect($ab)['original']['data'];
+                    $a['inbox'] = collect($ab)['original']['data'];
+                    break;
+
+                    //trade
+                case (10):
+                    $inbox = new Trade();
+                    $ab = $inbox->inbox($req);
+                    collect($ab)['original']['data']['licence'];
+                    $a['inbox'] = collect($ab)['original']['data']['licence'];
+                    break;
+
+                    //deactivation
+                case (167):
+                    $inbox = new PropertyDeactivate();
+                    $ab = $inbox->inbox($req);
+                    collect($ab)['original']['data']['property'];
+                    $a['inbox'] = collect($ab)['original']['data']['property'];
+                    break;
+
+                    //bifurcation
+                case (182):
+                    $inbox = new PropertyBifurcation();
+                    $ab = $inbox->inbox($req);
+                    collect($ab)['original']['data'];
+                    $a['inbox'] = collect($ab)['original']['data']['applications'];
+                    break;
+
+                    //SAF
+                case (3 || 4 || 5):
+                    $inbox = $this->saf_repository;
+                    $ab = $inbox->inbox();
+                    collect($ab)['original']['data'];
+                    $a['inbox'] = collect($ab)['original']['data'];
+                    break;
+            }
+
+            return responseMsgs(true, "Workflow Information", remove_null($a));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
+    }
 
 
+    // tabs permission
+    public function permission($req, $roleId)
+    {
+        $permission = WfWorkflowrolemap::select('wf_workflowrolemaps.*')
+            ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
+            ->where('wf_workflowrolemaps.wf_role_id', $roleId)
+            ->first();
 
+        // switch ($req->workflowId) {
+        //     case (3 || 4 || 5):
+        //         $permission = WfWorkflowrolemap::select('wf_workflowrolemaps.*')
+        //             // ->join('prop_active_safs', 'prop_active_safs.current_role', 'wf_workflowrolemaps.wf_role_id')
+        //             ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
+        //             ->where('wf_workflowrolemaps.wf_role_id', $roleId)
+        //             // ->where('prop_active_safs.id', $req->applicationId)
+        //             ->first();
+        //         break;
+
+        //         //concession
+        //     case (106):
+        //         $permission = WfWorkflowrolemap::select('wf_workflowrolemaps.*')
+        //             // ->join('prop_active_concessions', 'prop_active_concessions.current_role', 'wf_workflowrolemaps.wf_role_id')
+        //             ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
+        //             ->where('wf_workflowrolemaps.wf_role_id', $roleId)
+        //             // ->where('prop_active_concessions.id', $req->applicationId)
+        //             ->get();
+        //         break;
+        // }
 
         $data = [
-            'buttonEscalate' => $permission->escalation,
-            'buttonBTC' => $permission->is_btc,
-            'buttonBTD' => $permission->is_btda,
-            'tabWorkflowAction' => $permission->wf_action,
-            'tabViewDocument' => $permission->view_doc,
-            'tabUploadDocument' => $permission->upload_doc,
-            'tabVerifyDocument' => $permission->verify_doc,
-            'tabFreeCommunication' => $permission->communication_tab,
-            'buttonForward' => $permission->forward_btn,
-            'buttonBackward' => $permission->backward_btn,
-            'buttonApprove' => $permission->is_finisher,
-            'buttonReject' => $permission->is_finisher,
-            'tabsAllowed' => $permission->tab_allowed,
-
+            'allow_full_list' => $permission->allow_full_list,
+            'can_escalate' => $permission->can_escalate,
+            'is_btc' => $permission->is_btc,
+            'is_enabled' => $permission->is_enabled,
+            'can_view_document' => $permission->can_view_document,
+            'can_upload_document' => $permission->can_upload_document,
+            'can_verify_document' => $permission->can_verify_document,
+            'allow_free_communication' => $permission->allow_free_communication,
+            'can_forward' => $permission->can_forward,
+            'can_backward' => $permission->can_backward,
+            'can_approve' => $permission->is_finisher,
+            'can_reject' => $permission->is_finisher,
+            'is_pseudo' => $permission->is_pseudo,
+            'show_field_verification' => $permission->show_field_verification,
         ];
 
-        return responseMsg(true, "Permission", remove_null($data));
+        return $data;
+    }
+
+    public function pseudoUser()
+    {
+        $ulbId = authUser()->ulb_id;
+
+        $pseudo = User::select(
+            'id',
+            'user_name'
+        )
+            ->where('user_type', 'Pseudo')
+            ->where('ulb_id', $ulbId)
+            ->where('suspended', false)
+            ->get();
+        return $pseudo;
     }
 }

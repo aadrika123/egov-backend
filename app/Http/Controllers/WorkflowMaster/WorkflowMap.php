@@ -116,8 +116,8 @@ class WorkflowMap extends Controller
     }
 
     //
-    public function getWorkflownameByWorkflow(Request $request)
+    public function getWorkflow(Request $request)
     {
-        return $this->WfMap->getWorkflownameByWorkflow($request);
+        return $this->WfMap->getWorkflow($request);
     }
 }

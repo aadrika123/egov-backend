@@ -341,7 +341,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('workflow/role-map/byId', 'roleMapbyId');                       // Get Workflow By Id
         Route::post('workflow/role-map/list', 'getAllRoleMap');                     // Get All Workflow
         Route::post('workflow/role-map/delete', 'deleteRoleMap');                   // Delete Workflow
-        Route::post('workflow/role-map/permission', 'permission');
+        Route::post('workflow/role-map/workflow-info', 'workflowInfo');
     });
 
 
@@ -376,7 +376,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('workflow/getRoleByUserUlbId', 'getRoleByUserUlbId');
         Route::post('workflow/getRoleByWardUlbId', 'getRoleByWardUlbId');
 
-        Route::post('workflow/getWorkflownameByWorkflow', 'getWorkflownameByWorkflow');
+        Route::post('workflow/get-ulb-workflow', 'getWorkflow');
     });
 
 
@@ -396,6 +396,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('workflow-initiator', 'workflowInitiatorData');
         Route::post('role-by-user', 'roleIdByUserId');
         Route::post('ward-by-user', 'wardByUserId');
+        Route::post('role-by-workflow', 'getRole');
         Route::post('initiator', 'initiatorId');
         Route::post('finisher', 'finisherId');
     });
