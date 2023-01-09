@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\Property\ReqSiteVerification;
 use App\MicroServices\DocUpload;
+use App\Models\CustomDetail;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenalty;
 use App\Models\Property\PaymentPropRebate;
@@ -39,6 +40,7 @@ use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
+use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Payment\Razorpay;
@@ -572,6 +574,8 @@ class ActiveSafController extends Controller
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mWorkflowTracks = new WorkflowTrack();
+            $mCustomDetails = new CustomDetail();
+            $getDocuments = new PropertyBifurcation();
             $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
             // Saf Details
             $data = [];
@@ -615,6 +619,22 @@ class ActiveSafController extends Controller
 
             $citizenComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['id']);
             $data['citizenComment'] = $citizenComment;
+
+            $metaReqs['customFor'] = 'SAF';
+            $req->request->add($metaReqs);
+            $custom = $mCustomDetails->getCustomDetails($req);
+            $data['departmentalPost'] = collect($custom)['original']['data'];
+
+            $docList = $getDocuments->getUploadDocuments($req);
+            $data['documentList'] = collect($docList)['original']['data'];
+
+            $a = $getDocuments->getDocList($req);
+            $b = collect($a)['original']['data']['documentsList'];
+            $data['docrequired'] = collect($b)->map(function ($value) {
+                return $value['docVal'];
+            });
+
+
 
             return responseMsgs(true, 'Data Fetched', remove_null($data), "010104", "1.0", "303ms", "POST", $req->deviceId);
         } catch (Exception $e) {

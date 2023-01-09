@@ -50,11 +50,11 @@ class CommonFunction implements ICommonFunction
                                         wf_masters.workflow_name,
                                         wf_masters.id as workflow_id,
                                         wf_workflows.ulb_id,
-                                        wf_workflowrolemaps.show_full_list,wf_workflowrolemaps.escalation,
+                                        wf_workflowrolemaps.can_escalate,
                                         wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
-                                        wf_workflowrolemaps.upload_doc,
-                                        wf_workflowrolemaps.verify_doc
-                                        "
+                                        wf_workflowrolemaps.can_upload_document,
+                                        wf_workflowrolemaps.can_verify_document"
+                    // "*"
                 )
             )
                 ->join("wf_workflows", function ($join) {
@@ -62,20 +62,20 @@ class CommonFunction implements ICommonFunction
                         ->where("wf_workflows.is_suspended", FALSE);
                 })
                 ->join(
-                    DB::raw("(SELECT distinct(wf_role_id) as wf_role_id ,
-                                                workflow_id , forward_role_id , backward_role_id,is_initiator,is_finisher,
-                                                wf_workflowrolemaps.show_full_list,wf_workflowrolemaps.escalation,
+                    DB::raw("(SELECT distinct(wf_role_id) as wf_role_id,
+                                                workflow_id , forward_role_id , backward_role_id,
+                                                is_initiator,is_finisher,
+                                                wf_workflowrolemaps.allow_full_list,wf_workflowrolemaps.can_escalate,
                                                 wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
-                                                wf_workflowrolemaps.upload_doc,
-                                                wf_workflowrolemaps.verify_doc
+                                                wf_workflowrolemaps.allow_full_list,
+                                                wf_workflowrolemaps.can_verify_document
                                             FROM wf_workflowrolemaps 
                                             WHERE  wf_workflowrolemaps.is_suspended = false 
                                             GROUP BY workflow_id,wf_role_id , forward_role_id , backward_role_id, is_initiator, is_finisher,
-                                                wf_workflowrolemaps.show_full_list,wf_workflowrolemaps.escalation,
+                                                wf_workflowrolemaps.allow_full_list,wf_workflowrolemaps.can_escalate,
                                                 wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
-                                                wf_workflowrolemaps.upload_doc,
-                                                wf_workflowrolemaps.verify_doc
-                                            ) wf_workflowrolemaps "),
+                                                wf_workflowrolemaps.can_verify_document
+                                            ) wf_workflowrolemaps"),
                     function ($join) use ($ulb_id) {
                         $join->on("wf_workflowrolemaps.workflow_id", "wf_workflows.id");
                     }

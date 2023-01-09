@@ -53,16 +53,23 @@ class PropertyBifurcationController extends Controller
     {
         return $this->Repository->documentUpload($request);
     }
+    //saf
     public function safDocumentUpload(Request $request)
-    {       
+    {
         return $this->Repository->safDocumentUpload($request);
     }
+    //saf
+    public function getDocList(Request $request)
+    {
+        return $this->Repository->getDocList($request);
+    }
+    //saf
     public function getUploadDocuments(Request $request)
     {
         return $this->Repository->getUploadDocuments($request);
     }
     public function CitizenPymentHistory(Request $request)
     {
-        return $this->Repository->CitizenPymentHistory( $request);
+        return $this->Repository->CitizenPymentHistory($request);
     }
 }
