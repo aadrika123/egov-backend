@@ -645,6 +645,13 @@ class ActiveSafController extends Controller
                 'tableData' => $floorDetails
             ];
             $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement]);
+            // Card Detail Format
+            $cardDetails = $this->generateCardDetails($data);
+            $cardElement = [
+                'headerTitle' => "About Property",
+                'data' => $cardDetails
+            ];
+            $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
             return remove_null($fullDetailsData);
             $data = json_decode(json_encode($data), true);
             $metaReqs['customFor'] = 'SAF';
