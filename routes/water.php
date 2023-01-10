@@ -40,11 +40,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(NewConnectionController::class)->group(function () {
         # Citizen View Water Screen For Mobile 
-        Route::get('get-connection-type', 'getConnectionType');                                         //05         // Get Water Connection Type Details mstr
-        Route::get('get-connection-through', 'getConnectionThrough');                                   //06        // Get Water Connection Through Details mstr
-        Route::get('get-property-type', 'getPropertyType');                                             //07        // Get Property Type Details mstr
-        Route::get('get-owner-type', 'getOwnerType');                                                   //08        // Get Owner Type Details mstr
-        Route::get('get-ward-no', 'getWardNo');                                                         //09        // Get Ward No According to Saf or Holding Details mstr
+        Route::post('get-connection-type', 'getConnectionType');                                        //05         // Get Water Connection Type Details mstr
+        Route::post('get-connection-through', 'getConnectionThrough');                                  //06        // Get Water Connection Through Details mstr
+        Route::post('get-property-type', 'getPropertyType');                                            //07        // Get Property Type Details mstr
+        Route::post('get-owner-type', 'getOwnerType');                                                  //08        // Get Owner Type Details mstr
+        Route::post('get-ward-no', 'getWardNo');                                                        //09        // Get Ward No According to Saf or Holding Details mstr
 
         # water Workflow
         Route::post('water-inbox', 'waterInbox');                                                       // 
@@ -58,7 +58,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('approval-rejection-water', 'approvalRejectionWater');                              //
         Route::post('comment-independent', 'commentIndependent');                                       //
         Route::post('approved-water-applications', 'approvedWaterApplications');                        //
-        Route::post('get-water-payment', 'getWaterPayment');                                            //
+        Route::post('get-indipendent-comment', 'getIndipendentComment');                                            //
         // Route::post('get-level-comment', 'getLevelcomment');                                            //
     });
 });

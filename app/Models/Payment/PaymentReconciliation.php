@@ -18,6 +18,7 @@ class PaymentReconciliation extends Model
     public function allReconciliationDetails()
     {
         return PaymentReconciliation::select(
+            'id',
             'ulb_id AS ulbId',
             'department_id AS dpartmentId',
             'transaction_no AS transactionNo',
@@ -30,6 +31,6 @@ class PaymentReconciliation extends Model
             'bank_name AS bankName',
             'transaction_amount AS amount',
             'clearance_date AS clearanceDate'
-        );
+        )->orderByDesc('id');
     }
 }
