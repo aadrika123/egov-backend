@@ -168,7 +168,7 @@ class RazorpayPaymentController extends Controller
 
     // Serch the tranasaction details
     /**
-     | Flag
+     | Flag / Route
      */
     public function searchTransaction(Request $request)
     {
