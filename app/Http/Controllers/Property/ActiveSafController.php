@@ -285,12 +285,6 @@ class ActiveSafController extends Controller
                 }
             }
 
-            // Property SAF Label Pendings
-            $labelPending = new PropLevelPending();
-            $labelPending->saf_id = $safId;
-            $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
-            $labelPending->save();
-
             // Insert Tax
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
@@ -625,7 +619,8 @@ class ActiveSafController extends Controller
                 'headerTitle' => 'Electricity & Water Details',
                 'data' => $electDetails
             ];
-
+            $fullDetailsData['application_no'] = $data->saf_no;
+            $fullDetailsData['apply_date'] = $data->application_date;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
             // Table Array
             // Owner Details
@@ -645,35 +640,44 @@ class ActiveSafController extends Controller
                 'tableData' => $floorDetails
             ];
             $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement]);
-            return remove_null($fullDetailsData);
+            // Card Detail Format
+            $cardDetails = $this->generateCardDetails($data, $getOwnerDetails);
+            $cardElement = [
+                'headerTitle' => "About Property",
+                'data' => $cardDetails
+            ];
+            $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
             $data = json_decode(json_encode($data), true);
             $metaReqs['customFor'] = 'SAF';
-            $metaReqs['wfRoleId'] = $data['Basic Details']['current_role'];
-            $metaReqs['workflowId'] = $data['Basic Details']['workflow_id'];
-            $metaReqs['lastRoleId'] = $data['Basic Details']['last_role_id'];
+            $metaReqs['wfRoleId'] = $data['current_role'];
+            $metaReqs['workflowId'] = $data['workflow_id'];
+            $metaReqs['lastRoleId'] = $data['last_role_id'];
 
-            $citizenComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['Basic Details']['id']);
-            $data['citizenComment'] = $citizenComment;
+            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['id']);
+            $fullDetailsData['levelComment'] = $levelComment;
+
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $data['id'], $data['user_id']);
+            $fullDetailsData['citizenComment'] = $citizenComment;
 
             $req->request->add($metaReqs);
             $forwardBackward = $forwardBackward->getRoleDetails($req);
-            $data['roleDetails'] = collect($forwardBackward)['original']['data'];
+            $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
 
-            $data['timelineData'] = collect($req);
+            $fullDetailsData['timelineData'] = collect($req);
 
             $custom = $mCustomDetails->getCustomDetails($req);
-            $data['departmentalPost'] = collect($custom)['original']['data'];
+            $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
             $docList = $getDocuments->getUploadDocuments($req);
-            $data['documentList'] = collect($docList)['original']['data'];
+            $fullDetailsData['documentList'] = collect($docList)['original']['data'];
 
-            $a = $getDocuments->getDocList($req);
-            $b = collect($a)['original']['data']['documentsList'];
-            $data['docrequired'] = collect($b)->map(function ($value) {
+            $getDocumentList = $getDocuments->getDocList($req);
+            $documentList = collect($getDocumentList)['original']['data']['documentsList'];
+            $fullDetailsData['docrequired'] = collect($documentList)->map(function ($value) {
                 return $value['docVal'];
             });
 
-            return responseMsgs(true, 'Data Fetched', remove_null($data), "010104", "1.0", "303ms", "POST", $req->deviceId);
+            return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
