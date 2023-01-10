@@ -129,7 +129,7 @@ class WorkflowRoleMapController extends Controller
             //logged in user role
             // $role = new WorkflowMap();
             $role = $this->getRole($req);
-            $roleId  = collect($role)['wf_role_id'];
+            return $roleId  = collect($role)['wf_role_id'];
 
             //members permission
             $a['permissions'] = $this->permission($req, $roleId);

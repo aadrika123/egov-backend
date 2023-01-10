@@ -201,8 +201,13 @@ class ObjectionController extends Controller
                 'comment' => 'required'
             ]);
 
+            // objection Application Update Current Role Updation
+            $objection = PropActiveObjection::find($req->objectionId);
+            $objection->current_role = $req->receiverRoleId;
+            $objection->save();
+
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs['workflowId'] = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
+            $metaReqs['workflowId'] = $objection->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_objections.id';
             $metaReqs['refTableIdValue'] = $req->objectionId;
             $req->request->add($metaReqs);
@@ -211,10 +216,7 @@ class ObjectionController extends Controller
             $track = new WorkflowTrack();
             $track->saveTrack($req);
 
-            // objection Application Update Current Role Updation
-            $objection = PropActiveObjection::find($req->objectionId);
-            $objection->current_role = $req->receiverRoleId;
-            $objection->save();
+
 
             DB::commit();
 
