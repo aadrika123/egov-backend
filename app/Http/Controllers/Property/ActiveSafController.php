@@ -46,9 +46,11 @@ use App\Repository\Property\Interfaces\iSafRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF;
+use App\Traits\Property\SafDetailsTrait;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -58,6 +60,7 @@ class ActiveSafController extends Controller
     use Workflow;
     use SAF;
     use Razorpay;
+    use SafDetailsTrait;
     /**
      * | Created On-10-08-2022
      * | Created By-Anshu Kumar
@@ -78,6 +81,7 @@ class ActiveSafController extends Controller
     protected $user_id;
     protected $_todayDate;
     protected $_workflowIds;
+    protected $Repository;
     // Initializing function for Repository
     protected $saf_repository;
     public function __construct(iSafRepository $saf_repository)
@@ -568,7 +572,7 @@ class ActiveSafController extends Controller
      * | Rating-4 
      */
     #Saf Details
-    public function details(Request $req)
+    public function safDetails(Request $req)
     {
         try {
             $mPropActiveSaf = new PropActiveSaf();
@@ -580,7 +584,8 @@ class ActiveSafController extends Controller
             $forwardBackward = new WorkflowMap;
             $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
             // Saf Details
-            $data = [];
+            $data = array();
+            $fullDetailsData = array();
             if ($req->id) {                                       //<------- Search By SAF ID
                 $data = $mPropActiveSaf->getActiveSafDtls()      // <------- Model function Active SAF Details
                     ->where('prop_active_safs.id', $req->id)
@@ -592,21 +597,62 @@ class ActiveSafController extends Controller
                     ->where('prop_active_safs.saf_no', $req->safNo)
                     ->first();
             }
+            // return $data;
+            // Basic Details
+            $basicDetails = $this->generateBasicDetails($data);      // Trait function to get Basic Details
+            $basicElement = [
+                'headerTitle' => "Basic Details",
+                "data" => $basicDetails
+            ];
+
+            // Property Details
+            $propertyDetails = $this->generatePropertyDetails($data);   // Trait function to get Property Details
+            $propertyElement = [
+                'headerTitle' => "Property Details & Address",
+                'data' => $propertyDetails
+            ];
+
+            // Corresponding Address Details
+            $corrDetails = $this->generateCorrDtls($data);              // Trait function to generate corresponding address details
+            $corrElement = [
+                'headerTitle' => 'Corresponding Address',
+                'data' => $corrDetails,
+            ];
+
+            // Electricity & Water Details
+            $electDetails = $this->generateElectDtls($data);            // Trait function to generate Electricity Details
+            $electElement = [
+                'headerTitle' => 'Electricity & Water Details',
+                'data' => $electDetails
+            ];
+
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
+            // Table Array
+            // Owner Details
+            $getOwnerDetails = $mPropActiveSafOwner->getOwnersBySafId($data->id);    // Model function to get Owner Details
+            $ownerDetails = $this->generateOwnerDetails($getOwnerDetails);
+            $ownerElement = [
+                'headerTitle' => 'Owner Details',
+                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                'tableData' => $ownerDetails
+            ];
+            // Floor Details
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);      // Model Function to Get Floor Details
+            $floorDetails = $this->generateFloorDetails($getFloorDtls);
+            $floorElement = [
+                'headerTitle' => 'Floor Details',
+                'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
+                'tableData' => $floorDetails
+            ];
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement]);
+            return remove_null($fullDetailsData);
             $data = json_decode(json_encode($data), true);
             $metaReqs['customFor'] = 'SAF';
-            $metaReqs['wfRoleId'] = $data['current_role'];
-            $metaReqs['workflowId'] = $data['workflow_id'];
-            $metaReqs['lastRoleId'] = $data['last_role_id'];
+            $metaReqs['wfRoleId'] = $data['Basic Details']['current_role'];
+            $metaReqs['workflowId'] = $data['Basic Details']['workflow_id'];
+            $metaReqs['lastRoleId'] = $data['Basic Details']['last_role_id'];
 
-            // $data['applicationDetails'] = $data;
-
-            $ownerDetails = $mPropActiveSafOwner->getOwnersBySafId($data['id']);    // Model function to get Owner Details
-            $data['owners'] = $ownerDetails;
-
-            $floorDetails = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
-            $data['floors'] = $floorDetails;
-
-            $citizenComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['id']);
+            $citizenComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['Basic Details']['id']);
             $data['citizenComment'] = $citizenComment;
 
             $req->request->add($metaReqs);
@@ -626,8 +672,6 @@ class ActiveSafController extends Controller
             $data['docrequired'] = collect($b)->map(function ($value) {
                 return $value['docVal'];
             });
-
-
 
             return responseMsgs(true, 'Data Fetched', remove_null($data), "010104", "1.0", "303ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -1040,8 +1084,8 @@ class ActiveSafController extends Controller
     public function calculateSafBySafId(Request $req)
     {
         $safDetails = $this->details($req);
-        $safNo = $safDetails->original['data']['saf_no'];
-        $req = $safDetails->original['data'];
+        $safNo = $safDetails['saf_no'];
+        $req = $safDetails;
         $array = $this->generateSafRequest($req);                                                                       // Generate SAF Request by SAF Id Using Trait
         $safCalculation = new SafCalculation();
         $request = new Request($array);
