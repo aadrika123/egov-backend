@@ -19,6 +19,7 @@ use App\Repository\Water\Concrete\WaterNewConnection;
 use App\Repository\Property\Interfaces\iSafRepository;;
 
 use App\Traits\Payment\Razorpay;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 use Exception;
@@ -231,6 +232,19 @@ class PaymentRepository implements iPayment
         }
     }
 
+    /**
+     * | -------------------------------- integration of the webhook ------------------------------- |
+     * | @param request
+     * | 
+     * | @return 
+     * | Operation : this function url is hited by the webhook and the detail of the payment is collected in request 
+     *               thie the storage -> generating pdf -> generating json ->save -> hitting url for watsapp message.
+     * | Rating : 4
+     * | this -> naming
+     * | here -> variable
+        | Serial No : 03
+        | Flag : department Id will be replaced / switch case / the checking of the payment is success (keys:amount,orderid,departmentid,status) / razorpay verification 
+     */
     public function collectWebhookDetails($request)
     {
         try {
@@ -281,7 +295,7 @@ class PaymentRepository implements iPayment
 
                 # calling function for the modules                  
                 switch ($depatmentId) {
-                    case ('1'):                                 //<------------------ (SAF PAYMENT)
+                    case ('1'):                                     //<------------------ (SAF PAYMENT)
                         $obj = new ActiveSafController($this->_safRepo);
                         $transfer = new Request($transfer);
                         $obj->paymentSaf($transfer);
@@ -294,14 +308,26 @@ class PaymentRepository implements iPayment
                         $objTrade = new Trade();
                         $objTrade->razorPayResponse($transfer);
                         break;
-                    default:
-                        // $msg = 'Something went wrong on switch';
                 }
             }
             return responseMsg(true, "Webhook Data Collected!", $request->event);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $e->getLine());
         }
+    }
+
+    /**
+     * | ------------------------ generating Application ID ------------------------------- |
+     * | @param request
+     * | @var id
+     * | @return idDetails
+     * | Operation : this function generate a random and unique transactionID
+     * | Rating : 1
+        | Serial No : 03.1
+     */
+    public function generatingTransactionId()
+    {
+        return Carbon::createFromDate()->milli . carbon::now()->diffInMicroseconds();
     }
 
     /**
