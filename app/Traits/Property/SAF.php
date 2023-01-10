@@ -2,9 +2,15 @@
 
 namespace App\Traits\Property;
 
+use App\Models\CustomDetail;
 use App\Models\Property\ActiveSaf;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsFloor;
+use App\Models\Property\PropActiveSafsOwner;
 use App\Models\UlbWardMaster;
+use App\Models\WorkflowTrack;
+use App\Repository\Property\Concrete\PropertyBifurcation;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -207,6 +213,8 @@ trait SAF
         $refFloors = $req['floors'];
 
         foreach ($refFloors as $key => $refFloor) {
+            if (is_object($refFloor))
+                $refFloor = json_decode(json_encode($refFloor), true);
             $array['floor'][$key]['floorNo'] = $refFloor['floor_mstr_id'];
             $array['floor'][$key]['useType'] = $refFloor['usage_type_mstr_id'];
             $array['floor'][$key]['constructionType'] = $refFloor['const_type_mstr_id'];
@@ -219,6 +227,8 @@ trait SAF
         $refFloors = $req['owners'];
 
         foreach ($refFloors as $key => $refFloor) {
+            if (is_object($refFloor))
+                $refFloor = json_decode(json_encode($refFloor), true);
             $array['owner'][$key]['ownerName'] = $refFloor['owner_name'];
             $array['owner'][$key]['gender'] = $refFloor['gender'];
             $array['owner'][$key]['guardianName'] = $refFloor['guardian_name'];
@@ -384,5 +394,38 @@ trait SAF
             $roadWidthType = 1;
 
         return $roadWidthType;
+    }
+
+    /**
+     * | Get Saf Details
+     */
+    public function details($req)
+    {
+        $mPropActiveSaf = new PropActiveSaf();
+        $mPropActiveSafOwner = new PropActiveSafsOwner();
+        $mActiveSafsFloors = new PropActiveSafsFloor();
+        // Saf Details
+        $data = [];
+        if ($req->id) {                                       //<------- Search By SAF ID
+            $data = $mPropActiveSaf->getActiveSafDtls()      // <------- Model function Active SAF Details
+                ->where('prop_active_safs.id', $req->id)
+                ->first();
+        }
+
+        if ($req->safNo) {                                  // <-------- Search By SAF No
+            $data = $mPropActiveSaf->getActiveSafDtls()    // <------- Model Function Active SAF Details
+                ->where('prop_active_safs.saf_no', $req->safNo)
+                ->first();
+        }
+        $data = json_decode(json_encode($data), true);
+        // $data['applicationDetails'] = $data;
+
+        $ownerDetails = $mPropActiveSafOwner->getOwnersBySafId($data['id']);    // Model function to get Owner Details
+        $data['owners'] = $ownerDetails;
+
+        $floorDetails = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
+        $data['floors'] = $floorDetails;
+
+        return $data;
     }
 }

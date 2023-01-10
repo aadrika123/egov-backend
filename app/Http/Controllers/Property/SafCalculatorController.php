@@ -11,14 +11,15 @@ use App\Traits\Property\SAF;
 class SafCalculatorController extends Controller
 {
     use SAF;
+    protected $Repository;
     public function __construct(iSafRepository $repository)
     {
         $this->Repository = $repository;
     }
     public function calculateSaf(Request $req)
     {
-        $data = $this->Repository->details($req);
-        $req = $data->original['data'];
+        $data = $this->details($req);
+        $req = $data;
         // return $req;
         $array = $this->generateSafRequest($req);
 

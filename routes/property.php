@@ -60,7 +60,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::get('saf/inbox', 'inbox');                                                                   // Saf Inbox(3)
     Route::post('saf/btc-inbox', 'btcInbox');                                                           // Saf Inbox for Back To citizen(23)
     Route::get('saf/outbox', 'outbox');                                                                 // Saf Workflow Outbox and Outbox By search key(4)
-    Route::post('saf-details', 'details');                                                              // Saf Workflow safDetails and safDetails By ID(5)
+    Route::post('saf-details', 'safDetails');                                                           // Saf Workflow safDetails and safDetails By ID(5)
     Route::post('saf/escalate', 'postEscalate');                                                        // Saf Workflow special and safDetails By id(6)
     Route::get('saf/escalate/inbox/{key?}', 'specialInbox');                                            // Saf workflow Inbox and Inbox By search key(7)
     Route::post('saf/independent-comment', 'commentIndependent');                                       // Independent Comment for SAF Application(8)
