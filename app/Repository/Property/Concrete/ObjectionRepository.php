@@ -2,6 +2,7 @@
 
 namespace App\Repository\Property\Concrete;
 
+use App\Models\CustomDetail;
 use App\Models\Property\PropOwner;
 use Exception;
 use App\Repository\Property\Interfaces\iObjectionRepository;
@@ -22,6 +23,7 @@ use App\Models\PropActiveObjectionFloor;
 use App\Models\PropActiveObjectionDocdtl;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -389,6 +391,8 @@ class ObjectionRepository implements iObjectionRepository
      */
     public function getDetailsById($req)
     {
+        $mCustomDetails = new CustomDetail;
+        $forwardBackward = new WorkflowMap;
         $details = DB::table('prop_active_objections')
             ->select(
                 'prop_active_objections.id as objection_id',
@@ -418,8 +422,18 @@ class ObjectionRepository implements iObjectionRepository
         $metaReqs['wfRoleId']   =  $details->current_role;
         $metaReqs['workflowId'] =  $details->workflow_id;
         $metaReqs['lastRoleId'] =  $details->last_role_id;
+        $req->request->add($metaReqs);
 
+        //role details
+        $forwardBackward = $forwardBackward->getRoleDetails($req);
+        $details->roleDetails = collect($forwardBackward)['original']['data'];
+
+        //timeline Data
         $details->timelineData = collect($metaReqs);
+
+        //custom Details
+        $custom = $mCustomDetails->getCustomDetails($req);
+        $details->departmentalPost = collect($custom)['original']['data'];
 
         return responseMsgs(true, "Objection Details", remove_null($details), '010807', '01', '474ms-573', 'Post', '');
     }
