@@ -619,7 +619,8 @@ class ActiveSafController extends Controller
                 'headerTitle' => 'Electricity & Water Details',
                 'data' => $electDetails
             ];
-
+            $fullDetailsData['application_no'] = $data->saf_no;
+            $fullDetailsData['apply_date'] = $data->application_date;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
             // Table Array
             // Owner Details
@@ -652,7 +653,10 @@ class ActiveSafController extends Controller
             $metaReqs['workflowId'] = $data['workflow_id'];
             $metaReqs['lastRoleId'] = $data['last_role_id'];
 
-            $citizenComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['id']);
+            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['id']);
+            $fullDetailsData['levelComment'] = $levelComment;
+
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $data['id'], $data['user_id']);
             $fullDetailsData['citizenComment'] = $citizenComment;
 
             $req->request->add($metaReqs);

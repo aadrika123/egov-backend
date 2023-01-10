@@ -71,7 +71,30 @@ class WorkflowTrack extends Model
             )
             ->where('ref_table_dot_id', $mRefTable)
             ->where('ref_table_id_value', $tableId)
-            ->join('users as u', 'u.id', '=', 'workflow_tracks.sender_role_id')
+            ->where('citizen_id', null)
+            ->leftJoin('users as u', 'u.id', '=', 'workflow_tracks.sender_role_id')
+            ->get();
+    }
+
+    /**
+     * | Get Citizen Comment
+     */
+    public function getCitizenTracks($mRefTable, $tableId, $citizenId)
+    {
+        return DB::table('workflow_tracks')
+            ->select(
+                'workflow_tracks.ref_table_dot_id AS referenceTable',
+                'workflow_tracks.ref_table_id_value AS applicationId',
+                'workflow_tracks.message',
+                'workflow_tracks.track_date',
+                'workflow_tracks.forward_date',
+                'workflow_tracks.forward_time',
+                'u.user_name as commentedBy'
+            )
+            ->where('ref_table_dot_id', $mRefTable)
+            ->where('ref_table_id_value', $tableId)
+            ->where('citizen_id', $citizenId)
+            ->leftJoin('users as u', 'u.id', '=', 'workflow_tracks.citizen_id')
             ->get();
     }
 }
