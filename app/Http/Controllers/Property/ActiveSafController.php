@@ -285,12 +285,6 @@ class ActiveSafController extends Controller
                 }
             }
 
-            // Property SAF Label Pendings
-            $labelPending = new PropLevelPending();
-            $labelPending->saf_id = $safId;
-            $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
-            $labelPending->save();
-
             // Insert Tax
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
