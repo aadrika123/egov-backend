@@ -61,15 +61,17 @@ class WorkflowTrack extends Model
     {
         return DB::table('workflow_tracks')
             ->select(
-                'workflow_tracks.ref_table_dot_id',
+                'workflow_tracks.ref_table_dot_id AS referenceTable',
+                'workflow_tracks.ref_table_id_value AS applicationId',
                 'workflow_tracks.message',
                 'workflow_tracks.track_date',
-                'u.email as citizenEmail',
-                'u.user_name as citizenName'
+                'workflow_tracks.forward_date',
+                'workflow_tracks.forward_time',
+                'u.user_name as commentedBy'
             )
             ->where('ref_table_dot_id', $mRefTable)
             ->where('ref_table_id_value', $tableId)
-            ->join('users as u', 'u.id', '=', 'workflow_tracks.user_id')
+            ->join('users as u', 'u.id', '=', 'workflow_tracks.sender_role_id')
             ->get();
     }
 }

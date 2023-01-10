@@ -2,6 +2,7 @@
 
 namespace App\Traits\Payment;
 
+use App\Http\Controllers\Property\ActiveSafController;
 use App\Models\Payment\PaymentRequest;
 use App\Models\Payment\PaymentReject;
 use App\Models\Payment\PaymentSuccess;
@@ -12,6 +13,7 @@ use Razorpay\Api\Errors\SignatureVerificationError;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\WebhookPaymentData;
 use App\Repository\Property\Concrete\SafRepository;
+use App\Repository\Property\Interfaces\iSafRepository;
 use App\Repository\Trade\Trade;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use Carbon\Carbon;
@@ -160,90 +162,79 @@ trait Razorpay
         | Serial No : 03
         | Flag : department Id will be replaced / switch case / the checking of the payment is success (keys:amount,orderid,departmentid,status) / razorpay verification 
      */
-    public function collectWebhookDetails($request)
-    {
-        try {
-            # Variable Defining Section
-            $webhookEntity = $request->payload['payment']['entity'];
+    // public function collectWebhookDetails($request)
+    // {
+    //     try {
+    //         # Variable Defining Section
+    //         $webhookEntity = $request->payload['payment']['entity'];
 
-            $contains = json_encode($request->contains);
-            $notes = json_encode($webhookEntity['notes']);
+    //         $contains = json_encode($request->contains);
+    //         $notes = json_encode($webhookEntity['notes']);
 
-            $depatmentId = $webhookEntity['notes']['departmentId']; // ModuleId
-            $status = $webhookEntity['status'];
-            $captured = $webhookEntity['captured'];
-            $aCard = $webhookEntity['card_id'];
-            $amount = $webhookEntity['amount'];
-            $arrayInAquirer = $webhookEntity['acquirer_data'];
+    //         $depatmentId = $webhookEntity['notes']['departmentId']; // ModuleId
+    //         $status = $webhookEntity['status'];
+    //         $captured = $webhookEntity['captured'];
+    //         $aCard = $webhookEntity['card_id'];
+    //         $amount = $webhookEntity['amount'];
+    //         $arrayInAquirer = $webhookEntity['acquirer_data'];
 
-            $actulaAmount = $amount / 100;
-            $firstKey = array_key_first($arrayInAquirer);
-            $actualTransactionNo = $this->generatingTransactionId();
+    //         $actulaAmount = $amount / 100;
+    //         $firstKey = array_key_first($arrayInAquirer);
+    //         $actualTransactionNo = $this->generatingTransactionId();
 
-            if (!is_null($aCard)) {
+    //         if (!is_null($aCard)) {
 
-                $webhookCardDetails = $webhookEntity['card'];
-                $objcard = new CardDetail();
-                $objcard->saveCardDetails($webhookCardDetails);
-            }
+    //             $webhookCardDetails = $webhookEntity['card'];
+    //             $objcard = new CardDetail();
+    //             $objcard->saveCardDetails($webhookCardDetails);
+    //         }
 
-            # data to be stored in the database 
-            $webhookData = new WebhookPaymentData();
-            $webhookData = $webhookData->saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity);
+    //         # data to be stored in the database 
+    //         $webhookData = new WebhookPaymentData();
+    //         $webhookData = $webhookData->saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity);
 
-            # data transfer to the respective module dataBase 
-            $transfer['paymentMode'] = $webhookData->payment_method;
-            $transfer['id'] = $webhookEntity['notes']['applicationId'];
-            $transfer['amount'] = $actulaAmount;
-            $transfer['workflowId'] =  $webhookData->workflow_id;
-            $transfer['transactionNo'] = $actualTransactionNo;
-            $transfer['userId'] = $webhookData->user_id;
-            $transfer['ulbId'] = $webhookData->ulb_id;
-            $transfer['departmentId'] = $webhookData->department_id;    //ModuleId
-            $transfer['orderId'] = $webhookData->payment_order_id;
-            $transfer['paymentId'] = $webhookData->payment_id;
+    //         # data transfer to the respective module dataBase 
+    //         $transfer['paymentMode'] = $webhookData->payment_method;
+    //         $transfer['id'] = $webhookEntity['notes']['applicationId'];
+    //         $transfer['amount'] = $actulaAmount;
+    //         $transfer['workflowId'] =  $webhookData->workflow_id;
+    //         $transfer['transactionNo'] = $actualTransactionNo;
+    //         $transfer['userId'] = $webhookData->user_id;
+    //         $transfer['ulbId'] = $webhookData->ulb_id;
+    //         $transfer['departmentId'] = $webhookData->department_id;    //ModuleId
+    //         $transfer['orderId'] = $webhookData->payment_order_id;
+    //         $transfer['paymentId'] = $webhookData->payment_id;
 
-            # conditionaly upadting the request data
-            if ($status == 'captured' && $captured == 1) {
-                PaymentRequest::where('razorpay_order_id', $webhookEntity['order_id'])
-                    ->update(['payment_status' => 1]);
+    //         # conditionaly upadting the request data
+    //         if ($status == 'captured' && $captured == 1) {
+    //             PaymentRequest::where('razorpay_order_id', $webhookEntity['order_id'])
+    //                 ->update(['payment_status' => 1]);
 
-                # calling function for the modules                  
-                switch ($depatmentId) {
-                    case ('1'):                                      //<------------------ (SAF PAYMENT)
-                        $obj = new SafRepository();
-                        $obj->paymentSaf($transfer);
-                        break;
-                    case ('2'):                                      //<-------------------(Water)
-                        $objWater = new WaterNewConnection();
-                        $objWater->razorPayResponse($transfer);
-                        break;
-                    case ('3'):                                      //<-------------------(TRADE)
-                        $objTrade = new Trade();
-                        $objTrade->razorPayResponse($transfer);
-                        break;
-                    default:
-                        // $msg = 'Something went wrong on switch';
-                }
-            }
-            return responseMsg(true, "Webhook Data Collected!", $request->event);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $e->getLine());
-        }
-    }
+    //             # calling function for the modules                  
+    //             switch ($depatmentId) {
+    //                 case ('1'):      
+    //                     $repo=new iSafRepository;                                //<------------------ (SAF PAYMENT)
+    //                     $obj = new ActiveSafController($repo);
+    //                     $obj->paymentSaf($transfer);
+    //                     break;
+    //                 case ('2'):                                      //<-------------------(Water)
+    //                     $objWater = new WaterNewConnection();
+    //                     $objWater->razorPayResponse($transfer);
+    //                     break;
+    //                 case ('3'):                                      //<-------------------(TRADE)
+    //                     $objTrade = new Trade();
+    //                     $objTrade->razorPayResponse($transfer);
+    //                     break;
+    //                 default:
+    //                     // $msg = 'Something went wrong on switch';
+    //             }
+    //         }
+    //         return responseMsg(true, "Webhook Data Collected!", $request->event);
+    //     } catch (Exception $e) {
+    //         return responseMsg(false, $e->getMessage(), $e->getLine());
+    //     }
+    // }
 
 
-    /**
-     * | ------------------------ generating Application ID ------------------------------- |
-     * | @param request
-     * | @var id
-     * | @return idDetails
-     * | Operation : this function generate a random and unique transactionID
-     * | Rating : 1
-        | Serial No : 03.1
-     */
-    public function generatingTransactionId()
-    {
-        return Carbon::createFromDate()->milli . carbon::now()->diffInMicroseconds();
-    }
+   
 }

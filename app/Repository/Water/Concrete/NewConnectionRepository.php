@@ -24,6 +24,7 @@ use App\Traits\Property\SAF;
 use App\Traits\Water\WaterTrait;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -311,7 +312,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var waterTrack
      * | @var waterApplication
         | Serial No : 04
-        | Working
+        | Working  / Flag on last role cause forward and backword inin same function
      */
     public function postNextLevel($req)
     {
@@ -479,8 +480,6 @@ class NewConnectionRepository implements iNewConnection
     }
 
 
-
-
     /**
      * |------------------------------ Get Application details --------------------------------|
      * | @param request
@@ -489,7 +488,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var applicationDetails
      * | @var returnDetails
      * | @return returnDetails : list of individual applications
-        | Serial No : 07
+        | Serial No : 09
         | Workinig / Flag
      */
     public function getApplicationsDetails($request)
@@ -536,9 +535,102 @@ class NewConnectionRepository implements iNewConnection
         (collect($applicationDetails)->first())['owner_details'] = $ownerDetails;
         (collect($applicationDetails)->first())['payment_details'] = $connectionCharge;
 
+
+
+
+    //    $collectionApplications = collect($applicationDetails)->first();
+
+    //     $watreDetails = array();
+    //     $basicDetails = $this->getBasicDetails($applicationDetails);
+    //     $propertyDetails = $this->getpropertyDetails($applicationDetails);
+    //     // array_push($basicDetails, ['keyString' => 'wardNo', 'value' => $collectionApplications->ward_id]);
+
+    //     $base['headerTitle'] = 'Basic Details';
+    //     $base['data'] = $basicDetails;
+
+    //     $mid['headerTitle'] = 'Applicant Property Details';
+    //     $mid['data'] = $propertyDetails;
+
+    //     $low['headerTitle'] = 'Applicant Electricity Details';
+    //     $low['data'] = $basicDetails;
+
+    //     $alfa['headerTitle'] = 'Owner Details';
+    //     $alfa['data'] = $basicDetails;
+
+    //     $fullDetailsData['fullDetailsData']['dataArray'] = new collection([$base, $mid, $low, $alfa]);
+    //     return $fullDetailsData;
+
+
+
+
+
+
+
+
+
+
         $returnDetails = collect($applicationDetails)->first();
         return responseMsgs(true, "listed Data!", remove_null($returnDetails), "", "02", ".ms", "POST", "");
     }
+
+
+    /**
+     * |------------------
+     */
+    public function getBasicDetails($applicationDetails)
+    {
+        $basicDetails = array();
+        $collectionApplications = collect($applicationDetails)->first();
+        
+        array_push($basicDetails, ['keyString' => 'Ward No', 'value' => $collectionApplications->ward_id]);
+        array_push($basicDetails, ['keyString' => 'Type of Connection', 'value' => $collectionApplications->ward_id]);
+        array_push($basicDetails, ['keyString' => 'Connection Through', 'value' => $collectionApplications->ward_id]);
+        array_push($basicDetails, ['keyString' => 'Owner Type', 'value' => $collectionApplications->ward_id]);
+        array_push($basicDetails, ['keyString' => 'Property Type', 'value' => $collectionApplications->ward_id]);
+        array_push($basicDetails, ['keyString' => 'Flat Count', 'value' => $collectionApplications->ward_id]);
+        array_push($basicDetails, ['keyString' => 'Pipeline Type', 'value' => $collectionApplications->ward_id]);
+        // array_push($basicDetails, ['keyString' => 'wardNo', 'value' => $collectionApplications->ward_id]);
+        // array_push($basicDetails, ['keyString' => 'wardNo', 'value' => $collectionApplications->ward_id]);
+        return $basicDetails;
+    }
+
+    /**
+     * |-----------------
+     */
+    public function getpropertyDetails($applicationDetails)
+    {
+       $propertyDetails = array();
+       $collectionApplications = collect($applicationDetails)->first();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     /**
@@ -550,7 +642,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var refApplicationId
      * | @var data
      * | @return data : document details
-        | Serial No : 09
+        | Serial No : 10
         | Working
      */
     public function getWaterDocDetails($request)
@@ -583,8 +675,8 @@ class NewConnectionRepository implements iNewConnection
      * | @param applicationId
      * | @var docDetails
      * | @return docDetails : listed doc details according to application Id
-        | Serial No : 09.01
-        | Working / Dhift to model
+        | Serial No : 10.01
+        | Working / Shift to model
      */
     public function getWaterDocuments($applicationId)
     {
@@ -612,7 +704,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param path
      * | @var docPath
      * | @return docPath : doc url
-        | Serial No : 09.02
+        | Serial No : 10.02
         | Working
      */
     public function readDocumentPath($path)
@@ -629,7 +721,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var mSafWorkflowId
      * | @var mModuleId
      * | @var metaReqs
-        | Serial No : 00
+        | Serial No : 11
         | Unchecked
      */
     public function commentIndependent($request)
@@ -664,8 +756,8 @@ class NewConnectionRepository implements iNewConnection
      * | @var approvedWater
      * | @var applicationId
      * | @var connectionCharge
-     * | @return connectionCharge : list of approved application by consumer Id
-        | Serial No :00
+     * | @return connectionCharge : list of approved application by Consumer Id
+        | Serial No :12
         | Working / Flag
      */
     public function getApprovedWater($request)

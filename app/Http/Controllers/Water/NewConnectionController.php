@@ -137,7 +137,7 @@ class NewConnectionController extends Controller
      */
 
     // Get connection type / water
-    public function getConnectionType()
+    public function getConnectionType(Request $request)
     {
         try {
             $objConnectionTypes = new WaterConnectionTypeMstr();
@@ -149,7 +149,7 @@ class NewConnectionController extends Controller
     }
 
     // Get connection through / water
-    public function getConnectionThrough()
+    public function getConnectionThrough(Request $request)
     {
         try {
             $objConnectionThrough = new WaterConnectionThroughMstrs();
@@ -161,7 +161,7 @@ class NewConnectionController extends Controller
     }
 
     // Get property type / water
-    public function getPropertyType()
+    public function getPropertyType(Request $request)
     {
         try {
             $objPropertyType = new WaterPropertyTypeMstr();
@@ -173,7 +173,7 @@ class NewConnectionController extends Controller
     }
 
     // Get owner type / water
-    public function getOwnerType()
+    public function getOwnerType(Request $request)
     {
         try {
             $objOwnerType = new WaterOwnerTypeMstr();
@@ -185,7 +185,7 @@ class NewConnectionController extends Controller
     }
 
     // Get ward no / water
-    public function getWardNo()
+    public function getWardNo(Request $request)
     {
         try {
             $ulbId = auth()->user()->ulb_id;
@@ -383,13 +383,13 @@ class NewConnectionController extends Controller
     }
 
     // Get the water payment details and track details
-    public function getWaterPayment(Request $request)
+    public function getIndipendentComment(Request $request)
     {
         try {
             $request->validate([
                 "id" => "required|int",
             ]);
-            $a = auth()->user()->id;
+            $userId = auth()->user()->id;
             $trackObj = new WorkflowTrack();
             $mWaterRef = 'water_applications.id';
             $responseData = $trackObj->getTracksByRefId($mWaterRef, $request->id);
