@@ -646,7 +646,7 @@ class ActiveSafController extends Controller
             ];
             $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement]);
             // Card Detail Format
-            $cardDetails = $this->generateCardDetails($data);
+            $cardDetails = $this->generateCardDetails($data, $getOwnerDetails);
             $cardElement = [
                 'headerTitle' => "About Property",
                 'data' => $cardDetails

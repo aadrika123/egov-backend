@@ -120,12 +120,13 @@ trait SafDetailsTrait
     /**
      * | Generate Card Details
      */
-    public function generateCardDetails($req)
+    public function generateCardDetails($req, $ownerDetails)
     {
+        $owners = collect($ownerDetails)->implode('owner_name', ',');
         return new Collection([
             ['keyString' => 'Ward No', 'value' => $req->old_ward_no],
             ['keyString' => 'SAF No.', 'value' => $req->saf_no],
-            ['keyString' => 'Owner Name', 'value' => "demo,demo"],
+            ['keyString' => 'Owner Name', 'value' => $owners],
             ['keyString' => 'Property Type', 'value' => $req->property_type],
             ['keyString' => 'Assessment Type', 'value' => $req->assessment_type],
             ['keyString' => 'Ownership Type', 'value' => $req->ownership_type],
