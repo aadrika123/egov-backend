@@ -243,7 +243,7 @@ class WorkflowRoleMapController extends Controller
         $data = [
             'allow_full_list' => $permission->allow_full_list,
             'can_escalate' => $permission->can_escalate,
-            'is_btc' => $permission->is_btc,
+            'can_btc' => $permission->is_btc,
             'is_enabled' => $permission->is_enabled,
             'can_view_document' => $permission->can_view_document,
             'can_upload_document' => $permission->can_upload_document,

@@ -396,6 +396,7 @@ class ObjectionRepository implements iObjectionRepository
                 'prop_active_objections.objection_no',
                 'prop_active_objections.workflow_id',
                 'prop_active_objections.current_role',
+                'prop_active_objections.last_role_id',
                 'p.*',
                 'p.assessment_type as assessment',
                 'w.ward_name as old_ward_no',
@@ -412,6 +413,14 @@ class ObjectionRepository implements iObjectionRepository
             ->where('p.status', 1)
             ->where('prop_active_objections.id', $req->id)
             ->first();
+
+        $metaReqs['customFor']  = 'Objection';
+        $metaReqs['wfRoleId']   =  $details->current_role;
+        $metaReqs['workflowId'] =  $details->workflow_id;
+        $metaReqs['lastRoleId'] =  $details->last_role_id;
+
+        $details->timelineData = collect($metaReqs);
+
         return responseMsgs(true, "Objection Details", remove_null($details), '010807', '01', '474ms-573', 'Post', '');
     }
 
