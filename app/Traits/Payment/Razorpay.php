@@ -2,6 +2,7 @@
 
 namespace App\Traits\Payment;
 
+use App\Http\Controllers\Property\ActiveSafController;
 use App\Models\Payment\PaymentRequest;
 use App\Models\Payment\PaymentReject;
 use App\Models\Payment\PaymentSuccess;
@@ -12,6 +13,7 @@ use Razorpay\Api\Errors\SignatureVerificationError;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\WebhookPaymentData;
 use App\Repository\Property\Concrete\SafRepository;
+use App\Repository\Property\Interfaces\iSafRepository;
 use App\Repository\Trade\Trade;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use Carbon\Carbon;
@@ -210,8 +212,9 @@ trait Razorpay
 
                 # calling function for the modules                  
                 switch ($depatmentId) {
-                    case ('1'):                                      //<------------------ (SAF PAYMENT)
-                        $obj = new SafRepository();
+                    case ('1'):      
+                        $repo=new iSafRepository;                                //<------------------ (SAF PAYMENT)
+                        $obj = new ActiveSafController($repo);
                         $obj->paymentSaf($transfer);
                         break;
                     case ('2'):                                      //<-------------------(Water)

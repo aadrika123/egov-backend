@@ -2,14 +2,21 @@
 
 namespace App\Repository\Payment\Concrete;
 
+use App\Http\Controllers\Property\ActiveSafController;
+use App\Models\Payment\CardDetail;
 use App\Models\Payment\DepartmentMaster;
 use App\Models\Payment\PaymentGatewayDetail;
 use App\Models\Payment\PaymentGatewayMaster;
 use App\Models\Payment\PaymentReconciliation;
+use App\Models\Payment\PaymentRequest;
 use App\Models\Payment\WebhookPaymentData;
+use App\Models\Property\PropTransaction;
 use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
-use App\Repository\Property\Concrete\SafRepository;;
+use App\Repository\Property\Concrete\SafRepository;
+use App\Repository\Trade\Trade;
+use App\Repository\Water\Concrete\WaterNewConnection;
+use App\Repository\Property\Interfaces\iSafRepository;;
 
 use App\Traits\Payment\Razorpay;
 use Illuminate\Support\Facades\Storage;
@@ -30,6 +37,11 @@ class PaymentRepository implements iPayment
 {
     # traits
     use Razorpay;
+    protected $_safRepo;
+    public function __construct(iSafRepository $safRepo)
+    {
+        $this->_safRepo = $safRepo;
+    }
 
     /**
      * | Get Department By Ulb
@@ -168,35 +180,6 @@ class PaymentRepository implements iPayment
 
 
     /**
-     * |--------------------------------------- Payment Gateway --------------------------------------
-     * | calling trait for the generation of order id
-     * | @param request request from the frontend
-     * | @param 
-     * | @var 
-     * | 
-     * | Rating : 
-     * | Time :
-        | flag : red
-     */
-    public function getTraitOrderId(Request $request)  //<------------------ here (INVALID)
-    {
-        try {
-            $safRepo = new SafRepository();
-            $calculateSafById = $safRepo->calculateSafBySafId($request);
-            $mTotalAmount = $calculateSafById->original['data']['demand']['payableAmount'];
-
-            if ($request->amount == $mTotalAmount) {
-                $mOrderDetails = $this->saveGenerateOrderid($request);
-                return responseMsg(true, "OrderId Generated!", $mOrderDetails);
-            }
-            return responseMsg(false, "Operation Amount not matched!", $request->amount);
-        } catch (Exception $error) {
-            return $error;
-        }
-    }
-
-
-    /**
      * | verifiying the payment success and the signature key
      * | @param requet request from the frontend
      * | @param error collecting the operation error
@@ -245,6 +228,79 @@ class PaymentRepository implements iPayment
             return responseMsg(false, "WEBHOOK DATA NOT ACCUIRED!", "");
         } catch (Exception $error) {
             return responseMsg(false, "OPERATIONAL ERROR!", $error->getMessage());
+        }
+    }
+
+    public function collectWebhookDetails($request)
+    {
+        try {
+            # Variable Defining Section
+            $webhookEntity = $request->payload['payment']['entity'];
+
+            $contains = json_encode($request->contains);
+            $notes = json_encode($webhookEntity['notes']);
+
+            $depatmentId = $webhookEntity['notes']['departmentId']; // ModuleId
+            $status = $webhookEntity['status'];
+            $captured = $webhookEntity['captured'];
+            $aCard = $webhookEntity['card_id'];
+            $amount = $webhookEntity['amount'];
+            $arrayInAquirer = $webhookEntity['acquirer_data'];
+
+            $actulaAmount = $amount / 100;
+            $firstKey = array_key_first($arrayInAquirer);
+            $actualTransactionNo = $this->generatingTransactionId();
+
+            if (!is_null($aCard)) {
+
+                $webhookCardDetails = $webhookEntity['card'];
+                $objcard = new CardDetail();
+                $objcard->saveCardDetails($webhookCardDetails);
+            }
+
+            # data to be stored in the database 
+            $webhookData = new WebhookPaymentData();
+            $webhookData = $webhookData->saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity);
+
+            # data transfer to the respective module dataBase 
+            $transfer['paymentMode'] = $webhookData->payment_method;
+            $transfer['id'] = $webhookEntity['notes']['applicationId'];
+            $transfer['amount'] = $actulaAmount;
+            $transfer['workflowId'] =  $webhookData->workflow_id;
+            $transfer['transactionNo'] = $actualTransactionNo;
+            $transfer['userId'] = $webhookData->user_id;
+            $transfer['ulbId'] = $webhookData->ulb_id;
+            $transfer['departmentId'] = $webhookData->department_id;    //ModuleId
+            $transfer['orderId'] = $webhookData->payment_order_id;
+            $transfer['paymentId'] = $webhookData->payment_id;
+
+            # conditionaly upadting the request data
+            if ($status == 'captured' && $captured == 1) {
+                PaymentRequest::where('razorpay_order_id', $webhookEntity['order_id'])
+                    ->update(['payment_status' => 1]);
+
+                # calling function for the modules                  
+                switch ($depatmentId) {
+                    case ('1'):                                 //<------------------ (SAF PAYMENT)
+                        $obj = new ActiveSafController($this->_safRepo);
+                        $transfer = new Request($transfer);
+                        $obj->paymentSaf($transfer);
+                        break;
+                    case ('2'):                                      //<-------------------(Water)
+                        $objWater = new WaterNewConnection();
+                        $objWater->razorPayResponse($transfer);
+                        break;
+                    case ('3'):                                      //<-------------------(TRADE)
+                        $objTrade = new Trade();
+                        $objTrade->razorPayResponse($transfer);
+                        break;
+                    default:
+                        // $msg = 'Something went wrong on switch';
+                }
+            }
+            return responseMsg(true, "Webhook Data Collected!", $request->event);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $e->getLine());
         }
     }
 
@@ -405,27 +461,27 @@ class PaymentRepository implements iPayment
      */
     public function reconciliationDateWise($request)
     {
-            $reconciliationDetails = PaymentReconciliation::select(
-                'ulb_id AS ulbId',
-                'department_id AS dpartmentId',
-                'transaction_no AS transactionNo',
-                'payment_mode AS paymentMode',
-                'date AS transactionDate',
-                'status',
-                'cheque_no AS chequeNo',
-                'cheque_date AS chequeDate',
-                'branch_name AS branchName',
-                'bank_name AS bankName',
-                'transaction_amount AS amount',
-                'clearance_date AS clearanceDate'
-            )
-                ->whereBetween('date', [$request->fromDate, $request->toDate])
-                ->get();
+        $reconciliationDetails = PaymentReconciliation::select(
+            'ulb_id AS ulbId',
+            'department_id AS dpartmentId',
+            'transaction_no AS transactionNo',
+            'payment_mode AS paymentMode',
+            'date AS transactionDate',
+            'status',
+            'cheque_no AS chequeNo',
+            'cheque_date AS chequeDate',
+            'branch_name AS branchName',
+            'bank_name AS bankName',
+            'transaction_amount AS amount',
+            'clearance_date AS clearanceDate'
+        )
+            ->whereBetween('date', [$request->fromDate, $request->toDate])
+            ->get();
 
-            if (!empty(collect($reconciliationDetails)->first())) {
-                return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
-            }
-            return responseMsg(false, "data not found!", "");
+        if (!empty(collect($reconciliationDetails)->first())) {
+            return responseMsg(true, "Data Acording to request!", $reconciliationDetails);
+        }
+        return responseMsg(false, "data not found!", "");
     }
 
     /**
@@ -608,7 +664,7 @@ class PaymentRepository implements iPayment
     #________________________________________(END)_________________________________________#
 
     /**
-     * |--------- all the transaction details regardless of module ----------
+     * |--------- all the transaction details regardless of module ----------|
      * |@var object webhookModel
      * |@var transaction
      * |@var userId
@@ -618,13 +674,13 @@ class PaymentRepository implements iPayment
         try {
             $userId = auth()->user()->id;
             $transaction = WebhookPaymentData::select(
-                    'webhook_payment_data.payment_transaction_id AS transactionNo',
-                    'webhook_payment_data.created_at AS dateOfTransaction',
-                    'webhook_payment_data.payment_method AS paymentMethod',
-                    'webhook_payment_data.payment_amount AS amount',
-                    'webhook_payment_data.payment_status AS paymentStatus',
-                    'department_masters.department_name AS modueName'
-                )
+                'webhook_payment_data.payment_transaction_id AS transactionNo',
+                'webhook_payment_data.created_at AS dateOfTransaction',
+                'webhook_payment_data.payment_method AS paymentMethod',
+                'webhook_payment_data.payment_amount AS amount',
+                'webhook_payment_data.payment_status AS paymentStatus',
+                'department_masters.department_name AS modueName'
+            )
                 ->join('department_masters', 'department_masters.id', '=', 'webhook_payment_data.department_id')
                 ->where('user_id', $userId)
                 ->get();
@@ -635,5 +691,47 @@ class PaymentRepository implements iPayment
         } catch (Exception $error) {
             return responseMsg(false, "", $error->getMessage());
         }
+    }
+
+    /**
+        | function to be used for the payment reconcilation
+     */
+    public function searchTransaction($request)
+    {
+        // $typeWise = new Model();
+        // switch ($request) {
+        //     case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && null == ($request->paymentMode)): {
+        //             $reconciliationTypeWise = $typeWise->transactionTypeWise($request);
+        //             return $reconciliationTypeWise;
+        //         }
+        //         break;
+        //     case (null == ($request->chequeDdNo) && null == ($request->verificationType) && !null == ($request->paymentMode)): {
+        //             $reconciliationModeWise = $typeWise->transactionModeWise($request);
+        //             return $reconciliationModeWise;
+        //         }
+        //         break;
+        //     case (null == ($request->chequeDdNo) && null == ($request->verificationType) && null == ($request->paymentMode)): {
+        //             $reconciliationDateWise = $typeWise->transactionDateWise($request);
+        //             return $reconciliationDateWise;
+        //         }
+        //         break;
+        //     case (!null == ($request->chequeDdNo) && null == ($request->verificationType) && null == ($request->paymentMode)): {
+        //             $reconciliationOnlyTranWise = $typeWise->transactionOnlyTranWise($request);
+        //             return $reconciliationOnlyTranWise;
+        //         }
+        //         break;
+        //     case (!null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode)): {
+        //             $reconciliationWithAll = $typeWise->transactionWithAll($request);
+        //             return $reconciliationWithAll;
+        //         }
+        //         break;
+        //     case (null == ($request->chequeDdNo) && !null == ($request->verificationType) && !null == ($request->paymentMode)): {
+        //             $reconciliationModeType = $typeWise->transactionModeType($request);
+        //             return $reconciliationModeType;
+        //         }
+        //         break;
+        //     default:
+        //         return ("Some Error try again !");
+        // }
     }
 }

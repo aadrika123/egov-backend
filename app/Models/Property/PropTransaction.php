@@ -73,4 +73,5 @@ class PropTransaction extends Model
         ];
         return PropTransaction::insertGetId($metaReqs);
     }
+
 }

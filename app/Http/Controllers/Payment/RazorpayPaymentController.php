@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Payment;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
+use Exception;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -82,12 +83,6 @@ class RazorpayPaymentController extends Controller
         return $this->Prepository->getWebhookDetails();
     }
 
-    //get order Id of the transaction
-    public function getTraitOrderId(Request $req) //<------------------ here (INVALID)
-    {
-        return $this->Prepository->getTraitOrderId($req);
-    }
-
     //verify the payment status
     public function verifyPaymentStatus(Request $req)
     {
@@ -127,10 +122,18 @@ class RazorpayPaymentController extends Controller
         return $this->Prepository->getTransactionNoDetails($req);
     }
 
+    /**
+        |-------------------------------------- Payment Reconcillation -----------------------------------------| 
+     */
+
     //get all the details of Payment Reconciliation 
     public function getReconcillationDetails()
     {
-        return $this->Prepository->getReconcillationDetails();
+        try {
+            return $this->Prepository->getReconcillationDetails();
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     // serch the specific details according to the request
@@ -161,5 +164,23 @@ class RazorpayPaymentController extends Controller
     public function allModuleTransaction()
     {
         return $this->Prepository->allModuleTransaction();
+    }
+
+    // Serch the tranasaction details
+    /**
+     | Flag
+     */
+    public function searchTransaction(Request $request)
+    {
+        try{
+            $request->validate([
+                'fromDate' => 'required',
+                'toDate' => 'required',
+            ]);
+            return $this->Prepository->searchTransaction($request);
+        }catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),"");
+        }
     }
 }

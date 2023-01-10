@@ -17,7 +17,6 @@ interface iPayment
     public function getPaymentgatewayByrequests(Request $req);                      //02
     public function getPgDetails(Request $req);                                     //03
     public function getWebhookDetails();                                            //04
-    public function getTraitOrderId(Request $request);                              //<--------------- here(INVALID) 
     public function verifyPaymentStatus(Request $request);                          // 05
     public function gettingWebhookDetails(Request $request);                        // 06
     public function getTransactionNoDetails(Request $request);                      // 07
@@ -26,6 +25,7 @@ interface iPayment
     public function getReconcillationDetails();                                     // 08
     public function searchReconciliationDetails($request);                          // 09
     public function updateReconciliationDetails($request);                          // 10
+    public function searchTransaction($request);                                    // 11  Flag
 
     # Common Payments details
     public function allModuleTransaction();                                         // 11
