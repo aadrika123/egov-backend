@@ -652,7 +652,7 @@ class ActiveSafController extends Controller
                 'data' => $cardDetails
             ];
             $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
-            return remove_null($fullDetailsData);
+            return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $req->deviceId);
             $data = json_decode(json_encode($data), true);
             $metaReqs['customFor'] = 'SAF';
             $metaReqs['wfRoleId'] = $data['Basic Details']['current_role'];
