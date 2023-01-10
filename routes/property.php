@@ -176,11 +176,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('objection/owner-details', 'ownerDetails');              //03
     Route::post('objection/assesment-details', 'assesmentDetails');      //04
 
-    Route::get('objection/inbox', 'inbox');                              //05        //Inbox
-    Route::get('objection/outbox', 'outbox');                            //06        //Outbox
+    Route::post('objection/inbox', 'inbox');                              //05        //Inbox
+    Route::post('objection/outbox', 'outbox');                            //06        //Outbox
     Route::post('objection/details', 'getDetailsById');                  //07
     Route::post('objection/post-escalate', 'postEscalate');              //08        // Escalate the application and send to special category
-    Route::get('objection/special-inbox', 'specialInbox');               //09        // Special Inbox 
+    Route::post('objection/special-inbox', 'specialInbox');               //09        // Special Inbox 
     Route::post('objection/next-level', 'postNextLevel');                //10
     Route::post('objection/approvalrejection', 'approvalRejection');     //11
     Route::post('objection/backtocitizen', 'backToCitizen');             //12

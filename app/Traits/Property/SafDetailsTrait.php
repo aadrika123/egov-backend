@@ -116,4 +116,24 @@ trait SafDetailsTrait
             ];
         });
     }
+
+    /**
+     * | Generate Card Details
+     */
+    public function generateCardDetails($req, $ownerDetails)
+    {
+        $owners = collect($ownerDetails)->implode('owner_name', ',');
+        return new Collection([
+            ['keyString' => 'Ward No', 'value' => $req->old_ward_no],
+            ['keyString' => 'SAF No.', 'value' => $req->saf_no],
+            ['keyString' => 'Owner Name', 'value' => $owners],
+            ['keyString' => 'Property Type', 'value' => $req->property_type],
+            ['keyString' => 'Assessment Type', 'value' => $req->assessment_type],
+            ['keyString' => 'Ownership Type', 'value' => $req->ownership_type],
+            ['keyString' => 'Apply-Date', 'value' => $req->application_date],
+            ['keyString' => 'Plot-Area(sqt)', 'value' => $req->area_of_plot],
+            ['keyString' => 'Is-Water-Harvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+            ['keyString' => 'Is-Hoarding-Board', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
+        ]);
+    }
 }
