@@ -789,36 +789,19 @@ class ActiveSafController extends Controller
             // SAF Application Update Current Role Updation
             DB::beginTransaction();
             $saf = PropActiveSaf::find($request->safId);
-            if ($request->senderRoleId == $saf->initiator_role_id) {                                // Initiator Role Id
-                $saf->doc_upload_status = 1;
-            }
-            // Check if the application is in case of BTC
-            if ($saf->parked == true) {
-                $levelPending = new PropLevelPending();
-                $lastLevelEntry = $levelPending->getLastLevelBySafId($request->safId);              // Send Last Level Current Role
-                $saf->parked = false;                                                               // Disable BTC
-                $saf->current_role = $lastLevelEntry->sender_role_id;
-            } else
-                $saf->current_role = $request->receiverRoleId;
+            $saf->current_role = $request->receiverRoleId;
             $saf->save();
 
-            // previous level pending verification enabling
-            $levelPending = new PropLevelPending();
-            $levelPending->saf_id = $request->safId;
-            $levelPending->sender_role_id = $request->senderRoleId;
-            $levelPending->receiver_role_id = $request->receiverRoleId;
-            $levelPending->sender_user_id = auth()->user()->id;
-            $levelPending->save();
 
-            // Add Comment On Prop Level Pending
-            $propLevelPending = new PropLevelPending();
-            $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->senderRoleId);    //<-----Get SAF level Pending By safid and current role ID
-            $commentOnlevel->remarks = $request->comment;
-            $commentOnlevel->verification_status = 1;
-            $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
-            $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
-            $commentOnlevel->verification_status = 1;
-            $commentOnlevel->save();
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $saf->workflow_id;
+            $metaReqs['refTableDotId'] = 'prop_active_safs.id';
+            $metaReqs['refTableIdValue'] = $request->safId;
+            $request->request->add($metaReqs);
+
+            $track = new WorkflowTrack();
+            $track->saveTrack($request);
+
 
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);
