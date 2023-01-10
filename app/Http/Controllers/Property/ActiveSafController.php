@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\Property\ReqSiteVerification;
 use App\MicroServices\DocUpload;
+use App\Models\CustomDetail;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenalty;
 use App\Models\Property\PaymentPropRebate;
@@ -39,8 +40,10 @@ use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
+use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iSafRepository;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
@@ -572,6 +575,9 @@ class ActiveSafController extends Controller
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mWorkflowTracks = new WorkflowTrack();
+            $mCustomDetails = new CustomDetail();
+            $getDocuments = new PropertyBifurcation();
+            $forwardBackward = new WorkflowMap;
             $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
             // Saf Details
             $data = [];
@@ -586,8 +592,13 @@ class ActiveSafController extends Controller
                     ->where('prop_active_safs.saf_no', $req->safNo)
                     ->first();
             }
-
             $data = json_decode(json_encode($data), true);
+            $metaReqs['customFor'] = 'SAF';
+            $metaReqs['wfRoleId'] = $data['current_role'];
+            $metaReqs['workflowId'] = $data['workflow_id'];
+            $metaReqs['lastRoleId'] = $data['last_role_id'];
+
+            // $data['applicationDetails'] = $data;
 
             $ownerDetails = $mPropActiveSafOwner->getOwnersBySafId($data['id']);    // Model function to get Owner Details
             $data['owners'] = $ownerDetails;
@@ -595,26 +606,28 @@ class ActiveSafController extends Controller
             $floorDetails = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
             $data['floors'] = $floorDetails;
 
-            $levelComments = DB::table('prop_level_pendings')                   // <------- To Be Averted Used for Temperory
-                ->select(
-                    'prop_level_pendings.id',
-                    'prop_level_pendings.receiver_role_id as commentedByRoleId',
-                    'r.role_name as commentedByRoleName',
-                    'prop_level_pendings.remarks',
-                    'prop_level_pendings.forward_date',
-                    'prop_level_pendings.forward_time',
-                    'prop_level_pendings.verification_status',
-                    'prop_level_pendings.created_at as received_at'
-                )
-                ->where('prop_level_pendings.saf_id', $data['id'])
-                ->where('prop_level_pendings.status', 1)
-                ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_level_pendings.receiver_role_id')
-                ->orderByDesc('prop_level_pendings.id')
-                ->get();
-            $data['levelComments'] = $levelComments;
-
             $citizenComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['id']);
             $data['citizenComment'] = $citizenComment;
+
+            $req->request->add($metaReqs);
+            $forwardBackward = $forwardBackward->getRoleDetails($req);
+            $data['roleDetails'] = collect($forwardBackward)['original']['data'];
+
+            $data['timelineData'] = collect($req);
+
+            $custom = $mCustomDetails->getCustomDetails($req);
+            $data['departmentalPost'] = collect($custom)['original']['data'];
+
+            $docList = $getDocuments->getUploadDocuments($req);
+            $data['documentList'] = collect($docList)['original']['data'];
+
+            $a = $getDocuments->getDocList($req);
+            $b = collect($a)['original']['data']['documentsList'];
+            $data['docrequired'] = collect($b)->map(function ($value) {
+                return $value['docVal'];
+            });
+
+
 
             return responseMsgs(true, 'Data Fetched', remove_null($data), "010104", "1.0", "303ms", "POST", $req->deviceId);
         } catch (Exception $e) {
