@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
+use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterOwnerTypeMstr;
@@ -341,12 +342,14 @@ class NewConnectionController extends Controller
     public function approvedWaterApplications(Request $request)
     {
         try {
-            if ($request->consumerNo) {
+            $consumerNo = collect($request)->first();
+            if ($consumerNo) {
                 return $this->newConnection->getApprovedWater($request);
             }
 
             $userId = auth()->user()->id;
             $obj = new WaterApprovalApplicationDetail();
+            $chargesObj = new WaterConnectionCharge();
             $approvedWater = $obj->getApplicationRelatedDetails()
                 ->select(
                     'water_approval_application_details.id',
@@ -358,7 +361,9 @@ class NewConnectionController extends Controller
                 )
                 ->where('user_id', $userId)
                 ->get();
+            // return $approvedWater->first()->id;
             if ($approvedWater) {
+                $connectionCharge = $chargesObj->getWaterchargesById($approvedWater->first()->id)->first();
                 $returnWater = collect($approvedWater)->map(
                     function ($value, $key) {
                         $owner = WaterApplicant::select(
@@ -383,7 +388,7 @@ class NewConnectionController extends Controller
     }
 
     // Get the water payment details and track details
-    public function getIndipendentComment(Request $request)
+    public function getIndependentComment(Request $request)
     {
         try {
             $request->validate([

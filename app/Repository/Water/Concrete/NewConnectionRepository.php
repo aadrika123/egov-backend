@@ -2,6 +2,7 @@
 
 namespace App\Repository\Water\Concrete;
 
+use App\Models\CustomDetail;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
 use App\Models\Water\WaterApplicant;
@@ -29,6 +30,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Exists;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 
 /**
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
@@ -493,144 +495,206 @@ class NewConnectionRepository implements iNewConnection
      */
     public function getApplicationsDetails($request)
     {
-        # application details
+        # ref
         $waterObj = new WaterApplication();
-        $applicationDetails = $waterObj->fullWaterDetails($request)->select(
-            'water_applications.*',
-            'ulb_ward_masters.ward_name',
-            'ulb_masters.ulb_name',
-            'water_connection_type_mstrs.connection_type',
-            'water_property_type_mstrs.property_type',
-            'water_connection_through_mstrs.connection_through',
-            'wf_roles.role_name AS current_role_name',
-        )->get();
+        $ownerObj = new WaterApplicant();
+        $forwardBackward = new WorkflowMap;
+        $mWorkflowTracks = new WorkflowTrack();
+        $mCustomDetails = new CustomDetail();
 
+        # application details
+        $applicationDetails = $waterObj->fullWaterDetails($request)->get();
         if (collect($applicationDetails)->first() == null) {
             return responseMsg(false, "Application Data Not found!", $request->id);
         }
 
         # owner Details
-        $ownerObj = new WaterApplicant();
-        $ownerDetails = $ownerObj->ownerByApplication($request)->select(
-            'water_applicants.applicant_name as owner_name',
-            'guardian_name',
-            'mobile_no',
-            'email'
-        )->get();
-
-        $ownerDetails = collect($ownerDetails)->map(function ($value, $key) {
+        $ownerDetails = $ownerObj->ownerByApplication($request)->get();
+        $ownerDetail = collect($ownerDetails)->map(function ($value, $key) {
             return $value;
         });
 
-        # connection Charges
-        $connectionObj = new WaterConnectionCharge();
-        $connectionCharge = $connectionObj->getWatercharges($request)->select(
-            'amount',
-            'charge_category',
-            'penalty',
-            'conn_fee',
-            'rule_set'
-        )->get();
+        $aplictionList = [
+            'application_no' => collect($applicationDetails)->first()->application_no,
+            'apply_date' => collect($applicationDetails)->first()->apply_date
+        ];
 
-        (collect($applicationDetails)->first())['owner_details'] = $ownerDetails;
-        (collect($applicationDetails)->first())['payment_details'] = $connectionCharge;
+        # DataArray
+        $basicDetails = $this->getBasicDetails($applicationDetails);
+        $propertyDetails = $this->getpropertyDetails($applicationDetails);
+        $electricDetails = $this->getElectricDetails($applicationDetails);
+        $firstView = [
+            'headerTitle' => 'Basic Details',
+            'data' => $basicDetails
+        ];
 
+        $secondView = [
+            'headerTitle' => 'Applicant Property Details',
+            'data' => $propertyDetails
+        ];
 
+        $thirdView = [
+            'headerTitle' => 'Applicant Electricity Details',
+            'data' => $electricDetails
+        ];
+        $fullDetailsData['fullDetailsData']['dataArray'] = new collection([$firstView, $secondView, $thirdView]);
 
+        # CardArray
+        $cardDetails = $this->getCardDetails($applicationDetails, $ownerDetails);
+        $cardData = [
+            'headerTitle' => 'Water Connection',
+            'data' => $cardDetails
+        ];
+        $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardData);
 
-    //    $collectionApplications = collect($applicationDetails)->first();
+        # TableArray
+        $ownerList = $this->getOwnerDetails($ownerDetail);
+        $ownerView = [
+            'headerTitle' => 'Owner Details',
+            'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
+            'data' => $ownerList
+        ];
+        $fullDetailsData['fullDetailsData']['tableArray'] = new Collection($ownerView);
 
-    //     $watreDetails = array();
-    //     $basicDetails = $this->getBasicDetails($applicationDetails);
-    //     $propertyDetails = $this->getpropertyDetails($applicationDetails);
-    //     // array_push($basicDetails, ['keyString' => 'wardNo', 'value' => $collectionApplications->ward_id]);
+        # Level comment
+        $mtableId = $applicationDetails->first()->id;
+        $mRefTable = "water_applications.id";
+        $levelComment['levelcomments'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId);
 
-    //     $base['headerTitle'] = 'Basic Details';
-    //     $base['data'] = $basicDetails;
+        # Role Details
+        $data = json_decode(json_encode($applicationDetails->first()), true);
+        $metaReqs = [
+            'customFor' => 'Water',
+            'wfRoleId' => $data['current_role'],
+            'workflowId' => $data['workflow_id'],
+            'lastRoleId' => $data['last_role_id']
+        ];
+        $request->request->add($metaReqs);
+        $forwardBackward = $forwardBackward->getRoleDetails($request);
+        $roleDetails['roleDetails'] = collect($forwardBackward)['original']['data'];
 
-    //     $mid['headerTitle'] = 'Applicant Property Details';
-    //     $mid['data'] = $propertyDetails;
+        # timelineData
+        $timelineData['timelineData'] = collect($request);
 
-    //     $low['headerTitle'] = 'Applicant Electricity Details';
-    //     $low['data'] = $basicDetails;
+        # Departmental Post
+        $custom = $mCustomDetails->getCustomDetails($request);
+        $departmentPost['departmentalPost'] = collect($custom)['original']['data'];
 
-    //     $alfa['headerTitle'] = 'Owner Details';
-    //     $alfa['data'] = $basicDetails;
-
-    //     $fullDetailsData['fullDetailsData']['dataArray'] = new collection([$base, $mid, $low, $alfa]);
-    //     return $fullDetailsData;
-
-
-
-
-
-
-
-
-
-
-        $returnDetails = collect($applicationDetails)->first();
-        return responseMsgs(true, "listed Data!", remove_null($returnDetails), "", "02", ".ms", "POST", "");
+        $returnValues = array_merge($aplictionList, $fullDetailsData, $levelComment, $roleDetails, $timelineData, $departmentPost);
+        return responseMsgs(true, "listed Data!", remove_null($returnValues), "", "02", ".ms", "POST", "");
     }
 
 
     /**
-     * |------------------
+     * |------------------ Basic Details ------------------|
+     * | @param applicationDetails
+     * | @var collectionApplications
+        | Serial No : 09.01
      */
     public function getBasicDetails($applicationDetails)
     {
-        $basicDetails = array();
         $collectionApplications = collect($applicationDetails)->first();
-        
-        array_push($basicDetails, ['keyString' => 'Ward No', 'value' => $collectionApplications->ward_id]);
-        array_push($basicDetails, ['keyString' => 'Type of Connection', 'value' => $collectionApplications->ward_id]);
-        array_push($basicDetails, ['keyString' => 'Connection Through', 'value' => $collectionApplications->ward_id]);
-        array_push($basicDetails, ['keyString' => 'Owner Type', 'value' => $collectionApplications->ward_id]);
-        array_push($basicDetails, ['keyString' => 'Property Type', 'value' => $collectionApplications->ward_id]);
-        array_push($basicDetails, ['keyString' => 'Flat Count', 'value' => $collectionApplications->ward_id]);
-        array_push($basicDetails, ['keyString' => 'Pipeline Type', 'value' => $collectionApplications->ward_id]);
-        // array_push($basicDetails, ['keyString' => 'wardNo', 'value' => $collectionApplications->ward_id]);
-        // array_push($basicDetails, ['keyString' => 'wardNo', 'value' => $collectionApplications->ward_id]);
-        return $basicDetails;
+        return new Collection([
+            ['displayString' => 'Ward No',              'value' => $collectionApplications->ward_id],
+            ['displayString' => 'Type of Connection',   'value' => $collectionApplications->connection_type],
+            ['displayString' => 'Property Type',        'value' => $collectionApplications->property_type],
+            ['displayString' => 'Connection Through',   'value' => $collectionApplications->connection_through],
+            ['displayString' => 'Category',             'value' => $collectionApplications->category],
+            ['displayString' => 'Flat Count',           'value' => $collectionApplications->flat_count],
+            ['displayString' => 'Pipeline Type',        'value' => $collectionApplications->pipeline_type],
+            ['displayString' => 'Apply From',           'value' => $collectionApplications->apply_from],
+            ['displayString' => 'Apply Date',           'value' => $collectionApplications->apply_date]
+        ]);
     }
 
     /**
-     * |-----------------
+     * |------------------ Property Details ------------------|
+     * | @param applicationDetails
+     * | @var propertyDetails
+     * | @var collectionApplications
+        | Serial No : 09.02
      */
     public function getpropertyDetails($applicationDetails)
     {
-       $propertyDetails = array();
-       $collectionApplications = collect($applicationDetails)->first();
+        $propertyDetails = array();
+        $collectionApplications = collect($applicationDetails)->first();
+
+
+        if (!is_null($collectionApplications->holding_no)) {
+            array_push($propertyDetails, ['displayString' => 'Holding No',  'value' => $collectionApplications->holding_no]);
+        }
+        if (!is_null($collectionApplications->saf_no)) {
+            array_push($propertyDetails, ['displayString' => 'Saf No',      'value' => $collectionApplications->saf_no]);
+        }
+        array_push($propertyDetails, ['displayString' => 'Applied By',      'value' => 'Id Proof']);
+        array_push($propertyDetails, ['displayString' => 'Ward No',         'value' => $collectionApplications->ward_id]);
+        array_push($propertyDetails, ['displayString' => 'Area in Sqft',    'value' => $collectionApplications->area_sqft]);
+        array_push($propertyDetails, ['displayString' => 'Address',         'value' => $collectionApplications->address]);
+        array_push($propertyDetails, ['displayString' => 'Landmark',        'value' => $collectionApplications->landmark]);
+        array_push($propertyDetails, ['displayString' => 'Pin',             'value' => $collectionApplications->pin]);
+
+        return $propertyDetails;
     }
 
+    /**
+     * |------------------ Electric details ------------------|
+     * | @param applicationDetails
+     * | @var collectionApplications
+        | Serial No : 09.03
+     */
+    public function getElectricDetails($applicationDetails)
+    {
+        $collectionApplications = collect($applicationDetails)->first();
+        return new Collection([
+            ['displayString' => 'K.No',             'value' => $collectionApplications->elec_k_no],
+            ['displayString' => 'Bind Book No',     'value' => $collectionApplications->elec_bind_book_no],
+            ['displayString' => 'Elec Account No',  'value' => $collectionApplications->elec_account_no],
+            ['displayString' => 'Elec Category',    'value' => $collectionApplications->elec_category]
+        ]);
+    }
 
+    /**
+     * |------------------ Owner details ------------------|
+     * | @param ownerDetails
+        | Serial No : 09.04
+     */
+    public function getOwnerDetails($ownerDetails)
+    {
+        return collect($ownerDetails)->map(function ($value, $key) {
+            return [
+                $key + 1,
+                $value['owner_name'],
+                $value['guardian_name'],
+                $value['mobile_no'],
+                $value['email'],
+                $value['']
+            ];
+        });
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * |------------------ Get Card Details ------------------|
+     * | @param applicationDetails
+     * | @param ownerDetails
+     * | @var ownerDetail
+     * | @var collectionApplications
+        | Serial No : 09.05
+     */
+    public function getCardDetails($applicationDetails, $ownerDetails)
+    {
+        $ownerDetail = collect($ownerDetails)->first();
+        $collectionApplications = collect($applicationDetails)->first();
+        return new Collection([
+            ['displayString' => 'Ward No.',             'value' => $collectionApplications->ward_id],
+            ['displayString' => 'Application No.',      'value' => $collectionApplications->application_no],
+            ['displayString' => 'Owner Name',           'value' => $ownerDetail['owner_name']],
+            ['displayString' => 'Property Type',        'value' => $collectionApplications->property_type],
+            ['displayString' => 'Connection Type',      'value' => $collectionApplications->connection_type],
+            ['displayString' => 'Connection Through',   'value' => $collectionApplications->connection_through],
+            ['displayString' => 'Apply-Date',           'value' => $collectionApplications->apply_date],
+            ['displayString' => 'Total Area (sqt)',     'value' => $collectionApplications->area_sqft]
+        ]);
+    }
 
 
     /**
@@ -762,8 +826,9 @@ class NewConnectionRepository implements iNewConnection
      */
     public function getApprovedWater($request)
     {
-        $obj = new WaterApprovalApplicationDetail();
-        $approvedWater = $obj->getApplicationRelatedDetails()
+        $applicationObj = new WaterApprovalApplicationDetail();
+        $chargesObj = new WaterConnectionCharge();
+        $approvedWater = $applicationObj->getApplicationRelatedDetails()
             ->select(
                 'water_approval_application_details.*',
                 'ulb_masters.ulb_name',
@@ -772,26 +837,10 @@ class NewConnectionRepository implements iNewConnection
             ->where('consumer_no', $request->consumerNo)
             ->first();
         if ($approvedWater) {
-            $applicationId = $approvedWater['id'];
-            $connectionCharge = WaterConnectionCharge::select(
-                'amount',
-                'charge_category',
-                'penalty',
-                'conn_fee',
-                'rule_set'
-            )
-                ->where('application_id', $applicationId)
-                ->where('water_connection_charges.status', 1)
-                ->first();
+            $connectionCharge = $chargesObj->getWaterchargesById($approvedWater['id'])->first();
 
-            $owner = WaterApplicant::select(
-                'applicant_name',
-                'guardian_name',
-                'mobile_no',
-                'email'
-            )
-                ->where('application_id', $applicationId)
-                ->get();
+            $ownerObj = new  WaterApplicant();
+            $owner = $ownerObj->getOwnerList($approvedWater['id'])->get();
 
             $approvedWater['payment'] = $connectionCharge;
             $approvedWater['owner_details'] = $owner;
