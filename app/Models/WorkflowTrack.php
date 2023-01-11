@@ -67,13 +67,13 @@ class WorkflowTrack extends Model
                 'workflow_tracks.track_date',
                 'workflow_tracks.forward_date',
                 'workflow_tracks.forward_time',
-                'u.user_name as commentedBy'
+                'w.role_name as commentedBy'
             )
             ->where('ref_table_dot_id', $mRefTable)
             ->where('ref_table_id_value', $tableId)
             ->join('users as u', 'u.id', '=', 'workflow_tracks.user_id')
             ->where('citizen_id', null)
-            ->leftJoin('users as u', 'u.id', '=', 'workflow_tracks.sender_role_id')
+            ->leftJoin('wf_roles as w', 'w.id', '=', 'workflow_tracks.sender_role_id')
             ->get();
     }
 
