@@ -216,8 +216,6 @@ class ObjectionController extends Controller
             $track = new WorkflowTrack();
             $track->saveTrack($req);
 
-
-
             DB::commit();
 
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', '474ms-573', 'Post', '');

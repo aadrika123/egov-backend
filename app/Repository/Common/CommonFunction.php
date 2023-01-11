@@ -43,18 +43,18 @@ class CommonFunction implements ICommonFunction
             // DB::enableQueryLog();
             $workflow_rolse = WfMaster::select(
                 DB::raw(
-                    "wf_roles.id ,wf_roles.role_name,
-                                        forward_role_id as forward_id,
-                                        backward_role_id as backward_id,
-                                        is_initiator,is_finisher,
-                                        wf_masters.workflow_name,
-                                        wf_masters.id as workflow_id,
-                                        wf_workflows.ulb_id,
-                                        wf_workflowrolemaps.can_escalate,
-                                        wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
-                                        wf_workflowrolemaps.can_upload_document,
-                                        wf_workflowrolemaps.can_verify_document"
-                    // "*"
+                    // "wf_roles.id ,wf_roles.role_name,
+                    //                     forward_role_id as forward_id,
+                    //                     backward_role_id as backward_id,
+                    //                     is_initiator,is_finisher,
+                    //                     wf_masters.workflow_name,
+                    //                     wf_masters.id as workflow_id,
+                    //                     wf_workflows.ulb_id,
+                    //                     wf_workflowrolemaps.can_escalate,
+                    //                     wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
+                    //                     wf_workflowrolemaps.can_upload_document,
+                    //                     wf_workflowrolemaps.can_verify_document"
+                    "*"
                 )
             )
                 ->join("wf_workflows", function ($join) {
