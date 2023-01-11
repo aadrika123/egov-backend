@@ -468,6 +468,45 @@ class ActiveSafController extends Controller
     }
 
     /**
+     * | Fields Verified Inbox
+     */
+    public function fieldVerifiedInbox(Request $req)
+    {
+        try {
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWardUser = new WfWardUser();
+
+            $mUserId = authUser()->id;
+            $mUlbId = authUser()->ulb_id;
+            $mDeviceId = $req->deviceId ?? "";
+
+            $readWards = $mWfWardUser->getWardsByUserId($mUserId);                  // Model function to get ward list
+            $occupiedWardsId = collect($readWards)->map(function ($ward) {              // Collection filteration
+                return $ward->ward_id;
+            });
+
+            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);                 // Model function to get Role By User Id
+            $roleIds = $readRoles->map(function ($role, $key) {
+                return $role->wf_role_id;
+            });
+
+            $data = $this->Repository->getSaf($this->_workflowIds)                 // Repository function getSAF
+                ->where('is_field_verified', true)
+                ->where('prop_active_safs.ulb_id', $mUlbId)
+                ->where('prop_active_safs.status', 1)
+                ->whereIn('current_role', $roleIds)
+                ->orderByDesc('id')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->get();
+
+            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWardsId);
+            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010125, 1.0, "", "POST", $mDeviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $mDeviceId);
+        }
+    }
+
+    /**
      * | Saf Outbox
      * | @var userId authenticated user id
      * | @var ulbId authenticated user Ulb Id
@@ -585,13 +624,11 @@ class ActiveSafController extends Controller
                     ->where('prop_active_safs.id', $req->id)
                     ->first();
             }
-
             if ($req->safNo) {                                  // <-------- Search By SAF No
                 $data = $mPropActiveSaf->getActiveSafDtls()    // <------- Model Function Active SAF Details
                     ->where('prop_active_safs.saf_no', $req->safNo)
                     ->first();
             }
-            // return $data;
             // Basic Details
             $basicDetails = $this->generateBasicDetails($data);      // Trait function to get Basic Details
             $basicElement = [
@@ -856,6 +893,8 @@ class ActiveSafController extends Controller
         try {
             // Check if the Current User is Finisher or Not
             $safDetails = PropActiveSaf::find($req->safId);
+            $propSafVerification = new PropSafVerification();
+            $propSafVerificationDtl = new PropSafVerificationDtl();
             if ($safDetails->finisher_role_id != $req->roleId) {
                 return responseMsg(false, "Forbidden Access", "");
             }
@@ -1018,6 +1057,8 @@ class ActiveSafController extends Controller
                 $msg = "Application Rejected Successfully";
             }
 
+            $propSafVerification->deactivateVerifications($req->safId);                 // Deactivate Verification From Table
+            $propSafVerificationDtl->deactivateVerifications($req->safId);              // Deactivate Verification from Saf floor Dtls
             DB::commit();
             return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -1505,6 +1546,7 @@ class ActiveSafController extends Controller
             $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
             $verificationStatus = $req->verificationStatus;                                             // Verification Status true or false
 
+            $propActiveSaf = new PropActiveSaf();
             $verification = new PropSafVerification();
             $mPropSafVeriDtls = new PropSafVerificationDtl();
 
@@ -1519,7 +1561,7 @@ class ActiveSafController extends Controller
                         $msg = "Site Successfully rebuted";
                     }
                     break;
-
+                    DB::beginTransaction();
                 case $ulbTaxCollectorRole;                                                                // In Case of Ulb Tax Collector
                     if ($verificationStatus == 1) {
                         $req->ulbVerification = true;
@@ -1529,6 +1571,7 @@ class ActiveSafController extends Controller
                         $req->ulbVerification = false;
                         $msg = "Site Successfully rebuted";
                     }
+                    $propActiveSaf->verifyFieldStatus($req->safId);                                         // Enable Fields Verify Status
                     break;
 
                 default:
@@ -1536,9 +1579,7 @@ class ActiveSafController extends Controller
             }
 
             // Verification Store
-            DB::beginTransaction();
             $verificationId = $verification->store($req);                           // Model function to store verification and get the id
-
             // Verification Dtl Table Update                                         // For Tax Collector
             foreach ($req->floorDetails as $floorDetail) {
                 $verificationDtl = new PropSafVerificationDtl();

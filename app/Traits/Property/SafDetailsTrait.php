@@ -15,13 +15,13 @@ trait SafDetailsTrait
     public function generateBasicDetails($data)
     {
         return new Collection([
-            ['keyString' => 'Ward No', 'value' => $data->old_ward_no],
-            ['keyString' => 'New Ward No', 'value' => $data->new_ward_no],
-            ['keyString' => 'Ownership Type', 'value' => $data->ownership_type],
-            ['keyString' => 'Property Type', 'value' => $data->property_type],
-            ['keyString' => 'Zone', 'value' => ($data->zone_mstr_id == 1) ? 'Zone 1' : 'Zone 2'],
-            ['keyString' => 'Property has Mobile Tower(s) ?', 'value' => ($data->is_mobile_tower == false) ? 'No' : 'Yes'],
-            ['keyString' => 'Property has Hoarding Board(s) ?', 'value' => ($data->is_hoarding_board == false) ? 'No' : 'Yes']
+            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $data->old_ward_no],
+            ['displayString' => 'New Ward No', 'key' => 'newWardNo', 'value' => $data->new_ward_no],
+            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $data->ownership_type],
+            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $data->property_type],
+            ['displayString' => 'Zone', 'key' => 'zone', 'value' => ($data->zone_mstr_id == 1) ? 'Zone 1' : 'Zone 2'],
+            ['displayString' => 'Property has Mobile Tower(s) ?', 'key' => 'isMobileTower', 'value' => ($data->is_mobile_tower == false) ? 'No' : 'Yes'],
+            ['displayString' => 'Property has Hoarding Board(s) ?', 'key' => 'isHoardingBoard', 'value' => ($data->is_hoarding_board == false) ? 'No' : 'Yes']
         ]);
     }
 
@@ -31,16 +31,16 @@ trait SafDetailsTrait
     public function generatePropertyDetails($data)
     {
         return new Collection([
-            ['keyString' => 'Khata No.', 'value' => $data->khata_no],
-            ['keyString' => 'Plot No.', 'value' => $data->plot_no],
-            ['keyString' => 'Village/Mauja Name', 'value' => $data->village_mauja_name],
-            ['keyString' => 'Area of Plot', 'value' => $data->area_of_plot],
-            ['keyString' => 'Road Width', 'value' => $data->road_width],
-            ['keyString' => 'City', 'value' => $data->prop_city],
-            ['keyString' => 'District', 'value' => $data->prop_dist],
-            ['keyString' => 'State', 'value' => $data->prop_state],
-            ['keyString' => 'Pin', 'value' => $data->prop_pin_code],
-            ['keyString' => 'Locality', 'value' => $data->prop_address],
+            ['displayString' => 'Khata No.', 'key' => 'khataNo', 'value' => $data->khata_no],
+            ['displayString' => 'Plot No.', 'key' => 'plotNo', 'value' => $data->plot_no],
+            ['displayString' => 'Village/Mauja Name', 'key' => 'villageMaujaName', 'value' => $data->village_mauja_name],
+            ['displayString' => 'Area of Plot', 'key' => 'areaOfPlot', 'value' => $data->area_of_plot],
+            ['displayString' => 'Road Width', 'key' => 'roadWidth', 'value' => $data->road_width],
+            ['displayString' => 'City', 'key' => 'city', 'value' => $data->prop_city],
+            ['displayString' => 'District', 'key' => 'district', 'value' => $data->prop_dist],
+            ['displayString' => 'State', 'key' => 'state', 'value' => $data->prop_state],
+            ['displayString' => 'Pin', 'key' => 'pin', 'value' => $data->prop_pin_code],
+            ['displayString' => 'Locality', 'key' => 'locality', 'value' => $data->prop_address],
         ]);
     }
 
@@ -50,11 +50,11 @@ trait SafDetailsTrait
     public function generateCorrDtls($data)
     {
         return new Collection([
-            ['keyString' => 'City', 'value' => $data->corr_city],
-            ['keyString' => 'District', 'value' => $data->corr_dist],
-            ['keyString' => 'State', 'value' => $data->corr_state],
-            ['keyString' => 'Pin', 'value' => $data->corr_pin_code],
-            ['keyString' => 'Locality', 'value' => $data->corr_address],
+            ['displayString' => 'City', 'key' => 'corrCity', 'value' => $data->corr_city],
+            ['displayString' => 'District', 'key' => 'corrDistrict', 'value' => $data->corr_dist],
+            ['displayString' => 'State', 'key' => 'corrState', 'value' => $data->corr_state],
+            ['displayString' => 'Pin', 'key' => 'corrPin', 'value' => $data->corr_pin_code],
+            ['displayString' => 'Locality', 'key' => 'corrLocality', 'value' => $data->corr_address],
         ]);
     }
 
@@ -64,14 +64,14 @@ trait SafDetailsTrait
     public function generateElectDtls($data)
     {
         return new Collection([
-            ['keyString' => 'Electricity K. No', 'value' => $data->elect_consumer_no],
-            ['keyString' => 'ACC No.', 'value' => $data->elect_acc_no],
-            ['keyString' => 'BIND/BOOK No.', 'value' => $data->elect_bind_book_no],
-            ['keyString' => 'Electricity Consumer Category', 'value' => $data->elect_cons_category],
-            ['keyString' => 'Building Plan Approval No.', 'value' => $data->building_plan_approval_no],
-            ['keyString' => 'Building Plan Approval Date', 'value' => $data->building_plan_approval_date],
-            ['keyString' => 'Water Consumer No.', 'value' => $data->water_conn_no],
-            ['keyString' => 'Water Connection Date', 'value' => $data->water_conn_date]
+            ['displayString' => 'Electricity K. No', 'key' => 'electKNo', 'value' => $data->elect_consumer_no],
+            ['displayString' => 'ACC No.', 'key' => 'accNo', 'value' => $data->elect_acc_no],
+            ['displayString' => 'BIND/BOOK No.', 'key' => 'bindBookNo', 'value' => $data->elect_bind_book_no],
+            ['displayString' => 'Electricity Consumer Category', 'key' => 'electConsumerCategory', 'value' => $data->elect_cons_category],
+            ['displayString' => 'Building Plan Approval No.', 'key' => 'buildingApprovalNo', 'value' => $data->building_plan_approval_no],
+            ['displayString' => 'Building Plan Approval Date', 'key' => 'buildingApprovalDate', 'value' => $data->building_plan_approval_date],
+            ['displayString' => 'Water Consumer No.', 'key' => 'waterConsumerNo', 'value' => $data->water_conn_no],
+            ['displayString' => 'Water Connection Date', 'key' => 'waterConnectionDate', 'value' => $data->water_conn_date]
         ]);
     }
 
@@ -124,16 +124,16 @@ trait SafDetailsTrait
     {
         $owners = collect($ownerDetails)->implode('owner_name', ',');
         return new Collection([
-            ['keyString' => 'Ward No', 'value' => $req->old_ward_no],
-            ['keyString' => 'SAF No.', 'value' => $req->saf_no],
-            ['keyString' => 'Owner Name', 'value' => $owners],
-            ['keyString' => 'Property Type', 'value' => $req->property_type],
-            ['keyString' => 'Assessment Type', 'value' => $req->assessment_type],
-            ['keyString' => 'Ownership Type', 'value' => $req->ownership_type],
-            ['keyString' => 'Apply-Date', 'value' => $req->application_date],
-            ['keyString' => 'Plot-Area(sqt)', 'value' => $req->area_of_plot],
-            ['keyString' => 'Is-Water-Harvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
-            ['keyString' => 'Is-Hoarding-Board', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
+            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
+            ['displayString' => 'SAF No.', 'key' => 'safNo', 'value' => $req->saf_no],
+            ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $owners],
+            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
+            ['displayString' => 'Assessment Type', 'key' => 'assessmentType', 'value' => $req->assessment_type],
+            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
+            ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $req->application_date],
+            ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
         ]);
     }
 }
