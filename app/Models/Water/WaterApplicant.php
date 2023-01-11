@@ -13,7 +13,7 @@ class WaterApplicant extends Model
      * |--------------------------- save new water applicants details ------------------------------|
      * | @param
      * |
-        |
+        | Apply City and District
      */
     public function saveWaterApplicant($applicationId, $owners)
     {
@@ -32,9 +32,31 @@ class WaterApplicant extends Model
      */
     public function ownerByApplication($request)
     {
-        return WaterApplicant::join('water_applications', 'water_applications.id', '=', 'water_applicants.application_id')
+        return WaterApplicant::select(
+            'water_applicants.applicant_name as owner_name',
+            'guardian_name',
+            'mobile_no',
+            'email',
+            'city',
+            'district'
+        )
+            ->join('water_applications', 'water_applications.id', '=', 'water_applicants.application_id')
             ->where('water_applications.id', $request->id)
             ->where('water_applications.status', 1)
             ->where('water_applicants.status', 1);
+    }
+
+    /**
+     * |
+     */
+    public function getOwnerList($applicationId)
+    {
+        return WaterApplicant::select(
+            'applicant_name',
+            'guardian_name',
+            'mobile_no',
+            'email'
+        )
+            ->where('application_id', $applicationId);
     }
 }
