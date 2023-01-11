@@ -1399,11 +1399,11 @@ class ActiveSafController extends Controller
             "Remaining Amount" => 0,
         ];
 
-        $filtered = collect($amount)->filter(function ($value, $key) {
+        $tax = collect($amount)->filter(function ($value, $key) {
             return $value > 0;
         });
 
-        return $filtered;
+        return $tax;
     }
 
     /**
