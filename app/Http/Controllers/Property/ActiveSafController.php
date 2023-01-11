@@ -1052,26 +1052,19 @@ class ActiveSafController extends Controller
 
         try {
             $saf = PropActiveSaf::find($req->safId);
-            $propLevelPending = new PropLevelPending();
+            $track = new WorkflowTrack();
             DB::beginTransaction();
             $initiatorRoleId = $saf->initiator_role_id;
             $saf->current_role = $initiatorRoleId;
             $saf->parked = true;                        //<------ SAF Pending Status true
             $saf->save();
 
-            // $preLevelPending = $propLevelPending->getLevelBySafReceiver($req->safId, $req->currentRoleId);
-            // $preLevelPending->remarks = $req->comment;
-            // $preLevelPending->forward_date = $this->_todayDate->format('Y-m-d');
-            // $preLevelPending->forward_time = $this->_todayDate->format('H:i:m');
-            // $preLevelPending->save();
-
-            // $levelPending = new PropLevelPending();
-            // $levelPending->saf_id = $req->safId;
-            // $levelPending->sender_role_id = $req->currentRoleId;
-            // $levelPending->receiver_role_id = $initiatorRoleId;
-            // $levelPending->user_id = authUser()->id;
-            // $levelPending->sender_user_id = authUser()->id;
-            // $levelPending->save();
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $saf->workflow_id;
+            $metaReqs['refTableDotId'] = 'prop_active_safs.id';
+            $metaReqs['refTableIdValue'] = $req->safId;
+            $req->request->add($metaReqs);
+            $track->saveTrack($req);
 
             DB::commit();
             return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
@@ -1311,8 +1304,7 @@ class ActiveSafController extends Controller
 
             $applicationDtls = $paymentData->getApplicationId($req->paymentId);
             // Saf Payment
-            // $safId = json_decode($applicationDtls)->applicationId;
-            $safId = 1257;
+            $safId = json_decode($applicationDtls)->applicationId;
 
             $reqSafId = new Request(['id' => $safId]);
             $activeSafDetails = $this->details($reqSafId);
