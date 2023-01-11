@@ -59,6 +59,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/edit', 'editSaf');                                                                 // Edit Saf By Back Office(24)
     Route::get('saf/inbox', 'inbox');                                                                   // Saf Inbox(3)
     Route::post('saf/btc-inbox', 'btcInbox');                                                           // Saf Inbox for Back To citizen(23)
+    Route::post('saf/field-verified-inbox', 'fieldVerifiedInbox');                                      // Field Verified Inbox (25)
     Route::get('saf/outbox', 'outbox');                                                                 // Saf Workflow Outbox and Outbox By search key(4)
     Route::post('saf-details', 'safDetails');                                                           // Saf Workflow safDetails and safDetails By ID(5)
     Route::post('saf/escalate', 'postEscalate');                                                        // Saf Workflow special and safDetails By id(6)

@@ -240,4 +240,14 @@ class PropActiveSaf extends Model
             ->where('id', $safId)
             ->first();
     }
+
+    /**
+     * | Enable Field Verification Status
+     */
+    public function verifyFieldStatus($safId)
+    {
+        $activeSaf = PropActiveSaf::find($safId);
+        $activeSaf->is_field_verified = true;
+        $activeSaf->save();
+    }
 }
