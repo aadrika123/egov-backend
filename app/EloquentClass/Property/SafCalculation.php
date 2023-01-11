@@ -767,7 +767,7 @@ class SafCalculation
                 ->where('construction_types_id', 1)
                 ->where('effective_date', $this->_effectiveDateRule2)
                 ->first();
-            $rentalRate = $rentalRates->rate * $paramRentalRate;
+            $rentalRate = round($rentalRates->rate * $paramRentalRate);
         }
 
         if (is_numeric($key)) {                                                             // Applicable For Floors
@@ -882,9 +882,9 @@ class SafCalculation
                 ->where('effective_date', $this->_effectiveDateRule3)
                 ->first();
             $readCalculationFactor = $readMultiFactor->multi_factor;
-
+            $propRoadTypeId = ($key == 'petrolPump' ? 1 : $this->_readRoadType[$this->_effectiveDateRule3]);    // Petrol Pump case road type is 1
             $rentalRates = collect($this->_rentalRates)
-                ->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule3])
+                ->where('prop_road_type_id', $propRoadTypeId)
                 ->where('construction_types_id', 1)
                 ->where('effective_date', $this->_effectiveDateRule3)
                 ->first();
@@ -892,7 +892,7 @@ class SafCalculation
         }
 
         // For Floors
-        if (is_numeric($key)) {                                                                            // Applicable for floors
+        if (is_numeric($key)) {                                                                             // Applicable for floors
             $readCircleRate = $this->_capitalValueRate[$key];
             $readFloorUsageType = $this->_floors[$key]['useType'];
             $readBuildupArea = $this->_floors[$key]['buildupArea'];

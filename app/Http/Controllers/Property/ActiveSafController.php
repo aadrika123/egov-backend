@@ -1311,7 +1311,8 @@ class ActiveSafController extends Controller
 
             $applicationDtls = $paymentData->getApplicationId($req->paymentId);
             // Saf Payment
-            $safId = json_decode($applicationDtls)->applicationId;
+            // $safId = json_decode($applicationDtls)->applicationId;
+            $safId = 1257;
 
             $reqSafId = new Request(['id' => $safId]);
             $activeSafDetails = $this->details($reqSafId);
@@ -1334,7 +1335,7 @@ class ActiveSafController extends Controller
             $propPenalties = $propPenalties->getPenalties('tran_id', $propTrans->id);
             $mOnePercPenalty = collect($propPenalties)->where('penalty_type_id', $mOnePercPenaltyId)->sum('amount');
 
-            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails->original['data']['late_assess_penalty'], $mOnePercPenalty, $propTrans->amount);   // Get Holding Tax Dtls
+            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $mOnePercPenalty, $propTrans->amount);   // Get Holding Tax Dtls
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
@@ -1342,10 +1343,10 @@ class ActiveSafController extends Controller
                 "transactionDate" => $propTrans->tran_date,
                 "transactionNo" => $propTrans->tran_no,
                 "transactionTime" => $propTrans->created_at->format('H:i:s'),
-                "applicationNo" => $activeSafDetails->original['data']['saf_no'],
-                "customerName" => $activeSafDetails->original['data']['applicant_name'],
-                "receiptWard" => $activeSafDetails->original['data']['new_ward_no'],
-                "address" => $activeSafDetails->original['data']['prop_address'],
+                "applicationNo" => $activeSafDetails['saf_no'],
+                "customerName" => $activeSafDetails['applicant_name'],
+                "receiptWard" => $activeSafDetails['new_ward_no'],
+                "address" => $activeSafDetails['prop_address'],
                 "paidFrom" => $fromFinYear,
                 "paidFromQtr" => $fromFinQtr,
                 "paidUpto" => $upToFinYear,
@@ -1359,9 +1360,9 @@ class ActiveSafController extends Controller
                 "monthlyRate" => "",
                 "demandAmount" => roundFigure($calDemandAmt),
                 "taxDetails" => $taxDetails,
-                "ulbId" => $activeSafDetails->original['data']['ulb_id'],
-                "oldWardNo" => $activeSafDetails->original['data']['old_ward_no'],
-                "newWardNo" => $activeSafDetails->original['data']['new_ward_no'],
+                "ulbId" => $activeSafDetails['ulb_id'],
+                "oldWardNo" => $activeSafDetails['old_ward_no'],
+                "newWardNo" => $activeSafDetails['new_ward_no'],
                 "towards" => $mTowards,
                 "description" => $mDescriptions,
                 "totalPaidAmount" => $propTrans->amount,
