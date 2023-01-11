@@ -344,24 +344,6 @@ class ActiveSafController extends Controller
         }
     }
 
-    // Document Upload By Citizen Or JSK
-    public function documentUpload(Request $req)
-    {
-        $req->validate([
-            'safId' => 'required|integer'
-        ]);
-        return $this->Repository->documentUpload($req);
-    }
-
-    // Verify Document By Dealing Assistant
-    public function verifyDoc(Request $req)
-    {
-        $req->validate([
-            "verifications" => "required"
-        ]);
-        return $this->Repository->verifyDoc($req);
-    }
-
     /**
      * ---------------------- Saf Workflow Inbox --------------------
      * | Initialization
@@ -464,6 +446,45 @@ class ActiveSafController extends Controller
             return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, "271ms", "POST", $mDeviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
+        }
+    }
+
+    /**
+     * | Fields Verified Inbox
+     */
+    public function fieldVerifiedInbox(Request $req)
+    {
+        try {
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWardUser = new WfWardUser();
+
+            $mUserId = authUser()->id;
+            $mUlbId = authUser()->ulb_id;
+            $mDeviceId = $req->deviceId ?? "";
+
+            $readWards = $mWfWardUser->getWardsByUserId($mUserId);                  // Model function to get ward list
+            $occupiedWardsId = collect($readWards)->map(function ($ward) {          // Collection filteration
+                return $ward->ward_id;
+            });
+
+            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);                 // Model function to get Role By User Id
+            $roleIds = $readRoles->map(function ($role, $key) {
+                return $role->wf_role_id;
+            });
+
+            $data = $this->Repository->getSaf($this->_workflowIds)                 // Repository function getSAF
+                ->where('is_field_verified', true)
+                ->where('prop_active_safs.ulb_id', $mUlbId)
+                ->where('prop_active_safs.status', 1)
+                ->whereIn('current_role', $roleIds)
+                ->orderByDesc('id')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->get();
+
+            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWardsId);
+            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010125, 1.0, "", "POST", $mDeviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $mDeviceId);
         }
     }
 
@@ -585,13 +606,11 @@ class ActiveSafController extends Controller
                     ->where('prop_active_safs.id', $req->id)
                     ->first();
             }
-
             if ($req->safNo) {                                  // <-------- Search By SAF No
                 $data = $mPropActiveSaf->getActiveSafDtls()    // <------- Model Function Active SAF Details
                     ->where('prop_active_safs.saf_no', $req->safNo)
                     ->first();
             }
-            // return $data;
             // Basic Details
             $basicDetails = $this->generateBasicDetails($data);      // Trait function to get Basic Details
             $basicElement = [
@@ -619,7 +638,8 @@ class ActiveSafController extends Controller
                 'headerTitle' => 'Electricity & Water Details',
                 'data' => $electDetails
             ];
-
+            $fullDetailsData['application_no'] = $data->saf_no;
+            $fullDetailsData['apply_date'] = $data->application_date;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
             // Table Array
             // Owner Details
@@ -652,7 +672,10 @@ class ActiveSafController extends Controller
             $metaReqs['workflowId'] = $data['workflow_id'];
             $metaReqs['lastRoleId'] = $data['last_role_id'];
 
-            $citizenComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['id']);
+            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['id']);
+            $fullDetailsData['levelComment'] = $levelComment;
+
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $data['id'], $data['user_id']);
             $fullDetailsData['citizenComment'] = $citizenComment;
 
             $req->request->add($metaReqs);
@@ -785,36 +808,19 @@ class ActiveSafController extends Controller
             // SAF Application Update Current Role Updation
             DB::beginTransaction();
             $saf = PropActiveSaf::find($request->safId);
-            if ($request->senderRoleId == $saf->initiator_role_id) {                                // Initiator Role Id
-                $saf->doc_upload_status = 1;
-            }
-            // Check if the application is in case of BTC
-            if ($saf->parked == true) {
-                $levelPending = new PropLevelPending();
-                $lastLevelEntry = $levelPending->getLastLevelBySafId($request->safId);              // Send Last Level Current Role
-                $saf->parked = false;                                                               // Disable BTC
-                $saf->current_role = $lastLevelEntry->sender_role_id;
-            } else
-                $saf->current_role = $request->receiverRoleId;
+            $saf->current_role = $request->receiverRoleId;
             $saf->save();
 
-            // previous level pending verification enabling
-            $levelPending = new PropLevelPending();
-            $levelPending->saf_id = $request->safId;
-            $levelPending->sender_role_id = $request->senderRoleId;
-            $levelPending->receiver_role_id = $request->receiverRoleId;
-            $levelPending->sender_user_id = auth()->user()->id;
-            $levelPending->save();
 
-            // Add Comment On Prop Level Pending
-            $propLevelPending = new PropLevelPending();
-            $commentOnlevel = $propLevelPending->getLevelBySafReceiver($request->safId, $request->senderRoleId);    //<-----Get SAF level Pending By safid and current role ID
-            $commentOnlevel->remarks = $request->comment;
-            $commentOnlevel->verification_status = 1;
-            $commentOnlevel->forward_date = $this->_todayDate->format('Y-m-d');
-            $commentOnlevel->forward_time = $this->_todayDate->format('H:i:m');
-            $commentOnlevel->verification_status = 1;
-            $commentOnlevel->save();
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $saf->workflow_id;
+            $metaReqs['refTableDotId'] = 'prop_active_safs.id';
+            $metaReqs['refTableIdValue'] = $request->safId;
+            $request->request->add($metaReqs);
+
+            $track = new WorkflowTrack();
+            $track->saveTrack($request);
+
 
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);
@@ -852,6 +858,8 @@ class ActiveSafController extends Controller
         try {
             // Check if the Current User is Finisher or Not
             $safDetails = PropActiveSaf::find($req->safId);
+            $propSafVerification = new PropSafVerification();
+            $propSafVerificationDtl = new PropSafVerificationDtl();
             if ($safDetails->finisher_role_id != $req->roleId) {
                 return responseMsg(false, "Forbidden Access", "");
             }
@@ -1014,6 +1022,8 @@ class ActiveSafController extends Controller
                 $msg = "Application Rejected Successfully";
             }
 
+            $propSafVerification->deactivateVerifications($req->safId);                 // Deactivate Verification From Table
+            $propSafVerificationDtl->deactivateVerifications($req->safId);              // Deactivate Verification from Saf floor Dtls
             DB::commit();
             return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -1301,7 +1311,8 @@ class ActiveSafController extends Controller
 
             $applicationDtls = $paymentData->getApplicationId($req->paymentId);
             // Saf Payment
-            $safId = json_decode($applicationDtls)->applicationId;
+            // $safId = json_decode($applicationDtls)->applicationId;
+            $safId = 1257;
 
             $reqSafId = new Request(['id' => $safId]);
             $activeSafDetails = $this->details($reqSafId);
@@ -1324,7 +1335,7 @@ class ActiveSafController extends Controller
             $propPenalties = $propPenalties->getPenalties('tran_id', $propTrans->id);
             $mOnePercPenalty = collect($propPenalties)->where('penalty_type_id', $mOnePercPenaltyId)->sum('amount');
 
-            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails->original['data']['late_assess_penalty'], $mOnePercPenalty, $propTrans->amount);   // Get Holding Tax Dtls
+            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $mOnePercPenalty, $propTrans->amount);   // Get Holding Tax Dtls
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
@@ -1332,10 +1343,10 @@ class ActiveSafController extends Controller
                 "transactionDate" => $propTrans->tran_date,
                 "transactionNo" => $propTrans->tran_no,
                 "transactionTime" => $propTrans->created_at->format('H:i:s'),
-                "applicationNo" => $activeSafDetails->original['data']['saf_no'],
-                "customerName" => $activeSafDetails->original['data']['applicant_name'],
-                "receiptWard" => $activeSafDetails->original['data']['new_ward_no'],
-                "address" => $activeSafDetails->original['data']['prop_address'],
+                "applicationNo" => $activeSafDetails['saf_no'],
+                "customerName" => $activeSafDetails['applicant_name'],
+                "receiptWard" => $activeSafDetails['new_ward_no'],
+                "address" => $activeSafDetails['prop_address'],
                 "paidFrom" => $fromFinYear,
                 "paidFromQtr" => $fromFinQtr,
                 "paidUpto" => $upToFinYear,
@@ -1349,9 +1360,9 @@ class ActiveSafController extends Controller
                 "monthlyRate" => "",
                 "demandAmount" => roundFigure($calDemandAmt),
                 "taxDetails" => $taxDetails,
-                "ulbId" => $activeSafDetails->original['data']['ulb_id'],
-                "oldWardNo" => $activeSafDetails->original['data']['old_ward_no'],
-                "newWardNo" => $activeSafDetails->original['data']['new_ward_no'],
+                "ulbId" => $activeSafDetails['ulb_id'],
+                "oldWardNo" => $activeSafDetails['old_ward_no'],
+                "newWardNo" => $activeSafDetails['new_ward_no'],
                 "towards" => $mTowards,
                 "description" => $mDescriptions,
                 "totalPaidAmount" => $propTrans->amount,
@@ -1501,6 +1512,7 @@ class ActiveSafController extends Controller
             $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
             $verificationStatus = $req->verificationStatus;                                             // Verification Status true or false
 
+            $propActiveSaf = new PropActiveSaf();
             $verification = new PropSafVerification();
             $mPropSafVeriDtls = new PropSafVerificationDtl();
 
@@ -1515,7 +1527,7 @@ class ActiveSafController extends Controller
                         $msg = "Site Successfully rebuted";
                     }
                     break;
-
+                    DB::beginTransaction();
                 case $ulbTaxCollectorRole;                                                                // In Case of Ulb Tax Collector
                     if ($verificationStatus == 1) {
                         $req->ulbVerification = true;
@@ -1525,6 +1537,7 @@ class ActiveSafController extends Controller
                         $req->ulbVerification = false;
                         $msg = "Site Successfully rebuted";
                     }
+                    $propActiveSaf->verifyFieldStatus($req->safId);                                         // Enable Fields Verify Status
                     break;
 
                 default:
@@ -1532,9 +1545,7 @@ class ActiveSafController extends Controller
             }
 
             // Verification Store
-            DB::beginTransaction();
             $verificationId = $verification->store($req);                           // Model function to store verification and get the id
-
             // Verification Dtl Table Update                                         // For Tax Collector
             foreach ($req->floorDetails as $floorDetail) {
                 $verificationDtl = new PropSafVerificationDtl();

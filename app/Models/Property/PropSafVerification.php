@@ -50,4 +50,18 @@ class PropSafVerification extends Model
 
         return PropSafVerification::create($metaReqs)->id;
     }
+
+    /**
+     * | Deactivate Verifications
+     */
+    public function deactivateVerifications($safId)
+    {
+        $safVerifications = PropSafVerification::where('saf_id', $safId)
+            ->get();
+
+        collect($safVerifications)->map(function ($safVerification) {
+            $safVerification->status = 0;
+            $safVerification->save();
+        });
+    }
 }

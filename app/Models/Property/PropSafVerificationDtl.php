@@ -28,4 +28,18 @@ class PropSafVerificationDtl extends Model
             ->where('verification_id', $verifyId)
             ->get();
     }
+
+    /**
+     * | Deactivate Verifications
+     */
+    public function deactivateVerifications($safId)
+    {
+        $verifications = PropSafVerificationDtl::where('saf_id', $safId)
+            ->get();
+
+        collect($verifications)->map(function ($verification) {
+            $verification->status = 0;
+            $verification->save();
+        });
+    }
 }
