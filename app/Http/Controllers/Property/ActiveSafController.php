@@ -344,24 +344,6 @@ class ActiveSafController extends Controller
         }
     }
 
-    // Document Upload By Citizen Or JSK
-    public function documentUpload(Request $req)
-    {
-        $req->validate([
-            'safId' => 'required|integer'
-        ]);
-        return $this->Repository->documentUpload($req);
-    }
-
-    // Verify Document By Dealing Assistant
-    public function verifyDoc(Request $req)
-    {
-        $req->validate([
-            "verifications" => "required"
-        ]);
-        return $this->Repository->verifyDoc($req);
-    }
-
     /**
      * ---------------------- Saf Workflow Inbox --------------------
      * | Initialization
@@ -481,7 +463,7 @@ class ActiveSafController extends Controller
             $mDeviceId = $req->deviceId ?? "";
 
             $readWards = $mWfWardUser->getWardsByUserId($mUserId);                  // Model function to get ward list
-            $occupiedWardsId = collect($readWards)->map(function ($ward) {              // Collection filteration
+            $occupiedWardsId = collect($readWards)->map(function ($ward) {          // Collection filteration
                 return $ward->ward_id;
             });
 

@@ -62,6 +62,8 @@ class SafCalculation
     private $_jskRebateID;
     private $_speciallyAbledRebateID;
     private $_seniorCitizenRebateID;
+    private $_capitalValueRateMPH;
+    private $_currentQuarterDueDate;
 
     /** 
      * | For Building
@@ -311,13 +313,11 @@ class SafCalculation
         $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$readRoadType");
         $column = $col1 . $col2 . $col3;
         $capitalValueRate = json_decode(Redis::get('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-' . $column));         // Check Capital Value on Redis
-        $capitalValueRate = json_decode(Redis::get('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-' . $column));         // Check Capital Value on Redis
         if (!$capitalValueRate) {
             $capitalValueRate = MPropCvRate::select($column)
                 ->where('ulb_id', $this->_ulbId)
                 ->where('ward_no', $this->_wardNo)                                                                                                  // Ward No Fixed temprory
                 ->first();
-            $this->_redis->set('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-' . $column, json_encode($capitalValueRate));
             $this->_redis->set('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-' . $column, json_encode($capitalValueRate));
         }
         return $capitalValueRate->$column;
@@ -628,7 +628,7 @@ class SafCalculation
         $readOccupancyType = $this->_floors[$key]['occupancyType'];
         $readPropertyType = $this->_propertyDetails['propertyType'];
 
-        $readRentalValue = collect($this->_rentalValue)->where('usage_types_id', $readUsageType)
+        $readRentalValue = collect($this->_rentalValue)->where('usage_types_id', $readOccupancyType)
             ->where('construction_types_id', $this->_floors[$key]['constructionType'])
             ->first();
 
@@ -639,7 +639,7 @@ class SafCalculation
         $tempArv = $readBuildupArea * (float)$readRentalValue->rate;
         $arvCalcPercFactor = 0;
 
-        if ($readUsageType == 1 && $readOccupancyType == 2) {
+        if ($readUsageType == 1 && $readOccupancyType == 1) {                         // Occupancy Type 1 for Self 
             $arvCalcPercFactor += 30;
             // Condition if the property is Independent Building and installation date is less than 1942
             if ($readFloorInstallationDate < '1942-04-01' && $readPropertyType == 2) {
@@ -658,23 +658,29 @@ class SafCalculation
         $educationTax = ($arv * 5.0) / 100;
         $rwhPenalty = 0;
 
-        $totalTax = $holdingTax + $latrineTax + $waterTax + $healthTax + $educationTax;
-        $onePercPenaltyTax = ($totalTax * $onePercPenalty) / 100;
+        // Quaterly Taxes
+        $quaterHoldingTax = roundFigure($holdingTax / 4);
+        $quaterLatrineTax = roundFigure($latrineTax / 4);
+        $quaterWaterTax = roundFigure($waterTax / 4);
+        $quaterHealthTax = roundFigure($healthTax / 4);
+        $quaterEducationTax = roundFigure($educationTax / 4);
+        $quaterlyTax = roundFigure($quaterHoldingTax + $quaterLatrineTax + $quaterWaterTax + $quaterHealthTax + $quaterEducationTax);
+        $onePercPenaltyTax = ($quaterlyTax * $onePercPenalty) / 100;
 
         // Tax Calculation Quaterly
         $tax = [
             "arv" => roundFigure($arv),
             "calculationPercFactor" => $arvCalcPercFactor,
             "rentalValue" => $readRentalValue->rate,
-            "holdingTax" => roundFigure($holdingTax / 4),
-            "latrineTax" => roundFigure($latrineTax / 4),
-            "waterTax" => roundFigure($waterTax / 4),
-            "healthTax" => roundFigure($healthTax / 4),
-            "educationTax" => roundFigure($educationTax / 4),
+            "holdingTax" => $quaterHoldingTax,
+            "latrineTax" => $quaterLatrineTax,
+            "waterTax" => $quaterWaterTax,
+            "healthTax" => $quaterHealthTax,
+            "educationTax" => $quaterEducationTax,
             "rwhPenalty" => roundFigure($rwhPenalty),
-            "totalTax" => roundFigure($totalTax / 4),
+            "totalTax" => $quaterlyTax,
             "onePercPenalty" => $onePercPenalty,
-            "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
+            "onePercPenaltyTax" => roundFigure($onePercPenaltyTax)
         ];
         return $tax;
     }
@@ -769,7 +775,7 @@ class SafCalculation
             $readFloorBuildupArea = $this->_floors[$key]['buildupArea'];
             $readFloorOccupancyType = $this->_floors[$key]['occupancyType'];
             $paramCarpetAreaPerc = ($readFloorUsageType == 1) ? 70 : 80;
-            $paramOccupancyFactor = ($readFloorOccupancyType == 2) ? 1 : 1.5;
+            $paramOccupancyFactor = ($readFloorOccupancyType == 1) ? 1 : 1.5;
 
             $readMultiFactor = collect($this->_multiFactors)->where('usage_type_id', $readFloorUsageType)
                 ->where('effective_date', $this->_effectiveDateRule2)
@@ -892,7 +898,7 @@ class SafCalculation
             $readBuildupArea = $this->_floors[$key]['buildupArea'];
 
             $readFloorOccupancyType = $this->_floors[$key]['occupancyType'];
-            $paramOccupancyFactor = ($readFloorOccupancyType == 2) ? 1 : 1.5;
+            $paramOccupancyFactor = ($readFloorOccupancyType == 1) ? 1 : 1.5;
 
             $readUsageType = $this->_floors[$key]['useType'];
             $taxPerc = ($readUsageType == 1) ? 0.075 : 0.15;                                                // 0.075 for Residential and 0.15 for Commercial
