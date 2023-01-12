@@ -11,7 +11,7 @@ return [
     "SAF_REASSESSMENT_ID"       => "5",
     "SAF_MUTATION_ID"           => "9",
     "PROPERTY_CONCESSION_ID"    => "35",
-    "TRADE_WORKFLOW_ID"         => "19",
+    "TRADE_WORKFLOW_ID"         => "10",
     "PROPERTY_DEACTIVATION_WORKFLOW_ID" => "24",
     "PROPERTY_OBJECTION_CLERICAL"       => "36",
     "PROPERTY_OBJECTION_ASSESSMENT"     => "56",

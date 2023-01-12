@@ -19,10 +19,11 @@ interface ITrade
     public function paymentCounter(Request $request);
     public function isvalidateHolding(Request $request);
     public function searchLicenceByNo(Request $request);
-    public function searchLicence(string $licence_no,$ulb_id);
+    public function searchLicence(string $licence_no, $ulb_id);
     public function readApplication(Request $request);
     public function postEscalate(Request $request);
     public function updateLicenseBo(Request $request);
+    public function getDocList(Request $request);
     public function updateBasicDtl(Request $request);
     public function documentUpload(Request $request);
     public function getUploadDocuments(Request $request);
@@ -43,8 +44,8 @@ interface ITrade
     public function licenceCertificate($id);
     public function addDenail(Request $request);
     public function denialInbox(Request $request);
-    public function denialView($id,$mailID,Request $request);
+    public function denialView($id, $mailID, Request $request);
     public function approvedApplication(Request $request);
     public function reports(Request $request);
-    public function getLicenceDocuments($id,$tbl="active_");
+    public function getLicenceDocuments($id, $tbl = "active_");
 }

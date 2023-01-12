@@ -171,6 +171,13 @@ class TradeApplication extends Controller
     {
         return $this->Repository->updateBasicDtl($request);
     }
+
+    public function getDocList(Request $request)
+    {
+        return $this->Repository->getDocList($request);
+    }
+
+
     # Serial No : 04
     public function paymentReceipt(Request $request)
     {
