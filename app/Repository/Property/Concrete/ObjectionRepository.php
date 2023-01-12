@@ -384,59 +384,6 @@ class ObjectionRepository implements iObjectionRepository
         }
     }
 
-    /**
-     * | Get Objection Details by Id
-     * | @param request $req
-     */
-    public function getDetailsById($req)
-    {
-        $mCustomDetails = new CustomDetail;
-        $forwardBackward = new WorkflowMap;
-        $details = DB::table('prop_active_objections')
-            ->select(
-                'prop_active_objections.id as objection_id',
-                'objection_for',
-                'prop_active_objections.objection_no',
-                'prop_active_objections.workflow_id',
-                'prop_active_objections.current_role',
-                'prop_active_objections.last_role_id',
-                'p.*',
-                'p.assessment_type as assessment',
-                'w.ward_name as old_ward_no',
-                'o.ownership_type',
-                'pt.property_type'
-            )
-
-            ->join('prop_properties as p', 'p.id', '=', 'prop_active_objections.property_id')
-            ->join('prop_safs as s', 's.id', '=', 'p.saf_id')
-            ->join('ulb_ward_masters as w', 'w.id', '=', 's.ward_mstr_id')
-            ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 's.new_ward_mstr_id')
-            ->join('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
-            ->leftJoin('ref_prop_types as pt', 'pt.id', '=', 's.property_assessment_id')
-            ->where('p.status', 1)
-            ->where('prop_active_objections.id', $req->id)
-            ->first();
-
-        $metaReqs['customFor']  = 'Objection';
-        $metaReqs['wfRoleId']   =  $details->current_role;
-        $metaReqs['workflowId'] =  $details->workflow_id;
-        $metaReqs['lastRoleId'] =  $details->last_role_id;
-        $req->request->add($metaReqs);
-
-        //role details
-        $forwardBackward = $forwardBackward->getRoleDetails($req);
-        $details->roleDetails = collect($forwardBackward)['original']['data'];
-
-        //timeline Data
-        $details->timelineData = collect($metaReqs);
-
-        //custom Details
-        $custom = $mCustomDetails->getCustomDetails($req);
-        $details->departmentalPost = collect($custom)['original']['data'];
-
-        return responseMsgs(true, "Objection Details", remove_null($details), '010807', '01', '474ms-573', 'Post', '');
-    }
-
     // /**
     //  * | Forward Or BackWard Application
     //  * | @param $req
@@ -481,48 +428,6 @@ class ObjectionRepository implements iObjectionRepository
     //         return responseMsg(false, $e->getMessage(), "");
     //     }
     // }
-
-    /**
-     * | Back to Citizen the Application
-     * | @param request $req
-     */
-    public function backToCitizen($req)
-    {
-        try {
-            $redis = Redis::connection();
-            $workflowId = $req->workflowId;
-            $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
-            if (!$backId) {
-                $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
-                    ->where('is_initiator', true)
-                    ->first();
-                $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
-            }
-            DB::beginTransaction();
-            $objection = PropActiveObjection::find($req->objectionId);
-            $objection->current_role = $backId->wf_role_id;
-            $objection->save();
-
-            $propLevelPending = new PropObjectionLevelpending();
-            $preLevelPending = $propLevelPending->getCurrentObjByReceiver($req->objectionId, $req->currentRoleId);
-            $preLevelPending->remarks = $req->comment;
-            $preLevelPending->save();
-
-            $levelPending = new PropObjectionLevelpending();
-            $levelPending->objection_id = $req->objectionId;
-            $levelPending->sender_role_id = $req->currentRoleId;
-            $levelPending->receiver_role_id = $backId->wf_role_id;
-            $levelPending->user_id = authUser()->id;
-            $levelPending->sender_user_id = authUser()->id;
-            $levelPending->save();
-
-            DB::commit();
-            return responseMsgs(true, "Successfully Done", "", '010812', '01', '474ms-573', 'Post', '');
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 
 
     //get objection list
