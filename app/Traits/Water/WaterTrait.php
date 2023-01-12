@@ -33,6 +33,7 @@ trait WaterTrait
             'water_applications.workflow_id',
             'water_applications.current_role as role_id',
             'water_applications.apply_date',
+            'water_applications.parked'
         )
             ->join('ulb_ward_masters as u', 'u.id', '=', 'water_applications.ward_id')
             ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
