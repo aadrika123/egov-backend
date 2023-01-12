@@ -1687,9 +1687,11 @@ class Trade implements ITrade
      * | @var refTimeLine    = this->getTimelin(id)      | read Level remarks
      * | @var refUploadDocuments = this->getLicenceDocuments(id)    | read upload Documents
      */
-    public function readLicenceDtl($id)
+    public function readLicenceDtl($request)
     {
+
         try {
+            $id = $request->id;
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
@@ -1736,6 +1738,7 @@ class Trade implements ITrade
             $mworkflowRoles = $this->_parent->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
             $mileSton = $this->_parent->sortsWorkflowRols($mworkflowRoles);
 
+
             $data['licenceDtl']     = $refApplication;
             $data['ownerDtl']       = $refOwnerDtl;
             $data['transactionDtl'] = $refTransactionDtl;
@@ -1747,8 +1750,7 @@ class Trade implements ITrade
             // $data["pendingAt"]      = $pendingAt;
             // $data["levelData"]      = $mlevelData;
             // $data['finisher']       = $finisher;
-            $data = remove_null($data);
-            return responseMsg(true, "", $data);
+            return responseMsgs(true, 'Data Fetched', remove_null($data), "010104", "1.0", "303ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), '');
         }
