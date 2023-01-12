@@ -586,6 +586,7 @@ class ConcessionController extends Controller
             $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
             $metaReqs['refTableIdValue'] = $req->concessionId;
             $metaReqs['verificationStatus'] = $req->verificationStatus;
+            $metaReqs['senderRoleId'] = $req->currentRoleId;
             $req->request->add($metaReqs);
             $track = new WorkflowTrack();
             $track->saveTrack($req);

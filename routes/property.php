@@ -17,6 +17,7 @@ use App\Http\Controllers\Property\SafDemandController;
 use App\Http\Controllers\Property\DocumentController;
 use App\Http\Controllers\CustomController;
 use App\Http\Controllers\property\ClusterController;
+use Symfony\Component\Routing\DependencyInjection\RoutingResolverPass;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -178,14 +179,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('objection/owner-details', 'ownerDetails');              //03
     Route::post('objection/assesment-details', 'assesmentDetails');      //04
 
-    Route::post('objection/inbox', 'inbox');                              //05        //Inbox
-    Route::post('objection/outbox', 'outbox');                            //06        //Outbox
+    Route::post('objection/inbox', 'inbox');                             //05        //Inbox
+    Route::post('objection/outbox', 'outbox');                           //06        //Outbox
     Route::post('objection/details', 'getDetailsById');                  //07
     Route::post('objection/post-escalate', 'postEscalate');              //08        // Escalate the application and send to special category
-    Route::post('objection/special-inbox', 'specialInbox');               //09        // Special Inbox 
+    Route::post('objection/special-inbox', 'specialInbox');              //09        // Special Inbox 
     Route::post('objection/next-level', 'postNextLevel');                //10
     Route::post('objection/approvalrejection', 'approvalRejection');     //11
     Route::post('objection/backtocitizen', 'backToCitizen');             //12
+    Route::post('objection/btc-inbox', 'btcInboxList');                  //18
 
     Route::get('objection/list', 'objectionList');                       //13
     Route::post('objection/list-id', 'objectionByid');                   //14

@@ -35,7 +35,7 @@ trait SafDetailsTrait
             ['displayString' => 'Plot No.', 'key' => 'plotNo', 'value' => $data->plot_no],
             ['displayString' => 'Village/Mauja Name', 'key' => 'villageMaujaName', 'value' => $data->village_mauja_name],
             ['displayString' => 'Area of Plot', 'key' => 'areaOfPlot', 'value' => $data->area_of_plot],
-            ['displayString' => 'Road Width', 'key' => 'roadWidth', 'value' => $data->road_width],
+            ['displayString' => 'Road Width', 'key' => 'roadWidth', 'value' => $data->road_width ?? ""],
             ['displayString' => 'City', 'key' => 'city', 'value' => $data->prop_city],
             ['displayString' => 'District', 'key' => 'district', 'value' => $data->prop_dist],
             ['displayString' => 'State', 'key' => 'state', 'value' => $data->prop_state],
@@ -126,7 +126,7 @@ trait SafDetailsTrait
         return new Collection([
             ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
             ['displayString' => 'SAF No.', 'key' => 'safNo', 'value' => $req->saf_no],
-            ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $owners],
+            ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
             ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
             ['displayString' => 'Assessment Type', 'key' => 'assessmentType', 'value' => $req->assessment_type],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
@@ -151,14 +151,42 @@ trait SafDetailsTrait
             ['displayString' => 'Is Specially Abled', 'key' => 'isSpeciallyAbled', 'value' => ($req->is_specially_abled == true) ? 'Yes' : 'No'],
             ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
             ['displayString' => 'SAF No.', 'key' => 'safNo', 'value' => $req->saf_no],
-            ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $owners],
+            ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
             ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
             ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot]
         ]);
 
         $cardElement = [
-            'headerTitle' => "About Property",
+            'headerTitle' => "Concession Details",
+            'data' => $propertyDetails
+        ];
+        return $cardElement;
+    }
+
+
+    /**
+     * | Generate Card Details for Objections
+     */
+    public function generateObjCardDtls($req, $ownerDetails)
+    {
+        $owners = collect($ownerDetails)->implode('owner_name', ',');
+
+        $propertyDetails = new Collection([
+            ['displayString' => 'Holding No', 'key' => 'holdingNo', 'value' => $req->holding_no],
+            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
+            ['displayString' => 'Objection No.', 'key' => 'objectionNo', 'value' => $req->objection_no],
+            ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
+            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
+            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
+            ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Is Hoarding Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Is Petrol Pump', 'key' => 'isPetrolPump', 'value' => ($req->is_petrol_pump == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Is Water Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+        ]);
+
+        $cardElement = [
+            'headerTitle' => "Objection Details",
             'data' => $propertyDetails
         ];
         return $cardElement;
