@@ -387,7 +387,7 @@ class RainWaterHarvestingController extends Controller
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
-            return $fullDetailsData;
+            return responseMsg(true, "", remove_null($fullDetailsData));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -403,31 +403,30 @@ class RainWaterHarvestingController extends Controller
     {
         try {
             $req->validate([
-                'harvestingId' => 'required',
-                'senderRoleId' => 'required',
-                'receiverRoleId' => 'required',
-                'message' => 'required'
+                'harvestingId' => 'required|integer',
+                'senderRoleId' => 'required|integer',
+                'receiverRoleId' => 'required|integer',
+                'comment' => 'required'
             ]);
 
             DB::beginTransaction();
 
             $track = new WorkflowTrack();
+            $harvesting = PropActiveHarvesting::find($req->harvestingId);
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs['workflowId'] = Config::get('workflow-constants.RAIN_WATER_HARVESTING_ID');
+            $metaReqs['workflowId'] = $harvesting->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
             $metaReqs['refTableIdValue'] = $req->harvestingId;
             $metaReqs['senderRoleId'] = $req->senderRoleId;
             $metaReqs['receiverRoleId'] = $req->receiverRoleId;
             $metaReqs['verificationStatus'] = $req->verificationStatus;
-            $metaReqs['message'] = $req->message;
+            $metaReqs['comment'] = $req->comment;
 
-            return $metaReqs;
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 
 
             // harvesting Application Update Current Role Updation
-            $harvesting = PropActiveHarvesting::find($req->harvestingId);
             $harvesting->current_role = $req->receiverRoleId;
             $harvesting->save();
 
