@@ -350,7 +350,6 @@ class ObjectionRepository implements iObjectionRepository
                 'road_type_mstr_id',
                 'road_type as roadType',
                 'prop_type_mstr_id'
-                // 'prop_floors.*'
             )
                 ->where('prop_properties.id', $request->propId)
                 ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')

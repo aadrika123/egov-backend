@@ -136,4 +136,31 @@ trait SafDetailsTrait
             ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
         ]);
     }
+
+    /**
+     * | Generate Card Details for Concession
+     */
+    public function generateConcessionCardDtls($req, $ownerDetails)
+    {
+        $owners = collect($ownerDetails)->implode('owner_name', ',');
+
+        $propertyDetails = new Collection([
+            ['displayString' => 'DOB', 'key' => 'dob', 'value' => $req->dob],
+            ['displayString' => 'Gender', 'key' => 'gender', 'value' => $req->gender],
+            ['displayString' => 'Is Armed Force', 'key' => 'isArmedForce', 'value' => ($req->is_armed_force == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Is Specially Abled', 'key' => 'isSpeciallyAbled', 'value' => ($req->is_specially_abled == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
+            ['displayString' => 'SAF No.', 'key' => 'safNo', 'value' => $req->saf_no],
+            ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $owners],
+            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
+            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
+            ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot]
+        ]);
+
+        $cardElement = [
+            'headerTitle' => "About Property",
+            'data' => $propertyDetails
+        ];
+        return $cardElement;
+    }
 }

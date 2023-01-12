@@ -15,6 +15,7 @@ return [
     "ACCOUNT_DESCRIPTION" => "Holding Tax and Others",
     "DEPARTMENT_SECTION" => "Revenue Section",
     "SAF_REF_TABLE" => "prop_active_safs.id",
+    "SAF_CONCESSION_REF_TABLE" => "prop_active_concessions.id",
 
     // Mutation Reassessment and New Assessment Workflows
     "SAF_WORKFLOWS" => [3, 4, 5],
