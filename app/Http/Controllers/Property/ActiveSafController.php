@@ -665,7 +665,7 @@ class ActiveSafController extends Controller
                 'headerTitle' => "About Property",
                 'data' => $cardDetails
             ];
-            $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
+            $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardElement);
             $data = json_decode(json_encode($data), true);
             $metaReqs['customFor'] = 'SAF';
             $metaReqs['wfRoleId'] = $data['current_role'];
@@ -745,7 +745,6 @@ class ActiveSafController extends Controller
         ]);
 
         try {
-            $propLevelPending = new PropLevelPending();
             $workflowTrack = new WorkflowTrack();
             $userId = auth()->user()->id;
             $saf = PropActiveSaf::find($request->safId);                // SAF Details
@@ -753,18 +752,6 @@ class ActiveSafController extends Controller
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs = array();
             DB::beginTransaction();
-
-            $levelPending = $propLevelPending->getLevelBySafReceiver($request->safId, $userId);     // <---- Get level Pending by Model Function
-
-            if (is_null($levelPending)) {
-                $levelPending = $propLevelPending->getLastLevelBySafId($request->safId);            // <---- Get Last Level By SAf id by Model function
-                if (is_null($levelPending)) {
-                    return responseMsg(false, "SAF Not Found", "");
-                }
-            }
-            $levelPending->remarks = $request->comment;
-            $levelPending->receiver_user_id = $userId;
-            $levelPending->save();
 
             // Save On Workflow Track
             $metaReqs = [

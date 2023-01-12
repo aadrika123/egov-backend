@@ -11,12 +11,4 @@ use Illuminate\Http\Request;
 
 interface iConcessionRepository
 {
-
-    public function applyConcession(Request $request);                      // apply concession
-    public function postHolding(Request $request);                          // post Holding
-    public function getDetailsById($req);                                   // Get Concession Details By ID
-    public function postNextLevel($req);                                    // post next level application
-    public function backTocitizen($req);                                    // Back to citizen of the applications
-
-    public function concessionDocUpload($req);
 }

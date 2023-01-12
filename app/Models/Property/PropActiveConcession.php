@@ -11,6 +11,25 @@ class PropActiveConcession extends Model
 {
     use HasFactory;
 
+    /**
+     * | Get Concession Details
+     */
+    public function getDetailsById($id)
+    {
+        $details = PropActiveConcession::select(
+            'prop_active_concessions.*',
+            'prop_active_concessions.applicant_name as owner_name',
+            's.*',
+            'u.ward_name as ward_no',
+            'p.property_type'
+        )
+            ->join('prop_properties as s', 's.id', '=', 'prop_active_concessions.property_id')
+            ->join('ulb_ward_masters as u', 'u.id', '=', 's.ward_mstr_id')
+            ->join('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
+            ->where('prop_active_concessions.id', $id)
+            ->first();
+        return $details;
+    }
 
     /**
      * |-------------------------- details of all concession according id -----------------------------------------------
