@@ -81,7 +81,7 @@ class ConcessionController extends Controller
                 return $role->wf_role_id;
             });
 
-            return $concessions = $this->getConcessionList($ulbId)
+            $concessions = $this->getConcessionList($ulbId)
                 ->whereIn('prop_active_concessions.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_concessions.id')
