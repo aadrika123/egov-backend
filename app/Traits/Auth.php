@@ -250,6 +250,7 @@ trait Auth
                 'wf_roles.role_name AS roles',
                 'wf_roles.id AS roleId'
             )
+            ->orderByDesc('wf_roles.id')
             ->get();
 
         if (empty(collect($menuRoleDetails)->first())) {
@@ -276,6 +277,7 @@ trait Auth
                     'menu_masters.menu_string AS menuName',
                     'menu_masters.route AS menuPath',
                 )
+                ->orderByDesc('menu_masters.id')
                 ->get();
         }
 
