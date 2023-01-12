@@ -59,7 +59,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('post-message', 'commentIndependent');                                              //
         Route::post('approved-water-applications', 'approvedWaterApplications');                        //
         Route::post('list-message', 'getIndependentComment');                                //
-        // Route::post('get-level-comment', 'getLevelcomment');                                            //
+        // Route::post('', 'getLevelcomment');                                            //
     });
 });
 
