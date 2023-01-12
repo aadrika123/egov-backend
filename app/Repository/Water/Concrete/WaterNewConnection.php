@@ -78,6 +78,7 @@ class WaterNewConnection implements IWaterNewConnection
                 "water_applications.payment_status",
                 "water_applications.doc_status",
                 "water_applications.ward_id",
+                "water_applications.workflow_id",
                 "ulb_ward_masters.ward_name",
                 "charges.amount",
                 DB::raw("'connection' AS type,

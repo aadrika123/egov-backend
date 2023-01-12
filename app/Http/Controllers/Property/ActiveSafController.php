@@ -344,24 +344,6 @@ class ActiveSafController extends Controller
         }
     }
 
-    // Document Upload By Citizen Or JSK
-    public function documentUpload(Request $req)
-    {
-        $req->validate([
-            'safId' => 'required|integer'
-        ]);
-        return $this->Repository->documentUpload($req);
-    }
-
-    // Verify Document By Dealing Assistant
-    public function verifyDoc(Request $req)
-    {
-        $req->validate([
-            "verifications" => "required"
-        ]);
-        return $this->Repository->verifyDoc($req);
-    }
-
     /**
      * ---------------------- Saf Workflow Inbox --------------------
      * | Initialization
@@ -481,7 +463,7 @@ class ActiveSafController extends Controller
             $mDeviceId = $req->deviceId ?? "";
 
             $readWards = $mWfWardUser->getWardsByUserId($mUserId);                  // Model function to get ward list
-            $occupiedWardsId = collect($readWards)->map(function ($ward) {              // Collection filteration
+            $occupiedWardsId = collect($readWards)->map(function ($ward) {          // Collection filteration
                 return $ward->ward_id;
             });
 
@@ -1070,26 +1052,19 @@ class ActiveSafController extends Controller
 
         try {
             $saf = PropActiveSaf::find($req->safId);
-            $propLevelPending = new PropLevelPending();
+            $track = new WorkflowTrack();
             DB::beginTransaction();
             $initiatorRoleId = $saf->initiator_role_id;
             $saf->current_role = $initiatorRoleId;
             $saf->parked = true;                        //<------ SAF Pending Status true
             $saf->save();
 
-            $preLevelPending = $propLevelPending->getLevelBySafReceiver($req->safId, $req->currentRoleId);
-            $preLevelPending->remarks = $req->comment;
-            $preLevelPending->forward_date = $this->_todayDate->format('Y-m-d');
-            $preLevelPending->forward_time = $this->_todayDate->format('H:i:m');
-            $preLevelPending->save();
-
-            $levelPending = new PropLevelPending();
-            $levelPending->saf_id = $req->safId;
-            $levelPending->sender_role_id = $req->currentRoleId;
-            $levelPending->receiver_role_id = $initiatorRoleId;
-            $levelPending->user_id = authUser()->id;
-            $levelPending->sender_user_id = authUser()->id;
-            $levelPending->save();
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $saf->workflow_id;
+            $metaReqs['refTableDotId'] = 'prop_active_safs.id';
+            $metaReqs['refTableIdValue'] = $req->safId;
+            $req->request->add($metaReqs);
+            $track->saveTrack($req);
 
             DB::commit();
             return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
@@ -1352,7 +1327,7 @@ class ActiveSafController extends Controller
             $propPenalties = $propPenalties->getPenalties('tran_id', $propTrans->id);
             $mOnePercPenalty = collect($propPenalties)->where('penalty_type_id', $mOnePercPenaltyId)->sum('amount');
 
-            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails->original['data']['late_assess_penalty'], $mOnePercPenalty, $propTrans->amount);   // Get Holding Tax Dtls
+            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $mOnePercPenalty, $propTrans->amount);   // Get Holding Tax Dtls
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
@@ -1360,10 +1335,10 @@ class ActiveSafController extends Controller
                 "transactionDate" => $propTrans->tran_date,
                 "transactionNo" => $propTrans->tran_no,
                 "transactionTime" => $propTrans->created_at->format('H:i:s'),
-                "applicationNo" => $activeSafDetails->original['data']['saf_no'],
-                "customerName" => $activeSafDetails->original['data']['applicant_name'],
-                "receiptWard" => $activeSafDetails->original['data']['new_ward_no'],
-                "address" => $activeSafDetails->original['data']['prop_address'],
+                "applicationNo" => $activeSafDetails['saf_no'],
+                "customerName" => $activeSafDetails['applicant_name'],
+                "receiptWard" => $activeSafDetails['new_ward_no'],
+                "address" => $activeSafDetails['prop_address'],
                 "paidFrom" => $fromFinYear,
                 "paidFromQtr" => $fromFinQtr,
                 "paidUpto" => $upToFinYear,
@@ -1377,9 +1352,9 @@ class ActiveSafController extends Controller
                 "monthlyRate" => "",
                 "demandAmount" => roundFigure($calDemandAmt),
                 "taxDetails" => $taxDetails,
-                "ulbId" => $activeSafDetails->original['data']['ulb_id'],
-                "oldWardNo" => $activeSafDetails->original['data']['old_ward_no'],
-                "newWardNo" => $activeSafDetails->original['data']['new_ward_no'],
+                "ulbId" => $activeSafDetails['ulb_id'],
+                "oldWardNo" => $activeSafDetails['old_ward_no'],
+                "newWardNo" => $activeSafDetails['new_ward_no'],
                 "towards" => $mTowards,
                 "description" => $mDescriptions,
                 "totalPaidAmount" => $propTrans->amount,
@@ -1424,11 +1399,11 @@ class ActiveSafController extends Controller
             "Remaining Amount" => 0,
         ];
 
-        $filtered = collect($amount)->filter(function ($value, $key) {
+        $tax = collect($amount)->filter(function ($value, $key) {
             return $value > 0;
         });
 
-        return $filtered;
+        return $tax;
     }
 
     /**

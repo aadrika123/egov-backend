@@ -58,7 +58,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('approval-rejection-water', 'approvalRejectionWater');                              //
         Route::post('comment-independent', 'commentIndependent');                                       //
         Route::post('approved-water-applications', 'approvedWaterApplications');                        //
-        Route::post('get-indipendent-comment', 'getIndipendentComment');                                            //
+        Route::post('get-independent-comment', 'getIndependentComment');                                            //
         // Route::post('get-level-comment', 'getLevelcomment');                                            //
     });
 });
