@@ -450,9 +450,9 @@ class ConcessionController extends Controller
                 ->where('parked', true)
                 ->orderByDesc('prop_active_concessions.id')
                 ->get();
-            return responseMsgs(true, "BTC Inbox List", "", 010717, 1.0, "271ms", "POST", remove_null($concessions));
+            return responseMsgs(true, "BTC Inbox List", remove_null($concessions), 010717, 1.0, "271ms", "POST", "", "");;
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010717, 1.0, "271ms", "POST", remove_null($concessions));
+            return responseMsgs(false, $e->getMessage(), "", 010717, 1.0, "271ms", "POST", "", "");
         }
     }
 
