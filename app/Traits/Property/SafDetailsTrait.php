@@ -150,7 +150,7 @@ trait SafDetailsTrait
             ['displayString' => 'Is Armed Force', 'key' => 'isArmedForce', 'value' => ($req->is_armed_force == true) ? 'Yes' : 'No'],
             ['displayString' => 'Is Specially Abled', 'key' => 'isSpeciallyAbled', 'value' => ($req->is_specially_abled == true) ? 'Yes' : 'No'],
             ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
-            ['displayString' => 'SAF No.', 'key' => 'safNo', 'value' => $req->saf_no],
+            ['displayString' => 'Holding No', 'key' => 'safNo', 'value' => $req->holding_no],
             ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
             ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
@@ -187,6 +187,32 @@ trait SafDetailsTrait
 
         $cardElement = [
             'headerTitle' => "Objection Details",
+            'data' => $propertyDetails
+        ];
+        return $cardElement;
+    }
+
+    /**
+     * | Generate Card Details for Harvesting
+     */
+    public function generateHarvestingCardDtls($req, $ownerDetails)
+    {
+        $owners = collect($ownerDetails)->implode('owner_name', ',');
+        $propertyDetails = new Collection([
+            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
+            ['displayString' => 'Holding No', 'key' => 'holdingNo', 'value' => $req->holding_no],
+            ['displayString' => 'Harvesting No.', 'key' => 'harvestingNo', 'value' => $req->application_no],
+            ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
+            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
+            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
+            ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Is Hoarding Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Is Petrol Pump', 'key' => 'isPetrolPump', 'value' => ($req->is_petrol_pump == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Is Water Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+        ]);
+
+        $cardElement = [
+            'headerTitle' => "Harvesting Details",
             'data' => $propertyDetails
         ];
         return $cardElement;

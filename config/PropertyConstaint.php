@@ -17,6 +17,7 @@ return [
     "SAF_REF_TABLE" => "prop_active_safs.id",
     "SAF_CONCESSION_REF_TABLE" => "prop_active_concessions.id",
     "SAF_OBJECTION_REF_TABLE" => "prop_active_objections.id",
+    "SAF_HARVESTING_REF_TABLE" => "prop_active_harvesting.id",
 
     // Mutation Reassessment and New Assessment Workflows
     "SAF_WORKFLOWS" => [3, 4, 5],

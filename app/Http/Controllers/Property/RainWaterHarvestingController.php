@@ -3,20 +3,26 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomDetail;
 use App\Models\Property\PropActiveHarvesting;
+use App\Models\Property\PropFloor;
 use App\Models\Property\PropHarvestingDoc;
 use App\Models\Property\PropHarvestingLevelpending;
+use App\Models\Property\PropOwner;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Illuminate\Http\Request;
 use App\Traits\Property\SAF;
+use App\Traits\Property\SafDetailsTrait;
 use App\Traits\Ward;
 use App\Traits\Workflow\Workflow;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * | Created On - 22-11-2022
@@ -29,6 +35,7 @@ class RainWaterHarvestingController extends Controller
     use SAF;
     use Workflow;
     use Ward;
+    use SafDetailsTrait;
     private $_todayDate;
     private $_bifuraction;
     private $_workflowId;
@@ -291,6 +298,100 @@ class RainWaterHarvestingController extends Controller
         }
     }
 
+    /**
+     * | Harvesting Details
+     */
+    public function getDetailsById(Request $req)
+    {
+        $req->validate([
+            'id' => 'required'
+        ]);
+        try {
+            $mPropActiveHarvesting = new PropActiveHarvesting();
+            $mPropOwners = new PropOwner();
+            $mPropFloors = new PropFloor();
+            $mWorkflowTracks = new WorkflowTrack();
+            $mCustomDetails = new CustomDetail();
+            $mForwardBackward = new WorkflowMap();
+            $mRefTable = Config::get('PropertyConstaint.SAF_HARVESTING_REF_TABLE');
+            $details = $mPropActiveHarvesting->getDetailsById($req->id);
+
+            // Data Array
+            $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
+            $basicElement = [
+                'headerTitle' => "Basic Details",
+                "data" => $basicDetails
+            ];
+
+            $propertyDetails = $this->generatePropertyDetails($details);   // (Property Details) Trait function to get Property Details
+            $propertyElement = [
+                'headerTitle' => "Property Details & Address",
+                'data' => $propertyDetails
+            ];
+
+            $corrDetails = $this->generateCorrDtls($details);              // (Corresponding Address Details) Trait function to generate corresponding address details
+            $corrElement = [
+                'headerTitle' => 'Corresponding Address',
+                'data' => $corrDetails,
+            ];
+
+            $electDetails = $this->generateElectDtls($details);            // (Electricity & Water Details) Trait function to generate Electricity Details
+            $electElement = [
+                'headerTitle' => 'Electricity & Water Details',
+                'data' => $electDetails
+            ];
+            $fullDetailsData['application_no'] = $details->application_no;
+            $fullDetailsData['apply_date'] = Carbon::parse($details->created_at)->format('Y-m-d');
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
+
+            // Table Array
+            $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);
+            $ownerList = json_decode(json_encode($ownerList), true);       // Convert Std class to array
+            $ownerDetails = $this->generateOwnerDetails($ownerList);
+            $ownerElement = [
+                'headerTitle' => 'Owner Details',
+                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                'tableData' => $ownerDetails
+            ];
+            $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
+            $floorDetails = $this->generateFloorDetails($floorList);
+            $floorElement = [
+                'headerTitle' => 'Floor Details',
+                'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
+                'tableData' => $floorDetails
+            ];
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement]);
+            // Card Details
+            $cardElement = $this->generateHarvestingCardDtls($details, $ownerList);
+            $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
+
+            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $req->id);
+            $fullDetailsData['levelComment'] = $levelComment;
+
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $req->id, $details->user_id);
+            $fullDetailsData['citizenComment'] = $citizenComment;
+
+            $metaReqs['customFor'] = 'PROPERTY-HARVESTING';
+            $metaReqs['wfRoleId'] = $details->current_role;
+            $metaReqs['workflowId'] = $details->workflow_id;
+            $metaReqs['lastRoleId'] = $details->last_role_id;
+            $req->request->add($metaReqs);
+            $forwardBackward = $mForwardBackward->getRoleDetails($req);
+            $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
+
+            $fullDetailsData['timelineData'] = collect($req);
+
+            $custom = $mCustomDetails->getCustomDetails($req);
+            $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
+
+            $custom = $mCustomDetails->getCustomDetails($req);
+            $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
+
+            return $fullDetailsData;
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 
     /**
      * |--------------------------- Post Next Level Application(forward or backward application) ------------------------------------------------|
@@ -307,6 +408,7 @@ class RainWaterHarvestingController extends Controller
                 'receiverRoleId' => 'required',
                 'message' => 'required'
             ]);
+
             DB::beginTransaction();
 
             $track = new WorkflowTrack();
@@ -314,12 +416,12 @@ class RainWaterHarvestingController extends Controller
             $metaReqs['workflowId'] = Config::get('workflow-constants.RAIN_WATER_HARVESTING_ID');
             $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
             $metaReqs['refTableIdValue'] = $req->harvestingId;
-            // $metaReqs['senderRoleId'] = $req->senderRoleId;
-            // $metaReqs['receiverRoleId'] = $req->receiverRoleId;
-            // $metaReqs['verificationStatus'] = $req->verificationStatus;
-            // $metaReqs['message'] = $req->message;
+            $metaReqs['senderRoleId'] = $req->senderRoleId;
+            $metaReqs['receiverRoleId'] = $req->receiverRoleId;
+            $metaReqs['verificationStatus'] = $req->verificationStatus;
+            $metaReqs['message'] = $req->message;
 
-            // return $metaReqs;
+            return $metaReqs;
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 

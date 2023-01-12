@@ -54,4 +54,31 @@ class PropActiveHarvesting extends Model
 
         return $waterHaravesting->id;
     }
+
+    /**
+     * | Get Harvesting Details By Id
+     */
+    public function getDetailsById($id)
+    {
+        return DB::table('prop_active_harvestings as h')
+            ->select(
+                'h.*',
+                'pp.*',
+                'w.ward_name as old_ward_no',
+                'nw.ward_name as new_ward_no',
+                'o.ownership_type',
+                'p.property_type',
+                'r.road_type as road_type_master',
+                'wr.role_name as current_role_name'
+            )
+            ->join('prop_properties as pp', 'pp.id', '=', 'h.property_id')
+            ->join('ulb_ward_masters as w', 'w.id', '=', 'pp.ward_mstr_id')
+            ->join('wf_roles as wr', 'wr.id', '=', 'h.current_role')
+            ->join('ulb_ward_masters as nw', 'nw.id', '=', 'pp.new_ward_mstr_id')
+            ->join('ref_prop_ownership_types as o', 'o.id', '=', 'pp.ownership_type_mstr_id')
+            ->join('ref_prop_types as p', 'p.id', '=', 'pp.prop_type_mstr_id')
+            ->join('ref_prop_road_types as r', 'r.id', '=', 'pp.road_type_mstr_id')
+            ->where('h.id', $id)
+            ->first();
+    }
 }

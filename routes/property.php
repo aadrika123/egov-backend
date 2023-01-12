@@ -237,6 +237,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/next-level', 'postNextLevel');                      //10
     Route::post('harvesting/approval-rejection', 'finalApprovalRejection');     //11
     Route::post('harvesting/rejection', 'rejectionOfHarvesting');               //12
+    Route::post('harvesting/details-by-id', 'getDetailsById');                  //13
   });
 
   /**
