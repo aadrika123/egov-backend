@@ -12,10 +12,6 @@ use Illuminate\Http\Request;
 interface iObjectionRepository
 {
     public function applyObjection($request);
-
-    public function getDetailsById($req);                       // Get Objection Details By ID
-    public function backTocitizen($req);
-
     public function objectionDocList($req);
     public function objectionDocUpload($req);
 }

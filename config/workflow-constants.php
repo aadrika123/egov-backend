@@ -23,4 +23,5 @@ return [
     "TRADE_NOTICE_ID"      => "120",
     "WATER_WORKFLOW_ID" => "16",
     "DEALING_ASSISTENT_WF_ID" => "6",
+    "WATER_JE_ROLE_ID" => "40"
 ];

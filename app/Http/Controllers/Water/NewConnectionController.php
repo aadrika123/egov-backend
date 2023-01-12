@@ -11,10 +11,13 @@ use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterPropertyTypeMstr;
+use App\Models\Workflows\WfWardUser;
 use App\Models\WorkflowTrack;
 use Illuminate\Http\Request;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Traits\Ward;
+use App\Traits\Water\WaterTrait;
+use App\Traits\Workflow\Workflow;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +27,8 @@ use Ramsey\Collection\Collection as CollectionCollection;
 class NewConnectionController extends Controller
 {
     use Ward;
+    use Workflow;
+    use WaterTrait;
 
     private iNewConnection $newConnection;
     public function __construct(iNewConnection $newConnection)
@@ -230,7 +235,6 @@ class NewConnectionController extends Controller
                 'appId' => 'required',
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
-                'verificationStatus' => 'required',
                 'comment' => "required"
             ]);
             return $this->newConnection->postNextLevel($request);
@@ -399,6 +403,16 @@ class NewConnectionController extends Controller
             $mWaterRef = 'water_applications.id';
             $responseData = $trackObj->getTracksByRefId($mWaterRef, $request->id);
             return responseMsgs(true, "payment Details!", remove_null($responseData), "01", "", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Get the Field fieldVerifiedInbox
+    public function fieldVerifiedInbox(Request $request)
+    {
+        try {
+            return $this->newConnection->fieldVerifiedInbox($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
