@@ -34,12 +34,12 @@ trait WaterTrait
             'water_applications.current_role as role_id',
             'water_applications.apply_date',
         )
-            ->leftJoin('prop_properties as a', 'a.id', '=', 'water_applications.prop_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'water_applications.ward_id')
-            ->join('water_applicants','water_applicants.application_id','=','water_applications.id')
-            ->join('water_connection_through_mstrs','water_connection_through_mstrs.id','=','water_applications.connection_through')
-            ->join('water_connection_type_mstrs','water_connection_type_mstrs.id','=','water_applications.connection_type_id')
+            ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
+            ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
+            ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
             ->where('water_applications.status', 1)
+            // ->where('ulb_ward_masters.deleted_at', 0)
             ->where('water_applications.ulb_id', $ulbId);
     }
 }

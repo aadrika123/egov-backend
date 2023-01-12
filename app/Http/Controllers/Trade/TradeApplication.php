@@ -86,7 +86,7 @@ class TradeApplication extends Controller
             if (isset($request->licenseId) && $request->licenseId  && $mApplicationTypeId != 1) {
                 $mOldLicenceId = $request->licenseId;
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-                $refOldLicece = TradeLicence::find($mOldLicenceId);
+                return  $refOldLicece = TradeLicence::find($mOldLicenceId);
                 if (!$refOldLicece) {
                     throw new Exception("Old Licence Not Found");
                 }
@@ -102,7 +102,7 @@ class TradeApplication extends Controller
                 if ($refOldLicece->pending_status != 5) {
                     throw new Exception("Application Aready Apply Please Track  " . $refOldLicece->application_no);
                 }
-                $refOldOwneres = TradeOwner::owneresByLId($request->licenseId);
+                return $refOldOwneres = TradeOwner::owneresByLId($request->licenseId);
                 $mnaturOfBusiness = TradeParamItemType::itemsById($refOldLicece->nature_of_bussiness);
                 $natur = array();
                 foreach ($mnaturOfBusiness as $val) {
@@ -202,7 +202,7 @@ class TradeApplication extends Controller
         if ($validator->fails()) {
             return responseMsg(false, $validator->errors(), $request->all());
         }
-        return $this->Repository->readLicenceDtl($request->id);
+        return $this->Repository->readLicenceDtl($request);
     }
     # Serial No : 09 
     public function getDenialDetails(Request $request)

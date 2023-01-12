@@ -40,26 +40,26 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(NewConnectionController::class)->group(function () {
         # Citizen View Water Screen For Mobile 
-        Route::post('get-connection-type', 'getConnectionType');                                        //05         // Get Water Connection Type Details mstr
-        Route::post('get-connection-through', 'getConnectionThrough');                                  //06        // Get Water Connection Through Details mstr
-        Route::post('get-property-type', 'getPropertyType');                                            //07        // Get Property Type Details mstr
-        Route::post('get-owner-type', 'getOwnerType');                                                  //08        // Get Owner Type Details mstr
-        Route::post('get-ward-no', 'getWardNo');                                                        //09        // Get Ward No According to Saf or Holding Details mstr
+        Route::post('list-connection-type', 'getConnectionType');                                        //05         // Get Water Connection Type Details mstr
+        Route::post('list-connection-through', 'getConnectionThrough');                                  //06        // Get Water Connection Through Details mstr
+        Route::post('list-property-type', 'getPropertyType');                                            //07        // Get Property Type Details mstr
+        Route::post('list-owner-type', 'getOwnerType');                                                  //08        // Get Owner Type Details mstr
+        Route::post('list-ward-no', 'getWardNo');                                                        //09        // Get Ward No According to Saf or Holding Details mstr
 
         # water Workflow
-        Route::post('water-inbox', 'waterInbox');                                                       // 
-        Route::post('water-outbox', 'waterOutbox');                                                     //
+        Route::post('list-inbox', 'waterInbox');                                                        // 
+        Route::post('list-outbox', 'waterOutbox');                                                      //
         Route::post('post-next-level', 'postNextLevel');                                                //
-        Route::post('get-applications-details', 'getApplicationsDetails');                              //
-        Route::post('water-special-inbox', 'waterSpecialInbox');                                        //
-        Route::post('post-escalate', 'postEscalate');                                                   //
-        Route::post('get-water-doc-details', 'getWaterDocDetails');                                     //
-        Route::post('water-doc-status', 'waterDocStatus');                                              //
-        Route::post('approval-rejection-water', 'approvalRejectionWater');                              //
-        Route::post('comment-independent', 'commentIndependent');                                       //
+        Route::post('get-pending-application-by-id', 'getApplicationsDetails');                        //
+        Route::post('list-special-inbox', 'waterSpecialInbox');                                         //
+        Route::post('escalate', 'postEscalate');                                                        //
+        Route::post('list-doc', 'getWaterDocDetails');                                                  //
+        Route::post('verify-doc', 'waterDocStatus');                                                    //
+        Route::post('approval-rejection-application', 'approvalRejectionWater');                        //
+        Route::post('post-message', 'commentIndependent');                                              //
         Route::post('approved-water-applications', 'approvedWaterApplications');                        //
-        Route::post('get-independent-comment', 'getIndependentComment');                                            //
-        // Route::post('get-level-comment', 'getLevelcomment');                                            //
+        Route::post('list-message', 'getIndependentComment');                                //
+        // Route::post('', 'getLevelcomment');                                            //
     });
 });
 
