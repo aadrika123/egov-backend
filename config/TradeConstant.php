@@ -6,24 +6,25 @@
  * | For Trade Licence
  */
 
-return [    
+return [
     "MODULE-ID"     =>  "5",
     "CITIZEN"       => "Citizen",
-    "APPLICATION-TYPE"=>
+    "TRADE_REF_TABLE" => "active_trade_licences.id",
+    "APPLICATION-TYPE" =>
     [
         "NEWLICENSE"    =>  "1",
         "RENEWAL"       =>  "2",
         "AMENDMENT"     =>  "3",
         "SURRENDER"     =>  "4"
     ],
-    "APPLICATION-TYPE-BY-ID"=>
+    "APPLICATION-TYPE-BY-ID" =>
     [
         "1" =>  "NEW LICENSE",
         "2" =>  "RENEWAL",
         "3" =>  "AMENDMENT",
         "4" =>  "SURRENDER"
     ],
-    "USER-TYPE-SHORT-NAME"=>
+    "USER-TYPE-SHORT-NAME" =>
     [
         "SUPER ADMIN"       =>  "SUPER ADMIN",
         "ADMIN"             =>  "ADMIN",
@@ -31,7 +32,7 @@ return [
         "PM"                =>  "PM",
         "Team Leader"       =>  "TL",
         "TL"                =>  "TL",
-        "JUN SUWIDHA KENDRA"=>  "JSK",
+        "JUN SUWIDHA KENDRA" =>  "JSK",
         "JSK"               =>  "JSK",
         "BACK OFFICE"       =>  "BO",
         "BO"                =>  "BO",
@@ -39,22 +40,22 @@ return [
         "DA"                =>  "DA",
         "ULB TAX COLLECTOR" =>  "UTC",
         "UTC"               =>  "UTC",
-        "AJENCY TAX COLLECTOR"=>"TC",
+        "AJENCY TAX COLLECTOR" => "TC",
         "TAX COLLECTOR"     =>  "TC",
         "TC"                =>  "TC",
-        "ATC"               =>  "TC", 
-        "SECTION INCHARGE"  =>  "SI",  
+        "ATC"               =>  "TC",
+        "SECTION INCHARGE"  =>  "SI",
         "SI"                =>  "SI",
         "SECTION HEAD"      =>  "SH",
         "SH"                =>  "SH",
-        "TAX DAROGA"        =>  "TD",  
-        "TD"                =>  "TD", 
-        "JUNIOR ENGINEER"   =>  "JE" , 
-        "JE"                =>  "JE", 
+        "TAX DAROGA"        =>  "TD",
+        "TD"                =>  "TD",
+        "JUNIOR ENGINEER"   =>  "JE",
+        "JE"                =>  "JE",
         "ASSISTANT ENGINEER" => "AE",
         "AE"                =>  "AE",
         "EXECUTIVE OFFICER" =>  "EO",
         "EO"                =>  "EO",
-        
+
     ],
 ];

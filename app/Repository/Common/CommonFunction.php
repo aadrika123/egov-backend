@@ -82,8 +82,8 @@ class CommonFunction implements ICommonFunction
                 )
                 ->join("wf_roles", "wf_roles.id", "wf_workflowrolemaps.wf_role_id")
                 ->where("wf_roles.is_suspended", false)
-                ->where("wf_masters.id", $work_flow_id)
-                ->where("wf_masters.is_suspended", false)
+                ->where("wf_workflows.id", $work_flow_id)
+                ->where("wf_workflows.is_suspended", false)
                 ->orderBy("wf_roles.id")
                 ->get();
             // dd(DB::getQueryLog());
@@ -103,10 +103,10 @@ class CommonFunction implements ICommonFunction
         $backwordForword = array_values($backwordForword)[0] ?? [];
         if ($backwordForword) {
             $data = array_map(function ($val) use ($backwordForword) {
-                if ($val['id'] == $backwordForword['forward_id']) {
+                if ($val['id'] == $backwordForword['forward_role_id']) {
                     return ['forward' => ['id' => $val['id'], 'role_name' => $val['role_name']]];
                 }
-                if ($val['id'] == $backwordForword['backward_id']) {
+                if ($val['id'] == $backwordForword['backward_role_id']) {
                     return ['backward' => ['id' => $val['id'], 'role_name' => $val['role_name']]];
                 }
             }, $workflow_rolse);
@@ -151,9 +151,9 @@ class CommonFunction implements ICommonFunction
             if ($curentUser) {
                 $data = array_filter($data, function ($val) use ($curentUser, $all) { //dd();
                     if ($all) {
-                        return (!in_array($val['id'], [$curentUser['forward_id'], $curentUser['backward_id']]) && $val['id'] != $curentUser['id'] && ($val['forward_id'] || $val['backward_id']));
+                        return (!in_array($val['id'], [$curentUser['forward_role_id'], $curentUser['backward_role_id']]) && $val['id'] != $curentUser['id'] && ($val['forward_id'] || $val['backward_id']));
                     }
-                    return (!in_array($val['id'], [$curentUser['forward_id'], $curentUser['backward_id']]) && $val['id'] != $curentUser['id']);
+                    return (!in_array($val['id'], [$curentUser['forward_role_id'], $curentUser['backward_role_id']]) && $val['id'] != $curentUser['id']);
                 });
             }
             return (array_values($data));
