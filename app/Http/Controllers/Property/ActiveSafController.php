@@ -1052,26 +1052,19 @@ class ActiveSafController extends Controller
 
         try {
             $saf = PropActiveSaf::find($req->safId);
-            $propLevelPending = new PropLevelPending();
+            $track = new WorkflowTrack();
             DB::beginTransaction();
             $initiatorRoleId = $saf->initiator_role_id;
             $saf->current_role = $initiatorRoleId;
             $saf->parked = true;                        //<------ SAF Pending Status true
             $saf->save();
 
-            // $preLevelPending = $propLevelPending->getLevelBySafReceiver($req->safId, $req->currentRoleId);
-            // $preLevelPending->remarks = $req->comment;
-            // $preLevelPending->forward_date = $this->_todayDate->format('Y-m-d');
-            // $preLevelPending->forward_time = $this->_todayDate->format('H:i:m');
-            // $preLevelPending->save();
-
-            // $levelPending = new PropLevelPending();
-            // $levelPending->saf_id = $req->safId;
-            // $levelPending->sender_role_id = $req->currentRoleId;
-            // $levelPending->receiver_role_id = $initiatorRoleId;
-            // $levelPending->user_id = authUser()->id;
-            // $levelPending->sender_user_id = authUser()->id;
-            // $levelPending->save();
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $saf->workflow_id;
+            $metaReqs['refTableDotId'] = 'prop_active_safs.id';
+            $metaReqs['refTableIdValue'] = $req->safId;
+            $req->request->add($metaReqs);
+            $track->saveTrack($req);
 
             DB::commit();
             return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
@@ -1311,8 +1304,7 @@ class ActiveSafController extends Controller
 
             $applicationDtls = $paymentData->getApplicationId($req->paymentId);
             // Saf Payment
-            // $safId = json_decode($applicationDtls)->applicationId;
-            $safId = 1257;
+            $safId = json_decode($applicationDtls)->applicationId;
 
             $reqSafId = new Request(['id' => $safId]);
             $activeSafDetails = $this->details($reqSafId);
@@ -1368,9 +1360,9 @@ class ActiveSafController extends Controller
                 "totalPaidAmount" => $propTrans->amount,
                 "paidAmtInWords" => getIndianCurrency($propTrans->amount),
             ];
-            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "451ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsg(false, $e->getMessage(), "", "010116", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1381,18 +1373,30 @@ class ActiveSafController extends Controller
     public function readDescriptions($checkOtherTaxes)
     {
         $taxes = [
-            'Holding Tax' => $checkOtherTaxes->holding_tax,
-            'Water Tax' => $checkOtherTaxes->water_tax,
-            'Education Cess' => $checkOtherTaxes->education_cess,
-            'Latrine Tax' => $checkOtherTaxes->latrine_tax
+            [
+                "keyString" => "Holding Tax",
+                "value" => $checkOtherTaxes->holding_tax
+            ],
+            [
+                "keyString" => "Water Tax",
+                "value" => $checkOtherTaxes->water_tax
+            ],
+            [
+                "keyString" => "Education Cess",
+                "value" => $checkOtherTaxes->education_cess
+            ],
+            [
+                "keyString" => "Latrine Tax",
+                "value" => $checkOtherTaxes->latrine_tax
+            ]
         ];
         $filtered = collect($taxes)->filter(function ($tax, $key) {
-            if ($tax > 0) {
-                return $key;
+            if ($tax['value'] > 0) {
+                return $tax['keyString'];
             }
         });
 
-        return $filtered->keys();
+        return $filtered;
     }
     /**
      * | Read Penalty Tax Details with Penalties and final payable amount(1.2)
@@ -1400,18 +1404,29 @@ class ActiveSafController extends Controller
     public function readPenalyPmtAmts($lateAssessPenalty = 0, $onePercPenalty = 0, $amount)
     {
         $amount = [
-            "Late Assessment Fine(Rule 14.1)" => $lateAssessPenalty,
-            "1% Monthly Penalty" => roundFigure($onePercPenalty),
-            "Total Paid Amount" => $amount,
-            "Paid Amount In Words" => getIndianCurrency($amount),
-            "Remaining Amount" => 0,
+            [
+                "keyString" => "Late Assessment Fine(Rule 14.1)",
+                "value" => $lateAssessPenalty
+            ],
+            [
+                "keyString" => "1% Monthly Penalty",
+                "value" => roundFigure($onePercPenalty)
+            ],
+            [
+                "keyString" => "Total Paid Amount",
+                "value" => roundFigure($amount)
+            ],
+            [
+                "keyString" => "Remaining Amount",
+                "value" => 0
+            ]
         ];
 
-        $filtered = collect($amount)->filter(function ($value, $key) {
-            return $value > 0;
+        $tax = collect($amount)->filter(function ($value, $key) {
+            return $value['value'] > 0;
         });
 
-        return $filtered;
+        return $tax;
     }
 
     /**

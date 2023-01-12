@@ -305,7 +305,7 @@ class Trade implements ITrade
                     if ($refNoticeDetails) {
                         $refDenialId = $refNoticeDetails->dnialid;
                         $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date  
-                        if ($firm_date > $mNoticeDate) {
+                        if ($firm_date < $mNoticeDate) {
                             throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date ");
                         }
                     }
@@ -663,6 +663,7 @@ class Trade implements ITrade
             $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
             $args['noticeDate']          = $mNoticeDate;
             $chargeData = $this->cltCharge($args);
+
             if ($chargeData['response'] == false || $chargeData['total_charge'] != $request->totalCharge) {
                 throw new Exception("Payble Amount Missmatch!!!");
             }
@@ -1942,18 +1943,20 @@ class Trade implements ITrade
                 throw new Exception("You Can Not Apply New Licence");
             }
             // DB::enableQueryLog();
+
+            // commented by mrinal
             $data = TradeLicence::select(
                 "trade_licences.*",
                 "owner.*",
                 DB::raw("ulb_ward_masters.ward_name as ward_no,'trade_licences' AS tbl")
             )
-                ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "active_licences.ward_id")
+                ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                 ->leftjoin(
                     DB::raw("(SELECT temp_id,
                                     string_agg(owner_name,',') as owner_name,
                                     string_agg(guardian_name,',') as guardian_name,
-                                    string_agg(mobile,',') as mobile
-                                    FROM active_trade_owners
+                                    string_agg(mobile_no,',') as mobile
+                                    FROM trade_owners
                                     WHERE is_active =true
                                     GROUP BY temp_id
                                     ) owner
@@ -1967,19 +1970,27 @@ class Trade implements ITrade
                 ->where("trade_licences.ulb_id", $refUlbId)
                 // ->where('trade_licences.update_status',0)
                 ->first();
-            // dd(DB::getQueryLog());
+
+            // $data = TradeLicence::select('*')
+            //     ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+            //     ->where('trade_licences.is_active', TRUE)
+            //     ->where('trade_licences.license_no', $mLicenceNo)
+            //     ->where("trade_licences.ulb_id", $refUlbId)
+            //     ->first();
+            // return $data;
+
             if (!$data) {
                 $data = ActiveTradeLicence::select(
                     "active_trade_licences.*",
                     "owner.*",
                     DB::raw("ulb_ward_masters.ward_name as ward_no,'active_trade_licences' AS tbl")
                 )
-                    ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "active_licences.ward_id")
+                    ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "active_trade_licences.ward_id")
                     ->leftjoin(
                         DB::raw("(SELECT temp_id,
                                 string_agg(owner_name,',') as owner_name,
                                 string_agg(guardian_name,',') as guardian_name,
-                                string_agg(mobile,',') as mobile
+                                string_agg(mobile_no,',') as mobile
                                 FROM active_trade_owners
                                 WHERE is_active =true
                                 GROUP BY temp_id
@@ -2001,13 +2012,13 @@ class Trade implements ITrade
                     "owner.*",
                     DB::raw("ulb_ward_masters.ward_name as ward_no,'rejected_trade_licences' AS tbl")
                 )
-                    ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "active_licences.ward_id")
+                    ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "rejected_trade_licences.ward_id")
                     ->leftjoin(
                         DB::raw("(SELECT temp_id,
                                 string_agg(owner_name,',') as owner_name,
                                 string_agg(guardian_name,',') as guardian_name,
-                                string_agg(mobile,',') as mobile
-                                FROM active_trade_owners
+                                string_agg(mobile_no,',') as mobile
+                                FROM rejected_trade_owners
                                 WHERE is_active =true
                                 GROUP BY temp_id
                                 ) owner
@@ -2023,12 +2034,12 @@ class Trade implements ITrade
             }
             if (!$data) {
                 throw new Exception("No Data Found");
-            } elseif ($data->valid_upto > $mNextMonth && $mApplicationTypeId != 4 && $data->tbl = "trade_licences") {
+            } elseif ($data->valid_upto > $mNextMonth && $mApplicationTypeId != 4 && $data->tbl == "trade_licences") {
                 throw new Exception("Licence Valid Upto " . $data->valid_upto);
-            } elseif ($data->tbl = "active_trade_licences") {
+            } elseif ($data->tbl == "active_trade_licences") {
                 throw new Exception("Application Already Applied. Please Track  " . $data->application_no);
             }
-            if ($mApplicationTypeId == 4 && $data->valid_upto < Carbon::now()->format('Y-m-d') && $data->tbl = "trade_licences") {
+            if ($mApplicationTypeId == 4 && $data->valid_upto < Carbon::now()->format('Y-m-d') && $data->tbl == "trade_licences") {
                 throw new Exception("You Can Not Apply Surrender. Application No: " . $data->application_no . " Of Licence No: " . $data->license_no . " Expired On " . $data->valid_upto . ".");
             }
             return responseMsg(true, "", remove_null($data));
@@ -3838,7 +3849,7 @@ class Trade implements ITrade
                 ->where("trade_notice_consumer_dtls.notice_no", $notice_no)
                 // ->where("trade_denial_notices.created_on","<",$firm_date)
                 ->where("trade_notice_consumer_dtls.status", "=", 5)
-                ->where("trade_denial_consumer_dtls.ulb_id", $ulb_id)
+                ->where("trade_notice_consumer_dtls.ulb_id", $ulb_id)
                 ->first();
             return $data;
         } catch (Exception $e) {

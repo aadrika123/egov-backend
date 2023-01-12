@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiMasterController;
 use App\Http\Controllers\CitizenController;
+use App\Http\Controllers\DemoController;
 use App\Http\Controllers\Menu\MenuController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\SelfAdvertisementController;
@@ -419,6 +420,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('role-menu/get-role-by-menu', 'getRoleWiseMenu');     //<--------- (May not be USED)    // get menu according to the user role
         Route::post('sub-menu/tree-structure', 'getTreeStructureMenu');      // Generation of the menu tree Structure
     });
+});
+
+/**
+ * This Route is for Demo Purpose
+ */
+Route::controller(DemoController::class)->group(function () {
+    Route::post('water-connection', 'waterConnection');
 });
 
 #---------------------------- document read ------------------------------
