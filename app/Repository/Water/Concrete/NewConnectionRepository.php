@@ -554,7 +554,7 @@ class NewConnectionRepository implements iNewConnection
             'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
             'data' => $ownerList
         ];
-        $fullDetailsData['fullDetailsData']['tableArray'] = new Collection($ownerView);
+        $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
 
         # Level comment
         $mtableId = $applicationDetails->first()->id;
@@ -595,15 +595,15 @@ class NewConnectionRepository implements iNewConnection
     {
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
-            ['displayString' => 'Ward No',              'value' => $collectionApplications->ward_id],
-            ['displayString' => 'Type of Connection',   'value' => $collectionApplications->connection_type],
-            ['displayString' => 'Property Type',        'value' => $collectionApplications->property_type],
-            ['displayString' => 'Connection Through',   'value' => $collectionApplications->connection_through],
-            ['displayString' => 'Category',             'value' => $collectionApplications->category],
-            ['displayString' => 'Flat Count',           'value' => $collectionApplications->flat_count],
-            ['displayString' => 'Pipeline Type',        'value' => $collectionApplications->pipeline_type],
-            ['displayString' => 'Apply From',           'value' => $collectionApplications->apply_from],
-            ['displayString' => 'Apply Date',           'value' => $collectionApplications->apply_date]
+            ['displayString' => 'Ward No',            'key' => 'WardNo',              'value' => $collectionApplications->ward_id],
+            ['displayString' => 'Type of Connection', 'key' => 'TypeOfConnection',    'value' => $collectionApplications->connection_type],
+            ['displayString' => 'Property Type',      'key' => 'PropertyType',        'value' => $collectionApplications->property_type],
+            ['displayString' => 'Connection Through', 'key' => 'ConnectionThrough',   'value' => $collectionApplications->connection_through],
+            ['displayString' => 'Category',           'key' => 'Category',            'value' => $collectionApplications->category],
+            ['displayString' => 'Flat Count',         'key' => 'FlatCount',           'value' => $collectionApplications->flat_count],
+            ['displayString' => 'Pipeline Type',      'key' => 'PipelineType',        'value' => $collectionApplications->pipeline_type],
+            ['displayString' => 'Apply From',         'key' => 'ApplyFrom',           'value' => $collectionApplications->apply_from],
+            ['displayString' => 'Apply Date',         'key' => 'ApplyDate',           'value' => $collectionApplications->apply_date]
         ]);
     }
 
@@ -626,12 +626,12 @@ class NewConnectionRepository implements iNewConnection
         if (!is_null($collectionApplications->saf_no)) {
             array_push($propertyDetails, ['displayString' => 'Saf No',      'value' => $collectionApplications->saf_no]);
         }
-        array_push($propertyDetails, ['displayString' => 'Applied By',      'value' => 'Id Proof']);
-        array_push($propertyDetails, ['displayString' => 'Ward No',         'value' => $collectionApplications->ward_id]);
-        array_push($propertyDetails, ['displayString' => 'Area in Sqft',    'value' => $collectionApplications->area_sqft]);
-        array_push($propertyDetails, ['displayString' => 'Address',         'value' => $collectionApplications->address]);
-        array_push($propertyDetails, ['displayString' => 'Landmark',        'value' => $collectionApplications->landmark]);
-        array_push($propertyDetails, ['displayString' => 'Pin',             'value' => $collectionApplications->pin]);
+        array_push($propertyDetails, ['displayString' => 'Applied By',    'key' => 'AppliedBy',   'value' => 'Id Proof']);
+        array_push($propertyDetails, ['displayString' => 'Ward No',       'key' => 'WardNo',      'value' => $collectionApplications->ward_id]);
+        array_push($propertyDetails, ['displayString' => 'Area in Sqft',  'key' => 'AreaInSqft',  'value' => $collectionApplications->area_sqft]);
+        array_push($propertyDetails, ['displayString' => 'Address',       'key' => 'Address',     'value' => $collectionApplications->address]);
+        array_push($propertyDetails, ['displayString' => 'Landmark',      'key' => 'Landmark',    'value' => $collectionApplications->landmark]);
+        array_push($propertyDetails, ['displayString' => 'Pin',           'key' => 'Pin',         'value' => $collectionApplications->pin]);
 
         return $propertyDetails;
     }
@@ -646,10 +646,10 @@ class NewConnectionRepository implements iNewConnection
     {
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
-            ['displayString' => 'K.No',             'value' => $collectionApplications->elec_k_no],
-            ['displayString' => 'Bind Book No',     'value' => $collectionApplications->elec_bind_book_no],
-            ['displayString' => 'Elec Account No',  'value' => $collectionApplications->elec_account_no],
-            ['displayString' => 'Elec Category',    'value' => $collectionApplications->elec_category]
+            ['displayString' => 'K.No',             'key' => 'KNo',            'value' => $collectionApplications->elec_k_no],
+            ['displayString' => 'Bind Book No',     'key' => 'BindBookNo',    'value' => $collectionApplications->elec_bind_book_no],
+            ['displayString' => 'Elec Account No',  'key' => 'ElecAccountNo', 'value' => $collectionApplications->elec_account_no],
+            ['displayString' => 'Elec Category',    'key' => 'ElecCategory',   'value' => $collectionApplications->elec_category]
         ]);
     }
 
@@ -667,7 +667,8 @@ class NewConnectionRepository implements iNewConnection
                 $value['guardian_name'],
                 $value['mobile_no'],
                 $value['email'],
-                $value['']
+                $value['city'],
+                $value['district']
             ];
         });
     }
@@ -685,14 +686,14 @@ class NewConnectionRepository implements iNewConnection
         $ownerDetail = collect($ownerDetails)->first();
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
-            ['displayString' => 'Ward No.',             'value' => $collectionApplications->ward_id],
-            ['displayString' => 'Application No.',      'value' => $collectionApplications->application_no],
-            ['displayString' => 'Owner Name',           'value' => $ownerDetail['owner_name']],
-            ['displayString' => 'Property Type',        'value' => $collectionApplications->property_type],
-            ['displayString' => 'Connection Type',      'value' => $collectionApplications->connection_type],
-            ['displayString' => 'Connection Through',   'value' => $collectionApplications->connection_through],
-            ['displayString' => 'Apply-Date',           'value' => $collectionApplications->apply_date],
-            ['displayString' => 'Total Area (sqt)',     'value' => $collectionApplications->area_sqft]
+            ['displayString' => 'Ward No.',             'key' => 'WardNo.',           'value' => $collectionApplications->ward_id],
+            ['displayString' => 'Application No.',      'key' => 'ApplicationNo.',    'value' => $collectionApplications->application_no],
+            ['displayString' => 'Owner Name',           'key' => 'OwnerName',         'value' => $ownerDetail['owner_name']],
+            ['displayString' => 'Property Type',        'key' => 'PropertyType',      'value' => $collectionApplications->property_type],
+            ['displayString' => 'Connection Type',      'key' => 'ConnectionType',    'value' => $collectionApplications->connection_type],
+            ['displayString' => 'Connection Through',   'key' => 'ConnectionThrough', 'value' => $collectionApplications->connection_through],
+            ['displayString' => 'Apply-Date',           'key' => 'ApplyDate',         'value' => $collectionApplications->apply_date],
+            ['displayString' => 'Total Area (sqt)',     'key' => 'TotalArea',         'value' => $collectionApplications->area_sqft]
         ]);
     }
 
