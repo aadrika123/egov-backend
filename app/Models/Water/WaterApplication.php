@@ -96,4 +96,16 @@ class WaterApplication extends Model
             ->where('water_applications.id', $request->id)
             ->where('water_applications.status', 1);
     }
+
+
+    /**
+     * |----------------- is site is verified -------------------------|
+     * | @param $req
+     */
+    public function markSiteVerification($id)
+    {
+        $activeSaf = WaterApplication::find($id);
+        $activeSaf->is_field_verified = true;
+        $activeSaf->save();
+    }
 }

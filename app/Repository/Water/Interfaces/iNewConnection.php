@@ -25,4 +25,5 @@ interface iNewConnection
    public function approvalRejectionWater($request);                    // Final Approval and Rejection of water Applications
    public function commentIndependent($request);                        // Indipendent Commenting on the Application
    public function getApprovedWater($request);                          // 
+   public function fieldVerifiedInbox($request);                        //
 }

@@ -482,7 +482,7 @@ class ActiveSafController extends Controller
                 ->get();
 
             $safInbox = $data->whereIn('ward_mstr_id', $occupiedWardsId);
-            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010125, 1.0, "", "POST", $mDeviceId);
+            return responseMsgs(true, "field Verified Inbox!", remove_null($safInbox), 010125, 1.0, "", "POST", $mDeviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $mDeviceId);
         }

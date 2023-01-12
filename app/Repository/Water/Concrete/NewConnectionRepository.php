@@ -2,6 +2,7 @@
 
 namespace App\Repository\Water\Concrete;
 
+use App\Http\Requests\Water\reqSiteVerification;
 use App\Models\CustomDetail;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
@@ -12,6 +13,7 @@ use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterLevelpending;
 use App\Models\Water\WaterPenaltyInstallment;
+use App\Models\Water\WaterSiteInspection;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfTrack;
 use App\Models\Workflows\WfWardUser;
@@ -51,6 +53,7 @@ class NewConnectionRepository implements iNewConnection
     private $_waterWorkflowId;
     private $_waterWorkId;
     private $_waterModulId;
+    private $_juniorEngRoleId;
 
     public function __construct()
     {
@@ -59,6 +62,7 @@ class NewConnectionRepository implements iNewConnection
         $this->_waterWorkflowId = Config::get('workflow-constants.WATER_MASTER_ID');
         $this->_waterWorkId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
         $this->_waterModulId = Config::get('module-constants.WATER_MODULE_ID');
+        $this->_juniorEngRoleId  = Config::get('workflow-constants.WATER_JE_ROLE_ID');
     }
 
     /**
@@ -332,8 +336,12 @@ class NewConnectionRepository implements iNewConnection
         // ->where('wf_role_id',$currentRolecount)
         // ->where('workflow_id',$this->_waterWorkflowId)
         // ->first();
+
         $waterApplication = WaterApplication::find($req->appId);
         $waterApplication->current_role = $req->receiverRoleId;
+        if ($req->senderRoleId == $this->_juniorEngRoleId) {
+            $waterApplication->is_field_verified = true;
+        }
         $waterApplication->save();
 
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
@@ -556,7 +564,7 @@ class NewConnectionRepository implements iNewConnection
         $ownerView = [
             'headerTitle' => 'Owner Details',
             'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
-            'data' => $ownerList
+            'tableData' => $ownerList
         ];
         $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
 
@@ -856,5 +864,81 @@ class NewConnectionRepository implements iNewConnection
             return responseMsgs(true, "Consumer Details!", remove_null($approvedWater), "", "01", ".ms", "POST", $request->deviceId);
         }
         throw new Exception("Data Not Found!");
+    }
+
+    /**
+     * |-------------------- field Verified Inbox list ----------------------------|
+     * | @param req
+        | Serial No : 
+        | Working
+     */
+    public function fieldVerifiedInbox($req)
+    {
+        try {
+            $mWfWardUser = new WfWardUser();
+            $userId = auth()->user()->id;
+            $ulbId = auth()->user()->ulb_id;
+
+            $roleId = Config::get('waterConstaint.ROLE-LABEL.JE');
+
+            $refWard = $mWfWardUser->getWardsByUserId($userId);
+            $wardId = $refWard->map(function ($value, $key) {
+                return $value->ward_id;
+            });
+
+            $waterList = $this->getWaterApplicatioList($ulbId)
+                ->where('water_applications.current_role', $roleId)
+                ->whereIn('water_applications.ward_id', $wardId)
+                ->where('is_field_verified', true)
+                ->orderByDesc('water_applications.id')
+                ->get();
+
+            return responseMsgs(true, "field Verified Inbox", remove_null($waterList), 010125, 1.0, "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", "");
+        }
+    }
+
+
+    /**
+     * |--------------------------- field Verification of water -----------------------------------|
+     * | @param req
+     * | @var 
+        | Serial No : 
+        | Flag / work on saving the vrified details
+        | API
+     */
+    public function fieldVerification(reqSiteVerification $req)
+    {
+        try {
+            $juniorEngRoleId = Config::get('waterConstaint.ROLE-LABEL.JE');
+            $mWaterApplication = new WaterApplication();
+            $verification = new WaterSiteInspection();
+            $verificationStatus = $req->verificationStatus;                                             // Verification Status true or false
+
+            switch ($req->currentRoleId) {
+                case $juniorEngRoleId;                                                                  // In Case of Agency TAX Collector
+                    if ($verificationStatus == 1) {
+                        $req->agencyVerification = true;
+                        $msg = "Site Successfully Verified";
+                    }
+                    if ($verificationStatus == 0) {
+                        $req->agencyVerification = false;
+                        $msg = "Site Successfully rebuted";
+                    }
+                    $mWaterApplication->markSiteVerification($req);
+                    break;
+                default:
+                    return responseMsg(false, "Forbidden Access", "");
+            }
+            // DB::beginTransaction();
+            // // Verification Store
+            // $verification->store($req);                                                                          // Model function to store verification and get the id
+            // DB::commit();
+            return responseMsgs(true, $msg, "", "010118", "1.0", "310ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }
