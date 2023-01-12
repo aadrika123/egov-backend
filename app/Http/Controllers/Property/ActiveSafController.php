@@ -1360,9 +1360,9 @@ class ActiveSafController extends Controller
                 "totalPaidAmount" => $propTrans->amount,
                 "paidAmtInWords" => getIndianCurrency($propTrans->amount),
             ];
-            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "451ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsg(false, $e->getMessage(), "", "010116", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1373,18 +1373,30 @@ class ActiveSafController extends Controller
     public function readDescriptions($checkOtherTaxes)
     {
         $taxes = [
-            'Holding Tax' => $checkOtherTaxes->holding_tax,
-            'Water Tax' => $checkOtherTaxes->water_tax,
-            'Education Cess' => $checkOtherTaxes->education_cess,
-            'Latrine Tax' => $checkOtherTaxes->latrine_tax
+            [
+                "keyString" => "Holding Tax",
+                "value" => $checkOtherTaxes->holding_tax
+            ],
+            [
+                "keyString" => "Water Tax",
+                "value" => $checkOtherTaxes->water_tax
+            ],
+            [
+                "keyString" => "Education Cess",
+                "value" => $checkOtherTaxes->education_cess
+            ],
+            [
+                "keyString" => "Latrine Tax",
+                "value" => $checkOtherTaxes->latrine_tax
+            ]
         ];
         $filtered = collect($taxes)->filter(function ($tax, $key) {
-            if ($tax > 0) {
-                return $key;
+            if ($tax['value'] > 0) {
+                return $tax['keyString'];
             }
         });
 
-        return $filtered->keys();
+        return $filtered;
     }
     /**
      * | Read Penalty Tax Details with Penalties and final payable amount(1.2)
@@ -1392,15 +1404,30 @@ class ActiveSafController extends Controller
     public function readPenalyPmtAmts($lateAssessPenalty = 0, $onePercPenalty = 0, $amount)
     {
         $amount = [
-            "Late Assessment Fine(Rule 14.1)" => $lateAssessPenalty,
-            "1% Monthly Penalty" => roundFigure($onePercPenalty),
-            "Total Paid Amount" => $amount,
-            "Paid Amount In Words" => getIndianCurrency($amount),
-            "Remaining Amount" => 0,
+            [
+                "keyString" => "Late Assessment Fine(Rule 14.1)",
+                "value" => $lateAssessPenalty
+            ],
+            [
+                "keyString" => "1% Monthly Penalty",
+                "value" => roundFigure($onePercPenalty)
+            ],
+            [
+                "keyString" => "Total Paid Amount",
+                "value" => roundFigure($amount)
+            ],
+            [
+                "keyString" => "Paid Amount In Words",
+                "value" => getIndianCurrency($amount)
+            ],
+            [
+                "keyString" => "Remaining Amount",
+                "value" => 0
+            ]
         ];
 
         $tax = collect($amount)->filter(function ($value, $key) {
-            return $value > 0;
+            return $value['value'] > 0;
         });
 
         return $tax;
