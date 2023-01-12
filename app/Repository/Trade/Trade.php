@@ -1738,7 +1738,6 @@ class Trade implements ITrade
             $mworkflowRoles = $this->_parent->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
             $mileSton = $this->_parent->sortsWorkflowRols($mworkflowRoles);
 
-            return $data;
 
             $data['licenceDtl']     = $refApplication;
             $data['ownerDtl']       = $refOwnerDtl;
