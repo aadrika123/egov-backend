@@ -1417,10 +1417,6 @@ class ActiveSafController extends Controller
                 "value" => roundFigure($amount)
             ],
             [
-                "keyString" => "Paid Amount In Words",
-                "value" => getIndianCurrency($amount)
-            ],
-            [
                 "keyString" => "Remaining Amount",
                 "value" => 0
             ]
