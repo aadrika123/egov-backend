@@ -50,7 +50,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('list-inbox', 'waterInbox');                                                        // 
         Route::post('list-outbox', 'waterOutbox');                                                      //
         Route::post('post-next-level', 'postNextLevel');                                                //
-        Route::post('get-pending-application-by-id', 'getApplicationsDetails');                        //
+        Route::post('get-pending-application-by-id', 'getApplicationsDetails');                         //
         Route::post('list-special-inbox', 'waterSpecialInbox');                                         //
         Route::post('escalate', 'postEscalate');                                                        //
         Route::post('list-doc', 'getWaterDocDetails');                                                  //
@@ -58,8 +58,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('approval-rejection-application', 'approvalRejectionWater');                        //
         Route::post('post-message', 'commentIndependent');                                              //
         Route::post('approved-water-applications', 'approvedWaterApplications');                        //
-        Route::post('list-message', 'getIndependentComment');                                //
-        // Route::post('', 'getLevelcomment');                                            //
+        Route::post('list-message', 'getIndependentComment');                                           //
+        Route::post('list-field-verified-inbox', 'fieldVerifiedInbox');                                 //
+        // Route::post('', 'getLevelcomment');                                                          //
     });
 });
 
@@ -74,7 +75,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('citizenApplications', 'getCitizenApplication');                                     //10
         Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
-        Route::post('documentUpload', 'documentUpload');                                                //13
+        Route::post('upload-document', 'documentUpload');                                                //13
         Route::post('getUploadedDoc', 'getUploadDocuments');                                            //14
     });
 });
