@@ -213,6 +213,7 @@ class RainWaterHarvestingController extends Controller
             $auth = auth()->user();
             $userId = $auth->id;
             $ulbId = $auth->ulb_id;
+            $harvestingList = new PropActiveHarvesting();
 
             $workflowRoles = $this->getRoleIdByUserId($userId);
             $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
@@ -223,8 +224,6 @@ class RainWaterHarvestingController extends Controller
             $occupiedWards = $refWard->map(function ($value, $key) {
                 return $value->ward_id;
             });
-
-            $harvestingList = new PropActiveHarvesting();
             $harvesting = $harvestingList->getHarvestingList($ulbId)
                 ->whereNotIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
@@ -245,20 +244,24 @@ class RainWaterHarvestingController extends Controller
      * |@var applicationId
      * | Rating : 2
      */
-    public function escalateApplication($req)
+    public function postEscalate(Request $req)
     {
+        $req->validate([
+            'id' => 'required|integer',
+            'escalateStatus' => 'required|bool',
+        ]);
         try {
             $userId = auth()->user()->id;
             if ($req->escalateStatus == 1) {
                 $harvesting = PropActiveHarvesting::find($req->id);
-                $harvesting->is_escalate = 1;
+                $harvesting->is_escalated = 1;
                 $harvesting->escalated_by = $userId;
                 $harvesting->save();
                 return responseMsg(true, "Successfully Escalated the application", "");
             }
             if ($req->escalateStatus == 0) {
                 $harvesting = PropActiveHarvesting::find($req->id);
-                $harvesting->is_escalate = 0;
+                $harvesting->is_escalated = 0;
                 $harvesting->escalated_by = null;
                 $harvesting->save();
                 return responseMsg(true, "Successfully De-Escalated the application", "");
@@ -277,6 +280,7 @@ class RainWaterHarvestingController extends Controller
     public function specialInbox()
     {
         try {
+            $harvestingList = new PropActiveHarvesting();
             $auth = auth()->user();
             $userId = $auth->id;
             $ulbId = $auth->ulb_id;
@@ -286,8 +290,8 @@ class RainWaterHarvestingController extends Controller
                 return $ward->ward_id;
             });
 
-            $harvesting = $this->getHarvestingList($ulbId)                                         // Get harvesting
-                ->where('prop_active_harvestings.is_escalate', true)
+            $harvesting = $harvestingList->getHarvestingList($ulbId)                                         // Get harvesting
+                ->where('prop_active_harvestings.is_escalated', true)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_harvestings.id')
                 ->get();
@@ -448,14 +452,16 @@ class RainWaterHarvestingController extends Controller
     {
         try {
             $req->validate([
-                'workflowId' => 'required',
                 'roleId' => 'required',
                 'harvestingId' => 'required',
                 'status' => 'required',
 
             ]);
-            // Check if the Current User is Finisher or Not                                                                                 
-            $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
+            // Check if the Current User is Finisher or Not         
+            $activeHarvesting = PropActiveHarvesting::query()
+                ->where('id', $req->harvestingId)
+                ->first();
+            $getFinisherQuery = $this->getFinisherId($activeHarvesting->workflow_id);                                 // Get Finisher using Trait
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
             if ($refGetFinisher->role_id != $req->roleId) {
                 return responseMsg(false, " Access Forbidden", "");
@@ -465,9 +471,6 @@ class RainWaterHarvestingController extends Controller
             // Approval
             if ($req->status == 1) {
                 // Harvesting Application replication
-                $activeHarvesting = PropActiveHarvesting::query()
-                    ->where('id', $req->harvestingId)
-                    ->first();
 
                 $approvedHarvesting = $activeHarvesting->replicate();
                 $approvedHarvesting->setTable('prop_harvestings');
@@ -480,10 +483,6 @@ class RainWaterHarvestingController extends Controller
             // Rejection
             if ($req->status == 0) {
                 // Harvesting Application replication
-                $activeHarvesting = PropActiveHarvesting::query()
-                    ->where('id', $req->harvestingId)
-                    ->first();
-
                 $rejectedHarvesting = $activeHarvesting->replicate();
                 $rejectedHarvesting->setTable('prop_rejected_harvestings');
                 $rejectedHarvesting->id = $activeHarvesting->id;

@@ -18,6 +18,7 @@ class PropActiveHarvesting extends Model
     {
         return PropActiveHarvesting::select(
             'prop_active_harvestings.id',
+            'prop_active_harvestings.application_no',
             'a.applicant_name',
             'a.ward_mstr_id',
             'u.ward_name as ward_no',
