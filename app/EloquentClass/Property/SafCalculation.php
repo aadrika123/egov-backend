@@ -1118,9 +1118,8 @@ class SafCalculation
         $rebatePerc = $this->_GRID['demand']['specialRebatePerc'];
         $mRebateAmount = $this->_GRID['demand']['rebateAmount'];
         $mSpecialRebateAmount = roundFigure(($totalDemand * $rebatePerc) / 100);
-        $mLateAssessPenalty = $this->_GRID['demand']['lateAssessmentPenalty'];
         $this->_GRID['demand']['specialRebateAmount'] = $mSpecialRebateAmount;
-        $payableAmount = $totalDemand - ($mSpecialRebateAmount + $mRebateAmount) + $mLateAssessPenalty;
+        $payableAmount = $totalDemand - ($mSpecialRebateAmount + $mRebateAmount);
         return roundFigure($payableAmount);
     }
 
