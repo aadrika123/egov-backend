@@ -1013,7 +1013,7 @@ class SafCalculation
         $this->_GRID['demand']['lateAssessmentStatus'] = $lateAssessmentStatus;
         $this->_GRID['demand']['lateAssessmentPenalty'] = $fine;
 
-        $taxes = collect($this->_GRID['demand'])->only(['totalTax', 'totalOnePercPenalty', 'lateAssessmentPenalty']);
+        $taxes = collect($this->_GRID['demand'])->only(['totalTax', 'totalOnePercPenalty', 'lateAssessmentPenalty']);   // All Penalties are Added
         $totalDemandAmount = $taxes->sum();                                                                             // Total Demand with Penalty
         $this->_GRID['demand']['adjustAmount'] = 0;
         $this->_GRID['demand']['totalDemand'] = roundFigure($totalDemandAmount);
