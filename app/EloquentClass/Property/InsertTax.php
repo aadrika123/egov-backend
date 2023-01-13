@@ -22,9 +22,8 @@ class InsertTax
 
         foreach ($details as $detail) {
             $safDemand = new PropSafsDemand();
-            $safDemand->saf_id = $safId;
             $safDemand->qtr = $detail['qtr'];
-            $this->tSaveSafDemand($safDemand, $detail);     // <-------- Trait to Save Fields
+            $this->tSaveSafDemand($safDemand, $detail, $safId);     // <-------- Trait to Save Fields
             $safDemand->paid_status = 0;
             $safDemand->fyear = $detail['quarterYear'];
             $safDemand->due_date = $detail['dueDate'];

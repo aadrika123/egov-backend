@@ -17,6 +17,7 @@ use App\Http\Controllers\Property\SafDemandController;
 use App\Http\Controllers\Property\DocumentController;
 use App\Http\Controllers\CustomController;
 use App\Http\Controllers\property\ClusterController;
+use Illuminate\Routing\Router;
 use Symfony\Component\Routing\DependencyInjection\RoutingResolverPass;
 
 /**
@@ -147,25 +148,27 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
        | Serial No : 07
    */
   Route::controller(ConcessionController::class)->group(function () {
-    Route::post('concession/apply-concession', 'applyConcession');      //01                
-    Route::post('concession/postHolding', 'postHolding');               //02  
-    Route::post('concession/inbox', 'inbox');                           //03               // Concession Inbox 
-    Route::post('concession/outbox', 'outbox');                         //04               // Concession Outbox
-    Route::post('concession/details', 'getDetailsById');                //05               // Get Concession Details by ID
-    Route::post('concession/escalate', 'escalateApplication');          //06               // escalate application
-    Route::post('concession/special-inbox', 'specialInbox');            //07               // escalated application inbox
-    Route::post('concession/btc-inbox', 'btcInbox');                    //17               // Back To Citizen Inbox
+    Route::post('concession/apply-concession', 'applyConcession');                      //01                
+    Route::post('concession/postHolding', 'postHolding');                               //02  
+    Route::post('concession/inbox', 'inbox');                                           //03               // Concession Inbox 
+    Route::post('concession/outbox', 'outbox');                                         //04               // Concession Outbox
+    Route::post('concession/details', 'getDetailsById');                                //05               // Get Concession Details by ID
+    Route::post('concession/escalate', 'escalateApplication');                          //06               // escalate application
+    Route::post('concession/special-inbox', 'specialInbox');                            //07               // escalated application inbox
+    Route::post('concession/btc-inbox', 'btcInbox');                                    //17               // Back To Citizen Inbox
 
-    Route::post('concession/next-level', 'postNextLevel');              //08               // Backward Forward Application
-    Route::post('concession/approvalrejection', 'approvalRejection');   //09               // Approve Reject Application
-    Route::post('concession/backtocitizen', 'backToCitizen');           //10               // Back To Citizen 
-    Route::post('concession/owner-details', 'getOwnerDetails');         //11
+    Route::post('concession/next-level', 'postNextLevel');                              //08               // Backward Forward Application
+    Route::post('concession/approvalrejection', 'approvalRejection');                   //09               // Approve Reject Application
+    Route::post('concession/backtocitizen', 'backToCitizen');                           //10               // Back To Citizen 
+    Route::post('concession/owner-details', 'getOwnerDetails');                         //11
 
-    Route::post('concession/list', 'concessionList');                   //12
-    Route::post('concession/list-id', 'concessionByid');                //13
-    Route::post('concession/doc-list', 'concessionDocList');            //14
-    Route::post('concession/doc-upload', 'concessionDocUpload');        //15
-    Route::post('concession/doc-status', 'concessionDocStatus');        //16
+    Route::post('concession/list', 'concessionList');                                   //12
+    Route::post('concession/list-id', 'concessionByid');                                //13
+    Route::post('concession/doc-list', 'concessionDocList');                            //14
+    Route::post('concession/doc-upload', 'concessionDocUpload');                        //15
+    Route::post('concession/doc-status', 'concessionDocStatus');                        //16
+
+    Route::post('concession/comment-independent', 'commentIndependent');                //18 ( Citizen Independent comment and Level Pendings )
   });
 
 
@@ -174,26 +177,27 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
        | Serial No : 08
    */
   Route::controller(ObjectionController::class)->group(function () {
-    Route::post('objection/apply-objection', 'applyObjection');          //01
-    Route::get('objection/objection-type', 'objectionType');             //02                      
-    Route::post('objection/owner-details', 'ownerDetails');              //03
-    Route::post('objection/assesment-details', 'assesmentDetails');      //04
+    Route::post('objection/apply-objection', 'applyObjection');           //01
+    Route::get('objection/objection-type', 'objectionType');              //02                      
+    Route::post('objection/owner-details', 'ownerDetails');               //03
+    Route::post('objection/assesment-details', 'assesmentDetails');       //04
 
-    Route::post('objection/inbox', 'inbox');                             //05        //Inbox
-    Route::post('objection/outbox', 'outbox');                           //06        //Outbox
-    Route::post('objection/details', 'getDetailsById');                  //07
-    Route::post('objection/post-escalate', 'postEscalate');              //08        // Escalate the application and send to special category
-    Route::post('objection/special-inbox', 'specialInbox');              //09        // Special Inbox 
-    Route::post('objection/next-level', 'postNextLevel');                //10
-    Route::post('objection/approvalrejection', 'approvalRejection');     //11
-    Route::post('objection/backtocitizen', 'backToCitizen');             //12
-    Route::post('objection/btc-inbox', 'btcInboxList');                  //18
+    Route::post('objection/inbox', 'inbox');                              //05        //Inbox
+    Route::post('objection/outbox', 'outbox');                            //06        //Outbox
+    Route::post('objection/details', 'getDetailsById');                   //07
+    Route::post('objection/post-escalate', 'postEscalate');               //08        // Escalate the application and send to special category
+    Route::post('objection/special-inbox', 'specialInbox');               //09        // Special Inbox 
+    Route::post('objection/next-level', 'postNextLevel');                 //10
+    Route::post('objection/approvalrejection', 'approvalRejection');      //11
+    Route::post('objection/backtocitizen', 'backToCitizen');              //12
+    Route::post('objection/btc-inbox', 'btcInboxList');                   //18
 
-    Route::get('objection/list', 'objectionList');                       //13
-    Route::post('objection/list-id', 'objectionByid');                   //14
-    Route::post('objection/doc-list', 'objectionDocList');               //15
-    Route::post('objection/doc-upload', 'objectionDocUpload');           //16
-    Route::post('objection/doc-status', 'objectionDocStatus');           //17
+    Route::get('objection/list', 'objectionList');                        //13
+    Route::post('objection/list-id', 'objectionByid');                    //14
+    Route::post('objection/doc-list', 'objectionDocList');                //15
+    Route::post('objection/doc-upload', 'objectionDocUpload');            //16
+    Route::post('objection/doc-status', 'objectionDocStatus');            //17
+    Route::post('objection/comment-independent', 'commentIndependent');  //18
   });
 
   /**
@@ -240,6 +244,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/details-by-id', 'getDetailsById');                  //13
     Route::post('harvesting/escalate', 'postEscalate');                         //14
     Route::post('harvesting/special-inbox', 'specialInbox');                    //15
+    Route::post('harvesting/comment-independent', 'commentIndependent');        //16
   });
 
   /**

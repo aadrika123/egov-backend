@@ -372,7 +372,7 @@ class RainWaterHarvestingController extends Controller
             $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $req->id);
             $fullDetailsData['levelComment'] = $levelComment;
 
-            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $req->id, $details->user_id);
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $req->id, $details->citizen_user_id);
             $fullDetailsData['citizenComment'] = $citizenComment;
 
             $metaReqs['customFor'] = 'PROPERTY-HARVESTING';
@@ -691,5 +691,46 @@ class RainWaterHarvestingController extends Controller
         $path = storage_path('app/public/harvesting/' . $docName . '/');
         $file->move($path, $name);
         return $name;
+    }
+
+    /**
+     * | Independent Comments
+     */
+    public function commentIndependent(Request $req)
+    {
+        $req->validate([
+            'comment' => 'required',
+            'harvestingId' => 'required|integer',
+            'senderRoleId' => 'nullable|integer'
+        ]);
+
+        try {
+            $workflowTrack = new WorkflowTrack();
+            $harvesting = PropActiveHarvesting::find($req->harvestingId);                // SAF Details
+            $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs = array();
+            DB::beginTransaction();
+            // Save On Workflow Track For Level Independent
+            $metaReqs = [
+                'workflowId' => $harvesting->workflow_id,
+                'moduleId' => $mModuleId,
+                'refTableDotId' => "prop_active_harvestings.id",
+                'refTableIdValue' => $harvesting->id,
+                'message' => $req->comment
+            ];
+            // For Citizen Independent Comment
+            if (!$req->senderRoleId) {
+                $metaReqs = array_merge($metaReqs, ['citizenId' => $harvesting->user_id]);
+            }
+
+            $req->request->add($metaReqs);
+            $workflowTrack->saveTrack($req);
+
+            DB::commit();
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $req->comment], "010108", "1.0", "", "POST", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }

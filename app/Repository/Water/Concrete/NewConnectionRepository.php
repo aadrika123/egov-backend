@@ -630,14 +630,15 @@ class NewConnectionRepository implements iNewConnection
         $propertyDetails = array();
         $collectionApplications = collect($applicationDetails)->first();
 
-
         if (!is_null($collectionApplications->holding_no)) {
-            array_push($propertyDetails, ['displayString' => 'Holding No',  'value' => $collectionApplications->holding_no]);
+            array_push($propertyDetails, ['displayString' => 'Holding No',    'key' => 'AppliedBy',  'value' => $collectionApplications->holding_no]);
         }
         if (!is_null($collectionApplications->saf_no)) {
-            array_push($propertyDetails, ['displayString' => 'Saf No',      'value' => $collectionApplications->saf_no]);
+            array_push($propertyDetails, ['displayString' => 'Saf No',        'key' => 'AppliedBy',    'value' => $collectionApplications->saf_no]);
         }
-        array_push($propertyDetails, ['displayString' => 'Applied By',    'key' => 'AppliedBy',   'value' => 'Id Proof']);
+        if (is_null($collectionApplications->saf_no) && is_null($collectionApplications->holding_no)) {
+            array_push($propertyDetails, ['displayString' => 'Applied By',    'key' => 'AppliedBy',   'value' => 'Id Proof']);
+        }
         array_push($propertyDetails, ['displayString' => 'Ward No',       'key' => 'WardNo',      'value' => $collectionApplications->ward_id]);
         array_push($propertyDetails, ['displayString' => 'Area in Sqft',  'key' => 'AreaInSqft',  'value' => $collectionApplications->area_sqft]);
         array_push($propertyDetails, ['displayString' => 'Address',       'key' => 'Address',     'value' => $collectionApplications->address]);
@@ -893,7 +894,4 @@ class NewConnectionRepository implements iNewConnection
             return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", "");
         }
     }
-
-
-
 }

@@ -741,33 +741,34 @@ class ActiveSafController extends Controller
     {
         $request->validate([
             'comment' => 'required',
-            'safId' => 'required|integer'
+            'safId' => 'required|integer',
+            'senderRoleId' => 'nullable|integer'
         ]);
 
         try {
             $workflowTrack = new WorkflowTrack();
-            $userId = auth()->user()->id;
             $saf = PropActiveSaf::find($request->safId);                // SAF Details
-            $mSafWorkflowId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs = array();
             DB::beginTransaction();
-
-            // Save On Workflow Track
+            // Save On Workflow Track For Level Independent
             $metaReqs = [
-                'workflowId' => $mSafWorkflowId,
-                'userId' => $saf->user_id,
+                'workflowId' => $saf->workflow_id,
                 'moduleId' => $mModuleId,
-                'workflowId' => $mSafWorkflowId,
-                'refTableDotId' => "active_safs.id",
+                'refTableDotId' => "prop_active_safs.id",
                 'refTableIdValue' => $saf->id,
                 'message' => $request->comment
             ];
+            // For Citizen Independent Comment
+            if (!$request->senderRoleId) {
+                $metaReqs = array_merge($metaReqs, ['citizenId' => $saf->user_id]);
+            }
+
             $request->request->add($metaReqs);
             $workflowTrack->saveTrack($request);
 
             DB::commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "427ms", "POST", "");
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1127,12 +1128,12 @@ class ActiveSafController extends Controller
                 $mSafDemand = new PropSafsDemand();
                 $propSafDemand = $mSafDemand->getPropSafDemands($safDemandDetail['quarterYear'], $safDemandDetail['qtr'], $req->id); // Get SAF demand from model function
                 if ($propSafDemand) {       // <---------------- If The Data is already Existing then update the data
-                    $this->tSaveSafDemand($propSafDemand, $safDemandDetail);    // <--- Trait is Used for SAF Demand Update
+                    $this->tSaveSafDemand($propSafDemand, $safDemandDetail, $req->id);    // <--- Trait is Used for SAF Demand Update
                     $propSafDemand->save();
                 }
                 if (!$propSafDemand) {                                          // <----------------- If not Existing then add new 
                     $propSafDemand = new PropSafsDemand();
-                    $this->tSaveSafDemand($propSafDemand, $safDemandDetail);    // <--------- Trait is Used for Saf Demand Update
+                    $this->tSaveSafDemand($propSafDemand, $safDemandDetail, $req->id);    // <--------- Trait is Used for Saf Demand Update
                     $propSafDemand->save();
                 }
 
@@ -1413,7 +1414,7 @@ class ActiveSafController extends Controller
             return $value['value'] > 0;
         });
 
-        return $tax;
+        return $tax->values();
     }
 
     /**

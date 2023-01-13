@@ -927,6 +927,11 @@ class SafCalculation
         $totalTax = $calculatePropertyTax + $rwhPenalty;
         $onePercPenaltyTax = ($totalTax * $onePercPenalty) / 100;                                           // One Percent Penalty
 
+        // Quaterly Taxes
+        $qHoldingTax = roundFigure($calculatePropertyTax / 4);
+        $qRwhPenalty = roundFigure($rwhPenalty / 4);
+        $quaterTax = roundFigure($qHoldingTax + $qRwhPenalty);
+
         // Tax Calculation Quaterly
         $tax = [
             "arv" => roundFigure($calculatePropertyTax),
@@ -937,14 +942,14 @@ class SafCalculation
             "calculationFactor" => $readCalculationFactor,
             "matrixFactor" => $readMatrixFactor,
 
-            "holdingTax" => roundFigure($calculatePropertyTax / 4),
+            "holdingTax" => $qHoldingTax,
             "latrineTax" => 0,
             "waterTax" => 0,
             "healthTax" => 0,
             "educationTax" => 0,
 
-            "rwhPenalty" => roundFigure($rwhPenalty / 4),
-            "totalTax" => roundFigure($calculatePropertyTax / 4) + roundFigure($rwhPenalty / 4),
+            "rwhPenalty" => $qRwhPenalty,
+            "totalTax" => $quaterTax,
             "onePercPenalty" => $onePercPenalty,
             "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
         ];
@@ -1008,7 +1013,7 @@ class SafCalculation
         $this->_GRID['demand']['lateAssessmentStatus'] = $lateAssessmentStatus;
         $this->_GRID['demand']['lateAssessmentPenalty'] = $fine;
 
-        $taxes = collect($this->_GRID['demand'])->only(['totalTax', 'totalOnePercPenalty', 'lateAssessmentPenalty']);
+        $taxes = collect($this->_GRID['demand'])->only(['totalTax', 'totalOnePercPenalty', 'lateAssessmentPenalty']);   // All Penalties are Added
         $totalDemandAmount = $taxes->sum();                                                                             // Total Demand with Penalty
         $this->_GRID['demand']['adjustAmount'] = 0;
         $this->_GRID['demand']['totalDemand'] = roundFigure($totalDemandAmount);
@@ -1113,9 +1118,8 @@ class SafCalculation
         $rebatePerc = $this->_GRID['demand']['specialRebatePerc'];
         $mRebateAmount = $this->_GRID['demand']['rebateAmount'];
         $mSpecialRebateAmount = roundFigure(($totalDemand * $rebatePerc) / 100);
-        $mLateAssessPenalty = $this->_GRID['demand']['lateAssessmentPenalty'];
         $this->_GRID['demand']['specialRebateAmount'] = $mSpecialRebateAmount;
-        $payableAmount = $totalDemand - ($mSpecialRebateAmount + $mRebateAmount) + $mLateAssessPenalty;
+        $payableAmount = $totalDemand - ($mSpecialRebateAmount + $mRebateAmount);
         return roundFigure($payableAmount);
     }
 
