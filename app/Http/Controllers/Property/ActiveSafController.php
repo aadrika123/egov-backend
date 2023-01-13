@@ -1128,12 +1128,12 @@ class ActiveSafController extends Controller
                 $mSafDemand = new PropSafsDemand();
                 $propSafDemand = $mSafDemand->getPropSafDemands($safDemandDetail['quarterYear'], $safDemandDetail['qtr'], $req->id); // Get SAF demand from model function
                 if ($propSafDemand) {       // <---------------- If The Data is already Existing then update the data
-                    $this->tSaveSafDemand($propSafDemand, $safDemandDetail);    // <--- Trait is Used for SAF Demand Update
+                    $this->tSaveSafDemand($propSafDemand, $safDemandDetail, $req->id);    // <--- Trait is Used for SAF Demand Update
                     $propSafDemand->save();
                 }
                 if (!$propSafDemand) {                                          // <----------------- If not Existing then add new 
                     $propSafDemand = new PropSafsDemand();
-                    $this->tSaveSafDemand($propSafDemand, $safDemandDetail);    // <--------- Trait is Used for Saf Demand Update
+                    $this->tSaveSafDemand($propSafDemand, $safDemandDetail, $req->id);    // <--------- Trait is Used for Saf Demand Update
                     $propSafDemand->save();
                 }
 

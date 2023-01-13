@@ -306,8 +306,9 @@ trait SAF
     /**
      * | Save SAF Demand
      */
-    public function tSaveSafDemand($propSafDemand, $safDemandDetail)
+    public function tSaveSafDemand($propSafDemand, $safDemandDetail, $safId)
     {
+        $propSafDemand->saf_id = $safId;
         $propSafDemand->water_tax = $safDemandDetail['waterTax'];
         $propSafDemand->education_cess = $safDemandDetail['educationTax'];
         $propSafDemand->health_cess = $safDemandDetail['healthCess'];
@@ -315,6 +316,12 @@ trait SAF
         $propSafDemand->additional_tax = $safDemandDetail['additionTax'];
         $propSafDemand->holding_tax = $safDemandDetail['holdingTax'];
         $propSafDemand->amount = $safDemandDetail['totalTax'];
+        $propSafDemand->fyear = $safDemandDetail['quarterYear'];
+        $propSafDemand->qtr = $safDemandDetail['qtr'];
+        $propSafDemand->due_date = $safDemandDetail['dueDate'];
+        $propSafDemand->status = 1;
+        $propSafDemand->paid_status = 0;
+        $propSafDemand->user_id = auth()->user()->id;
     }
 
     /**
