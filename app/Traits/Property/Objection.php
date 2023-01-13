@@ -3,8 +3,6 @@
 namespace App\Traits\Property;
 
 use Illuminate\Support\Facades\DB;
-use App\Models\Property\PropActiveObjection;
-use Illuminate\Support\Carbon;
 
 /**
  * | Created On - 20-11-2022 

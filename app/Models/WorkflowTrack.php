@@ -73,7 +73,7 @@ class WorkflowTrack extends Model
             ->where('ref_table_dot_id', $mRefTable)
             ->where('ref_table_id_value', $tableId)
             ->join('wf_roles as w', 'w.id', '=', 'workflow_tracks.sender_role_id')
-            ->join('wf_roles as wr', 'wr.id', '=', 'workflow_tracks.receiver_role_id')
+            ->leftJoin('wf_roles as wr', 'wr.id', '=', 'workflow_tracks.receiver_role_id')
             ->where('citizen_id', null)
             ->orderByDesc('workflow_tracks.id')
             ->get();
