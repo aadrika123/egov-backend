@@ -174,7 +174,7 @@ class WorkflowRoleMapController extends Controller
                     //trade
                 case (10):
                     $inbox = new Trade();
-                    return   $ab = $inbox->inbox($req);
+                    $ab = $inbox->inbox($req);
                     collect($ab)['original']['data'];
                     $a['inbox'] = collect($ab)['original']['data'];
                     break;

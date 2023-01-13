@@ -172,12 +172,14 @@ trait Workflow
     public function getRole($request)
     {
         $userId = authUser()->id;
-
+        // DB::enableQueryLog();
         $role = WfRoleusermap::select('wf_workflowrolemaps.*')
             ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.wf_role_id', 'wf_roleusermaps.wf_role_id')
             ->where('user_id', $userId)
             ->where('wf_workflowrolemaps.workflow_id', $request->workflowId)
             ->first();
+        // dd(DB::getQueryLog());
+
         return remove_null($role);
     }
 
