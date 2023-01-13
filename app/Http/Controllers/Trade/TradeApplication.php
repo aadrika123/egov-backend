@@ -150,6 +150,7 @@ class TradeApplication extends Controller
             if (!$refWorkflows['finisher']) {
                 throw new Exception("Finisher Not Available");
             }
+            // return $request->applicationType;
             if (in_array($mApplicationTypeId, ["2", "3", "4"]) && (!$request->licenseId || !is_numeric($request->licenseId))) {
                 throw new Exception("Old licence Id Requird");
             }
