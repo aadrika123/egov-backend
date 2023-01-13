@@ -3,20 +3,26 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomDetail;
 use App\Models\Property\PropActiveHarvesting;
+use App\Models\Property\PropFloor;
 use App\Models\Property\PropHarvestingDoc;
 use App\Models\Property\PropHarvestingLevelpending;
+use App\Models\Property\PropOwner;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Illuminate\Http\Request;
 use App\Traits\Property\SAF;
+use App\Traits\Property\SafDetailsTrait;
 use App\Traits\Ward;
 use App\Traits\Workflow\Workflow;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * | Created On - 22-11-2022
@@ -29,6 +35,7 @@ class RainWaterHarvestingController extends Controller
     use SAF;
     use Workflow;
     use Ward;
+    use SafDetailsTrait;
     private $_todayDate;
     private $_bifuraction;
     private $_workflowId;
@@ -206,6 +213,7 @@ class RainWaterHarvestingController extends Controller
             $auth = auth()->user();
             $userId = $auth->id;
             $ulbId = $auth->ulb_id;
+            $harvestingList = new PropActiveHarvesting();
 
             $workflowRoles = $this->getRoleIdByUserId($userId);
             $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
@@ -216,8 +224,6 @@ class RainWaterHarvestingController extends Controller
             $occupiedWards = $refWard->map(function ($value, $key) {
                 return $value->ward_id;
             });
-
-            $harvestingList = new PropActiveHarvesting();
             $harvesting = $harvestingList->getHarvestingList($ulbId)
                 ->whereNotIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
@@ -238,20 +244,24 @@ class RainWaterHarvestingController extends Controller
      * |@var applicationId
      * | Rating : 2
      */
-    public function escalateApplication($req)
+    public function postEscalate(Request $req)
     {
+        $req->validate([
+            'id' => 'required|integer',
+            'escalateStatus' => 'required|bool',
+        ]);
         try {
             $userId = auth()->user()->id;
             if ($req->escalateStatus == 1) {
                 $harvesting = PropActiveHarvesting::find($req->id);
-                $harvesting->is_escalate = 1;
+                $harvesting->is_escalated = 1;
                 $harvesting->escalated_by = $userId;
                 $harvesting->save();
                 return responseMsg(true, "Successfully Escalated the application", "");
             }
             if ($req->escalateStatus == 0) {
                 $harvesting = PropActiveHarvesting::find($req->id);
-                $harvesting->is_escalate = 0;
+                $harvesting->is_escalated = 0;
                 $harvesting->escalated_by = null;
                 $harvesting->save();
                 return responseMsg(true, "Successfully De-Escalated the application", "");
@@ -270,6 +280,7 @@ class RainWaterHarvestingController extends Controller
     public function specialInbox()
     {
         try {
+            $harvestingList = new PropActiveHarvesting();
             $auth = auth()->user();
             $userId = $auth->id;
             $ulbId = $auth->ulb_id;
@@ -279,8 +290,8 @@ class RainWaterHarvestingController extends Controller
                 return $ward->ward_id;
             });
 
-            $harvesting = $this->getHarvestingList($ulbId)                                         // Get harvesting
-                ->where('prop_active_harvestings.is_escalate', true)
+            $harvesting = $harvestingList->getHarvestingList($ulbId)                                         // Get harvesting
+                ->where('prop_active_harvestings.is_escalated', true)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_harvestings.id')
                 ->get();
@@ -291,6 +302,100 @@ class RainWaterHarvestingController extends Controller
         }
     }
 
+    /**
+     * | Harvesting Details
+     */
+    public function getDetailsById(Request $req)
+    {
+        $req->validate([
+            'id' => 'required'
+        ]);
+        try {
+            $mPropActiveHarvesting = new PropActiveHarvesting();
+            $mPropOwners = new PropOwner();
+            $mPropFloors = new PropFloor();
+            $mWorkflowTracks = new WorkflowTrack();
+            $mCustomDetails = new CustomDetail();
+            $mForwardBackward = new WorkflowMap();
+            $mRefTable = Config::get('PropertyConstaint.SAF_HARVESTING_REF_TABLE');
+            $details = $mPropActiveHarvesting->getDetailsById($req->id);
+
+            // Data Array
+            $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
+            $basicElement = [
+                'headerTitle' => "Basic Details",
+                "data" => $basicDetails
+            ];
+
+            $propertyDetails = $this->generatePropertyDetails($details);   // (Property Details) Trait function to get Property Details
+            $propertyElement = [
+                'headerTitle' => "Property Details & Address",
+                'data' => $propertyDetails
+            ];
+
+            $corrDetails = $this->generateCorrDtls($details);              // (Corresponding Address Details) Trait function to generate corresponding address details
+            $corrElement = [
+                'headerTitle' => 'Corresponding Address',
+                'data' => $corrDetails,
+            ];
+
+            $electDetails = $this->generateElectDtls($details);            // (Electricity & Water Details) Trait function to generate Electricity Details
+            $electElement = [
+                'headerTitle' => 'Electricity & Water Details',
+                'data' => $electDetails
+            ];
+            $fullDetailsData['application_no'] = $details->application_no;
+            $fullDetailsData['apply_date'] = Carbon::parse($details->created_at)->format('Y-m-d');
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
+
+            // Table Array
+            $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);
+            $ownerList = json_decode(json_encode($ownerList), true);       // Convert Std class to array
+            $ownerDetails = $this->generateOwnerDetails($ownerList);
+            $ownerElement = [
+                'headerTitle' => 'Owner Details',
+                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                'tableData' => $ownerDetails
+            ];
+            $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
+            $floorDetails = $this->generateFloorDetails($floorList);
+            $floorElement = [
+                'headerTitle' => 'Floor Details',
+                'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
+                'tableData' => $floorDetails
+            ];
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement]);
+            // Card Details
+            $cardElement = $this->generateHarvestingCardDtls($details, $ownerList);
+            $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
+
+            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $req->id);
+            $fullDetailsData['levelComment'] = $levelComment;
+
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $req->id, $details->user_id);
+            $fullDetailsData['citizenComment'] = $citizenComment;
+
+            $metaReqs['customFor'] = 'PROPERTY-HARVESTING';
+            $metaReqs['wfRoleId'] = $details->current_role;
+            $metaReqs['workflowId'] = $details->workflow_id;
+            $metaReqs['lastRoleId'] = $details->last_role_id;
+            $req->request->add($metaReqs);
+            $forwardBackward = $mForwardBackward->getRoleDetails($req);
+            $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
+
+            $fullDetailsData['timelineData'] = collect($req);
+
+            $custom = $mCustomDetails->getCustomDetails($req);
+            $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
+
+            $custom = $mCustomDetails->getCustomDetails($req);
+            $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
+
+            return responseMsg(true, "", remove_null($fullDetailsData));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 
     /**
      * |--------------------------- Post Next Level Application(forward or backward application) ------------------------------------------------|
@@ -302,30 +407,30 @@ class RainWaterHarvestingController extends Controller
     {
         try {
             $req->validate([
-                'harvestingId' => 'required',
-                'senderRoleId' => 'required',
-                'receiverRoleId' => 'required',
-                'message' => 'required'
+                'harvestingId' => 'required|integer',
+                'senderRoleId' => 'required|integer',
+                'receiverRoleId' => 'required|integer',
+                'comment' => 'required'
             ]);
+
             DB::beginTransaction();
 
             $track = new WorkflowTrack();
+            $harvesting = PropActiveHarvesting::find($req->harvestingId);
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs['workflowId'] = Config::get('workflow-constants.RAIN_WATER_HARVESTING_ID');
+            $metaReqs['workflowId'] = $harvesting->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
             $metaReqs['refTableIdValue'] = $req->harvestingId;
-            // $metaReqs['senderRoleId'] = $req->senderRoleId;
-            // $metaReqs['receiverRoleId'] = $req->receiverRoleId;
-            // $metaReqs['verificationStatus'] = $req->verificationStatus;
-            // $metaReqs['message'] = $req->message;
+            $metaReqs['senderRoleId'] = $req->senderRoleId;
+            $metaReqs['receiverRoleId'] = $req->receiverRoleId;
+            $metaReqs['verificationStatus'] = $req->verificationStatus;
+            $metaReqs['comment'] = $req->comment;
 
-            // return $metaReqs;
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 
 
             // harvesting Application Update Current Role Updation
-            $harvesting = PropActiveHarvesting::find($req->harvestingId);
             $harvesting->current_role = $req->receiverRoleId;
             $harvesting->save();
 
@@ -347,14 +452,16 @@ class RainWaterHarvestingController extends Controller
     {
         try {
             $req->validate([
-                'workflowId' => 'required',
                 'roleId' => 'required',
                 'harvestingId' => 'required',
                 'status' => 'required',
 
             ]);
-            // Check if the Current User is Finisher or Not                                                                                 
-            $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
+            // Check if the Current User is Finisher or Not         
+            $activeHarvesting = PropActiveHarvesting::query()
+                ->where('id', $req->harvestingId)
+                ->first();
+            $getFinisherQuery = $this->getFinisherId($activeHarvesting->workflow_id);                                 // Get Finisher using Trait
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
             if ($refGetFinisher->role_id != $req->roleId) {
                 return responseMsg(false, " Access Forbidden", "");
@@ -364,9 +471,6 @@ class RainWaterHarvestingController extends Controller
             // Approval
             if ($req->status == 1) {
                 // Harvesting Application replication
-                $activeHarvesting = PropActiveHarvesting::query()
-                    ->where('id', $req->harvestingId)
-                    ->first();
 
                 $approvedHarvesting = $activeHarvesting->replicate();
                 $approvedHarvesting->setTable('prop_harvestings');
@@ -379,10 +483,6 @@ class RainWaterHarvestingController extends Controller
             // Rejection
             if ($req->status == 0) {
                 // Harvesting Application replication
-                $activeHarvesting = PropActiveHarvesting::query()
-                    ->where('id', $req->harvestingId)
-                    ->first();
-
                 $rejectedHarvesting = $activeHarvesting->replicate();
                 $rejectedHarvesting->setTable('prop_rejected_harvestings');
                 $rejectedHarvesting->id = $activeHarvesting->id;

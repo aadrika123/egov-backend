@@ -82,8 +82,8 @@ class CommonFunction implements ICommonFunction
                 )
                 ->join("wf_roles", "wf_roles.id", "wf_workflowrolemaps.wf_role_id")
                 ->where("wf_roles.is_suspended", false)
-                ->where("wf_masters.id", $work_flow_id)
-                ->where("wf_masters.is_suspended", false)
+                ->where("wf_workflows.id", $work_flow_id)
+                ->where("wf_workflows.is_suspended", false)
                 ->orderBy("wf_roles.id")
                 ->get();
             // dd(DB::getQueryLog());
@@ -103,10 +103,10 @@ class CommonFunction implements ICommonFunction
         $backwordForword = array_values($backwordForword)[0] ?? [];
         if ($backwordForword) {
             $data = array_map(function ($val) use ($backwordForword) {
-                if ($val['id'] == $backwordForword['forward_id']) {
+                if ($val['id'] == $backwordForword['forward_role_id']) {
                     return ['forward' => ['id' => $val['id'], 'role_name' => $val['role_name']]];
                 }
-                if ($val['id'] == $backwordForword['backward_id']) {
+                if ($val['id'] == $backwordForword['backward_role_id']) {
                     return ['backward' => ['id' => $val['id'], 'role_name' => $val['role_name']]];
                 }
             }, $workflow_rolse);
@@ -151,9 +151,9 @@ class CommonFunction implements ICommonFunction
             if ($curentUser) {
                 $data = array_filter($data, function ($val) use ($curentUser, $all) { //dd();
                     if ($all) {
-                        return (!in_array($val['id'], [$curentUser['forward_id'], $curentUser['backward_id']]) && $val['id'] != $curentUser['id'] && ($val['forward_id'] || $val['backward_id']));
+                        return (!in_array($val['id'], [$curentUser['forward_role_id'], $curentUser['backward_role_id']]) && $val['id'] != $curentUser['id'] && ($val['forward_id'] || $val['backward_id']));
                     }
-                    return (!in_array($val['id'], [$curentUser['forward_id'], $curentUser['backward_id']]) && $val['id'] != $curentUser['id']);
+                    return (!in_array($val['id'], [$curentUser['forward_role_id'], $curentUser['backward_role_id']]) && $val['id'] != $curentUser['id']);
                 });
             }
             return (array_values($data));
@@ -165,7 +165,7 @@ class CommonFunction implements ICommonFunction
     public function getUserRoll($user_id, $ulb_id, $workflow_id)
     {
         try {
-            // DB::enableQueryLog();
+            DB::enableQueryLog();
             $data = WfRole::select(
                 DB::raw(
                     "wf_roles.id as role_id,wf_roles.role_name,
@@ -176,7 +176,7 @@ class CommonFunction implements ICommonFunction
                                             wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
                                             wf_workflowrolemaps.can_upload_document,
                                             wf_workflowrolemaps.can_verify_document,
-                                            wf_masters.id as workflow_id,wf_masters.workflow_name,
+                                            wf_workflows.id as workflow_id,wf_masters.workflow_name,
                                             ulb_masters.id as ulb_id, ulb_masters.ulb_name,
                                             ulb_masters.ulb_type"
                 )
@@ -204,7 +204,7 @@ class CommonFunction implements ICommonFunction
                 ->where("wf_roles.is_suspended", false)
                 ->where("wf_roleusermaps.user_id", $user_id)
                 ->where("wf_workflows.ulb_id", $ulb_id)
-                ->where("wf_masters.id", $workflow_id)
+                ->where("wf_workflows.id", $workflow_id)
                 ->orderBy("wf_roleusermaps.id", "desc")
                 ->first();
             // dd(DB::getQueryLog());

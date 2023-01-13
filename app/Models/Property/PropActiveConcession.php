@@ -20,12 +20,18 @@ class PropActiveConcession extends Model
             'prop_active_concessions.*',
             'prop_active_concessions.applicant_name as owner_name',
             's.*',
-            'u.ward_name as ward_no',
-            'p.property_type'
+            'u.ward_name as old_ward_no',
+            'u1.ward_name as new_ward_no',
+            'p.property_type',
+            'o.ownership_type',
+            'r.road_type as road_type_master'
         )
-            ->join('prop_properties as s', 's.id', '=', 'prop_active_concessions.property_id')
-            ->join('ulb_ward_masters as u', 'u.id', '=', 's.ward_mstr_id')
-            ->join('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
+            ->leftJoin('prop_properties as s', 's.id', '=', 'prop_active_concessions.property_id')
+            ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 's.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as u1', 'u.id', '=', 's.new_ward_mstr_id')
+            ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
+            ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
+            ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 's.road_type_mstr_id')
             ->where('prop_active_concessions.id', $id)
             ->first();
         return $details;

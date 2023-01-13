@@ -8,13 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class TradeTransaction extends Model
 {
     use HasFactory;
-    public $timestamps=false;
+    public $timestamps = false;
 
     public static function listByLicId($licenseId)
     {
         return self::select("*")
-                ->where("temp_id",$licenseId)
-                ->whereIn("status",[1,2])
-                ->get();
+            ->where("temp_id", $licenseId)
+            ->whereIn("status", [1, 2])
+            ->first();
     }
 }

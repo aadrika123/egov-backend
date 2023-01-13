@@ -4,6 +4,7 @@ namespace App\Repository\Trade;
 
 use Illuminate\Support\Facades\Storage;
 use App\EloquentModels\Common\ModelWard;
+use App\Models\CustomDetail;
 use App\Models\Property\ActiveSafsOwnerDtl;
 use App\Models\Property\ActiveSaf;
 use App\Models\Property\PropActiveSaf;
@@ -38,13 +39,16 @@ use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Models\Workflows\WfRole;
 use App\Repository\Common\CommonFunction;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Illuminate\Http\Request;
 
 use App\Traits\Auth;
 use App\Traits\Property\WardPermission;
 use App\Traits\Payment\Razorpay;
+use App\Traits\Trade\TradeTrait;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -55,6 +59,7 @@ class Trade implements ITrade
     use Auth;               // Trait Used added by sandeep bara date 17-09-2022
     use WardPermission;
     use Razorpay;
+    use TradeTrait;
 
     /**
      * | Created On-01-10-2022 
@@ -1148,6 +1153,129 @@ class Trade implements ITrade
         }
     }
 
+    #serial 
+    public function getDocList(Request $request)
+    {
+        try {
+
+            $refUser = Auth()->user();
+            $refUserId = $refUser->id;
+            $refUlbId = $refUser->ulb_id;
+            $refLicence = null;
+            $refOwneres = (array)null;
+            $mUploadDocument = (array)null;
+            $mDocumentsList  = (array)null;
+            $requiedDocs =   (array) null;
+            $ownersDoc = (array) null;
+            $testOwnersDoc = (array) null;
+            $mItemName = "";
+            $mCods = "";
+
+            $licenceId = $request->id;
+            if (!$licenceId) {
+                throw new Exception("Licence Id Required");
+            }
+            $refLicence = $this->getActiveLicenseById($licenceId);
+            if (!$refLicence) {
+                throw new Exception("Data Not Found");
+            } elseif ($refLicence->doc_verify_date) {
+                throw new Exception("Document Verified You Can Not Upload Documents");
+            }
+            if ($refLicence->nature_of_bussiness) {
+                $items = TradeParamItemType::itemsById($refLicence->nature_of_bussiness);
+                foreach ($items as $val) {
+                    $mItemName .= $val->trade_item . ",";
+                    $mCods .= $val->trade_code . ",";
+                }
+                $mItemName = trim($mItemName, ',');
+                $mCods = trim($mCods, ',');
+            }
+            $refLicence->items = $mItemName;
+            $refLicence->items_code = $mCods;
+            $refOwneres = ActiveTradeOwner::owneresByLId($licenceId);
+            $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function ($val) {
+                if (isset($val["document_path"])) {
+                    $path = $this->readDocumentPath($val["document_path"]);
+                    $val["document_path"] = !empty(trim($val["document_path"])) ? $path : null;
+                }
+                return $val;
+            });
+
+            $mDocumentsList = $this->getDocumentTypeList($refLicence);
+            foreach ($mDocumentsList as $val) {
+                $doc = (array) null;
+                $doc['docName'] = $val->doc_for;
+                $doc['isMadatory'] = $val->is_mandatory;
+                $doc['docVal'] = $this->getDocumentList($val->doc_for, $refLicence->application_type_id, $val->show);
+                array_push($requiedDocs, $doc);
+            }
+            if ($refLicence->application_type_id == 1) {
+                $doc = (array) null;
+                $doc['docName'] = "Identity Proof";
+                $doc['isMadatory'] = 1;
+                $doc['docVal'] = $this->getDocumentList("Identity Proof", $refLicence->application_type_id, 0);
+            }
+            foreach ($requiedDocs as $key => $val) {
+                if ($val['docName'] == "Identity Proof") {
+                    continue;
+                }
+                $doc = (array) null;
+                $doc = $this->check_doc_exist($licenceId, $val['docName']);
+                if (isset($doc["document_path"])) {
+                    $path = $this->readDocumentPath($doc["document_path"]);
+                    $doc["document_path"] = !empty(trim($doc["document_path"])) ? $path : null;
+                }
+                $requiedDocs[$key]['uploadDoc'] = $doc;
+            }
+
+            if ($refLicence->application_type_id == 1) {
+                foreach ($refOwneres as $key => $val) {
+                    $doc = (array) null;
+                    $testOwnersDoc[$key] = (array) null;
+                    $doc["ownerId"] = $val->id;
+                    $doc["ownerName"] = $val->owner_name;
+                    $doc["docName"]   = "Identity Proof";
+                    $doc['isMadatory'] = 1;
+                    $doc['docVal'] = $this->getDocumentList("Identity Proof", $refLicence->application_type_id, 0);
+                    $refOwneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId, $val->id);
+                    $doc['uploadDoc'] = $refOwneres[$key]["Identity Proof"];
+                    if (isset($refOwneres[$key]["Identity Proof"]["document_path"])) {
+                        $path = $this->readDocumentPath($refOwneres[$key]["Identity Proof"]["document_path"]);
+                        $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"])) ? $path : null;
+                        $doc['uploadDoc']["document_path"] = $path;
+                    }
+                    array_push($ownersDoc, $doc);
+                    array_push($testOwnersDoc[$key], $doc);
+                    $doc2 = (array) null;
+                    $doc2["ownerId"] = $val->id;
+                    $doc2["ownerName"] = $val->owner_name;
+                    $doc2["docName"]   = "image";
+                    $doc2['isMadatory'] = 0;
+                    $doc2['docVal'][] = ["id" => 0, "doc_name" => "Photo"];
+                    $refOwneres[$key]["image"] = $this->check_doc_exist_owner($licenceId, $val->id, 0);
+                    $doc2['uploadDoc'] = $refOwneres[$key]["image"];
+                    if (isset($refOwneres[$key]["image"]["document_path"])) {
+                        $path = $this->readDocumentPath($refOwneres[$key]["image"]["document_path"]);
+                        $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"])) ? $path : null;
+                        $doc2['uploadDoc']["document_path"] = $path;
+                    }
+                    array_push($ownersDoc, $doc2);
+                    array_push($testOwnersDoc[$key], $doc2);
+                }
+            }
+            $data["documentsList"]  = $requiedDocs;
+            $data["ownersDocList"]  = $testOwnersDoc;
+            $data["licence"] = $refLicence;
+            $data["owneres"] = $refOwneres;
+            $data["uploadDocument"] = $mUploadDocument;
+
+            return responseMsg(true, "ABC Ok", remove_null($data));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), '');
+        }
+    }
+
+
     # Serial No : 05
     public function documentUpload(Request $request)
     {
@@ -1168,7 +1296,7 @@ class Trade implements ITrade
             if (!$licenceId) {
                 throw new Exception("Licence Id Required");
             }
-            $refLicence = $this->getLicenceById($licenceId);
+            $refLicence = $this->getActiveLicenseById($licenceId);
             if (!$refLicence) {
                 throw new Exception("Data Not Found");
             } elseif ($refLicence->doc_verify_date) {
@@ -1691,12 +1819,16 @@ class Trade implements ITrade
     {
 
         try {
+            $mWorkflowTracks = new WorkflowTrack();
+            $mCustomDetails = new CustomDetail();
+            $forwardBackward = new WorkflowMap;
             $id = $request->id;
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+            $mRefTable = Config::get('TradeConstaint.TRADE_REF_TABLE');
+            $refWorkflowMstrId     = WfWorkflow::where('id', $refWorkflowId)
                 ->where('ulb_id', $refUlbId)
                 ->first();
             if (!$refWorkflowMstrId) {
@@ -1739,18 +1871,83 @@ class Trade implements ITrade
             $mileSton = $this->_parent->sortsWorkflowRols($mworkflowRoles);
 
 
-            $data['licenceDtl']     = $refApplication;
-            $data['ownerDtl']       = $refOwnerDtl;
-            $data['transactionDtl'] = $refTransactionDtl;
+            $licenseDetail =  $refApplication;
+            $ownerDetails  = $refOwnerDtl;
+            $transactionDtl = $refTransactionDtl;
             $data['pendingStatus']  = $mStatus;
             $data['remarks']        = $refTimeLine;
-            // $data['documents']      = $refUploadDocuments;            
             $data["userType"]       = $mUserType;
             $data["roles"]          = $mileSton;
+
+            // $data['documents']      = $refUploadDocuments;   
             // $data["pendingAt"]      = $pendingAt;
             // $data["levelData"]      = $mlevelData;
             // $data['finisher']       = $finisher;
-            return responseMsgs(true, 'Data Fetched', remove_null($data), "010104", "1.0", "303ms", "POST", $request->deviceId);
+
+            //=========================================================================================
+            // return $data['licenceDtl'];
+            $newData = array();
+            $fullDetailsData = array();
+
+            $basicDetails = $this->generateBasicDetails($licenseDetail);      // Trait function to get Basic Details
+            $basicElement = [
+                'headerTitle' => "Basic Details",
+                "data" => $basicDetails
+            ];
+
+            // Property Details and address
+            // $propertyDetails = $this->generatePropertyDetails($licenseDetail);   // Trait function to get Property Details
+            // $propertyElement = [
+            //     'headerTitle' => "Property Details & Address",
+            //     'data' => $propertyDetails
+            // ];
+
+            $paymentDetail = $this->generatepaymentDetails($transactionDtl);      // Trait function to get payment Details
+            $paymentElement = [
+                'headerTitle' => "Transaction Details",
+                "data" => $paymentDetail
+            ];
+
+            $ownerDetails = $this->generateOwnerDetails($ownerDetails);
+            $ownerElement = [
+                'headerTitle' => 'Owner Details',
+                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email"],
+                'tableData' => $ownerDetails
+            ];
+
+            $cardDetails = $this->generateCardDetails($licenseDetail, $ownerDetails);
+            $cardElement = [
+                'headerTitle' => "About Trade",
+                'data' => $cardDetails
+            ];
+
+            $fullDetailsData['application_no'] = $licenseDetail->application_no;
+            $fullDetailsData['apply_date'] = $licenseDetail->application_date;
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement,   $paymentElement]);
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement]);
+            $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
+
+            $metaReqs['customFor'] = 'Trade';
+            $metaReqs['wfRoleId'] = $licenseDetail->current_role;
+            $metaReqs['workflowId'] = $licenseDetail->workflow_id;
+            $metaReqs['lastRoleId'] = $licenseDetail->last_role_id;
+
+            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $licenseDetail->id);
+            $fullDetailsData['levelComment'] = $levelComment;
+
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $licenseDetail->id, $licenseDetail->user_id);
+            $fullDetailsData['citizenComment'] = $citizenComment;
+
+            $request->request->add($metaReqs);
+            $forwardBackward = $forwardBackward->getRoleDetails($request);
+            $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
+
+            $fullDetailsData['timelineData'] = collect($request);
+
+            $custom = $mCustomDetails->getCustomDetails($request);
+            $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
+
+            return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), '');
         }
@@ -2202,7 +2399,7 @@ class Trade implements ITrade
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+            $refWorkflowMstrId     = WfWorkflow::where('id', $refWorkflowId)
                 ->where('ulb_id', $refUlbId)
                 ->first();
             if (!$refWorkflowMstrId) {
@@ -2210,7 +2407,8 @@ class Trade implements ITrade
             }
             $mUserType = $this->_parent->userType($refWorkflowId);
             $mWardPermission = $this->_parent->WardPermission($refUserId);
-            $mRole = $this->_parent->getUserRoll($refUserId, $refUlbId, $refWorkflowMstrId->wf_master_id);
+            $mRole = $this->_parent->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
+            // dd($refUserId, $refUlbId, $refWorkflowId);
             $mJoins = "";
             if (!$mRole) {
                 throw new Exception("You Are Not Authorized For This Action");
@@ -2288,10 +2486,10 @@ class Trade implements ITrade
                 ->get();
             // dd(DB::getQueryLog());
             $data = [
-                "wardList" => $mWardPermission,
-                "licence" => $licence,
+                // "wardList" => $mWardPermission,
+                // "licence" => $licence,
             ];
-            return responseMsg(true, "", $data);
+            return responseMsg(true, "", $licence);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -2305,7 +2503,7 @@ class Trade implements ITrade
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+            $workflowId = WfWorkflow::where('id', $refWorkflowId)
                 ->where('ulb_id', $ulb_id)
                 ->first();
             if (!$workflowId) {
@@ -4292,7 +4490,7 @@ class Trade implements ITrade
     {
         try {
             // DB::enableQueryLog();
-            $doc = ActiveTradeDocument::select("id", "doc_type_code", "is_verified", "remarks", "document_path", "document_id")
+            $doc = ActiveTradeDocument::select("id", "doc_type_code", "is_verified", "remarks",  "document_id")
                 ->where('temp_id', $licenceId)
                 ->where('temp_owner_id', $owner_id);
             if ($doc_type_code) {
