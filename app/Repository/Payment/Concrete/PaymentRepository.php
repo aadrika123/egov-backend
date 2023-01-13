@@ -761,3 +761,9 @@ class PaymentRepository implements iPayment
         // }
     }
 }
+
+
+# Conversion of epoch time in human readable time
+// $epoch = 1673593047;
+// $dt = new DateTime("@$epoch");  
+// return  $dt->format('Y-m-d H:i:s');

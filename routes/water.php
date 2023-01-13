@@ -60,6 +60,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('approved-water-applications', 'approvedWaterApplications');                        //
         Route::post('list-message', 'getIndependentComment');                                           //
         Route::post('list-field-verified-inbox', 'fieldVerifiedInbox');                                 //
+        Route::post('verification-field', 'fieldVerification');                                         //
         // Route::post('', 'getLevelcomment');                                                          //
     });
 });
