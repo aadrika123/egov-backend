@@ -493,4 +493,46 @@ class ObjectionController extends Controller
             echo $e->getMessage();
         }
     }
+
+    /**
+     * | Independent Comment
+     */
+    public function commentIndependent(Request $req)
+    {
+        $req->validate([
+            'comment' => 'required',
+            'objectionId' => 'required|integer',
+            'senderRoleId' => 'nullable|integer'
+        ]);
+
+        try {
+            $workflowTrack = new WorkflowTrack();
+            $objection = PropActiveObjection::find($req->objectionId);                // SAF Details
+            $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
+            $metaReqs = array();
+            DB::beginTransaction();
+            // Save On Workflow Track For Level Independent
+            $metaReqs = [
+                'workflowId' => $objection->workflow_id,
+                'moduleId' => $mModuleId,
+                'refTableDotId' => $mRefTable,
+                'refTableIdValue' => $objection->id,
+                'message' => $req->comment
+            ];
+            // For Citizen Independent Comment
+            if (!$req->senderRoleId) {
+                $metaReqs = array_merge($metaReqs, ['citizenId' => $objection->user_id]);
+            }
+
+            $req->request->add($metaReqs);
+            $workflowTrack->saveTrack($req);
+
+            DB::commit();
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $req->comment], "010108", "1.0", "", "POST", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 }

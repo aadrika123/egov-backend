@@ -17,6 +17,7 @@ use App\Http\Controllers\Property\SafDemandController;
 use App\Http\Controllers\Property\DocumentController;
 use App\Http\Controllers\CustomController;
 use App\Http\Controllers\property\ClusterController;
+use Illuminate\Routing\Router;
 use Symfony\Component\Routing\DependencyInjection\RoutingResolverPass;
 
 /**
@@ -176,26 +177,27 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
        | Serial No : 08
    */
   Route::controller(ObjectionController::class)->group(function () {
-    Route::post('objection/apply-objection', 'applyObjection');          //01
-    Route::get('objection/objection-type', 'objectionType');             //02                      
-    Route::post('objection/owner-details', 'ownerDetails');              //03
-    Route::post('objection/assesment-details', 'assesmentDetails');      //04
+    Route::post('objection/apply-objection', 'applyObjection');           //01
+    Route::get('objection/objection-type', 'objectionType');              //02                      
+    Route::post('objection/owner-details', 'ownerDetails');               //03
+    Route::post('objection/assesment-details', 'assesmentDetails');       //04
 
-    Route::post('objection/inbox', 'inbox');                             //05        //Inbox
-    Route::post('objection/outbox', 'outbox');                           //06        //Outbox
-    Route::post('objection/details', 'getDetailsById');                  //07
-    Route::post('objection/post-escalate', 'postEscalate');              //08        // Escalate the application and send to special category
-    Route::post('objection/special-inbox', 'specialInbox');              //09        // Special Inbox 
-    Route::post('objection/next-level', 'postNextLevel');                //10
-    Route::post('objection/approvalrejection', 'approvalRejection');     //11
-    Route::post('objection/backtocitizen', 'backToCitizen');             //12
-    Route::post('objection/btc-inbox', 'btcInboxList');                  //18
+    Route::post('objection/inbox', 'inbox');                              //05        //Inbox
+    Route::post('objection/outbox', 'outbox');                            //06        //Outbox
+    Route::post('objection/details', 'getDetailsById');                   //07
+    Route::post('objection/post-escalate', 'postEscalate');               //08        // Escalate the application and send to special category
+    Route::post('objection/special-inbox', 'specialInbox');               //09        // Special Inbox 
+    Route::post('objection/next-level', 'postNextLevel');                 //10
+    Route::post('objection/approvalrejection', 'approvalRejection');      //11
+    Route::post('objection/backtocitizen', 'backToCitizen');              //12
+    Route::post('objection/btc-inbox', 'btcInboxList');                   //18
 
-    Route::get('objection/list', 'objectionList');                       //13
-    Route::post('objection/list-id', 'objectionByid');                   //14
-    Route::post('objection/doc-list', 'objectionDocList');               //15
-    Route::post('objection/doc-upload', 'objectionDocUpload');           //16
-    Route::post('objection/doc-status', 'objectionDocStatus');           //17
+    Route::get('objection/list', 'objectionList');                        //13
+    Route::post('objection/list-id', 'objectionByid');                    //14
+    Route::post('objection/doc-list', 'objectionDocList');                //15
+    Route::post('objection/doc-upload', 'objectionDocUpload');            //16
+    Route::post('objection/doc-status', 'objectionDocStatus');            //17
+    Route::post('objection/comment-independent', 'commentIndependent');  //18
   });
 
   /**
@@ -242,6 +244,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/details-by-id', 'getDetailsById');                  //13
     Route::post('harvesting/escalate', 'postEscalate');                         //14
     Route::post('harvesting/special-inbox', 'specialInbox');                    //15
+    Route::post('harvesting/comment-independent', 'commentIndependent');        //16
   });
 
   /**

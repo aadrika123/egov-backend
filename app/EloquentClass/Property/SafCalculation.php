@@ -927,6 +927,11 @@ class SafCalculation
         $totalTax = $calculatePropertyTax + $rwhPenalty;
         $onePercPenaltyTax = ($totalTax * $onePercPenalty) / 100;                                           // One Percent Penalty
 
+        // Quaterly Taxes
+        $qHoldingTax = roundFigure($calculatePropertyTax / 4);
+        $qRwhPenalty = roundFigure($rwhPenalty / 4);
+        $quaterTax = $qHoldingTax + $qRwhPenalty;
+
         // Tax Calculation Quaterly
         $tax = [
             "arv" => roundFigure($calculatePropertyTax),
@@ -937,14 +942,14 @@ class SafCalculation
             "calculationFactor" => $readCalculationFactor,
             "matrixFactor" => $readMatrixFactor,
 
-            "holdingTax" => roundFigure($calculatePropertyTax / 4),
+            "holdingTax" => $qHoldingTax,
             "latrineTax" => 0,
             "waterTax" => 0,
             "healthTax" => 0,
             "educationTax" => 0,
 
-            "rwhPenalty" => roundFigure($rwhPenalty / 4),
-            "totalTax" => roundFigure($calculatePropertyTax / 4) + roundFigure($rwhPenalty / 4),
+            "rwhPenalty" => $qRwhPenalty,
+            "totalTax" => $quaterTax,
             "onePercPenalty" => $onePercPenalty,
             "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
         ];
