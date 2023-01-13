@@ -241,17 +241,9 @@ trait Auth
             return $collection;
         }
 
-        # may call another function for below database serch
         # collecting the roles for respective user
-        $menuRoleDetails = WfRoleusermap::leftJoin('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_role_id')
-            ->where('wf_roleusermaps.user_id', $userId)
-            ->where('wf_roleusermaps.is_suspended', false)
-            ->select(
-                'wf_roles.role_name AS roles',
-                'wf_roles.id AS roleId'
-            )
-            ->orderByDesc('wf_roles.id')
-            ->get();
+        $mWfRoleusermap = new WfRoleusermap();
+        $menuRoleDetails = $mWfRoleusermap->getRoleDetailsByUserId($userId);
 
         if (empty(collect($menuRoleDetails)->first())) {
             return ("User has No Roles!");
@@ -267,18 +259,10 @@ trait Auth
             return $values;
         });
 
-        # may call another function for below database serch
         # representing the menu details for each role
         foreach ($roleId as $roleIds) {
-            $roleBasedMenu[] = WfRolemenu::join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
-                ->where('wf_rolemenus.role_id', $roleIds)
-                ->where('wf_rolemenus.status', 1)
-                ->select(
-                    'menu_masters.menu_string AS menuName',
-                    'menu_masters.route AS menuPath',
-                )
-                ->orderByDesc('menu_masters.id')
-                ->get();
+            $mWfRolemenu = new WfRolemenu();
+            $roleBasedMenu[] = $mWfRolemenu->getMenuDetailsByRoleId($roleIds);
         }
 
         $menuDetails = collect($roleBasedMenu)->collapse();

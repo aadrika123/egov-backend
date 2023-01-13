@@ -11,11 +11,8 @@ use App\Models\Water\WaterApplicantDoc;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionCharge;
-use App\Models\Water\WaterLevelpending;
 use App\Models\Water\WaterPenaltyInstallment;
-use App\Models\Water\WaterSiteInspection;
 use App\Models\Workflows\WfRoleusermap;
-use App\Models\Workflows\WfTrack;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
@@ -39,7 +36,7 @@ use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
  * | Created On-07-10-2022 
  * | Created By-Anshu Kumar
- * | Updated By-Sam kerketta
+ * | Created By-Sam kerketta
  */
 
 class NewConnectionRepository implements iNewConnection
@@ -48,6 +45,7 @@ class NewConnectionRepository implements iNewConnection
     use Workflow;
     use Ward;
     use WaterTrait;
+
     private $_dealingAssistent;
     private $_vacantLand;
     private $_waterWorkflowId;
@@ -339,9 +337,6 @@ class NewConnectionRepository implements iNewConnection
 
         $waterApplication = WaterApplication::find($req->appId);
         $waterApplication->current_role = $req->receiverRoleId;
-        if ($req->senderRoleId == $this->_juniorEngRoleId) {
-            $waterApplication->is_field_verified = true;
-        }
         $waterApplication->save();
 
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
@@ -571,7 +566,7 @@ class NewConnectionRepository implements iNewConnection
         # Level comment
         $mtableId = $applicationDetails->first()->id;
         $mRefTable = "water_applications.id";
-        $levelComment['levelcomments'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId);
+        $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId);
 
         #citizen comment
         $refCitizenId = $applicationDetails->first()->user_id;
@@ -900,45 +895,5 @@ class NewConnectionRepository implements iNewConnection
     }
 
 
-    /**
-     * |--------------------------- field Verification of water -----------------------------------|
-     * | @param req
-     * | @var 
-        | Serial No : 
-        | Flag / work on saving the vrified details
-        | API
-     */
-    public function fieldVerification(reqSiteVerification $req)
-    {
-        try {
-            $juniorEngRoleId = Config::get('waterConstaint.ROLE-LABEL.JE');
-            $mWaterApplication = new WaterApplication();
-            $verification = new WaterSiteInspection();
-            $verificationStatus = $req->verificationStatus;                                             // Verification Status true or false
 
-            switch ($req->currentRoleId) {
-                case $juniorEngRoleId;                                                                  // In Case of Agency TAX Collector
-                    if ($verificationStatus == 1) {
-                        $req->agencyVerification = true;
-                        $msg = "Site Successfully Verified";
-                    }
-                    if ($verificationStatus == 0) {
-                        $req->agencyVerification = false;
-                        $msg = "Site Successfully rebuted";
-                    }
-                    $mWaterApplication->markSiteVerification($req);
-                    break;
-                default:
-                    return responseMsg(false, "Forbidden Access", "");
-            }
-            // DB::beginTransaction();
-            // // Verification Store
-            // $verification->store($req);                                                                          // Model function to store verification and get the id
-            // DB::commit();
-            return responseMsgs(true, $msg, "", "010118", "1.0", "310ms", "POST", $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 }

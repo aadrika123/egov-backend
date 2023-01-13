@@ -165,7 +165,7 @@ class CommonFunction implements ICommonFunction
     public function getUserRoll($user_id, $ulb_id, $workflow_id)
     {
         try {
-            // DB::enableQueryLog();
+            DB::enableQueryLog();
             $data = WfRole::select(
                 DB::raw(
                     "wf_roles.id as role_id,wf_roles.role_name,
@@ -176,7 +176,7 @@ class CommonFunction implements ICommonFunction
                                             wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
                                             wf_workflowrolemaps.can_upload_document,
                                             wf_workflowrolemaps.can_verify_document,
-                                            wf_masters.id as workflow_id,wf_masters.workflow_name,
+                                            wf_workflows.id as workflow_id,wf_masters.workflow_name,
                                             ulb_masters.id as ulb_id, ulb_masters.ulb_name,
                                             ulb_masters.ulb_type"
                 )
@@ -204,7 +204,7 @@ class CommonFunction implements ICommonFunction
                 ->where("wf_roles.is_suspended", false)
                 ->where("wf_roleusermaps.user_id", $user_id)
                 ->where("wf_workflows.ulb_id", $ulb_id)
-                ->where("wf_masters.id", $workflow_id)
+                ->where("wf_workflows.id", $workflow_id)
                 ->orderBy("wf_roleusermaps.id", "desc")
                 ->first();
             // dd(DB::getQueryLog());
