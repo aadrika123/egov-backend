@@ -254,7 +254,7 @@ class ObjectionController extends Controller
             $data->escalated_by = $userId;
             $data->save();
             DB::commit();
-            return responseMsgs(true, $req->escalateStatus == 1 ? 'Objection is Escalated' : "Objection is removed from Escalated", '', '010808', '01', '474ms-573', 'Post', '');
+            return responseMsgs(true, $req->escalateStatus == 1 ? 'Objection is Escalated' : "Objection is removed from Escalated", '', '010808', '01', '', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -337,7 +337,7 @@ class ObjectionController extends Controller
 
             DB::commit();
 
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', '474ms-573', 'Post', '');
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', '', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -447,7 +447,7 @@ class ObjectionController extends Controller
                 ->orderByDesc('prop_active_objections.id')
                 ->get();
 
-            return responseMsgs(true, "", remove_null($ojectionlist), '010813', '01', '319ms-364ms', 'Post', '');
+            return responseMsgs(true, "", remove_null($ojectionlist), '010813', '01', '', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -462,7 +462,7 @@ class ObjectionController extends Controller
                 ->where('prop_active_objections.id', $req->id)
                 ->get();
 
-            return responseMsgs(true, "", remove_null($ojectionlist), '010813', '01', '319ms-364ms', 'Post', '');
+            return responseMsgs(true, "", remove_null($ojectionlist), '010813', '01', '', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }
@@ -488,7 +488,7 @@ class ObjectionController extends Controller
             $docStatus = new PropActiveObjectionDocdtl();
             $docStatus->verifyDoc($req);
 
-            return responseMsgs(true, "Successfully Done", '', '010817', '01', '302ms-356ms', 'Post', '');
+            return responseMsgs(true, "Successfully Done", '', '010817', '01', '', 'Post', '');
         } catch (Exception $e) {
             echo $e->getMessage();
         }

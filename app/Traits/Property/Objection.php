@@ -21,10 +21,10 @@ trait Objection
             ->select(
                 'prop_active_objections.id',
                 'prop_active_objections.workflow_id',
+                'prop_active_objections.objection_no as application_no',
                 'p.ward_mstr_id as old_ward_id',
                 'u.ward_name as old_ward_no',
                 'p.new_ward_mstr_id',
-                // 'u1.ward_name as new_ward_no',
                 'p.applicant_name',
                 'p.new_holding_no',
                 'p.application_date',

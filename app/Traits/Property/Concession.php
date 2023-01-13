@@ -17,6 +17,7 @@ trait Concession
         return DB::table('prop_active_concessions')
             ->select(
                 'prop_active_concessions.id',
+                'prop_active_concessions.application_no',
                 'prop_active_concessions.applicant_name as owner_name',
                 'a.ward_mstr_id',
                 'u.ward_name as ward_no',
