@@ -11,7 +11,7 @@ class DemoController extends Controller
     public function waterConnection(Request $req)
     {
         // return $req->mobileNo;
-        $a = '91';
+        // $a = '91';
         $data = User::select('application_no', 'ward_id')
             ->join('water_applications', 'water_applications.user_id', 'users.id')
             ->where('users.mobile', $req->mobileNo)
