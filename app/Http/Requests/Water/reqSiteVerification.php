@@ -13,7 +13,7 @@ class reqSiteVerification extends FormRequest
      */
     public function authorize()
     {
-        return false;
+        return true;
     }
 
     /**
@@ -25,6 +25,8 @@ class reqSiteVerification extends FormRequest
     {
         return [
             //
+            'verificationStatus' => 'required',
+            'currentRoleId' => 'required'
         ];
     }
 }

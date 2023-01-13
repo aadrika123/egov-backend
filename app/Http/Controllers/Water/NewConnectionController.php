@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Water\reqSiteVerification;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
@@ -11,6 +12,7 @@ use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterPropertyTypeMstr;
+use App\Models\Water\WaterSiteInspection;
 use App\Models\Workflows\WfWardUser;
 use App\Models\WorkflowTrack;
 use Illuminate\Http\Request;
@@ -18,8 +20,10 @@ use App\Repository\Water\Interfaces\iNewConnection;
 use App\Traits\Ward;
 use App\Traits\Water\WaterTrait;
 use App\Traits\Workflow\Workflow;
+use DateTime;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Ramsey\Collection\Collection as CollectionCollection;
@@ -413,6 +417,38 @@ class NewConnectionController extends Controller
     {
         try {
             return $this->newConnection->fieldVerifiedInbox($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Field Verification of water
+    public function fieldVerification(reqSiteVerification $request)
+    {
+        try {
+            $juniorEngRoleId = Config::get('waterConstaint.ROLE-LABEL.JE');
+            $mWaterApplication = new WaterApplication();
+            // $verification = new WaterSiteInspection();
+            $verificationStatus = $request->verificationStatus;                                             // Verification Status true or false
+
+            switch ($request->currentRoleId) {
+                case $juniorEngRoleId;                                                                  // In Case of Agency TAX Collector
+                    if ($verificationStatus == 1) {
+                        $msg = "Site Successfully Verified";
+                    }
+                    if ($verificationStatus == 0) {
+                        $msg = "Site Successfully Rebuted";
+                    }
+                    $mWaterApplication->markSiteVerification($request->id);
+                    break;
+                default:
+                    return responseMsg(false, "Forbidden Access", "");
+            }
+            // DB::beginTransaction();
+            // // Verification Store
+            // $verification->store($request);                                                                          // Model function to store verification and get the id
+            // DB::commit();
+            return responseMsgs(true, $msg, "", "010118", "1.0", "310ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
