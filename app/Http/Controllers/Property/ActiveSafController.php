@@ -1414,7 +1414,7 @@ class ActiveSafController extends Controller
             return $value['value'] > 0;
         });
 
-        return $tax;
+        return $tax->values();
     }
 
     /**
