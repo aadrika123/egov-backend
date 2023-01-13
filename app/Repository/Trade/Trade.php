@@ -2407,7 +2407,8 @@ class Trade implements ITrade
             }
             $mUserType = $this->_parent->userType($refWorkflowId);
             $mWardPermission = $this->_parent->WardPermission($refUserId);
-            $mRole = $this->_parent->getUserRoll($refUserId, $refUlbId, $refWorkflowMstrId->wf_master_id);
+            $mRole = $this->_parent->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
+            // dd($refUserId, $refUlbId, $refWorkflowId);
             $mJoins = "";
             if (!$mRole) {
                 throw new Exception("You Are Not Authorized For This Action");

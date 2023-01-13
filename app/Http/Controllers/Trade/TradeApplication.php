@@ -78,6 +78,7 @@ class TradeApplication extends Controller
             } else {
                 $data['wardList'] = $this->_parent->WardPermission($refUserId);
             }
+
             $data['userType']           = $mUserType;
             $data["firmTypeList"]       = TradeParamFirmType::List();
             $data["ownershipTypeList"]  = TradeParamOwnershipType::List();
@@ -86,7 +87,7 @@ class TradeApplication extends Controller
             if (isset($request->licenseId) && $request->licenseId  && $mApplicationTypeId != 1) {
                 $mOldLicenceId = $request->licenseId;
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-                return  $refOldLicece = TradeLicence::find($mOldLicenceId);
+                $refOldLicece = $this->Repository->getLicenceById($mOldLicenceId); //TradeLicence::find($mOldLicenceId)
                 if (!$refOldLicece) {
                     throw new Exception("Old Licence Not Found");
                 }
@@ -94,7 +95,7 @@ class TradeApplication extends Controller
                     $newLicense = ActiveTradeLicence::where("license_no", $refOldLicece->license_no)
                         ->orderBy("id")
                         ->first();
-                    throw new Exception("Application Aready Apply Please Track  " . $newLicense->application_no);
+                    throw new Exception("Application Already Apply Please Track  " . $newLicense->application_no);
                 }
                 if ($refOldLicece->valid_upto > $nextMonth) {
                     throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
@@ -102,7 +103,7 @@ class TradeApplication extends Controller
                 if ($refOldLicece->pending_status != 5) {
                     throw new Exception("Application Aready Apply Please Track  " . $refOldLicece->application_no);
                 }
-                return $refOldOwneres = TradeOwner::owneresByLId($request->licenseId);
+                $refOldOwneres = TradeOwner::owneresByLId($request->licenseId);
                 $mnaturOfBusiness = TradeParamItemType::itemsById($refOldLicece->nature_of_bussiness);
                 $natur = array();
                 foreach ($mnaturOfBusiness as $val) {
