@@ -930,7 +930,7 @@ class SafCalculation
         // Quaterly Taxes
         $qHoldingTax = roundFigure($calculatePropertyTax / 4);
         $qRwhPenalty = roundFigure($rwhPenalty / 4);
-        $quaterTax = $qHoldingTax + $qRwhPenalty;
+        $quaterTax = roundFigure($qHoldingTax + $qRwhPenalty);
 
         // Tax Calculation Quaterly
         $tax = [
