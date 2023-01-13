@@ -64,6 +64,7 @@ class PropActiveHarvesting extends Model
         return DB::table('prop_active_harvestings as h')
             ->select(
                 'h.*',
+                'h.user_id as citizen_user_id',
                 'pp.*',
                 'w.ward_name as old_ward_no',
                 'nw.ward_name as new_ward_no',
@@ -72,13 +73,13 @@ class PropActiveHarvesting extends Model
                 'r.road_type as road_type_master',
                 'wr.role_name as current_role_name'
             )
-            ->join('prop_properties as pp', 'pp.id', '=', 'h.property_id')
-            ->join('ulb_ward_masters as w', 'w.id', '=', 'pp.ward_mstr_id')
-            ->join('wf_roles as wr', 'wr.id', '=', 'h.current_role')
-            ->join('ulb_ward_masters as nw', 'nw.id', '=', 'pp.new_ward_mstr_id')
-            ->join('ref_prop_ownership_types as o', 'o.id', '=', 'pp.ownership_type_mstr_id')
-            ->join('ref_prop_types as p', 'p.id', '=', 'pp.prop_type_mstr_id')
-            ->join('ref_prop_road_types as r', 'r.id', '=', 'pp.road_type_mstr_id')
+            ->leftJoin('prop_properties as pp', 'pp.id', '=', 'h.property_id')
+            ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'pp.ward_mstr_id')
+            ->leftJoin('wf_roles as wr', 'wr.id', '=', 'h.current_role')
+            ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'pp.new_ward_mstr_id')
+            ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'pp.ownership_type_mstr_id')
+            ->leftJoin('ref_prop_types as p', 'p.id', '=', 'pp.prop_type_mstr_id')
+            ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'pp.road_type_mstr_id')
             ->where('h.id', $id)
             ->first();
     }

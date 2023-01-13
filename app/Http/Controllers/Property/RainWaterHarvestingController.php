@@ -372,7 +372,7 @@ class RainWaterHarvestingController extends Controller
             $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $req->id);
             $fullDetailsData['levelComment'] = $levelComment;
 
-            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $req->id, $details->user_id);
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $req->id, $details->citizen_user_id);
             $fullDetailsData['citizenComment'] = $citizenComment;
 
             $metaReqs['customFor'] = 'PROPERTY-HARVESTING';
