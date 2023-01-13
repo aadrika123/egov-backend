@@ -674,6 +674,9 @@ class ConcessionController extends Controller
     //get document status by id
     public function concessionDocList(Request $req)
     {
+        $req->validate([
+            'id' => 'required|integer'
+        ]);
         try {
             $list = PropConcessionDocDtl::select(
                 'id',
@@ -699,6 +702,9 @@ class ConcessionController extends Controller
     //doc upload
     public function concessionDocUpload(Request $req)
     {
+        $req->validate([
+            'id' => 'required|integer'
+        ]);
         try {
             //gender doc
             if ($file = $req->file('genderDoc')) {
@@ -866,5 +872,46 @@ class ConcessionController extends Controller
             ->first();
 
         return $ownerDetails;
+    }
+
+    /**
+     * | Citizen and Level Pendings Independent Comments
+     */
+    public function commentIndependent(Request $req)
+    {
+        $req->validate([
+            'comment' => 'required',
+            'concessionId' => 'required|integer',
+            'senderRoleId' => 'nullable|integer'
+        ]);
+
+        try {
+            $workflowTrack = new WorkflowTrack();
+            $concession = PropActiveConcession::find($req->concessionId);                         // Concessions
+            $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs = array();
+            DB::beginTransaction();
+            // Save On Workflow Track For Level Independent
+            $metaReqs = [
+                'workflowId' => $concession->workflow_id,
+                'moduleId' => $mModuleId,
+                'refTableDotId' => "prop_active_concessions.id",
+                'refTableIdValue' => $concession->id,
+                'message' => $req->comment
+            ];
+            // For Citizen Independent Comment
+            if (!$req->senderRoleId) {
+                $metaReqs = array_merge($metaReqs, ['citizenId' => $concession->user_id]);
+            }
+
+            $req->request->add($metaReqs);
+            $workflowTrack->saveTrack($req);
+
+            DB::commit();
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $req->comment], "010108", "1.0", "", "POST", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }
