@@ -30,6 +30,7 @@ class ObjectionController extends Controller
     use SafDetailsTrait;
 
     protected $objection;
+    protected $Repository;
     public function __construct(iObjectionRepository $objection)
     {
         $this->Repository = $objection;
