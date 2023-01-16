@@ -124,7 +124,12 @@ class WaterNewConnection implements IWaterNewConnection
                         return $secondVal;
                     }
                 });
-                $value['transDetails'] = $transactionIdDetail['1'];
+                $filtered = collect($transactionIdDetail)->filter(function ($nonEmpty,) {
+                    if ($nonEmpty != null) {
+                        return $nonEmpty;
+                    }
+                });
+                $value['transDetails'] = $filtered->values();
                 return $value;
             });
 

@@ -169,6 +169,7 @@ class WebhookPaymentData extends Model
         $ref = WebhookPaymentData::select('id', 'payment_transaction_id', 'payment_notes')
             ->where('user_id', $user->id)
             ->where('department_id', $depId)
+            ->orderByDesc('id')
             ->get();
         return collect($ref)->map(function ($value, $key) {
             $notes = json_decode($value['payment_notes']);
