@@ -4,15 +4,18 @@ namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\reqSiteVerification;
+use App\Models\Payment\WebhookPaymentData;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
+use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterPropertyTypeMstr;
 use App\Models\Water\WaterSiteInspection;
+use App\Models\Water\WaterTran;
 use App\Models\Workflows\WfWardUser;
 use App\Models\WorkflowTrack;
 use Illuminate\Http\Request;
@@ -422,7 +425,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Field Verification of water
+    // Field Verification of water Applications
     public function fieldVerification(reqSiteVerification $request)
     {
         try {
@@ -451,6 +454,72 @@ class NewConnectionController extends Controller
             return responseMsgs(true, $msg, "", "010118", "1.0", "310ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Generate the payment Recipt
+    public function generatePaymentReceipt(Request $req)
+    {
+        $req->validate([
+            'paymentId' => 'required'
+        ]);
+
+        try {
+            $mPaymentData = new WebhookPaymentData();
+            $mWaterApplication = new WaterApplication();
+            $mWaterTransaction = new WaterTran();
+            $mTowards = Config::get('waterConstaint.TOWARDS');
+            $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
+            $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
+
+            $applicationDtls = $mPaymentData->getApplicationId($req->paymentId);
+            $applicationId = json_decode($applicationDtls)->applicationId;
+
+            $applicationDetails = $mWaterApplication->getWaterApplicationsDetails($applicationId);
+            $webhookData = $mPaymentData->getPaymentDetailsByPId($req->paymentId);
+            $webhookDetails = collect($webhookData)->last();
+
+            $transactionDetails = $mWaterTransaction->getTransactionDetailsById($applicationId);
+            $waterTrans = collect($transactionDetails)->last();
+
+            $epoch = $webhookDetails->payment_created_at;
+            $dateTime = new DateTime("@$epoch");
+            $transactionTime = $dateTime->format('H:i:s');
+
+            return   $responseData = [
+                "departmentSection" => $mDepartmentSection,
+                "accountDescription" => $mAccDescription,
+                "transactionDate" => $waterTrans->tran_date,
+                "transactionNo" => $waterTrans->tran_no,
+                "transactionTime" => $transactionTime,
+                "applicationNo" => $applicationDetails->application_no,
+                "customerName" => $applicationDetails->applicant_name,
+                "customerMobile" => $applicationDetails->mobile_no,
+                "receiptWard" => $applicationDetails->ward_id,
+                "address" => $applicationDetails->address,
+                "paidFrom" => "",
+                "paidFromQtr" => "",
+                "paidUpto" => "",
+                "paidUptoQtr" => "",
+                "paymentMode" => $waterTrans->payment_mode,
+                "bankName" => $webhookDetails->payment_bank ?? null,
+                "branchName" => "",
+                "chequeNo" => "",
+                "chequeDate" => "",
+                "noOfFlats" => "",
+                "monthlyRate" => "",
+                "demandAmount" => "",  // if the trans is diff
+                "taxDetails" => "",
+                "ulbId" => $webhookDetails->ulb_id,
+                "WardNo" => $applicationDetails->ward_id,
+                "towards" => $mTowards,
+                "description" => $waterTrans->tran_type,
+                "totalPaidAmount" => $webhookDetails->payment_amount,
+                "paidAmtInWords" => getIndianCurrency($webhookDetails->payment_amount),
+            ];
+            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }

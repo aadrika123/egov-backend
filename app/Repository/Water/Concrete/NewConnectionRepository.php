@@ -584,7 +584,7 @@ class NewConnectionRepository implements iNewConnection
         $forwardBackward = $forwardBackward->getRoleDetails($request);
         $roleDetails['roleDetails'] = collect($forwardBackward)['original']['data'];
 
-        # timelineData
+        # Timeline Data
         $timelineData['timelineData'] = collect($request);
 
         # Departmental Post

@@ -10,4 +10,8 @@ return [
         "AE" => "55",
         "EO" => "10"
     ],
+
+    "ACCOUNT_DESCRIPTION" => "Water",
+    "DEPARTMENT_SECTION" => "Revenue Section",
+    "TOWARDS" => "Water Connection and Others",
 ];

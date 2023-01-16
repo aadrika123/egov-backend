@@ -279,6 +279,33 @@ class WaterNewConnection implements IWaterNewConnection
                 $val->update();
             }
 
+            /**
+             *  get the document details by (upload-document) api function 
+             *  run foreach for (documentsList) then check the (document Mandatory is 1 and  collect the uplode doc then it should be contain data)
+             *  then only the curent role will be farwarded to the current role  ie. below code 
+             */
+            // $req = [
+            //     'applicationId' => $application->id,
+            //     'userId' => $application->user_id,
+            //     'ulbId' => $application->ulb_id
+            // ];
+            // $refrequest = new Request($req);
+            // $details = $this->documentUpload($refrequest);
+            // $verified = collect($details)->map(function ($value, $key) use ($applicationId) {
+            //     if ($value['isMadatory'] == 1 && $value['uploadDoc'] != null) {
+            //         return true;
+            //     }
+            //     return false;
+            // })->reject(function ($value) {
+            //     return $value === false;
+            // });
+            // if ($verified == true) {
+            //     WaterApplication::where('id', $applicationId)
+            //         ->update([
+            //             'current_role' => $this->_dealingAssistent
+            //         ]);
+            // }
+
             WaterApplication::where('id', $applicationId)
                 ->update([
                     'current_role' => $this->_dealingAssistent
@@ -376,8 +403,8 @@ class WaterNewConnection implements IWaterNewConnection
     {
         try {
             $refUser            = Auth()->user();
-            $refUserId          = $refUser->id;
-            $refUlbId           = $refUser->ulb_id;
+            $refUserId          = $refUser->id ?? $request->userId;
+            $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
             $refApplication     = (array)null;
             $refOwneres         = (array)null;
             $mUploadDocument    = (array)null;

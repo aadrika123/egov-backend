@@ -149,4 +149,14 @@ class WebhookPaymentData extends Model
             ->where('payment_transaction_id', $req->transactionNo)
             ->orderByDesc('id');
     }
+
+
+    /**
+     * 
+     */
+    public function getPaymentDetailsByPId ($payId)
+    {
+        return WebhookPaymentData::where('payment_id', $payId)
+            ->get();
+    }
 }
