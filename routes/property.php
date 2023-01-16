@@ -17,8 +17,7 @@ use App\Http\Controllers\Property\SafDemandController;
 use App\Http\Controllers\Property\DocumentController;
 use App\Http\Controllers\CustomController;
 use App\Http\Controllers\property\ClusterController;
-use Illuminate\Routing\Router;
-use Symfony\Component\Routing\DependencyInjection\RoutingResolverPass;
+use App\Http\Controllers\Property\SafDocController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -51,9 +50,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(CalculatorController::class)->group(function () {
     Route::post('calculatePropertyTax', 'calculator');
   });
+
   /**
    * | SAF
-       | Serial No : 01
+     | Serial No : 01
    */
   Route::controller(ActiveSafController::class)->group(function () {
     Route::get('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf(1)
@@ -76,20 +76,20 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment(15)
     Route::post('saf/payment-receipt', 'generatePaymentReceipt');                                       // Generate payment Receipt(16)
     Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions(17)
-
     Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification(18)
     Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging(19)
     Route::post('saf/get-tc-verifications', 'getTcVerifications');                                      // Get TC Verifications  Data(20)
     Route::post('saf/doc-status', 'safDocStatus');                                                      // Doc Verify (21)
     Route::post('saf/proptransaction-by-id', 'getTransactionBySafPropId');                              // Get Property Transaction by Property ID or SAF id(22)
+    Route::post('saf/get-demand-by-id', 'getDemandBySafId');                                            // Get the demandable Amount of the Property after payment done(26)
   });
 
   /**
    * | SAF Demand and Property contollers
        | Serial No : 02
    */
-  Route::controller(SafDemandController::class)->group(function () {
-    Route::post('saf/get-demand-by-id', 'getDemandBySafId');                // <------------- Get the demandable Amount of the Property after payment done
+  Route::controller(SafDocController::class)->group(function () {
+    Route::post('saf/document-upload', 'docUpload');                                                    // Upload Documents for SAF (01)
   });
 
   /**

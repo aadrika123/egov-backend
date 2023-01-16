@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\Property\ReqSiteVerification;
 use App\MicroServices\DocUpload;
+use App\MicroServices\IdGeneration;
 use App\Models\CustomDetail;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenalty;
@@ -250,11 +251,10 @@ class ActiveSafController extends Controller
             $finisherRoleId = DB::select($refFinisherRoleId);
 
             DB::beginTransaction();
-            $safNo = $this->safNo($request->ward, $assessmentTypeId, $ulb_id);
             $saf = new PropActiveSaf();
 
             $metaReqs['lateAssessPenalty'] = $mLateAssessPenalty;
-            $metaReqs['safNo'] = $safNo;
+            // $metaReqs['safNo'] = $safNo;
             $metaReqs['roadWidthType'] = $roadWidthType;
             $metaReqs['userId'] = $user_id;
             $metaReqs['workflowId'] = $ulbWorkflowId->id;
@@ -263,7 +263,9 @@ class ActiveSafController extends Controller
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
 
             $request->merge($metaReqs);
-            $safId = $saf->store($request);                                             // Store SAF Using Model function 
+            $createSaf = $saf->store($request);                                             // Store SAF Using Model function 
+            $safId = $createSaf->original['safId'];
+            $safNo = $createSaf->original['safNo'];
 
             // SAF Owner Details
             if ($request['owner']) {
@@ -1497,7 +1499,7 @@ class ActiveSafController extends Controller
             $propertyDtl['floors'] = $floors;
             $propertyDtl['owners'] = $owners;
 
-            return responseMsgs(true, "Property Details", remove_null($propertyDtl), "010112", "1.0", "238ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Property Details", remove_null($propertyDtl), "010112", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -1635,6 +1637,28 @@ class ActiveSafController extends Controller
 
             $data['floorDetails'] = $verificationDtls;
             return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Get the Demandable Amount By SAF ID After Payment
+     * | @param $req
+     * | Query Run time -272ms 
+     * | Rating-2
+     */
+    public function getDemandBySafId(Request $req)
+    {
+        try {
+            $demand = array();
+            $transaction = new PropTransaction();
+            $demand['amounts'] = $transaction->getPropTransactions($req->safId, "saf_id");
+
+            $propSafDemand = new PropSafsDemand();
+            $demand['details'] = $propSafDemand->getDemandBySafId($req->safId);
+
+            return responseMsg(true, "All Demands", remove_null($demand));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
