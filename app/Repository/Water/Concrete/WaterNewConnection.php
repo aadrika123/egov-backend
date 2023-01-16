@@ -3,6 +3,7 @@
 namespace App\Repository\Water\Concrete;
 
 use App\EloquentModels\Common\ModelWard;
+use App\Models\Payment\WebhookPaymentData;
 use App\Models\UlbMaster;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplicantDoc;
@@ -69,6 +70,8 @@ class WaterNewConnection implements IWaterNewConnection
         try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
+            $mWebhookPaymentData = new WebhookPaymentData();
+            $departmnetId       = Config::get('waterConstaint.WATER_DEPAPRTMENT_ID');
             // $refUlbId           = $request->ulbId;
             // AND water_applications.ulb_id = $refUlbId (btw line 95 96)
             $connection         = WaterApplication::select(
@@ -112,12 +115,26 @@ class WaterNewConnection implements IWaterNewConnection
                 // ->where("water_applications.ulb_id", $refUlbId)
                 ->orderbydesc('id')
                 ->get();
-            return responseMsg(true, "", $connection);
+
+            $TransData = $mWebhookPaymentData->getTransactionDetails($departmnetId, $refUser);
+            $returnValue = collect($connection)->map(function ($value) use ($TransData) {
+                $id = $value['id'];
+                $transactionIdDetail = collect($TransData)->map(function ($secondVal) use ($id) {
+                    if ($secondVal['applicationId'] == $id) {
+                        return $secondVal;
+                    }
+                });
+                $value['transDetails'] = $transactionIdDetail['1'];
+                return $value;
+            });
+
+            return responseMsg(true, "", remove_null($returnValue));
         } catch (Exception $e) {
 
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
     /**
      *  Genrate the RazorPay OrderId 
        Query const(3.30)

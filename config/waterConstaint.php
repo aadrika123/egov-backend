@@ -14,4 +14,5 @@ return [
     "ACCOUNT_DESCRIPTION" => "Water",
     "DEPARTMENT_SECTION" => "Revenue Section",
     "TOWARDS" => "Water Connection and Others",
+    "WATER_DEPAPRTMENT_ID" => "2",
 ];

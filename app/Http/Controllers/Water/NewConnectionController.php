@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Water;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\reqSiteVerification;
 use App\Models\Payment\WebhookPaymentData;
+use App\Models\UlbWardMaster;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
@@ -468,6 +469,8 @@ class NewConnectionController extends Controller
             $mPaymentData = new WebhookPaymentData();
             $mWaterApplication = new WaterApplication();
             $mWaterTransaction = new WaterTran();
+            $mUlbWardMaster = new UlbWardMaster();
+            
             $mTowards = Config::get('waterConstaint.TOWARDS');
             $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
@@ -485,6 +488,10 @@ class NewConnectionController extends Controller
             $epoch = $webhookDetails->payment_created_at;
             $dateTime = new DateTime("@$epoch");
             $transactionTime = $dateTime->format('H:i:s');
+
+            return $applicationDetails->ward_id;
+            $mUlbWardMaster->getWardByUlbId($applicationDetails->ward_id);
+
 
             return   $responseData = [
                 "departmentSection" => $mDepartmentSection,
