@@ -61,6 +61,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('list-message', 'getIndependentComment');                                           //
         Route::post('list-field-verified-inbox', 'fieldVerifiedInbox');                                 //
         Route::post('verification-field', 'fieldVerification');                                         //
+        Route::post('generate_payment_receipt', 'generatePaymentReceipt');                              //
         // Route::post('', 'getLevelcomment');                                                          //
     });
 });

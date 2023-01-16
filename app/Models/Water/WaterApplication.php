@@ -108,4 +108,14 @@ class WaterApplication extends Model
         $activeSaf->is_field_verified = true;
         $activeSaf->save();
     }
+
+    /**
+     * |------------------ Get Application details By Id ---------------|
+     */
+    public function getWaterApplicationsDetails($req)
+    {
+        return WaterApplication::join('water_applicants','water_applicants.application_id','water_applications.id')
+        ->where('water_applications.id',$req)
+        ->first();
+    }
 }

@@ -40,9 +40,9 @@ class WebhookPaymentData extends Model
      * | @return data
         | Serial No :
      */
-    public function getApplicationId($payId)
+    public function getApplicationId($transId)
     {
-        $userDetails = WebhookPaymentData::where('payment_id', $payId)
+        $userDetails = WebhookPaymentData::where('payment_transaction_id', $transId)
             ->select(
                 'payment_notes AS userDetails'
             )
@@ -66,7 +66,7 @@ class WebhookPaymentData extends Model
      * | @var webhookData : Object for the model 
         | Serial No : 
      */
-    public function saveWebhookData($request,$captured,$actulaAmount,$status,$notes,$firstKey,$contains,$actualTransactionNo,$webhookEntity)
+    public function saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity)
     {
         $webhookData = new WebhookPaymentData();
         $webhookData->entity                       = $request->entity;
@@ -126,7 +126,7 @@ class WebhookPaymentData extends Model
      */
     public function webhookByTransaction($req)
     {
-       return WebhookPaymentData::select(
+        return WebhookPaymentData::select(
             'payment_order_id AS orderId',
             'payment_amount AS amount',
             'payment_status AS status',
@@ -148,5 +148,36 @@ class WebhookPaymentData extends Model
         )
             ->where('payment_transaction_id', $req->transactionNo)
             ->orderByDesc('id');
+    }
+
+
+    /**
+     * | Get payment Details by PaymentId
+     */
+    public function getPaymentDetailsByPId($transId)
+    {
+        return WebhookPaymentData::where('payment_transaction_id', $transId)
+            ->get();
+    }
+
+
+    /**
+     * |Get Transaction Id by application Id
+     */
+    public function getTransactionDetails($depId, $user)
+    {
+        $ref = WebhookPaymentData::select('id', 'payment_transaction_id', 'payment_notes')
+            ->where('user_id', $user->id)
+            ->where('department_id', $depId)
+            ->orderByDesc('id')
+            ->get();
+        return collect($ref)->map(function ($value, $key) {
+            $notes = json_decode($value['payment_notes']);
+            $applicationId = $notes->applicationId;
+            return $returnValue = [
+                'applicationId' => $applicationId,
+                'payment_transaction_id' => $value['payment_transaction_id']
+            ];
+        });
     }
 }
