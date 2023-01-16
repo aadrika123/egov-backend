@@ -292,7 +292,7 @@ class TradeCitizenController extends Controller
             DB::beginTransaction();
             $TradeRazorPayRequest = new TradeRazorPayRequest();
             $TradeRazorPayRequest->temp_id   = $request->licenceId;
-            $TradeRazorPayRequest->payment_from = $transactionType;
+            $TradeRazorPayRequest->tran_type = $transactionType;
             $TradeRazorPayRequest->amount       = $totalCharge;
             $TradeRazorPayRequest->ip_address   = $request->ip();
             $TradeRazorPayRequest->order_id        = $temp["orderId"];
