@@ -462,7 +462,7 @@ class NewConnectionController extends Controller
     public function generatePaymentReceipt(Request $req)
     {
         $req->validate([
-            'paymentId' => 'required'
+            'transactionNo' => 'required'
         ]);
 
         try {
@@ -470,16 +470,16 @@ class NewConnectionController extends Controller
             $mWaterApplication = new WaterApplication();
             $mWaterTransaction = new WaterTran();
             $mUlbWardMaster = new UlbWardMaster();
-            
+
             $mTowards = Config::get('waterConstaint.TOWARDS');
             $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
 
-            $applicationDtls = $mPaymentData->getApplicationId($req->paymentId);
+            $applicationDtls = $mPaymentData->getApplicationId($req->transactionNo);
             $applicationId = json_decode($applicationDtls)->applicationId;
 
             $applicationDetails = $mWaterApplication->getWaterApplicationsDetails($applicationId);
-            $webhookData = $mPaymentData->getPaymentDetailsByPId($req->paymentId);
+            $webhookData = $mPaymentData->getPaymentDetailsByPId($req->transactionNo);
             $webhookDetails = collect($webhookData)->last();
 
             $transactionDetails = $mWaterTransaction->getTransactionDetailsById($applicationId);
@@ -489,9 +489,7 @@ class NewConnectionController extends Controller
             $dateTime = new DateTime("@$epoch");
             $transactionTime = $dateTime->format('H:i:s');
 
-            return $applicationDetails->ward_id;
-            $mUlbWardMaster->getWardByUlbId($applicationDetails->ward_id);
-
+           $wardName=$mUlbWardMaster->getWardById($applicationDetails->ward_id);
 
             return   $responseData = [
                 "departmentSection" => $mDepartmentSection,
@@ -518,7 +516,7 @@ class NewConnectionController extends Controller
                 "demandAmount" => "",  // if the trans is diff
                 "taxDetails" => "",
                 "ulbId" => $webhookDetails->ulb_id,
-                "WardNo" => $applicationDetails->ward_id,
+                "WardNo" => $wardName->ward_name,
                 "towards" => $mTowards,
                 "description" => $waterTrans->tran_type,
                 "totalPaidAmount" => $webhookDetails->payment_amount,

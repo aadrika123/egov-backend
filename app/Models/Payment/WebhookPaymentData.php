@@ -40,9 +40,9 @@ class WebhookPaymentData extends Model
      * | @return data
         | Serial No :
      */
-    public function getApplicationId($payId)
+    public function getApplicationId($transId)
     {
-        $userDetails = WebhookPaymentData::where('payment_id', $payId)
+        $userDetails = WebhookPaymentData::where('payment_transaction_id', $transId)
             ->select(
                 'payment_notes AS userDetails'
             )
@@ -154,9 +154,9 @@ class WebhookPaymentData extends Model
     /**
      * | Get payment Details by PaymentId
      */
-    public function getPaymentDetailsByPId($payId)
+    public function getPaymentDetailsByPId($transId)
     {
-        return WebhookPaymentData::where('payment_id', $payId)
+        return WebhookPaymentData::where('payment_transaction_id', $transId)
             ->get();
     }
 
