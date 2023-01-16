@@ -489,9 +489,7 @@ class NewConnectionController extends Controller
             $dateTime = new DateTime("@$epoch");
             $transactionTime = $dateTime->format('H:i:s');
 
-           $wardName=$mUlbWardMaster->getWardById($applicationDetails->ward_id);
-
-            return   $responseData = [
+            $responseData = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
                 "transactionDate" => $waterTrans->tran_date,
@@ -500,7 +498,6 @@ class NewConnectionController extends Controller
                 "applicationNo" => $applicationDetails->application_no,
                 "customerName" => $applicationDetails->applicant_name,
                 "customerMobile" => $applicationDetails->mobile_no,
-                "receiptWard" => $applicationDetails->ward_id,
                 "address" => $applicationDetails->address,
                 "paidFrom" => "",
                 "paidFromQtr" => "",
@@ -516,7 +513,7 @@ class NewConnectionController extends Controller
                 "demandAmount" => "",  // if the trans is diff
                 "taxDetails" => "",
                 "ulbId" => $webhookDetails->ulb_id,
-                "WardNo" => $wardName->ward_name,
+                "WardNo" => $applicationDetails->ward_id,
                 "towards" => $mTowards,
                 "description" => $waterTrans->tran_type,
                 "totalPaidAmount" => $webhookDetails->payment_amount,
