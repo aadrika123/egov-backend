@@ -691,10 +691,10 @@ class ActiveSafController extends Controller
             $fullDetailsData['documentList'] = collect($docList)['original']['data'];
 
             $getDocumentList = $getDocuments->getDocList($req);
-            $documentList = collect($getDocumentList)['original']['data']['documentsList'];
-            $fullDetailsData['docrequired'] = collect($documentList)->map(function ($value) {
-                return $value['docVal'];
-            });
+            // $documentList = collect($getDocumentList)['original']['data']['documentsList'];
+            // $fullDetailsData['docrequired'] = collect($documentList)->map(function ($value) {
+            //     return $value['docVal'];
+            // });
 
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $req->deviceId);
         } catch (Exception $e) {
