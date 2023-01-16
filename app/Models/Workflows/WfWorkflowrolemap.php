@@ -34,6 +34,9 @@ class WfWorkflowrolemap extends Model
         $data->can_verify_document = $req->canVerifyDocument;
         $data->allow_free_communication = $req->allowFreeCommunication;
         $data->can_forward = $req->canForward;
+        $data->can_backward = $req->canBackward;
+        $data->is_pseudo = $req->isPseudo;
+        $data->show_field_verification = $req->showFieldVerification;
         $data->created_by = $createdBy;
         $data->stamp_date_time = Carbon::now();
         $data->created_at = Carbon::now();
@@ -52,8 +55,19 @@ class WfWorkflowrolemap extends Model
         $data->backward_role_id = $req->backwardRoleId;
         $data->is_initiator = $req->isInitiator;
         $data->is_finisher = $req->isFinisher;
-        $data->show_full_list = $req->showFullList;
-        $data->escalation = $req->escalation;
+        $data->allow_full_list = $req->allowFullList;
+        $data->can_escalate = $req->canEscalate;
+        $data->serial_no = $req->serialNo;
+        $data->is_btc = $req->isBtc;
+        $data->is_enabled = $req->isEnabled;
+        $data->can_view_document = $req->canViewDocument;
+        $data->can_upload_document = $req->canUploadDocument;
+        $data->can_verify_document = $req->canVerifyDocument;
+        $data->allow_free_communication = $req->allowFreeCommunication;
+        $data->can_forward = $req->canForward;
+        $data->can_backward = $req->canBackward;
+        $data->is_pseudo = $req->isPseudo;
+        $data->show_field_verification = $req->showFieldVerification;
         $data->save();
     }
 

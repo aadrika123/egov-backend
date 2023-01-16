@@ -16,7 +16,7 @@ class SafRepository implements iSafRepository
     public function getSaf($workflowIds)
     {
         $data = DB::table('prop_active_safs')
-            ->join('prop_active_safs_owners as o', 'o.saf_id', '=', 'prop_active_safs.id')
+            ->leftJoin('prop_active_safs_owners as o', 'o.saf_id', '=', 'prop_active_safs.id')
             ->join('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
             ->join('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
             ->select(
