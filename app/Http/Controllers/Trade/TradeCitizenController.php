@@ -44,15 +44,15 @@ class TradeCitizenController extends Controller
     private $_counter;
     public function __construct(ITradeCitizen $TradeRepository)
     {
-        $this->Repository = $TradeRepository ;
+        $this->Repository = $TradeRepository;
         $this->_modelWard = new ModelWard();
         $this->_parent = new CommonFunction();
         $this->_counter = new Trade;
-        $this->_queryRunTime=0.00;
+        $this->_queryRunTime = 0.00;
         $this->_metaData = [
-            "apiId" =>1.1,
-            "version"=>1.1,            
-            'queryRunTime' => $this->_queryRunTime,            
+            "apiId" => 1.1,
+            "version" => 1.1,
+            'queryRunTime' => $this->_queryRunTime,
         ];
     }
 
@@ -62,31 +62,47 @@ class TradeCitizenController extends Controller
         $this->_metaData["queryRunTime"] = 2.48;
         $this->_metaData["action"]    = $request->getMethod();
         $this->_metaData["deviceId"] = $request->ip();
-        try{
-            $rules["ulbId"]="required|digits_between:1,9223372036854775807";
+        try {
+            $rules["ulbId"] = "required|digits_between:1,9223372036854775807";
             $validator = Validator::make($request->all(), $rules);
-            if ($validator->fails()) 
-            {
-               return responseMsgs(false,$validator->errors(),$request->all(),
-                        $this->_metaData["apiId"],$this->_metaData["version"],$this->_metaData["queryRunTime"],
-                        $this->_metaData["action"],$this->_metaData["deviceId"]
-                    );
+            if ($validator->fails()) {
+                return responseMsgs(
+                    false,
+                    $validator->errors(),
+                    $request->all(),
+                    $this->_metaData["apiId"],
+                    $this->_metaData["version"],
+                    $this->_metaData["queryRunTime"],
+                    $this->_metaData["action"],
+                    $this->_metaData["deviceId"]
+                );
             }
-            $mWardList = $this->_modelWard->getAllWard($request->ulbId)->map(function($val){
+            $mWardList = $this->_modelWard->getAllWard($request->ulbId)->map(function ($val) {
                 $val["ward_no"] = $val["ward_name"];
                 return $val;
             });
             $mWardList = remove_null($mWardList);
-            return responseMsgs(true,"",$mWardList,
-                $this->_metaData["apiId"],$this->_metaData["version"],$this->_metaData["queryRunTime"],
-                $this->_metaData["action"],$this->_metaData["deviceId"]
+            return responseMsgs(
+                true,
+                "",
+                $mWardList,
+                $this->_metaData["apiId"],
+                $this->_metaData["version"],
+                $this->_metaData["queryRunTime"],
+                $this->_metaData["action"],
+                $this->_metaData["deviceId"]
             );
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),
-            $this->_metaData["apiId"],$this->_metaData["version"],$this->_metaData["queryRunTime"],
-            $this->_metaData["action"],$this->_metaData["deviceId"]);
+        } catch (Exception $e) {
+            return responseMsgs(
+                false,
+                $e->getMessage(),
+                $request->all(),
+                $this->_metaData["apiId"],
+                $this->_metaData["version"],
+                $this->_metaData["queryRunTime"],
+                $this->_metaData["action"],
+                $this->_metaData["deviceId"]
+            );
         }
     }
 
@@ -96,58 +112,54 @@ class TradeCitizenController extends Controller
         $this->_metaData["queryRunTime"] = 2.48;
         $this->_metaData["action"]    = $request->getMethod();
         $this->_metaData["deviceId"] = $request->ip();
-        try{
-            $refUser            = Auth()->user(); 
+        try {
+            $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $request->ulbId;
-            $wardId = $request->firmDetails["wardNo"];            
-            $wardId = $this->_modelWard->getAllWard($request->ulbId)->filter(function($item) use($wardId){
-                            if($item->id== $wardId )
-                            {
-                                return $item;
-                            }
-                    });
-            $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID'); 
+            $wardId = $request->firmDetails["wardNo"];
+            $wardId = $this->_modelWard->getAllWard($request->ulbId)->filter(function ($item) use ($wardId) {
+                if ($item->id == $wardId) {
+                    return $item;
+                }
+            });
+            $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
             $mUserType          = $this->_parent->userType($refWorkflowId);
-            $refWorkflows       = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);        
-            $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE.".$request->applicationType);            
-            if(sizeOf($wardId)<1)
-            {
+            $refWorkflows       = $this->_parent->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE." . $request->applicationType);
+            if (sizeOf($wardId) < 1) {
                 throw new Exception("Invalide Ward Id Pase");
             }
-            if(!in_array(strtoupper($mUserType),["ONLINE"]))
-            {
+            if (!in_array(strtoupper($mUserType), ["ONLINE"])) {
                 throw new Exception("You Are Not Authorized For This Action. Please Apply From Counter");
-            }            
-            if(!$mApplicationTypeId)
-            {
+            }
+            if (!$mApplicationTypeId) {
                 throw new Exception("Invalide Application Type");
             }
-            if (!$refWorkflows) 
-            {
+            if (!$refWorkflows) {
                 throw new Exception("Workflow Not Available");
-            } 
-            if(!$refWorkflows['initiator'])
-            {
-                throw new Exception("Initiator Not Available"); 
             }
-            if(!$refWorkflows['finisher'])
-            {
-                throw new Exception("Finisher Not Available"); 
+            if (!$refWorkflows['initiator']) {
+                throw new Exception("Initiator Not Available");
             }
-            if (in_array($mApplicationTypeId, ["2", "3","4"]) && (!$request->id || !is_numeric($request->id))) 
-            {
-                throw new Exception ("Old licence Id Requird");
-            } 
+            if (!$refWorkflows['finisher']) {
+                throw new Exception("Finisher Not Available");
+            }
+            if (in_array($mApplicationTypeId, ["2", "3", "4"]) && (!$request->id || !is_numeric($request->id))) {
+                throw new Exception("Old licence Id Requird");
+            }
             return $this->Repository->addRecord($request);
-            
+        } catch (Exception $e) {
+            return responseMsgs(
+                false,
+                $e->getMessage(),
+                $request->all(),
+                $this->_metaData["apiId"],
+                $this->_metaData["version"],
+                $this->_metaData["queryRunTime"],
+                $this->_metaData["action"],
+                $this->_metaData["deviceId"]
+            );
         }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),
-            $this->_metaData["apiId"],$this->_metaData["version"],$this->_metaData["queryRunTime"],
-            $this->_metaData["action"],$this->_metaData["deviceId"]);
-        }        
     }
     # Serial No : 03 
     /**
@@ -165,47 +177,58 @@ class TradeCitizenController extends Controller
         $refUlbId = $request->ulbId;
         $mNoticeNo = null;
         $mNowDate = Carbon::now()->format('Y-m-d'); // todays date
-        try 
-        {
-            $rules=[
-                "noticeNo"=>"required|string",
-                "ulbId"    =>"required|digits_between:1,92"
+        try {
+            $rules = [
+                "noticeNo" => "required|string",
+                "ulbId"    => "required|digits_between:1,92"
             ];
-            $validator = Validator::make($request->all(), $rules, ); 
-            if ($validator->fails()) {                        
-                return responseMsg(false, $validator->errors(),$request->all());
+            $validator = Validator::make($request->all(), $rules,);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), $request->all());
             }
             $mNoticeNo = $request->noticeNo;
 
-            $refDenialDetails =  $this->_counter->getDenialFirmDetails($refUlbId,strtoupper(trim($mNoticeNo)));
-            if ($refDenialDetails) 
-            {
+            $refDenialDetails =  $this->_counter->getDenialFirmDetails($refUlbId, strtoupper(trim($mNoticeNo)));
+            if ($refDenialDetails) {
                 $notice_date = Carbon::parse($refDenialDetails->noticedate)->format('Y-m-d'); //notice date
                 $denialAmount =  $this->_counter->getDenialAmountTrade($notice_date, $mNowDate);
                 $data['denialDetails'] = $refDenialDetails;
                 $data['denialAmount'] = $denialAmount;
-                return responseMsgs(true,"",$data,
-                    $this->_metaData["apiId"],$this->_metaData["version"],$this->_metaData["queryRunTime"],
-                    $this->_metaData["action"],$this->_metaData["deviceId"]
-                    );
-            } 
-            else 
-            {
+                return responseMsgs(
+                    true,
+                    "",
+                    $data,
+                    $this->_metaData["apiId"],
+                    $this->_metaData["version"],
+                    $this->_metaData["queryRunTime"],
+                    $this->_metaData["action"],
+                    $this->_metaData["deviceId"]
+                );
+            } else {
                 $response = "no Data";
-                return responseMsgs(false,$response,$request->all(),
-                    $this->_metaData["apiId"],$this->_metaData["version"],$this->_metaData["queryRunTime"],
-                    $this->_metaData["action"],$this->_metaData["deviceId"]
-                    );
+                return responseMsgs(
+                    false,
+                    $response,
+                    $request->all(),
+                    $this->_metaData["apiId"],
+                    $this->_metaData["version"],
+                    $this->_metaData["queryRunTime"],
+                    $this->_metaData["action"],
+                    $this->_metaData["deviceId"]
+                );
             }
-        } 
-        catch (Exception $e) 
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),
-                $this->_metaData["apiId"],$this->_metaData["version"],$this->_metaData["queryRunTime"],
-                $this->_metaData["action"],$this->_metaData["deviceId"]
+        } catch (Exception $e) {
+            return responseMsgs(
+                false,
+                $e->getMessage(),
+                $request->all(),
+                $this->_metaData["apiId"],
+                $this->_metaData["version"],
+                $this->_metaData["queryRunTime"],
+                $this->_metaData["action"],
+                $this->_metaData["deviceId"]
             );
         }
-        
     }
 
     # Serial No : 04
@@ -215,57 +238,48 @@ class TradeCitizenController extends Controller
         $this->_metaData["queryRunTime"] = 4.00;
         $this->_metaData["action"]    = $request->getMethod();
         $this->_metaData["deviceId"] = $request->ip();
-        try{
+        try {
             #------------------------ Declaration-----------------------
             $refUser            = Auth()->user();
             $refNoticeDetails   = null;
             $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
             $mNoticeDate        = null;
             #------------------------End Declaration-----------------------
-            $refLecenceData = $this->_counter->getLicenceById($request->licenceId);
-            if(!$refLecenceData)
-            {
+            $refLecenceData = $this->_counter->getActiveLicenseById($request->licenceId);
+            if (!$refLecenceData) {
                 throw new Exception("Licence Data Not Found !!!!!");
-            }
-            elseif($refLecenceData->application_type_id==4)
-            {
+            } elseif ($refLecenceData->application_type_id == 4) {
                 throw new Exception("Surender Application Not Pay Anny Amount");
-            }
-            elseif(in_array($refLecenceData->payment_status,[1,2]))
-            {
+            } elseif (in_array($refLecenceData->payment_status, [1, 2])) {
                 throw new Exception("Payment Already Done Of This Application");
             }
-            if($refLecenceData->tobacco_status==1 && $request->licenseFor >1)
-            {
+            if ($refLecenceData->tobacco_status == 1 && $request->licenseFor > 1) {
                 throw new Exception("Tobaco Application Not Take Licence More Than One Year");
             }
-            if($refNoticeDetails = $this->_counter->readNotisDtl($refLecenceData->id))
-            { 
-                $mNoticeDate = date('Y-m-d',strtotime($refNoticeDetails['created_on'])); //notice date 
+            if ($refNoticeDetails = $this->_counter->readNotisDtl($refLecenceData->id)) {
+                $mNoticeDate = date('Y-m-d', strtotime($refNoticeDetails['created_on'])); //notice date 
             }
 
-            #-----------End valication-------------------
+            #-----------End validation-------------------
             #-------------Calculation-----------------------------                
             $args['areaSqft']            = (float)$refLecenceData->area_in_sqft;
-            $args['application_type_id'] = $refLecenceData->application_type_id;                    
+            $args['application_type_id'] = $refLecenceData->application_type_id;
             $args['firmEstdDate'] = !empty(trim($refLecenceData->valid_from)) ? $refLecenceData->valid_from : $refLecenceData->apply_date;
-            if($refLecenceData->application_type_id==1)
-            {
+            if ($refLecenceData->application_type_id == 1) {
                 $args['firmEstdDate'] = $refLecenceData->establishment_date;
             }
             $args['tobacco_status']      = $refLecenceData->tobacco_status;
-            $args['licenseFor']          = $refLecenceData->licence_for_years ;
+            $args['licenseFor']          = $refLecenceData->licence_for_years;
             $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
             $args['noticeDate']          = $mNoticeDate;
             $chargeData = $this->_counter->cltCharge($args);
-            if($chargeData['response']==false || $chargeData['total_charge']==0)
-            {
+            if ($chargeData['response'] == false || $chargeData['total_charge'] == 0) {
                 throw new Exception("Payble Amount Missmatch!!!");
             }
-            
-            $transactionType = Config::get('TradeConstant.APPLICATION-TYPE-BY-ID.'.$refLecenceData->application_type_id);  
-            
-            $totalCharge = $chargeData['total_charge'] ;
+
+            $transactionType = Config::get('TradeConstant.APPLICATION-TYPE-BY-ID.' . $refLecenceData->application_type_id);
+
+            $totalCharge = $chargeData['total_charge'];
 
             $myRequest = new \Illuminate\Http\Request();
             $myRequest->setMethod('POST');
@@ -278,14 +292,14 @@ class TradeCitizenController extends Controller
             DB::beginTransaction();
             $TradeRazorPayRequest = new TradeRazorPayRequest();
             $TradeRazorPayRequest->temp_id   = $request->licenceId;
-            $TradeRazorPayRequest->payment_from = $transactionType ;
-            $TradeRazorPayRequest->amount       = $totalCharge; 
-            $TradeRazorPayRequest->ip_address   = $request->ip() ;
-            $TradeRazorPayRequest->order_id	    = $temp["orderId"];
+            $TradeRazorPayRequest->payment_from = $transactionType;
+            $TradeRazorPayRequest->amount       = $totalCharge;
+            $TradeRazorPayRequest->ip_address   = $request->ip();
+            $TradeRazorPayRequest->order_id        = $temp["orderId"];
             $TradeRazorPayRequest->department_id = $temp["departmentId"];
             $TradeRazorPayRequest->save();
 
-            $temp["requestId"]  = $TradeRazorPayRequest->id; 
+            $temp["requestId"]  = $TradeRazorPayRequest->id;
             $temp['name']       = $refUser->user_name;
             $temp['mobile']     = $refUser->mobile;
             $temp['email']      = $refUser->email;
@@ -296,106 +310,106 @@ class TradeCitizenController extends Controller
             $temp['newWardNo']  = $refLecenceData->new_ward_no;
             $temp['applyDate']  = $refLecenceData->apply_date;
             $temp['licenceForYears']  = $refLecenceData->licence_for_years;
-            $temp['applicationType']  = config::get("TradeConstant.APPLICATION-TYPE-BY-ID.".$refLecenceData->application_type_id);
+            $temp['applicationType']  = config::get("TradeConstant.APPLICATION-TYPE-BY-ID." . $refLecenceData->application_type_id);
             DB::commit();
-            return responseMsgs(true,"",$temp,
-                $this->_metaData["apiId"],$this->_metaData["version"],$this->_metaData["queryRunTime"],
-                $this->_metaData["action"],$this->_metaData["deviceId"]
+            return responseMsgs(
+                true,
+                "",
+                $temp,
+                $this->_metaData["apiId"],
+                $this->_metaData["version"],
+                $this->_metaData["queryRunTime"],
+                $this->_metaData["action"],
+                $this->_metaData["deviceId"]
             );
-        }
-        catch(Exception $e)
-        { 
+        } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false,$e->getMessage(),$request->all(),
-                $this->_metaData["apiId"],$this->_metaData["version"],$this->_metaData["queryRunTime"],
-                $this->_metaData["action"],$this->_metaData["deviceId"]
+            return responseMsgs(
+                false,
+                $e->getMessage(),
+                $request->all(),
+                $this->_metaData["apiId"],
+                $this->_metaData["version"],
+                $this->_metaData["queryRunTime"],
+                $this->_metaData["action"],
+                $this->_metaData["deviceId"]
             );
         }
     }
     public function razorPayResponse($args)
     {
-        try{
+        try {
             $refUser        = Auth()->user();
-            $refUserId      = $refUser->id??$args["userId"];
-            $refUlbId       = $refUser->ulb_id??$args["ulbId"]; 
-            $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID'); 
-            $refWorkflows   = $this->_parent->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);  
-            $refNoticeDetails= null;
+            $refUserId      = $refUser->id ?? $args["userId"];
+            $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
+            $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $refWorkflows   = $this->_parent->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            $refNoticeDetails = null;
             $refDenialId    = null;
             $refUlbDtl      = UlbMaster::find($refUlbId);
-            $refUlbName     = explode(' ',$refUlbDtl->ulb_name);
-            $mNowDate       = Carbon::now()->format('Y-m-d'); 
+            $refUlbName     = explode(' ', $refUlbDtl->ulb_name);
+            $mNowDate       = Carbon::now()->format('Y-m-d');
             $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
             $mDenialAmount  = 0;
-            $mPaymentStatus = 1;            
-            $mNoticeDate    = null;            
+            $mPaymentStatus = 1;
+            $mNoticeDate    = null;
             $mShortUlbName  = "";
             $mWardNo        = "";
-            foreach($refUlbName as $val)
-            {
-                $mShortUlbName.=$val[0];
+            foreach ($refUlbName as $val) {
+                $mShortUlbName .= $val[0];
             }
 
             #-----------valication-------------------   
             $RazorPayRequest = TradeRazorPayRequest::select("*")
-                                    ->where("order_id",$args["orderId"])
-                                    ->where("temp_id",$args["id"])
-                                    ->where("status",2)
-                                    ->first();                         
-            if(!$RazorPayRequest)
-            {
+                ->where("order_id", $args["orderId"])
+                ->where("temp_id", $args["id"])
+                ->where("status", 2)
+                ->first();
+            if (!$RazorPayRequest) {
                 throw new Exception("Data Not Found");
             }
             $refLecenceData = ActiveTradeLicence::find($args["id"]);
             $licenceId = $args["id"];
             $refLevelData = $this->_counter->getWorkflowTrack($licenceId);
-            if(!$refLecenceData)
-            {
+            if (!$refLecenceData) {
                 throw new Exception("Licence Data Not Found !!!!!");
-            }
-            elseif($refLecenceData->application_type_id==4)
-            {
+            } elseif ($refLecenceData->application_type_id == 4) {
                 throw new Exception("Surender Application Not Pay Anny Amount");
-            }
-            elseif(in_array($refLecenceData->payment_status,[1,2]))
-            {
+            } elseif (in_array($refLecenceData->payment_status, [1, 2])) {
                 throw new Exception("Payment Already Done Of This Application");
             }
-            if($refNoticeDetails = $this->readNotisDtl($refLecenceData->id))
-            { 
+            if ($refNoticeDetails = $this->readNotisDtl($refLecenceData->id)) {
                 $refDenialId = $refNoticeDetails->dnialid;
-                $mNoticeDate = date("Y-m-d",strtotime($refNoticeDetails['created_on'])); //notice date 
+                $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date 
             }
 
             $ward_no = UlbWardMaster::select("ward_name")
-                        ->where("id",$refLecenceData->ward_mstr_id)
-                        ->first();
-            $mWardNo = $ward_no['ward_name']; 
+                ->where("id", $refLecenceData->ward_mstr_id)
+                ->first();
+            $mWardNo = $ward_no['ward_name'];
 
             #-----------End valication-------------------
 
             #-------------Calculation-----------------------------                
             $args['areaSqft']            = (float)$refLecenceData->area_in_sqft;
-            $args['application_type_id'] = $refLecenceData->application_type_id;                    
+            $args['application_type_id'] = $refLecenceData->application_type_id;
             $args['firmEstdDate'] = !empty(trim($refLecenceData->valid_from)) ? $refLecenceData->valid_from : $refLecenceData->apply_date;
-            if($refLecenceData->application_type_id==1)
-            {
+            if ($refLecenceData->application_type_id == 1) {
                 $args['firmEstdDate'] = $refLecenceData->establishment_date;
             }
             $args['tobacco_status']      = $refLecenceData->tobacco_status;
-            $args['licenseFor']          = $refLecenceData->licence_for_years ;
+            $args['licenseFor']          = $refLecenceData->licence_for_years;
             $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
             $args['noticeDate']          = $mNoticeDate;
             $chargeData = $this->_counter->cltCharge($args);
-            if($chargeData['response']==false || round($args['amount'])!= round($chargeData['total_charge']))
-            {
+            if ($chargeData['response'] == false || round($args['amount']) != round($chargeData['total_charge'])) {
                 throw new Exception("Payble Amount Missmatch!!!");
             }
-            
-            $transactionType = Config::get('TradeConstant.APPLICATION-TYPE-BY-ID.'.$refLecenceData->application_type_id);  
-            
+
+            $transactionType = Config::get('TradeConstant.APPLICATION-TYPE-BY-ID.' . $refLecenceData->application_type_id);
+
             $rate_id = $chargeData["rate_id"];
-            $totalCharge = $chargeData['total_charge'] ;
+            $totalCharge = $chargeData['total_charge'];
             $mDenialAmount = $chargeData['notice_amount'];
             #-------------End Calculation-----------------------------
             #-------- Transection -------------------
@@ -405,15 +419,15 @@ class TradeCitizenController extends Controller
             $RazorPayResponse->temp_id      = $RazorPayRequest->related_id;
             $RazorPayResponse->request_id   = $RazorPayRequest->id;
             $RazorPayResponse->amount       = $args['amount'];
-            $RazorPayResponse->merchant_id  = $args['merchantId']??null;
+            $RazorPayResponse->merchant_id  = $args['merchantId'] ?? null;
             $RazorPayResponse->order_id     = $args["orderId"];
             $RazorPayResponse->payment_id   = $args["paymentId"];
             $RazorPayResponse->save();
 
-            $RazorPayRequest->status=1;
+            $RazorPayRequest->status = 1;
             $RazorPayRequest->update();
 
-            $Tradetransaction = new TradeTransaction ;
+            $Tradetransaction = new TradeTransaction;
             $Tradetransaction->temp_id          = $licenceId;
             $Tradetransaction->ward_id          = $refLecenceData->ward_id;
             $Tradetransaction->tran_type        = $transactionType;
@@ -428,7 +442,7 @@ class TradeCitizenController extends Controller
             $Tradetransaction->ulb_id           = $refUlbId;
             $Tradetransaction->save();
             $transaction_id                     = $Tradetransaction->id;
-            $Tradetransaction->transaction_no   = $args["transactionNo"];//$this->createTransactionNo($transaction_id);//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
+            $Tradetransaction->transaction_no   = $args["transactionNo"]; //$this->createTransactionNo($transaction_id);//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
             $Tradetransaction->update();
 
             $TradeFineRebet = new TradeFineRebete;
@@ -439,8 +453,7 @@ class TradeCitizenController extends Controller
             $TradeFineRebet->save();
 
             $mDenialAmount = $mDenialAmount + $chargeData['arear_amount'];
-            if ($mDenialAmount > 0) 
-            {
+            if ($mDenialAmount > 0) {
                 $TradeFineRebet2 = new TradeFineRebete;
                 $TradeFineRebet2->tran_id   = $transaction_id;
                 $TradeFineRebet2->type      = 'Denial Apply';
@@ -449,46 +462,42 @@ class TradeCitizenController extends Controller
                 $TradeFineRebet2->save();
             }
 
-            if($mPaymentStatus==1 && $refLecenceData->document_upload_status =1 && $refLecenceData->pending_status=0 && !$refLevelData)
-            {
+            if ($mPaymentStatus == 1 && $refLecenceData->document_upload_status = 1 && $refLecenceData->pending_status = 0 && !$refLevelData) {
                 $refLecenceData->current_role = $refWorkflows['initiator']['forward_id'];
                 $refLecenceData->pending_status  = 2;
-                $args["sender_role_id"] = $refWorkflows['initiator']['id']; 
+                $args["sender_role_id"] = $refWorkflows['initiator']['id'];
                 $args["receiver_role_id"] = $refWorkflows['initiator']['forward_id'];
                 $args["citizen_id"] = $refUserId;;
                 $args["ref_table_dot_id"] = "active_trade_licences";
                 $args["ref_table_id_value"] = $licenceId;
                 $args["workflow_id"] = $refWorkflowId;
                 $args["module_id"] = Config::get('TradeConstant.MODULE-ID');
-                
-               $tem =  $this->_counter->insertWorkflowTrack($args);
+
+                $tem =  $this->_counter->insertWorkflowTrack($args);
             }
-            
-            $provNo = $this->_counter->createProvisinalNo($mShortUlbName,$mWardNo,$licenceId);
+
+            $provNo = $this->_counter->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
             $refLecenceData->provisional_license_no = $provNo;
             $refLecenceData->payment_status         = $mPaymentStatus;
             $refLecenceData->save();
-                            
-            if($refNoticeDetails)
-            {
-                $this->_counter->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId,1); //update status and fineAmount                     
+
+            if ($refNoticeDetails) {
+                $this->_counter->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId, 1); //update status and fineAmount                     
             }
             DB::commit();
             #----------End transaction------------------------
             #----------Response------------------------------
             $res['transactionId'] = $transaction_id;
-            $res['paymentReceipt']= config('app.url')."/api/trade/paymentReceipt/".$licenceId."/".$transaction_id;
-            return responseMsg(true,"",$res); 
-        }
-        catch(Exception $e)
-        {
+            $res['paymentReceipt'] = config('app.url') . "/api/trade/paymentReceipt/" . $licenceId . "/" . $transaction_id;
+            return responseMsg(true, "", $res);
+        } catch (Exception $e) {
             DB::rollBack();
-            return responseMsg(false,$e->getMessage(),$args);
+            return responseMsg(false, $e->getMessage(), $args);
         }
     }
     public function conformRazorPayTran(Request $request)
     {
-        try{
+        try {
             $refUser        = Auth()->user();
             $application = null;
             $transection = null;
@@ -501,28 +510,25 @@ class TradeCitizenController extends Controller
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
-            $TradeRazorPayResponse = TradeRazorPayResponse::select("trade_razor_pay_responses.*","trade_razor_pay_requests.payment_from")
+            $TradeRazorPayResponse = TradeRazorPayResponse::select("trade_razor_pay_responses.*", "trade_razor_pay_requests.payment_from")
                 ->join("trade_razor_pay_requests", "trade_razor_pay_requests.id", "trade_razor_pay_responses.request_id")
                 ->where("trade_razor_pay_responses.order_id", $request->orderId)
                 ->where("trade_razor_pay_responses.payment_id", $request->paymentId)
                 ->where("trade_razor_pay_requests.status", 1)
                 ->first();
-            if (!$TradeRazorPayResponse) 
-            {
+            if (!$TradeRazorPayResponse) {
                 throw new Exception("Not Transection Found...");
             }
-            $application = ActiveTradeLicence::find($TradeRazorPayResponse->temp_id );
+            $application = ActiveTradeLicence::find($TradeRazorPayResponse->temp_id);
             $transection = TradeTransaction::select("*")
                 ->where("temp_id", $TradeRazorPayResponse->temp_id)
                 ->where("response_id", $TradeRazorPayResponse->id)
                 ->first();
-            
-            if (!$application) 
-            {
+
+            if (!$application) {
                 throw new Exception("Application Not Found....");
             }
-            if (!$transection) 
-            {
+            if (!$transection) {
                 throw new Exception("Not Transection Data Found....");
             }
             $data["amount"]            = $TradeRazorPayResponse->amount;
@@ -533,13 +539,17 @@ class TradeCitizenController extends Controller
             $data["transectionNo"]     = $transection->transaction_no;
             $data["transectionDate"]   = $transection->transaction_date;
             $data['paymentRecipt']     = config('app.url') . $path . $TradeRazorPayResponse->licence_id . "/" . $transection->id;
-            return responseMsg(true,"",$data,
+            return responseMsg(
+                true,
+                "",
+                $data,
             );
-        }
-        catch(Exception $e)
-        {
-            return responseMsg(false,$e->getMessage(),$request->all(),
-            ); 
+        } catch (Exception $e) {
+            return responseMsg(
+                false,
+                $e->getMessage(),
+                $request->all(),
+            );
         }
     }
     # Serial No : 27
@@ -548,8 +558,8 @@ class TradeCitizenController extends Controller
         return $this->Repository->citizenApplication($request);
     }
     # Serial No : 28
-    public function readCitizenLicenceDtl($id)
+    public function readCitizenLicenceDtl(Request $request)
     {
-        return $this->Repository->readCitizenLicenceDtl($id);
+        return $this->Repository->readCitizenLicenceDtl($request);
     }
 }

@@ -57,11 +57,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(TradeCitizenController::class)->group(function () {
         Route::post('citizenGetWardList', "getWardList");               #id = c1
         Route::post('citizenApply', 'applyApplication');                #id = c2
-        Route::post('citizenGetDenialDetails', "getDenialDetails");      #id = c3        
+        Route::post('citizenGetDenialDetails', "getDenialDetails");     #id = c3        
         Route::post('payOnline', 'handeRazorPay');                      #id = c4 
         Route::post('conformRazorPayTran', 'conformRazorPayTran');      #id = c5 
-        Route::get('citizenApplication', 'citizenApplication');         #id = c6
-        Route::get('citizenApplication/{id}', 'readCitizenLicenceDtl'); #id = c7
+        Route::post('citizenApplication', 'citizenApplication');        #id = c6
+        Route::post('citizenApplicationById', 'readCitizenLicenceDtl'); #id = c7
     });
 });
 

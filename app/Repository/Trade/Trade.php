@@ -4337,7 +4337,7 @@ class Trade implements ITrade
                                     THEN CONCAT(" . $tbl . "trade_owners.owner_name,'( '," . $tbl . "trade_documents.doc_type_code,' )')
                                     ELSE " . $tbl . "trade_documents.doc_type_code END doc_type_code")
             );
-            if ($tbl == "active_") {
+            if ($tbl = "active_") {
                 $doc =  ActiveTradeDocument::select(
                     $tbl . "trade_documents.*",
                     DB::raw("CASE WHEN " . $tbl . "trade_owners.id" . " NOTNULL 
@@ -4345,7 +4345,7 @@ class Trade implements ITrade
                                         ELSE " . $tbl . "trade_documents.doc_type_code END doc_type_code")
                 );
             }
-            if ($tbl == "rejected_") {
+            if ($tbl = "rejected_") {
                 $doc =  RejectedTradeDocument::select(
                     $tbl . "trade_documents.*",
                     DB::raw("CASE WHEN " . $tbl . "trade_owners.id" . " NOTNULL 
