@@ -46,6 +46,7 @@ class PropActiveConcession extends Model
             ->select(
                 'c.id',
                 'c.applicant_name as owner_name',
+                'p.new_holding_no',
                 'p.ward_mstr_id',
                 'p.new_ward_mstr_id',
                 'u.ward_name as old_ward_no',
