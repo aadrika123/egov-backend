@@ -604,9 +604,10 @@ class NewConnectionController extends Controller
             'applicationId' => 'required|integer'
         ]);
         try {
+            $userId = auth()->user()->id;
             $mWaterApplication = new WaterApplication();
             $applicantDetals = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
-            if ($applicantDetals) {
+            if ($applicantDetals->user_id == $userId) {
                 DB::beginTransaction();
                 $mWaterApplication->DeleteWaterApplication($req->applicationId);
                 DB::commit();
