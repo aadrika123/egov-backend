@@ -20,7 +20,7 @@ class DocUpload
     {
         $extention = $image->getClientOriginalExtension();
         $imageName = time() . '-' . $refImageName . '.' . $extention;
-        $image->storeAs($relativePath, $imageName);
+        $image->move($relativePath, $imageName);
         return $imageName;
     }
 }

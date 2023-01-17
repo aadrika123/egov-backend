@@ -39,15 +39,17 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             $requestDetails = $request->filteredBy;
             switch ($requestDetails) {
                 case ("HoldingNo"):
-                    $filterByHolding = $this->searchByHolding($request);
-                    if (empty($filterByHolding['0'])) {
+                    $holding = $this->searchByHolding($request);
+                    $filterByHolding = collect($holding)->first();
+                    if (empty($filterByHolding)) {
                         return responseMsg(false, "Data Not Found!", $request->search);
                     }
                     return responseMsg(true, "Data According to Holding!", remove_null($filterByHolding));
                     break;
                 case ("OwnerDetail"):
-                    $filterByOwner = $this->searchByOwner($request);
-                    if (empty($filterByOwner['0'])) {
+                    return $owner = $this->searchByOwner($request);
+                    $filterByOwner = collect($owner)->first();
+                    if (empty($filterByOwner)) {
                         return responseMsg(false, "Data Not Found!", $request->search);
                     }
                     return responseMsg(true, "Data According to Owner!", remove_null($filterByOwner));
@@ -94,7 +96,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
      */
     public function searchByOwner($request)
     {
-        if (($request->wardId) == 0) {
+        if (($request->wardId) == 0 || is_null($request->wardId)) {
             return PropProperty::select(
                 'prop_properties.id AS id',
                 'prop_properties.new_holding_no AS holdingNo',
@@ -104,6 +106,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                 'mobile_no AS mobileNo'
             )
                 ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+                ->where('ulb_id', auth()->user()->ulb_id)
                 ->where('owner_name', $request->search)
                 ->orwhere('mobile_no', $request->search)
                 ->orwhere('pan_no', $request->search)
@@ -119,7 +122,8 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             'mobile_no AS mobileNo'
         )
             ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
-            ->where('ward_mstr_id', $request->wardId)
+            ->where('ulb_id', auth()->user()->ulb_id)
+            ->where('prop_properties.ward_mstr_id', $request->wardId)
             ->where('owner_name', $request->search)
             ->orwhere('mobile_no', $request->search)
             ->orwhere('pan_no', $request->search)

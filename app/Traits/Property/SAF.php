@@ -309,11 +309,12 @@ trait SAF
     public function tSaveSafDemand($propSafDemand, $safDemandDetail, $safId)
     {
         $propSafDemand->saf_id = $safId;
+        $propSafDemand->arv = $safDemandDetail['arv'];
         $propSafDemand->water_tax = $safDemandDetail['waterTax'];
         $propSafDemand->education_cess = $safDemandDetail['educationTax'];
         $propSafDemand->health_cess = $safDemandDetail['healthCess'];
         $propSafDemand->latrine_tax = $safDemandDetail['latrineTax'];
-        $propSafDemand->additional_tax = $safDemandDetail['additionTax'];
+        $propSafDemand->additional_tax = $safDemandDetail['rwhPenalty'];
         $propSafDemand->holding_tax = $safDemandDetail['holdingTax'];
         $propSafDemand->amount = $safDemandDetail['totalTax'];
         $propSafDemand->fyear = $safDemandDetail['quarterYear'];

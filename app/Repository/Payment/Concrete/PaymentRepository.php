@@ -277,16 +277,18 @@ class PaymentRepository implements iPayment
             $webhookData = $webhookData->saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity);
 
             # data transfer to the respective module dataBase 
-            $transfer['paymentMode'] = $webhookData->payment_method;
-            $transfer['id'] = $webhookEntity['notes']['applicationId'];
-            $transfer['amount'] = $actulaAmount;
-            $transfer['workflowId'] =  $webhookData->workflow_id;
-            $transfer['transactionNo'] = $actualTransactionNo;
-            $transfer['userId'] = $webhookData->user_id;
-            $transfer['ulbId'] = $webhookData->ulb_id;
-            $transfer['departmentId'] = $webhookData->department_id;    //ModuleId
-            $transfer['orderId'] = $webhookData->payment_order_id;
-            $transfer['paymentId'] = $webhookData->payment_id;
+            $transfer = [
+                'paymentMode' => $webhookData->payment_method,
+                'id' => $webhookEntity['notes']['applicationId'],
+                'amount' => $actulaAmount,
+                'workflowId' =>  $webhookData->workflow_id,
+                'transactionNo' => $actualTransactionNo,
+                'userId' => $webhookData->user_id,
+                'ulbId' => $webhookData->ulb_id,
+                'departmentId' => $webhookData->department_id,    //ModuleId
+                'orderId' => $webhookData->payment_order_id,
+                'paymentId' => $webhookData->payment_id
+            ];
 
             # conditionaly upadting the request data
             if ($status == 'captured' && $captured == 1) {

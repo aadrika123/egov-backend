@@ -2,6 +2,7 @@
 
 namespace App\Models\Property;
 
+use App\MicroServices\IdGeneration;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,7 +23,6 @@ class PropActiveSaf extends Model
             'previous_ward_mstr_id' => $req->previousWard,
             'is_owner_changed' => $req->isOwnerChanged,
             'transfer_mode_mstr_id' => $req->transferModeId,
-            'saf_no' => $req->safNo,
             'holding_no' => $req->holdingNo,
             'ward_mstr_id' => $req->ward,
             'ownership_type_mstr_id' => $req->ownershipType,
@@ -90,7 +90,11 @@ class PropActiveSaf extends Model
             'finisher_role_id' => $req->finisherRoleId,
             'late_assess_penalty' => $req->lateAssessPenalty
         ];
-        return PropActiveSaf::insertGetId($reqs);
+        $propActiveSafs = PropActiveSaf::create($reqs);
+        return response()->json([
+            'safId' => $propActiveSafs->id,
+            'safNo' => $propActiveSafs->saf_no,
+        ]);
     }
 
     // Update
@@ -145,12 +149,12 @@ class PropActiveSaf extends Model
                 'r.road_type as road_type_master',
                 'wr.role_name as current_role_name'
             )
-            ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
-            ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
+            ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
+            ->join('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
-            ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
-            ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
-            ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id');
+            ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+            ->join('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
+            ->join('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id');
     }
 
     /**
@@ -218,15 +222,36 @@ class PropActiveSaf extends Model
     public function getSafId($safNo)
     {
         return PropActiveSaf::where('saf_no', $safNo)
-            ->select('id')
-            ->get()
+            ->select('id', 'saf_no')
             ->first();
     }
+
+    /**
+     * | Get Saf Details by Saf No
+     * | @param SafNo
+     */
+    public function getSafDtlsBySafNo($safNo)
+    {
+        return DB::table('prop_active_safs as s')
+            ->where('s.saf_no', $safNo)
+            ->select(
+                's.id',
+                's.saf_no',
+                's.ward_mstr_id',
+                's.new_ward_mstr_id',
+                'u.ward_name as old_ward_no',
+                'u1.ward_name as new_ward_no',
+            )
+            ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
+            ->join('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
+            ->first();
+    }
+
 
     // Get SAF No
     public function getSafNo($safId)
     {
-        return PropActiveSaf::select('saf_no')
+        return PropActiveSaf::select('*')
             ->where('id', $safId)
             ->first();
     }

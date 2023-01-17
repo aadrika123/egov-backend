@@ -38,6 +38,28 @@ class PropActiveConcession extends Model
     }
 
     /**
+     * | Get Concession Application Dtls by application No
+     */
+    public function getDtlsByConcessionNo($concessionNo)
+    {
+        return DB::table('prop_active_concessions as c')
+            ->select(
+                'c.id',
+                'c.applicant_name as owner_name',
+                'p.ward_mstr_id',
+                'p.new_ward_mstr_id',
+                'u.ward_name as old_ward_no',
+                'u1.ward_name as new_ward_no',
+                'c.mobile_no'
+            )
+            ->join('prop_properties as p', 'p.id', '=', 'c.property_id')
+            ->join('ulb_ward_masters as u', 'p.ward_mstr_id', '=', 'u.id')
+            ->join('ulb_ward_masters as u1', 'p.new_ward_mstr_id', '=', 'u1.id')
+            ->where('c.application_no', $concessionNo)
+            ->first();
+    }
+
+    /**
      * |-------------------------- details of all concession according id -----------------------------------------------
      * | @param request
      */
