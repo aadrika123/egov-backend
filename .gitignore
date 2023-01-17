@@ -19,4 +19,4 @@ yarn-error.log
 /public/image/
 /public/custom/
 /storage/concession
-/razorpay-php
+# /razorpay-php

@@ -39,11 +39,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('searchLicense', 'searchLicence');
         Route::post('getApplicationList', 'readApplication');
         Route::post('escalate', 'postEscalate');
+        Route::post('postBtc', 'backToCitizen');
         Route::post('specialInbox', 'specialInbox');
         Route::post('btcInbox', 'btcInbox');
         Route::post('inbox', 'inbox');
         Route::post('outbox', 'outbox');
         Route::post('postNext', 'postNextLevel');
+        Route::post('approveReject', 'approveReject');
         Route::post('postComment', 'addIndependentComment');
         Route::post('pay', 'PaymentCounter');
         Route::match(["get", "post"], 'applyDenail', 'applyDenail');
@@ -62,6 +64,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('conformRazorPayTran', 'conformRazorPayTran');      #id = c5 
         Route::post('citizenApplication', 'citizenApplication');        #id = c6
         Route::post('citizenApplicationById', 'readCitizenLicenceDtl'); #id = c7
+        // Route::post('expired-licence', 'expiredLicence');
+        Route::post('list-renewal', 'renewalList');
+        Route::post('list-amendment', 'amendmentList');
+        Route::post('list-surrender', 'surrenderList');
     });
 });
 

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Trade\ReqCitizenAddRecorde;
 use App\Models\Trade\ActiveTradeLicence;
 use App\Models\Trade\TradeFineRebete;
+use App\Models\Trade\TradeLicence;
 use App\Models\Trade\TradeRazorPayRequest;
 use App\Models\Trade\TradeRazorPayResponse;
 use App\Models\Trade\TradeTransaction;
@@ -561,5 +562,102 @@ class TradeCitizenController extends Controller
     public function readCitizenLicenceDtl(Request $request)
     {
         return $this->Repository->readCitizenLicenceDtl($request);
+    }
+
+    # Serial No
+    public function expiredLicence(Request $request)
+    {
+        try {
+            $citizenId = authUser()->id;
+            $mApplicationTypeId = $request->applicationType;
+            $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+
+            if ($mApplicationTypeId == 1) {
+                throw new Exception("You Can Not Apply New Licence");
+            }
+
+            $data = TradeLicence::select('*')
+                ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+                ->where('trade_licences.is_active', TRUE)
+                ->where('trade_licences.user_id', $citizenId)
+                ->where('trade_licences.valid_upto', '<', Carbon::now())
+                ->get();
+
+            if (!$data) {
+                throw new Exception("No Data Found");
+            }
+            return responseMsg(true, "", remove_null($data));
+        } catch (Exception $e) {
+            // dd($e->getFile(), $e->getLine(), $e->getMessage());
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    # Serial No
+    public function renewalList()
+    {
+        $citizenId = authUser()->id;
+        $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+
+        $data = TradeLicence::select('*')
+            ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+            ->where('trade_licences.is_active', TRUE)
+            ->where('trade_licences.user_id', $citizenId)
+            ->where('trade_licences.valid_upto', '<', $mNextMonth)
+            ->where('trade_licences.application_type_id', '!=', 4)
+            ->get();
+        if (!$data) {
+            throw new Exception("No Data Found");
+        }
+
+        return responseMsg(true, "", remove_null($data));
+    }
+
+    # Serial No
+    public function amendmentList()
+    {
+        try {
+            $citizenId = authUser()->id;
+            $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+
+            $data = TradeLicence::select('*')
+                ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+                ->where('trade_licences.is_active', TRUE)
+                ->where('trade_licences.user_id', $citizenId)
+                ->where('trade_licences.valid_upto', '<', Carbon::now())
+                ->get();
+
+            if (!$data) {
+                throw new Exception("No Data Found");
+            }
+            return responseMsg(true, "", remove_null($data));
+        } catch (Exception $e) {
+            // dd($e->getFile(), $e->getLine(), $e->getMessage());
+            return responseMsg(false, $e->getMessage(), '');
+        }
+    }
+
+    # Serial No
+    public function surrenderList(Request $request)
+    {
+        try {
+            $citizenId = authUser()->id;
+            $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+
+            $data = TradeLicence::select('*')
+                ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+                ->where('trade_licences.is_active', TRUE)
+                ->where('trade_licences.user_id', $citizenId)
+                ->where('trade_licences.valid_upto', '<', Carbon::now())
+                ->get();
+
+            if (!$data) {
+                throw new Exception("No Data Found");
+            }
+            return responseMsg(true, "", remove_null($data));
+        } catch (Exception $e) {
+            // dd($e->getFile(), $e->getLine(), $e->getMessage());
+            return responseMsg(false, $e->getMessage(), '');
+        }
     }
 }

@@ -1201,7 +1201,7 @@ class Trade implements ITrade
                 return $val;
             });
 
-            $mDocumentsList = $this->getDocumentTypeList($refLicence);
+            return  $mDocumentsList = $this->getDocumentTypeList($refLicence);
             foreach ($mDocumentsList as $val) {
                 $doc = (array) null;
                 $doc['docName'] = $val->doc_for;
@@ -2134,16 +2134,15 @@ class Trade implements ITrade
                 return responseMsg(false, $validator->errors(), $request->all());
             }
 
-            $mApplicationTypeId = $request->applicationType;
+            $mApplicationTypeId = $request->applicationType;    //if application type is for new, renewal, amendment or surrender btw 1,2,3,4
             $mLicenceNo = $request->licenceNo;
             if (!in_array($mApplicationTypeId, [1, 2, 3, 4])) {
                 throw new Exception("Invalid Application Type Supplied");
             } elseif ($mApplicationTypeId == 1) {
                 throw new Exception("You Can Not Apply New Licence");
             }
-            // DB::enableQueryLog();
+            DB::enableQueryLog();
 
-            // commented by mrinal
             $data = TradeLicence::select(
                 "trade_licences.*",
                 "owner.*",
@@ -2170,6 +2169,8 @@ class Trade implements ITrade
                 // ->where('trade_licences.update_status',0)
                 ->first();
 
+
+            // dd(DB::getQueryLog());
             // $data = TradeLicence::select('*')
             //     ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
             //     ->where('trade_licences.is_active', TRUE)
@@ -2202,7 +2203,10 @@ class Trade implements ITrade
                     ->where('active_trade_licences.is_active', TRUE)
                     ->where('active_trade_licences.license_no', $mLicenceNo)
                     ->where("active_trade_licences.ulb_id", $refUlbId)
-                    // ->where('trade_licences.update_status',0)
+
+
+                    // ->where('trade_licences.applicationTypeId !=',4)
+                    // ->where('trade_licences.valid_upto <',$curnd_date+30days)
                     ->first();
             }
             if (!$data) {
@@ -2229,6 +2233,7 @@ class Trade implements ITrade
                     ->where('rejected_trade_licences.is_active', TRUE)
                     ->where('rejected_trade_licences.license_no', $mLicenceNo)
                     ->where("rejected_trade_licences.ulb_id", $refUlbId)
+
                     ->first();
             }
             if (!$data) {
@@ -2342,19 +2347,19 @@ class Trade implements ITrade
             // Validation Rule
             $rules = [
                 "escalateStatus" => "required|int",
-                "licenceId" => "required",
+                "id" => "required",
             ];
             // Validation Message
             $message = [
                 "escalateStatus.required" => "Escalate Status Is Required",
-                "licenceId.required" => "Application Id Is Required",
+                // "id.required" => "Application Id Is Required",
             ];
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
             DB::beginTransaction();
-            $licenceId = $request->licenceId;
+            $licenceId = $request->id;
             $data = ActiveTradeLicence::find($licenceId);
             $data->is_escalate = $request->escalateStatus;
             $data->escalate_by = $userId;
@@ -2511,7 +2516,7 @@ class Trade implements ITrade
             }
             $mUserType = $this->_parent->userType($refWorkflowId);
             $ward_permission = $this->_parent->WardPermission($user_id);
-            $role = $this->_parent->getUserRoll($user_id, $ulb_id, $workflowId->wf_master_id);
+            return $role = $this->_parent->getUserRoll($user_id, $ulb_id, $workflowId->wf_master_id);
             if (!$role) {
                 throw new Exception("You Are Not Authorized");
             }
@@ -2615,7 +2620,7 @@ class Trade implements ITrade
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+            $refWorkflowMstrId     = WfWorkflow::where('id', $refWorkflowId)
                 ->where('ulb_id', $refUlbId)
                 ->first();
             if (!$refWorkflowMstrId) {
@@ -2689,7 +2694,7 @@ class Trade implements ITrade
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+            $refWorkflowMstrId     = WfWorkflow::where('id', $refWorkflowId)
                 ->where('ulb_id', $refUlbId)
                 ->first();
             if (!$refWorkflowMstrId) {
@@ -2776,431 +2781,469 @@ class Trade implements ITrade
         }
     }
     # Serial No : 18
+    // public function postNextLevel(Request $request)
+    // {
+    //     try {
+    //         $receiver_user_type_id = "";
+    //         $sms = "";
+    //         $licence_pending = 2;
+    //         $user = Auth()->user();
+    //         $user_id = $user->id;
+    //         $ulb_id = $user->ulb_id;
+    //         $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+    //         $workflowId = WfWorkflow::where('id', $refWorkflowId)
+    //             ->where('ulb_id', $ulb_id)
+    //             ->first();
+    //         if (!$workflowId) {
+    //             throw new Exception("Workflow Not Available");
+    //         }
+    //         $role = $this->_parent->getUserRoll($user_id, $ulb_id, $workflowId->wf_master_id);
+    //         $init_finish = $this->_parent->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
+    //         if (!$role) {
+    //             throw new Exception("You Are Not Authorized");
+    //         }
+    //         $role_id = $role->role_id;
+    //         $mUserType = $this->_parent->userType($refWorkflowId);
+
+    //         if ($role->is_initiator && in_array($request->btn, ['btc', 'backward'])) {
+    //             throw new Exception("Initator Can Not send Back The Application");
+    //         }
+    //         $licenc_data = ActiveTradeLicence::find($request->licenceId);
+    //         $level_data = $this->getWorkflowTrack($request->licenceId); //TradeLevelPending::getLevelData($request->licenceId);
+
+    //         if (!$licenc_data) {
+    //             throw new Exception("Data Not Found");
+    //         }
+    //         if ($licenc_data->pending_status == 5) {
+    //             throw new Exception("Licence Is Already Approved");
+    //         }
+    //         if (!$role->is_initiator && isset($level_data->receiver_role_id) && $level_data->receiver_role_id != $role->role_id) {
+    //             throw new Exception("You are not authorised for this action");
+    //         }
+    //         if (!$role->is_initiator && !$level_data) {
+    //             throw new Exception("Data Not Found On Level. Please Contact Admin!!!...");
+    //         }
+    //         if (isset($level_data->receiver_role_id) && $level_data->receiver_role_id != $role->role_id) {
+    //             throw new Exception("You Have Already Taken The Action On This Application");
+    //         }
+    //         if ($request->btn == "forward" && !$role->is_finisher && !$role->is_initiator) {
+    //             $sms = "Application Forwarded To " . $role->forword_name;
+    //             $receiver_user_type_id = $role->forward_role_id;
+    //         } elseif ($request->btn == "backward" && !$role->is_initiator) {
+    //             $sms = "Application Forwarded To " . $role->backword_name;
+    //             $receiver_user_type_id = $role->backward_role_id;
+    //             $licence_pending = $init_finish["initiator"]['id'] == $role->backward_role_id ? 3 : $licence_pending;
+    //         } elseif ($request->btn == "btc" && !$role->is_initiator) {
+    //             $licence_pending = 3;
+    //             $sms = "Application Forwarded To " . $init_finish["initiator"]['role_name'];
+    //             $receiver_user_type_id = $init_finish["initiator"]['id'];
+    //         } elseif ($request->btn == "forward" && !$role->is_initiator && $level_data) {
+    //             $sms = "Application Forwarded ";
+    //             $receiver_user_type_id = $role->role_id;
+    //         } elseif ($request->btn == "forward" && $role->is_initiator && !$level_data) {
+    //             $licence_pending = 2;
+    //             $sms = "Application Forwarded To " . $role->forword_name;
+    //             $receiver_user_type_id = $role->forward_role_id;
+    //         } elseif ($request->btn == "forward" && $role->is_initiator && $level_data) {
+    //             $licence_pending = 2;
+    //             $sms = "Application Forwarded To ";
+    //             $receiver_user_type_id = $level_data->sender_role_id;
+    //         }
+    //         if ($request->btn == "forward" && $role->is_initiator) {
+    //             $doc = (array) null;
+    //             $owneres = ActiveTradeOwner::owneresByLId($licenc_data->id);
+    //             $documentsList = $this->getDocumentTypeList($licenc_data);
+    //             if ($licenc_data->payment_status != 1) {
+    //                 $doc[] = "Payment is Not Clear";
+    //             }
+    //             foreach ($documentsList as $val) {
+    //                 $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for, $licenc_data->application_type_id, $val->show);
+    //                 $data["documentsList"][$val->doc_for]["is_mandatory"] = $val->is_mandatory;
+    //             }
+    //             if ($licenc_data->application_type_id == 1) {
+    //                 $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof", $licenc_data->application_type_id, 0);
+    //                 $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
+    //             }
+    //             foreach ($data["documentsList"] as $key => $val) {
+    //                 if ($key == "Identity Proof") {
+    //                     continue;
+    //                 }
+    //                 $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenc_data->id, $key);
+    //                 if (!isset($data["documentsList"][$key]["doc"]["document_path"]) && $data["documentsList"][$key]["is_mandatory"]) {
+    //                     $doc[] = $key . " Not Uploaded";
+    //                 }
+    //             }
+    //             if ($licenc_data->application_type_id == 1) {
+    //                 foreach ($owneres as $key => $val) {
+    //                     $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenc_data->id, $val->id);
+    //                     if (!isset($owneres[$key]["Identity Proof"]["document_path"]) && $data["documentsList"]["Identity Proof"]["is_mandatory"]) {
+    //                         $doc[] = "Identity Proof Of " . $val->owner_name . " Not Uploaded";
+    //                     }
+    //                 }
+    //             }
+    //             // if($doc)
+    //             // {   
+    //             //     if(sizeOf($doc)>1)
+    //             //     {
+    //             //         throw new Exception("All Documernt Are Not Uploaded");
+    //             //     }
+    //             //     else
+    //             //     {
+    //             //         throw new Exception($doc[0]);
+    //             //     }                
+    //             // }
+    //         }
+    //         if ($request->btn == "forward" && in_array(strtoupper($mUserType), ["DA"])) {
+    //             $docs = $this->getLicenceDocuments($request->licenceId);
+    //             $docs = objToArray($docs);
+    //             // if(!$docs)
+    //             // {
+    //             //     throw new Exception("No Anny Document Found");
+    //             // }
+    //             $test = array_filter($docs, function ($val) {
+    //                 if ($val["verify_status"] != 1) {
+    //                     return True;
+    //                 }
+    //             });
+    //             if ($test) {
+    //                 throw new Exception("All Document Are Not Verified");
+    //             }
+    //         }
+    //         if (!$role->is_finisher && !$receiver_user_type_id) {
+    //             throw new Exception("Next Role Not Found !!!....");
+    //         }
+
+    //         DB::beginTransaction();
+    //         if ($level_data) {
+    //             $level_data->verification_status = 1;
+    //             $level_data->user_id = $user_id;
+    //             $level_data->message = $request->comment;
+    //             $level_data->forward_date = Carbon::now()->format('Y-m-d');
+    //             $level_data->forward_time = Carbon::now()->format('H:s:i');
+    //             $level_data->update();
+    //         }
+    //         if (!$role->is_finisher || in_array($request->btn, ["backward", "btc"])) {
+    //             $level_insert = new WorkflowTrack;
+    //             $level_insert->ref_table_id_value = $licenc_data->id;
+    //             $level_insert->ref_table_dot_id = "active_trade_licences";
+    //             $level_insert->sender_role_id = $role_id;
+    //             $level_insert->receiver_role_id = $receiver_user_type_id;
+    //             $level_insert->citizen_id = $user_id;
+    //             $level_insert->workflow_id = $refWorkflowId;
+    //             $level_insert->module_id = Config::get('TradeConstant.MODULE-ID');
+    //             $level_insert->save();
+    //             // $licenc_data->current_user_id = $receiver_user_type_id;
+    //         }
+    //         if ($role->is_finisher && $request->btn == "forward") {
+    //             $licence_pending = 5;
+    //             $sms = "Application Approved By " . $role->role_name;
+    //             $ulbDtl = UlbMaster::find($ulb_id);
+    //             $ulb_name = explode(' ', $ulbDtl->ulb_name);
+    //             $short_ulb_name = "";
+    //             foreach ($ulb_name as $val) {
+    //                 $short_ulb_name .= $val[0];
+    //             }
+    //             $ward_no = UlbWardMaster::select("ward_name")
+    //                 ->where("id", $licenc_data->ward_id)
+    //                 ->first();
+    //             $ward_no = $ward_no['ward_name'];
+    //             $license_no = $short_ulb_name . $ward_no . date("mdY") . $licenc_data->id;
+    //             $licence_for_years = $licenc_data->licence_for_years;
+    //             # 1	NEW LICENSE
+    //             if ($licenc_data->application_type_id == 1) {
+    //                 $valid_from = $licenc_data->application_date;
+    //                 $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime($licenc_data->application_date)));
+    //             }
+    //             # 2 RENEWAL
+    //             if ($licenc_data->application_type_id == 2) {
+    //                 $prive_licence = TradeLicence::find($licenc_data->trade_id);
+    //                 if (!empty($prive_licence)) {
+    //                     $prive_licence_id = $prive_licence->id;
+    //                     $license_no = $prive_licence->license_no;
+    //                     $valid_from = $prive_licence->valid_upto; {
+    //                         $datef = date('Y-m-d', strtotime($valid_from));
+    //                         $datefrom = date_create($datef);
+    //                         $datea = date('Y-m-d', strtotime($licenc_data->application_date));
+    //                         $dateapply = date_create($datea);
+    //                         $year_diff = date_diff($datefrom, $dateapply);
+    //                         $year_diff =  $year_diff->format('%y');
+
+    //                         $priv_m_d = date('m-d', strtotime($valid_from));
+    //                         $date = date('Y', strtotime($valid_from)) . '-' . $priv_m_d;
+    //                         $licence_for_years2 = $licence_for_years + $year_diff;
+    //                         $valid_upto = date('Y-m-d', strtotime($date . "+" . $licence_for_years2 . " years"));
+    //                         $data['valid_upto'] = $valid_upto;
+    //                     }
+    //                 } else {
+    //                     throw new Exception('licence', 'Some Error Occurred Please Contact to Admin!!!');
+    //                 }
+    //             }
+
+    //             # 3	AMENDMENT
+    //             if ($licenc_data->application_type_id == 3) {
+    //                 $prive_licence = TradeLicence::find($licenc_data->trade_id);
+    //                 $license_no = $prive_licence->license_no;
+    //                 $oneYear_validity = date("Y-m-d", strtotime("+1 years", strtotime('now')));
+    //                 $previous_validity = $prive_licence->valid_upto;
+    //                 if ($previous_validity > $oneYear_validity)
+    //                     $valid_upto = $previous_validity;
+    //                 else
+    //                     $valid_upto = $oneYear_validity;
+    //                 $valid_from = date('Y-m-d');
+    //             }
+
+    //             # 4 SURRENDER
+    //             if ($licenc_data->application_type_id == 4) {
+    //                 // Incase of surrender valid upto is previous license validity
+    //                 $prive_licence = TradeLicence::find($licenc_data->trade_id);
+    //                 $license_no = $prive_licence->license_no;
+    //                 $valid_from = $prive_licence->valid_from;
+    //                 $valid_upto = $prive_licence->valid_upto;
+    //             }
+    //             $licenc_data->license_date = Carbon::now()->format("Y-m-d");
+    //             $licenc_data->valid_from = $valid_from;
+    //             $licenc_data->valid_upto = $valid_upto;
+    //             $licenc_data->license_no = $license_no;
+    //             $licenc_data->current_role = $receiver_user_type_id;
+    //             $sms .= " Licence No " . $license_no;
+    //         }
+    //         if ($request->btn == "forward" && $role->is_initiator) {
+    //             $licenc_data->document_upload_status = 1;
+    //         }
+    //         if ($request->btn == "forward" && in_array(strtoupper($mUserType), ["DA"])) {
+    //             $nowdate = Carbon::now()->format('Y-m-d');
+    //             $licenc_data->doc_verify_date = $nowdate;
+    //             $licenc_data->doc_verified_by = $user_id;
+    //             $licenc_data->is_doc_verified = TRUE;
+    //         }
+    //         if (in_array($request->btn, ["backward", "btc"]) && in_array(strtoupper($mUserType), ["DA"])) {
+    //             $licenc_data->is_doc_verified = FALSE;
+    //         }
+    //         if (!$role->is_finisher) {
+    //             $licenc_data->current_role = $receiver_user_type_id;
+    //         }
+    //         if ($request->btn == "forward" && $licenc_data->is_parked) {
+    //             $licenc_data->is_parked = false;
+    //         }
+    //         $licenc_data->max_level_attained = $licenc_data->max_level_attained < $role->serial_no ? $role->serial_no : $licenc_data->max_level_attained;
+    //         $licenc_data->pending_status = $licence_pending;
+    //         $licenc_data->update();
+    //         // dd($sms,$licenc_data);             
+    //         if ($role->is_finisher && $request->btn == "forward") {
+    //             $success = $this->transferActiveToTrade($licenc_data->id);
+    //             if (!$success) {
+    //                 throw new Exception("Some error on data raplication");
+    //             }
+    //         }
+
+    //         DB::commit();
+    //         return responseMsg(true, $sms, "");
+    //     } catch (Exception $e) {
+    //         return responseMsg(false, $e->getMessage(), $request->all());
+    //     }
+    // }
+    // # Serial No : 18.01
+    // public function transferActiveToTrade($licenceId)
+    // {
+    //     try {
+    //         $TradeLicence = new TradeLicence();
+    //         $licence = ActiveTradeLicence::find($licenceId);
+    //         if ($licence->id) {
+
+    //             $TradeLicence->id                       = $licence->id;
+    //             $TradeLicence->ulb_id                   = $licence->ulb_id;
+    //             $TradeLicence->ward_id                  = $licence->ward_id;
+    //             $TradeLicence->new_ward_id              = $licence->new_ward_id;
+    //             $TradeLicence->trade_id                 = $licence->trade_id;
+    //             $TradeLicence->denial_id                = $licence->denial_id;
+    //             $TradeLicence->fy_id                    = $licence->fy_id;
+    //             $TradeLicence->application_no           = $licence->application_no;
+    //             $TradeLicence->provisional_license_no    = $licence->provisional_license_no;
+    //             $TradeLicence->temp_id                  = $licence->temp_id;
+    //             $TradeLicence->application_date         = $licence->application_date;
+    //             $TradeLicence->license_no               = $licence->license_no;
+    //             $TradeLicence->license_date             = $licence->license_date;
+    //             $TradeLicence->valid_from               = $licence->valid_from;
+    //             $TradeLicence->valid_upto               = $licence->valid_upto;
+    //             $TradeLicence->licence_for_years        = $licence->licence_for_years;
+    //             $TradeLicence->firm_name                = $licence->firm_name;
+    //             $TradeLicence->property_id              = $licence->property_id;
+    //             $TradeLicence->holding_no               = $licence->holding_no;
+    //             $TradeLicence->premises_owner_name      = $licence->premises_owner_name;
+    //             $TradeLicence->address                  = $licence->address;
+    //             $TradeLicence->landmark                 = $licence->landmark;
+    //             $TradeLicence->pin_code                 = $licence->pin_code;
+    //             $TradeLicence->street_name              = $licence->street_name;
+    //             $TradeLicence->firm_type_id             = $licence->firm_type_id;
+    //             $TradeLicence->firm_description         = $licence->firm_description;
+    //             $TradeLicence->establishment_date       = $licence->establishment_date;
+    //             $TradeLicence->application_type_id      = $licence->application_type_id;
+    //             $TradeLicence->category_type_id         = $licence->category_type_id;
+    //             $TradeLicence->ownership_type_id        = $licence->ownership_type_id;
+    //             $TradeLicence->nature_of_bussiness      = $licence->nature_of_bussiness;
+    //             $TradeLicence->brief_firm_desc          = $licence->brief_firm_desc;
+    //             $TradeLicence->area_in_sqft             = $licence->area_in_sqft;
+    //             $TradeLicence->k_no                     = $licence->k_no;
+    //             $TradeLicence->bind_book_no             = $licence->bind_book_no;
+    //             $TradeLicence->account_no               = $licence->account_no;
+    //             $TradeLicence->pan_no                   = $licence->pan_no;
+    //             $TradeLicence->tin_no                   = $licence->tin_no;
+    //             $TradeLicence->salestax_no              = $licence->salestax_no;
+    //             $TradeLicence->property_type            = $licence->property_type;
+    //             $TradeLicence->payment_status           = $licence->payment_status;
+    //             $TradeLicence->document_upload_status   = $licence->document_upload_status;
+    //             $TradeLicence->pending_status           = $licence->pending_status;
+    //             $TradeLicence->doc_verify_date          = $licence->doc_verify_date;
+    //             $TradeLicence->doc_verified_by          = $licence->doc_verified_by;
+    //             $TradeLicence->is_doc_verified          = $licence->is_doc_verified;
+    //             $TradeLicence->parent_ids               = $licence->parent_ids;
+    //             $TradeLicence->turnover                 = $licence->turnover;
+    //             $TradeLicence->is_tobacco               = $licence->is_tobacco;
+    //             $TradeLicence->apply_from               = $licence->apply_from;
+    //             $TradeLicence->workflow_id              = $licence->workflow_id;
+    //             $TradeLicence->max_level_attained       = $licence->max_level_attained;
+    //             $TradeLicence->is_parked                = $licence->is_parked;
+    //             $TradeLicence->current_role             = $licence->current_role;
+    //             $TradeLicence->initiator_role           = $licence->initiator_role;
+    //             $TradeLicence->finisher_role            = $licence->finisher_role;
+    //             $TradeLicence->is_escalate              = $licence->is_escalate;
+    //             $TradeLicence->escalate_by              = $licence->escalate_by;
+    //             $TradeLicence->is_active                = $licence->is_active;
+    //             $TradeLicence->user_id                  = $licence->user_id;
+    //             $TradeLicence->citizen_id               = $licence->citizen_id;
+    //             $TradeLicence->created_at               = $licence->created_at;
+    //             $TradeLicence->updated_at               = $licence->updated_at;
+    //             $TradeLicence->deleted_at               = $licence->deleted_at;
+
+    //             $TradeLicence->save();
+    //             $expireLicenceId = $TradeLicence->id;
+    //             $sql = "Insert Into trade_owners
+    //                     (
+    //                         id,temp_id,owner_name,	guardian_name,	address, mobile_no,	city ,	district, state,
+    //                         email_id,	user_id,	is_active,	created_at,	updated_at,	deleted_at
+    //                     )
+    //                     select id, $expireLicenceId,owner_name,	guardian_name,	address, mobile_no,	city ,	district, state,
+    //                         email_id,	user_id,	is_active,	created_at,	updated_at,	deleted_at 
+    //                     from active_trade_owners where temp_id = $licenceId order by id ";
+
+    //             DB::insert($sql);
+    //             $sql = "Insert Into trade_documents
+    //                     (
+    //                         id,temp_id,	doc_type_code, document_id,  temp_owner_id, is_verified, 
+    //                         is_rejected, remarks, user_id, verified_dy,  verified_date, created_at, updated_at,
+    //                         deleted_at
+    //                     )
+    //                     select id, $expireLicenceId,doc_type_code, document_id,  temp_owner_id, is_verified, 
+    //                         is_rejected, remarks, user_id, verified_dy,  verified_date, created_at, updated_at,
+    //                         deleted_at 
+    //                     from active_trade_documents where temp_id = $licenceId order by id ";
+    //             DB::insert($sql);
+    //             $sql = 'Insert Into trade_renewals(
+    //                     id , ulb_id , ward_id ,	new_ward_id ,	trade_id ,	denial_id ,	fy_id ,	application_no ,	provisional_license_no ,	
+    //                     temp_id ,	application_date ,	license_no ,	license_date ,	valid_from ,	valid_upto ,	licence_for_years ,
+    //                     firm_name ,	property_id  ,    holding_no ,	premises_owner_name ,	address ,	landmark ,	pin_code ,	street_name ,
+    //                     firm_type_id  ,	firm_description ,	establishment_date ,	application_type_id ,	category_type_id ,	ownership_type_id ,
+    //                     nature_of_bussiness ,	brief_firm_desc ,	area_in_sqft ,	k_no ,	bind_book_no ,	account_no ,	pan_no ,	tin_no ,
+    //                     salestax_no ,	property_type ,    payment_status ,    document_upload_status ,    pending_status ,    doc_verify_date ,
+    //                     doc_verified_by ,    is_doc_verified ,	parent_ids ,	turnover ,	is_tobacco ,	apply_from ,	workflow_id ,	max_level_attained ,
+    //                     is_parked ,	"current_role",	initiator_role ,	finisher_role ,	is_escalate ,	escalate_by ,	is_active ,	user_id ,
+    //                     citizen_id ,	created_at ,	updated_at ,	deleted_at ,	
+    //                     tran_id ,	rate_id ,	demand_amount ,	fine_amount ,	penalty_amount ,	rebate_amount ,	tax_percent ,
+    //                     tax_amount ,	total_taxable_amount ,	payable_amount ,	pmt_amount 
+    //                     )
+    //                 select active_trade_licences.id , active_trade_licences.ulb_id , active_trade_licences.ward_id ,	active_trade_licences.new_ward_id ,
+    //                     active_trade_licences.trade_id ,	active_trade_licences.denial_id ,	active_trade_licences.fy_id ,	active_trade_licences.application_no ,	
+    //                     active_trade_licences.provisional_license_no ,    active_trade_licences.temp_id ,	active_trade_licences.application_date ,	
+    //                     active_trade_licences.license_no ,	active_trade_licences.license_date ,	active_trade_licences.valid_from ,	
+    //                     active_trade_licences.valid_upto ,	active_trade_licences.licence_for_years ,
+    //                     active_trade_licences.firm_name ,	active_trade_licences.property_id  ,    active_trade_licences.holding_no ,	
+    //                     active_trade_licences.premises_owner_name ,	active_trade_licences.address ,	active_trade_licences.landmark ,	
+    //                     active_trade_licences.pin_code ,	active_trade_licences.street_name ,    active_trade_licences.firm_type_id  ,	
+    //                     active_trade_licences.firm_description ,	active_trade_licences.establishment_date ,	active_trade_licences.application_type_id ,	
+    //                     active_trade_licences.category_type_id ,	active_trade_licences.ownership_type_id ,
+    //                     active_trade_licences.nature_of_bussiness ,	active_trade_licences.brief_firm_desc ,	active_trade_licences.area_in_sqft ,	
+    //                     active_trade_licences.k_no ,	active_trade_licences.bind_book_no ,	active_trade_licences.account_no ,	active_trade_licences.pan_no ,	
+    //                     active_trade_licences.tin_no , active_trade_licences.salestax_no ,	active_trade_licences.property_type ,    
+    //                     active_trade_licences.payment_status ,    active_trade_licences.document_upload_status ,    active_trade_licences.pending_status ,    
+    //                     active_trade_licences.doc_verify_date ,    active_trade_licences.doc_verified_by ,    active_trade_licences.is_doc_verified ,	
+    //                     active_trade_licences.parent_ids ,	active_trade_licences.turnover ,	active_trade_licences.is_tobacco ,	active_trade_licences.apply_from ,	
+    //                     active_trade_licences.workflow_id ,	active_trade_licences.max_level_attained ,
+    //                     active_trade_licences.is_parked ,	active_trade_licences.current_role,	active_trade_licences.initiator_role ,	active_trade_licences.finisher_role ,	
+    //                     active_trade_licences.is_escalate ,	active_trade_licences.escalate_by ,	active_trade_licences.is_active ,	
+    //                     active_trade_licences.user_id ,
+    //                     active_trade_licences.citizen_id ,	active_trade_licences.created_at ,	active_trade_licences.updated_at ,	active_trade_licences.deleted_at,
+    //                     trade_transactions.id as tran_id ,	trade_transactions.rate_id ,	(trade_transactions.paid_amount - transactions.penalty  )as demand_amount ,	0 as fine_amount ,	
+    //                     transactions.penalty as penalty_amount ,	transactions.rebet  as rebate_amount ,	100.00 as tax_percent ,
+    //                     trade_transactions.paid_amount as tax_amount ,	trade_transactions.paid_amount as total_taxable_amount ,	
+    //                     trade_transactions.paid_amount as payable_amount ,	trade_transactions.paid_amount as pmt_amount
+
+    //                 from active_trade_licences
+    //                 left join trade_transactions  on trade_transactions.temp_id = active_trade_licences.id and trade_transactions.status in(1,2)
+    //                 left join ( 
+    //                     select distinct(trade_fine_rebetes.tran_id) as tran_id,
+    //                         sum(case when trade_fine_rebetes.is_rebet = true then amount else 0 end) as rebet,
+    //                         sum(case when trade_fine_rebetes.is_rebet = false then amount else 0 end) as penalty
+    //                     from trade_transactions  
+    //                     join trade_fine_rebetes on trade_fine_rebetes.tran_id = trade_transactions.id
+    //                     where trade_transactions.status in(1,2) 
+    //                         and trade_transactions.temp_id = ' . $licenceId . '
+    //                     group by trade_fine_rebetes.tran_id
+    //                         )transactions on transactions.tran_id = active_trade_licences.id
+    //                 where active_trade_licences.id = ' . $licenceId . '
+    //                 limit 1
+    //                 ';
+    //             DB::insert($sql);
+    //             if ($licence->application_type_id != 1) {
+    //                 TradeLicence::find($TradeLicence->temp_id)->forceDelete();
+    //             }
+    //             $licence->forceDelete();
+    //             ActiveTradeOwner::where('temp_id', $licenceId)->forceDelete();
+    //             ActiveTradeDocument::where('temp_id', $licenceId)->forceDelete();
+    //             return $expireLicenceId;
+    //         }
+    //     } catch (Exception $e) {
+    //         echo $e->getMessage();
+    //         return false;
+    //     }
+    // }
+
+    # Serial No : 18
     public function postNextLevel(Request $request)
     {
+        $request->validate([
+            'id' => 'required|integer',
+            'senderRoleId' => 'required|integer',
+            'receiverRoleId' => 'required|integer',
+            'comment' => 'required',
+        ]);
+
         try {
-            $receiver_user_type_id = "";
-            $sms = "";
-            $licence_pending = 2;
-            $user = Auth()->user();
-            $user_id = $user->id;
-            $ulb_id = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
-                ->where('ulb_id', $ulb_id)
-                ->first();
-            if (!$workflowId) {
-                throw new Exception("Workflow Not Available");
-            }
-            $role = $this->_parent->getUserRoll($user_id, $ulb_id, $workflowId->wf_master_id);
-            $init_finish = $this->_parent->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
-            if (!$role) {
-                throw new Exception("You Are Not Authorized");
-            }
-            $role_id = $role->role_id;
-            $mUserType = $this->_parent->userType($refWorkflowId);
-
-            if ($role->is_initiator && in_array($request->btn, ['btc', 'backward'])) {
-                throw new Exception("Initator Can Not send Back The Application");
-            }
-            $licenc_data = ActiveTradeLicence::find($request->licenceId);
-            $level_data = $this->getWorkflowTrack($request->licenceId); //TradeLevelPending::getLevelData($request->licenceId);
-
-            if (!$licenc_data) {
-                throw new Exception("Data Not Found");
-            }
-            if ($licenc_data->pending_status == 5) {
-                throw new Exception("Licence Is Already Approved");
-            }
-            if (!$role->is_initiator && isset($level_data->receiver_role_id) && $level_data->receiver_role_id != $role->role_id) {
-                throw new Exception("You are not authorised for this action");
-            }
-            if (!$role->is_initiator && !$level_data) {
-                throw new Exception("Data Not Found On Level. Please Contact Admin!!!...");
-            }
-            if (isset($level_data->receiver_role_id) && $level_data->receiver_role_id != $role->role_id) {
-                throw new Exception("You Have Already Taken The Action On This Application");
-            }
-            if ($request->btn == "forward" && !$role->is_finisher && !$role->is_initiator) {
-                $sms = "Application Forwarded To " . $role->forword_name;
-                $receiver_user_type_id = $role->forward_role_id;
-            } elseif ($request->btn == "backward" && !$role->is_initiator) {
-                $sms = "Application Forwarded To " . $role->backword_name;
-                $receiver_user_type_id = $role->backward_role_id;
-                $licence_pending = $init_finish["initiator"]['id'] == $role->backward_role_id ? 3 : $licence_pending;
-            } elseif ($request->btn == "btc" && !$role->is_initiator) {
-                $licence_pending = 3;
-                $sms = "Application Forwarded To " . $init_finish["initiator"]['role_name'];
-                $receiver_user_type_id = $init_finish["initiator"]['id'];
-            } elseif ($request->btn == "forward" && !$role->is_initiator && $level_data) {
-                $sms = "Application Forwarded ";
-                $receiver_user_type_id = $role->role_id;
-            } elseif ($request->btn == "forward" && $role->is_initiator && !$level_data) {
-                $licence_pending = 2;
-                $sms = "Application Forwarded To " . $role->forword_name;
-                $receiver_user_type_id = $role->forward_role_id;
-            } elseif ($request->btn == "forward" && $role->is_initiator && $level_data) {
-                $licence_pending = 2;
-                $sms = "Application Forwarded To ";
-                $receiver_user_type_id = $level_data->sender_role_id;
-            }
-            if ($request->btn == "forward" && $role->is_initiator) {
-                $doc = (array) null;
-                $owneres = ActiveTradeOwner::owneresByLId($licenc_data->id);
-                $documentsList = $this->getDocumentTypeList($licenc_data);
-                if ($licenc_data->payment_status != 1) {
-                    $doc[] = "Payment is Not Clear";
-                }
-                foreach ($documentsList as $val) {
-                    $data["documentsList"][$val->doc_for] = $this->getDocumentList($val->doc_for, $licenc_data->application_type_id, $val->show);
-                    $data["documentsList"][$val->doc_for]["is_mandatory"] = $val->is_mandatory;
-                }
-                if ($licenc_data->application_type_id == 1) {
-                    $data["documentsList"]["Identity Proof"] = $this->getDocumentList("Identity Proof", $licenc_data->application_type_id, 0);
-                    $data["documentsList"]["Identity Proof"]["is_mandatory"] = 1;
-                }
-                foreach ($data["documentsList"] as $key => $val) {
-                    if ($key == "Identity Proof") {
-                        continue;
-                    }
-                    $data["documentsList"][$key]["doc"] = $this->check_doc_exist($licenc_data->id, $key);
-                    if (!isset($data["documentsList"][$key]["doc"]["document_path"]) && $data["documentsList"][$key]["is_mandatory"]) {
-                        $doc[] = $key . " Not Uploaded";
-                    }
-                }
-                if ($licenc_data->application_type_id == 1) {
-                    foreach ($owneres as $key => $val) {
-                        $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenc_data->id, $val->id);
-                        if (!isset($owneres[$key]["Identity Proof"]["document_path"]) && $data["documentsList"]["Identity Proof"]["is_mandatory"]) {
-                            $doc[] = "Identity Proof Of " . $val->owner_name . " Not Uploaded";
-                        }
-                    }
-                }
-                // if($doc)
-                // {   
-                //     if(sizeOf($doc)>1)
-                //     {
-                //         throw new Exception("All Documernt Are Not Uploaded");
-                //     }
-                //     else
-                //     {
-                //         throw new Exception($doc[0]);
-                //     }                
-                // }
-            }
-            if ($request->btn == "forward" && in_array(strtoupper($mUserType), ["DA"])) {
-                $docs = $this->getLicenceDocuments($request->licenceId);
-                $docs = objToArray($docs);
-                // if(!$docs)
-                // {
-                //     throw new Exception("No Anny Document Found");
-                // }
-                $test = array_filter($docs, function ($val) {
-                    if ($val["verify_status"] != 1) {
-                        return True;
-                    }
-                });
-                if ($test) {
-                    throw new Exception("All Document Are Not Verified");
-                }
-            }
-            if (!$role->is_finisher && !$receiver_user_type_id) {
-                throw new Exception("Next Role Not Found !!!....");
-            }
-
+            // SAF Application Update Current Role Updation
             DB::beginTransaction();
-            if ($level_data) {
-                $level_data->verification_status = 1;
-                $level_data->user_id = $user_id;
-                $level_data->message = $request->comment;
-                $level_data->forward_date = Carbon::now()->format('Y-m-d');
-                $level_data->forward_time = Carbon::now()->format('H:s:i');
-                $level_data->update();
-            }
-            if (!$role->is_finisher || in_array($request->btn, ["backward", "btc"])) {
-                $level_insert = new WorkflowTrack;
-                $level_insert->ref_table_id_value = $licenc_data->id;
-                $level_insert->ref_table_dot_id = "active_trade_licences";
-                $level_insert->sender_role_id = $role_id;
-                $level_insert->receiver_role_id = $receiver_user_type_id;
-                $level_insert->citizen_id = $user_id;
-                $level_insert->workflow_id = $refWorkflowId;
-                $level_insert->module_id = Config::get('TradeConstant.MODULE-ID');
-                $level_insert->save();
-                // $licenc_data->current_user_id = $receiver_user_type_id;
-            }
-            if ($role->is_finisher && $request->btn == "forward") {
-                $licence_pending = 5;
-                $sms = "Application Approved By " . $role->role_name;
-                $ulbDtl = UlbMaster::find($ulb_id);
-                $ulb_name = explode(' ', $ulbDtl->ulb_name);
-                $short_ulb_name = "";
-                foreach ($ulb_name as $val) {
-                    $short_ulb_name .= $val[0];
-                }
-                $ward_no = UlbWardMaster::select("ward_name")
-                    ->where("id", $licenc_data->ward_id)
-                    ->first();
-                $ward_no = $ward_no['ward_name'];
-                $license_no = $short_ulb_name . $ward_no . date("mdY") . $licenc_data->id;
-                $licence_for_years = $licenc_data->licence_for_years;
-                # 1	NEW LICENSE
-                if ($licenc_data->application_type_id == 1) {
-                    $valid_from = $licenc_data->application_date;
-                    $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime($licenc_data->application_date)));
-                }
-                # 2 RENEWAL
-                if ($licenc_data->application_type_id == 2) {
-                    $prive_licence = TradeLicence::find($licenc_data->trade_id);
-                    if (!empty($prive_licence)) {
-                        $prive_licence_id = $prive_licence->id;
-                        $license_no = $prive_licence->license_no;
-                        $valid_from = $prive_licence->valid_upto; {
-                            $datef = date('Y-m-d', strtotime($valid_from));
-                            $datefrom = date_create($datef);
-                            $datea = date('Y-m-d', strtotime($licenc_data->application_date));
-                            $dateapply = date_create($datea);
-                            $year_diff = date_diff($datefrom, $dateapply);
-                            $year_diff =  $year_diff->format('%y');
+            $licence = ActiveTradeLicence::find($request->id);
+            $licence->current_role = $request->receiverRoleId;
+            $licence->save();
 
-                            $priv_m_d = date('m-d', strtotime($valid_from));
-                            $date = date('Y', strtotime($valid_from)) . '-' . $priv_m_d;
-                            $licence_for_years2 = $licence_for_years + $year_diff;
-                            $valid_upto = date('Y-m-d', strtotime($date . "+" . $licence_for_years2 . " years"));
-                            $data['valid_upto'] = $valid_upto;
-                        }
-                    } else {
-                        throw new Exception('licence', 'Some Error Occurred Please Contact to Admin!!!');
-                    }
-                }
 
-                # 3	AMENDMENT
-                if ($licenc_data->application_type_id == 3) {
-                    $prive_licence = TradeLicence::find($licenc_data->trade_id);
-                    $license_no = $prive_licence->license_no;
-                    $oneYear_validity = date("Y-m-d", strtotime("+1 years", strtotime('now')));
-                    $previous_validity = $prive_licence->valid_upto;
-                    if ($previous_validity > $oneYear_validity)
-                        $valid_upto = $previous_validity;
-                    else
-                        $valid_upto = $oneYear_validity;
-                    $valid_from = date('Y-m-d');
-                }
+            $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
+            $metaReqs['workflowId'] = $licence->workflow_id;
+            $metaReqs['refTableDotId'] = 'active_trade_licences.id';
+            $metaReqs['refTableIdValue'] = $request->id;
+            $request->request->add($metaReqs);
 
-                # 4 SURRENDER
-                if ($licenc_data->application_type_id == 4) {
-                    // Incase of surrender valid upto is previous license validity
-                    $prive_licence = TradeLicence::find($licenc_data->trade_id);
-                    $license_no = $prive_licence->license_no;
-                    $valid_from = $prive_licence->valid_from;
-                    $valid_upto = $prive_licence->valid_upto;
-                }
-                $licenc_data->license_date = Carbon::now()->format("Y-m-d");
-                $licenc_data->valid_from = $valid_from;
-                $licenc_data->valid_upto = $valid_upto;
-                $licenc_data->license_no = $license_no;
-                $licenc_data->current_role = $receiver_user_type_id;
-                $sms .= " Licence No " . $license_no;
-            }
-            if ($request->btn == "forward" && $role->is_initiator) {
-                $licenc_data->document_upload_status = 1;
-            }
-            if ($request->btn == "forward" && in_array(strtoupper($mUserType), ["DA"])) {
-                $nowdate = Carbon::now()->format('Y-m-d');
-                $licenc_data->doc_verify_date = $nowdate;
-                $licenc_data->doc_verified_by = $user_id;
-                $licenc_data->is_doc_verified = TRUE;
-            }
-            if (in_array($request->btn, ["backward", "btc"]) && in_array(strtoupper($mUserType), ["DA"])) {
-                $licenc_data->is_doc_verified = FALSE;
-            }
-            if (!$role->is_finisher) {
-                $licenc_data->current_role = $receiver_user_type_id;
-            }
-            if ($request->btn == "forward" && $licenc_data->is_parked) {
-                $licenc_data->is_parked = false;
-            }
-            $licenc_data->max_level_attained = $licenc_data->max_level_attained < $role->serial_no ? $role->serial_no : $licenc_data->max_level_attained;
-            $licenc_data->pending_status = $licence_pending;
-            $licenc_data->update();
-            // dd($sms,$licenc_data);             
-            if ($role->is_finisher && $request->btn == "forward") {
-                $success = $this->transferActiveToTrade($licenc_data->id);
-                if (!$success) {
-                    throw new Exception("Some error on data raplication");
-                }
-            }
+            $track = new WorkflowTrack();
+            $track->saveTrack($request);
 
             DB::commit();
-            return responseMsg(true, $sms, "");
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
-    # Serial No : 18.01
-    public function transferActiveToTrade($licenceId)
-    {
-        try {
-            $TradeLicence = new TradeLicence();
-            $licence = ActiveTradeLicence::find($licenceId);
-            if ($licence->id) {
 
-                $TradeLicence->id                       = $licence->id;
-                $TradeLicence->ulb_id                   = $licence->ulb_id;
-                $TradeLicence->ward_id                  = $licence->ward_id;
-                $TradeLicence->new_ward_id              = $licence->new_ward_id;
-                $TradeLicence->trade_id                 = $licence->trade_id;
-                $TradeLicence->denial_id                = $licence->denial_id;
-                $TradeLicence->fy_id                    = $licence->fy_id;
-                $TradeLicence->application_no           = $licence->application_no;
-                $TradeLicence->provisional_license_no    = $licence->provisional_license_no;
-                $TradeLicence->temp_id                  = $licence->temp_id;
-                $TradeLicence->application_date         = $licence->application_date;
-                $TradeLicence->license_no               = $licence->license_no;
-                $TradeLicence->license_date             = $licence->license_date;
-                $TradeLicence->valid_from               = $licence->valid_from;
-                $TradeLicence->valid_upto               = $licence->valid_upto;
-                $TradeLicence->licence_for_years        = $licence->licence_for_years;
-                $TradeLicence->firm_name                = $licence->firm_name;
-                $TradeLicence->property_id              = $licence->property_id;
-                $TradeLicence->holding_no               = $licence->holding_no;
-                $TradeLicence->premises_owner_name      = $licence->premises_owner_name;
-                $TradeLicence->address                  = $licence->address;
-                $TradeLicence->landmark                 = $licence->landmark;
-                $TradeLicence->pin_code                 = $licence->pin_code;
-                $TradeLicence->street_name              = $licence->street_name;
-                $TradeLicence->firm_type_id             = $licence->firm_type_id;
-                $TradeLicence->firm_description         = $licence->firm_description;
-                $TradeLicence->establishment_date       = $licence->establishment_date;
-                $TradeLicence->application_type_id      = $licence->application_type_id;
-                $TradeLicence->category_type_id         = $licence->category_type_id;
-                $TradeLicence->ownership_type_id        = $licence->ownership_type_id;
-                $TradeLicence->nature_of_bussiness      = $licence->nature_of_bussiness;
-                $TradeLicence->brief_firm_desc          = $licence->brief_firm_desc;
-                $TradeLicence->area_in_sqft             = $licence->area_in_sqft;
-                $TradeLicence->k_no                     = $licence->k_no;
-                $TradeLicence->bind_book_no             = $licence->bind_book_no;
-                $TradeLicence->account_no               = $licence->account_no;
-                $TradeLicence->pan_no                   = $licence->pan_no;
-                $TradeLicence->tin_no                   = $licence->tin_no;
-                $TradeLicence->salestax_no              = $licence->salestax_no;
-                $TradeLicence->property_type            = $licence->property_type;
-                $TradeLicence->payment_status           = $licence->payment_status;
-                $TradeLicence->document_upload_status   = $licence->document_upload_status;
-                $TradeLicence->pending_status           = $licence->pending_status;
-                $TradeLicence->doc_verify_date          = $licence->doc_verify_date;
-                $TradeLicence->doc_verified_by          = $licence->doc_verified_by;
-                $TradeLicence->is_doc_verified          = $licence->is_doc_verified;
-                $TradeLicence->parent_ids               = $licence->parent_ids;
-                $TradeLicence->turnover                 = $licence->turnover;
-                $TradeLicence->is_tobacco               = $licence->is_tobacco;
-                $TradeLicence->apply_from               = $licence->apply_from;
-                $TradeLicence->workflow_id              = $licence->workflow_id;
-                $TradeLicence->max_level_attained       = $licence->max_level_attained;
-                $TradeLicence->is_parked                = $licence->is_parked;
-                $TradeLicence->current_role             = $licence->current_role;
-                $TradeLicence->initiator_role           = $licence->initiator_role;
-                $TradeLicence->finisher_role            = $licence->finisher_role;
-                $TradeLicence->is_escalate              = $licence->is_escalate;
-                $TradeLicence->escalate_by              = $licence->escalate_by;
-                $TradeLicence->is_active                = $licence->is_active;
-                $TradeLicence->user_id                  = $licence->user_id;
-                $TradeLicence->citizen_id               = $licence->citizen_id;
-                $TradeLicence->created_at               = $licence->created_at;
-                $TradeLicence->updated_at               = $licence->updated_at;
-                $TradeLicence->deleted_at               = $licence->deleted_at;
 
-                $TradeLicence->save();
-                $expireLicenceId = $TradeLicence->id;
-                $sql = "Insert Into trade_owners
-                        (
-                            id,temp_id,owner_name,	guardian_name,	address, mobile_no,	city ,	district, state,
-	                        email_id,	user_id,	is_active,	created_at,	updated_at,	deleted_at
-                        )
-                        select id, $expireLicenceId,owner_name,	guardian_name,	address, mobile_no,	city ,	district, state,
-                            email_id,	user_id,	is_active,	created_at,	updated_at,	deleted_at 
-                        from active_trade_owners where temp_id = $licenceId order by id ";
 
-                DB::insert($sql);
-                $sql = "Insert Into trade_documents
-                        (
-                            id,temp_id,	doc_type_code, document_id,  temp_owner_id, is_verified, 
-                            is_rejected, remarks, user_id, verified_dy,  verified_date, created_at, updated_at,
-                            deleted_at
-                        )
-                        select id, $expireLicenceId,doc_type_code, document_id,  temp_owner_id, is_verified, 
-                            is_rejected, remarks, user_id, verified_dy,  verified_date, created_at, updated_at,
-                            deleted_at 
-                        from active_trade_documents where temp_id = $licenceId order by id ";
-                DB::insert($sql);
-                $sql = 'Insert Into trade_renewals(
-                        id , ulb_id , ward_id ,	new_ward_id ,	trade_id ,	denial_id ,	fy_id ,	application_no ,	provisional_license_no ,	
-                        temp_id ,	application_date ,	license_no ,	license_date ,	valid_from ,	valid_upto ,	licence_for_years ,
-                        firm_name ,	property_id  ,    holding_no ,	premises_owner_name ,	address ,	landmark ,	pin_code ,	street_name ,
-                        firm_type_id  ,	firm_description ,	establishment_date ,	application_type_id ,	category_type_id ,	ownership_type_id ,
-                        nature_of_bussiness ,	brief_firm_desc ,	area_in_sqft ,	k_no ,	bind_book_no ,	account_no ,	pan_no ,	tin_no ,
-                        salestax_no ,	property_type ,    payment_status ,    document_upload_status ,    pending_status ,    doc_verify_date ,
-                        doc_verified_by ,    is_doc_verified ,	parent_ids ,	turnover ,	is_tobacco ,	apply_from ,	workflow_id ,	max_level_attained ,
-                        is_parked ,	"current_role",	initiator_role ,	finisher_role ,	is_escalate ,	escalate_by ,	is_active ,	user_id ,
-                        citizen_id ,	created_at ,	updated_at ,	deleted_at ,	
-                        tran_id ,	rate_id ,	demand_amount ,	fine_amount ,	penalty_amount ,	rebate_amount ,	tax_percent ,
-                        tax_amount ,	total_taxable_amount ,	payable_amount ,	pmt_amount 
-                        )
-                    select active_trade_licences.id , active_trade_licences.ulb_id , active_trade_licences.ward_id ,	active_trade_licences.new_ward_id ,
-                        active_trade_licences.trade_id ,	active_trade_licences.denial_id ,	active_trade_licences.fy_id ,	active_trade_licences.application_no ,	
-                        active_trade_licences.provisional_license_no ,    active_trade_licences.temp_id ,	active_trade_licences.application_date ,	
-                        active_trade_licences.license_no ,	active_trade_licences.license_date ,	active_trade_licences.valid_from ,	
-                        active_trade_licences.valid_upto ,	active_trade_licences.licence_for_years ,
-                        active_trade_licences.firm_name ,	active_trade_licences.property_id  ,    active_trade_licences.holding_no ,	
-                        active_trade_licences.premises_owner_name ,	active_trade_licences.address ,	active_trade_licences.landmark ,	
-                        active_trade_licences.pin_code ,	active_trade_licences.street_name ,    active_trade_licences.firm_type_id  ,	
-                        active_trade_licences.firm_description ,	active_trade_licences.establishment_date ,	active_trade_licences.application_type_id ,	
-                        active_trade_licences.category_type_id ,	active_trade_licences.ownership_type_id ,
-                        active_trade_licences.nature_of_bussiness ,	active_trade_licences.brief_firm_desc ,	active_trade_licences.area_in_sqft ,	
-                        active_trade_licences.k_no ,	active_trade_licences.bind_book_no ,	active_trade_licences.account_no ,	active_trade_licences.pan_no ,	
-                        active_trade_licences.tin_no , active_trade_licences.salestax_no ,	active_trade_licences.property_type ,    
-                        active_trade_licences.payment_status ,    active_trade_licences.document_upload_status ,    active_trade_licences.pending_status ,    
-                        active_trade_licences.doc_verify_date ,    active_trade_licences.doc_verified_by ,    active_trade_licences.is_doc_verified ,	
-                        active_trade_licences.parent_ids ,	active_trade_licences.turnover ,	active_trade_licences.is_tobacco ,	active_trade_licences.apply_from ,	
-                        active_trade_licences.workflow_id ,	active_trade_licences.max_level_attained ,
-                        active_trade_licences.is_parked ,	active_trade_licences.current_role,	active_trade_licences.initiator_role ,	active_trade_licences.finisher_role ,	
-                        active_trade_licences.is_escalate ,	active_trade_licences.escalate_by ,	active_trade_licences.is_active ,	
-                        active_trade_licences.user_id ,
-                        active_trade_licences.citizen_id ,	active_trade_licences.created_at ,	active_trade_licences.updated_at ,	active_trade_licences.deleted_at,
-                        trade_transactions.id as tran_id ,	trade_transactions.rate_id ,	(trade_transactions.paid_amount - transactions.penalty  )as demand_amount ,	0 as fine_amount ,	
-                        transactions.penalty as penalty_amount ,	transactions.rebet  as rebate_amount ,	100.00 as tax_percent ,
-                        trade_transactions.paid_amount as tax_amount ,	trade_transactions.paid_amount as total_taxable_amount ,	
-                        trade_transactions.paid_amount as payable_amount ,	trade_transactions.paid_amount as pmt_amount
-                        
-                    from active_trade_licences
-                    left join trade_transactions  on trade_transactions.temp_id = active_trade_licences.id and trade_transactions.status in(1,2)
-                    left join ( 
-                        select distinct(trade_fine_rebetes.tran_id) as tran_id,
-                            sum(case when trade_fine_rebetes.is_rebet = true then amount else 0 end) as rebet,
-                            sum(case when trade_fine_rebetes.is_rebet = false then amount else 0 end) as penalty
-                        from trade_transactions  
-                        join trade_fine_rebetes on trade_fine_rebetes.tran_id = trade_transactions.id
-                        where trade_transactions.status in(1,2) 
-                            and trade_transactions.temp_id = ' . $licenceId . '
-                        group by trade_fine_rebetes.tran_id
-                            )transactions on transactions.tran_id = active_trade_licences.id
-                    where active_trade_licences.id = ' . $licenceId . '
-                    limit 1
-                    ';
-                DB::insert($sql);
-                if ($licence->application_type_id != 1) {
-                    TradeLicence::find($TradeLicence->temp_id)->forceDelete();
-                }
-                $licence->forceDelete();
-                ActiveTradeOwner::where('temp_id', $licenceId)->forceDelete();
-                ActiveTradeDocument::where('temp_id', $licenceId)->forceDelete();
-                return $expireLicenceId;
-            }
-        } catch (Exception $e) {
-            echo $e->getMessage();
-            return false;
-        }
-    }
     # Serial No : 19
     public function provisionalCertificate($id) # unauthorised  function
     {
@@ -3514,7 +3557,7 @@ class Trade implements ITrade
         try {
             $data = array();
             $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
-            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+            $workflowId = WfWorkflow::where('id', $refWorkflowId)
                 ->where('ulb_id', $ulbId)
                 ->first();
 
@@ -3589,14 +3632,14 @@ class Trade implements ITrade
             if ($role) {
                 $role_id = $role->role_id;
             }
-            $rules["comments"] = "required|min:10|regex:$mRegex";
-            $rules["licenceId"] = "required||digits_between:1,9223372036854775807";
+            $rules["comment"] = "required|min:10|regex:$mRegex";
+            $rules["id"] = "required||digits_between:1,9223372036854775807";
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
 
-            $refLicense = ActiveTradeLicence::find($request->licenceId);
+            $refLicense = ActiveTradeLicence::find($request->id);
             if (!$refLicense) {
                 throw new Exception("Comments for invalide application !....");
             }
@@ -3609,13 +3652,13 @@ class Trade implements ITrade
             $workflowTrack->module_id       =   Config::get('TradeConstant.MODULE-ID');
             $workflowTrack->ref_table_dot_id = "active_trade_licences";
             $workflowTrack->ref_table_id_value = $refLicense->id;
-            $workflowTrack->message         =   $request->comments;
+            $workflowTrack->message         =   $request->comment;
             $workflowTrack->commented_by    =   $role_id;
             $workflowTrack->track_date      =   Carbon::now()->format('Y-m-d H:i:s');
             $workflowTrack->save();
 
             DB::commit();
-            return responseMsg(true, "You Have Commented Successfully!!", ['Comment' => $request->comments]);
+            return responseMsg(true, "You Have Commented Successfully!!", ['Comment' => $request->comment]);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -3849,8 +3892,8 @@ class Trade implements ITrade
             )
                 ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                 STRING_AGG(guardian_name,',') AS guardian_name,
-                                STRING_AGG(mobile::TEXT,',') AS mobile_no,
-                                STRING_AGG(emailid,',') AS email_id,
+                                STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                STRING_AGG(email_id,',') AS email_id,
                                 temp_id
                                 FROM trade_owners 
                                 WHERE is_active =TRUE

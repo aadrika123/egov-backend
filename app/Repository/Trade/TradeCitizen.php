@@ -298,6 +298,7 @@ class TradeCitizen implements ITradeCitizen
             "active_trade_licences.firm_name",
             "active_trade_licences.application_date",
             "active_trade_licences.apply_from",
+            "active_trade_licences.application_type_id",
             "owner.owner_name",
             "owner.guardian_name",
             "owner.mobile_no",
