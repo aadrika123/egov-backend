@@ -114,8 +114,17 @@ class WaterApplication extends Model
      */
     public function getWaterApplicationsDetails($req)
     {
-        return WaterApplication::join('water_applicants','water_applicants.application_id','water_applications.id')
-        ->where('water_applications.id',$req)
-        ->first();
+        return WaterApplication::join('water_applicants', 'water_applicants.application_id', 'water_applications.id')
+            ->where('water_applications.id', $req)
+            ->first();
+    }
+
+    /**
+     * |------------------- Delete the Application Prmanentaly ----------------------|
+     */
+    public function DeleteWaterApplication($req)
+    {
+        WaterApplication::where('id', $req)
+            ->delete();
     }
 }

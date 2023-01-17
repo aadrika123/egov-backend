@@ -87,6 +87,12 @@ class CustomDetail extends Model
                 $customDetails->save();
             }
 
+            if ($customFor == 'Water') {
+                $customDetails->ref_type = 'Water';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
             return responseMsg(true, "Successfully Saved", $customDetails);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

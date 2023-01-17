@@ -17,6 +17,7 @@ use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterPropertyTypeMstr;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterTran;
+use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\WorkflowTrack;
 use Illuminate\Http\Request;
@@ -30,6 +31,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Unique;
 use Ramsey\Collection\Collection as CollectionCollection;
 
 class NewConnectionController extends Controller
@@ -235,6 +237,50 @@ class NewConnectionController extends Controller
         }
     }
 
+    // Back to citizen Inbox
+    public function btcInbox(Request $req)
+    {
+        try {
+            $mWfWardUser = new WfWardUser();
+
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+            $mDeviceId = $req->deviceId ?? "";
+
+            $workflowRoles = $this->getRoleIdByUserId($userId);
+            $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
+                return $value->wf_role_id;
+            });
+
+            $refWard = $mWfWardUser->getWardsByUserId($userId);
+            $wardId = $refWard->map(function ($value, $key) {
+                return $value->ward_id;
+            });
+
+            $waterList = $this->getWaterApplicatioList($ulbId)
+                ->whereIn('water_applications.current_role', $roleId)
+                ->whereIn('water_applications.ward_id', $wardId)
+                ->where('parked', true)
+                ->orderByDesc('water_applications.id')
+                ->get();
+
+            $filterWaterList = collect($waterList)->unique('id');
+            return responseMsgs(true, "BTC Inbox List", remove_null($filterWaterList), "", 1.0, "560ms", "POST", $mDeviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
+        }
+    }
+
+    // Water Special Inbox
+    public function waterSpecialInbox(Request $request)
+    {
+        try {
+            return $this->newConnection->waterSpecialInbox($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
     // Post Next Level
     public function postNextLevel(Request $request)
     {
@@ -260,16 +306,6 @@ class NewConnectionController extends Controller
                 'id' => 'required'
             ]);
             return $this->newConnection->getApplicationsDetails($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    // Water Special Inbox
-    public function waterSpecialInbox(Request $request)
-    {
-        try {
-            return $this->newConnection->waterSpecialInbox($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -469,7 +505,6 @@ class NewConnectionController extends Controller
             $mPaymentData = new WebhookPaymentData();
             $mWaterApplication = new WaterApplication();
             $mWaterTransaction = new WaterTran();
-            $mUlbWardMaster = new UlbWardMaster();
 
             $mTowards = Config::get('waterConstaint.TOWARDS');
             $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
@@ -522,6 +557,65 @@ class NewConnectionController extends Controller
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    // Back to Citizen 
+    public function backToCitizen(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|integer',
+            'workflowId' => 'required|integer',
+            'currentRoleId' => 'required|integer',
+            'comment' => 'required|string'
+        ]);
+
+        try {
+            $mWaterApplication = WaterApplication::find($req->applicationId);
+            $WorkflowTrack = new WorkflowTrack();
+
+            DB::beginTransaction();
+
+            $initiatorRoleId = $mWaterApplication->initiator_role_id;
+            $mWaterApplication->current_role = $initiatorRoleId;
+            $mWaterApplication->parked = true;                        //<------ SAF Pending Status true
+            $mWaterApplication->save();
+
+            $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
+            $metaReqs['workflowId'] = $mWaterApplication->workflow_id;
+            $metaReqs['refTableDotId'] = 'water_applications.id';
+            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['senderRoleId'] = $req->currentRoleId;
+            $req->request->add($metaReqs);
+            $WorkflowTrack->saveTrack($req);
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Done", "", "", "1.0", "350ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Delete the Application
+    public function deleteWaterApplication(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|integer'
+        ]);
+        try {
+            $mWaterApplication = new WaterApplication();
+            $applicantDetals = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
+            if ($applicantDetals) {
+                DB::beginTransaction();
+                $mWaterApplication->DeleteWaterApplication($req->applicationId);
+                DB::commit();
+                return responseMsgs(true, "Application Successfully Deleted", "", "", "1.0", "", "POST", $req->deviceId);
+            }
+            throw new Exception("You'r not the user of this form!");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }
