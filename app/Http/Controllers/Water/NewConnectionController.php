@@ -610,7 +610,7 @@ class NewConnectionController extends Controller
             $applicantDetals = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
 
             if (!$applicantDetals) {
-                throw new Exception("Data not found!");
+                throw new Exception("Data or Owner not found!");
             }
             if ($applicantDetals->payment_status == true) {
                 throw new Exception("Your paymnet is done application Cannot be Deleted!");
