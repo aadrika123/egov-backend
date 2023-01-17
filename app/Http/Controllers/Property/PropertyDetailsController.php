@@ -52,7 +52,7 @@ class PropertyDetailsController extends Controller
                     $details = $mPropConcessions->getDtlsByConcessionNo($applicationNo);
                     break;
             }
-            return responseMsgs(true, "Application Details", remove_null($details), "010501", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Application Details", [remove_null($details)], "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010501", "1.0", "", "POST", $request->deviceId ?? "");
         }
