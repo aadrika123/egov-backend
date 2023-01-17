@@ -84,7 +84,7 @@ class ObjectionRepository implements iObjectionRepository
                 DB::beginTransaction();
 
                 //saving objection details
-                # Flag : call model <----------
+                # Flag : call model <-----
                 $objection = new PropActiveObjection();
                 $objection->ulb_id = $ulbId;
                 $objection->user_id = $userId;
