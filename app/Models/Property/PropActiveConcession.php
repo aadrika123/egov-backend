@@ -38,6 +38,17 @@ class PropActiveConcession extends Model
     }
 
     /**
+     * | Get Concession Application Dtls by application No
+     */
+    public function getDtlsByConcessionNo($concessionNo)
+    {
+        return DB::table('prop_active_concessions as c')
+            ->select('c.id', 'c.')
+            ->where('c.application_no', $concessionNo)
+            ->first();
+    }
+
+    /**
      * |-------------------------- details of all concession according id -----------------------------------------------
      * | @param request
      */

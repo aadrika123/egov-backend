@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
@@ -44,10 +45,14 @@ class PropertyDetailsController extends Controller
                     $mPropActiveSafOwners = new PropActiveSafsOwner();
                     $application = collect($mPropActiveSaf->getSafDtlsBySafNo($applicationNo));
                     $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
-                    $merged = $application->merge($owners);
-                    return responseMsgs(true, "Application Details", remove_null($merged), "010501", "1.0", "", "POST", $request->deviceId ?? "");
+                    $details = $application->merge($owners);
+                    break;
+                case ("concession"):
+                    $mPropConcessions = new PropActiveConcession();
+                    $details = $mPropConcessions->getDtlsByConcessionNo($applicationNo);
                     break;
             }
+            return responseMsgs(true, "Application Details", remove_null($details), "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010501", "1.0", "", "POST", $request->deviceId ?? "");
         }

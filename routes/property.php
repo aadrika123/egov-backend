@@ -280,8 +280,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
        | Serial No : 15
    */
   Route::controller(PropertyDetailsController::class)->group(function () {
-    Route::post('get-filter-property-details', 'propertyListByKey');    // 01
-    Route::post('get-filter-safs-details', 'getFilterSafs');            // 02
+    Route::post('get-filter-application-details', 'propertyListByKey');        // 01
+    Route::post('get-filter-property-details', 'getFilterSafs');            // 02
     Route::get('get-list-saf', 'getListOfSaf');                         // 03
     Route::post('active-application/get-user-details', 'getUserDetails'); // 04
   });
