@@ -114,7 +114,19 @@ class WaterApplication extends Model
      */
     public function getWaterApplicationsDetails($req)
     {
-        return WaterApplication::join('water_applicants', 'water_applicants.application_id', 'water_applications.id')
+        return WaterApplication::select(
+            'water_applications.*',
+            'water_applicants.id as ownerId',
+            'water_applicants.applicant_name',
+            'water_applicants.guardian_name',
+            'water_applicants.city',
+            'water_applicants.mobile_no',
+            'water_applicants.email',
+            'water_applicants.status',
+            'water_applicants.district'
+
+        )
+        ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
             ->where('water_applications.id', $req)
             ->first();
     }
@@ -122,7 +134,7 @@ class WaterApplication extends Model
     /**
      * |------------------- Delete the Application Prmanentaly ----------------------|
      */
-    public function DeleteWaterApplication($req)
+    public function deleteWaterApplication($req)
     {
         WaterApplication::where('id', $req)
             ->delete();
