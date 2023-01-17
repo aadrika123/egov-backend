@@ -54,7 +54,7 @@ class PropActiveConcession extends Model
             )
             ->join('prop_properties as p', 'p.id', '=', 'c.property_id')
             ->join('ulb_ward_masters as u', 'p.ward_mstr_id', '=', 'u.id')
-            ->join('ulb_ward_masters as u1', 'p.new_ward_mstr_id', '=', 'u1.id')
+            ->leftJoin('ulb_ward_masters as u1', 'p.new_ward_mstr_id', '=', 'u1.id')
             ->where('c.application_no', $concessionNo)
             ->first();
     }
