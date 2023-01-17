@@ -13,9 +13,6 @@ use App\Http\Controllers\Property\SafReassessmentController;
 use App\Http\Controllers\Property\PropertyBifurcationController;
 use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
-use App\Http\Controllers\Property\SafDemandController;
-use App\Http\Controllers\Property\DocumentController;
-use App\Http\Controllers\CustomController;
 use App\Http\Controllers\property\ClusterController;
 use App\Http\Controllers\Property\SafDocController;
 
