@@ -222,10 +222,31 @@ class PropActiveSaf extends Model
     public function getSafId($safNo)
     {
         return PropActiveSaf::where('saf_no', $safNo)
-            ->select('id')
-            ->get()
+            ->select('id', 'saf_no')
             ->first();
     }
+
+    /**
+     * | Get Saf Details by Saf No
+     * | @param SafNo
+     */
+    public function getSafDtlsBySafNo($safNo)
+    {
+        return DB::table('prop_active_safs as s')
+            ->where('s.saf_no', $safNo)
+            ->select(
+                's.id',
+                's.saf_no',
+                's.ward_mstr_id',
+                's.new_ward_mstr_id',
+                'u.ward_name as old_ward_no',
+                'u1.ward_name as new_ward_no',
+            )
+            ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
+            ->join('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
+            ->first();
+    }
+
 
     // Get SAF No
     public function getSafNo($safId)
