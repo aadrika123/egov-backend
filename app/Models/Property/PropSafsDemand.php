@@ -36,17 +36,17 @@ class PropSafsDemand extends Model
     /**
      * | Save SAF Demand
      */
-    public function saveSafDemands($req)
+    public function postDemands($req)
     {
-        $metaReqs = [
-            'waterTax' => $req->waterTax,
-            'educationTax' => $req->educationTax,
-            'healthCess' => $req->healthCess,
-            'latrineTax' => $req->latrineTax,
-            'additionTax' => $req->additionTax,
-            'holdingTax' => $req->holdingTax,
-            'totalTax' => $req->totalTax
-        ];
-        PropSafsDemand::create($metaReqs);
+        PropSafsDemand::create($req);
+    }
+
+    /**
+     * | Update Demands
+     */
+    public function editDemands($demandId, $req)
+    {
+        $demands = PropSafsDemand::find($demandId);
+        $demands->update($req);
     }
 }

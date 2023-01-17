@@ -38,7 +38,7 @@ class SafDocController extends Controller
             $metaReqs['image'] = $imageName;
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
-            return responseMsgs(true, "Document Uploadation Successfull", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }

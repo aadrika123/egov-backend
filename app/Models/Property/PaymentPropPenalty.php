@@ -8,14 +8,32 @@ use Illuminate\Database\Eloquent\Model;
 class PaymentPropPenalty extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     /**
-     * | Check Penalty By demand ID and Penalty Type
+     * | Check Penalty By demand ID and safid
      */
-    public function getPenaltyByDemandPenaltyID($demandId, $penaltyId)
+    public function getPenaltyByDemandSafId($demandId, $safId)
     {
         return PaymentPropPenalty::where('saf_demand_id', $demandId)
-            ->where('penalty_type_id', $penaltyId)
+            ->where('saf_id', $safId)
             ->first();
+    }
+
+    /**
+     * | Edit Penalties
+     */
+    public function editPenalties($penaltyId, $reqs)
+    {
+        $penalty = PaymentPropPenalty::find($penaltyId);
+        $penalty->update($reqs);
+    }
+
+    /**
+     * | Post New Penalty
+     */
+    public function postPenalties($reqs)
+    {
+        PaymentPropPenalty::create($reqs);
     }
 }
