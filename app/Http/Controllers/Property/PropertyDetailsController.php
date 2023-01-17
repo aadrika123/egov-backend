@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveSaf;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
+use Exception;
 use Illuminate\Http\Request;
 
 class PropertyDetailsController extends Controller
@@ -26,7 +27,16 @@ class PropertyDetailsController extends Controller
     // get details of the property filtering with the provided details
     public function getFilterProperty(Request $request)
     {
+        try{
+            $request->validate([
+                'filteredBy' => 'required'
+            ]);
         return $this->propertyDetails->getFilterProperty($request);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg( false,$e->getMessage(),"");
+        }
     }
 
     // get details of the diff operation in property
