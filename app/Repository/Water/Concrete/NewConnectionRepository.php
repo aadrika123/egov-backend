@@ -264,8 +264,8 @@ class NewConnectionRepository implements iNewConnection
             ->where('water_applications.is_escalate', false)
             ->orderByDesc('water_applications.id')
             ->get();
-
-        return responseMsgs(true, "Inbox List Details!", remove_null($waterList), '', '02', '', 'Post', '');
+        $filterWaterList = collect($waterList)->unique('id');
+        return responseMsgs(true, "Inbox List Details!", remove_null($filterWaterList), '', '02', '', 'Post', '');
     }
 
 
@@ -303,8 +303,8 @@ class NewConnectionRepository implements iNewConnection
             ->whereIn('water_applications.ward_id', $wardId)
             ->orderByDesc('water_applications.id')
             ->get();
-
-        return responseMsgs(true, "Outbox List", remove_null($waterList), '', '01', '.ms', 'Post', '');
+        $filterWaterList = collect($waterList)->unique('id');
+        return responseMsgs(true, "Outbox List", remove_null($filterWaterList), '', '01', '.ms', 'Post', '');
     }
 
 
@@ -373,7 +373,8 @@ class NewConnectionRepository implements iNewConnection
             ->whereIn('water_applications.ward_id', $wardId)
             ->orderByDesc('water_applications.id')
             ->get();
-        return responseMsgs(true, "Data Fetched", remove_null($waterData), "010107", "1.0", "251ms", "POST", "");
+        $filterWaterList = collect($waterData)->unique('id');
+        return responseMsgs(true, "Data Fetched", remove_null($filterWaterList), "010107", "1.0", "251ms", "POST", "");
     }
 
 

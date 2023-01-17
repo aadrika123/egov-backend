@@ -200,15 +200,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('objection/comment-independent', 'commentIndependent');  //18
   });
 
-  /**
-   * | for custom details
-       | Serial No : 09
-   */
-  Route::controller(CustomController::class)->group(function () {
-    Route::post('get-all-custom-tab-data', 'getCustomDetails');
-    Route::post('post-custom-data', 'postCustomDetails');
-  });
-
 
   /**
    * | Calculator dashboardDate

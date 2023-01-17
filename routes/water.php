@@ -62,6 +62,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('list-field-verified-inbox', 'fieldVerifiedInbox');                                 //
         Route::post('verification-field', 'fieldVerification');                                         //
         Route::post('generate_payment_receipt', 'generatePaymentReceipt');                              //
+        Route::post('back_to_citizen', 'backToCitizen');
+        Route::post('list_btc_inbox', 'btcInbox');
+        Route::Post('delete_application', 'deleteWaterApplication');
         // Route::post('', 'getLevelcomment');                                                          //
     });
 });
