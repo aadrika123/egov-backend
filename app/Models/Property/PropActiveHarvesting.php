@@ -92,6 +92,7 @@ class PropActiveHarvesting extends Model
         return DB::table('prop_active_harvestings as h')
             ->select(
                 'h.id',
+                'h.application_no',
                 'p.new_holding_no',
                 'p.id as property_id',
                 'p.ward_mstr_id',

@@ -109,6 +109,7 @@ class PropActiveObjection extends Model
         return DB::table('prop_active_objections as o')
             ->select(
                 'o.id',
+                'o.objection_no as application_no',
                 'p.new_holding_no',
                 'p.id as property_id',
                 'p.ward_mstr_id',

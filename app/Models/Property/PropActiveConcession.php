@@ -45,6 +45,7 @@ class PropActiveConcession extends Model
         return DB::table('prop_active_concessions as c')
             ->select(
                 'c.id',
+                'c.application_no',
                 'c.applicant_name as owner_name',
                 'p.new_holding_no',
                 'p.ward_mstr_id',
