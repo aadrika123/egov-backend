@@ -59,4 +59,13 @@ class WaterApplicant extends Model
         )
             ->where('application_id', $applicationId);
     }
+
+    /**
+     * |-------------- Delete the applicant -------------|
+     */
+    public function deleteWaterApplicant($id)
+    {
+        WaterApplicant::where('application_id',$id)
+        ->delete();
+    }
 }

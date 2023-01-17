@@ -606,10 +606,19 @@ class NewConnectionController extends Controller
         try {
             $userId = auth()->user()->id;
             $mWaterApplication = new WaterApplication();
+            $mWaterApplicant = new WaterApplicant();
             $applicantDetals = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
+
+            if (!$applicantDetals) {
+                throw new Exception("Data not found!");
+            }
+            if ($applicantDetals->payment_status == true) {
+                throw new Exception("Your paymnet is done application Cannot be Deleted!");
+            }
             if ($applicantDetals->user_id == $userId) {
                 DB::beginTransaction();
-                $mWaterApplication->DeleteWaterApplication($req->applicationId);
+                $mWaterApplication->deleteWaterApplication($req->applicationId);
+                $mWaterApplicant->deleteWaterApplicant($req->applicationId);
                 DB::commit();
                 return responseMsgs(true, "Application Successfully Deleted", "", "", "1.0", "", "POST", $req->deviceId);
             }
