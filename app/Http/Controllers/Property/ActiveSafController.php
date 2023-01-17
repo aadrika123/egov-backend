@@ -604,9 +604,9 @@ class ActiveSafController extends Controller
             // Saf Details
             $data = array();
             $fullDetailsData = array();
-            if ($req->id) {                                       //<------- Search By SAF ID
+            if ($req->applicationId) {                                       //<------- Search By SAF ID
                 $data = $mPropActiveSaf->getActiveSafDtls()      // <------- Model function Active SAF Details
-                    ->where('prop_active_safs.id', $req->id)
+                    ->where('prop_active_safs.id', $req->applicationId)
                     ->first();
             }
             if ($req->safNo) {                                  // <-------- Search By SAF No
@@ -724,11 +724,11 @@ class ActiveSafController extends Controller
     {
         $request->validate([
             "escalateStatus" => "required|int",
-            "safId" => "required|int",
+            "applicationId" => "required|int",
         ]);
         try {
             $userId = auth()->user()->id;
-            $saf_id = $request->safId;
+            $saf_id = $request->applicationId;
             $data = PropActiveSaf::find($saf_id);
             $data->is_escalate = $request->escalateStatus;
             $data->escalate_by = $userId;
@@ -744,13 +744,13 @@ class ActiveSafController extends Controller
     {
         $request->validate([
             'comment' => 'required',
-            'safId' => 'required|integer',
+            'applicationId' => 'required|integer',
             'senderRoleId' => 'nullable|integer'
         ]);
 
         try {
             $workflowTrack = new WorkflowTrack();
-            $saf = PropActiveSaf::find($request->safId);                // SAF Details
+            $saf = PropActiveSaf::find($request->applicationId);                // SAF Details
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs = array();
             DB::beginTransaction();
@@ -789,7 +789,7 @@ class ActiveSafController extends Controller
     public function postNextLevel(Request $request)
     {
         $request->validate([
-            'safId' => 'required|integer',
+            'applicationId' => 'required|integer',
             'senderRoleId' => 'required|integer',
             'receiverRoleId' => 'required|integer',
             'comment' => 'required',
@@ -798,7 +798,7 @@ class ActiveSafController extends Controller
         try {
             // SAF Application Update Current Role Updation
             DB::beginTransaction();
-            $saf = PropActiveSaf::find($request->safId);
+            $saf = PropActiveSaf::find($request->applicationId);
             $saf->current_role = $request->receiverRoleId;
             $saf->save();
 
@@ -806,7 +806,7 @@ class ActiveSafController extends Controller
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_safs.id';
-            $metaReqs['refTableIdValue'] = $request->safId;
+            $metaReqs['refTableIdValue'] = $request->applicationId;
             $request->request->add($metaReqs);
 
             $track = new WorkflowTrack();
@@ -842,13 +842,13 @@ class ActiveSafController extends Controller
         $req->validate([
             'workflowId' => 'required|integer',
             'roleId' => 'required|integer',
-            'safId' => 'required|integer',
+            'applicationId' => 'required|integer',
             'status' => 'required|integer'
         ]);
 
         try {
             // Check if the Current User is Finisher or Not
-            $safDetails = PropActiveSaf::find($req->safId);
+            $safDetails = PropActiveSaf::find($req->applicationId);
             $propSafVerification = new PropSafVerification();
             $propSafVerificationDtl = new PropSafVerificationDtl();
             if ($safDetails->finisher_role_id != $req->roleId) {
@@ -857,13 +857,13 @@ class ActiveSafController extends Controller
             $reAssessment = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
 
             $activeSaf = PropActiveSaf::query()
-                ->where('id', $req->safId)
+                ->where('id', $req->applicationId)
                 ->first();
             $ownerDetails = PropActiveSafsOwner::query()
-                ->where('saf_id', $req->safId)
+                ->where('saf_id', $req->applicationId)
                 ->get();
             $floorDetails = PropActiveSafsFloor::query()
-                ->where('saf_id', $req->safId)
+                ->where('saf_id', $req->applicationId)
                 ->get();
 
             DB::beginTransaction();
@@ -872,16 +872,16 @@ class ActiveSafController extends Controller
                 if ($req->assessmentType == $reAssessment)
                     $safDetails->holding_no = $safDetails->previous_holding_id;
                 if ($req->assessmentType != $reAssessment) {
-                    $safDetails->holding_no = 'HOL-SAF-' . $req->safId;
+                    $safDetails->holding_no = 'HOL-SAF-' . $req->applicationId;
                 }
 
-                $safDetails->fam_no = 'FAM/' . $req->safId;
+                $safDetails->fam_no = 'FAM/' . $req->applicationId;
                 $safDetails->saf_pending_status = 0;
                 $safDetails->save();
 
                 // SAF Application replication
                 $toBeProperties = PropActiveSaf::query()
-                    ->where('id', $req->safId)
+                    ->where('id', $req->applicationId)
                     ->select(
                         'ulb_id',
                         'cluster_id',
@@ -1013,8 +1013,8 @@ class ActiveSafController extends Controller
                 $msg = "Application Rejected Successfully";
             }
 
-            $propSafVerification->deactivateVerifications($req->safId);                 // Deactivate Verification From Table
-            $propSafVerificationDtl->deactivateVerifications($req->safId);              // Deactivate Verification from Saf floor Dtls
+            $propSafVerification->deactivateVerifications($req->applicationId);                 // Deactivate Verification From Table
+            $propSafVerificationDtl->deactivateVerifications($req->applicationId);              // Deactivate Verification from Saf floor Dtls
             DB::commit();
             return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -1035,14 +1035,14 @@ class ActiveSafController extends Controller
     public function backToCitizen(Request $req)
     {
         $req->validate([
-            'safId' => 'required|integer',
+            'applicationId' => 'required|integer',
             'workflowId' => 'required|integer',
             'currentRoleId' => 'required|integer',
             'comment' => 'required|string'
         ]);
 
         try {
-            $saf = PropActiveSaf::find($req->safId);
+            $saf = PropActiveSaf::find($req->applicationId);
             $track = new WorkflowTrack();
             DB::beginTransaction();
             $initiatorRoleId = $saf->initiator_role_id;
@@ -1053,7 +1053,7 @@ class ActiveSafController extends Controller
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_safs.id';
-            $metaReqs['refTableIdValue'] = $req->safId;
+            $metaReqs['refTableIdValue'] = $req->applicationId;
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 

@@ -25,7 +25,7 @@ class PropActiveSafsDoc extends Model
         try {
             $userId = auth()->user()->id;
 
-            $docStatus = PropActiveSafsDoc::find($req->id);
+            $docStatus = PropActiveSafsDoc::find($req->applicationId);
             $docStatus->remarks = $req->docRemarks;
             $docStatus->verified_by_emp_id = $userId;
             $docStatus->verified_on = Carbon::now();
