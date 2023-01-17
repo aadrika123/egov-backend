@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveConcession;
+use App\Models\Property\PropActiveHarvesting;
+use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropOwner;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -51,8 +54,22 @@ class PropertyDetailsController extends Controller
                     $mPropConcessions = new PropActiveConcession();
                     $details = $mPropConcessions->getDtlsByConcessionNo($applicationNo);
                     break;
+                case ("objection"):
+                    $mPropObjections = new PropActiveObjection();
+                    $mPropOwners = new PropOwner();
+                    $application = collect($mPropObjections->getObjByObjNo($applicationNo));
+                    $owners = collect($mPropOwners->getOwnerByPropId($application['property_id']));
+                    $details = $application->merge($owners);
+                    break;
+                case ("harvesting"):
+                    $mPropHarvesting = new PropActiveHarvesting();
+                    $mPropOwners = new PropOwner();
+                    $application = collect($mPropHarvesting->getDtlsByHarvestingNo($applicationNo));
+                    $owners = collect($mPropOwners->getOwnerByPropId($application['property_id']));
+                    $details = $application->merge($owners);
+                    break;
             }
-            return responseMsgs(true, "Application Details", remove_null($details), "010501", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Application Details", [remove_null($details)], "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010501", "1.0", "", "POST", $request->deviceId ?? "");
         }
