@@ -607,9 +607,9 @@ class NewConnectionController extends Controller
             $mWaterApplication = new WaterApplication();
             $applicantDetals = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
             if ($applicantDetals) {
-                // DB::beginTransaction();
-                // $mWaterApplication->DeleteWaterApplication($req->applicationId);
-                // DB::commit();
+                DB::beginTransaction();
+                $mWaterApplication->DeleteWaterApplication($req->applicationId);
+                DB::commit();
                 return responseMsgs(true, "Application Successfully Deleted", "", "", "1.0", "", "POST", $req->deviceId);
             }
             throw new Exception("You'r not the user of this form!");
