@@ -608,9 +608,12 @@ class NewConnectionController extends Controller
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
             $applicantDetals = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
-            
+
             if (!$applicantDetals) {
                 throw new Exception("Data not found!");
+            }
+            if ($applicantDetals->payment_status == true) {
+                throw new Exception("Your paymnet is done application Cannot be Deleted!");
             }
             if ($applicantDetals->user_id == $userId) {
                 DB::beginTransaction();
