@@ -48,7 +48,7 @@ class WfActiveDocument extends Model
                 'dm.doc_type',
                 'o.owner_name'
             )
-            ->leftJoin('ref_prop_docs_required as dm', 'dm.id', '=', 'd.doc_mstr_id')
+            ->join('ref_prop_docs_required as dm', 'dm.id', '=', 'd.doc_mstr_id')
             ->leftJoin('prop_active_safs_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationNo)
             ->get();
