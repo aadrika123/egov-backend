@@ -596,16 +596,17 @@ class TradeCitizenController extends Controller
     # Serial No
     public function renewalList()
     {
-        return $citizenId = authUser()->id;
+        $citizenId = authUser()->id;
         $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
-        $data = TradeLicence::select('*')
-            ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+        $data = TradeLicence::select('trade_licences.*')
+            // ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
             ->where('trade_licences.is_active', TRUE)
             ->where('trade_licences.user_id', $citizenId)
             ->where('trade_licences.valid_upto', '<', $mNextMonth)
             ->where('trade_licences.application_type_id', '!=', 4)
             ->get();
+
         if (!$data) {
             throw new Exception("No Data Found");
         }
@@ -621,7 +622,7 @@ class TradeCitizenController extends Controller
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
             $data = TradeLicence::select('*')
-                ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+                // ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                 ->where('trade_licences.is_active', TRUE)
                 ->where('trade_licences.user_id', $citizenId)
                 ->where('trade_licences.valid_upto', '<', Carbon::now())
@@ -645,7 +646,7 @@ class TradeCitizenController extends Controller
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
             $data = TradeLicence::select('*')
-                ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+                // ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                 ->where('trade_licences.is_active', TRUE)
                 ->where('trade_licences.user_id', $citizenId)
                 ->where('trade_licences.valid_upto', '<', Carbon::now())

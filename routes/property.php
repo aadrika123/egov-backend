@@ -280,7 +280,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(PropertyDetailsController::class)->group(function () {
     Route::post('get-filter-application-details', 'applicationsListByKey');        // 01
     Route::post('get-filter-property-details', 'propertyListByKey');            // 02
-    Route::get('get-list-saf', 'getListOfSaf');                         // 03
+    Route::get('get-list-saf', 'getListOfSaf');                                 // 03
     Route::post('active-application/get-user-details', 'getUserDetails'); // 04
   });
 });
