@@ -666,4 +666,15 @@ class NewConnectionController extends Controller
             return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         }
     }
+
+    // Citizen view : Get Application Details
+    public function getApplicationDetails(Request $request)
+    {
+        try{
+            
+        }catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),"");
+        }
+    }
 }

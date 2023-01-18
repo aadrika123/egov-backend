@@ -595,18 +595,16 @@ class NewConnectionRepository implements iNewConnection
         $departmentPost['departmentalPost'] = collect($custom)['original']['data'];
 
         # Document Details
-        $metaReqs = [
-            'userId' => auth()->user()->id,
-            'ulbId' => auth()->user()->ulb_id,
-        ];
-        $request->request->add($metaReqs);
-        $document = $mWaterNewConnection->documentUpload($request);
-        $documentDetails = collect($document)['original']['data'];
+        // $metaReqs = [
+        //     'userId' => auth()->user()->id,
+        //     'ulbId' => auth()->user()->ulb_id,
+        // ];
+        // $request->request->add($metaReqs);
+        // $document = $mWaterNewConnection->documentUpload($request);
+        // $documentDetails = collect($document)['original']['data'];
 
         # Payments Details
-        
-
-        $returnValues = array_merge($aplictionList, $fullDetailsData, $levelComment, $citizenComment, $roleDetails, $timelineData, $departmentPost, $documentDetails);
+        $returnValues = array_merge($aplictionList, $fullDetailsData, $levelComment, $citizenComment, $roleDetails, $timelineData, $departmentPost);
         return responseMsgs(true, "listed Data!", remove_null($returnValues), "", "02", ".ms", "POST", "");
     }
 
