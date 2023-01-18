@@ -103,7 +103,7 @@ class TradeApplication extends Controller
                     throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
                 }
                 if ($refOldLicece->pending_status != 5) {
-                    throw new Exception("Application Aready Apply Please Track  " . $refOldLicece->application_no);
+                    throw new Exception("Application not approved Please Track  " . $refOldLicece->application_no);
                 }
                 $refOldOwneres = TradeOwner::owneresByLId($request->licenseId);
                 $mnaturOfBusiness = TradeParamItemType::itemsById($refOldLicece->nature_of_bussiness);
