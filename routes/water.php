@@ -66,7 +66,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('list_btc_inbox', 'btcInbox');                                                      //
         Route::Post('delete_application', 'deleteWaterApplication');                                    //
         Route::post('edit_water_details', 'editWaterDetails');                                          //
-        Route::post('get_application_detals', 'getApplicationDetails');                                 //
+        Route::post('get_application_details', 'getApplicationDetails');                                 //
         // Route::post('', 'getLevelcomment');                                                          //
     });
 });
