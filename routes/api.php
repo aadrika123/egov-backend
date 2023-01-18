@@ -26,8 +26,7 @@ use App\Http\Controllers\WorkflowMaster\WorkflowWardUserController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleUserMapController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleMapController;
 use App\Http\Controllers\WorkflowMaster\WorkflowController as WfController;
-
-
+use App\Http\Controllers\Workflows\WfDocumentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -410,6 +409,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(CustomController::class)->group(function () {
         Route::post('get-all-custom-tab-data', 'getCustomDetails');
         Route::post('post-custom-data', 'postCustomDetails');
+    });
+
+
+    /**
+     * | Workflow Document Controller (10)
+     */
+    Route::controller(WfDocumentController::class)->group(function () {
+        Route::post('workflows/document/verify-reject', 'docVerifyReject'); // 01
     });
 });
 

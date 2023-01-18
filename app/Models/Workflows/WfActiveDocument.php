@@ -52,4 +52,14 @@ class WfActiveDocument extends Model
             ->where('d.active_id', $applicationNo)
             ->get();
     }
+
+
+    /**
+     * | Document Verify Reject
+     */
+    public function docVerifyReject($id, $req)
+    {
+        $document = WfActiveDocument::find($id);
+        $document->update($req);
+    }
 }
