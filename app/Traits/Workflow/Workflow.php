@@ -173,7 +173,10 @@ trait Workflow
     {
         $userId = authUser()->id;
         // DB::enableQueryLog();
-        $role = WfRoleusermap::select('wf_workflowrolemaps.*')
+        $role = WfRoleusermap::select(
+            'wf_workflowrolemaps.*',
+            'wf_roleusermaps.user_id'
+        )
             ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.wf_role_id', 'wf_roleusermaps.wf_role_id')
             ->where('user_id', $userId)
             ->where('wf_workflowrolemaps.workflow_id', $request->workflowId)
