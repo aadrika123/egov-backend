@@ -1794,7 +1794,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->saf_no, $val->id, "Photo", 0);
                 array_push($ownersDoc, $doc);
                 array_push($testOwnersDoc[$key], $doc);
-                $mOwneres[$key]["uploadoc"] = $doc["uploadDoc"]->doc_path;
+                $mOwneres[$key]["uploadoc"] = $doc["uploadDoc"]->doc_path ?? "";
                 $doc = (array) null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
