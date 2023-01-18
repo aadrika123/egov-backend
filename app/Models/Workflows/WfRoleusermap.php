@@ -25,7 +25,7 @@ class WfRoleusermap extends Model
      */
     public function getRoleDetailsByUserId($userId)
     {
-        return WfRoleusermap::leftJoin('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_role_id')
+        return WfRoleusermap::Join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_role_id')
             ->where('wf_roleusermaps.user_id', $userId)
             ->where('wf_roleusermaps.is_suspended', false)
             ->select(
