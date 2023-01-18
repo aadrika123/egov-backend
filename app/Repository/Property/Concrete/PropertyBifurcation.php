@@ -1792,13 +1792,9 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $doc['isMadatory']  = 1;
                 $doc['docVal'][]      = ["id" => 0, "doc_name" => "Photo"];
                 $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->saf_no, $val->id, "Photo", 0);
-                if (isset($doc["uploadDoc"]["doc_path"])) {
-                    $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
-                    $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
-                    array_push($uploadDoc, $doc["uploadDoc"]);
-                }
                 array_push($ownersDoc, $doc);
                 array_push($testOwnersDoc[$key], $doc);
+                $mOwneres[$key]["uploadoc"] = $doc["uploadDoc"]->doc_path;
                 $doc = (array) null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
@@ -1840,7 +1836,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     array_push($ownersDoc, $doc);
                     array_push($testOwnersDoc[$key], $doc);
                 }
-                $mOwneres[$key]["uploadoc"] = collect($uploadDoc);
+                // $mOwneres[$key]["uploadoc"] = collect($testOwnersDoc[$key]);
             }
             $data["documentsList"]  = $requiedDocs;
             $data["ownersDocList"]  = $testOwnersDoc;
