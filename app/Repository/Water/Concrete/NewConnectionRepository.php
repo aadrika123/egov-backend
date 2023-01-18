@@ -262,7 +262,7 @@ class NewConnectionRepository implements iNewConnection
             ->whereIn('water_applications.current_role', $roleIds)
             ->whereIn('water_applications.ward_id', $occupiedWards)
             ->where('water_applications.is_escalate', false)
-            ->where('water_applications.parked',false)
+            ->where('water_applications.parked', false)
             ->orderByDesc('water_applications.id')
             ->get();
         $filterWaterList = collect($waterList)->unique('id')->values();
@@ -510,6 +510,7 @@ class NewConnectionRepository implements iNewConnection
         $forwardBackward = new WorkflowMap;
         $mWorkflowTracks = new WorkflowTrack();
         $mCustomDetails = new CustomDetail();
+        $mWaterNewConnection = new WaterNewConnection();
 
         # application details
         $applicationDetails = $waterObj->fullWaterDetails($request)->get();
@@ -593,7 +594,19 @@ class NewConnectionRepository implements iNewConnection
         $custom = $mCustomDetails->getCustomDetails($request);
         $departmentPost['departmentalPost'] = collect($custom)['original']['data'];
 
-        $returnValues = array_merge($aplictionList, $fullDetailsData, $levelComment, $citizenComment, $roleDetails, $timelineData, $departmentPost);
+        # Document Details
+        $metaReqs = [
+            'userId' => auth()->user()->id,
+            'ulbId' => auth()->user()->ulb_id,
+        ];
+        $request->request->add($metaReqs);
+        $document = $mWaterNewConnection->documentUpload($request);
+        $documentDetails = collect($document)['original']['data'];
+
+        # Payments Details
+        
+
+        $returnValues = array_merge($aplictionList, $fullDetailsData, $levelComment, $citizenComment, $roleDetails, $timelineData, $departmentPost, $documentDetails);
         return responseMsgs(true, "listed Data!", remove_null($returnValues), "", "02", ".ms", "POST", "");
     }
 
