@@ -16,6 +16,7 @@ use App\Models\Property\PropTransaction;
 use App\Models\Trade\ActiveLicence;
 use App\Models\Trade\ExpireLicence;
 use App\Models\UlbWardMaster;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfWorkflow;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IPropertyBifurcation;
@@ -1529,29 +1530,29 @@ class PropertyBifurcation implements IPropertyBifurcation
             return $e->getMessage();
         }
     }
-    public function check_doc_exist($saf_id, $doc_for, $doc_mstr_id = null, $woner_id = null)
+    public function check_doc_exist($safNo, $doc_for, $doc_mstr_id = null, $woner_id = null)
     {
         try {
             // DB::enableQueryLog();
-            $doc = PropActiveSafsDoc::select(
-                "prop_active_safs_docs.id",
+            $doc = WfActiveDocument::select(
+                "wf_active_documents.id",
                 "doc_type",
-                "prop_active_safs_docs.verify_status",
-                "prop_active_safs_docs.remarks",
-                "prop_active_safs_docs.doc_path",
+                "wf_active_documents.verify_status",
+                "wf_active_documents.remarks",
+                DB::raw("concat(relative_path,'/',image) as doc_path"),
                 "doc_mstr_id"
             )
-                ->join("ref_prop_docs_required", "ref_prop_docs_required.id", "prop_active_safs_docs.doc_mstr_id")
-                ->where('saf_id', $saf_id)
+                ->join("ref_prop_docs_required", "ref_prop_docs_required.id", "wf_active_documents.doc_mstr_id")
+                ->where('active_id', $safNo)
                 ->where('ref_prop_docs_required.doc_type', "$doc_for");
             if ($doc_mstr_id) {
                 $doc = $doc->where('doc_mstr_id', $doc_mstr_id);
             }
             if ($woner_id) {
-                $doc = $doc->where('saf_owner_dtl_id', $woner_id);
+                $doc = $doc->where('owner_dtl_id', $woner_id);
             }
-            $doc = $doc->where('prop_active_safs_docs.status', 1)
-                ->orderBy('prop_active_safs_docs.id', 'DESC')
+            $doc = $doc->where('wf_active_documents.status', 1)
+                ->orderBy('wf_active_documents.id', 'DESC')
                 ->first();
             //    dd(DB::getQueryLog());                  
             return $doc;
@@ -1559,7 +1560,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             echo $e->getMessage();
         }
     }
-    public function check_doc_exist_owner($saf_id, $owner_id, $doc_for, $document_id = null)
+    public function check_doc_exist_owner($safNo, $owner_id, $doc_for, $document_id = null)
     {
         try {
             // DB::enableQueryLog();
@@ -1567,28 +1568,29 @@ class PropertyBifurcation implements IPropertyBifurcation
             if ($doc_for == "Photo") {
                 $joins = "leftjoin";
             }
-            $doc = PropActiveSafsDoc::select(
-                "prop_active_safs_docs.id",
-                "prop_active_safs_docs.verify_status",
-                "prop_active_safs_docs.remarks",
-                "prop_active_safs_docs.doc_path",
-                "doc_mstr_id",
-                DB::raw("CASE WHEN ref_prop_docs_required.id ISNULL THEN 'Applicant Image' ELSE doc_type END AS doc_type")
-            )
+            $doc = DB::table('wf_active_documents as d')
+                ->select(
+                    "d.id",
+                    "d.verify_status",
+                    "d.remarks",
+                    DB::raw("concat(relative_path,'/',image) as doc_path"),
+                    "doc_mstr_id",
+                    DB::raw("CASE WHEN ref_prop_docs_required.id ISNULL THEN 'Applicant Image' ELSE doc_type END AS doc_type")
+                )
                 ->$joins("ref_prop_docs_required", function ($join) use ($doc_for) {
-                    $join->on("ref_prop_docs_required.id", "prop_active_safs_docs.doc_mstr_id")
+                    $join->on("ref_prop_docs_required.id", "d.doc_mstr_id")
                         ->where('ref_prop_docs_required.doc_type', "$doc_for");
                 })
-                ->where('saf_id', $saf_id)
-                ->where('saf_owner_dtl_id', $owner_id);
+                ->where('active_id', $safNo)
+                ->where('owner_dtl_id', $owner_id);
             if ($document_id !== null) {
                 $document_id = (int)$document_id;
                 $doc = $doc->where('doc_mstr_id', $document_id);
             } else {
                 $doc = $doc->where("doc_mstr_id", "<>", 0);
             }
-            $doc = $doc->where('prop_active_safs_docs.status', 1)
-                ->orderBy('prop_active_safs_docs.id', 'DESC')
+            $doc = $doc->where('d.status', 1)
+                ->orderBy('d.id', 'DESC')
                 ->first();
             //    print_var(DB::getQueryLog());                    
             return $doc;
@@ -1611,24 +1613,23 @@ class PropertyBifurcation implements IPropertyBifurcation
     public function getSafDocuments($id)
     {
         try {
-
-            $time_line =  PropActiveSafsDoc::select(
-                "prop_active_safs_docs.id",
-                "doc_path",
+            $time_line =  WfActiveDocument::select(
+                "wf_active_documents.id",
+                "image",
                 "remarks",
                 "verify_status",
                 DB::raw(
-                    "CASE WHEN ref_prop_docs_required.id ISNULL AND prop_active_safs_docs.saf_owner_dtl_id NOTNULL THEN CONCAT(prop_active_safs_owners.owner_name, ' (Applicant Image)')
-                                      WHEN ref_prop_docs_required.id NOTNULL AND prop_active_safs_docs.saf_owner_dtl_id NOTNULL THEN CONCAT(prop_active_safs_owners.owner_name, ' (',doc_type,')')
+                    "CASE WHEN ref_prop_docs_required.id ISNULL AND wf_active_documents.owner_dtl_id NOTNULL THEN CONCAT(prop_active_safs_owners.owner_name, ' (Applicant Image)')
+                                      WHEN ref_prop_docs_required.id NOTNULL AND wf_active_documents.owner_dtl_id NOTNULL THEN CONCAT(prop_active_safs_owners.owner_name, ' (',doc_type,')')
                                       ELSE doc_type 
                                 END AS doc_type"
                 )
             )
-                ->leftjoin("ref_prop_docs_required", "ref_prop_docs_required.id", "prop_active_safs_docs.doc_mstr_id")
-                ->leftjoin("prop_active_safs_owners", "prop_active_safs_owners.id", "prop_active_safs_docs.saf_owner_dtl_id")
-                ->where('prop_active_safs_docs.saf_id', $id)
-                ->where('prop_active_safs_docs.status', 1)
-                ->orderBy('prop_active_safs_docs.id', 'desc')
+                ->leftjoin("ref_prop_docs_required", "ref_prop_docs_required.id", "wf_active_documents.doc_mstr_id")
+                ->leftjoin("prop_active_safs_owners", "prop_active_safs_owners.id", "wf_active_documents.owner_dtl_id")
+                ->where('wf_active_documents.active_id', $id)
+                ->where('wf_active_documents.status', 1)
+                ->orderBy('wf_active_documents.id', 'desc')
                 ->get();
             return $time_line;
         } catch (Exception $e) {
@@ -1768,28 +1769,17 @@ class PropertyBifurcation implements IPropertyBifurcation
             $refSafs = $this->getSafDtlById($safId);
             if (!$refSafs) {
                 throw new Exception("Data Not Found");
-            } elseif ($refSafs->doc_verify_status) {
+            } elseif ($refSafs->doc_verify_status == 1) {
                 throw new Exception("Document Verified You Can Not Upload Documents");
             }
             $mOwneres = $this->getOwnereDtlBySId($refSafs->id);
             $mDocumentsList = $this->getDocumentTypeList($refSafs);
-            $mUploadDocument = $this->getSafDocuments($refSafs->id)->map(function ($val) {
-                if (isset($val["doc_path"])) {
-                    $path = $this->readDocumentPath($val["doc_path"]);
-                    $val["doc_path"] = !empty(trim($val["doc_path"])) ? $path : null;
-                }
-                return $val;
-            });
             foreach ($mDocumentsList as $val) {
                 $doc = (array) null;
                 $doc['docName'] = $val->doc_type;
                 $doc['isMadatory'] = in_array($val->doc_type, ["additional_doc", "other"]) ? 0 : 1;
                 $doc['docVal'] = $this->getDocumentList($val->doc_type);
-                $doc["uploadDoc"] = $this->check_doc_exist($refSafs->id, $val->doc_type);
-                if (isset($doc["uploadDoc"]["doc_path"])) {
-                    $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
-                    $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
-                }
+                $doc["uploadDoc"] = $this->check_doc_exist($refSafs->saf_no, $val->doc_type);
                 array_push($requiedDocs, $doc);
             }
             foreach ($mOwneres as $key => $val) {
@@ -1801,26 +1791,17 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $doc['docName']     = "Photo";
                 $doc['isMadatory']  = 1;
                 $doc['docVal'][]      = ["id" => 0, "doc_name" => "Photo"];
-                $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id, $val->id, "Photo", 0);
-                if (isset($doc["uploadDoc"]["doc_path"])) {
-                    $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
-                    $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
-                    array_push($uploadDoc, $doc["uploadDoc"]);
-                }
+                $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->saf_no, $val->id, "Photo", 0);
                 array_push($ownersDoc, $doc);
                 array_push($testOwnersDoc[$key], $doc);
+                $mOwneres[$key]["uploadoc"] = $doc["uploadDoc"]->doc_path ?? "";
                 $doc = (array) null;
                 $doc["ownerId"]     = $val->id;
                 $doc["ownerName"]   = $val->owner_name;
                 $doc['docName']     = "Gender Document";
                 $doc['isMadatory']  = 1;
                 $doc['docVal']      = $this->getDocumentList("gender_document");
-                $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id, $val->id, "gender_document");
-                if (isset($doc["uploadDoc"]["doc_path"])) {
-                    $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
-                    $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
-                    array_push($uploadDoc, $doc["uploadDoc"]);
-                }
+                $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->saf_no, $val->id, "gender_document");
                 array_push($ownersDoc, $doc);
                 array_push($testOwnersDoc[$key], $doc);
                 $doc = (array) null;
@@ -1829,12 +1810,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $doc['docName']     = "DOB Document";
                 $doc['isMadatory']  = 1;
                 $doc['docVal']      = $this->getDocumentList("dob_document");
-                $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id, $val->id, "dob_document");
-                if (isset($doc["uploadDoc"]["doc_path"])) {
-                    $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
-                    $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
-                    array_push($uploadDoc, $doc["uploadDoc"]);
-                }
+                $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->saf_no, $val->id, "dob_document");
                 array_push($ownersDoc, $doc);
                 array_push($testOwnersDoc[$key], $doc);
                 if ($val->is_armed_force) {
@@ -1844,12 +1820,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $doc['docName']     = "Armed";
                     $doc['isMadatory']  = 1;
                     $doc['docVal']      = $this->getDocumentList("armed_force_document");
-                    $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id, $val->id, "armed_force_document");
-                    if (isset($doc["uploadDoc"]["doc_path"])) {
-                        $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
-                        $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
-                        array_push($uploadDoc, $doc["uploadDoc"]);
-                    }
+                    $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->saf_no, $val->id, "armed_force_document");
                     array_push($ownersDoc, $doc);
                     array_push($testOwnersDoc[$key], $doc);
                 }
@@ -1860,23 +1831,15 @@ class PropertyBifurcation implements IPropertyBifurcation
                     $doc['docName']     = "Handicap";
                     $doc['isMadatory']  = 1;
                     $doc['docVal']      = $this->getDocumentList("handicaped_document");
-                    $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->id, $val->id, "handicaped_document");
+                    $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->saf_no, $val->id, "handicaped_document");
                     $doc["uploadDoc"]   = $this->check_doc_exist($refSafs->id, $val->doc_type);
-                    if (isset($doc["uploadDoc"]["doc_path"])) {
-                        $path = $this->readDocumentPath($doc["uploadDoc"]["doc_path"]);
-                        $doc["uploadDoc"]["doc_path"] = !empty(trim($doc["uploadDoc"]["doc_path"])) ? $path : null;
-                        array_push($uploadDoc, $doc["uploadDoc"]);
-                    }
                     array_push($ownersDoc, $doc);
                     array_push($testOwnersDoc[$key], $doc);
                 }
-                $mOwneres[$key]["uploadoc"] = collect($uploadDoc);
             }
             $data["documentsList"]  = $requiedDocs;
             $data["ownersDocList"]  = $testOwnersDoc;
-            $data["safDtl"]         = $refSafs;
             $data["owners"]         = $mOwneres;
-            $data["uploadDocument"] = $mUploadDocument;
 
             return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
