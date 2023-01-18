@@ -73,7 +73,7 @@ class SafDocController extends Controller
 
             $safNo = $safDetails->saf_no;
             $documents = $mWfActiveDocument->getDocsByAppNo($safNo);
-            return responseMsgs(true, "Uploaded Documents", $documents, "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }

@@ -44,9 +44,11 @@ class WfActiveDocument extends Model
                 DB::raw("concat(relative_path,'/',image) as doc_path"),
                 'd.remarks',
                 'd.verify_status',
-                'dm.doc_type'
+                'dm.doc_type',
+                'o.owner_name'
             )
             ->join('ref_prop_docs_required as dm', 'dm.id', '=', 'd.doc_mstr_id')
+            ->leftJoin('prop_active_safs_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationNo)
             ->get();
     }
