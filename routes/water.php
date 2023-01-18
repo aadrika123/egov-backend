@@ -65,6 +65,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('back_to_citizen', 'backToCitizen');                                                //
         Route::post('list_btc_inbox', 'btcInbox');                                                      //
         Route::Post('delete_application', 'deleteWaterApplication');                                    //
+        Route::post('edit_water_details', 'editWaterDetails');                                          //
+        Route::post('get_application_detals', 'getApplicationDetails');                                 //
         // Route::post('', 'getLevelcomment');                                                          //
     });
 });
@@ -85,7 +87,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 });
 Route::controller(WaterApplication::class)->group(function () {
-    Route::get('paymentRecipt/{id}/{transectionId}', 'paymentRecipt');                                  //15
+    Route::post('payment_recipt', 'paymentRecipt');                                  //15
     Route::post('cargeCal', 'calWaterConCharge');                                                       //16
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //17
 });

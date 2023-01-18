@@ -1512,8 +1512,8 @@ class ActiveSafController extends Controller
                     ->first();
             }
 
-            $floors = $mPropFloors->getPropFloors($properties->property_id);        // Model function to get Property Floors
-            $owners = $mPropOwners->getOwnersByPropId($properties->property_id);    // Model function to get Property Owners
+            $floors = $mPropFloors->getPropFloors($properties->id);        // Model function to get Property Floors
+            $owners = $mPropOwners->getOwnersByPropId($properties->id);    // Model function to get Property Owners
             $propertyDtl = collect($properties);
             $propertyDtl['floors'] = $floors;
             $propertyDtl['owners'] = $owners;

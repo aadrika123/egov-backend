@@ -435,7 +435,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Get the water payment details and track details
+    // Get the water payment details and track details  // RECHECK
     public function getIndependentComment(Request $request)
     {
         try {
@@ -629,5 +629,52 @@ class NewConnectionController extends Controller
         }
     }
 
-    //
+    // Edit the Water Application
+    /**
+        | Not
+     */
+    public function editWaterDetails(Request $req)
+    {
+        $req->validate([
+            'applicatonId' => 'required|integer',
+            // 'owner' => 'array',
+            // 'owner.*.ownerId' => 'required|integer',
+            // 'owner.*.ownerName' => 'required',
+            // 'owner.*.guardianName' => 'required',
+            // 'owner.*.mobileNo' => 'numeric|string|digits:10',
+            // 'owner.*.aadhar' => 'numeric|string|digits:12|nullable',
+            // 'owner.*.email' => 'email|nullable',
+        ]);
+
+        try {
+            $mWaterApplication = new WaterApplication();
+            $mWaterApplicant = new WaterApplicant();
+            $refWaterApplications = $mWaterApplication->getWaterApplicationsDetails($req->applicatonId);
+            $mOwners = $req->owner;
+
+            DB::beginTransaction();
+            $mWaterApplication->editWaterApplication($req,$refWaterApplications);                                                      // Updation SAF Basic Details
+
+            collect($mOwners)->map(function ($owner) use ($mWaterApplicant,$refWaterApplications) {            // Updation of Owner Basic Details
+                $mWaterApplicant->editWaterOwners($owner,$refWaterApplications);
+            });
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+        }
+    }
+
+    // Citizen view : Get Application Details
+    public function getApplicationDetails(Request $request)
+    {
+        try{
+            
+        }catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),"");
+        }
+    }
 }

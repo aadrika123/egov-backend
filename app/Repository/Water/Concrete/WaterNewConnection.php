@@ -16,6 +16,7 @@ use App\Models\Water\WaterRazorPayRequest;
 use App\Models\Water\WaterRazorPayResponse;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
@@ -436,6 +437,8 @@ class WaterNewConnection implements IWaterNewConnection
             $testOwnersDoc      = (array)null;
             $data               = (array)null;
             $sms                = "";
+            $refWaterWorkflowId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
+            $refWaterModuleId   = Config::get('module-constants.WATER_MODULE_ID');
 
             $rules = [
                 'applicationId'     => 'required|digits_between:1,9223372036854775807',
@@ -544,6 +547,15 @@ class WaterNewConnection implements IWaterNewConnection
                                 $waterDoc->doc_for    = $request->$doc_for;
                                 $waterDoc->document_id = $request->$doc_mstr_id;
                                 $waterDoc->emp_details_id = $refUserId;
+
+                                // $waterDoc = new WfActiveDocument();
+                                // $waterDoc->active_id = $refApplication->application_no;
+                                // $waterDoc->workflow_id = $refWaterWorkflowId;
+                                // $waterDoc->ulb_id = $refUlbId;
+                                // $waterDoc->module_id = $refWaterModuleId;
+                                // $waterDoc->relative_path =
+                                // $waterDoc->image =
+                                // $waterDoc->uploaded_by =$refUserId
 
                                 $waterDoc->save();
                                 $newFileName = $waterDoc->id;
@@ -718,14 +730,15 @@ class WaterNewConnection implements IWaterNewConnection
      *  Get The Payment Reciept Data Or Water Module
         Query Cost(2.00)
      */
-    public function paymentRecipt($id, $transectionId)
+    public function paymentRecipt($transectionNo)
     {
         try {
             $application = (array)null;
             $transection = WaterTran::select("*")
-                ->where("id", $transectionId)
+                ->where("tran_no", $transectionNo)
                 ->whereIn("status", [1, 2])
                 ->first();
+
             if (!$transection) {
                 throw new Exception("Transection Data Not Found....");
             }
@@ -749,13 +762,13 @@ class WaterNewConnection implements IWaterNewConnection
                                                             STRING_AGG(mobile_no::text,',') as mobile,
                                                             application_id
                                                         FROM water_applicants 
-                                                        WHERE application_id = $id
+                                                        WHERE application_id = $transection->related_id
                                                             AND status != FALSE
                                                         GROUP BY application_id
                                                         ) owner"), function ($join) {
                         $join->on("owner.application_id", "=", "water_applications.id");
                     })
-                    ->where('water_applications.id', $id)
+                    ->where('water_applications.id', $transection->related_id)
                     ->first();
             }
             $data["transaction"] = $transection;

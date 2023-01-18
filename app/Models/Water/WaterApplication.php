@@ -93,7 +93,7 @@ class WaterApplication extends Model
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_applications.property_type_id')
             ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', '=', 'water_applications.pipeline_type_id')
-            ->where('water_applications.id', $request->id)
+            ->where('water_applications.id', $request->applicationId)
             ->where('water_applications.status', 1);
     }
 
@@ -126,7 +126,7 @@ class WaterApplication extends Model
             'water_applicants.district'
 
         )
-        ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
+            ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
             ->where('water_applications.id', $req)
             ->first();
     }
@@ -138,5 +138,44 @@ class WaterApplication extends Model
     {
         WaterApplication::where('id', $req)
             ->delete();
+    }
+
+    /**
+     * |----------------------- Edit Water Application ----------------------------|
+     */
+    public function editWaterApplication($req,$refWaterApplications)
+    {
+        $water = WaterApplication::find($req->id);
+
+        $reqs = [
+            'connection_type_id'  => $req->connection_type_id  ?? $refWaterApplications->connection_type_id,   
+            'property_type_id'    => $req->property_type_id    ?? $refWaterApplications->property_type_id,
+            'owner_type'          => $req->owner_type          ?? $refWaterApplications->owner_type,
+            'category'            => $req->category            ?? $refWaterApplications->category,
+            'pipeline_type_id'    => $req->pipeline_type_id    ?? $refWaterApplications->pipeline_type_id,
+            'ward_id'             => $req->ward_id             ?? $refWaterApplications->ward_id,
+            'area_sqft'           => $req->area_sqft           ?? $refWaterApplications->area_sqft,
+            'address'             => $req->address             ?? $refWaterApplications->address,
+            'landmark'            => $req->landmark            ?? $refWaterApplications->landmark,
+            'pin'                 => $req->pin                 ?? $refWaterApplications->pin,
+            'flat_count'          => $req->flat_count          ?? $refWaterApplications->flat_count,
+            'elec_k_no'           => $req->elec_k_no           ?? $refWaterApplications->elec_k_no,
+            'elec_bind_book_no'   => $req->elec_bind_book_no   ?? $refWaterApplications->elec_bind_book_no,
+            'elec_account_no'     => $req->elec_account_no     ?? $refWaterApplications->elec_account_no,
+            'elec_category'       => $req->elec_category       ?? $refWaterApplications->elec_category,
+            'connection_through'  => $req->connection_through  ?? $refWaterApplications->connection_through,
+            'workflow_id'         => $req->workflow_id         ?? $refWaterApplications->workflow_id,
+            'connection_fee_id'   => $req->connection_fee_id   ?? $refWaterApplications->connection_fee_id,
+            'current_role'        => $req->current_role        ?? $refWaterApplications->current_role,
+            'initiator'           => $req->initiator           ?? $refWaterApplications->initiator,
+            'finisher'            => $req->finisher            ?? $refWaterApplications->finisher,
+            'application_no'      => $req->application_no      ?? $refWaterApplications->application_no,
+            'ulb_id'              => $req->ulb_id              ?? $refWaterApplications->ulb_id,
+            'apply_date'          => $req->apply_date          ?? $refWaterApplications->apply_date,
+            'user_id'             => $req->user_id             ?? $refWaterApplications->user_id,                    
+           
+        ];
+
+        return $water->update($reqs);
     }
 }
