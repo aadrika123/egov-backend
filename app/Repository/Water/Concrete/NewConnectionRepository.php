@@ -513,7 +513,7 @@ class NewConnectionRepository implements iNewConnection
         $mWaterNewConnection = new WaterNewConnection();
 
         # application details
-        $applicationDetails = $waterObj->fullWaterDetails($request)->get();
+       return $applicationDetails = $waterObj->fullWaterDetails($request)->get();
         if (collect($applicationDetails)->first() == null) {
             return responseMsg(false, "Application Data Not found!", $request->applicationId);
         }
