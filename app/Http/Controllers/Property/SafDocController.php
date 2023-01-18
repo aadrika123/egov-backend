@@ -32,16 +32,16 @@ class SafDocController extends Controller
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveSafs = new PropActiveSaf();
             $relativePath = FacadesConfig::get('PropertyConstaint.SAF_RELATIVE_PATH');
-            $refImageName = $req->docRefName;
-            $refImageName = str_replace(' ', '_', $refImageName);
             $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
+            $refImageName = $req->docRefName;
+            $refImageName = $getSafDtls->id . '-' . str_replace(' ', '_', $refImageName);
             $document = $req->document;
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
+            $metaReqs['moduleId'] = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['activeId'] = $getSafDtls->saf_no;
             $metaReqs['workflowId'] = $getSafDtls->workflow_id;
             $metaReqs['ulbId'] = $getSafDtls->ulb_id;
-            $metaReqs['moduleId'] = 1;
             $metaReqs['relativePath'] = $relativePath;
             $metaReqs['image'] = $imageName;
             $metaReqs['docMstrId'] = $req->docMstrId;
@@ -52,6 +52,30 @@ class SafDocController extends Controller
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | View Saf Uploaded Documents 
+     */
+    public function getUploadDocuments(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $mActiveSafs = new PropActiveSaf();
+
+            $safDetails = $mActiveSafs->getSafNo($req->applicationId);
+            if (!$safDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $safNo = $safDetails->saf_no;
+            $documents = $mWfActiveDocument->getDocsByAppNo($safNo);
+            return responseMsgs(true, "Uploaded Documents", $documents, "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }
