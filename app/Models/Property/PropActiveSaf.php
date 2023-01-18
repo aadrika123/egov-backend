@@ -243,10 +243,13 @@ class PropActiveSaf extends Model
                 'u1.ward_name as new_ward_no',
             )
             ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
-            ->join('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
+            ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
             ->first();
     }
 
+    /**
+     * 
+     */
 
     // Get SAF No
     public function getSafNo($safId)

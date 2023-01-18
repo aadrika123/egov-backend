@@ -83,4 +83,27 @@ class PropActiveHarvesting extends Model
             ->where('h.id', $id)
             ->first();
     }
+
+    /**
+     * | Get Harvesting By Harvesting No
+     */
+    public function getDtlsByHarvestingNo($harvestingNo)
+    {
+        return DB::table('prop_active_harvestings as h')
+            ->select(
+                'h.id',
+                'h.application_no',
+                'p.new_holding_no',
+                'p.id as property_id',
+                'p.ward_mstr_id',
+                'p.new_ward_mstr_id',
+                'u.ward_name as old_ward_no',
+                'u1.ward_name as new_ward_no'
+            )
+            ->join('prop_properties as p', 'p.id', '=', 'h.property_id')
+            ->join('ulb_ward_masters as u', 'p.ward_mstr_id', '=', 'u.id')
+            ->leftJoin('ulb_ward_masters as u1', 'p.new_ward_mstr_id', '=', 'u1.id')
+            ->where('application_no', $harvestingNo)
+            ->first();
+    }
 }

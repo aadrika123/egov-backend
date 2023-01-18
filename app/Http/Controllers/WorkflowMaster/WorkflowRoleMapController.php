@@ -49,8 +49,8 @@ class WorkflowRoleMapController extends Controller
             $req->validate([
                 'workflowId' => 'required',
                 'wfRoleId' => 'required',
-                'forwardRoleId' => 'required',
-                'backwardRoleId' => 'required',
+                // 'forwardRoleId' => 'required',
+                // 'backwardRoleId' => 'required',
             ]);
 
             $create = new WfWorkflowrolemap();

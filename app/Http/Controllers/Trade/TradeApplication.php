@@ -24,7 +24,9 @@ use App\Models\Trade\TradeParamFirmType;
 use App\Models\Trade\TradeParamItemType;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Models\UlbMaster;
+use Illuminate\Support\Facades\DB;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\WorkflowTrack;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Validator;
@@ -270,29 +272,141 @@ class TradeApplication extends Controller
     {
         return $this->Repository->outbox($request);
     }
-    # Serial No : 18
-    public function postNextLevel(ReqPostNextLevel $request)
+
+
+    # Serial No
+    public function backToCitizen(Request $req)
     {
+        $req->validate([
+            'id' => 'required|integer',
+            'workflowId' => 'required|integer',
+            'currentRoleId' => 'required|integer',
+            'comment' => 'required|string'
+        ]);
+
         try {
-            $refUser = Auth()->user();
-            $user_id = $refUser->id;
-            $ulb_id = $refUser->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $init_finish = $this->_parent->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
-            if (!$init_finish) {
-                throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
-            }
-            if (!$init_finish["initiator"]) {
-                throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
-            }
-            if (!$init_finish["finisher"]) {
-                throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
-            }
-            return $this->Repository->postNextLevel($request);
+            $activeLicence = ActiveTradeLicence::find($req->id);
+            $track = new WorkflowTrack();
+            DB::beginTransaction();
+            $initiatorRoleId = $activeLicence->initiator_role;
+            $activeLicence->current_role = $initiatorRoleId;
+            $activeLicence->is_parked = true;
+            $activeLicence->save();
+
+            $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
+            $metaReqs['workflowId'] = $activeLicence->workflow_id;
+            $metaReqs['refTableDotId'] = 'active_trade_licences.id';
+            $metaReqs['refTableIdValue'] = $req->id;
+            $req->request->add($metaReqs);
+            $track->saveTrack($req);
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    # Serial No : 18
+    public function postNextLevel(Request $request)
+    {
+        // try {
+        // $refUser = Auth()->user();
+        // $user_id = $refUser->id;
+        // $ulb_id = $refUser->ulb_id;
+        // $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        // $init_finish = $this->_parent->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
+        // if (!$init_finish) {
+        //     throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
+        // }
+        // if (!$init_finish["initiator"]) {
+        //     throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
+        // }
+        // if (!$init_finish["finisher"]) {
+        //     throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
+        // }
+        // return $this->Repository->postNextLevel($request);
+
+        $request->validate([
+            'id' => 'required|integer',
+            'senderRoleId' => 'required|integer',
+            'receiverRoleId' => 'required|integer',
+            'comment' => 'required',
+        ]);
+
+        try {
+            // SAF Application Update Current Role Updation
+            DB::beginTransaction();
+            $licence = ActiveTradeLicence::find($request->id);
+            $licence->current_role = $request->receiverRoleId;
+            $licence->save();
+
+
+            $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
+            $metaReqs['workflowId'] = $licence->workflow_id;
+            $metaReqs['refTableDotId'] = 'active_trade_licences.id';
+            $metaReqs['refTableIdValue'] = $request->id;
+            $request->request->add($metaReqs);
+
+            $track = new WorkflowTrack();
+            $track->saveTrack($request);
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    # Serial No
+    public function approveReject(Request $req)
+    {
+        try {
+            $req->validate([
+                "id" => "required",
+                "status" => "required"
+            ]);
+            $activeLicence = ActiveTradeLicence::find($req->id);
+
+            if ($activeLicence->finisher_role != $req->roleId) {
+                return responseMsg(false, "Forbidden Access", "");
+            }
+            DB::beginTransaction();
+
+            // Approval
+            if ($req->status == 1) {
+                // Objection Application replication
+                $approvedLicence = $activeLicence->replicate();
+                $approvedLicence->setTable('trade_licences');
+                $approvedLicence->id = $activeLicence->id;
+                $approvedLicence->save();
+                $activeLicence->delete();
+
+                $msg =  "Application Successfully Approved !!";
+            }
+
+            // Rejection
+            if ($req->status == 0) {
+                // Objection Application replication
+                $approvedLicence = $activeLicence->replicate();
+                $approvedLicence->setTable('rejected_trade_licences');
+                $approvedLicence->id = $activeLicence->id;
+                $approvedLicence->save();
+                $activeLicence->delete();
+                $msg = "Application Successfully Rejected !!";
+            }
+            DB::commit();
+
+            return responseMsgs(true, $msg, "", '010811', '01', '474ms-573', 'Post', '');
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
     # Serial No : 19
     public function provisionalCertificate(Request $request)
     {

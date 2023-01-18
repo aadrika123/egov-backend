@@ -34,7 +34,7 @@ class CustomDetail extends Model
                 'ref_type as customFor'
             )
                 ->orderBy("id", 'desc')
-                ->where('ref_id', $request->id)
+                ->where('ref_id', $request->applicationId)
                 ->where('ref_type', $request->customFor)
                 ->get();
             $customDetails = $customDetails->map(function ($val) {
@@ -93,6 +93,12 @@ class CustomDetail extends Model
                 $customDetails->save();
             }
 
+            if ($customFor == 'TRADE') {
+                $customDetails->ref_type = 'TRADE';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
             return responseMsg(true, "Successfully Saved", $customDetails);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -104,20 +110,20 @@ class CustomDetail extends Model
     {
         if ($request->remarks && $request->document) {
 
-            $customDetails->ref_id = $request->id;
+            $customDetails->ref_id = $request->applicationId;
             $customDetails->doc_name = $filename;
             $customDetails->remarks = $request->remarks;
             $customDetails->relative_path = '/custom/';
             $customDetails->type = "both";
         } elseif ($request->document) {
 
-            $customDetails->ref_id = $request->id;
+            $customDetails->ref_id = $request->applicationId;
             $customDetails->doc_name = $filename;
             $customDetails->relative_path = '/custom/';
             $customDetails->type = "file";
         } elseif ($request->remarks) {
 
-            $customDetails->ref_id = $request->id;
+            $customDetails->ref_id = $request->applicationId;
             $customDetails->remarks = $request->remarks;
             $customDetails->type = "text";
         }

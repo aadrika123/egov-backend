@@ -1760,7 +1760,7 @@ class PropertyBifurcation implements IPropertyBifurcation
             $requiedDocs     = (array) null;
             $ownersDoc       = (array) null;
             $testOwnersDoc   = (array)null;
-            $safId           = $request->id;
+            $safId           = $request->applicationId;
             if (!$safId) {
                 throw new Exception("Saf Id Required");
             }

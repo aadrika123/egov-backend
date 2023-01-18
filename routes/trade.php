@@ -39,11 +39,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('searchLicense', 'searchLicence');
         Route::post('getApplicationList', 'readApplication');
         Route::post('escalate', 'postEscalate');
+        Route::post('postBtc', 'backToCitizen');
         Route::post('specialInbox', 'specialInbox');
         Route::post('btcInbox', 'btcInbox');
         Route::post('inbox', 'inbox');
         Route::post('outbox', 'outbox');
         Route::post('postNext', 'postNextLevel');
+        Route::post('approveReject', 'approveReject');
         Route::post('postComment', 'addIndependentComment');
         Route::post('pay', 'PaymentCounter');
         Route::match(["get", "post"], 'applyDenail', 'applyDenail');
@@ -57,11 +59,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(TradeCitizenController::class)->group(function () {
         Route::post('citizenGetWardList', "getWardList");               #id = c1
         Route::post('citizenApply', 'applyApplication');                #id = c2
-        Route::post('citizenGetDenialDetails', "getDenialDetails");      #id = c3        
+        Route::post('citizenGetDenialDetails', "getDenialDetails");     #id = c3        
         Route::post('payOnline', 'handeRazorPay');                      #id = c4 
         Route::post('conformRazorPayTran', 'conformRazorPayTran');      #id = c5 
-        Route::get('citizenApplication', 'citizenApplication');         #id = c6
-        Route::get('citizenApplication/{id}', 'readCitizenLicenceDtl'); #id = c7
+        Route::post('citizenApplication', 'citizenApplication');        #id = c6
+        Route::post('citizenApplicationById', 'readCitizenLicenceDtl'); #id = c7
+        // Route::post('expired-licence', 'expiredLicence');
+        Route::post('list-renewal', 'renewalList');
+        Route::post('list-amendment', 'amendmentList');
+        Route::post('list-surrender', 'surrenderList');
     });
 });
 
