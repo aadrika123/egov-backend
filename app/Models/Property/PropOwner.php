@@ -10,18 +10,22 @@ class PropOwner extends Model
 {
     use HasFactory;
 
-    //owner details by propertyId
-    public function getOwnerDetails($request)
+    //owner details by ownerId
+    public function getOwnerDetail($request)
     {
         return PropOwner::select(
             'prop_owners.id',
-            'prop_owners.owner_name as name',
-            'prop_owners.mobile_no as mobileNo',
-            'prop_properties.corr_address as address'
+            'prop_owners.owner_name',
+            'prop_owners.mobile_no',
+            'corr_address',
+            'corr_city',
+            'corr_dist',
+            'corr_pin_code',
+            'corr_state'
         )
             ->join('prop_properties', 'prop_properties.id', '=', 'prop_owners.property_id')
-            ->where('prop_owners.property_id', $request->propId)
-            ->get();
+            ->where('prop_owners.id', $request->ownerId)
+            ->first();
     }
 
     // Get Owners by Property Id

@@ -378,7 +378,7 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 'comment' => 'required',
-                'applicationId' => 'required|integer'
+                'applicationId' => 'required'
             ]);
             return $this->newConnection->commentIndependent($request);
         } catch (Exception $e) {
@@ -671,7 +671,7 @@ class NewConnectionController extends Controller
     public function getApplicationDetails(Request $request)
     {
         try{
-            
+
         }catch(Exception $e)
         {
             return responseMsg(false,$e->getMessage(),"");

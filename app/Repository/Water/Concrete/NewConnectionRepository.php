@@ -755,8 +755,11 @@ class NewConnectionRepository implements iNewConnection
                 }
                 return $val;
             });
-        $data["uploadDocument"] = $mUploadDocument;
-        return responseMsgs(true, "list Of Uploaded Doc!", $data, "", "02", ".ms", "POST", $request->deviceId);
+        if (collect($mUploadDocument)->first()) {
+            $data["uploadDocument"] = $mUploadDocument;
+            return responseMsgs(true, "list Of Uploaded Doc!", $data, "", "02", ".ms", "POST", $request->deviceId);
+        }
+        throw new Exception("document Not found!");
     }
 
 
