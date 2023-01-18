@@ -262,6 +262,7 @@ class NewConnectionRepository implements iNewConnection
             ->whereIn('water_applications.current_role', $roleIds)
             ->whereIn('water_applications.ward_id', $occupiedWards)
             ->where('water_applications.is_escalate', false)
+            ->where('water_applications.parked',false)
             ->orderByDesc('water_applications.id')
             ->get();
         $filterWaterList = collect($waterList)->unique('id')->values();
@@ -322,7 +323,7 @@ class NewConnectionRepository implements iNewConnection
         $metaReqs['moduleId'] =  $this->_waterModulId;
         $metaReqs['workflowId'] = $this->_waterWorkId;
         $metaReqs['refTableDotId'] = 'water_applications.id';
-        $metaReqs['refTableIdValue'] = $req->appId;
+        $metaReqs['refTableIdValue'] = $req->applicationId;
         $req->request->add($metaReqs);
 
         $waterTrack = new WorkflowTrack();
@@ -335,7 +336,7 @@ class NewConnectionRepository implements iNewConnection
         // ->where('workflow_id',$this->_waterWorkflowId)
         // ->first();
 
-        $waterApplication = WaterApplication::find($req->appId);
+        $waterApplication = WaterApplication::find($req->applicationId);
         $waterApplication->current_role = $req->receiverRoleId;
         $waterApplication->save();
 
@@ -423,7 +424,7 @@ class NewConnectionRepository implements iNewConnection
             $msg = "Doc Status Rejected!";
         }
 
-        WaterApplicantDoc::where('id', $req->id)
+        WaterApplicantDoc::where('id', $req->applicationId)
             ->update([
                 'remarks' => $req->docRemarks ?? null,
                 'verify_by_emp_id' => $userId,
@@ -449,7 +450,7 @@ class NewConnectionRepository implements iNewConnection
     public function approvalRejectionWater($request)
     {
         $now = Carbon::now();
-        $waterDetails = WaterApplication::find($request->id);
+        $waterDetails = WaterApplication::find($request->applicationId);
         if ($waterDetails->finisher != $request->roleId) {
             throw new Exception("You're Not the finisher!");
         }
@@ -460,7 +461,7 @@ class NewConnectionRepository implements iNewConnection
         // Approval
         if ($request->status == 1) {
             $approvedWater = WaterApplication::query()
-                ->where('id', $request->id)
+                ->where('id', $request->applicationId)
                 ->first();
 
             $approvedWaterRep = $approvedWater->replicate();
@@ -475,7 +476,7 @@ class NewConnectionRepository implements iNewConnection
         // Rejection
         if ($request->status == 0) {
             $rejectedWater = WaterApplication::query()
-                ->where('id', $request->id)
+                ->where('id', $request->applicationId)
                 ->first();
 
             $rejectedWaterRep = $rejectedWater->replicate();
@@ -513,7 +514,7 @@ class NewConnectionRepository implements iNewConnection
         # application details
         $applicationDetails = $waterObj->fullWaterDetails($request)->get();
         if (collect($applicationDetails)->first() == null) {
-            return responseMsg(false, "Application Data Not found!", $request->id);
+            return responseMsg(false, "Application Data Not found!", $request->applicationId);
         }
 
         # owner Details
@@ -727,7 +728,7 @@ class NewConnectionRepository implements iNewConnection
     {
         $applicationId = null;
         $mUploadDocument = (array)null;
-        $applicationId   = $request->id;
+        $applicationId   = $request->applicationId;
 
         $refApplicationNo = WaterApplication::where('id', $applicationId)->get();
         if (!collect($refApplicationNo)->first()) {
@@ -804,7 +805,7 @@ class NewConnectionRepository implements iNewConnection
      */
     public function commentIndependent($request)
     {
-        $applicationId = WaterApplication::find($request->id);
+        $applicationId = WaterApplication::find($request->applicationId);
         $workflowTrack = new WorkflowTrack();
         $mSafWorkflowId = $this->_waterWorkId;
         $mModuleId =  $this->_waterModulId;

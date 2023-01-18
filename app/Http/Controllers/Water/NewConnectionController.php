@@ -286,7 +286,7 @@ class NewConnectionController extends Controller
     {
         try {
             $request->validate([
-                'appId' => 'required',
+                'applicationId' => 'required',
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
                 'comment' => "required"
@@ -303,7 +303,7 @@ class NewConnectionController extends Controller
     {
         try {
             $request->validate([
-                'id' => 'required'
+                'applicationId' => 'required'
             ]);
             return $this->newConnection->getApplicationsDetails($request);
         } catch (Exception $e) {
@@ -330,7 +330,7 @@ class NewConnectionController extends Controller
     {
         try {
             $request->validate([
-                "id" => "required",
+                "applicationId" => "required",
             ]);
             return $this->newConnection->getWaterDocDetails($request);
         } catch (Exception $e) {
@@ -343,7 +343,7 @@ class NewConnectionController extends Controller
     {
         try {
             $request->validate([
-                "id" => "required",
+                "applicationId" => "required",
                 "docStatus" => "required"
             ]);
             return $this->newConnection->waterDocStatus($request);
@@ -357,7 +357,7 @@ class NewConnectionController extends Controller
     {
         try {
             $request->validate([
-                "id" => "required",
+                "applicationId" => "required",
                 "roleId" => "required",
                 "status" => "required"
             ]);
@@ -378,7 +378,7 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 'comment' => 'required',
-                'id' => 'required|integer'
+                'applicationId' => 'required|integer'
             ]);
             return $this->newConnection->commentIndependent($request);
         } catch (Exception $e) {
@@ -386,7 +386,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Get Approved Water Appliction
+    // Get Approved Water Appliction   // RECHECK
     public function approvedWaterApplications(Request $request)
     {
         try {
@@ -628,4 +628,6 @@ class NewConnectionController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    //
 }
