@@ -208,7 +208,7 @@ class TradeApplication extends Controller
     public function getLicenceDtl(Request $request)
     {
 
-        $rules["id"] = "required|digits_between:1,9223372036854775807";
+        $rules["applicationId"] = "required|digits_between:1,9223372036854775807";
         $validator = Validator::make($request->all(), $rules,);
         if ($validator->fails()) {
             return responseMsg(false, $validator->errors(), $request->all());
