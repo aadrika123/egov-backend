@@ -2560,11 +2560,11 @@ class PropertyBifurcation implements IPropertyBifurcation
             $finalData       = (array)null;
             $requiedDocs     = (array) null;
             $ownersDoc       = (array) null;
-            $safId           = $request->id;
-            if (!$safId) {
-                throw new Exception("Saf Id Required");
+            $applicationId           = $request->applicationId;
+            if (!$applicationId) {
+                throw new Exception("Application Id Required");
             }
-            $refSafs = PropActiveSaf::find($safId);
+            $refSafs = PropActiveSaf::find($applicationId);
             if (!$refSafs) {
                 throw new Exception("Data Not Found");
             }

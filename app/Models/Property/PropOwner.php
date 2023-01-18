@@ -14,9 +14,10 @@ class PropOwner extends Model
     public function getOwnerDetails($request)
     {
         return PropOwner::select(
+            'prop_owners.id',
             'prop_owners.owner_name as name',
             'prop_owners.mobile_no as mobileNo',
-            'prop_properties.prop_address as address'
+            'prop_properties.corr_address as address'
         )
             ->join('prop_properties', 'prop_properties.id', '=', 'prop_owners.property_id')
             ->where('prop_owners.property_id', $request->propId)

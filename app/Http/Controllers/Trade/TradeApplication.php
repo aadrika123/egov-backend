@@ -278,14 +278,14 @@ class TradeApplication extends Controller
     public function backToCitizen(Request $req)
     {
         $req->validate([
-            'id' => 'required|integer',
+            'applicationId' => 'required|integer',
             'workflowId' => 'required|integer',
             'currentRoleId' => 'required|integer',
             'comment' => 'required|string'
         ]);
 
         try {
-            $activeLicence = ActiveTradeLicence::find($req->id);
+            $activeLicence = ActiveTradeLicence::find($req->applicationId);
             $track = new WorkflowTrack();
             DB::beginTransaction();
             $initiatorRoleId = $activeLicence->initiator_role;
@@ -296,7 +296,7 @@ class TradeApplication extends Controller
             $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
             $metaReqs['workflowId'] = $activeLicence->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences.id';
-            $metaReqs['refTableIdValue'] = $req->id;
+            $metaReqs['refTableIdValue'] = $req->applicationId;
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 
@@ -330,7 +330,7 @@ class TradeApplication extends Controller
         // return $this->Repository->postNextLevel($request);
 
         $request->validate([
-            'id' => 'required|integer',
+            'applicationId' => 'required|integer',
             'senderRoleId' => 'required|integer',
             'receiverRoleId' => 'required|integer',
             'comment' => 'required',
@@ -339,7 +339,7 @@ class TradeApplication extends Controller
         try {
             // SAF Application Update Current Role Updation
             DB::beginTransaction();
-            $licence = ActiveTradeLicence::find($request->id);
+            $licence = ActiveTradeLicence::find($request->applicationId);
             $licence->current_role = $request->receiverRoleId;
             $licence->save();
 
@@ -347,7 +347,7 @@ class TradeApplication extends Controller
             $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
             $metaReqs['workflowId'] = $licence->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences.id';
-            $metaReqs['refTableIdValue'] = $request->id;
+            $metaReqs['refTableIdValue'] = $request->applicationId;
             $request->request->add($metaReqs);
 
             $track = new WorkflowTrack();
@@ -365,10 +365,10 @@ class TradeApplication extends Controller
     {
         try {
             $req->validate([
-                "id" => "required",
+                "applicationId" => "required",
                 "status" => "required"
             ]);
-            $activeLicence = ActiveTradeLicence::find($req->id);
+            $activeLicence = ActiveTradeLicence::find($req->applicationId);
 
             if ($activeLicence->finisher_role != $req->roleId) {
                 return responseMsg(false, "Forbidden Access", "");

@@ -111,6 +111,7 @@ class ConcessionController extends Controller
             $concession->dob = $request->dob;
             $concession->is_armed_force = $request->armedForce;
             $concession->is_specially_abled = $request->speciallyAbled;
+            $concession->specially_abled_percentage = $request->speciallyAbledPercentage;
             $concession->remarks = $request->remarks;
             $concession->status = '1';
             $concession->user_id = $userId;

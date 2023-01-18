@@ -1171,7 +1171,7 @@ class Trade implements ITrade
             $mItemName = "";
             $mCods = "";
 
-            $licenceId = $request->id;
+            $licenceId = $request->applicationId;
             if (!$licenceId) {
                 throw new Exception("Licence Id Required");
             }
@@ -1822,7 +1822,7 @@ class Trade implements ITrade
             $mWorkflowTracks = new WorkflowTrack();
             $mCustomDetails = new CustomDetail();
             $forwardBackward = new WorkflowMap;
-            $id = $request->id;
+            $id = $request->applicationId;
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
@@ -2347,7 +2347,7 @@ class Trade implements ITrade
             // Validation Rule
             $rules = [
                 "escalateStatus" => "required|int",
-                "id" => "required",
+                "applicationId" => "required",
             ];
             // Validation Message
             $message = [
@@ -2359,7 +2359,7 @@ class Trade implements ITrade
                 return responseMsg(false, $validator->errors(), $request->all());
             }
             DB::beginTransaction();
-            $licenceId = $request->id;
+            $licenceId = $request->applicationId;
             $data = ActiveTradeLicence::find($licenceId);
             $data->is_escalate = $request->escalateStatus;
             $data->escalate_by = $userId;
@@ -3639,7 +3639,7 @@ class Trade implements ITrade
                 return responseMsg(false, $validator->errors(), $request->all());
             }
 
-            $refLicense = ActiveTradeLicence::find($request->id);
+            $refLicense = ActiveTradeLicence::find($request->applicationId);
             if (!$refLicense) {
                 throw new Exception("Comments for invalide application !....");
             }

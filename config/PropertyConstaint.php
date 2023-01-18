@@ -352,6 +352,7 @@ return [
 
     // Relative GeoTagging Path of Geo Tagging
     "GEOTAGGING_RELATIVE_PATH" => "public/Property/GeoTagging",
+    "SAF_RELATIVE_PATH" => "Uploads/Property/Saf",
 
     // Rebates
     "REBATES" => [
