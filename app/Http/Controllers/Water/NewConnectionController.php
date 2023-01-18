@@ -20,6 +20,7 @@ use App\Models\Water\WaterTran;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\WorkflowTrack;
+use App\Repository\Water\Concrete\WaterNewConnection;
 use Illuminate\Http\Request;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Traits\Ward;
@@ -631,7 +632,7 @@ class NewConnectionController extends Controller
 
     // Edit the Water Application
     /**
-        | Not
+        | Not / validate the payment status 
      */
     public function editWaterDetails(Request $req)
     {
@@ -652,11 +653,13 @@ class NewConnectionController extends Controller
             $refWaterApplications = $mWaterApplication->getWaterApplicationsDetails($req->applicatonId);
             $mOwners = $req->owner;
 
+            if ($refWaterApplications->payment) {
+            }
             DB::beginTransaction();
-            $mWaterApplication->editWaterApplication($req,$refWaterApplications);                                                      // Updation SAF Basic Details
+            $mWaterApplication->editWaterApplication($req, $refWaterApplications);                                                      // Updation SAF Basic Details
 
-            collect($mOwners)->map(function ($owner) use ($mWaterApplicant,$refWaterApplications) {            // Updation of Owner Basic Details
-                $mWaterApplicant->editWaterOwners($owner,$refWaterApplications);
+            collect($mOwners)->map(function ($owner) use ($mWaterApplicant, $refWaterApplications) {            // Updation of Owner Basic Details
+                $mWaterApplicant->editWaterOwners($owner, $refWaterApplications);
             });
 
             DB::commit();
@@ -670,11 +673,33 @@ class NewConnectionController extends Controller
     // Citizen view : Get Application Details
     public function getApplicationDetails(Request $request)
     {
-        try{
+        $request->validate([
+            'applicationId' => 'required|integer',
+        ]);
+        try {
+            $mWaterApplication = new WaterApplication();
+            $mWaterNewConnection = new WaterNewConnection();
+            $mWaterTran = new WaterTran();
+            $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
 
-        }catch(Exception $e)
-        {
-            return responseMsg(false,$e->getMessage(),"");
+            # Document Details
+            $metaReqs = [
+                'userId' => auth()->user()->id,
+                'ulbId' => auth()->user()->ulb_id,
+            ];
+            $request->request->add($metaReqs);
+            $document = $mWaterNewConnection->documentUpload($request);
+            $documentDetails['documentDetails'] = collect($document)['original']['data'];
+
+            # Payment Details 
+            $refAppDetails = collect($applicationDetails)->first();
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
+            $waterTransDetail['waterTransDetail'] = $waterTransaction;
+            
+            $returnData = array_merge($applicationDetails, $documentDetails,$waterTransDetail);
+            return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }

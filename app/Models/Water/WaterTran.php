@@ -18,4 +18,13 @@ class WaterTran extends Model
         return WaterTran::where('related_id',$req)
         ->get();
     }
+
+    /**
+     * |---------------- Get transaction by the transaction details ---------------|
+     */
+    public function getTransNo($applicationId,$applicationFor)
+    {
+        return WaterTran::where('related_id',$applicationId)
+        ->where('tran_type',$applicationFor);
+    }
 }
