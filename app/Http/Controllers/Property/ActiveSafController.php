@@ -1633,13 +1633,6 @@ class ActiveSafController extends Controller
         }
     }
 
-    //document verification
-    public function safDocStatus(Request $req)
-    {
-        $docVerify = new PropActiveSafsDoc();
-        return $docVerify->safDocStatus($req);
-    }
-
     // Get TC Verifications
     public function getTcVerifications(Request $req)
     {
