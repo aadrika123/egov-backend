@@ -34,7 +34,7 @@ class WfDocumentController extends Controller
                 'action_taken_by' => $userId
             ];
             $mWfDocument->docVerifyReject($wfDocId, $reqs);
-            return responseMsgs(true, $req->docRemarks . "Successfully", "", "1001", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "1001", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "1001", "1.0", "", "POST", $req->deviceId ?? "");
         }
