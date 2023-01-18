@@ -64,7 +64,7 @@ class ObjectionController extends Controller
             $Details = new PropOwner();
             $ownerDetails = $Details->getOwnerDetails($request);
 
-            return responseMsg(true, "Successfully Retrieved", $ownerDetails);
+            return responseMsg(true, "Successfully Retrieved", remove_null($ownerDetails));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
