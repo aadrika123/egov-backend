@@ -17,7 +17,8 @@ class SafDocController extends Controller
     public function docUpload(Request $req)
     {
         $req->validate([
-            "safId" => "required|integer"
+            "applicationId" => "required|integer",
+            "document" => "required|mimes:pdf,jpeg,png,jpg,gif"
         ]);
 
         try {
@@ -25,17 +26,20 @@ class SafDocController extends Controller
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveSafs = new PropActiveSaf();
-            $getSafDtls = $mActiveSafs->getSafNo($req->safId);
+            $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
             $refImageName = "Image";
             $relativePath = "Uploads/Property";
-            $image = $req->image;
-            $imageName = $docUpload->upload($refImageName, $image, $relativePath);
+            $document = $req->document;
+            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+
             $metaReqs['activeId'] = $getSafDtls->saf_no;
             $metaReqs['workflowId'] = $getSafDtls->workflow_id;
             $metaReqs['ulbId'] = $getSafDtls->ulb_id;
             $metaReqs['moduleId'] = 1;
             $metaReqs['relativePath'] = $relativePath;
             $metaReqs['image'] = $imageName;
+            $metaReqs['docMstrId'] = $req->docMstrId;
+
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
