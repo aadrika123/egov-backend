@@ -653,15 +653,14 @@ class NewConnectionController extends Controller
             $refWaterApplications = $mWaterApplication->getWaterApplicationsDetails($req->applicatonId);
             $mOwners = $req->owner;
 
-            if ($refWaterApplications->payment) {
+            if ($refWaterApplications->payment_status == true) {
+                throw new Exception("Payment has been made!");
             }
             DB::beginTransaction();
-            $mWaterApplication->editWaterApplication($req, $refWaterApplications);                                                      // Updation SAF Basic Details
-
-            collect($mOwners)->map(function ($owner) use ($mWaterApplicant, $refWaterApplications) {            // Updation of Owner Basic Details
-                $mWaterApplicant->editWaterOwners($owner, $refWaterApplications);
-            });
-
+            // $mWaterApplication->editWaterApplication($req, $refWaterApplications);                              // Updation water Basic Details
+            // collect($mOwners)->map(function ($owner) use ($mWaterApplicant, $refWaterApplications) {            // Updation of Owner Basic Details
+            //     $mWaterApplicant->editWaterOwners($owner, $refWaterApplications);
+            // });
             DB::commit();
             return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -680,6 +679,8 @@ class NewConnectionController extends Controller
             $mWaterApplication = new WaterApplication();
             $mWaterNewConnection = new WaterNewConnection();
             $mWaterTran = new WaterTran();
+            
+            # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
 
             # Document Details
@@ -695,7 +696,7 @@ class NewConnectionController extends Controller
             $refAppDetails = collect($applicationDetails)->first();
             $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
-            
+
             $returnData = array_merge($applicationDetails, $documentDetails,$waterTransDetail);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {

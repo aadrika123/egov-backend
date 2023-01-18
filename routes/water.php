@@ -66,7 +66,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('list_btc_inbox', 'btcInbox');                                                      //
         Route::Post('delete_application', 'deleteWaterApplication');                                    //
         Route::post('edit_water_details', 'editWaterDetails');                                          //
-        Route::post('get_application_details', 'getApplicationDetails');                                 //
+        Route::post('get_application_details', 'getApplicationDetails');                                //
+        Route::post('upload_document', 'uploadWaterDoc');
         // Route::post('', 'getLevelcomment');                                                          //
     });
 });
@@ -82,7 +83,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('citizenApplications', 'getCitizenApplication');                                     //10
         Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
-        Route::post('upload-document', 'documentUpload');                                                //13
+        Route::post('get_doc_to_upload', 'documentUpload');                                             //13
         Route::post('getUploadedDoc', 'getUploadDocuments');                                            //14
     });
 });
