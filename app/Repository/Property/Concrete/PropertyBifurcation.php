@@ -1746,8 +1746,8 @@ class PropertyBifurcation implements IPropertyBifurcation
             return [];
         }
     }
-    #-------------------------saf-----------------------
 
+    #-------------------------saf-----------------------
     public function getDocList($request)
     {
         try {
@@ -1790,8 +1790,8 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $doc["ownerName"]   = $val->owner_name;
                 $doc['docName']     = "Photo";
                 $doc['isMadatory']  = 1;
-                $doc['docVal'][]      = ["id" => 0, "doc_name" => "Photo"];
-                $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->saf_no, $val->id, "Photo", 0);
+                $doc['docVal'][]      = $this->getDocumentList("owner_photo");
+                $doc["uploadDoc"]   = $this->check_doc_exist_owner($refSafs->saf_no, $val->id, "owner_photo");
                 array_push($ownersDoc, $doc);
                 array_push($testOwnersDoc[$key], $doc);
                 $mOwneres[$key]["uploadoc"] = $doc["uploadDoc"]->doc_path ?? "";

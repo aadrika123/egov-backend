@@ -162,8 +162,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('concession/doc-list', 'concessionDocList');                            //14
     Route::post('concession/doc-upload', 'concessionDocUpload');                        //15
     Route::post('concession/doc-status', 'concessionDocStatus');                        //16
-
-    Route::post('concession/comment-independent', 'commentIndependent');                //18 ( Citizen Independent comment and Level Pendings )
+    Route::post('concession/comment-independent', 'commentIndependent');                //18               ( Citizen Independent comment and Level Pendings )
   });
 
 
