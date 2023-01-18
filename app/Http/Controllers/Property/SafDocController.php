@@ -8,6 +8,8 @@ use App\Models\Property\PropActiveSaf;
 use App\Models\Workflows\WfActiveDocument;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config as FacadesConfig;
+use PSpell\Config;
 
 class SafDocController extends Controller
 {
@@ -20,7 +22,8 @@ class SafDocController extends Controller
             "applicationId" => "required|numeric",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
             "docMstrId" => "required|numeric",
-            "ownerId" => "nullable|numeric"
+            "ownerId" => "nullable|numeric",
+            "docRefName" => "required"
         ]);
 
         try {
@@ -28,9 +31,10 @@ class SafDocController extends Controller
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveSafs = new PropActiveSaf();
+            $relativePath = FacadesConfig::get('PropertyConstaint.SAF_RELATIVE_PATH');
+            $refImageName = $req->docRefName;
+            $refImageName = str_replace(' ', '_', $refImageName);
             $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
-            $refImageName = "Image";
-            $relativePath = "Uploads/Property";
             $document = $req->document;
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
