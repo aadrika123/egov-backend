@@ -1836,7 +1836,6 @@ class PropertyBifurcation implements IPropertyBifurcation
                     array_push($ownersDoc, $doc);
                     array_push($testOwnersDoc[$key], $doc);
                 }
-                // $mOwneres[$key]["uploadoc"] = collect($testOwnersDoc[$key]);
             }
             $data["documentsList"]  = $requiedDocs;
             $data["ownersDocList"]  = $testOwnersDoc;
