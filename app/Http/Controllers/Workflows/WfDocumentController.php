@@ -17,7 +17,7 @@ class WfDocumentController extends Controller
         $req->validate([
             'id' => 'required|numeric',
             'docRemarks' => 'required',
-            'docStatus' => 'required'
+            'docStatus' => 'required|in:Verified,Rejected'
         ]);
 
         try {
