@@ -10,7 +10,7 @@ interface IWaterNewConnection
     public function getCitizenApplication(Request $request);
     public function handeRazorPay(Request $request);
     public function readTransectionAndApl(Request $request);
-    public function paymentRecipt($id, $transectionId);
+    public function paymentRecipt($transectionNo);
     public function documentUpload(Request $request);
     public function getUploadDocuments(Request $request);
     public function calWaterConCharge(Request $request);

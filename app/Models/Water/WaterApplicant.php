@@ -18,11 +18,11 @@ class WaterApplicant extends Model
     public function saveWaterApplicant($applicationId, $owners)
     {
         $applicant = new WaterApplicant();
-        $applicant->application_id = $applicationId;
-        $applicant->applicant_name = $owners['ownerName'];
-        $applicant->guardian_name = $owners['guardianName'];
-        $applicant->mobile_no = $owners['mobileNo'];
-        $applicant->email = $owners['email'];
+        $applicant->application_id  = $applicationId;
+        $applicant->applicant_name  = $owners['ownerName'];
+        $applicant->guardian_name   = $owners['guardianName'];
+        $applicant->mobile_no       = $owners['mobileNo'];
+        $applicant->email           = $owners['email'];
         $applicant->save();
     }
 
@@ -41,7 +41,7 @@ class WaterApplicant extends Model
             'district'
         )
             ->join('water_applications', 'water_applications.id', '=', 'water_applicants.application_id')
-            ->where('water_applications.id', $request->id)
+            ->where('water_applications.id', $request->applicationId)
             ->where('water_applications.status', 1)
             ->where('water_applicants.status', 1);
     }
@@ -67,5 +67,20 @@ class WaterApplicant extends Model
     {
         WaterApplicant::where('application_id',$id)
         ->delete();
+    }
+
+    /**
+     * |---------- Edit the water owner Details ----------|
+     */
+    public function editWaterOwners($req,$refWaterApplications)
+    {
+            $owner = WaterApplicant::find($req->ownerId);
+            $reqs = [
+                'applicant_name'  =>$req->applicant_name ?? $refWaterApplications->applicant_name,
+                'guardian_name'   =>$req->guardian_name  ?? $refWaterApplications->guardian_name,
+                'mobile_no'       =>$req->mobile_no      ?? $refWaterApplications->mobile_no,
+                'email'           =>$req->email          ?? $refWaterApplications->email,
+            ];
+            $owner->update($reqs);
     }
 }
