@@ -44,6 +44,7 @@ class WfActiveDocument extends Model
                 DB::raw("concat(relative_path,'/',image) as doc_path"),
                 'd.remarks',
                 'd.verify_status',
+                'd.doc_mstr_id',
                 'dm.doc_type',
                 'o.owner_name'
             )
