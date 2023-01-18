@@ -596,7 +596,7 @@ class TradeCitizenController extends Controller
     # Serial No
     public function renewalList()
     {
-        $citizenId = authUser()->id;
+        return $citizenId = authUser()->id;
         $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
         $data = TradeLicence::select('*')
