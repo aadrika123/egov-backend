@@ -9,6 +9,7 @@ use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropOwner;
+use App\Models\Property\PropProperty;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -32,7 +33,7 @@ class PropertyDetailsController extends Controller
     }
 
     // get details of the property filtering with the provided details
-    public function propertyListByKey(Request $request)
+    public function applicationsListByKey(Request $request)
     {
         try {
             $request->validate([
@@ -77,9 +78,25 @@ class PropertyDetailsController extends Controller
 
 
     // get details of the diff operation in property
-    public function getFilterSafs(Request $request)
+    public function propertyListByKey(Request $request)
     {
-        return $this->propertyDetails->getFilterSafs($request);
+        $request->validate([
+            'filteredBy' => "required",
+            'parameter' => "required"
+        ]);
+
+        try {
+            $key = $request->filteredBy;
+            $parameter = $request->parameter;
+            $mPropProperty = new PropProperty();
+            switch ($key) {
+                case ("holdingNo"):
+
+                case ("ownerName"):
+            }
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010502", "1.0", "", "POST", $request->deviceId ?? "");
+        }
     }
 
     // All saf no from Active Saf no

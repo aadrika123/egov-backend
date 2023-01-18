@@ -24,6 +24,8 @@ class WfActiveDocument extends Model
             "image" => $req->image,
             "uploaded_by" => authUser()->id,
             "remarks" => $req->remarks ?? null,
+            "doc_mstr_id" => $req->docMstrId,
+            "owner_dtl_id" => $req->ownerDtlId,
         ];
 
         WfActiveDocument::create($metaReqs);
