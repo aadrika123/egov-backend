@@ -17,8 +17,10 @@ class SafDocController extends Controller
     public function docUpload(Request $req)
     {
         $req->validate([
-            "applicationId" => "required|integer",
-            "document" => "required|mimes:pdf,jpeg,png,jpg,gif"
+            "applicationId" => "required|numeric",
+            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "docMstrId" => "required|numeric",
+            "ownerId" => "nullable|numeric"
         ]);
 
         try {
@@ -39,6 +41,7 @@ class SafDocController extends Controller
             $metaReqs['relativePath'] = $relativePath;
             $metaReqs['image'] = $imageName;
             $metaReqs['docMstrId'] = $req->docMstrId;
+            $metaReqs['ownerDtlId'] = $req->ownerId;
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
