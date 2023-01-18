@@ -110,10 +110,14 @@ class ObjectionRepository implements iObjectionRepository
                 # Flag : call model <----------
                 $objectionOwner = new PropActiveObjectionOwner();
                 $objectionOwner->objection_id = $objection->id;
-                $objectionOwner->name = $request->name;
-                $objectionOwner->address = $request->address;
-                $objectionOwner->mobile = $request->mobileNo;
-                $objectionOwner->members = $request->safMember;
+                $objectionOwner->prop_owner_id = $request->ownerId;
+                $objectionOwner->owner_name = $request->ownerName;
+                $objectionOwner->owner_mobile = $request->mobileNo;
+                $objectionOwner->corr_address = $request->corrAddress;
+                $objectionOwner->corr_city = $request->corrCity;
+                $objectionOwner->corr_dist = $request->corrDist;
+                $objectionOwner->corr_pin_code = $request->corrPinCode;
+                $objectionOwner->corr_state = $request->corrState;
                 $objectionOwner->created_at = Carbon::now();
                 $objectionOwner->save();
 

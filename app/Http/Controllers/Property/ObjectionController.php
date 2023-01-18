@@ -57,12 +57,12 @@ class ObjectionController extends Controller
     }
 
     // get owner Details
-    public function ownerDetails(Request $request)
+    public function ownerDetailById(Request $request)
     {
         try {
 
             $Details = new PropOwner();
-            $ownerDetails = $Details->getOwnerDetails($request);
+            $ownerDetails = $Details->getOwnerDetail($request);
 
             return responseMsg(true, "Successfully Retrieved", remove_null($ownerDetails));
         } catch (Exception $e) {
