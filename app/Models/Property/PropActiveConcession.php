@@ -114,4 +114,12 @@ class PropActiveConcession extends Model
             return "Successfully De-Escalated the application";
         }
     }
+
+
+    public function getConcessionNo($conId)
+    {
+        return PropActiveConcession::select('*')
+            ->where('id', $conId)
+            ->first();
+    }
 }

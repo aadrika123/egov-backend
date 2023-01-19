@@ -14,7 +14,9 @@ use App\Http\Controllers\Property\PropertyBifurcationController;
 use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\property\ClusterController;
+use App\Http\Controllers\Property\ObjectionDocController;
 use App\Http\Controllers\Property\ConcessionDocController;
+use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Property\SafDocController;
 
 /**
@@ -164,6 +166,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('concession/doc-upload', 'concessionDocUpload');                        //15
     Route::post('concession/doc-status', 'concessionDocStatus');                        //16
     Route::post('concession/comment-independent', 'commentIndependent');                //18               ( Citizen Independent comment and Level Pendings )
+    Route::post('concession/get-doc-type', 'getDocType');
+    Route::post('concession/upload-document', 'uploadDocument');
+    Route::post('concession/get-upload-documents', 'getUploadDocuments');
   });
 
   /**
@@ -200,7 +205,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('objection/doc-list', 'objectionDocList');                //15
     Route::post('objection/doc-upload', 'objectionDocUpload');            //16
     Route::post('objection/doc-status', 'objectionDocStatus');            //17
-    Route::post('objection/comment-independent', 'commentIndependent');  //18
+    Route::post('objection/comment-independent', 'commentIndependent');   //18
+    Route::post('objection/upload-document', 'uploadDocument');
+    Route::post('objection/get-upload-documents', 'getUploadDocuments');
   });
 
 
@@ -239,6 +246,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/escalate', 'postEscalate');                         //14
     Route::post('harvesting/special-inbox', 'specialInbox');                    //15
     Route::post('harvesting/comment-independent', 'commentIndependent');        //16
+    Route::post('harvesting/upload-document', 'uploadDocument');
+    Route::post('harvesting/get-upload-documents', 'getUploadDocuments');
   });
 
   /**
@@ -287,8 +296,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    */
   Route::controller(PropertyDetailsController::class)->group(function () {
     Route::post('get-filter-application-details', 'applicationsListByKey');        // 01
-    Route::post('get-filter-property-details', 'propertyListByKey');            // 02
-    Route::get('get-list-saf', 'getListOfSaf');                                 // 03
-    Route::post('active-application/get-user-details', 'getUserDetails'); // 04
+    Route::post('get-filter-property-details', 'propertyListByKey');              // 02
+    Route::get('get-list-saf', 'getListOfSaf');                                   // 03
+    Route::post('active-application/get-user-details', 'getUserDetails');         // 04
+  });
+
+  /**
+   * | Calculation of Yearly Property Tax and generation of its demand
+   * | Serial No-16 
+   */
+  Route::controller(HoldingTaxController::class)->group(function () {
+    Route::post('generate-holding-demand', 'generateHoldingDemand');              // (01) Property/Holding Yearly Holding Tax Generation
   });
 });
