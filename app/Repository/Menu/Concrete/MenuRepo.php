@@ -140,7 +140,7 @@ class MenuRepo implements iMenuRepo
     public function generateMenuTree($req)
     {
         $mMenuMaster = new MenuMaster();
-        $mMenues = $mMenuMaster->fetchAllMenues();
+        $mMenues = $mMenuMaster->getMenuByRole($req->roleId);
 
         $data = collect($mMenues)->map(function ($value, $key) {
             $return = array();
