@@ -35,7 +35,7 @@ class ConcessionDocController extends Controller
             $applicationId = $req->applicationId;
             $concessionDtls = $mPropActiveConcession->getConcessionById($applicationId);
 
-            if ($concessionDtls->gender != 'Male') {
+            if ($concessionDtls->gender != 'Male' && !is_null($concessionDtls->gender)) {
                 $document = $mPropDocRequired->getDocByDocType("gender_document");
                 $docMstrIds = $this->readDocIds($document);
                 $document = [
@@ -47,7 +47,7 @@ class ConcessionDocController extends Controller
                 array_push($array['documentList'], $document);
             }
 
-            if ($concessionDtls->is_specially_abled == true) {
+            if ($concessionDtls->is_specially_abled == true && !is_null($concessionDtls->is_specially_abled)) {
                 $document = $mPropDocRequired->getDocByDocType("handicaped_document");
                 $docMstrIds = $this->readDocIds($document);
                 $document = [
@@ -59,12 +59,23 @@ class ConcessionDocController extends Controller
                 array_push($array['documentList'], $document);
             }
 
-            if ($concessionDtls->is_armed_force == true) {
-
+            if ($concessionDtls->is_armed_force == true && !is_null($concessionDtls->is_armed_force)) {
                 $document = $mPropDocRequired->getDocByDocType("armed_force_document");
                 $docMstrIds = $this->readDocIds($document);
                 $document = [
                     'docName' => 'armed_force_document',
+                    'isMandatory' => 1,
+                    'docVal' => $document,
+                    'uploadDoc' =>  $mWfActiveDocuments->getAppByAppNoDocId($concessionDtls->application_no, $docMstrIds)
+                ];
+                array_push($array['documentList'], $document);
+            }
+
+            if (!is_null($concessionDtls->dob)) {
+                $document = $mPropDocRequired->getDocByDocType("dob_document");
+                $docMstrIds = $this->readDocIds($document);
+                $document = [
+                    'docName' => 'dob_document',
                     'isMandatory' => 1,
                     'docVal' => $document,
                     'uploadDoc' =>  $mWfActiveDocuments->getAppByAppNoDocId($concessionDtls->application_no, $docMstrIds)
