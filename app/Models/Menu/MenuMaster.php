@@ -60,10 +60,14 @@ class MenuMaster extends Model
      */
     public function getMenuByRole($roleId)
     {
-        return MenuMaster::join('wf_rolemenus', 'wf_rolemenus.menu_id', '=', 'menu_masters.id')
+        $a = MenuMaster::select(
+            'menu_masters.id'
+        )
+            ->join('wf_rolemenus', 'wf_rolemenus.menu_id', '=', 'menu_masters.id')
             ->where('menu_masters.is_deleted', false)
             ->where('wf_rolemenus.role_id', $roleId)
             ->orderByDesc('menu_masters.id')
             ->get();
+        return  objToArray($a);
     }
 }

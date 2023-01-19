@@ -686,9 +686,8 @@ class NewConnectionController extends Controller
         ]);
         try {
             $mWaterApplication = new WaterApplication();
-            $mWaterNewConnection = new WaterNewConnection();
+            $mWaterApplicant = new WaterApplicant();
             $mWaterTran = new WaterTran();
-
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
 
@@ -698,7 +697,7 @@ class NewConnectionController extends Controller
                 'ulbId' => auth()->user()->ulb_id,
             ];
             $request->request->add($metaReqs);
-            $document = $mWaterNewConnection->documentUpload($request);
+            $document = $this->getDocToUpload($request);
             $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
             # Payment Details 
@@ -706,7 +705,10 @@ class NewConnectionController extends Controller
             $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
-            $returnData = array_merge($applicationDetails, $documentDetails, $waterTransDetail);
+            # owner details
+            $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
+
+            $returnData = array_merge($applicationDetails, $documentDetails, $waterTransDetail, $ownerDetails);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
