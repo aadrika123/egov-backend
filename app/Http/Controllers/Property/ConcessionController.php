@@ -96,7 +96,7 @@ class ConcessionController extends Controller
             DB::beginTransaction();
             $concession = new PropActiveConcession;
             $concession->property_id = $request->propId;
-            $concession->applicant_name = $ownerName;
+            $concession->applicant_name = $request->applicantName;
 
             if ($request->gender == 1) {
                 $concession->gender = 'Male';
@@ -113,7 +113,6 @@ class ConcessionController extends Controller
             $concession->is_specially_abled = $request->speciallyAbled;
             $concession->specially_abled_percentage = $request->speciallyAbledPercentage;
             $concession->remarks = $request->remarks;
-            $concession->status = '1';
             $concession->user_id = $userId;
             $concession->ulb_id = $ulbId;
             $concession->workflow_id = $ulbWorkflowId->id;
@@ -914,5 +913,14 @@ class ConcessionController extends Controller
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    /**
+     * 
+     */
+
+    public function getDocType(Request $req)
+    {
+        new RefPropD();
     }
 }
