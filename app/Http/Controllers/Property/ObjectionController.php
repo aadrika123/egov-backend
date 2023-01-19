@@ -149,7 +149,7 @@ class ObjectionController extends Controller
     public function getDetailsById(Request $req)
     {
         $req->validate([
-            'id' => 'required|integer'
+            'applicationId' => 'required|integer'
         ]);
 
         try {
@@ -160,7 +160,7 @@ class ObjectionController extends Controller
             $mForwardBackward = new WorkflowMap();
             $mWorkflowTracks = new WorkflowTrack();
             $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
-            $details = $mPropActiveObjection->getObjectionById($req->id);
+            $details = $mPropActiveObjection->getObjectionById($req->applicationId);
             // Data Array
             $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
             $basicElement = [
@@ -550,13 +550,13 @@ class ObjectionController extends Controller
         ]);
         try {
             $mWfActiveDocument = new WfActiveDocument();
-            $mPropActiveConcession = new PropActiveConcession();
+            $mPropActiveObjection = new PropActiveObjection();
 
-            $concessionDetails = $mPropActiveConcession->getConcessionNo($req->applicationId);
-            if (!$concessionDetails)
+            $objectionDetails = $mPropActiveObjection->getObjectionNo($req->applicationId);
+            if (!$objectionDetails)
                 throw new Exception("Application Not Found for this application Id");
 
-            $appNo = $concessionDetails->application_no;
+            $appNo = $objectionDetails->objection_no;
             $documents = $mWfActiveDocument->getDocsByAppNo($appNo);
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -591,7 +591,7 @@ class ObjectionController extends Controller
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs['activeId'] = $getConcessionDtls->application_no;
+            $metaReqs['activeId'] = $getConcessionDtls->objection_no;
             $metaReqs['workflowId'] = $getConcessionDtls->workflow_id;
             $metaReqs['ulbId'] = $getConcessionDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
