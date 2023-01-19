@@ -14,6 +14,7 @@ use App\Http\Controllers\Property\PropertyBifurcationController;
 use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\property\ClusterController;
+use App\Http\Controllers\Property\ObjectionDocController;
 use App\Http\Controllers\Property\SafDocController;
 
 /**
