@@ -47,4 +47,22 @@ class PropProperty extends Model
             ->join('ref_prop_road_types as r', 'r.id', '=', 'prop_properties.road_type_mstr_id')
             ->where('prop_properties.status', 1);
     }
+
+    /**
+     * | Get Property Full Details
+     * | Used for Calculation Parameter
+     * | @param propId Property Id
+     */
+    public function getPropFullDtls($propId)
+    {
+        $mPropOwners = new PropOwner();
+        $mPropFloors = new PropFloor();
+        $details = array();
+        $details = PropProperty::find($propId);
+        $owners = $mPropOwners->getOwnersByPropId($propId);
+        $details['owners'] = $owners;
+        $floors = $mPropFloors->getFloorsByPropId($propId);
+        $details['floors'] = $floors;
+        return $details;
+    }
 }

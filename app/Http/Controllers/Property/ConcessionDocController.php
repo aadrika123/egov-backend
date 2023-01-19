@@ -35,6 +35,10 @@ class ConcessionDocController extends Controller
             $applicationId = $req->applicationId;
             $concessionDtls = $mPropActiveConcession->getConcessionById($applicationId);
 
+            if (!$concessionDtls) {
+                throw new Exception("Application Not Found");
+            }
+
             if ($concessionDtls->gender != 'Male' && !is_null($concessionDtls->gender)) {
                 $document = $mPropDocRequired->getDocByDocType("gender_document");
                 $docMstrIds = $this->readDocIds($document);
