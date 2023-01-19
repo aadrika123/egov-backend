@@ -355,6 +355,8 @@ return [
     "SAF_RELATIVE_PATH" => "Uploads/Property/Saf",
     "OBJECTION_RELATIVE_PATH" => "Uploads/Property/Objection",
     "CONCESSION_RELATIVE_PATH" => "Uploads/Property/Concession",
+    "HARVESTING_RELATIVE_PATH" => "Uploads/Property/Harvesting",
+
 
 
     // Rebates

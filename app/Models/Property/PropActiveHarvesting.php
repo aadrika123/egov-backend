@@ -106,4 +106,14 @@ class PropActiveHarvesting extends Model
             ->where('application_no', $harvestingNo)
             ->first();
     }
+
+    /**
+     * 
+     */
+    public function getHarvestingNo($appId)
+    {
+        return PropActiveHarvesting::select('*')
+            ->where('id', $appId)
+            ->first();
+    }
 }

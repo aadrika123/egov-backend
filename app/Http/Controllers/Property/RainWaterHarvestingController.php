@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\MicroServices\DocUpload;
 use App\Models\CustomDetail;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropHarvestingDoc;
 use App\Models\Property\PropHarvestingLevelpending;
 use App\Models\Property\PropOwner;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
@@ -308,7 +310,7 @@ class RainWaterHarvestingController extends Controller
     public function getDetailsById(Request $req)
     {
         $req->validate([
-            'id' => 'required'
+            'applicationId' => 'required'
         ]);
         try {
             $mPropActiveHarvesting = new PropActiveHarvesting();
@@ -318,7 +320,7 @@ class RainWaterHarvestingController extends Controller
             $mCustomDetails = new CustomDetail();
             $mForwardBackward = new WorkflowMap();
             $mRefTable = Config::get('PropertyConstaint.SAF_HARVESTING_REF_TABLE');
-            $details = $mPropActiveHarvesting->getDetailsById($req->id);
+            $details = $mPropActiveHarvesting->getDetailsById($req->applicationId);
 
             // Data Array
             $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
@@ -731,6 +733,73 @@ class RainWaterHarvestingController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     *  get uploaded documents
+     */
+    public function getUploadDocuments(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $mPropActiveHarvesting = new PropActiveHarvesting();
+
+            $harvestingDetails = $mPropActiveHarvesting->getHarvestingNo($req->applicationId);
+            if (!$harvestingDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $appNo = $harvestingDetails->application_no;
+            $documents = $mWfActiveDocument->getDocsByAppNo($appNo);
+            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+
+    /**
+     * 
+     */
+    public function uploadDocument(Request $req)
+    {
+        $req->validate([
+            "applicationId" => "required|numeric",
+            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "docMstrId" => "required|numeric",
+            "docRefName" => "required"
+        ]);
+
+        try {
+            $metaReqs = array();
+            $docUpload = new DocUpload;
+            $mWfActiveDocument = new WfActiveDocument();
+            $mPropActiveHarvesting = new PropActiveHarvesting();
+            $relativePath = Config::get('PropertyConstaint.HARVESTING_RELATIVE_PATH');
+            $getHarvestingDtls = $mPropActiveHarvesting->getHarvestingNo($req->applicationId);
+            $refImageName = $req->docRefName;
+            $refImageName = $getHarvestingDtls->id . '-' . str_replace(' ', '_', $refImageName);
+            $document = $req->document;
+
+            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['activeId'] = $getHarvestingDtls->application_no;
+            $metaReqs['workflowId'] = $getHarvestingDtls->workflow_id;
+            $metaReqs['ulbId'] = $getHarvestingDtls->ulb_id;
+            $metaReqs['relativePath'] = $relativePath;
+            $metaReqs['image'] = $imageName;
+            $metaReqs['docMstrId'] = $req->docMstrId;
+
+
+            $metaReqs = new Request($metaReqs);
+            $mWfActiveDocument->postDocuments($metaReqs);
+            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }
