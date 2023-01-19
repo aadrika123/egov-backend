@@ -68,6 +68,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('edit_water_details', 'editWaterDetails');                                          //
         Route::post('get_application_details', 'getApplicationDetails');                                //
         Route::post('upload_document', 'uploadWaterDoc');
+        Route::post('get_upload_documents', 'getUploadDocuments');
+
+        Route::post('demo_doc', 'getDocToUpload');
         // Route::post('', 'getLevelcomment');                                                          //
     });
 });
@@ -84,7 +87,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
         Route::post('get_doc_to_upload', 'documentUpload');                                             //13
-        Route::post('getUploadedDoc', 'getUploadDocuments');                                            //14
+        // Route::post('getUploadedDoc', 'getUploadDocuments');                                            //14
     });
 });
 Route::controller(WaterApplication::class)->group(function () {

@@ -3,6 +3,7 @@
 namespace App\Repository\Water\Concrete;
 
 use App\EloquentModels\Common\ModelWard;
+use App\Http\Controllers\Water\NewConnectionController;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\UlbMaster;
 use App\Models\Water\WaterApplicant;

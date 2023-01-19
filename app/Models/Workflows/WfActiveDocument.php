@@ -63,4 +63,29 @@ class WfActiveDocument extends Model
         $document = WfActiveDocument::find($id);
         $document->update($req);
     }
+
+
+    /**
+     * | Get Document By Application no and Doc Master Id
+     */
+    public function getDocsByAppNoMasterId($applicationNo,$docMasterId)
+    {
+        return DB::table('wf_active_documents as d')
+            ->select(
+                'd.id',
+                'd.image',
+                DB::raw("concat(relative_path,'/',image) as doc_path"),
+                'd.remarks',
+                'd.verify_status',
+                'd.doc_mstr_id',
+                'dm.doc_type',
+                'o.owner_name'
+            )
+            ->join('ref_prop_docs_required as dm', 'dm.id', '=', 'd.doc_mstr_id')
+            ->leftJoin('prop_active_safs_owners as o', 'o.id', '=', 'd.owner_dtl_id')
+            ->where('d.active_id', $applicationNo)
+            ->where('doc_mstr_id',$docMasterId)
+            ->get();
+    }
+    
 }
