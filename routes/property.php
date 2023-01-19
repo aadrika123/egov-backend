@@ -14,6 +14,7 @@ use App\Http\Controllers\Property\PropertyBifurcationController;
 use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\property\ClusterController;
+use App\Http\Controllers\Property\ConcessionDocController;
 use App\Http\Controllers\Property\SafDocController;
 
 /**
@@ -162,8 +163,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('concession/doc-list', 'concessionDocList');                            //14
     Route::post('concession/doc-upload', 'concessionDocUpload');                        //15
     Route::post('concession/doc-status', 'concessionDocStatus');                        //16
+    Route::post('concession/comment-independent', 'commentIndependent');                //18               ( Citizen Independent comment and Level Pendings )
+  });
 
-    Route::post('concession/comment-independent', 'commentIndependent');                //18 ( Citizen Independent comment and Level Pendings )
+  /**
+   * | Property Concession doc Controller
+   * | Serial No : 16
+   */
+  Route::controller(ConcessionDocController::class)->group(function () {
+    Route::post('concession/document-list', 'docList');                                //01
   });
 
 
@@ -280,7 +288,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(PropertyDetailsController::class)->group(function () {
     Route::post('get-filter-application-details', 'applicationsListByKey');        // 01
     Route::post('get-filter-property-details', 'propertyListByKey');            // 02
-    Route::get('get-list-saf', 'getListOfSaf');                         // 03
+    Route::get('get-list-saf', 'getListOfSaf');                                 // 03
     Route::post('active-application/get-user-details', 'getUserDetails'); // 04
   });
 });

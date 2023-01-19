@@ -38,6 +38,14 @@ class PropActiveConcession extends Model
     }
 
     /**
+     * | Get Concession by Id
+     */
+    public function getConcessionById($id)
+    {
+        return PropActiveConcession::find($id);
+    }
+
+    /**
      * | Get Concession Application Dtls by application No
      */
     public function getDtlsByConcessionNo($concessionNo)

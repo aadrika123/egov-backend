@@ -1193,7 +1193,7 @@ class Trade implements ITrade
             $refLicence->items = $mItemName;
             $refLicence->items_code = $mCods;
             $refOwneres = ActiveTradeOwner::owneresByLId($licenceId);
-            $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function ($val) {
+            return $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function ($val) {
                 if (isset($val["document_path"])) {
                     $path = $this->readDocumentPath($val["document_path"]);
                     $val["document_path"] = !empty(trim($val["document_path"])) ? $path : null;
@@ -1201,7 +1201,7 @@ class Trade implements ITrade
                 return $val;
             });
 
-            return  $mDocumentsList = $this->getDocumentTypeList($refLicence);
+            $mDocumentsList = $this->getDocumentTypeList($refLicence);
             foreach ($mDocumentsList as $val) {
                 $doc = (array) null;
                 $doc['docName'] = $val->doc_for;

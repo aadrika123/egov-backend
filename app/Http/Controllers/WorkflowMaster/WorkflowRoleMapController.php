@@ -195,6 +195,13 @@ class WorkflowRoleMapController extends Controller
                     $a['inbox'] = collect($ab)['original']['data']['applications'];
                     break;
 
+                case (245):
+                    // $inbox = new Trade();
+                    // $ab = $inbox->inbox($req);
+                    // collect($ab)['original']['data'];
+                    // $a['inbox'] = collect($ab)['original']['data'];
+                    break;
+
                     //SAF
                 case (3 || 4 || 5):
                     $inbox = $this->saf_repository;
@@ -232,10 +239,10 @@ class WorkflowRoleMapController extends Controller
         //         //concession
         //     case (106):
         //         $permission = WfWorkflowrolemap::select('wf_workflowrolemaps.*')
-        //             // ->join('prop_active_concessions', 'prop_active_concessions.current_role', 'wf_workflowrolemaps.wf_role_id')
+        //             ->join('prop_active_concessions', 'prop_active_concessions.current_role', 'wf_workflowrolemaps.wf_role_id')
         //             ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
         //             ->where('wf_workflowrolemaps.wf_role_id', $roleId)
-        //             // ->where('prop_active_concessions.id', $req->applicationId)
+        //             ->where('prop_active_concessions.id', $req->applicationId)
         //             ->get();
         //         break;
         // }
