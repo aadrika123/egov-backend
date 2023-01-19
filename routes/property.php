@@ -205,6 +205,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('objection/doc-upload', 'objectionDocUpload');            //16
     Route::post('objection/doc-status', 'objectionDocStatus');            //17
     Route::post('objection/comment-independent', 'commentIndependent');   //18
+    Route::post('objection/upload-document', 'uploadDocument');
+    Route::post('objection/get-upload-documents', 'getUploadDocuments');
   });
 
 

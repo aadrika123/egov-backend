@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Property;
 
 use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Http\Controllers\Controller;
+use App\MicroServices\DocUpload;
 use App\Models\CustomDetail;
 use App\Models\PropActiveObjectionDocdtl;
+use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropFloor;
 use Illuminate\Http\Request;
@@ -13,6 +15,7 @@ use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Traits\Property\Objection;
 use App\Models\Property\RefPropObjectionType;
 use App\Models\Property\PropOwner;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
@@ -534,6 +537,73 @@ class ObjectionController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     *  get uploaded documents
+     */
+    public function getUploadDocuments(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $mPropActiveConcession = new PropActiveConcession();
+
+            $concessionDetails = $mPropActiveConcession->getConcessionNo($req->applicationId);
+            if (!$concessionDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $appNo = $concessionDetails->application_no;
+            $documents = $mWfActiveDocument->getDocsByAppNo($appNo);
+            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+
+    /**
+     * 
+     */
+    public function uploadDocument(Request $req)
+    {
+        $req->validate([
+            "applicationId" => "required|numeric",
+            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "docMstrId" => "required|numeric",
+            "docRefName" => "required"
+        ]);
+
+        try {
+            $metaReqs = array();
+            $docUpload = new DocUpload;
+            $mWfActiveDocument = new WfActiveDocument();
+            $mPropActiveObjection = new PropActiveObjection();
+            $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
+            $getConcessionDtls = $mPropActiveObjection->getObjectionNo($req->applicationId);
+            $refImageName = $req->docRefName;
+            $refImageName = $getConcessionDtls->id . '-' . str_replace(' ', '_', $refImageName);
+            $document = $req->document;
+
+            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['activeId'] = $getConcessionDtls->application_no;
+            $metaReqs['workflowId'] = $getConcessionDtls->workflow_id;
+            $metaReqs['ulbId'] = $getConcessionDtls->ulb_id;
+            $metaReqs['relativePath'] = $relativePath;
+            $metaReqs['image'] = $imageName;
+            $metaReqs['docMstrId'] = $req->docMstrId;
+
+
+            $metaReqs = new Request($metaReqs);
+            $mWfActiveDocument->postDocuments($metaReqs);
+            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }
