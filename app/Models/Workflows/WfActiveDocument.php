@@ -63,4 +63,24 @@ class WfActiveDocument extends Model
         $document = WfActiveDocument::find($id);
         $document->update($req);
     }
+
+    /**
+     * | Get Uploaded Document by document mstr id and application No
+     */
+    public function getAppByAppNoDocId($applicationNo, $docId)
+    {
+        return DB::table('wf_active_documents as d')
+            ->select(
+                'd.id',
+                'dr.doc_type',
+                'd.verify_status',
+                DB::raw("concat(relative_path,'/',image) as doc_path"),
+                'remarks',
+                'doc_mstr_id'
+            )
+            ->join('ref_prop_docs_required as dr', 'dr.id', '=', 'd.doc_mstr_id')
+            ->where("d.active_id", $applicationNo)
+            ->whereIn("d.doc_mstr_id", $docId)
+            ->first();
+    }
 }
