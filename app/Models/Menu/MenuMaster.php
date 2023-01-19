@@ -54,4 +54,16 @@ class MenuMaster extends Model
         MenuMaster::where('id', $menuId)
             ->update(['is_deleted' => true]);
     }
+
+    /**
+     * | Get menu by Role Id
+     */
+    public function getMenuByRole($roleId)
+    {
+        return MenuMaster::join('wf_rolemenus', 'wf_rolemenus.menu_id', '=', 'menu_masters.id')
+            ->where('menu_masters.is_deleted', false)
+            ->where('wf_rolemenus.role_id', $roleId)
+            ->orderByDesc('menu_masters.id')
+            ->get();
+    }
 }

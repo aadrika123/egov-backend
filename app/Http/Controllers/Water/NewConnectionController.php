@@ -771,7 +771,7 @@ class NewConnectionController extends Controller
                 throw new Exception("Application Not Found for this application Id");
 
             $applicationNo = $waterDetails->application_no;
-            $documents = $mWfActiveDocument->getDocsByAppNo($applicationNo);
+            $documents = $mWfActiveDocument->getWaterDocsByAppNo($applicationNo);
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
@@ -779,53 +779,41 @@ class NewConnectionController extends Controller
     }
 
     /**
-        | This is Manditory
+        | This is Manditory / use in the place of the document list
      */
     public function getDocToUpload(Request $request)
     {
+        $request->validate([
+            'applicationId' => 'required|numeric'
+        ]);
         try {
-            $refUser            = Auth()->user();
-            $refUserId          = $refUser->id ?? $request->userId;
-            $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
             $refApplication     = (array)null;
             $refOwneres         = (array)null;
-            $mUploadDocument    = (array)null;
-            $mDocumentsList     = (array)null;
             $requiedDocs        = (array)null;
             $ownersDoc          = (array)null;
             $testOwnersDoc      = (array)null;
             $data               = (array)null;
             $sms                = "";
-            $refWaterWorkflowId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
-            $refWaterModuleId   = Config::get('module-constants.WATER_MODULE_ID');
             $refWaterNewConnection = new WaterNewConnection();
-            $rules = [
-                'applicationId'     => 'required|digits_between:1,9223372036854775807',
-            ];
-            $validator = Validator::make($request->all(), $rules,);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
-            }
+            $refWfActiveDocument = new WfActiveDocument();
+
             $connectionId = $request->applicationId;
             $refApplication = WaterApplication::where("status", 1)->find($connectionId);
             if (!$refApplication) {
-                throw new Exception("Application Not Found.....");
+                throw new Exception("Application Not Found!");
             }
 
-
             $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication);  # get All Related Document Type List
-            // return $this->refGetUploadDocument($requiedDocType['0']->doc_for);
-            // $refOwneres = $this->getOwnereDtlByLId($refApplication->id);    # get Owneres List
+            $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
             foreach ($requiedDocType as $val) {
                 $doc = (array) null;
                 $doc['docName'] = $val->doc_for;
                 $doc['isMadatory'] = $val->is_mandatory;
                 $doc['docVal'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
-                $doc['uploadDoc'] = $this->refGetUploadDocument($val->application_no, $doc['docVal']); # Check Document is Uploaded Of That Type
-                if (isset($doc['uploadDoc']["document_path"])) {
-                    $path = $refWaterNewConnection->readDocumentPath($doc['uploadDoc']["document_path"]); # Create The Relative Path For Document Read
-                    $doc['uploadDoc']["document_path"] = !empty(trim($doc['uploadDoc']["document_path"])) ? $path : null;
-                }
+                $docForId = collect($doc['docVal'])->map(function ($value) {
+                    return $value['id'];
+                });
+                $doc['uploadDoc'] = $refWfActiveDocument->getAppByAppNoDocId($refApplication->application_no, $docForId); # Check Document is Uploaded Of That Type
                 array_push($requiedDocs, $doc);
             }
             foreach ($refOwneres as $key => $val) {
@@ -835,76 +823,19 @@ class NewConnectionController extends Controller
                 $doc["ownerName"] = $val->applicant_name;
                 $doc["docName"]   = "ID Proof";
                 $doc['isMadatory'] = 1;
-                $doc['docVal'] = $this->getDocumentList("ID Proof");
-                $refOwneres[$key]["ID Proof"] = $this->check_doc_exist_owner($refApplication->id, $val->id); # check Owners ID Proof Documents             
-                $doc['uploadDoc'] = $refOwneres[$key]["ID Proof"];
-                if (isset($refOwneres[$key]["ID Proof"]["document_path"])) {
-                    $path = $this->readDocumentPath($refOwneres[$key]["ID Proof"]["document_path"]);
-                    $refOwneres[$key]["ID Proof"]["document_path"] = !empty(trim($refOwneres[$key]["ID Proof"]["document_path"])) ? $path : null;
-                    $doc['uploadDoc']["document_path"] = $path;
-                }
-                // array_push($ownersDoc, $doc);
-                // array_push($testOwnersDoc[$key], $doc);
-                # use of doc2
-                $doc2 = (array) null;
-                $doc2["ownerId"] = $val->id;
-                $doc2["ownerName"] = $val->owner_name;
-                $doc2["docName"]   = "image";
-                $doc2['isMadatory'] = 0;
-                $doc2['docVal'][] = ["id" => 0, "doc_name" => "Photo"];
-                $refOwneres[$key]["image"] = $this->check_doc_exist_owner($refApplication->id, $val->id, 0);
-                $doc2['uploadDoc'] = $refOwneres[$key]["image"];
-                if (isset($refOwneres[$key]["image"]["document_path"])) {
-                    $path = $this->readDocumentPath($refOwneres[$key]["image"]["document_path"]);
-                    $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"])) ? storage_path('app/public/' . $refOwneres[$key]["image"]["document_path"]) : null;
-                    $refOwneres[$key]["image"]["document_path"] = !empty(trim($refOwneres[$key]["image"]["document_path"])) ? $path : null;
-                    $doc2['uploadDoc']["document_path"] = $path;
-                }
+                $doc['docVal'] = $refWaterNewConnection->getDocumentList("ID Proof");
+                $refdocForId = collect($doc['docVal'])->map(function ($value, $key) {
+                    return $value['id'];
+                });
+                $doc['uploadDoc'] = $refWfActiveDocument->getAppByAppNoDocId($refApplication->application_no, $refdocForId);
                 array_push($ownersDoc, $doc);
                 array_push($testOwnersDoc[$key], $doc);
             }
             $data["documentsList"]  = $requiedDocs;
-            // $data["ownersDocList"]  = collect($testOwnersDoc)->first();
+            $data["ownersDocList"]  = collect($testOwnersDoc)->first();
             return responseMsg(true, $sms, $data);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
-
-
-    // get Spacafic Document
-    public function refGetUploadDocument($applicationId, $docVals)
-    {
-        try {
-            $mWfActiveDocument = new WfActiveDocument();
-            $mWaterApplication = new WaterApplication();
-
-            $return = collect($docVals)->map(function ($value, $key) use($mWfActiveDocument,$applicationId){
-                $mWfActiveDocument->getDocsByAppNoMasterId($applicationId,$value['id']);
-            });
-
-            return $return;
-
-
-
-
-
-
-
-
-
-
-
-
-            $waterDetails = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
-            if (!$waterDetails)
-                throw new Exception("Application Not Found for this application Id");
-
-            $applicationNo = $waterDetails->application_no;
-            $documents = $mWfActiveDocument->getDocsByAppNo($applicationNo);
-            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }

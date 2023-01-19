@@ -54,6 +54,26 @@ class WfActiveDocument extends Model
             ->get();
     }
 
+    # water document View
+    public function getWaterDocsByAppNo($applicationNo)
+    {
+        return DB::table('wf_active_documents as d')
+            ->select(
+                'd.id',
+                'd.image',
+                DB::raw("concat(relative_path,'/',image) as doc_path"),
+                'd.remarks',
+                'd.verify_status',
+                'd.doc_mstr_id',
+                'dm.document_name',
+                'o.applicant_name as owner_name'
+            )
+            ->join('water_param_document_types as dm', 'dm.id', '=', 'd.doc_mstr_id')
+            ->leftJoin('water_applicants as o', 'o.id', '=', 'd.owner_dtl_id')
+            ->where('d.active_id', $applicationNo)
+            ->get();
+    }
+
 
     /**
      * | Document Verify Reject
