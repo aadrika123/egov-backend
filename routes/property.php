@@ -165,6 +165,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('concession/doc-upload', 'concessionDocUpload');                        //15
     Route::post('concession/doc-status', 'concessionDocStatus');                        //16
     Route::post('concession/comment-independent', 'commentIndependent');                //18               ( Citizen Independent comment and Level Pendings )
+    Route::post('concession/get-doc-type', 'getDocType');
+    Route::post('concession/upload-document', 'uploadDocument');
+    Route::post('concession/get-upload-documents', 'getUploadDocuments');
   });
 
   /**
@@ -201,7 +204,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('objection/doc-list', 'objectionDocList');                //15
     Route::post('objection/doc-upload', 'objectionDocUpload');            //16
     Route::post('objection/doc-status', 'objectionDocStatus');            //17
-    Route::post('objection/comment-independent', 'commentIndependent');  //18
+    Route::post('objection/comment-independent', 'commentIndependent');   //18
   });
 
 
