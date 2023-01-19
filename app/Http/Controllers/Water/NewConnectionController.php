@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\reqSiteVerification;
+use App\MicroServices\DocUpload;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterApplicant;
@@ -14,11 +15,14 @@ use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterOwnerTypeMstr;
+use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterPropertyTypeMstr;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterTran;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
+use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use Illuminate\Http\Request;
@@ -608,10 +612,13 @@ class NewConnectionController extends Controller
             $userId = auth()->user()->id;
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+
             $applicantDetals = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
 
             if (!$applicantDetals) {
-                throw new Exception("Data or Owner not found!");
+                throw new Exception("Relted Data or Owner not found!");
             }
             if ($applicantDetals->payment_status == true) {
                 throw new Exception("Your paymnet is done application Cannot be Deleted!");
@@ -620,6 +627,8 @@ class NewConnectionController extends Controller
                 DB::beginTransaction();
                 $mWaterApplication->deleteWaterApplication($req->applicationId);
                 $mWaterApplicant->deleteWaterApplicant($req->applicationId);
+                $mWaterConnectionCharge->deleteWaterConnectionCharges($req->applicationId);
+                $mWaterPenaltyInstallment->deleteWaterPenelty($req->applicationId);
                 DB::commit();
                 return responseMsgs(true, "Application Successfully Deleted", "", "", "1.0", "", "POST", $req->deviceId);
             }
@@ -632,7 +641,7 @@ class NewConnectionController extends Controller
 
     // Edit the Water Application
     /**
-        | Not / validate the payment status 
+        | Not / validate the payment status / Check the use
      */
     public function editWaterDetails(Request $req)
     {
@@ -653,15 +662,14 @@ class NewConnectionController extends Controller
             $refWaterApplications = $mWaterApplication->getWaterApplicationsDetails($req->applicatonId);
             $mOwners = $req->owner;
 
-            if ($refWaterApplications->payment) {
+            if ($refWaterApplications->payment_status == true) {
+                throw new Exception("Payment has been made!");
             }
             DB::beginTransaction();
-            $mWaterApplication->editWaterApplication($req, $refWaterApplications);                                                      // Updation SAF Basic Details
-
-            collect($mOwners)->map(function ($owner) use ($mWaterApplicant, $refWaterApplications) {            // Updation of Owner Basic Details
-                $mWaterApplicant->editWaterOwners($owner, $refWaterApplications);
-            });
-
+            // $mWaterApplication->editWaterApplication($req, $refWaterApplications);                              // Updation water Basic Details
+            // collect($mOwners)->map(function ($owner) use ($mWaterApplicant, $refWaterApplications) {            // Updation of Owner Basic Details
+            //     $mWaterApplicant->editWaterOwners($owner, $refWaterApplications);
+            // });
             DB::commit();
             return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -680,6 +688,8 @@ class NewConnectionController extends Controller
             $mWaterApplication = new WaterApplication();
             $mWaterNewConnection = new WaterNewConnection();
             $mWaterTran = new WaterTran();
+
+            # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
 
             # Document Details
@@ -695,11 +705,137 @@ class NewConnectionController extends Controller
             $refAppDetails = collect($applicationDetails)->first();
             $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
-            
-            $returnData = array_merge($applicationDetails, $documentDetails,$waterTransDetail);
+
+            $returnData = array_merge($applicationDetails, $documentDetails, $waterTransDetail);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Application details
+    public function uploadWaterDoc(Request $req)
+    {
+        $req->validate([
+            "applicationId" => "required|numeric",
+            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "docMstrId" => "required|numeric",
+            "ownerId" => "nullable|numeric",
+            "docRefName" => "required"
+        ]);
+
+        try {
+            $metaReqs = array();
+            $docUpload = new DocUpload;
+            $mWfActiveDocument = new WfActiveDocument();
+            $mWaterApplication = new WaterApplication();
+            $relativePath = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+
+            $getWaterDetails = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
+            $refImageName = $req->docRefName;
+            $refImageName = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
+            $document = $req->document;
+            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+
+            $metaReqs = [
+                'moduleId' => Config::get('module-constants.WATER_MODULE_ID'),
+                'activeId' => $getWaterDetails->application_no,
+                'workflowId' => $getWaterDetails->workflow_id,
+                'ulbId' => $getWaterDetails->ulb_id,
+                'relativePath' => $relativePath,
+                'image' => $imageName,
+                'docMstrId' => $req->docMstrId,
+                'ownerDtlId' => $req->ownerId,
+            ];
+
+            $metaReqs = new Request($metaReqs);
+            $mWfActiveDocument->postDocuments($metaReqs);
+            return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    // Get the upoaded docunment
+    public function getUploadDocuments(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $mWaterApplication = new WaterApplication();
+
+            $waterDetails = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
+            if (!$waterDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $applicationNo = $waterDetails->application_no;
+            $documents = $mWfActiveDocument->getWaterDocsByAppNo($applicationNo);
+            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+        | This is Manditory / use in the place of the document list
+     */
+    public function getDocToUpload(Request $request)
+    {
+        $request->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try {
+            $refApplication     = (array)null;
+            $refOwneres         = (array)null;
+            $requiedDocs        = (array)null;
+            $ownersDoc          = (array)null;
+            $testOwnersDoc      = (array)null;
+            $data               = (array)null;
+            $sms                = "";
+            $refWaterNewConnection = new WaterNewConnection();
+            $refWfActiveDocument = new WfActiveDocument();
+
+            $connectionId = $request->applicationId;
+            $refApplication = WaterApplication::where("status", 1)->find($connectionId);
+            if (!$refApplication) {
+                throw new Exception("Application Not Found!");
+            }
+
+            $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication);  # get All Related Document Type List
+            $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
+            foreach ($requiedDocType as $val) {
+                $doc = (array) null;
+                $doc['docName'] = $val->doc_for;
+                $doc['isMadatory'] = $val->is_mandatory;
+                $doc['docVal'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
+                $docForId = collect($doc['docVal'])->map(function ($value) {
+                    return $value['id'];
+                });
+                $doc['uploadDoc'] = $refWfActiveDocument->getAppByAppNoDocId($refApplication->application_no, $docForId); # Check Document is Uploaded Of That Type
+                array_push($requiedDocs, $doc);
+            }
+            foreach ($refOwneres as $key => $val) {
+                $doc = (array) null;
+                $testOwnersDoc[$key] = (array) null;
+                $doc["ownerId"] = $val->id;
+                $doc["ownerName"] = $val->applicant_name;
+                $doc["docName"]   = "ID Proof";
+                $doc['isMadatory'] = 1;
+                $doc['docVal'] = $refWaterNewConnection->getDocumentList("ID Proof");
+                $refdocForId = collect($doc['docVal'])->map(function ($value, $key) {
+                    return $value['id'];
+                });
+                $doc['uploadDoc'] = $refWfActiveDocument->getAppByAppNoDocId($refApplication->application_no, $refdocForId);
+                array_push($ownersDoc, $doc);
+                array_push($testOwnersDoc[$key], $doc);
+            }
+            $data["documentsList"]  = $requiedDocs;
+            $data["ownersDocList"]  = collect($testOwnersDoc)->first();
+            return responseMsg(true, $sms, $data);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
 }

@@ -15,13 +15,26 @@ class WaterPenaltyInstallment extends Model
      * | @var
         |
      */
-    public function saveWaterPenelty($applicationId,$installments)
+    public function saveWaterPenelty($applicationId, $installments)
     {
-        $quaters= new WaterPenaltyInstallment();
+        $quaters = new WaterPenaltyInstallment();
         $quaters->apply_connection_id = $applicationId;
         $quaters->installment_amount = $installments['installment_amount'];
         $quaters->penalty_head = $installments['penalty_head'];
         $quaters->balance_amount = $installments['balance_amount'];
         $quaters->save();
+    }
+
+    /**
+     * |------------- Delete the Penelty Installment -------------------|
+     */
+    public function deleteWaterPenelty($applicationId)
+    {
+        $waterPenelty = WaterPenaltyInstallment::where('apply_connection_id', $applicationId)
+            ->get();
+        if ($waterPenelty) {
+            WaterPenaltyInstallment::where('apply_connection_id', $applicationId)
+                ->delete();
+        }
     }
 }

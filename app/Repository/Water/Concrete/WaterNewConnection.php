@@ -3,6 +3,7 @@
 namespace App\Repository\Water\Concrete;
 
 use App\EloquentModels\Common\ModelWard;
+use App\Http\Controllers\Water\NewConnectionController;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\UlbMaster;
 use App\Models\Water\WaterApplicant;
@@ -507,173 +508,173 @@ class WaterNewConnection implements IWaterNewConnection
             }
 
             #---------- upload the documents--------------
-            if (isset($request->docFor)) {
-                #connection Doc
-                if (in_array($request->docFor, objToArray($requiedDocType->pluck("doc_for")))) {
-                    $rules = [
-                        'docPath'        => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
-                        'docMstrId'      => 'required|digits_between:1,9223372036854775807',
-                        'docFor'         => "required|string",
-                    ];
-                    $validator = Validator::make($request->all(), $rules,);
-                    if ($validator->fails()) {
-                        return responseMsg(false, $validator->errors(), $request->all());
-                    }
-                    $file = $request->file('docPath');
-                    $doc_for = "docFor";
-                    $doc_mstr_id = "docMstrId";
-                    $ids = objToArray(collect($this->getDocumentList($request->$doc_for))->pluck("id"));
-                    if ($file->IsValid() && in_array($request->$doc_mstr_id, $ids)) {
-                        if ($app_doc_dtl_id = $this->check_doc_exist($connectionId, $request->$doc_for)) {
-                            if ($app_doc_dtl_id->verify_status == 0) {
-                                $delete_path = storage_path('app/public/' . $app_doc_dtl_id['document_path']);
-                                if (file_exists($delete_path)) {
-                                    unlink($delete_path);
-                                }
-                                $newFileName = $app_doc_dtl_id['id'];
+            // if (isset($request->docFor)) {
+            //     #connection Doc
+            //     if (in_array($request->docFor, objToArray($requiedDocType->pluck("doc_for")))) {
+            //         $rules = [
+            //             'docPath'        => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
+            //             'docMstrId'      => 'required|digits_between:1,9223372036854775807',
+            //             'docFor'         => "required|string",
+            //         ];
+            //         $validator = Validator::make($request->all(), $rules,);
+            //         if ($validator->fails()) {
+            //             return responseMsg(false, $validator->errors(), $request->all());
+            //         }
+            //         $file = $request->file('docPath');
+            //         $doc_for = "docFor";
+            //         $doc_mstr_id = "docMstrId";
+            //         $ids = objToArray(collect($this->getDocumentList($request->$doc_for))->pluck("id"));
+            //         if ($file->IsValid() && in_array($request->$doc_mstr_id, $ids)) {
+            //             if ($app_doc_dtl_id = $this->check_doc_exist($connectionId, $request->$doc_for)) {
+            //                 if ($app_doc_dtl_id->verify_status == 0) {
+            //                     $delete_path = storage_path('app/public/' . $app_doc_dtl_id['document_path']);
+            //                     if (file_exists($delete_path)) {
+            //                         unlink($delete_path);
+            //                     }
+            //                     $newFileName = $app_doc_dtl_id['id'];
 
-                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                                $fileName = "water_conn_doc/$newFileName.$file_ext";
-                                $filePath = $this->uplodeFile($file, $fileName);
-                                $app_doc_dtl_id->doc_name       =  $filePath;
-                                $app_doc_dtl_id->document_id    =  $request->$doc_mstr_id;
-                                $app_doc_dtl_id->update();
-                            } else {
-                                $app_doc_dtl_id->status = 0;
-                                $app_doc_dtl_id->update();
+            //                     $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+            //                     $fileName = "water_conn_doc/$newFileName.$file_ext";
+            //                     $filePath = $this->uplodeFile($file, $fileName);
+            //                     $app_doc_dtl_id->doc_name       =  $filePath;
+            //                     $app_doc_dtl_id->document_id    =  $request->$doc_mstr_id;
+            //                     $app_doc_dtl_id->update();
+            //                 } else {
+            //                     $app_doc_dtl_id->status = 0;
+            //                     $app_doc_dtl_id->update();
 
-                                $waterDoc = new WaterApplicantDoc;
-                                $waterDoc->application_id = $connectionId;
-                                $waterDoc->doc_for    = $request->$doc_for;
-                                $waterDoc->document_id = $request->$doc_mstr_id;
-                                $waterDoc->emp_details_id = $refUserId;
+            //                     $waterDoc = new WaterApplicantDoc;
+            //                     $waterDoc->application_id = $connectionId;
+            //                     $waterDoc->doc_for    = $request->$doc_for;
+            //                     $waterDoc->document_id = $request->$doc_mstr_id;
+            //                     $waterDoc->emp_details_id = $refUserId;
 
-                                // $waterDoc = new WfActiveDocument();
-                                // $waterDoc->active_id = $refApplication->application_no;
-                                // $waterDoc->workflow_id = $refWaterWorkflowId;
-                                // $waterDoc->ulb_id = $refUlbId;
-                                // $waterDoc->module_id = $refWaterModuleId;
-                                // $waterDoc->relative_path =
-                                // $waterDoc->image =
-                                // $waterDoc->uploaded_by =$refUserId
+            //                     // $waterDoc = new WfActiveDocument();
+            //                     // $waterDoc->active_id = $refApplication->application_no;
+            //                     // $waterDoc->workflow_id = $refWaterWorkflowId;
+            //                     // $waterDoc->ulb_id = $refUlbId;
+            //                     // $waterDoc->module_id = $refWaterModuleId;
+            //                     // $waterDoc->relative_path =
+            //                     // $waterDoc->image =
+            //                     // $waterDoc->uploaded_by =$refUserId
 
-                                $waterDoc->save();
-                                $newFileName = $waterDoc->id;
+            //                     $waterDoc->save();
+            //                     $newFileName = $waterDoc->id;
 
-                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                                $fileName = "water_conn_doc/$newFileName.$file_ext";
-                                $filePath = $this->uplodeFile($file, $fileName);
-                                $waterDoc->doc_name =  $filePath;
-                                $waterDoc->update();
-                            }
-                            $sms = $app_doc_dtl_id->doc_for . " Update Successfully";
-                        } else {
-                            $waterDoc = new WaterApplicantDoc;
-                            $waterDoc->application_id = $connectionId;
-                            $waterDoc->doc_for    = $request->$doc_for;
-                            $waterDoc->document_id = $request->$doc_mstr_id;
-                            $waterDoc->emp_details_id = $refUserId;
+            //                     $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+            //                     $fileName = "water_conn_doc/$newFileName.$file_ext";
+            //                     $filePath = $this->uplodeFile($file, $fileName);
+            //                     $waterDoc->doc_name =  $filePath;
+            //                     $waterDoc->update();
+            //                 }
+            //                 $sms = $app_doc_dtl_id->doc_for . " Update Successfully";
+            //             } else {
+            //                 $waterDoc = new WaterApplicantDoc;
+            //                 $waterDoc->application_id = $connectionId;
+            //                 $waterDoc->doc_for    = $request->$doc_for;
+            //                 $waterDoc->document_id = $request->$doc_mstr_id;
+            //                 $waterDoc->emp_details_id = $refUserId;
 
-                            $waterDoc->save();
-                            $newFileName = $waterDoc->id;
+            //                 $waterDoc->save();
+            //                 $newFileName = $waterDoc->id;
 
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                            $fileName = "water_conn_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file, $fileName);
-                            $waterDoc->doc_name =  $filePath;
-                            $waterDoc->update();
-                            $sms = $waterDoc->doc_for . " Upload Successfully";
-                        }
-                    } else {
-                        return responseMsg(false, "something errors in Document Uploades", $request->all());
-                    }
-                }
-                #owners Doc
-                elseif (in_array($request->docFor, objToArray(collect($ownersDoc)->pluck("docName")))) {
-                    $rules = [
-                        'docPath'        => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
-                        'docMstrId'      => 'required|digits_between:1,9223372036854775807',
-                        'docFor'         => "required|string",
-                        'ownerId'        => "required|digits_between:1,9223372036854775807",
-                    ];
-                    $validator = Validator::make($request->all(), $rules,);
-                    if ($validator->fails()) {
-                        return responseMsg(false, $validator->errors(), $request->all());
-                    }
-                    $file = $request->file('docPath');
-                    $doc_for = "docFor";
-                    $doc_mstr_id = "docMstrId";
-                    if ($request->$doc_for == "image") {
-                        $ids = [0];
-                    } else {
+            //                 $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+            //                 $fileName = "water_conn_doc/$newFileName.$file_ext";
+            //                 $filePath = $this->uplodeFile($file, $fileName);
+            //                 $waterDoc->doc_name =  $filePath;
+            //                 $waterDoc->update();
+            //                 $sms = $waterDoc->doc_for . " Upload Successfully";
+            //             }
+            //         } else {
+            //             return responseMsg(false, "something errors in Document Uploades", $request->all());
+            //         }
+            //     }
+            //     #owners Doc
+            //     elseif (in_array($request->docFor, objToArray(collect($ownersDoc)->pluck("docName")))) {
+            //         $rules = [
+            //             'docPath'        => 'required|max:30720|mimes:pdf,jpg,jpeg,png',
+            //             'docMstrId'      => 'required|digits_between:1,9223372036854775807',
+            //             'docFor'         => "required|string",
+            //             'ownerId'        => "required|digits_between:1,9223372036854775807",
+            //         ];
+            //         $validator = Validator::make($request->all(), $rules,);
+            //         if ($validator->fails()) {
+            //             return responseMsg(false, $validator->errors(), $request->all());
+            //         }
+            //         $file = $request->file('docPath');
+            //         $doc_for = "docFor";
+            //         $doc_mstr_id = "docMstrId";
+            //         if ($request->$doc_for == "image") {
+            //             $ids = [0];
+            //         } else {
 
-                        $ids = objToArray(collect($this->getDocumentList($request->$doc_for))->pluck("id"));
-                    }
-                    if (!in_array($request->ownerId, objToArray(collect($ownersDoc)->pluck("ownerId")))) {
-                        throw new Exception("Invalid Owner Id supply.....");
-                    }
-                    if ($file->IsValid() && in_array($request->$doc_mstr_id, $ids)) {
-                        if ($app_doc_dtl_id = $this->check_doc_exist_owner($connectionId, $request->ownerId, $request->docMstrId)) {
-                            if ($app_doc_dtl_id->verify_status == 0) {
-                                $delete_path = storage_path('app/public/' . $app_doc_dtl_id['document_path']);
-                                if (file_exists($delete_path)) {
-                                    unlink($delete_path);
-                                }
-                                $newFileName = $app_doc_dtl_id['id'];
+            //             $ids = objToArray(collect($this->getDocumentList($request->$doc_for))->pluck("id"));
+            //         }
+            //         if (!in_array($request->ownerId, objToArray(collect($ownersDoc)->pluck("ownerId")))) {
+            //             throw new Exception("Invalid Owner Id supply.....");
+            //         }
+            //         if ($file->IsValid() && in_array($request->$doc_mstr_id, $ids)) {
+            //             if ($app_doc_dtl_id = $this->check_doc_exist_owner($connectionId, $request->ownerId, $request->docMstrId)) {
+            //                 if ($app_doc_dtl_id->verify_status == 0) {
+            //                     $delete_path = storage_path('app/public/' . $app_doc_dtl_id['document_path']);
+            //                     if (file_exists($delete_path)) {
+            //                         unlink($delete_path);
+            //                     }
+            //                     $newFileName = $app_doc_dtl_id['id'];
 
-                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                                $fileName = "water_conn_doc/$newFileName.$file_ext";
-                                $filePath = $this->uplodeFile($file, $fileName);
-                                $app_doc_dtl_id->doc_name       =  $filePath;
-                                $app_doc_dtl_id->document_id    =  $request->$doc_mstr_id;
-                                $app_doc_dtl_id->update();
-                            } else {
-                                $app_doc_dtl_id->status    =  0;
-                                $app_doc_dtl_id->update();
+            //                     $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+            //                     $fileName = "water_conn_doc/$newFileName.$file_ext";
+            //                     $filePath = $this->uplodeFile($file, $fileName);
+            //                     $app_doc_dtl_id->doc_name       =  $filePath;
+            //                     $app_doc_dtl_id->document_id    =  $request->$doc_mstr_id;
+            //                     $app_doc_dtl_id->update();
+            //                 } else {
+            //                     $app_doc_dtl_id->status    =  0;
+            //                     $app_doc_dtl_id->update();
 
-                                $waterDoc                = new WaterApplicantDoc;
-                                $waterDoc->application_id    = $connectionId;
-                                $waterDoc->doc_for       = $request->docFor;
-                                $waterDoc->document_id   = $request->docMstrId;
-                                $waterDoc->applicant_id  = $request->ownerId;
-                                $waterDoc->emp_details_id = $refUserId;
+            //                     $waterDoc                = new WaterApplicantDoc;
+            //                     $waterDoc->application_id    = $connectionId;
+            //                     $waterDoc->doc_for       = $request->docFor;
+            //                     $waterDoc->document_id   = $request->docMstrId;
+            //                     $waterDoc->applicant_id  = $request->ownerId;
+            //                     $waterDoc->emp_details_id = $refUserId;
 
-                                $waterDoc->save();
-                                $newFileName = $waterDoc->id;
+            //                     $waterDoc->save();
+            //                     $newFileName = $waterDoc->id;
 
-                                $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                                $fileName = "water_conn_doc/$newFileName.$file_ext";
-                                $filePath = $this->uplodeFile($file, $fileName);
-                                $waterDoc->doc_name =  $filePath;
-                                $waterDoc->update();
-                            }
-                            $sms = $app_doc_dtl_id->doc_for . " Update Successfully";
-                        } else {
-                            $waterDoc                = new WaterApplicantDoc;
-                            $waterDoc->application_id    = $connectionId;
-                            $waterDoc->doc_for       = $request->docFor;
-                            $waterDoc->document_id   = $request->docMstrId;
-                            $waterDoc->applicant_id  = $request->ownerId;
-                            $waterDoc->emp_details_id = $refUserId;
+            //                     $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+            //                     $fileName = "water_conn_doc/$newFileName.$file_ext";
+            //                     $filePath = $this->uplodeFile($file, $fileName);
+            //                     $waterDoc->doc_name =  $filePath;
+            //                     $waterDoc->update();
+            //                 }
+            //                 $sms = $app_doc_dtl_id->doc_for . " Update Successfully";
+            //             } else {
+            //                 $waterDoc                = new WaterApplicantDoc;
+            //                 $waterDoc->application_id    = $connectionId;
+            //                 $waterDoc->doc_for       = $request->docFor;
+            //                 $waterDoc->document_id   = $request->docMstrId;
+            //                 $waterDoc->applicant_id  = $request->ownerId;
+            //                 $waterDoc->emp_details_id = $refUserId;
 
-                            $waterDoc->save();
-                            $newFileName = $waterDoc->id;
+            //                 $waterDoc->save();
+            //                 $newFileName = $waterDoc->id;
 
-                            $file_ext = $data["exten"] = $file->getClientOriginalExtension();
-                            $fileName = "water_conn_doc/$newFileName.$file_ext";
-                            $filePath = $this->uplodeFile($file, $fileName);
-                            $waterDoc->doc_name =  $filePath;
-                            $waterDoc->update();
-                            $sms = $waterDoc->doc_for . " Upload Successfully";
-                        }
-                    } else {
-                        return responseMsg(false, "something errors in Document Uploades", $request->all());
-                    }
-                } else {
-                    throw new Exception("Invalid Document type Passe");
-                }
-                return responseMsg(true, $sms, "");
-            }
+            //                 $file_ext = $data["exten"] = $file->getClientOriginalExtension();
+            //                 $fileName = "water_conn_doc/$newFileName.$file_ext";
+            //                 $filePath = $this->uplodeFile($file, $fileName);
+            //                 $waterDoc->doc_name =  $filePath;
+            //                 $waterDoc->update();
+            //                 $sms = $waterDoc->doc_for . " Upload Successfully";
+            //             }
+            //         } else {
+            //             return responseMsg(false, "something errors in Document Uploades", $request->all());
+            //         }
+            //     } else {
+            //         throw new Exception("Invalid Document type Passe");
+            //     }
+            //     return responseMsg(true, $sms, "");
+            // }
             $data["documentsList"]  = $requiedDocs;
             $data["ownersDocList"]  = collect($testOwnersDoc)->first();
             return responseMsg(true, $sms, $data);

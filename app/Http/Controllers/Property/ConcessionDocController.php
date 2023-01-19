@@ -28,7 +28,7 @@ class ConcessionDocController extends Controller
         ]);
 
         try {
-            $array['documentList'] = array();
+            $array['documentsList'] = array();
             $mPropActiveConcession = new PropActiveConcession();
             $mPropDocRequired = new RefPropDocsRequired();
             $mWfActiveDocuments = new WfActiveDocument();
@@ -48,7 +48,7 @@ class ConcessionDocController extends Controller
                     'docVal' => $document,
                     'uploadDoc' => $mWfActiveDocuments->getAppByAppNoDocId($concessionDtls->application_no, $docMstrIds)
                 ];
-                array_push($array['documentList'], $document);
+                array_push($array['documentsList'], $document);
             }
 
             if ($concessionDtls->is_specially_abled == true && !is_null($concessionDtls->is_specially_abled)) {
@@ -60,7 +60,7 @@ class ConcessionDocController extends Controller
                     'docVal' => $document,
                     'uploadDoc' =>  $mWfActiveDocuments->getAppByAppNoDocId($concessionDtls->application_no, $docMstrIds)
                 ];
-                array_push($array['documentList'], $document);
+                array_push($array['documentsList'], $document);
             }
 
             if ($concessionDtls->is_armed_force == true && !is_null($concessionDtls->is_armed_force)) {
@@ -72,7 +72,7 @@ class ConcessionDocController extends Controller
                     'docVal' => $document,
                     'uploadDoc' =>  $mWfActiveDocuments->getAppByAppNoDocId($concessionDtls->application_no, $docMstrIds)
                 ];
-                array_push($array['documentList'], $document);
+                array_push($array['documentsList'], $document);
             }
 
             if (!is_null($concessionDtls->dob)) {
@@ -84,7 +84,7 @@ class ConcessionDocController extends Controller
                     'docVal' => $document,
                     'uploadDoc' =>  $mWfActiveDocuments->getAppByAppNoDocId($concessionDtls->application_no, $docMstrIds)
                 ];
-                array_push($array['documentList'], $document);
+                array_push($array['documentsList'], $document);
             }
 
             return responseMsgs(true, "document list", remove_null($array), "011601", "1.0", "", "POST", $req->deviceId ?? "");

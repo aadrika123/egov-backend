@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\MicroServices\DocUpload;
 use App\Models\CustomDetail;
 use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropConcessionDocDtl;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\RefPropDocsRequired;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
@@ -65,6 +68,7 @@ class ConcessionController extends Controller
      */
     public function applyConcession(Request $request)
     {
+
         $request->validate([
             'propId' => "required"
         ]);
@@ -75,8 +79,8 @@ class ConcessionController extends Controller
             $userType = auth()->user()->user_type;
             $concessionNo = "";
 
-            $applicantName = $this->getOwnerName($request->propId);
-            $ownerName = $applicantName->ownerName;
+            // $applicantName = $this->getOwnerName($request->propId);
+            // $ownerName = $applicantName->ownerName;
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
@@ -96,7 +100,8 @@ class ConcessionController extends Controller
             DB::beginTransaction();
             $concession = new PropActiveConcession;
             $concession->property_id = $request->propId;
-            $concession->applicant_name = $ownerName;
+            $concession->applicant_name = $request->applicantName;
+
 
             if ($request->gender == 1) {
                 $concession->gender = 'Male';
@@ -113,7 +118,6 @@ class ConcessionController extends Controller
             $concession->is_specially_abled = $request->speciallyAbled;
             $concession->specially_abled_percentage = $request->speciallyAbledPercentage;
             $concession->remarks = $request->remarks;
-            $concession->status = '1';
             $concession->user_id = $userId;
             $concession->ulb_id = $ulbId;
             $concession->workflow_id = $ulbWorkflowId->id;
@@ -131,44 +135,105 @@ class ConcessionController extends Controller
             PropActiveConcession::where('id', $concession->id)
                 ->update(['application_no' => $concessionNo]);
 
-            //saving document in concession doc table
-            if ($file = $request->file('genderDoc')) {
-                $docName = "genderDoc";
-                $name = $this->moveFile($docName, $file);
+            // return $this->uploadDocument($request, $concession, $concessionNo);
 
-                $concessionDoc = new PropConcessionDocDtl();
-                $concessionDoc->concession_id = $concession->id;
-                $this->citizenDocUpload($concessionDoc, $name, $docName);
+            //saving document 
+            if ($file = $request->file('genderDoc')) {
+
+                $docUpload = new DocUpload;
+                $mWfActiveDocument = new WfActiveDocument();
+                $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
+                $refImageName = $request->genderRefName;
+                $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
+                $document = $request->genderDoc;
+
+                $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $metaReqs['activeId'] = $concessionNo;
+                $metaReqs['workflowId'] = $concession->workflow_id;
+                $metaReqs['ulbId'] = $concession->ulb_id;
+                $metaReqs['relativePath'] = $relativePath;
+                $metaReqs['image'] = $imageName;
+                $metaReqs['docMstrId'] = $request->genderMstrId;
+
+                $metaReqs = new Request($metaReqs);
+                $mWfActiveDocument->postDocuments($metaReqs);
             }
 
             // dob Doc
             if ($file = $request->file('dobDoc')) {
-                $docName = "dobDoc";
-                $name = $this->moveFile($docName, $file);
 
-                $concessionDoc = new PropConcessionDocDtl();
-                $concessionDoc->concession_id = $concession->id;
-                $this->citizenDocUpload($concessionDoc, $name, $docName);
+                $docUpload = new DocUpload;
+                $mWfActiveDocument = new WfActiveDocument();
+                $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
+                $refImageName = $request->dobRefName;
+                $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
+                $document = $request->dobDoc;
+
+                $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $metaReqs['activeId'] = $concessionNo;
+                $metaReqs['workflowId'] = $concession->workflow_id;
+                $metaReqs['ulbId'] = $concession->ulb_id;
+                $metaReqs['relativePath'] = $relativePath;
+                $metaReqs['image'] = $imageName;
+                $metaReqs['docMstrId'] = $request->dobMstrId;
+
+                // return $metaReqs;
+
+                $metaReqs = new Request($metaReqs);
+                $mWfActiveDocument->postDocuments($metaReqs);
+
+                // $name = $this->moveFile($docName, $file);
+                // $concessionDoc = new PropConcessionDocDtl();
+                // $concessionDoc->concession_id = $concession->id;
+                // $this->citizenDocUpload($concessionDoc, $name, $docName);
             }
 
             // specially abled Doc
             if ($file = $request->file('speciallyAbledDoc')) {
-                $docName = "speciallyAbledDoc";
-                $name = $this->moveFile($docName, $file);
 
-                $concessionDoc = new PropConcessionDocDtl();
-                $concessionDoc->concession_id = $concession->id;
-                $this->citizenDocUpload($concessionDoc, $name, $docName);
+                $docUpload = new DocUpload;
+                $mWfActiveDocument = new WfActiveDocument();
+                $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
+                $refImageName = $request->speciallyAbledRefName;
+                $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
+                $document = $request->speciallyAbledDoc;
+
+                $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $metaReqs['activeId'] = $concessionNo;
+                $metaReqs['workflowId'] = $concession->workflow_id;
+                $metaReqs['ulbId'] = $concession->ulb_id;
+                $metaReqs['relativePath'] = $relativePath;
+                $metaReqs['image'] = $imageName;
+                $metaReqs['docMstrId'] = $request->speciallyAbledMstrId;
+
+                $metaReqs = new Request($metaReqs);
+                $mWfActiveDocument->postDocuments($metaReqs);
             }
 
             // Armed force Doc
             if ($file = $request->file('armedForceDoc')) {
-                $docName = "armedForceDoc";
-                $name = $this->moveFile($docName, $file);
 
-                $concessionDoc = new PropConcessionDocDtl();
-                $concessionDoc->concession_id = $concession->id;
-                $this->citizenDocUpload($concessionDoc, $name, $docName);
+                $docUpload = new DocUpload;
+                $mWfActiveDocument = new WfActiveDocument();
+                $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
+                $refImageName = $request->armedForceRefName;
+                $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
+                $document = $request->armedForceDoc;
+
+                $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $metaReqs['activeId'] = $concessionNo;
+                $metaReqs['workflowId'] = $concession->workflow_id;
+                $metaReqs['ulbId'] = $concession->ulb_id;
+                $metaReqs['relativePath'] = $relativePath;
+                $metaReqs['image'] = $imageName;
+                $metaReqs['docMstrId'] = $request->armedForceMstrId;
+
+                $metaReqs = new Request($metaReqs);
+                $mWfActiveDocument->postDocuments($metaReqs);
             }
 
             DB::commit();
@@ -276,7 +341,7 @@ class ConcessionController extends Controller
     public function getDetailsById(Request $req)
     {
         $req->validate([
-            'id' => 'required'
+            'applicationId' => 'required'
         ]);
 
         try {
@@ -288,7 +353,7 @@ class ConcessionController extends Controller
             $mCustomDetails = new CustomDetail();
             $mForwardBackward = new WorkflowMap();
             $mRefTable = Config::get('PropertyConstaint.SAF_CONCESSION_REF_TABLE');
-            $details = $mPropActiveConcession->getDetailsById($req->id);
+            $details = $mPropActiveConcession->getDetailsById($req->applicationId);
             // Data Array
             $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
             $basicElement = [
@@ -865,15 +930,7 @@ class ConcessionController extends Controller
         return $name;
     }
 
-    //owner name
-    public function getOwnerName($propId)
-    {
-        $ownerDetails = PropProperty::select('applicant_name as ownerName')
-            ->where('prop_properties.id', $propId)
-            ->first();
 
-        return $ownerDetails;
-    }
 
     /**
      * | Citizen and Level Pendings Independent Comments
@@ -913,6 +970,119 @@ class ConcessionController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * get owner name
+     */
+    public function getOwnerName($propId)
+    {
+        $ownerDetails = PropProperty::select('applicant_name as ownerName')
+            ->where('prop_properties.id', $propId)
+            ->first();
+
+        return $ownerDetails;
+    }
+
+    /**
+     *  get document ttype
+     */
+    public function getDocType(Request $req)
+    {
+        switch ($req->doc) {
+            case ('gender'):
+                $data =  RefPropDocsRequired::select('id', 'doc_name')
+                    ->where('doc_type', 'gender_document')
+                    ->first();
+                break;
+
+            case ('seniorCitizen'):
+                $data =  RefPropDocsRequired::select('id', 'doc_name')
+                    ->where('doc_type', 'dob_document')
+                    ->first();
+                break;
+
+            case ('speciallyAbled'):
+                $data =  RefPropDocsRequired::select('id', 'doc_name')
+                    ->where('doc_type', 'handicaped_document')
+                    ->first();
+                break;
+
+            case ('armedForce'):
+                $data =  RefPropDocsRequired::select('id', 'doc_name')
+                    ->where('doc_type', 'armed_force_document')
+                    ->first();
+                break;
+        }
+
+        return responseMsg(true, '', $data);
+    }
+
+    /**
+     *  get uploaded documents
+     */
+    public function getUploadDocuments(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $mPropActiveConcession = new PropActiveConcession();
+
+            $concessionDetails = $mPropActiveConcession->getConcessionNo($req->applicationId);
+            if (!$concessionDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $appNo = $concessionDetails->application_no;
+            $documents = $mWfActiveDocument->getDocsByAppNo($appNo);
+            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+
+    /**
+     * 
+     */
+    public function uploadDocument(Request $req)
+    {
+        $req->validate([
+            "applicationId" => "required|numeric",
+            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "docMstrId" => "required|numeric",
+            "docRefName" => "required"
+        ]);
+
+        try {
+            $metaReqs = array();
+            $docUpload = new DocUpload;
+            $mWfActiveDocument = new WfActiveDocument();
+            $mPropActiveConcession = new PropActiveConcession();
+            $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
+            $getConcessionDtls = $mPropActiveConcession->getConcessionNo($req->applicationId);
+            $refImageName = $req->docRefName;
+            $refImageName = $getConcessionDtls->id . '-' . str_replace(' ', '_', $refImageName);
+            $document = $req->document;
+
+            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['activeId'] = $getConcessionDtls->application_no;
+            $metaReqs['workflowId'] = $getConcessionDtls->workflow_id;
+            $metaReqs['ulbId'] = $getConcessionDtls->ulb_id;
+            $metaReqs['relativePath'] = $relativePath;
+            $metaReqs['image'] = $imageName;
+            $metaReqs['docMstrId'] = $req->docMstrId;
+
+
+            $metaReqs = new Request($metaReqs);
+            $mWfActiveDocument->postDocuments($metaReqs);
+            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }

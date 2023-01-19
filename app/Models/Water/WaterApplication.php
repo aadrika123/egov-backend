@@ -165,17 +165,11 @@ class WaterApplication extends Model
             'elec_category'       => $req->elec_category       ?? $refWaterApplications->elec_category,
             'connection_through'  => $req->connection_through  ?? $refWaterApplications->connection_through,
             'workflow_id'         => $req->workflow_id         ?? $refWaterApplications->workflow_id,
-            'connection_fee_id'   => $req->connection_fee_id   ?? $refWaterApplications->connection_fee_id,
-            'current_role'        => $req->current_role        ?? $refWaterApplications->current_role,
-            'initiator'           => $req->initiator           ?? $refWaterApplications->initiator,
-            'finisher'            => $req->finisher            ?? $refWaterApplications->finisher,
-            'application_no'      => $req->application_no      ?? $refWaterApplications->application_no,
             'ulb_id'              => $req->ulb_id              ?? $refWaterApplications->ulb_id,
             'apply_date'          => $req->apply_date          ?? $refWaterApplications->apply_date,
             'user_id'             => $req->user_id             ?? $refWaterApplications->user_id,                    
            
         ];
-
         return $water->update($reqs);
     }
 }

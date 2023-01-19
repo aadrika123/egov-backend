@@ -15,4 +15,5 @@ return [
     "DEPARTMENT_SECTION" => "Revenue Section",
     "TOWARDS" => "Water Connection and Others",
     "WATER_DEPAPRTMENT_ID" => "2",
+    "WATER_RELATIVE_PATH" => "Uploads/water",
 ];

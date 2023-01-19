@@ -123,4 +123,14 @@ class PropActiveObjection extends Model
             ->where('o.objection_no', $objectionNo)
             ->first();
     }
+
+    /**
+     * 
+     */
+    public function getObjectionNo($objId)
+    {
+        return PropActiveObjection::select('*')
+            ->where('id', $objId)
+            ->first();
+    }
 }
