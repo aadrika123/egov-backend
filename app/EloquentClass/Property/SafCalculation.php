@@ -162,7 +162,9 @@ class SafCalculation
         $this->_readRoadType[$this->_effectiveDateRule2] = $this->readRoadType($this->_effectiveDateRule2);         // Road Type ID According to ruleset2 effective Date
         $this->_readRoadType[$this->_effectiveDateRule3] = $this->readRoadType($this->_effectiveDateRule3);         // Road Type id according to ruleset3 effective Date
         $this->_rentalRates = $this->calculateRentalRates();
-        $this->_capitalValueRate = $this->readCapitalvalueRate();                                                   // Calculate Capital Value Rate 
+        $this->_capitalValueRate = $this->readCapitalvalueRate();        // Calculate Capital Value Rate 
+        if (!$this->_capitalValueRate)
+            throw new Exception("CV Rate Not Available for this ward");
         if ($propertyDetails['isMobileTower'] == 1 || $propertyDetails['isHoardingBoard'] == 1 || $propertyDetails['isPetrolPump'] == 1) {
             $this->_capitalValueRateMPH = $this->readCapitalValueRateMHP();                                         // Capital Value Rate for MobileTower, PetrolPump,HoardingBoard
         }
@@ -270,36 +272,32 @@ class SafCalculation
      */
     public function readCapitalValueRate()
     {
-        try {
-            $readFloors = $this->_floors;
-            // Capital Value Rate
-            $readPropertyType = $this->_propertyDetails['propertyType'] == 1 ? 1 : 2;
-            $col1 = Config::get("PropertyConstaint.CIRCALE-RATE-USAGE.$readPropertyType");
+        $readFloors = $this->_floors;
+        // Capital Value Rate
+        $readPropertyType = $this->_propertyDetails['propertyType'] == 1 ? 1 : 2;
+        $col1 = Config::get("PropertyConstaint.CIRCALE-RATE-USAGE.$readPropertyType");
 
-            $readRoadType = $this->_readRoadType[$this->_effectiveDateRule3];
-            $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$this->_effectiveDateRule3.$readRoadType");
+        $readRoadType = $this->_readRoadType[$this->_effectiveDateRule3];
+        $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$this->_effectiveDateRule3.$readRoadType");
 
-            $capitalValue = collect($readFloors)->map(function ($readfloor) use ($col1, $col3) {
+        $capitalValue = collect($readFloors)->map(function ($readfloor) use ($col1, $col3) {
 
-                $readConstructionType = $readfloor['constructionType'];
-                $col2 = Config::get("PropertyConstaint.CIRCALE-RATE-PROP.$this->_effectiveDateRule3.$readConstructionType");
-                $column = $col1 . $col2 . $col3;
+            $readConstructionType = $readfloor['constructionType'];
+            $col2 = Config::get("PropertyConstaint.CIRCALE-RATE-PROP.$this->_effectiveDateRule3.$readConstructionType");
+            $column = $col1 . $col2 . $col3;
 
-                $capitalValueRate = json_decode(Redis::get('propMCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-col-' . $column));
-                if (!$capitalValueRate) {
-                    $capitalValueRate = MPropCvRate::select($column)
-                        ->where('ulb_id', $this->_ulbId)
-                        ->where('ward_no', $this->_wardNo)
-                        ->first();
-                    $this->_redis->set('propMCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-col-' . $column, json_encode($capitalValueRate));
-                }
+            $capitalValueRate = json_decode(Redis::get('propMCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-col-' . $column));
+            if (!$capitalValueRate) {
+                $capitalValueRate = MPropCvRate::select($column)
+                    ->where('ulb_id', $this->_ulbId)
+                    ->where('ward_no', $this->_wardNo)
+                    ->first();
+                $this->_redis->set('propMCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-col-' . $column, json_encode($capitalValueRate));
+            }
 
-                return $capitalValueRate->$column;
-            });
-            return $capitalValue;
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
+            return $capitalValueRate->$column;
+        });
+        return $capitalValue;
     }
 
     /**
@@ -1008,6 +1006,12 @@ class SafCalculation
             if ($lateAssessmentStatus == true) {
                 $fine = $this->_isResidential == true ? 2000 : 5000;
             }
+        }
+
+        // No Late Assessment For Property
+        if ($this->_propertyDetails['isProperty'] ?? "" && $this->_propertyDetails['isProperty'] == true) {
+            $lateAssessmentStatus = false;
+            $fine = 0;
         }
 
         $this->_GRID['demand']['lateAssessmentStatus'] = $lateAssessmentStatus;

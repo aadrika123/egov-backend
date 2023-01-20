@@ -243,6 +243,7 @@ class ActiveSafController extends Controller
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
 
             $safCalculation = new SafCalculation();
+            $request->request->add(['road_type_mstr_id' => $roadWidthType]);
             $safTaxes = $safCalculation->calculateTax($request);
             $mLateAssessPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
 

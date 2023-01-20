@@ -5,6 +5,8 @@ namespace App\Traits;
 use App\Models\Menu\WfRolemenu;
 use App\Models\User;
 use App\Models\Workflows\WfRoleusermap;
+use App\Repository\Menu\Concrete\MenuRepo;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Razorpay\Api\Collection;
@@ -254,19 +256,26 @@ trait Auth
             return $values;
         });
 
-        $roleId = $menuRoleDetails['roleId'] = collect($menuRoleDetails)->map(function ($value, $key) {
-            $values = $value['roleId'];
-            return $values;
-        });
+        // $roleId = $menuRoleDetails['roleId'] = collect($menuRoleDetails)->map(function ($value, $key) {
+        //     $values = $value['roleId'];
+        //     return $values;
+        // });
 
-        # representing the menu details for each role
-        foreach ($roleId as $roleIds) {
-            $mWfRolemenu = new WfRolemenu();
-            $roleBasedMenu[] = $mWfRolemenu->getMenuDetailsByRoleId($roleIds);
-        }
+        // # representing the menu details for each role
+        // foreach ($roleId as $roleIds) {
+        //     $mWfRolemenu = new WfRolemenu();
+        //     $roleBasedMenu[] = $mWfRolemenu->getMenuDetailsByRoleId($roleIds);
+        // }
 
-        $menuDetails = collect($roleBasedMenu)->collapse();
-        $collection['menuPermission'] = $menuDetails->unique()->values();
+        // $menuDetails = collect($roleBasedMenu)->collapse();
+        // $collection['menuPermission'] = $menuDetails->unique()->values();
+        $metaReqs = [
+            'roleId' => collect($menuRoleDetails)->first()->roleId,
+        ];
+        $lodeData = new Request($metaReqs);
+        $mMenuRepo = new MenuRepo();
+        $treeStructure = $mMenuRepo->generateMenuTree($lodeData);
+        $collection['menuPermission'] = collect($treeStructure)['original']['data'];
         return $collection;
     }
 }

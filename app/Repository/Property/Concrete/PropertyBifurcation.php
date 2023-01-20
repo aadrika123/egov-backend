@@ -1838,7 +1838,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 }
             }
             $data["documentsList"]  = $requiedDocs;
-            $data["ownersDocList"]  = $testOwnersDoc;
+            $data["ownersDocList"]  = $testOwnersDoc[0];
             $data["owners"]         = $mOwneres;
 
             return responseMsg(true, "", remove_null($data));

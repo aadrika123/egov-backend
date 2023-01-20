@@ -147,6 +147,7 @@ class MenuRepo implements iMenuRepo
             $return = array();
             $return['id'] = $value['id'];
             $return['parentId'] = $value['parent_serial'];
+            $return['path'] = $value['route'];
             $return['name'] = $value['menu_string'];
             $return['children'] = array();
             return ($return);
@@ -183,3 +184,53 @@ class MenuRepo implements iMenuRepo
         return responseMsgs(true, "OPERATION OK!", $retunProperValues->filter()->values(), "", "01", "308.ms", "POST", $req->deviceId);
     }
 }
+
+/**
+    | Working code for he tree structure
+ */
+// public function generateMenuTree($req)
+// {
+//     $mMenuMaster = new MenuMaster();
+//     $mMenues = $mMenuMaster->fetchAllMenues();
+//     $mRoleMenues = $mMenuMaster->getMenuByRole($req->roleId);
+
+//     $data = collect($mMenues)->map(function ($value, $key) {
+//         $return = array();
+//         $return['id'] = $value['id'];
+//         $return['parentId'] = $value['parent_serial'];
+//         $return['path'] = $value['route'];  ----------------------------> remove first the check
+//         $return['name'] = $value['menu_string'];
+//         $return['children'] = array();
+//         return ($return);
+//     });
+
+//     $data = (objToArray($data));
+//     $itemsByReference = array();
+
+//     foreach ($data as $key => &$item) {
+//         $itemsByReference[$item['id']] = &$item;
+//     }
+
+//     # looping for the generation of child nodes / operation will end if the parentId is not match to id 
+//     foreach ($data as $key => &$item)
+//         if ($item['id'] && isset($itemsByReference[$item['parentId']]))
+//             $itemsByReference[$item['parentId']]['children'][] = &$item;
+
+//     # this loop is to remove the external loop of the child node ie. not allowing the child node to create its own treee
+//     foreach ($data as $key => &$item) {
+//         if ($item['parentId'] && isset($itemsByReference[$item['parentId']]))
+//             unset($data[$key]);
+//     }
+
+//     $data = collect($data)->values();
+//     $roleWise = collect($mRoleMenues)->map(function ($value) {
+//         return $value['id'];
+//     });
+//     $retunProperValues = collect($data)->map(function ($value, $key) use ($roleWise) {
+//         if ($roleWise->contains($value['id'])) {
+//             return $value;
+//         }
+//     });
+
+//     return responseMsgs(true, "OPERATION OK!", $retunProperValues->filter()->values(), "", "01", "308.ms", "POST", $req->deviceId);
+// }
