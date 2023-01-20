@@ -69,8 +69,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get_application_details', 'getApplicationDetails');                                //
         Route::post('upload_document', 'uploadWaterDoc');
         Route::post('get_upload_documents', 'getUploadDocuments');
-
-        Route::post('demo_doc', 'getDocToUpload');
+        Route::post('list_doc_to_upload', 'getDocToUpload');
         // Route::post('', 'getLevelcomment');                                                          //
     });
 });
@@ -86,7 +85,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('citizenApplications', 'getCitizenApplication');                                     //10
         Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
-        Route::post('get_doc_to_upload', 'documentUpload');                                             //13
+        // Route::post('get_doc_to_upload', 'documentUpload');                                             //13
         // Route::post('getUploadedDoc', 'getUploadDocuments');                                            //14
     });
 });
