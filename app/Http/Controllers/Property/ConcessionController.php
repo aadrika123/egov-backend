@@ -171,18 +171,18 @@ class ConcessionController extends Controller
                 $document = $request->dobDoc;
 
                 $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-                $metaReqs['activeId'] = $concessionNo;
-                $metaReqs['workflowId'] = $concession->workflow_id;
-                $metaReqs['ulbId'] = $concession->ulb_id;
-                $metaReqs['relativePath'] = $relativePath;
-                $metaReqs['image'] = $imageName;
-                $metaReqs['docMstrId'] = $request->dobMstrId;
+                $docReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $docReqs['activeId'] = $concessionNo;
+                $docReqs['workflowId'] = $concession->workflow_id;
+                $docReqs['ulbId'] = $concession->ulb_id;
+                $docReqs['relativePath'] = $relativePath;
+                $docReqs['image'] = $imageName;
+                $docReqs['docMstrId'] = $request->dobMstrId;
 
                 // return $metaReqs;
 
-                $metaReqs = new Request($metaReqs);
-                $mWfActiveDocument->postDocuments($metaReqs);
+                $docReqs = new Request($docReqs);
+                $mWfActiveDocument->postDocuments($docReqs);
 
                 // $name = $this->moveFile($docName, $file);
                 // $concessionDoc = new PropConcessionDocDtl();
@@ -201,13 +201,13 @@ class ConcessionController extends Controller
                 $document = $request->speciallyAbledDoc;
 
                 $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-                $metaReqs['activeId'] = $concessionNo;
-                $metaReqs['workflowId'] = $concession->workflow_id;
-                $metaReqs['ulbId'] = $concession->ulb_id;
-                $metaReqs['relativePath'] = $relativePath;
-                $metaReqs['image'] = $imageName;
-                $metaReqs['docMstrId'] = $request->speciallyAbledMstrId;
+                $speciallyAbledReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $speciallyAbledReqs['activeId'] = $concessionNo;
+                $speciallyAbledReqs['workflowId'] = $concession->workflow_id;
+                $speciallyAbledReqs['ulbId'] = $concession->ulb_id;
+                $speciallyAbledReqs['relativePath'] = $relativePath;
+                $speciallyAbledReqs['image'] = $imageName;
+                $speciallyAbledReqs['docMstrId'] = $request->speciallyAbledMstrId;
 
                 $metaReqs = new Request($metaReqs);
                 $mWfActiveDocument->postDocuments($metaReqs);
