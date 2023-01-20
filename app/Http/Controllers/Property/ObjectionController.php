@@ -618,19 +618,22 @@ class ObjectionController extends Controller
      */
     public function addMembers(Request $request)
     {
-        $request->validate([
-            "objectionFor" => "required",
-            // "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            // "docMstrId" => "required|numeric",
-            // "docRefName" => "required"
-        ]);
+        // $request->validate([
+        //     // "objectionFor" => "required",
+        //     // "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+        //     // "docMstrId" => "required|numeric",
+        //     // "docRefName" => "required"
+        // ]);
 
+        // return $request;
         try {
+
 
             $userId = authUser()->id;
             $ulbId = auth()->user()->ulb_id;
             $userType = auth()->user()->user_type;
             $objectionFor = $request->objectionFor;
+            $owner = $request->owners;
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL'))
                 ->where('ulb_id', $ulbId)
@@ -666,23 +669,26 @@ class ObjectionController extends Controller
             PropActiveObjection::where('id', $objection->id)
                 ->update(['objection_no' => $objectionNo]);
 
+
             //saving objection owner details
             # Flag : call model <----------
-            $objectionOwner = new PropActiveObjectionOwner();
-            $objectionOwner->objection_id = $objection->id;
-            $objectionOwner->gender = $request->gender;
-            $objectionOwner->owner_name = $request->ownerName;
-            $objectionOwner->owner_mobile = $request->mobileNo;
-            $objectionOwner->aadhar = $request->aadhar;
-            $objectionOwner->dob = $request->dob;
-            $objectionOwner->guardian_name = $request->guardianName;
-            $objectionOwner->relation = $request->relation;
-            $objectionOwner->pan = $request->pan;
-            $objectionOwner->email = $request->email;
-            $objectionOwner->is_armed_force = $request->isArmedForce;
-            $objectionOwner->is_specially_abled = $request->isSpeciallyAbled;
-            $objectionOwner->created_at = Carbon::now();
-            $objectionOwner->save();
+            foreach ($owner as $owners) {
+                $objectionOwner = new PropActiveObjectionOwner();
+                $objectionOwner->objection_id = $objection->id;
+                $objectionOwner->gender = $owners['gender'];
+                $objectionOwner->owner_name = $owners['ownerName'];
+                $objectionOwner->owner_mobile = $owners['mobileNo'];
+                $objectionOwner->aadhar = $owners['aadhar'] ?? null;
+                $objectionOwner->dob = $owners['dob'] ?? null;
+                $objectionOwner->guardian_name = $owners['guardianName'];
+                $objectionOwner->relation = $owners['relation'];
+                $objectionOwner->pan = $owners['pan'] ?? null;
+                $objectionOwner->email = $owners['email'] ?? null;
+                $objectionOwner->is_armed_force = $owners['isArmedForce'] ?? false;
+                $objectionOwner->is_specially_abled = $owners['isSpeciallyAbled'] ?? false;
+                $objectionOwner->created_at = Carbon::now();
+                $objectionOwner->save();
+            }
 
             DB::commit();
 

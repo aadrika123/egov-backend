@@ -151,7 +151,7 @@ class WfActiveDocument extends Model
         return DB::table('wf_active_documents as d')
             ->select(
                 'd.id',
-                'dr.document_name',
+                'dr.doc_name',
                 'd.verify_status',
                 DB::raw("concat(relative_path,'/',image) as doc_path"),
                 'remarks',
