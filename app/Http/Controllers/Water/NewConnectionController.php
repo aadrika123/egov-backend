@@ -330,7 +330,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // View Uploaded Documents
+    // View Uploaded Documents   // NOT used
     public function getWaterDocDetails(Request $request)
     {
         try {
@@ -343,7 +343,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Verification/Rejection of Document 
+    // Verification/Rejection of Document  // NOT used
     public function waterDocStatus(Request $request)
     {
         try {
@@ -440,7 +440,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Get the water payment details and track details  // RECHECK
+    // Get the water payment details and track details  // RECHECK  // Not used
     public function getIndependentComment(Request $request)
     {
         try {
@@ -641,7 +641,7 @@ class NewConnectionController extends Controller
 
     // Edit the Water Application
     /**
-        | Not / validate the payment status / Check the use
+        | Not / validate the payment status / Check the use / Not used
      */
     public function editWaterDetails(Request $req)
     {
@@ -780,9 +780,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    /**
-        | This is Manditory / use in the place of the document list
-     */
+    // Get the document to be upoaded with list of dock uploaded 
     public function getDocToUpload(Request $request)
     {
         $request->validate([
