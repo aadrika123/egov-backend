@@ -901,7 +901,7 @@ class Trade implements ITrade
                 }
             }
             $refOldLicece->firm_type_id        = $request->initialBusinessDetails['firmType'];
-            $refOldLicece->otherfirmtype       = $request->initialBusinessDetails['otherFirmType'] ?? null;
+            $refOldLicece->firm_description    = $request->initialBusinessDetails['otherFirmType'] ?? null;
             $refOldLicece->category_type_id    = $request->initialBusinessDetails['categoryTypeId'] ?? null;
             $refOldLicece->ownership_type_id   = $request->initialBusinessDetails['ownershipType'];
             $refOldLicece->ward_id             = $request->firmDetails['wardNo'];
@@ -927,7 +927,7 @@ class Trade implements ITrade
             foreach ($request->ownerDetails as $owner) {
                 if (isset($owner['id']) && trim($owner['id'])) {
                     $refOldOwner = ActiveTradeOwner::find($owner['id']);
-                    if (!$refOldOwner || $refOldOwner->licence_id != $mLicenceId) {
+                    if (!$refOldOwner || $refOldOwner->temp_id != $mLicenceId) {
                         throw new Exception("Invalid Owner Id Supply!!!");
                     }
                     $refOldOwner->owner_name       = $owner['businessOwnerName'];

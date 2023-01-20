@@ -39,7 +39,7 @@ class HoldingTaxController extends Controller
             $this->_propertyDetails = $details;
             $calReqs = $this->generateSafRequest($details);                                                   // Generate Calculation Parameters
             $calParams = $this->generateCalculationParams($propId, $calReqs);                                 // (1.1)
-
+            $calParams = array_merge($calParams, ['isProperty' => true]);
             $calParams = new Request($calParams);
             $taxes = $safCalculation->calculateTax($calParams);
             $holdingDemand['amount'] = $taxes->original['data']['demand'];
