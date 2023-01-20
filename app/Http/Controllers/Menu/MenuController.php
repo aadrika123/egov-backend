@@ -110,4 +110,31 @@ class MenuController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * |------------------------ Provide menu to the role -----------------------|
+     */
+    public function provideParent(Request $req)
+    {
+        try {
+            MenuMaster::where('id', $req->menuID)
+                ->update([
+                    'parent_serial' => $req->parentId
+                ]);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    //
+    public function listParentSerial()
+    {
+        try{
+           $mMenuMaster = new MenuMaster();
+           $mMenuMaster->
+        }catch(Exception $e)
+        {
+            return responseMsg(false,$e->getMessage(),"");
+        }
+    }
 }
