@@ -1299,7 +1299,7 @@ class ActiveSafController extends Controller
     public function generatePaymentReceipt(Request $req)
     {
         $req->validate([
-            'tranNo' => 'required'
+            'paymentId' => 'required'
         ]);
 
         try {
@@ -1312,7 +1312,7 @@ class ActiveSafController extends Controller
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
 
-            $applicationDtls = $paymentData->getApplicationId($req->tranNo);
+            $applicationDtls = $paymentData->getApplicationId1($req->paymentId);
             // Saf Payment
             $safId = json_decode($applicationDtls)->applicationId;
 
@@ -1655,7 +1655,7 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | Get the Demandable Amount By SAF ID After Payment
+     * | Get the Demandable Amount By SAF ID
      * | @param $req
      * | Query Run time -272ms 
      * | Rating-2

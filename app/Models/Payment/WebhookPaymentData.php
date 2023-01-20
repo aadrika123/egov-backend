@@ -51,6 +51,17 @@ class WebhookPaymentData extends Model
         return $data;
     }
 
+    public function getApplicationId1($paymentId)
+    {
+        $userDetails = WebhookPaymentData::where('payment_id', $paymentId)
+            ->select(
+                'payment_notes AS userDetails'
+            )
+            ->get();
+        $data = collect($userDetails)->first()->userDetails;
+        return $data;
+    }
+
 
     /**
      * |----------------------------------- Save Webhook data / Razorpay ----------------------------------|
