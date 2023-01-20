@@ -1266,7 +1266,7 @@ class Trade implements ITrade
             $data["documentsList"]  = $requiedDocs;
             $data["ownersDocList"]  = $testOwnersDoc;
             $data["licence"] = $refLicence;
-            $data["owneres"] = $refOwneres;
+            $data["owners"] = $refOwneres;
             $data["uploadDocument"] = $mUploadDocument;
 
             return responseMsg(true, "ABC Ok", remove_null($data));
