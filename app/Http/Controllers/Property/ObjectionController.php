@@ -161,6 +161,9 @@ class ObjectionController extends Controller
             $mWorkflowTracks = new WorkflowTrack();
             $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
             $details = $mPropActiveObjection->getObjectionById($req->applicationId);
+
+            if (!$details)
+                throw new Exception("Application Not Found for this id");
             // Data Array
             $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
             $basicElement = [
