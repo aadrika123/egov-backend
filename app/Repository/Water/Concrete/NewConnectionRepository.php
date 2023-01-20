@@ -815,7 +815,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var mModuleId
      * | @var metaReqs
         | Serial No : 11
-        | Working
+        | Working 
      */
     public function commentIndependent($request)
     {
