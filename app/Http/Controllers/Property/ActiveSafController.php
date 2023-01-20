@@ -1663,14 +1663,15 @@ class ActiveSafController extends Controller
     public function getDemandBySafId(Request $req)
     {
         try {
-            $demand = array();
-            $transaction = new PropTransaction();
-            $demand['amounts'] = $transaction->getPropTransactions($req->safId, "saf_id");
-
-            $propSafDemand = new PropSafsDemand();
-            $demand['details'] = $propSafDemand->getDemandBySafId($req->safId);
-
-            return responseMsg(true, "All Demands", remove_null($demand));
+            $safDetails = $this->details($req);
+            $req = $safDetails;
+            $array = $this->generateSafRequest($req);                                                                       // Generate SAF Request by SAF Id Using Trait
+            $safCalculation = new SafCalculation();
+            $request = new Request($array);
+            $safTaxes = $safCalculation->calculateTax($request);
+            $demand['amounts'] = $safTaxes->original['data']['demand'];
+            $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
+            return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
