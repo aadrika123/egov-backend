@@ -38,6 +38,7 @@ use App\Models\Property\RefPropTransferMode;
 use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
 use App\Models\UlbWardMaster;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
@@ -315,10 +316,9 @@ class ActiveSafController extends Controller
     public function editSaf(Request $req)
     {
         $req->validate([
-            'id' => 'required|integer',
-            'zone' => 'required|integer',
+            'id' => 'required|numeric',
             'owner' => 'array',
-            'owner.*.ownerId' => 'required|integer',
+            'owner.*.ownerId' => 'required|numeric',
             'owner.*.ownerName' => 'required',
             'owner.*.guardianName' => 'required',
             'owner.*.relation' => 'required',
@@ -592,6 +592,10 @@ class ActiveSafController extends Controller
     #Saf Details
     public function safDetails(Request $req)
     {
+        $req->validate([
+            'applicationId' => 'required|integer'
+        ]);
+
         try {
             $mPropActiveSaf = new PropActiveSaf();
             $mPropActiveSafOwner = new PropActiveSafsOwner();
@@ -614,6 +618,10 @@ class ActiveSafController extends Controller
                     ->where('prop_active_safs.saf_no', $req->safNo)
                     ->first();
             }
+
+            if (!$data)
+                throw new Exception("Application Not Found for this id");
+
             // Basic Details
             $basicDetails = $this->generateBasicDetails($data);      // Trait function to get Basic Details
             $basicElement = [
@@ -692,12 +700,6 @@ class ActiveSafController extends Controller
 
             $docList = $getDocuments->getUploadDocuments($req);
             $fullDetailsData['documentList'] = collect($docList)['original']['data'];
-
-            $getDocumentList = $getDocuments->getDocList($req);
-            // $documentList = collect($getDocumentList)['original']['data']['documentsList'];
-            // $fullDetailsData['docrequired'] = collect($documentList)->map(function ($value) {
-            //     return $value['docVal'];
-            // });
 
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -796,12 +798,11 @@ class ActiveSafController extends Controller
         ]);
 
         try {
+            $saf = PropActiveSaf::find($request->applicationId);
             // SAF Application Update Current Role Updation
             DB::beginTransaction();
-            $saf = PropActiveSaf::find($request->applicationId);
             $saf->current_role = $request->receiverRoleId;
             $saf->save();
-
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
@@ -811,7 +812,6 @@ class ActiveSafController extends Controller
 
             $track = new WorkflowTrack();
             $track->saveTrack($request);
-
 
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);

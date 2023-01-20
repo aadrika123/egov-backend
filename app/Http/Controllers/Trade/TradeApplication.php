@@ -514,7 +514,7 @@ class TradeApplication extends Controller
                 throw new Exception("Application Not Found for this application Id");
 
             $appNo = $licenceDetails->application_no;
-            $documents = $mWfActiveDocument->getDocsByAppNo($appNo);
+            $documents = $mWfActiveDocument->getTradeDocByAppNo($appNo);
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");

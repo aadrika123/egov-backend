@@ -104,7 +104,6 @@ class PropActiveSaf extends Model
 
         $reqs = [
             'previous_ward_mstr_id' => $req->previousWard,
-            'zone_mstr_id' => $req->zone,
             'no_electric_connection' => $req->electricityConnection,
             'elect_consumer_no' => $req->electricityCustNo,
             'elect_acc_no' => $req->electricityAccNo,
