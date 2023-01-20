@@ -816,7 +816,11 @@ class NewConnectionController extends Controller
                 $docForId = collect($doc['docVal'])->map(function ($value) {
                     return $value['id'];
                 });
-                $doc['uploadDoc'] = $refWfActiveDocument->getAppByAppNoDocId($refApplication->application_no, $docForId); # Check Document is Uploaded Of That Type
+                $doc['uploadDoc'] = $refWfActiveDocument->getWaterAppByAppNoDocId($refApplication->application_no, $docForId); # Check Document is Uploaded Of That Type
+                if (isset($doc["uploadDoc"]->doc_path)) {
+                    $path = $refWaterNewConnection->readDocumentPath($doc["uploadDoc"]->doc_path);
+                    $doc["uploadDoc"]->doc_path = !empty(trim($doc["uploadDoc"]->doc_path)) ? $path : null;
+                }
                 array_push($requiedDocs, $doc);
             }
             foreach ($refOwneres as $key => $val) {
@@ -830,7 +834,11 @@ class NewConnectionController extends Controller
                 $refdocForId = collect($doc['docVal'])->map(function ($value, $key) {
                     return $value['id'];
                 });
-                $doc['uploadDoc'] = $refWfActiveDocument->getAppByAppNoDocId($refApplication->application_no, $refdocForId);
+                $doc['uploadDoc'] = $refWfActiveDocument->getWaterAppByAppNoDocId($refApplication->application_no, $refdocForId);
+                if (isset($doc["uploadDoc"]->doc_path)) {
+                    $path = $refWaterNewConnection->readDocumentPath($doc["uploadDoc"]->doc_path);
+                    $doc["uploadDoc"]->doc_path = !empty(trim($doc["uploadDoc"]->doc_path)) ? $path : null;
+                }
                 array_push($ownersDoc, $doc);
                 array_push($testOwnersDoc[$key], $doc);
             }
