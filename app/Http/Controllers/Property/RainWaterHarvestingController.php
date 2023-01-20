@@ -10,6 +10,7 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropHarvestingDoc;
 use App\Models\Property\PropHarvestingLevelpending;
 use App\Models\Property\PropOwner;
+use App\Models\Property\RefPropDocsRequired;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
@@ -102,13 +103,17 @@ class RainWaterHarvestingController extends Controller
             $finisherRoleId = DB::select($refFinisherRoleId);
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
-            $save = new PropActiveHarvesting();
-            $waterHaravestingId  = $save->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $applicationNo);
+            $mPropActiveHarvesting = new PropActiveHarvesting();
+            $waterHaravestingId  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $applicationNo);
 
-            if ($file = $request->file('rwhImage')) {
-                $docName = "rwhImage";
+            if ($file = $request->file('document')) {
+
+                $docreq =  RefPropDocsRequired::select('id', 'doc_name')
+                    ->where('doc_type', 'water_harvesting')
+                    ->first();
+                $docName = $docreq->doc_name;
+
                 $name = $this->moveFile($docName, $file);
-
                 $harvestingDoc = new PropHarvestingDoc();
                 $harvestingDoc->harvesting_id = $waterHaravestingId;
                 $harvestingDoc->citizenDocUpload($harvestingDoc, $name, $docName);

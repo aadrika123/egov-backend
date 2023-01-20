@@ -9,6 +9,7 @@ use App\Models\CustomDetail;
 use App\Models\PropActiveObjectionDocdtl;
 use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropActiveObjection;
+use App\Models\Property\PropActiveObjectionOwner;
 use App\Models\Property\PropFloor;
 use Illuminate\Http\Request;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
@@ -16,10 +17,12 @@ use App\Traits\Property\Objection;
 use App\Models\Property\RefPropObjectionType;
 use App\Models\Property\PropOwner;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Traits\Property\SafDetailsTrait;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 use Exception;
@@ -607,6 +610,85 @@ class ObjectionController extends Controller
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     *  add members for clerical mistake
+     */
+    public function addMembers(Request $request)
+    {
+        $request->validate([
+            "objectionFor" => "required",
+            // "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            // "docMstrId" => "required|numeric",
+            // "docRefName" => "required"
+        ]);
+
+        try {
+
+            $userId = authUser()->id;
+            $ulbId = auth()->user()->ulb_id;
+            $userType = auth()->user()->user_type;
+            $objectionFor = $request->objectionFor;
+
+            $ulbWorkflowId = WfWorkflow::where('wf_master_id', Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL'))
+                ->where('ulb_id', $ulbId)
+                ->first();
+
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
+            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);              // Get Finisher ID
+            $initiatorRoleId = DB::select($refInitiatorRoleId);
+            $finisherRoleId = DB::select($refFinisherRoleId);
+
+            DB::beginTransaction();
+
+            //saving objection details
+            # Flag : call model <-----
+            $objection = new PropActiveObjection();
+            $objection->ulb_id = $ulbId;
+            $objection->user_id = $userId;
+            $objection->objection_for =  $objectionFor;
+            $objection->property_id = $request->propId;
+            $objection->remarks = $request->remarks;
+            $objection->date = Carbon::now();
+            $objection->created_at = Carbon::now();
+            $objection->workflow_id = $ulbWorkflowId->id;
+            $objection->current_role = $initiatorRoleId[0]->role_id;
+            $objection->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
+            $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
+            $objection->save();
+
+            //objection No generation in model
+            $objNo = new PropActiveObjection();
+            $objectionNo = $objNo->objectionNo($objection->id);
+
+            PropActiveObjection::where('id', $objection->id)
+                ->update(['objection_no' => $objectionNo]);
+
+            //saving objection owner details
+            # Flag : call model <----------
+            $objectionOwner = new PropActiveObjectionOwner();
+            $objectionOwner->objection_id = $objection->id;
+            $objectionOwner->gender = $request->gender;
+            $objectionOwner->owner_name = $request->ownerName;
+            $objectionOwner->owner_mobile = $request->mobileNo;
+            $objectionOwner->aadhar = $request->aadhar;
+            $objectionOwner->dob = $request->dob;
+            $objectionOwner->guardian_name = $request->guardianName;
+            $objectionOwner->relation = $request->relation;
+            $objectionOwner->pan = $request->pan;
+            $objectionOwner->email = $request->email;
+            $objectionOwner->is_armed_force = $request->isArmedForce;
+            $objectionOwner->is_specially_abled = $request->isSpeciallyAbled;
+            $objectionOwner->created_at = Carbon::now();
+            $objectionOwner->save();
+
+            DB::commit();
+
+            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 }
