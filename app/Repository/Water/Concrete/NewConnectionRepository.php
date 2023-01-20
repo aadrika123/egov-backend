@@ -137,8 +137,11 @@ class NewConnectionRepository implements iNewConnection
 
         $charges = new WaterConnectionCharge();
         $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
-
-        return responseMsgs(true, "Successfully Saved!", $applicationNo, "", "02", "", "POST", "");
+        $returnResponse = [
+            'applicationNo' => $applicationNo,
+            'applicationId' => $applicationId
+        ];
+        return responseMsgs(true, "Successfully Saved!", $returnResponse, "", "02", "", "POST", "");
     }
 
 

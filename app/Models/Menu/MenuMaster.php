@@ -70,4 +70,15 @@ class MenuMaster extends Model
             ->get();
         return  objToArray($a);
     }
+
+    /**
+     * | Get Parent Menues
+     */
+    public function getParentMenue()
+    {
+        return MenuMaster::select(
+            ''
+        )
+        ->where('parent_serial',0);
+    }
 }
