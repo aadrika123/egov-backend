@@ -22,6 +22,7 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropPenalty;
+use App\Models\Property\PropPenaltyrebate;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafsDemand;
@@ -1298,21 +1299,20 @@ class ActiveSafController extends Controller
     public function generatePaymentReceipt(Request $req)
     {
         $req->validate([
-            'paymentId' => 'required'
+            'tranNo' => 'required'
         ]);
 
         try {
             $paymentData = new WebhookPaymentData();
             $propSafsDemand = new PropSafsDemand();
             $transaction = new PropTransaction();
-            $propPenalties = new PropPenalty();
+            $propPenalties = new PropPenaltyrebate();
 
-            $mOnePercPenaltyId = Config::get('PropertyConstaint.PENALTIES.LATE_ASSESSMENT_ID');
             $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
 
-            $applicationDtls = $paymentData->getApplicationId($req->paymentId);
+            $applicationDtls = $paymentData->getApplicationId($req->tranNo);
             // Saf Payment
             $safId = json_decode($applicationDtls)->applicationId;
 
@@ -1334,10 +1334,9 @@ class ActiveSafController extends Controller
             $propTrans = collect($propTrans)->last();
 
             // Get Property Penalties against property transaction
-            $propPenalties = $propPenalties->getPenalties('tran_id', $propTrans->id);
-            $mOnePercPenalty = collect($propPenalties)->where('penalty_type_id', $mOnePercPenaltyId)->sum('amount');
+            $mOnePercPenalty = $propPenalties->getPenalRebateByTranId($propTrans->id, "1% Monthly Penalty");
 
-            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $mOnePercPenalty, $propTrans->amount);   // Get Holding Tax Dtls
+            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $mOnePercPenalty->amount, $propTrans->amount);   // Get Holding Tax Dtls
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
