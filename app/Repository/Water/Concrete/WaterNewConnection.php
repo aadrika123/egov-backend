@@ -983,7 +983,7 @@ class WaterNewConnection implements IWaterNewConnection
     public function getDocumentList($doc_for)
     {
         try {
-            $data = WaterParamDocumentType::select("id", "document_name")
+            $data = WaterParamDocumentType::select("id", "document_name as doc_name")
                 ->where("status", 1)
                 ->where("doc_for", $doc_for)
                 ->get();

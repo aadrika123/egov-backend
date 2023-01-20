@@ -849,4 +849,80 @@ class NewConnectionController extends Controller
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    // Citizen Side View
+    public function demo(Request $request)
+    {
+        try {
+            $refUser                = Auth()->user();
+            $refUserId              = $refUser->id;
+            $mWebhookPaymentData    = new WebhookPaymentData();
+            $departmnetId       = Config::get('waterConstaint.WATER_DEPAPRTMENT_ID');
+            // $refUlbId           = $request->ulbId;
+            // AND water_applications.ulb_id = $refUlbId (btw line 95 96)
+            $connection         = WaterApplication::select(
+                "water_applications.id",
+                "water_applications.application_no",
+                "water_applications.address",
+                "water_applications.payment_status",
+                "water_applications.doc_status",
+                "water_applications.ward_id",
+                "water_applications.workflow_id",
+                "ulb_ward_masters.ward_name",
+                "charges.amount",
+                DB::raw("'connection' AS type,
+                                        water_applications.apply_date::date AS apply_date")
+            )
+                ->join(
+                    DB::raw("( 
+                                        SELECT DISTINCT(water_applications.id) AS application_id , SUM(COALESCE(amount,0)) AS amount
+                                        FROM water_applications 
+                                        LEFT JOIN water_connection_charges 
+                                            ON water_applications.id = water_connection_charges.application_id 
+                                            AND ( 
+                                                water_connection_charges.paid_status ISNULL  
+                                                OR water_connection_charges.paid_status=FALSE 
+                                            )  
+                                            AND( 
+                                                    water_connection_charges.status = TRUE
+                                                    OR water_connection_charges.status ISNULL  
+                                                )
+                                        WHERE water_applications.user_id = $refUserId
+                                        GROUP BY water_applications.id
+                                        ) AS charges
+                                    "),
+                    function ($join) {
+                        $join->on("charges.application_id", "water_applications.id");
+                    }
+                )
+                // ->whereNotIn("status",[0,6,7])
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
+                ->where("water_applications.user_id", $refUserId)
+                // ->where("water_applications.ulb_id", $refUlbId)
+                ->orderbydesc('id')
+                ->get();
+
+            $TransData = $mWebhookPaymentData->getTransactionDetails($departmnetId, $refUser);
+            $returnValue = collect($connection)->map(function ($value) use ($TransData) {
+                $id = $value['id'];
+                $transactionIdDetail = collect($TransData)->map(function ($secondVal) use ($id) {
+                    if ($secondVal['applicationId'] == $id) {
+                        return $secondVal;
+                    }
+                });
+                $filtered = collect($transactionIdDetail)->filter(function ($nonEmpty,) {
+                    if ($nonEmpty != null) {
+                        return $nonEmpty;
+                    }
+                });
+                $value['transDetails'] = $filtered->values();
+                return $value;
+            });
+
+            return responseMsg(true, "", remove_null($returnValue));
+        } catch (Exception $e) {
+
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
 }

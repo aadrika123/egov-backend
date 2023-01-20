@@ -67,6 +67,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get_upload_documents', 'getUploadDocuments');
         Route::post('list_doc_to_upload', 'getDocToUpload');
 
+        Route::post('demo', 'demo');
         // Route::post('list-doc', 'getWaterDocDetails');                                                  //
         // Route::post('verify-doc', 'waterDocStatus');                                                    //
         // Route::post('list-message', 'getIndependentComment');                                           //

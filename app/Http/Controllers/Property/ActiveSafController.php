@@ -593,6 +593,10 @@ class ActiveSafController extends Controller
     #Saf Details
     public function safDetails(Request $req)
     {
+        $req->validate([
+            'applicationId' => 'required|integer'
+        ]);
+
         try {
             $mPropActiveSaf = new PropActiveSaf();
             $mPropActiveSafOwner = new PropActiveSafsOwner();
@@ -615,6 +619,10 @@ class ActiveSafController extends Controller
                     ->where('prop_active_safs.saf_no', $req->safNo)
                     ->first();
             }
+
+            if (!$data)
+                throw new Exception("Application Not Found for this id");
+
             // Basic Details
             $basicDetails = $this->generateBasicDetails($data);      // Trait function to get Basic Details
             $basicElement = [

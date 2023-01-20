@@ -249,8 +249,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/upload-document', 'uploadDocument');
     Route::post('harvesting/get-upload-documents', 'getUploadDocuments');
 
-    Route::post('harvesting/backtocitizen', 'backToCitizen');              //12
-    Route::post('harvesting/btc-inbox', 'btcInboxList');                   //18
+    Route::post('harvesting/backtocitizen', 'backToCitizen');
+    Route::post('harvesting/btc-inbox', 'btcInboxList');
   });
 
   /**

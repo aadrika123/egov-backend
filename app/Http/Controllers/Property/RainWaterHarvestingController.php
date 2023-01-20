@@ -324,6 +324,9 @@ class RainWaterHarvestingController extends Controller
             $mRefTable = Config::get('PropertyConstaint.SAF_HARVESTING_REF_TABLE');
             $details = $mPropActiveHarvesting->getDetailsById($req->applicationId);
 
+            if (!$details)
+                throw new Exception("Application Not Found for this id");
+
             // Data Array
             $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
             $basicElement = [
