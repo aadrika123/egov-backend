@@ -103,4 +103,24 @@ class WfActiveDocument extends Model
             ->whereIn("d.doc_mstr_id", $docId)
             ->first();
     }
+
+    /**
+     * | Water document 
+     */
+    public function getWaterAppByAppNoDocId($applicationNo, $docId)
+    {
+        return DB::table('wf_active_documents as d')
+            ->select(
+                'd.id',
+                'dr.document_name',
+                'd.verify_status',
+                DB::raw("concat(relative_path,'/',image) as doc_path"),
+                'remarks',
+                'doc_mstr_id'
+            )
+            ->join('water_param_document_types as dr', 'dr.id', '=', 'd.doc_mstr_id')
+            ->where("d.active_id", $applicationNo)
+            ->whereIn("d.doc_mstr_id", $docId)
+            ->first();
+    }
 }

@@ -16,6 +16,7 @@ use App\Http\Requests\Trade\ReqPaybleAmount;
 use App\Http\Requests\Trade\ReqInbox;
 use App\Http\Requests\Trade\ReqPostNextLevel;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
+use App\MicroServices\DocUpload;
 use App\Models\Trade\ActiveTradeLicence;
 use App\Models\Trade\TradeLicence;
 use App\Models\Trade\TradeOwner;
@@ -24,6 +25,7 @@ use App\Models\Trade\TradeParamFirmType;
 use App\Models\Trade\TradeParamItemType;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Models\UlbMaster;
+use App\Models\Workflows\WfActiveDocument;
 use Illuminate\Support\Facades\DB;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
@@ -195,10 +197,10 @@ class TradeApplication extends Controller
         return $this->Repository->documentUpload($request);
     }
     # Serial No : 06
-    public function getUploadDocuments(Request $request)
-    {
-        return $this->Repository->getUploadDocuments($request);
-    }
+    // public function getUploadDocuments(Request $request)
+    // {
+    //     return $this->Repository->getUploadDocuments($request);
+    // }
     # Serial No : 07
     public function documentVirify(Request $request)
     {
@@ -493,5 +495,72 @@ class TradeApplication extends Controller
     public function reports(Request $request)
     {
         return $this->Repository->reports($request);
+    }
+
+    /**
+     *  get uploaded documents
+     */
+    public function getUploadDocuments(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $mActiveTradeLicence = new ActiveTradeLicence();
+
+            $licenceDetails = $mActiveTradeLicence->getLicenceNo($req->applicationId);
+            if (!$licenceDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $appNo = $licenceDetails->application_no;
+            $documents = $mWfActiveDocument->getDocsByAppNo($appNo);
+            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+
+    /**
+     * 
+     */
+    public function uploadDocument(Request $req)
+    {
+        $req->validate([
+            "applicationId" => "required|numeric",
+            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "docMstrId" => "required|numeric",
+            "docRefName" => "required"
+        ]);
+
+        try {
+            $metaReqs = array();
+            $docUpload = new DocUpload;
+            $mWfActiveDocument = new WfActiveDocument();
+            $mActiveTradeLicence = new ActiveTradeLicence();
+            $relativePath = Config::get('TradeConstant.TRADE_RELATIVE_PATH');
+            $getLicenceDtls = $mActiveTradeLicence->getLicenceNo($req->applicationId);
+            $refImageName = $req->docRefName;
+            $refImageName = $getLicenceDtls->id . '-' . str_replace(' ', '_', $refImageName);
+            $document = $req->document;
+
+            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+
+            $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
+            $metaReqs['activeId'] = $getLicenceDtls->application_no;
+            $metaReqs['workflowId'] = $getLicenceDtls->workflow_id;
+            $metaReqs['ulbId'] = $getLicenceDtls->ulb_id;
+            $metaReqs['relativePath'] = $relativePath;
+            $metaReqs['image'] = $imageName;
+            $metaReqs['docMstrId'] = $req->docMstrId;
+
+
+            $metaReqs = new Request($metaReqs);
+            $mWfActiveDocument->postDocuments($metaReqs);
+            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        }
     }
 }

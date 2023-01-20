@@ -28,11 +28,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('updateBasicDtl', 'updateBasicDtl');
 
         Route::post('get-doc-list', 'getDocList');
-        Route::post('upload-document', 'documentUpload');
+        Route::post('upload-document', 'uploadDocument');
+        Route::post('get-upload-documents', 'getUploadDocuments');
 
         // Route::match(["get", "post"], 'documentUpload/{id}', 'documentUpload');
 
-        Route::post('getUploadDocuments', 'getUploadDocuments');
+        // Route::post('upload-document', 'documentUpload');        //old
+        // Route::post('getUploadDocuments', 'getUploadDocuments');
         Route::match(["get", "post"], 'documentVerify/{licenceId}', 'documentVirify');
         Route::post('getLicenceDtl', 'getLicenceDtl');
         Route::post('getDenialDetails', "getDenialDetails");

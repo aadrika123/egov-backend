@@ -171,18 +171,16 @@ class ConcessionController extends Controller
                 $document = $request->dobDoc;
 
                 $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-                $metaReqs['activeId'] = $concessionNo;
-                $metaReqs['workflowId'] = $concession->workflow_id;
-                $metaReqs['ulbId'] = $concession->ulb_id;
-                $metaReqs['relativePath'] = $relativePath;
-                $metaReqs['image'] = $imageName;
-                $metaReqs['docMstrId'] = $request->dobMstrId;
+                $docReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $docReqs['activeId'] = $concessionNo;
+                $docReqs['workflowId'] = $concession->workflow_id;
+                $docReqs['ulbId'] = $concession->ulb_id;
+                $docReqs['relativePath'] = $relativePath;
+                $docReqs['image'] = $imageName;
+                $docReqs['docMstrId'] = $request->dobMstrId;
 
-                // return $metaReqs;
-
-                $metaReqs = new Request($metaReqs);
-                $mWfActiveDocument->postDocuments($metaReqs);
+                $docReqs = new Request($docReqs);
+                $mWfActiveDocument->postDocuments($docReqs);
 
                 // $name = $this->moveFile($docName, $file);
                 // $concessionDoc = new PropConcessionDocDtl();
@@ -201,16 +199,16 @@ class ConcessionController extends Controller
                 $document = $request->speciallyAbledDoc;
 
                 $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-                $metaReqs['activeId'] = $concessionNo;
-                $metaReqs['workflowId'] = $concession->workflow_id;
-                $metaReqs['ulbId'] = $concession->ulb_id;
-                $metaReqs['relativePath'] = $relativePath;
-                $metaReqs['image'] = $imageName;
-                $metaReqs['docMstrId'] = $request->speciallyAbledMstrId;
+                $speciallyAbledReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $speciallyAbledReqs['activeId'] = $concessionNo;
+                $speciallyAbledReqs['workflowId'] = $concession->workflow_id;
+                $speciallyAbledReqs['ulbId'] = $concession->ulb_id;
+                $speciallyAbledReqs['relativePath'] = $relativePath;
+                $speciallyAbledReqs['image'] = $imageName;
+                $speciallyAbledReqs['docMstrId'] = $request->speciallyAbledMstrId;
 
-                $metaReqs = new Request($metaReqs);
-                $mWfActiveDocument->postDocuments($metaReqs);
+                $speciallyAbledReqs = new Request($speciallyAbledReqs);
+                $mWfActiveDocument->postDocuments($speciallyAbledReqs);
             }
 
             // Armed force Doc
@@ -224,16 +222,16 @@ class ConcessionController extends Controller
                 $document = $request->armedForceDoc;
 
                 $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-                $metaReqs['activeId'] = $concessionNo;
-                $metaReqs['workflowId'] = $concession->workflow_id;
-                $metaReqs['ulbId'] = $concession->ulb_id;
-                $metaReqs['relativePath'] = $relativePath;
-                $metaReqs['image'] = $imageName;
-                $metaReqs['docMstrId'] = $request->armedForceMstrId;
+                $armedForceReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $armedForceReqs['activeId'] = $concessionNo;
+                $armedForceReqs['workflowId'] = $concession->workflow_id;
+                $armedForceReqs['ulbId'] = $concession->ulb_id;
+                $armedForceReqs['relativePath'] = $relativePath;
+                $armedForceReqs['image'] = $imageName;
+                $armedForceReqs['docMstrId'] = $request->armedForceMstrId;
 
-                $metaReqs = new Request($metaReqs);
-                $mWfActiveDocument->postDocuments($metaReqs);
+                $armedForceReqs = new Request($armedForceReqs);
+                $mWfActiveDocument->postDocuments($armedForceReqs);
             }
 
             DB::commit();
@@ -624,11 +622,11 @@ class ConcessionController extends Controller
     public function backToCitizen(Request $req)
     {
         $req->validate([
-            'concessionId' => "required"
+            'applicationId' => "required"
         ]);
         try {
             $redis = Redis::connection();
-            $concession = PropActiveConcession::find($req->concessionId);
+            $concession = PropActiveConcession::find($req->applicationId);
 
             $workflowId = $concession->workflow_id;
             $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
@@ -1042,7 +1040,6 @@ class ConcessionController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
-
 
     /**
      * 

@@ -330,7 +330,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // View Uploaded Documents
+    // View Uploaded Documents   // NOT used
     public function getWaterDocDetails(Request $request)
     {
         try {
@@ -343,7 +343,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Verification/Rejection of Document 
+    // Verification/Rejection of Document  // NOT used
     public function waterDocStatus(Request $request)
     {
         try {
@@ -383,7 +383,8 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 'comment' => 'required',
-                'applicationId' => 'required'
+                'applicationId' => 'required',
+                'senderRoleId' => 'nullable|integer'
             ]);
             return $this->newConnection->commentIndependent($request);
         } catch (Exception $e) {
@@ -440,7 +441,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Get the water payment details and track details  // RECHECK
+    // Get the water payment details and track details  // RECHECK  // Not used
     public function getIndependentComment(Request $request)
     {
         try {
@@ -641,7 +642,7 @@ class NewConnectionController extends Controller
 
     // Edit the Water Application
     /**
-        | Not / validate the payment status / Check the use
+        | Not / validate the payment status / Check the use / Not used
      */
     public function editWaterDetails(Request $req)
     {
@@ -678,7 +679,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Citizen view : Get Application Details
+    // Citizen view : Get Application Details of viewind
     public function getApplicationDetails(Request $request)
     {
         $request->validate([
@@ -780,9 +781,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    /**
-        | This is Manditory / use in the place of the document list
-     */
+    // Get the document to be upoaded with list of dock uploaded 
     public function getDocToUpload(Request $request)
     {
         $request->validate([
@@ -809,13 +808,19 @@ class NewConnectionController extends Controller
             $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
             foreach ($requiedDocType as $val) {
                 $doc = (array) null;
+                $doc["ownerId"] = collect($refOwneres)->first()->id;
+                $doc["ownerName"] = collect($refOwneres)->first()->applicant_name;
                 $doc['docName'] = $val->doc_for;
                 $doc['isMadatory'] = $val->is_mandatory;
                 $doc['docVal'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
                 $docForId = collect($doc['docVal'])->map(function ($value) {
                     return $value['id'];
                 });
-                $doc['uploadDoc'] = $refWfActiveDocument->getAppByAppNoDocId($refApplication->application_no, $docForId); # Check Document is Uploaded Of That Type
+                $doc['uploadDoc'] = $refWfActiveDocument->getWaterAppByAppNoDocId($refApplication->application_no, $docForId); # Check Document is Uploaded Of That Type
+                if (isset($doc["uploadDoc"]->doc_path)) {
+                    $path = $refWaterNewConnection->readDocumentPath($doc["uploadDoc"]->doc_path);
+                    $doc["uploadDoc"]->doc_path = !empty(trim($doc["uploadDoc"]->doc_path)) ? $path : null;
+                }
                 array_push($requiedDocs, $doc);
             }
             foreach ($refOwneres as $key => $val) {
@@ -829,7 +834,11 @@ class NewConnectionController extends Controller
                 $refdocForId = collect($doc['docVal'])->map(function ($value, $key) {
                     return $value['id'];
                 });
-                $doc['uploadDoc'] = $refWfActiveDocument->getAppByAppNoDocId($refApplication->application_no, $refdocForId);
+                $doc['uploadDoc'] = $refWfActiveDocument->getWaterAppByAppNoDocId($refApplication->application_no, $refdocForId);
+                if (isset($doc["uploadDoc"]->doc_path)) {
+                    $path = $refWaterNewConnection->readDocumentPath($doc["uploadDoc"]->doc_path);
+                    $doc["uploadDoc"]->doc_path = !empty(trim($doc["uploadDoc"]->doc_path)) ? $path : null;
+                }
                 array_push($ownersDoc, $doc);
                 array_push($testOwnersDoc[$key], $doc);
             }

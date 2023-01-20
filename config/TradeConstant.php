@@ -10,6 +10,8 @@ return [
     "MODULE-ID"     =>  "5",
     "CITIZEN"       => "Citizen",
     "TRADE_REF_TABLE" => "active_trade_licences.id",
+    "TRADE_RELATIVE_PATH" => "Uploads/Trade",
+
     "APPLICATION-TYPE" =>
     [
         "NEWLICENSE"    =>  "1",

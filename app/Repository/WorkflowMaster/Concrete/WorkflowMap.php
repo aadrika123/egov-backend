@@ -314,6 +314,7 @@ class WorkflowMap implements iWorkflowMapRepository
     //get role by ward & ulb id
     public function getRoleByWardUlbId(Request $request)
     {
+
         try {
             $users = UlbWardMaster::select('wf_roles.*')
                 ->where('ulb_ward_masters.ulb_id', $request->ulbId)
@@ -335,6 +336,11 @@ class WorkflowMap implements iWorkflowMapRepository
     //get workflow by ulb and master id
     public function getWorkflow(Request $request)
     {
+        $request->validate([
+            "ulbId" => "required|numeric",
+            "workflowMstrId" => "required|numeric",
+
+        ]);
         try {
             $workflow = WfWorkflow::select('wf_workflows.*')
                 ->where('ulb_id', $request->ulbId)

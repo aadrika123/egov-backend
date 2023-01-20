@@ -12,6 +12,7 @@ use App\Models\Property\PropHarvestingLevelpending;
 use App\Models\Property\PropOwner;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
@@ -25,6 +26,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * | Created On - 22-11-2022
@@ -800,6 +802,83 @@ class RainWaterHarvestingController extends Controller
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+
+    /**
+     *  send back to citizen
+     */
+    public function backToCitizen(Request $req)
+    {
+        $req->validate([
+            'applicationId' => "required"
+        ]);
+        try {
+            $redis = Redis::connection();
+            $harvesting = PropActiveHarvesting::find($req->applicationId);
+
+            $workflowId = $harvesting->workflow_id;
+            $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
+            if (!$backId) {
+                $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
+                    ->where('is_initiator', true)
+                    ->first();
+                $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
+            }
+
+            $harvesting->current_role = $backId->wf_role_id;
+            $harvesting->parked = 1;
+            $harvesting->save();
+
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $harvesting->workflow_id;
+            $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
+            $metaReqs['refTableIdValue'] = $req->concessionId;
+            $metaReqs['verificationStatus'] = $req->verificationStatus;
+            $metaReqs['senderRoleId'] = $req->currentRoleId;
+            $req->request->add($metaReqs);
+            $track = new WorkflowTrack();
+            $track->saveTrack($req);
+
+            return responseMsgs(true, "Successfully Done", "", "", '010710', '01', '358ms', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Back To Citizen Inbox
+     */
+    public function btcInboxList()
+    {
+        try {
+            $auth = auth()->user();
+            $userId = $auth->id;
+            $ulbId = $auth->ulb_id;
+            $wardId = $this->getWardByUserId($userId);
+
+            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
+                return $ward->ward_id;
+            });
+
+            $roles = $this->getRoleIdByUserId($userId);
+
+            $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
+                return $role->wf_role_id;
+            });
+
+            $harvestingList = new PropActiveHarvesting();
+            $harvesting = $harvestingList->getHarvestingList($ulbId)
+                ->whereIn('prop_active_harvestings.current_role', $roleId)
+                ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->where('parked', true)
+                ->orderByDesc('prop_active_harvestings.id')
+                ->get();
+
+            return responseMsgs(true, "BTC Inbox List", remove_null($harvesting), 010717, 1.0, "271ms", "POST", "", "");;
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010717, 1.0, "271ms", "POST", "", "");
         }
     }
 }

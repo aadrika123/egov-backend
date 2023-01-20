@@ -409,7 +409,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var msg
      * | @return msg : status
         | Serial No : 07
-        | Working 
+        | Working  / not used 
      */
     public function waterDocStatus($req)
     {
@@ -733,7 +733,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var data
      * | @return data : document details
         | Serial No : 10
-        | Working
+        | Working / not used
      */
     public function getWaterDocDetails($request)
     {
@@ -769,7 +769,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var docDetails
      * | @return docDetails : listed doc details according to application Id
         | Serial No : 10.01
-        | Working / Shift to model
+        | Working / Shift to model / not ued
      */
     public function getWaterDocuments($applicationId)
     {
@@ -798,7 +798,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var docPath
      * | @return docPath : doc url
         | Serial No : 10.02
-        | Working
+        | Working / not used
      */
     public function readDocumentPath($path)
     {
@@ -815,7 +815,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var mModuleId
      * | @var metaReqs
         | Serial No : 11
-        | Working
+        | Working 
      */
     public function commentIndependent($request)
     {
@@ -837,6 +837,11 @@ class NewConnectionRepository implements iNewConnection
             'refTableDotId' => "water_applications.id",
             'refTableIdValue' => $applicationId->id,
         ];
+        
+        # For Citizen Independent Comment
+        if (!$request->senderRoleId) {
+            $metaReqs = array_merge($metaReqs, ['citizenId' => auth()->user()->id]);
+        }
         $request->request->add($metaReqs);
         $workflowTrack->saveTrack($request);
         return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "427ms", "POST", "");
