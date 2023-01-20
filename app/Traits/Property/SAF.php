@@ -210,6 +210,7 @@ trait SAF
         $array['petrolPump']['dateFrom'] = $req['petrol_pump_completion_date'];
         $array['isWaterHarvesting'] = $req['is_water_harvesting'];
         $array['zone'] = $req['zone_mstr_id'];
+        $array['roadTypeMstrId'] = $req['road_type_mstr_id'];
         $refFloors = $req['floors'];
 
         foreach ($refFloors as $key => $refFloor) {
@@ -285,16 +286,15 @@ trait SAF
                     'quarterYear' => $collection->first()['quarterYear'],
                     'qtr' => $collection->first()['qtr'],
                     'dueDate' => $collection->first()['dueDate'],
-                    'rwhPenalty' => $collection->sum('rwhPenalty'),
+                    'rwhPenalty' => roundFigure($collection->sum('rwhPenalty')),
                     'onePercPenaltyTax' => roundFigure($collection->sum('onePercPenaltyTax')),
-                    'arv' => $collection->sum('arv'),
-                    'holdingTax' => $collection->sum('holdingTax'),
-                    'waterTax' => $collection->sum('waterTax'),
-                    'educationTax' => $collection->sum('educationTax'),
-                    'healthCess' => $collection->sum('healthTax'),
-                    'latrineTax' => $collection->sum('latrineTax'),
-                    'additionTax' => $collection->sum('additionalTax'),
-                    'latrineTax' => $collection->sum('latrineTax'),
+                    'arv' => roundFigure($collection->sum('arv')),
+                    'holdingTax' => roundFigure($collection->sum('holdingTax')),
+                    'waterTax' => roundFigure($collection->sum('waterTax')),
+                    'educationTax' => roundFigure($collection->sum('educationTax')),
+                    'healthCess' => roundFigure($collection->sum('healthTax')),
+                    'latrineTax' => roundFigure($collection->sum('latrineTax')),
+                    'additionTax' => roundFigure($collection->sum('additionalTax')),
                     'totalTax' => roundFigure($collection->sum('totalTax'))
                 ]);
             });

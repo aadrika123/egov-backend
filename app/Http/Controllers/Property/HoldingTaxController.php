@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
+use App\Models\ActiveSafDemand;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Traits\Property\SAF;
@@ -30,6 +31,7 @@ class HoldingTaxController extends Controller
             'propId' => 'required|numeric'
         ]);
         try {
+            $holdingDemand = array();
             $propId = $req->propId;
             $mPropProperty = new PropProperty();
             $safCalculation = new SafCalculation;
@@ -40,7 +42,9 @@ class HoldingTaxController extends Controller
 
             $calParams = new Request($calParams);
             $taxes = $safCalculation->calculateTax($calParams);
-            return $taxes;
+            $holdingDemand['amount'] = $taxes->original['data']['demand'];
+            $holdingDemand['details'] = $this->generateSafDemand($taxes->original['data']['details']);
+            return $holdingDemand;
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011601", "1.0", "", "POST", $req->deviceId ?? "");
         }
@@ -52,8 +56,18 @@ class HoldingTaxController extends Controller
     public function generateCalculationParams($propertyId, $propDetails)
     {
         $mPropDemand = new PropDemand();
+        $mSafDemand = new ActiveSafDemand();
+        $safId = $this->_propertyDetails->saf_id;
+        $todayDate = Carbon::now();
         $propDemand = $mPropDemand->readLastDemandDateByPropId($propertyId);
+        if (!$propDemand) {
+            $propDemand = $mSafDemand->readLastDemandDateBySafId($safId);
+            if (!$propDemand)
+                throw new Exception("Last Demand is Not Available for this Property");
+        }
         $lastPayDate = $propDemand->due_date;
+        if (Carbon::parse($lastPayDate) > $todayDate)
+            throw new Exception("No Dues For This Property");
         $payFrom = Carbon::parse($lastPayDate)->addDay(1);
         $payFrom = $payFrom->format('Y-m-d');
 
