@@ -592,6 +592,10 @@ class ActiveSafController extends Controller
     #Saf Details
     public function safDetails(Request $req)
     {
+        $req->validate([
+            'applicationId' => 'required|integer'
+        ]);
+
         try {
             $mPropActiveSaf = new PropActiveSaf();
             $mPropActiveSafOwner = new PropActiveSafsOwner();
