@@ -4480,6 +4480,7 @@ class Trade implements ITrade
                 }
             }
             $show = explode(",", $show);
+            DB::enableQueryLog();
             $data = TradeParamDocumentType::select("doc_for", "is_mandatory", "show")
                 ->where("application_type_id", $refLicense->application_type_id)
                 ->where("status", 1)
@@ -4489,6 +4490,7 @@ class Trade implements ITrade
                 $data = $data->where("doc_for", "<>", "Application Form");
             }
             $data =    $data->get();
+            dd(DB::getQueryLog());
             return $data;
         } catch (Exception $e) {
             return $e->getMessage();
