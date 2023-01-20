@@ -1069,7 +1069,7 @@ class WaterNewConnection implements IWaterNewConnection
     }
     public function readDocumentPath($path)
     {
-        $path = (config('app.url') . '/api/getImageLink?path=' . $path);
+        $path = (config('app.url')."/". $path);
         return $path;
     }
     public function getWaterDocuments($id)
