@@ -15,13 +15,13 @@ trait SafDetailsTrait
     public function generateBasicDetails($data)
     {
         return new Collection([
-            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $data->old_ward_no],
-            ['displayString' => 'New Ward No', 'key' => 'newWardNo', 'value' => $data->new_ward_no],
-            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $data->ownership_type],
-            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $data->property_type],
-            ['displayString' => 'Zone', 'key' => 'zone', 'value' => ($data->zone_mstr_id == 1) ? 'Zone 1' : 'Zone 2'],
-            ['displayString' => 'Property has Mobile Tower(s) ?', 'key' => 'isMobileTower', 'value' => ($data->is_mobile_tower == false) ? 'No' : 'Yes'],
-            ['displayString' => 'Property has Hoarding Board(s) ?', 'key' => 'isHoardingBoard', 'value' => ($data->is_hoarding_board == false) ? 'No' : 'Yes']
+            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $data->old_ward_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'New Ward No', 'key' => 'newWardNo', 'value' => $data->new_ward_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $data->ownership_type, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $data->property_type, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Zone', 'key' => 'zone', 'value' => ($data->zone_mstr_id == 1) ? 'Zone 1' : 'Zone 2', 'canBtc' => 'true', 'canEdit' => 'false'],
+            ['displayString' => 'Property has Mobile Tower(s) ?', 'key' => 'isMobileTower', 'value' => ($data->is_mobile_tower == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Property has Hoarding Board(s) ?', 'key' => 'isHoardingBoard', 'value' => ($data->is_hoarding_board == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true']
         ]);
     }
 
@@ -31,16 +31,16 @@ trait SafDetailsTrait
     public function generatePropertyDetails($data)
     {
         return new Collection([
-            ['displayString' => 'Khata No.', 'key' => 'khataNo', 'value' => $data->khata_no],
-            ['displayString' => 'Plot No.', 'key' => 'plotNo', 'value' => $data->plot_no],
-            ['displayString' => 'Village/Mauja Name', 'key' => 'villageMaujaName', 'value' => $data->village_mauja_name],
-            ['displayString' => 'Area of Plot', 'key' => 'areaOfPlot', 'value' => $data->area_of_plot],
-            ['displayString' => 'Road Width', 'key' => 'roadWidth', 'value' => $data->road_width ?? ""],
-            ['displayString' => 'City', 'key' => 'city', 'value' => $data->prop_city],
-            ['displayString' => 'District', 'key' => 'district', 'value' => $data->prop_dist],
-            ['displayString' => 'State', 'key' => 'state', 'value' => $data->prop_state],
-            ['displayString' => 'Pin', 'key' => 'pin', 'value' => $data->prop_pin_code],
-            ['displayString' => 'Locality', 'key' => 'locality', 'value' => $data->prop_address],
+            ['displayString' => 'Khata No.', 'key' => 'khataNo', 'value' => $data->khata_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Plot No.', 'key' => 'plotNo', 'value' => $data->plot_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Village/Mauja Name', 'key' => 'villageMaujaName', 'value' => $data->village_mauja_name, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Area of Plot', 'key' => 'areaOfPlot', 'value' => $data->area_of_plot, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Road Width', 'key' => 'roadWidth', 'value' => $data->road_width ?? "", 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'City', 'key' => 'city', 'value' => $data->prop_city, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'District', 'key' => 'district', 'value' => $data->prop_dist, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'State', 'key' => 'state', 'value' => $data->prop_state, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Pin', 'key' => 'pin', 'value' => $data->prop_pin_code, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Locality', 'key' => 'locality', 'value' => $data->prop_address, 'canBtc' => 'true', 'canEdit' => 'true'],
         ]);
     }
 
@@ -50,11 +50,11 @@ trait SafDetailsTrait
     public function generateCorrDtls($data)
     {
         return new Collection([
-            ['displayString' => 'City', 'key' => 'corrCity', 'value' => $data->corr_city],
-            ['displayString' => 'District', 'key' => 'corrDistrict', 'value' => $data->corr_dist],
-            ['displayString' => 'State', 'key' => 'corrState', 'value' => $data->corr_state],
-            ['displayString' => 'Pin', 'key' => 'corrPin', 'value' => $data->corr_pin_code],
-            ['displayString' => 'Locality', 'key' => 'corrLocality', 'value' => $data->corr_address],
+            ['displayString' => 'City', 'key' => 'corrCity', 'value' => $data->corr_city, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'District', 'key' => 'corrDistrict', 'value' => $data->corr_dist, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'State', 'key' => 'corrState', 'value' => $data->corr_state, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Pin', 'key' => 'corrPin', 'value' => $data->corr_pin_code, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Locality', 'key' => 'corrLocality', 'value' => $data->corr_address, 'canBtc' => 'true', 'canEdit' => 'true'],
         ]);
     }
 
@@ -64,14 +64,14 @@ trait SafDetailsTrait
     public function generateElectDtls($data)
     {
         return new Collection([
-            ['displayString' => 'Electricity K. No', 'key' => 'electKNo', 'value' => $data->elect_consumer_no],
-            ['displayString' => 'ACC No.', 'key' => 'accNo', 'value' => $data->elect_acc_no],
-            ['displayString' => 'BIND/BOOK No.', 'key' => 'bindBookNo', 'value' => $data->elect_bind_book_no],
-            ['displayString' => 'Electricity Consumer Category', 'key' => 'electConsumerCategory', 'value' => $data->elect_cons_category],
-            ['displayString' => 'Building Plan Approval No.', 'key' => 'buildingApprovalNo', 'value' => $data->building_plan_approval_no],
-            ['displayString' => 'Building Plan Approval Date', 'key' => 'buildingApprovalDate', 'value' => $data->building_plan_approval_date],
-            ['displayString' => 'Water Consumer No.', 'key' => 'waterConsumerNo', 'value' => $data->water_conn_no],
-            ['displayString' => 'Water Connection Date', 'key' => 'waterConnectionDate', 'value' => $data->water_conn_date]
+            ['displayString' => 'Electricity K. No', 'key' => 'electKNo', 'value' => $data->elect_consumer_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'ACC No.', 'key' => 'accNo', 'value' => $data->elect_acc_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'BIND/BOOK No.', 'key' => 'bindBookNo', 'value' => $data->elect_bind_book_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Electricity Consumer Category', 'key' => 'electConsumerCategory', 'value' => $data->elect_cons_category, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Building Plan Approval No.', 'key' => 'buildingApprovalNo', 'value' => $data->building_plan_approval_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Building Plan Approval Date', 'key' => 'buildingApprovalDate', 'value' => $data->building_plan_approval_date, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Water Consumer No.', 'key' => 'waterConsumerNo', 'value' => $data->water_conn_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Water Connection Date', 'key' => 'waterConnectionDate', 'value' => $data->water_conn_date, 'canBtc' => 'true', 'canEdit' => 'true']
         ]);
     }
 
