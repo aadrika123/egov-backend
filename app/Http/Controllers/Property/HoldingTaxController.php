@@ -44,6 +44,7 @@ class HoldingTaxController extends Controller
             $taxes = $safCalculation->calculateTax($calParams);
             $holdingDemand['amount'] = $taxes->original['data']['demand'];
             $holdingDemand['details'] = $this->generateSafDemand($taxes->original['data']['details']);
+            $holdingDemand['applicationNo'] = $details['holding_no'];
             return responseMsgs(true, "Property Demand", remove_null($holdingDemand), "011601", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011601", "1.0", "", "POST", $req->deviceId ?? "");
