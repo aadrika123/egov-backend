@@ -38,6 +38,7 @@ use App\Models\Property\RefPropTransferMode;
 use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
 use App\Models\UlbWardMaster;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
@@ -697,12 +698,6 @@ class ActiveSafController extends Controller
             $docList = $getDocuments->getUploadDocuments($req);
             $fullDetailsData['documentList'] = collect($docList)['original']['data'];
 
-            $getDocumentList = $getDocuments->getDocList($req);
-            // $documentList = collect($getDocumentList)['original']['data']['documentsList'];
-            // $fullDetailsData['docrequired'] = collect($documentList)->map(function ($value) {
-            //     return $value['docVal'];
-            // });
-
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -800,12 +795,11 @@ class ActiveSafController extends Controller
         ]);
 
         try {
+            $saf = PropActiveSaf::find($request->applicationId);
             // SAF Application Update Current Role Updation
             DB::beginTransaction();
-            $saf = PropActiveSaf::find($request->applicationId);
             $saf->current_role = $request->receiverRoleId;
             $saf->save();
-
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
@@ -815,7 +809,6 @@ class ActiveSafController extends Controller
 
             $track = new WorkflowTrack();
             $track->saveTrack($request);
-
 
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);
