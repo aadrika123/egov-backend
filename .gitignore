@@ -21,3 +21,5 @@ yarn-error.log
 /storage/concession
 # /razorpay-php
 public/Uploads/Property/
+public/Uploads/Trade/
+
