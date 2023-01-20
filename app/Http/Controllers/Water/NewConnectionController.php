@@ -383,7 +383,8 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 'comment' => 'required',
-                'applicationId' => 'required'
+                'applicationId' => 'required',
+                'senderRoleId' => 'nullable|integer'
             ]);
             return $this->newConnection->commentIndependent($request);
         } catch (Exception $e) {
@@ -678,7 +679,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Citizen view : Get Application Details
+    // Citizen view : Get Application Details of viewind
     public function getApplicationDetails(Request $request)
     {
         $request->validate([
@@ -807,6 +808,8 @@ class NewConnectionController extends Controller
             $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
             foreach ($requiedDocType as $val) {
                 $doc = (array) null;
+                $doc["ownerId"] = collect($refOwneres)->first()->id;
+                $doc["ownerName"] = collect($refOwneres)->first()->applicant_name;
                 $doc['docName'] = $val->doc_for;
                 $doc['isMadatory'] = $val->is_mandatory;
                 $doc['docVal'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
