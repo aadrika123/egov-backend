@@ -352,6 +352,10 @@ class ConcessionController extends Controller
             $mForwardBackward = new WorkflowMap();
             $mRefTable = Config::get('PropertyConstaint.SAF_CONCESSION_REF_TABLE');
             $details = $mPropActiveConcession->getDetailsById($req->applicationId);
+
+            if (!$details)
+                throw new Exception("Application Not Found for this id");
+
             // Data Array
             $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
             $basicElement = [

@@ -74,6 +74,25 @@ class WfActiveDocument extends Model
             ->get();
     }
 
+    public function getTradeDocByAppNo($applicationNo)
+    {
+        return DB::table('wf_active_documents as d')
+            ->select(
+                'd.id',
+                'd.image',
+                DB::raw("concat(relative_path,'/',image) as doc_path"),
+                'd.remarks',
+                'd.verify_status',
+                'd.doc_mstr_id',
+                'dm.doc_for',
+                'o.owner_name'
+            )
+            ->join('trade_param_document_types as dm', 'dm.id', '=', 'd.doc_mstr_id')
+            ->leftJoin('active_trade_owners as o', 'o.id', '=', 'd.owner_dtl_id')
+            ->where('d.active_id', $applicationNo)
+            ->get();
+    }
+
 
     /**
      * | Document Verify Reject
