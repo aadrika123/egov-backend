@@ -901,7 +901,7 @@ class Trade implements ITrade
                 }
             }
             $refOldLicece->firm_type_id        = $request->initialBusinessDetails['firmType'];
-            $refOldLicece->otherfirmtype       = $request->initialBusinessDetails['otherFirmType'] ?? null;
+            $refOldLicece->firm_description    = $request->initialBusinessDetails['otherFirmType'] ?? null;
             $refOldLicece->category_type_id    = $request->initialBusinessDetails['categoryTypeId'] ?? null;
             $refOldLicece->ownership_type_id   = $request->initialBusinessDetails['ownershipType'];
             $refOldLicece->ward_id             = $request->firmDetails['wardNo'];
