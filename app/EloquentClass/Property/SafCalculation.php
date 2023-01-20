@@ -1008,7 +1008,7 @@ class SafCalculation
             }
         }
 
-        // No Late Assessment For Property
+        // No Late Assessment For Property Yearly Holding Tax
         if ($this->_propertyDetails['isProperty'] ?? "" && $this->_propertyDetails['isProperty'] == true) {
             $lateAssessmentStatus = false;
             $fine = 0;
