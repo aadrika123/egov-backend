@@ -52,26 +52,25 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('post-next-level', 'postNextLevel');                                                //
         Route::post('get-pending-application-by-id', 'getApplicationsDetails');                         //
         Route::post('list-special-inbox', 'waterSpecialInbox');                                         //
-        Route::post('escalate', 'postEscalate');                                                        //
-        Route::post('list-doc', 'getWaterDocDetails');                                                  //
-        Route::post('verify-doc', 'waterDocStatus');                                                    //
+        Route::post('escalate', 'postEscalate');                                                        //       
         Route::post('approval-rejection-application', 'approvalRejectionWater');                        //
         Route::post('post-message', 'commentIndependent');                                              //
-        Route::post('approved-water-applications', 'approvedWaterApplications');                        //
-        Route::post('list-message', 'getIndependentComment');                                           //
+        Route::post('approved-water-applications', 'approvedWaterApplications');                        //       
         Route::post('list-field-verified-inbox', 'fieldVerifiedInbox');                                 //
         Route::post('verification-field', 'fieldVerification');                                         //
         Route::post('generate_payment_receipt', 'generatePaymentReceipt');                              //
         Route::post('back_to_citizen', 'backToCitizen');                                                //
         Route::post('list_btc_inbox', 'btcInbox');                                                      //
-        Route::Post('delete_application', 'deleteWaterApplication');                                    //
-        Route::post('edit_water_details', 'editWaterDetails');                                          //
+        Route::Post('delete_application', 'deleteWaterApplication');                                    //       
         Route::post('get_application_details', 'getApplicationDetails');                                //
         Route::post('upload_document', 'uploadWaterDoc');
         Route::post('get_upload_documents', 'getUploadDocuments');
-
-        Route::post('demo_doc', 'getDocToUpload');
-        // Route::post('', 'getLevelcomment');                                                          //
+        Route::post('list_doc_to_upload', 'getDocToUpload');
+        
+        // Route::post('list-doc', 'getWaterDocDetails');                                                  //
+        // Route::post('verify-doc', 'waterDocStatus');                                                    //
+        // Route::post('list-message', 'getIndependentComment');                                           //
+        // Route::post('edit_water_details', 'editWaterDetails');                                          //
     });
 });
 
@@ -86,7 +85,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('citizenApplications', 'getCitizenApplication');                                     //10
         Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
-        Route::post('get_doc_to_upload', 'documentUpload');                                             //13
+        // Route::post('get_doc_to_upload', 'documentUpload');                                             //13
         // Route::post('getUploadedDoc', 'getUploadDocuments');                                            //14
     });
 });

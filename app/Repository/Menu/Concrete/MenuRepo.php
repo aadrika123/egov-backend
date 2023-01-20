@@ -140,7 +140,8 @@ class MenuRepo implements iMenuRepo
     public function generateMenuTree($req)
     {
         $mMenuMaster = new MenuMaster();
-        $mMenues = $mMenuMaster->getMenuByRole($req->roleId);
+        $mMenues = $mMenuMaster->fetchAllMenues();
+        $mRoleMenues = $mMenuMaster->getMenuByRole($req->roleId);
 
         $data = collect($mMenues)->map(function ($value, $key) {
             $return = array();
@@ -170,6 +171,15 @@ class MenuRepo implements iMenuRepo
         }
 
         $data = collect($data)->values();
-        return responseMsgs(true, "OPERATION OK!", $data, "", "01", "308.ms", "POST", $req->deviceId);
+        $roleWise = collect($mRoleMenues)->map(function ($value) {
+            return $value['id'];
+        });
+        $retunProperValues = collect($data)->map(function ($value, $key) use ($roleWise) {
+            if ($roleWise->contains($value['id'])) {
+                return $value;
+            }
+        });
+
+        return responseMsgs(true, "OPERATION OK!", $retunProperValues->filter()->values(), "", "01", "308.ms", "POST", $req->deviceId);
     }
 }

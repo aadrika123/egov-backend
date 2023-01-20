@@ -16,6 +16,7 @@ use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\property\ClusterController;
 use App\Http\Controllers\Property\ObjectionDocController;
 use App\Http\Controllers\Property\ConcessionDocController;
+use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Property\SafDocController;
 
 /**
@@ -295,8 +296,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    */
   Route::controller(PropertyDetailsController::class)->group(function () {
     Route::post('get-filter-application-details', 'applicationsListByKey');        // 01
-    Route::post('get-filter-property-details', 'propertyListByKey');            // 02
-    Route::get('get-list-saf', 'getListOfSaf');                                 // 03
-    Route::post('active-application/get-user-details', 'getUserDetails'); // 04
+    Route::post('get-filter-property-details', 'propertyListByKey');              // 02
+    Route::get('get-list-saf', 'getListOfSaf');                                   // 03
+    Route::post('active-application/get-user-details', 'getUserDetails');         // 04
+  });
+
+  /**
+   * | Calculation of Yearly Property Tax and generation of its demand
+   * | Serial No-16 
+   */
+  Route::controller(HoldingTaxController::class)->group(function () {
+    Route::post('generate-holding-demand', 'generateHoldingDemand');              // (01) Property/Holding Yearly Holding Tax Generation
   });
 });

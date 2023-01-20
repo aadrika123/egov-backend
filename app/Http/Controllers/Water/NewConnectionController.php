@@ -330,7 +330,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // View Uploaded Documents
+    // View Uploaded Documents   // NOT used
     public function getWaterDocDetails(Request $request)
     {
         try {
@@ -343,7 +343,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Verification/Rejection of Document 
+    // Verification/Rejection of Document  // NOT used
     public function waterDocStatus(Request $request)
     {
         try {
@@ -440,7 +440,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Get the water payment details and track details  // RECHECK
+    // Get the water payment details and track details  // RECHECK  // Not used
     public function getIndependentComment(Request $request)
     {
         try {
@@ -641,7 +641,7 @@ class NewConnectionController extends Controller
 
     // Edit the Water Application
     /**
-        | Not / validate the payment status / Check the use
+        | Not / validate the payment status / Check the use / Not used
      */
     public function editWaterDetails(Request $req)
     {
@@ -686,9 +686,8 @@ class NewConnectionController extends Controller
         ]);
         try {
             $mWaterApplication = new WaterApplication();
-            $mWaterNewConnection = new WaterNewConnection();
+            $mWaterApplicant = new WaterApplicant();
             $mWaterTran = new WaterTran();
-
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
 
@@ -698,7 +697,7 @@ class NewConnectionController extends Controller
                 'ulbId' => auth()->user()->ulb_id,
             ];
             $request->request->add($metaReqs);
-            $document = $mWaterNewConnection->documentUpload($request);
+            $document = $this->getDocToUpload($request);
             $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
             # Payment Details 
@@ -706,7 +705,10 @@ class NewConnectionController extends Controller
             $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
-            $returnData = array_merge($applicationDetails, $documentDetails, $waterTransDetail);
+            # owner details
+            $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
+
+            $returnData = array_merge($applicationDetails, $documentDetails, $waterTransDetail, $ownerDetails);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -778,9 +780,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    /**
-        | This is Manditory / use in the place of the document list
-     */
+    // Get the document to be upoaded with list of dock uploaded 
     public function getDocToUpload(Request $request)
     {
         $request->validate([
