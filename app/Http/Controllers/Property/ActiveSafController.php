@@ -316,10 +316,9 @@ class ActiveSafController extends Controller
     public function editSaf(Request $req)
     {
         $req->validate([
-            'id' => 'required|integer',
-            'zone' => 'required|integer',
+            'id' => 'required|numeric',
             'owner' => 'array',
-            'owner.*.ownerId' => 'required|integer',
+            'owner.*.ownerId' => 'required|numeric',
             'owner.*.ownerName' => 'required',
             'owner.*.guardianName' => 'required',
             'owner.*.relation' => 'required',
