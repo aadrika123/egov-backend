@@ -41,6 +41,14 @@ class reqApplySaf extends FormRequest
         $rules['roadType']      = "required|numeric";
         $rules['areaOfPlot']    = "required|numeric";
         $rules['isMobileTower'] = "required|bool";
+        $rules['owner'] = "required|array";
+        if (isset($this->owner) && $this->owner) {
+            $rules["owner.*.ownerName"] = "required";
+            $rules["owner.*.gender"] = "required";
+            $rules["owner.*.dob"] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
+            $rules["owner.*.isArmedForce"] = "required|bool";
+            $rules["owner.*.isSpeciallyAbled"] = "required|bool";
+        }
         if (isset($this->isMobileTower) && $this->isMobileTower) {
             $rules['mobileTower.area'] = "required|numeric";
             $rules['mobileTower.dateFrom'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
