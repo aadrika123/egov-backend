@@ -151,7 +151,7 @@ class TradeCitizen implements ITradeCitizen
             if (!$RazorPayRequest) {
                 throw new Exception("Data Not Found");
             }
-            $refLecenceData = ActiveLicence::find($args["id"]);
+            $refLecenceData = ActiveTradeLicence::find($args["id"]);
             $licenceId = $args["id"];
             $refLevelData = $this->_counter->getWorkflowTrack($licenceId); //TradeLevelPending::getLevelData($licenceId);
             if (!$refLecenceData) {
