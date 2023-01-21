@@ -66,9 +66,9 @@ class MenuController extends Controller
     {
         try {
             $request->validate([
-                'menuName' => 'required',
-                'route' => 'required|unique:menu_masters,route',
-                'parentSerial' => 'required',
+                'menuName'      => 'required',
+                'route'         => 'required|unique:menu_masters,route',
+                'parentSerial'  => 'required',
             ]);
             $menuMaster = new MenuMaster();
             $menuMaster->putNewMenues($request);
@@ -112,8 +112,7 @@ class MenuController extends Controller
         }
     }
 
-
-    // List the Menu Parent
+    // List all the Parent Menu
     public function listParentSerial()
     {
         try {
