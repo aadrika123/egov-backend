@@ -512,7 +512,7 @@ class TradeCitizenController extends Controller
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
-            $TradeRazorPayResponse = TradeRazorPayResponse::select("trade_razor_pay_responses.*", "trade_razor_pay_requests.payment_from")
+            $TradeRazorPayResponse = TradeRazorPayResponse::select("trade_razor_pay_responses.*", "trade_razor_pay_requests.tran_type")
                 ->join("trade_razor_pay_requests", "trade_razor_pay_requests.id", "trade_razor_pay_responses.request_id")
                 ->where("trade_razor_pay_responses.order_id", $request->orderId)
                 ->where("trade_razor_pay_responses.payment_id", $request->paymentId)
@@ -534,13 +534,13 @@ class TradeCitizenController extends Controller
                 throw new Exception("Not Transection Data Found....");
             }
             $data["amount"]            = $TradeRazorPayResponse->amount;
-            $data["applicationId"]     = $TradeRazorPayResponse->licence_id;
+            $data["applicationId"]     = $TradeRazorPayResponse->temp_id;
             $data["applicationNo"]     = $application->application_no;
-            $data["tranType"]          = $TradeRazorPayResponse->payment_from;
+            $data["tranType"]          = $TradeRazorPayResponse->tran_type;
             $data["transectionId"]     = $transection->id;
-            $data["transectionNo"]     = $transection->transaction_no;
-            $data["transectionDate"]   = $transection->transaction_date;
-            $data['paymentRecipt']     = config('app.url') . $path . $TradeRazorPayResponse->licence_id . "/" . $transection->id;
+            $data["transectionNo"]     = $transection->tran_no;
+            $data["transectionDate"]   = $transection->tran_date;
+            $data['paymentRecipt']     = config('app.url') . $path . $TradeRazorPayResponse->temp_id . "/" . $transection->id;
             return responseMsg(
                 true,
                 "",
