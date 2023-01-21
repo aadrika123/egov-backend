@@ -500,7 +500,7 @@ class TradeCitizenController extends Controller
     public function conformRazorPayTran(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser     = Auth()->user();
             $application = null;
             $transection = null;
             $path = "/api/trade/paymentReceipt/";
