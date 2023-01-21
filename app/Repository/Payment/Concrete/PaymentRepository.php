@@ -3,6 +3,7 @@
 namespace App\Repository\Payment\Concrete;
 
 use App\Http\Controllers\Property\ActiveSafController;
+use App\Http\Controllers\Trade\TradeCitizenController;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\DepartmentMaster;
 use App\Models\Payment\PaymentGatewayDetail;
@@ -307,7 +308,7 @@ class PaymentRepository implements iPayment
                         $objWater->razorPayResponse($transfer);
                         break;
                     case ('3'):                                      //<-------------------(TRADE)
-                        $objTrade = new Trade();
+                        $objTrade = new TradeCitizenController();
                         $objTrade->razorPayResponse($transfer);
                         break;
                 }

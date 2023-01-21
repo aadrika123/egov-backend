@@ -82,4 +82,13 @@ class MenuMaster extends Model
         )
         ->where('parent_serial',0);
     }
+
+    /**
+     * | Get Menues By Id
+     */
+    public function getMenuById($id)
+    {
+        return MenuMaster::find($id)
+        ->first();
+    }
 }
