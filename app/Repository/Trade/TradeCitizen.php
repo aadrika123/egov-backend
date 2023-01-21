@@ -29,6 +29,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Models\Trade\ActiveTradeLicence;
+use App\Models\Trade\TradeFineRebete;
 
 class TradeCitizen implements ITradeCitizen
 {
@@ -209,15 +210,16 @@ class TradeCitizen implements ITradeCitizen
             $RazorPayRequest->update();
 
             $Tradetransaction = new TradeTransaction();
-            $Tradetransaction->related_id       = $licenceId;
-            $Tradetransaction->ward_mstr_id     = $refLecenceData->ward_mstr_id;
-            $Tradetransaction->transaction_type = $transactionType;
-            $Tradetransaction->transaction_date = $mNowDate;
+            $Tradetransaction->temp_id          = $licenceId;
+            $Tradetransaction->response_id      = $RazorPayResponse->id;
+            $Tradetransaction->ward_id          = $refLecenceData->ward_mstr_id;
+            $Tradetransaction->tran_type        = $transactionType;
+            $Tradetransaction->tran_date        = $mNowDate;
             $Tradetransaction->payment_mode     = "Online";
             $Tradetransaction->paid_amount      = $totalCharge;
             $Tradetransaction->penalty          = $chargeData['penalty'] + $mDenialAmount + $chargeData['arear_amount'];
-            $Tradetransaction->emp_details_id   = $refUserId;
-            $Tradetransaction->created_on       = $mTimstamp;
+            $Tradetransaction->emp_dtl_id       = $refUserId;
+            $Tradetransaction->created_at       = $mTimstamp;
             $Tradetransaction->ip_address       = '';
             $Tradetransaction->ulb_id           = $refUlbId;
             $Tradetransaction->save();
@@ -225,22 +227,20 @@ class TradeCitizen implements ITradeCitizen
             $Tradetransaction->transaction_no   = $args["transactionNo"]; //$this->createTransactionNo($transaction_id);//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
             $Tradetransaction->update();
 
-            $TradeFineRebet = new TradeFineRebetDetail();
-            $TradeFineRebet->transaction_id = $transaction_id;
-            $TradeFineRebet->head_name      = 'Delay Apply License';
+            $TradeFineRebet = new TradeFineRebete();
+            $TradeFineRebet->tran_id = $transaction_id;
+            $TradeFineRebet->type      = 'Delay Apply License';
             $TradeFineRebet->amount         = $chargeData['penalty'];
-            $TradeFineRebet->value_add_minus = 'Add';
-            $TradeFineRebet->created_on     = $mTimstamp;
+            $TradeFineRebet->created_at     = $mTimstamp;
             $TradeFineRebet->save();
 
             $mDenialAmount = $mDenialAmount + $chargeData['arear_amount'];
             if ($mDenialAmount > 0) {
-                $TradeFineRebet2 = new TradeFineRebetDetail;
-                $TradeFineRebet2->transaction_id = $transaction_id;
-                $TradeFineRebet2->head_name      = 'Denial Apply';
+                $TradeFineRebet2 = new TradeFineRebete;
+                $TradeFineRebet2->tran_id = $transaction_id;
+                $TradeFineRebet2->type      = 'Denial Apply';
                 $TradeFineRebet2->amount         = $mDenialAmount;
-                $TradeFineRebet2->value_add_minus = 'Add';
-                $TradeFineRebet2->created_on     = $mTimstamp;
+                $TradeFineRebet2->created_at     = $mTimstamp;
                 $TradeFineRebet2->save();
             }
 
