@@ -625,8 +625,9 @@ class ObjectionController extends Controller
         //     // "docRefName" => "required"
         // ]);
 
-        // return $request;
+        return $request->owners[0]['gender'];
         try {
+
 
 
             $userId = authUser()->id;
@@ -673,6 +674,17 @@ class ObjectionController extends Controller
             //saving objection owner details
             # Flag : call model <----------
             foreach ($owner as $owners) {
+                // return $request->owners['gender'];
+                // if ($request->gender == 1) {
+                //     $concession->gender = 'Male';
+                // }
+                // if ($request->gender == 2) {
+                //     $concession->gender = 'Female';
+                // }
+                // if ($request->gender == 3) {
+                //     $concession->gender = 'Transgender';
+                // }
+
                 $objectionOwner = new PropActiveObjectionOwner();
                 $objectionOwner->objection_id = $objection->id;
                 $objectionOwner->gender = $owners['gender'];
