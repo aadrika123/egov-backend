@@ -17,7 +17,10 @@ use App\Repository\Payment\Interfaces\iPayment;
 use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\Trade\Trade;
 use App\Repository\Water\Concrete\WaterNewConnection;
-use App\Repository\Property\Interfaces\iSafRepository;;
+use App\Repository\Property\Interfaces\iSafRepository;
+use App\Repository\Trade\TradeCitizen;
+
+;
 
 use App\Traits\Payment\Razorpay;
 use Carbon\Carbon;
@@ -308,7 +311,7 @@ class PaymentRepository implements iPayment
                         $objWater->razorPayResponse($transfer);
                         break;
                     case ('3'):                                      //<-------------------(TRADE)
-                        $objTrade = new TradeCitizenController();
+                        $objTrade = new TradeCitizen();
                         $objTrade->razorPayResponse($transfer);
                         break;
                 }
