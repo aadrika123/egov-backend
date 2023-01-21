@@ -46,8 +46,8 @@ class reqApplySaf extends FormRequest
             $rules["owner.*.ownerName"] = "required";
             $rules["owner.*.gender"] = "required";
             $rules["owner.*.dob"] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
-            $rules["owner.*.isArmedForce"] = "required|bool";
-            $rules["owner.*.isSpeciallyAbled"] = "required|bool";
+            $rules["owner.*.isArmedForce"] = "required|in:true,false,0,1";
+            $rules["owner.*.isSpeciallyAbled"] = "required|in:true,false,0,1";
         }
         if (isset($this->isMobileTower) && $this->isMobileTower) {
             $rules['mobileTower.area'] = "required|numeric";
