@@ -1917,8 +1917,7 @@ class Trade implements ITrade
             //     'headerTitle' => "Property Details & Address",
             //     'data' => $propertyDetails
             // ];
-
-            $paymentDetail = $this->generatepaymentDetails($transactionDtl);      // Trait function to get payment Details
+            $paymentDetail = sizeOf($transactionDtl) > 0 ? $this->generatepaymentDetails($transactionDtl) : (array) null;      // Trait function to get payment Details
             $paymentElement = [
                 'headerTitle' => "Transaction Details",
                 "data" => $paymentDetail

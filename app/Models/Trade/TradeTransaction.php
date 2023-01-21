@@ -15,6 +15,6 @@ class TradeTransaction extends Model
         return self::select("*")
             ->where("temp_id", $licenseId)
             ->whereIn("status", [1, 2])
-            ->first();
+            ->get();
     }
 }
