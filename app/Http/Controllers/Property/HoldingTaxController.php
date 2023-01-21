@@ -48,7 +48,7 @@ class HoldingTaxController extends Controller
             $holdingDemand['holdingNo'] = $details['holding_no'];
             return responseMsgs(true, "Property Demand", remove_null($holdingDemand), "011601", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011601", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['holdingNo' => $details['holding_no']], "011601", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
