@@ -116,7 +116,6 @@ class PropertyDetailsController extends Controller
                         DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
                         DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
                     )
-
                         ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                         ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                         ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($parameter) . '%')
