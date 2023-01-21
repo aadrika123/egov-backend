@@ -103,9 +103,8 @@ class PropertyDetailsController extends Controller
                         ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                         ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                         ->where('prop_properties.holding_no', 'LIKE', '%' . $parameter . '%')
-                        ->orWhere('prop_properties.new_holding_no', 'LIKE', '%' . $parameter . '%')
                         ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
-                        ->paginate(15);
+                        ->paginate(50);
                     break;
 
                 case ("ownerName"):
@@ -136,9 +135,9 @@ class PropertyDetailsController extends Controller
                     )
                         ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                         ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-                        ->where('prop_properties.prop_address', 'LIKE', '%' . $parameter . '%')
+                        ->where('prop_properties.prop_address', 'LIKE', '%' . strtoupper($parameter) . '%')
                         ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
-                        ->paginate(15);
+                        ->paginate(50);
                     break;
 
                 case ("mobileNo"):
@@ -154,7 +153,7 @@ class PropertyDetailsController extends Controller
                         ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                         ->where('prop_owners.mobile_no', 'LIKE', '%' . $parameter . '%')
                         ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
-                        ->paginate(15);
+                        ->paginate(50);
                     break;
             }
             return responseMsgs(true, "Application Details", remove_null($data), "010501", "1.0", "", "POST", $request->deviceId ?? "");

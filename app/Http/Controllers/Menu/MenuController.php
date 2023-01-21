@@ -68,6 +68,7 @@ class MenuController extends Controller
             $request->validate([
                 'menuName' => 'required',
                 'route' => 'required|unique:menu_masters,route',
+                'parentSerial' => 'required',
             ]);
             $menuMaster = new MenuMaster();
             $menuMaster->putNewMenues($request);
@@ -111,30 +112,16 @@ class MenuController extends Controller
         }
     }
 
-    /**
-     * |------------------------ Provide menu to the role -----------------------|
-     */
-    public function provideParent(Request $req)
-    {
-        try {
-            MenuMaster::where('id', $req->menuID)
-                ->update([
-                    'parent_serial' => $req->parentId
-                ]);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 
-    //
+    // List the Menu Parent
     public function listParentSerial()
     {
-        try{
-           $mMenuMaster = new MenuMaster();
-           $mMenuMaster->
-        }catch(Exception $e)
-        {
-            return responseMsg(false,$e->getMessage(),"");
+        try {
+            $mMenuMaster = new MenuMaster();
+            $parentMenu = $mMenuMaster->getParentMenue()->get();
+            return responseMsgs(true, "parent Menu!", $parentMenu, "", "", "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }
