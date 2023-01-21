@@ -145,7 +145,7 @@ class TradeCitizen implements ITradeCitizen
             #-----------valication-------------------   
             $RazorPayRequest = TradeRazorPayRequest::select("*")
                 ->where("order_id", $args["orderId"])
-                ->where("licence_id", $args["id"])
+                ->where("temp_id", $args["id"])
                 ->where("status", 2)
                 ->first();
             if (!$RazorPayRequest) {
@@ -198,7 +198,7 @@ class TradeCitizen implements ITradeCitizen
             DB::beginTransaction();
 
             $RazorPayResponse = new TradeRazorPayResponse();
-            $RazorPayResponse->licence_id   = $RazorPayRequest->licence_id;
+            $RazorPayResponse->temp_id   = $RazorPayRequest->temp_id;
             $RazorPayResponse->request_id   = $RazorPayRequest->id;
             $RazorPayResponse->amount       = $args['amount'];
             $RazorPayResponse->merchant_id  = $args['merchantId'] ?? null;
