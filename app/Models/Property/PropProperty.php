@@ -65,4 +65,21 @@ class PropProperty extends Model
         $details['floors'] = $floors;
         return $details;
     }
+
+    /**
+     * | Get Property Details
+     */
+    public function getPropByHoldingNo($holdingNo)
+    {
+        return PropProperty::select(
+            'prop_properties.id',
+            'prop_properties.holding_no',
+            'ward_name',
+            'prop_address'
+        )
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+            ->where('prop_properties.holding_no', 'LIKE', '%' . $holdingNo . '%')
+            ->orWhere('prop_properties.new_holding_no', 'LIKE', '%' . $holdingNo . '%')
+            ->get();
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use KitLoong\MigrationsGenerator\Migration\Blueprint\Property;
 
 class PropSafsDemand extends Model
 {
@@ -48,5 +49,16 @@ class PropSafsDemand extends Model
     {
         $demands = PropSafsDemand::find($demandId);
         $demands->update($req);
+    }
+
+    /**
+     * | Get Last Demand Date by Saf Id
+     */
+    public function readLastDemandDateBySafId($safId)
+    {
+        $safDemand = PropSafsDemand::where('saf_id', $safId)
+            ->orderByDesc('id')
+            ->first();
+        return $safDemand;
     }
 }
