@@ -145,7 +145,7 @@ class TradeCitizen implements ITradeCitizen
             #-----------valication-------------------   
             $RazorPayRequest = TradeRazorPayRequest::select("*")
                 ->where("order_id", $args["orderId"])
-                ->where("licence_id", $args["id"])
+                ->where("temp_id", $args["id"])
                 ->where("status", 2)
                 ->first();
             if (!$RazorPayRequest) {
@@ -167,7 +167,7 @@ class TradeCitizen implements ITradeCitizen
             }
 
             $ward_no = UlbWardMaster::select("ward_name")
-                ->where("id", $refLecenceData->ward_mstr_id)
+                ->where("id", $refLecenceData->ward_id)
                 ->first();
             $mWardNo = $ward_no['ward_name'];
 
@@ -198,7 +198,7 @@ class TradeCitizen implements ITradeCitizen
             DB::beginTransaction();
 
             $RazorPayResponse = new TradeRazorPayResponse();
-            $RazorPayResponse->licence_id   = $RazorPayRequest->licence_id;
+            $RazorPayResponse->temp_id   = $RazorPayRequest->temp_id;
             $RazorPayResponse->request_id   = $RazorPayRequest->id;
             $RazorPayResponse->amount       = $args['amount'];
             $RazorPayResponse->merchant_id  = $args['merchantId'] ?? null;
@@ -212,7 +212,7 @@ class TradeCitizen implements ITradeCitizen
             $Tradetransaction = new TradeTransaction();
             $Tradetransaction->temp_id          = $licenceId;
             $Tradetransaction->response_id      = $RazorPayResponse->id;
-            $Tradetransaction->ward_id          = $refLecenceData->ward_mstr_id;
+            $Tradetransaction->ward_id          = $refLecenceData->ward_id;
             $Tradetransaction->tran_type        = $transactionType;
             $Tradetransaction->tran_date        = $mNowDate;
             $Tradetransaction->payment_mode     = "Online";
@@ -224,7 +224,7 @@ class TradeCitizen implements ITradeCitizen
             $Tradetransaction->ulb_id           = $refUlbId;
             $Tradetransaction->save();
             $transaction_id                     = $Tradetransaction->id;
-            $Tradetransaction->transaction_no   = $args["transactionNo"]; //$this->createTransactionNo($transaction_id);//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
+            $Tradetransaction->tran_no   = $args["transactionNo"]; //$this->createTransactionNo($transaction_id);//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
             $Tradetransaction->update();
 
             $TradeFineRebet = new TradeFineRebete();
