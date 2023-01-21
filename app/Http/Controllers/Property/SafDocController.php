@@ -71,7 +71,7 @@ class SafDocController extends Controller
             if (!$safDetails)
                 throw new Exception("Application Not Found for this application Id");
 
-            return $safNo = $safDetails->saf_no;
+            $safNo = $safDetails->saf_no;
             $documents = $mWfActiveDocument->getDocsByAppNo($safNo);
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {

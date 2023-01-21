@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActiveSafDemand;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSafsDemand;
 use App\Traits\Property\SAF;
 use Carbon\Carbon;
 use Exception;
@@ -47,7 +48,7 @@ class HoldingTaxController extends Controller
             $holdingDemand['holdingNo'] = $details['holding_no'];
             return responseMsgs(true, "Property Demand", remove_null($holdingDemand), "011601", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011601", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['holdingNo' => $details['holding_no']], "011601", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -57,7 +58,7 @@ class HoldingTaxController extends Controller
     public function generateCalculationParams($propertyId, $propDetails)
     {
         $mPropDemand = new PropDemand();
-        $mSafDemand = new ActiveSafDemand();
+        $mSafDemand = new PropSafsDemand();
         $safId = $this->_propertyDetails->saf_id;
         $todayDate = Carbon::now();
         $propDemand = $mPropDemand->readLastDemandDateByPropId($propertyId);

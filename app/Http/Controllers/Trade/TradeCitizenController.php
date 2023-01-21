@@ -270,6 +270,7 @@ class TradeCitizenController extends Controller
                 $args['firmEstdDate'] = $refLecenceData->establishment_date;
             }
             $args['tobacco_status']      = $refLecenceData->tobacco_status;
+            $args['application_no']      = $refLecenceData->application_no;
             $args['licenseFor']          = $refLecenceData->licence_for_years;
             $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
             $args['noticeDate']          = $mNoticeDate;
@@ -499,7 +500,7 @@ class TradeCitizenController extends Controller
     public function conformRazorPayTran(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser     = Auth()->user();
             $application = null;
             $transection = null;
             $path = "/api/trade/paymentReceipt/";

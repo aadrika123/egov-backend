@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ActiveSafDemand extends Model
 {
     use HasFactory;
+    protected $table = 'prop_safs_demands';
 
     /**
      * | Get Last Demand Date by Saf Id

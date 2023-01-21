@@ -625,8 +625,9 @@ class ObjectionController extends Controller
         //     // "docRefName" => "required"
         // ]);
 
-        // return $request;
+        // return $request->owners[0]['gender'];
         try {
+
 
 
             $userId = authUser()->id;
@@ -673,15 +674,26 @@ class ObjectionController extends Controller
             //saving objection owner details
             # Flag : call model <----------
             foreach ($owner as $owners) {
+                // return $request->owners['gender'];
+                // if ($request->gender == 1) {
+                //     $concession->gender = 'Male';
+                // }
+                // if ($request->gender == 2) {
+                //     $concession->gender = 'Female';
+                // }
+                // if ($request->gender == 3) {
+                //     $concession->gender = 'Transgender';
+                // }
+
                 $objectionOwner = new PropActiveObjectionOwner();
                 $objectionOwner->objection_id = $objection->id;
-                $objectionOwner->gender = $owners['gender'];
-                $objectionOwner->owner_name = $owners['ownerName'];
-                $objectionOwner->owner_mobile = $owners['mobileNo'];
+                $objectionOwner->gender = $owners['gender'] ?? null;
+                $objectionOwner->owner_name = $owners['ownerName'] ?? null;
+                $objectionOwner->owner_mobile = $owners['mobileNo'] ?? null;
                 $objectionOwner->aadhar = $owners['aadhar'] ?? null;
                 $objectionOwner->dob = $owners['dob'] ?? null;
-                $objectionOwner->guardian_name = $owners['guardianName'];
-                $objectionOwner->relation = $owners['relation'];
+                $objectionOwner->guardian_name = $owners['guardianName'] ?? null;
+                $objectionOwner->relation = $owners['relation'] ?? null;
                 $objectionOwner->pan = $owners['pan'] ?? null;
                 $objectionOwner->email = $owners['email'] ?? null;
                 $objectionOwner->is_armed_force = $owners['isArmedForce'] ?? false;
@@ -692,7 +704,7 @@ class ObjectionController extends Controller
 
             DB::commit();
 
-            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "member added use this for future use", $objectionNo, "010201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
         }
