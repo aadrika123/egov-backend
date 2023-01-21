@@ -14,6 +14,7 @@ use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PropertyDetailsController extends Controller
 {
@@ -80,7 +81,6 @@ class PropertyDetailsController extends Controller
     // get details of the diff operation in property
     public function propertyListByKey(Request $request)
     {
-        $ulbId = authUser()->ulb_id;
         $request->validate([
             'filteredBy' => "required",
             'parameter' => "required"
@@ -95,15 +95,16 @@ class PropertyDetailsController extends Controller
                     $data = PropProperty::select(
                         'prop_properties.id',
                         'prop_properties.holding_no',
-                        'prop_owners.mobile_no',
-                        'prop_owners.owner_name',
                         'ward_name',
-                        'prop_address'
+                        'prop_address',
+                        DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                        DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
                     )
-                        ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                         ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+                        ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                         ->where('prop_properties.holding_no', 'LIKE', '%' . $parameter . '%')
-                        ->where('prop_properties.ulb_id', $ulbId)
+                        ->orWhere('prop_properties.new_holding_no', 'LIKE', '%' . $parameter . '%')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
                         ->paginate(15);
                     break;
 
@@ -111,16 +112,16 @@ class PropertyDetailsController extends Controller
                     $data = PropProperty::select(
                         'prop_properties.id',
                         'prop_properties.holding_no',
-                        'prop_owners.mobile_no',
-                        'prop_owners.owner_name',
                         'ward_name',
-                        'prop_address'
+                        'prop_address',
+                        DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                        DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
                     )
 
                         ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                         ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
-                        ->where('prop_owners.owner_name', 'LIKE', '%' . $parameter . '%')
-                        ->where('prop_properties.ulb_id', $ulbId)
+                        ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($parameter) . '%')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
                         ->paginate(15);
                     break;
 
@@ -128,15 +129,15 @@ class PropertyDetailsController extends Controller
                     $data = PropProperty::select(
                         'prop_properties.id',
                         'prop_properties.holding_no',
-                        'prop_owners.mobile_no',
-                        'prop_owners.owner_name',
                         'ward_name',
-                        'prop_address'
+                        'prop_address',
+                        DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                        DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
                     )
                         ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                         ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                         ->where('prop_properties.prop_address', 'LIKE', '%' . $parameter . '%')
-                        ->where('prop_properties.ulb_id', $ulbId)
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
                         ->paginate(15);
                     break;
 
@@ -144,15 +145,15 @@ class PropertyDetailsController extends Controller
                     $data = PropProperty::select(
                         'prop_properties.id',
                         'prop_properties.holding_no',
-                        'prop_owners.mobile_no',
-                        'prop_owners.owner_name',
+                        DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                        DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
                         'ward_name',
                         'prop_address'
                     )
                         ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                         ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                         ->where('prop_owners.mobile_no', 'LIKE', '%' . $parameter . '%')
-                        ->where('prop_properties.ulb_id', $ulbId)
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
                         ->paginate(15);
                     break;
             }
