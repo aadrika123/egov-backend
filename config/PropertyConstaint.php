@@ -86,8 +86,9 @@ return [
 
     ],
     "OCCUPANCY-TYPE" => [
-        "1" =>  "TENANTED",
-        "2" =>  "SELF OCCUPIED",
+        "1" =>  "SELF OCCUPIED",
+        "2" =>  "TENANTED",
+        "TENANTED" => '2'
 
     ],
     "USAGE-TYPE" => [
