@@ -20,10 +20,10 @@ class PropertyDetailsController extends Controller
 {
     /**
      * | Created On-26-11-2022 
-     * | Created By-Sam kerkettta
      * | Modified by-Anshu Kumar On-(17/01/2023)
      * --------------------------------------------------------------------------------------
      * | Controller regarding with Propery Module (Property Details)
+     * | Status-Open
      */
 
     // Construction 
@@ -95,6 +95,7 @@ class PropertyDetailsController extends Controller
                     $data = PropProperty::select(
                         'prop_properties.id',
                         'prop_properties.holding_no',
+                        'prop_properties.new_holding_no',
                         'ward_name',
                         'prop_address',
                         DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
@@ -103,8 +104,9 @@ class PropertyDetailsController extends Controller
                         ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                         ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                         ->where('prop_properties.holding_no', 'LIKE', '%' . $parameter . '%')
+                        ->orWhere('prop_properties.new_holding_no', 'LIKE', '%' . $parameter . '%')
                         ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
-                        ->paginate(50);
+                        ->get();
                     break;
 
                 case ("ownerName"):
@@ -120,7 +122,7 @@ class PropertyDetailsController extends Controller
                         ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                         ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($parameter) . '%')
                         ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
-                        ->paginate(15);
+                        ->get();
                     break;
 
                 case ("address"):
@@ -136,7 +138,7 @@ class PropertyDetailsController extends Controller
                         ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                         ->where('prop_properties.prop_address', 'LIKE', '%' . strtoupper($parameter) . '%')
                         ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
-                        ->paginate(50);
+                        ->get();
                     break;
 
                 case ("mobileNo"):
@@ -152,7 +154,7 @@ class PropertyDetailsController extends Controller
                         ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
                         ->where('prop_owners.mobile_no', 'LIKE', '%' . $parameter . '%')
                         ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
-                        ->paginate(50);
+                        ->get();
                     break;
             }
             return responseMsgs(true, "Application Details", remove_null($data), "010501", "1.0", "", "POST", $request->deviceId ?? "");

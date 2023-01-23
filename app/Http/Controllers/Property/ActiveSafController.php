@@ -294,6 +294,9 @@ class ActiveSafController extends Controller
             // Insert Tax
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
+            $detailsByRulesets = collect($safTaxes->original['data']['details'])->groupBy('ruleSet');
+            $demandResponse['amounts'] = $safTaxes->original['data']['demand'];
+            $demandResponse['details'] = $detailsByRulesets;
 
             $tax = new InsertTax();
             $tax->insertTax($safId, $ulb_id, $safTaxes);                                               // Insert SAF Tax
@@ -303,7 +306,7 @@ class ActiveSafController extends Controller
                 "safNo" => $safNo,
                 "applyDate" => $mApplyDate,
                 "safId" => $safId,
-                "demand" => $demand
+                "demand" => $demandResponse
             ], "010102", "1.0", "1s", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
