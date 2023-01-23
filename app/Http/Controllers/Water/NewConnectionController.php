@@ -6,6 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\reqSiteVerification;
 use App\MicroServices\DocUpload;
 use App\Models\Payment\WebhookPaymentData;
+use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropOwner;
+use App\Models\Property\PropProperty;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
@@ -702,7 +706,7 @@ class NewConnectionController extends Controller
             $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
             # Payment Details 
-             $refAppDetails = collect($applicationDetails)->first();
+            $refAppDetails = collect($applicationDetails)->first();
             $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
@@ -850,79 +854,49 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Citizen Side View
-    public function demo(Request $request)
+    // Serch the holding and the saf details
+    public function getSafHoldingDetails(Request $request)
     {
+        $request->validate([
+            'connectionThrough' => 'required|numeric',
+        ]);
         try {
-            $refUser                = Auth()->user();
-            $refUserId              = $refUser->id;
-            $mWebhookPaymentData    = new WebhookPaymentData();
-            $departmnetId       = Config::get('waterConstaint.WATER_DEPAPRTMENT_ID');
-            // $refUlbId           = $request->ulbId;
-            // AND water_applications.ulb_id = $refUlbId (btw line 95 96)
-            $connection         = WaterApplication::select(
-                "water_applications.id",
-                "water_applications.application_no",
-                "water_applications.address",
-                "water_applications.payment_status",
-                "water_applications.doc_status",
-                "water_applications.ward_id",
-                "water_applications.workflow_id",
-                "ulb_ward_masters.ward_name",
-                "charges.amount",
-                DB::raw("'connection' AS type,
-                                        water_applications.apply_date::date AS apply_date")
-            )
-                ->join(
-                    DB::raw("( 
-                                        SELECT DISTINCT(water_applications.id) AS application_id , SUM(COALESCE(amount,0)) AS amount
-                                        FROM water_applications 
-                                        LEFT JOIN water_connection_charges 
-                                            ON water_applications.id = water_connection_charges.application_id 
-                                            AND ( 
-                                                water_connection_charges.paid_status ISNULL  
-                                                OR water_connection_charges.paid_status=FALSE 
-                                            )  
-                                            AND( 
-                                                    water_connection_charges.status = TRUE
-                                                    OR water_connection_charges.status ISNULL  
-                                                )
-                                        WHERE water_applications.user_id = $refUserId
-                                        GROUP BY water_applications.id
-                                        ) AS charges
-                                    "),
-                    function ($join) {
-                        $join->on("charges.application_id", "water_applications.id");
+            $key = $request->connectionThrough;
+            switch ($key) {
+                case ("1"):
+                    $request->validate([
+                        'holdingNo' => 'required',
+                    ]);
+                    $mPropProperty = new PropProperty();
+                    $mPropOwner = new PropOwner();
+                    $application = collect($mPropProperty->getPropByHolding($request->holdingNo));
+                    $checkExist = collect($application)->first();
+                    if ($checkExist) {
+                        $owners = collect($mPropOwner->getOwnerByPropId($application['id']));
+                        $details = $application->merge($owners);
+                        return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
-                )
-                // ->whereNotIn("status",[0,6,7])
-                ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
-                ->where("water_applications.user_id", $refUserId)
-                // ->where("water_applications.ulb_id", $refUlbId)
-                ->orderbydesc('id')
-                ->get();
+                    throw new Exception("Data According to Holding Not Found!");
+                    break;
 
-            $TransData = $mWebhookPaymentData->getTransactionDetails($departmnetId, $refUser);
-            $returnValue = collect($connection)->map(function ($value) use ($TransData) {
-                $id = $value['id'];
-                $transactionIdDetail = collect($TransData)->map(function ($secondVal) use ($id) {
-                    if ($secondVal['applicationId'] == $id) {
-                        return $secondVal;
+                case ("2"):
+                    $request->validate([
+                        'safNo' => 'required',
+                    ]);
+                    $mPropActiveSaf = new PropActiveSaf();
+                    $mPropActiveSafOwners = new PropActiveSafsOwner();
+                    $application = collect($mPropActiveSaf->getSafBySafNo($request->safNo));
+                    $checkExist = collect($application)->first();
+                    if ($checkExist) {
+                        $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
+                        $details = $application->merge($owners);
+                        return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
-                });
-                $filtered = collect($transactionIdDetail)->filter(function ($nonEmpty,) {
-                    if ($nonEmpty != null) {
-                        return $nonEmpty;
-                    }
-                });
-                $value['transDetails'] = $filtered->values();
-                return $value;
-            });
-
-            return responseMsg(true, "", remove_null($returnValue));
+                    throw new Exception("Data According to SAF Not Found!");
+                    break;
+            }
         } catch (Exception $e) {
-
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }
