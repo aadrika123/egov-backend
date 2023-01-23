@@ -30,12 +30,9 @@ class CitizenController extends Controller
     // Citizen Registrations
     public function citizenRegister(Request $request)
     {
-        $validator = Validator::make(request()->all(), [
+        $request->validate([
             'name'     => 'required',
-            'mobile'   => 'required|unique:active_citizens',
-            // 'email' => 'required',
-            // 'dob' => 'required|date',
-            // 'gender' => 'required',
+            'mobile'   => 'required|numeric|digits:10',
             'password' => [
                 'required',
                 'min:6',
@@ -47,15 +44,11 @@ class CitizenController extends Controller
             ],
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(
-                $validator->errors(),
-                Response::HTTP_BAD_REQUEST
-            );
-        }
-
         try {
             $mCitizen = new ActiveCitizen();
+            $citizens = $mCitizen->getCitizenByMobile($request->mobile);
+            if (isset($citizens))
+                return responseMsgs(false, "This Mobile No is Already Existing", "");
             $mCitizen->citizenRegister($request);
             return responseMsg(true, "Succesfully Registered", "");
         } catch (Exception $e) {
@@ -90,7 +83,7 @@ class CitizenController extends Controller
 
             $userDetails['userName'] = $citizenInfo->user_name;
             $userDetails['mobile'] = $citizenInfo->mobile;
-            $userDetails['email'] = $citizenInfo->email;
+            $userDetails['userType'] = $citizenInfo->user_type;
 
             if ($citizenInfo) {
                 if (Hash::check($req->password, $citizenInfo->password)) {

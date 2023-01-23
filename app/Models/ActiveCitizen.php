@@ -35,4 +35,13 @@ class ActiveCitizen extends Model
 
         ActiveCitizen::create($reqs);
     }
+
+    /**
+     * | Get Active Citizens by Moble No
+     */
+    public function getCitizenByMobile($mobile)
+    {
+        return ActiveCitizen::where('mobile', $mobile)
+            ->first();
+    }
 }
