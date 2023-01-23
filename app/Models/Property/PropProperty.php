@@ -85,4 +85,34 @@ class PropProperty extends Model
             ->orWhere('prop_properties.new_holding_no', 'LIKE', '%' . $holdingNo . '%')
             ->get();
     }
+
+    /**
+     * | Get Proprty Details By Holding No
+     */
+    public function getPropByHolding($holdingNo)
+    {
+        return PropProperty::select(
+            'prop_properties.id',
+            'prop_properties.holding_no',
+            'prop_properties.new_holding_no',
+            'prop_properties.ward_mstr_id',
+            'prop_properties.new_ward_mstr_id',
+            'prop_properties.elect_consumer_no',
+            'prop_properties.elect_acc_no',
+            'prop_properties.elect_bind_book_no',
+            'prop_properties.elect_cons_category',
+            'prop_properties.prop_pin_code',
+            'prop_properties.corr_pin_code',
+            'prop_properties.prop_address',
+            'prop_properties.corr_address',
+            'prop_properties.area_of_plot as total_area_in_desimal',
+            'ulb_ward_masters.ward_name as old_ward_no',
+            'u.ward_name as new_ward_no',
+        )
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_properties.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'prop_properties.new_ward_mstr_id')
+            ->where('prop_properties.holding_no', $holdingNo)
+            ->orwhere('prop_properties.new_holding_no', $holdingNo)
+            ->first();
+    }
 }

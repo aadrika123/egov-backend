@@ -783,7 +783,7 @@ class WaterNewConnection implements IWaterNewConnection
     public function calWaterConCharge(Request $request)
     {
         try {
-            if (($request->applyDate && $request->applyDate < "2021-04-01") || $request->pipelineTypeId == "1") {
+            if (($request->applyDate && $request->applyDate < "2021-04-01") && $request->pipelineTypeId == "1") {
                 $res = $this->conRuleSet1($request);
             } else {
                 $res = $this->conRuleSet2($request);
@@ -1069,7 +1069,7 @@ class WaterNewConnection implements IWaterNewConnection
     }
     public function readDocumentPath($path)
     {
-        $path = (config('app.url')."/". $path);
+        $path = (config('app.url') . "/" . $path);
         return $path;
     }
     public function getWaterDocuments($id)
