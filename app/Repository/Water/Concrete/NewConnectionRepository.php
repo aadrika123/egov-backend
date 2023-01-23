@@ -237,7 +237,7 @@ class NewConnectionRepository implements iNewConnection
     {
         switch ($req) {
             case ($req->$req->saf_no): {
-                PropFloor::where('saf_id',$safCheck->id)
+                PropFloor::where('saf_id',$safCheck->id);
                 }
                 break;
             case ($req->holdingNo): {
