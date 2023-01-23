@@ -220,6 +220,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 
 
+    Route::controller(UlbMaster::class)->group(function () {
+        Route::get('get-all-wards', 'getAllWards');
+    });
 
     /**
      * | Created On-19-08-2022 
@@ -382,9 +385,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
 
     //
-    Route::controller(UlbMaster::class)->group(function () {
-        Route::get('get-all-wards', 'getAllWards');
-    });
+
 
 
     /**

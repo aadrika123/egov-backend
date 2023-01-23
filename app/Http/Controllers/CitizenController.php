@@ -30,8 +30,8 @@ class CitizenController extends Controller
     {
         $validator = Validator::make(request()->all(), [
             'name'     => 'required',
-            'mobile' => 'required',
-            'email' => 'required|unique:active_citizens',
+            'mobile' => 'required|unique:active_citizens',
+            'email' => 'required',
             'password' => [
                 'required',
                 'min:6',
