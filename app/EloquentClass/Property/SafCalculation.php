@@ -182,10 +182,10 @@ class SafCalculation
         $this->_loggedInUserType = auth()->user()->user_type ?? 'Citizen';                                            // User Type of current Logged In User
 
         // Types of Rebates and Rebate Percentages
-        $this->_citizenRebatePerc = Config::get('PropertyConstaint.REBATES.CITIZEN.PERC');                  // 5
-        $this->_jskRebatePerc = Config::get('PropertyConstaint.REBATES.JSK.PERC');                          // 2.5
-        $this->_speciallyAbledRebatePerc = Config::get('PropertyConstaint.REBATES.SPECIALLY_ABLED.PERC');   // 5
-        $this->_seniorCitizenRebatePerc = Config::get('PropertyConstaint.REBATES.SERIOR_CITIZEN.PERC');     // 5
+        $this->_citizenRebatePerc = Config::get('PropertyConstaint.REBATES.CITIZEN.PERC');                  // 5%
+        $this->_jskRebatePerc = Config::get('PropertyConstaint.REBATES.JSK.PERC');                          // 2.5%
+        $this->_speciallyAbledRebatePerc = Config::get('PropertyConstaint.REBATES.SPECIALLY_ABLED.PERC');   // 5%
+        $this->_seniorCitizenRebatePerc = Config::get('PropertyConstaint.REBATES.SERIOR_CITIZEN.PERC');     // 5%
 
         $this->_citizenRebateID = Config::get('PropertyConstaint.REBATES.CITIZEN.ID');                  // 5
         $this->_jskRebateID = Config::get('PropertyConstaint.REBATES.JSK.ID');                          // 2.5
