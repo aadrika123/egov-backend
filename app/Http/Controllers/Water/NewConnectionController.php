@@ -42,6 +42,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Unique;
 use Ramsey\Collection\Collection as CollectionCollection;
+use Symfony\Contracts\Service\Attribute\Required;
 
 class NewConnectionController extends Controller
 {
@@ -859,17 +860,15 @@ class NewConnectionController extends Controller
     {
         $request->validate([
             'connectionThrough' => 'required|numeric',
+            'id' => 'required'
         ]);
         try {
             $key = $request->connectionThrough;
             switch ($key) {
                 case ("1"):
-                    $request->validate([
-                        'holdingNo' => 'required',
-                    ]);
                     $mPropProperty = new PropProperty();
                     $mPropOwner = new PropOwner();
-                    $application = collect($mPropProperty->getPropByHolding($request->holdingNo));
+                    $application = collect($mPropProperty->getPropByHolding($request->id));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
                         $owners = collect($mPropOwner->getOwnerByPropId($application['id']));
@@ -880,12 +879,9 @@ class NewConnectionController extends Controller
                     break;
 
                 case ("2"):
-                    $request->validate([
-                        'safNo' => 'required',
-                    ]);
                     $mPropActiveSaf = new PropActiveSaf();
                     $mPropActiveSafOwners = new PropActiveSafsOwner();
-                    $application = collect($mPropActiveSaf->getSafBySafNo($request->safNo));
+                    $application = collect($mPropActiveSaf->getSafBySafNo($request->id));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
                         $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));

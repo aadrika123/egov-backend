@@ -5,6 +5,7 @@ namespace App\Repository\Water\Concrete;
 use App\Http\Requests\Water\reqSiteVerification;
 use App\Models\CustomDetail;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropFloor;
 use App\Models\Property\PropProperty;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplicantDoc;
@@ -200,29 +201,49 @@ class NewConnectionRepository implements iNewConnection
      */
     public function checkPropertyExist($req)
     {
-        if ($req->saf_no) {
-            $safCheck = PropActiveSaf::select(
-                'saf_no'
-            )
-                ->where('saf_no', $req->saf_no)
-                ->get()
-                ->first();
-            if ($safCheck) {
-                return true;
-            }
-        } elseif ($req->holdingNo) {
-            $holdingCheck = PropProperty::select(
-                'new_holding_no'
-            )
-                ->where('new_holding_no', $req->holdingNo)
-                ->get()
-                ->first();
-            if ($holdingCheck) {
-                return true;
-            }
+        switch ($req) {
+            case ($req->saf_no): {
+                    $safCheck = PropActiveSaf::select(
+                        'id',
+                        'saf_no'
+                    )
+                        ->where('saf_no', $req->saf_no)
+                        ->get()
+                        ->first();
+                    if ($safCheck) {
+                        $this->checkOwnerType($req,$safCheck);
+                        return true;
+                    }
+                }
+            case ($req->holdingNo): {
+                    $holdingCheck = PropProperty::select(
+                        'id',
+                        'new_holding_no'
+                    )
+                        ->where('new_holding_no', $req->holdingNo)
+                        ->get()
+                        ->first();
+                    if ($holdingCheck) {
+                        return true;
+                    }
+                }
         }
     }
 
+    /**
+     * | Check if the owner is Tanent of self occupied
+     */
+    public function checkOwnerType($req,$safCheck)
+    {
+        switch ($req) {
+            case ($req->$req->saf_no): {
+                PropFloor::where('saf_id',$safCheck->id)
+                }
+                break;
+            case ($req->holdingNo): {
+                }
+        }
+    }
 
 
     /**
@@ -840,7 +861,7 @@ class NewConnectionRepository implements iNewConnection
             'refTableDotId' => "water_applications.id",
             'refTableIdValue' => $applicationId->id,
         ];
-        
+
         # For Citizen Independent Comment
         if (!$request->senderRoleId) {
             $metaReqs = array_merge($metaReqs, ['citizenId' => auth()->user()->id]);
