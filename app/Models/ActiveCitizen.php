@@ -23,12 +23,5 @@ class ActiveCitizen extends Model
         ];
 
         ActiveCitizen::create($reqs);
-        $mUser = new User();
-        $mUser->user_name = $request->name;
-        $mUser->email = $request->email;
-        $mUser->mobile = $request->mobile;
-        $mUser->ulb_id = $request->ulb;
-        $mUser->password = Hash::make($request->password);
-        $mUser->save();
     }
 }
