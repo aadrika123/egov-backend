@@ -33,9 +33,9 @@ class CitizenController extends Controller
         $validator = Validator::make(request()->all(), [
             'name'     => 'required',
             'mobile'   => 'required|unique:active_citizens',
-            'email' => 'required',
-            'dob' => 'required|date',
-            'gender' => 'required',
+            // 'email' => 'required',
+            // 'dob' => 'required|date',
+            // 'gender' => 'required',
             'password' => [
                 'required',
                 'min:6',
