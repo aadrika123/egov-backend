@@ -4,6 +4,7 @@ namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class PropActiveSafsFloor extends Model
@@ -23,5 +24,26 @@ class PropActiveSafsFloor extends Model
             ->join('ref_prop_construction_types as c', 'c.id', '=', 'prop_active_safs_floors.const_type_mstr_id')
             ->where('saf_id', $safId)
             ->get();
+    }
+
+    /**
+     * | Get occupancy type according to Saf id
+     */
+    public function getOccupancyType($safId, $refTenanted)
+    {
+        $occupency = PropActiveSafsFloor::where('saf_id', $safId)
+            ->where('occupancy_type_mstr_id', $refTenanted)
+            ->get();
+        $check = collect($occupency)->first();
+        if ($check) {
+            $metaData = [
+                'tenanted' => true
+            ];
+            return $metaData;
+        }
+        return  $metaData = [
+            'tenanted' => false
+        ];
+        return $metaData;
     }
 }

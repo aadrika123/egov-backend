@@ -238,6 +238,15 @@ class PropActiveSaf extends Model
                 's.saf_no',
                 's.ward_mstr_id',
                 's.new_ward_mstr_id',
+                's.elect_consumer_no',
+                's.elect_acc_no',
+                's.elect_bind_book_no',
+                's.elect_cons_category',
+                's.prop_address',
+                's.corr_address',
+                's.prop_pin_code',
+                's.corr_pin_code',
+                's.area_of_plot as total_area_in_desimal',
                 'u.ward_name as old_ward_no',
                 'u1.ward_name as new_ward_no',
             )
@@ -276,57 +285,5 @@ class PropActiveSaf extends Model
         $activeSaf = PropActiveSaf::find($safId);
         $activeSaf->is_field_verified = true;
         $activeSaf->save();
-    }
-
-    /**
-     * |
-     */
-    public function getSafBySafNo($safNo)
-    {
-        $activeSaf = DB::table('prop_active_safs as s')
-            ->where('s.saf_no', $safNo)
-            ->select(
-                's.id',
-                's.saf_no',
-                's.ward_mstr_id',
-                's.new_ward_mstr_id',
-                's.elect_consumer_no',
-                's.elect_acc_no',
-                's.elect_bind_book_no',
-                's.elect_cons_category',
-                's.prop_address',
-                's.corr_address',
-                's.prop_pin_code',
-                's.corr_pin_code',
-                's.area_of_plot as total_area_in_desimal',
-                'u.ward_name as old_ward_no',
-                'u1.ward_name as new_ward_no',
-            )
-            ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
-            ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id');
-
-        $saf = DB::table('prop_safs as s')
-            ->where('s.saf_no', $safNo)
-            ->select(
-                's.id',
-                's.saf_no',
-                's.ward_mstr_id',
-                's.new_ward_mstr_id',
-                's.elect_consumer_no',
-                's.elect_acc_no',
-                's.elect_bind_book_no',
-                's.elect_cons_category',
-                's.prop_address',
-                's.corr_address',
-                's.prop_pin_code',
-                's.corr_pin_code',
-                's.area_of_plot as total_area_in_desimal',
-                'u.ward_name as old_ward_no',
-                'u1.ward_name as new_ward_no',
-            )
-            ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
-            ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id');
-
-        return $activeSaf->union($saf)->first();
     }
 }

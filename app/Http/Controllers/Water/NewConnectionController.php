@@ -7,7 +7,9 @@ use App\Http\Requests\Water\reqSiteVerification;
 use App\MicroServices\DocUpload;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\UlbWardMaster;
@@ -868,11 +870,14 @@ class NewConnectionController extends Controller
                 case ("1"):
                     $mPropProperty = new PropProperty();
                     $mPropOwner = new PropOwner();
+                    $mPropFloor = new PropFloor();
                     $application = collect($mPropProperty->getPropByHolding($request->id));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
+                        $refTenanted = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
+                        $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropOwner->getOwnerByPropId($application['id']));
-                        $details = $application->merge($owners);
+                        $details = $application->merge($owners)->merge($occupancyOwnerType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to Holding Not Found!");
@@ -881,15 +886,22 @@ class NewConnectionController extends Controller
                 case ("2"):
                     $mPropActiveSaf = new PropActiveSaf();
                     $mPropActiveSafOwners = new PropActiveSafsOwner();
-                    $application = collect($mPropActiveSaf->getSafBySafNo($request->id));
+                    $mPropActiveSafsFloor = new PropActiveSafsFloor();
+                    $application = collect($mPropActiveSaf->getSafDtlsBySafNo($request->id));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
+                        $refTenanted = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
+                        $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
-                        $details = $application->merge($owners);
+                        $details = $application->merge($owners)->merge($occupancyOwnerType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to SAF Not Found!");
                     break;
+
+                default: {
+                        throw new Exception("Enter holding or SAF Property!");
+                    }
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

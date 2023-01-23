@@ -5,6 +5,7 @@ namespace App\Repository\Water\Concrete;
 use App\Http\Requests\Water\reqSiteVerification;
 use App\Models\CustomDetail;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropProperty;
 use App\Models\Water\WaterApplicant;
@@ -211,7 +212,6 @@ class NewConnectionRepository implements iNewConnection
                         ->get()
                         ->first();
                     if ($safCheck) {
-                        $this->checkOwnerType($req,$safCheck);
                         return true;
                     }
                 }
@@ -226,21 +226,6 @@ class NewConnectionRepository implements iNewConnection
                     if ($holdingCheck) {
                         return true;
                     }
-                }
-        }
-    }
-
-    /**
-     * | Check if the owner is Tanent of self occupied
-     */
-    public function checkOwnerType($req,$safCheck)
-    {
-        switch ($req) {
-            case ($req->$req->saf_no): {
-                PropFloor::where('saf_id',$safCheck->id);
-                }
-                break;
-            case ($req->holdingNo): {
                 }
         }
     }
