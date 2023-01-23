@@ -16,6 +16,8 @@ class UlbWardMaster extends Model
         try {
             $wards = UlbWardMaster::where('ulb_id', $ulbId)
                 ->select('id', 'ward_name')
+                ->distinct('ward_name')
+                ->orderBy('ward_name')
                 ->get();
             return responseMsg(true, "Successfully Retrieved", $wards);
         } catch (Exception $e) {

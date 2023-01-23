@@ -79,6 +79,7 @@ Route::controller(ApiMasterController::class)->group(function () {
  */
 Route::controller(CitizenController::class)->group(function () {
     Route::post('citizen-register', 'citizenRegister');         // Citizen Registration
+    Route::post('citizen-login', 'citizenLogin')->middleware('request_logger');
 });
 
 /**

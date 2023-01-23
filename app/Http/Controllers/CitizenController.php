@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use Exception;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -30,8 +32,10 @@ class CitizenController extends Controller
     {
         $validator = Validator::make(request()->all(), [
             'name'     => 'required',
-            'mobile' => 'required|unique:active_citizens',
-            'email' => 'required',
+            'mobile'   => 'required|unique:active_citizens',
+            // 'email' => 'required',
+            // 'dob' => 'required|date',
+            // 'gender' => 'required',
             'password' => [
                 'required',
                 'min:6',
@@ -58,6 +62,55 @@ class CitizenController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     *  Citizen Login
+     */
+    public function citizenLogin(Request $req)
+    {
+        try {
+            $req->validate([
+                'mobile' => "required",
+                'password' => [
+                    'required',
+                    'min:6',
+                    'max:255',
+                    'regex:/[a-z]/',      // must contain at least one lowercase letter
+                    'regex:/[A-Z]/',      // must contain at least one uppercase letter
+                    'regex:/[0-9]/',      // must contain at least one digit
+                    'regex:/[@$!%*#?&]/'  // must contain a special character
+                ],
+            ]);
+            $citizenInfo = ActiveCitizen::where('mobile', $req->mobile)
+                ->first();
+            if (!$citizenInfo) {
+                $msg = "Oops! Given mobile no does not exist";
+                return responseMsg(false, $msg, "");
+            }
+
+            $userDetails['userName'] = $citizenInfo->user_name;
+            $userDetails['mobile'] = $citizenInfo->mobile;
+            $userDetails['email'] = $citizenInfo->email;
+
+            if ($citizenInfo) {
+                if (Hash::check($req->password, $citizenInfo->password)) {
+                    $token = $citizenInfo->createToken('my-app-token')->plainTextToken;
+                    $citizenInfo->remember_token = $token;
+                    $citizenInfo->save();
+                    $userDetails['token'] = $token;
+                    return responseMsgs(true, 'You r logged in now', $userDetails, '', "1.0", "494ms", "POST", "");
+                } else {
+                    $msg = "Incorrect Password";
+                    return responseMsg(false, $msg, '');
+                }
+            }
+        }
+        // Authentication Using Sql Database
+        catch (Exception $e) {
+            return $e;
+        }
+    }
+
 
     // Get Citizen By ID
     public function getCitizenByID($id)
