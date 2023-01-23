@@ -8,9 +8,4 @@ use App\Models\UlbWardMaster;
 
 class UlbMaster extends Controller
 {
-    public function getAllWards()
-    {
-        $obj = new UlbWardMaster;
-        return $obj->getAllWards();
-    }
 }
