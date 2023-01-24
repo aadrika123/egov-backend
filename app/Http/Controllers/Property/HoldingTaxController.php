@@ -33,6 +33,7 @@ class HoldingTaxController extends Controller
         ]);
         try {
             $holdingDemand = array();
+            $responseDemand = array();
             $propId = $req->propId;
             $mPropProperty = new PropProperty();
             $safCalculation = new SafCalculation;
@@ -46,7 +47,9 @@ class HoldingTaxController extends Controller
             $holdingDemand['amount'] = $taxes->original['data']['demand'];
             $holdingDemand['details'] = $this->generateSafDemand($taxes->original['data']['details']);
             $holdingDemand['holdingNo'] = $details['holding_no'];
-            return responseMsgs(true, "Property Demand", remove_null($holdingDemand), "011601", "1.0", "", "POST", $req->deviceId ?? "");
+            $responseDemand['amount'] = $holdingDemand['amount'];
+            $responseDemand['details'] = collect($taxes->original['data']['details'])->groupBy('ruleSet');
+            return responseMsgs(true, "Property Demand", remove_null($responseDemand), "011601", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), ['holdingNo' => $details['holding_no']], "011601", "1.0", "", "POST", $req->deviceId ?? "");
         }
