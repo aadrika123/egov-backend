@@ -76,7 +76,7 @@ class TradeCitizen implements ITradeCitizen
             if ($mApplicationTypeId != 1) {
                 $mOldLicenceId = $request->id;
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-                $refOldLicece = ActiveLicence::find($mOldLicenceId);
+                $refOldLicece = ActiveTradeLicence::find($mOldLicenceId);
                 if (!$refOldLicece) {
                     throw new Exception("Old Licence Not Found");
                 }

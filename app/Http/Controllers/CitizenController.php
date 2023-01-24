@@ -104,6 +104,32 @@ class CitizenController extends Controller
         }
     }
 
+    /**
+     * | Citizen Logout 
+     */
+    public function citizenLogout(Request $req)
+    {
+        // token();
+        $id =  auth()->user();
+        // $user =  auth()->user()->tokens()->revoke();
+
+        $user = ActiveCitizen::where('id', $id)->first();
+        $user->remember_token = null;
+        $user->save();
+
+        $user->tokens()->delete();
+
+        return auth()->user();
+
+
+
+        return response()->json([
+            'message' => 'Successfully logged out',
+        ]);
+    }
+
+
+
 
     // Get Citizen By ID
     public function getCitizenByID($id)
