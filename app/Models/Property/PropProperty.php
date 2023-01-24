@@ -116,4 +116,18 @@ class PropProperty extends Model
             ->orwhere('prop_properties.new_holding_no', $holdingNo)
             ->first();
     }
+
+    /**
+     * | get property details by userId and ulbId
+     */
+    public function getpropByUserUlb($request)
+    {
+        PropProperty::select(
+            'new_holding_no',
+            'holding_no'
+        )
+        ->where('user_id',auth()->user()->id)
+        ->where('ulb_id',$request->ulbId)
+        ->get();
+    }
 }

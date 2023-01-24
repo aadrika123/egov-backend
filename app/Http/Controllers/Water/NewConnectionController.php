@@ -96,10 +96,6 @@ class NewConnectionController extends Controller
                     'areaSqft'           => 'required',
                     'landmark'           => 'required',
                     'pin'                => 'required|digits:6',
-                    'elecKNo'            => 'required',
-                    'elecBindBookNo'     => 'required',
-                    'elecAccountNo'      => 'required',
-                    'elecCategory'       => 'required',
                     'connection_through' => 'required|integer',
                     'owners'             => 'required',
                     'ulbId'              => 'required'
@@ -889,7 +885,7 @@ class NewConnectionController extends Controller
                     $mPropActiveSaf = new PropActiveSaf();
                     $mPropActiveSafOwners = new PropActiveSafsOwner();
                     $mPropActiveSafsFloor = new PropActiveSafsFloor();
-                    $application = collect($mPropActiveSaf->getSafDtlsBySafNo($request->id, $request->ulbId));
+                    $application = collect($mPropActiveSaf->getSafDtlBySafUlbNo($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
                         $safUsageType = $this->getPropUsageType($request, $application['id']);
@@ -963,15 +959,52 @@ class NewConnectionController extends Controller
                     ];
                     break;
 
-                case ($var == 'M'):  // Here is is differ
+                case ($var == 'M'):  // Here it's differ
                     return $metaData = [
-                        'id'        => null,
-                        'usageType' => 'Other'
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Commercial'),
+                        'usageType' => 'Other / Commercial'
                     ];
                     break;
             }
         });
         $returnData['usageType'] = $usage->unique()->values();
         return $returnData;
+    }
+
+    /**
+     * | Get Prperty relates details
+        | get property and saf details 
+     */
+    public function getProperyDetailsByLogin(Request $request)
+    {
+        $request->validate([
+            'connectionThrough' => 'required|numeric',
+            'ulbId' => 'required'
+        ]);
+        try {
+            $key = $request->connectionThrough;
+            switch ($key) {
+                case ('1'):
+                    $mPropProperty = new PropProperty();
+                    $listOfHolding = $mPropProperty->getpropByUserUlb($request);
+                    $checkExist = collect($listOfHolding)->first();
+                    if ($checkExist) {
+                        return responseMsgs(true, "list of holding!", collect($listOfHolding), "", "", "", "POST", "");
+                    }
+                    throw new Exception("Holdin Not Found!");
+                    break;
+                case ('2'):
+                    $mPropActiveSaf = new PropActiveSaf();
+                    $listOfSaf=$mPropActiveSaf->getSafByIdUlb($request);
+                    $checkExist = collect($listOfSaf)->first();
+                    if($checkExist)
+                    {
+                        return responseMsgs(true,"List of Saf No !", collect($listOfSaf),"","","","","");
+                    }
+                    throw new Exception("Saf Not Found !");
+            }
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }
