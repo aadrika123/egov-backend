@@ -622,14 +622,15 @@ class TradeCitizenController extends Controller
         try {
             $citizenId = authUser()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-
+            // DB::enableQueryLog();
             $data = TradeLicence::select('*')
                 // ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                 ->where('trade_licences.is_active', TRUE)
-                ->where('trade_licences.user_id', $citizenId)
+                ->where('trade_licences.citizen_id', $citizenId)
                 ->where('trade_licences.valid_upto', '>=', Carbon::now())
                 ->get();
 
+            // return (DB::getQueryLog());
             if (!$data) {
                 throw new Exception("No Data Found");
             }

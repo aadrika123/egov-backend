@@ -10,19 +10,6 @@ class UlbWardMaster extends Model
 {
     use HasFactory;
 
-    public function getAllWards()
-    {
-        $ulbId = auth()->user()->ulb_id;
-        try {
-            $wards = UlbWardMaster::where('ulb_id', $ulbId)
-                ->select('id', 'ward_name')
-                ->get();
-            return responseMsg(true, "Successfully Retrieved", $wards);
-        } catch (Exception $e) {
-            return response()->json($e, 400);
-        }
-    }
-
     /**
      * | Get the Ward No by ward id
      * | @param id $id
