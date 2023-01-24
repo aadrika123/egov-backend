@@ -46,4 +46,18 @@ class PropActiveSafsFloor extends Model
         ];
         return $metaData;
     }
+
+     /**
+     * | Get usage type according to Saf NO
+     */
+    public function getSafUsageCatagory($safId)
+    {
+        return PropActiveSafsFloor::select(
+            'ref_prop_usage_types.usage_code'
+        )
+            ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', '=', 'prop_active_safs_floors.usage_type_mstr_id')
+            ->where('saf_id', $safId)
+            ->get();
+    }
 }
+
