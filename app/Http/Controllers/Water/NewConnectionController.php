@@ -857,27 +857,29 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Serch the holding and the saf details
+    // Serch the holding and the saf details 
     public function getSafHoldingDetails(Request $request)
     {
         $request->validate([
             'connectionThrough' => 'required|numeric',
-            'id' => 'required'
+            'id' => 'required',
+            'ulbId' => 'required'
         ]);
         try {
             $key = $request->connectionThrough;
+            $refTenanted = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
             switch ($key) {
                 case ("1"):
                     $mPropProperty = new PropProperty();
                     $mPropOwner = new PropOwner();
                     $mPropFloor = new PropFloor();
-                    $application = collect($mPropProperty->getPropByHolding($request->id));
+                    $application = collect($mPropProperty->getPropByHolding($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
-                        $refTenanted = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
+                        $propUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropOwner->getOwnerByPropId($application['id']));
-                        $details = $application->merge($owners)->merge($occupancyOwnerType);
+                        $details = $application->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to Holding Not Found!");
@@ -887,24 +889,89 @@ class NewConnectionController extends Controller
                     $mPropActiveSaf = new PropActiveSaf();
                     $mPropActiveSafOwners = new PropActiveSafsOwner();
                     $mPropActiveSafsFloor = new PropActiveSafsFloor();
-                    $application = collect($mPropActiveSaf->getSafDtlsBySafNo($request->id));
+                    $application = collect($mPropActiveSaf->getSafDtlsBySafNo($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
-                        $refTenanted = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
+                        $safUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
-                        $details = $application->merge($owners)->merge($occupancyOwnerType);
+                        $details = $application->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to SAF Not Found!");
                     break;
 
                 default: {
-                        throw new Exception("Enter holding or SAF Property!");
+                        throw new Exception("Enter Holding or SAF Property!");
                     }
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    /**
+     * | Get Usage type according to holding
+        | Calling function : for the search of the property usage type 
+     */
+    public function getPropUsageType($request, $id)
+    {
+        switch ($request->connectionThrough) {
+            case ('1'):
+                $mPropFloor = new PropFloor();
+                $usageCatagory = $mPropFloor->getPropUsageCatagory($id);
+                break;
+            case ('2'):
+                $mPropActiveSafsFloor = new PropActiveSafsFloor();
+                $usageCatagory = $mPropActiveSafsFloor->getSafUsageCatagory($id);
+        }
+
+        $usage = collect($usageCatagory)->map(function ($value, $key) use ($id) {
+            $var = $value['usage_code'];
+            switch (true) {
+                case ($var == 'A'):
+                    return $metaData = [
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Residential'),
+                        'usageType' => 'Residential'
+                    ];
+                    break;
+                case ($var == 'F'):
+                    return $metaData = [
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Industrial'),
+                        'usageType' => 'Industrial'
+                    ];
+                    break;
+
+                case ($var == 'G' || $var == 'I'):
+                    return $metaData = [
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Government'),
+                        'usageType' => 'Government & PSU'
+                    ];
+                    break;
+
+                case ($var == 'B' || $var == 'C' || $var == 'D' || $var == 'E'):
+                    return $metaData = [
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Commercial'),
+                        'usageType' => 'Commercial'
+                    ];
+                    break;
+
+                case ($var == 'H' || $var == 'J' || $var == 'K' || $var == 'L'):
+                    return $metaData = [
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Institutional'),
+                        'usageType' => 'Institutional'
+                    ];
+                    break;
+
+                case ($var == 'M'):  // Here is is differ
+                    return $metaData = [
+                        'id'        => null,
+                        'usageType' => 'Other'
+                    ];
+                    break;
+            }
+        });
+        $returnData['usageType'] = $usage->unique()->values();
+        return $returnData;
     }
 }

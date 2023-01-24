@@ -88,7 +88,8 @@ class PropActiveSaf extends Model
             'current_role' => $req->initiatorRoleId,
             'initiator_role_id' => $req->initiatorRoleId,
             'finisher_role_id' => $req->finisherRoleId,
-            'late_assess_penalty' => $req->lateAssessPenalty
+            'late_assess_penalty' => $req->lateAssessPenalty,
+            'citizen_id' => $req->citizenId ?? null,
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);
         return response()->json([
@@ -229,10 +230,11 @@ class PropActiveSaf extends Model
      * | Get Saf Details by Saf No
      * | @param SafNo
      */
-    public function getSafDtlsBySafNo($safNo)
+    public function getSafDtlsBySafNo($safNo, $ulbId)
     {
         return DB::table('prop_active_safs as s')
             ->where('s.saf_no', $safNo)
+            ->where('s.ulb_id', $ulbId)
             ->select(
                 's.id',
                 's.saf_no',

@@ -195,7 +195,8 @@ trait Workflow
     {
         $query = "SELECT 
                     r.id AS role_id,
-                    r.role_name AS role_name 
+                    r.role_name AS role_name,
+                    w.forward_role_id
                     FROM wf_roles r
                     INNER JOIN (SELECT * FROM wf_workflowrolemaps WHERE workflow_id=$wfWorkflowId) w ON w.wf_role_id=r.id
                     WHERE w.is_initiator=TRUE 

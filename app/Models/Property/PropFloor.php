@@ -57,4 +57,18 @@ class PropFloor extends Model
         ];
         return $metaData;
     }
+
+    /**
+     * | Get usage type according to holding
+     */
+    public function getPropUsageCatagory($propertyId)
+    {
+        return PropFloor::select(
+            'ref_prop_usage_types.usage_code'
+        )
+            ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', '=', 'prop_floors.usage_type_mstr_id')
+            ->where('property_id', $propertyId)
+            ->orderByDesc('ref_prop_usage_types.id')
+            ->get();
+    }
 }
