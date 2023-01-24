@@ -1421,7 +1421,7 @@ class ActiveSafController extends Controller
                 "value" => $lateAssessPenalty
             ],
             [
-                "keyString" => "1% Monthly Penalty",
+                "keyString" => "1% Interest On Monthly Penalty(Notification No-641)",
                 "value" => roundFigure($onePercPenalty)
             ],
             [

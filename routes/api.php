@@ -220,11 +220,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');                    // Delete Self Advertisement By ID
     });
 
-
-    Route::controller(UlbMaster::class)->group(function () {
-        Route::get('get-all-wards', 'getAllWards');
-    });
-
     /**
      * | Created On-19-08-2022 
      * | Created by-Anshu Kumar
@@ -235,6 +230,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::put('edit-ulb-ward/{id}', 'editUlbWard');         // Edit Ulb Ward
         Route::get('get-ulb-ward/{id}', 'getUlbWardByID');       // Get Ulb Ward Details by ID
         Route::get('get-all-ulb-wards', 'getAllUlbWards');       // Get All Ulb Wards
+        Route::post('get-newward-by-oldward', 'getNewWardByOldWard');
     });
 });
 
