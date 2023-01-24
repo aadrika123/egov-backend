@@ -230,11 +230,10 @@ class PropActiveSaf extends Model
      * | Get Saf Details by Saf No
      * | @param SafNo
      */
-    public function getSafDtlsBySafNo($safNo, $ulbId)
+    public function getSafDtlsBySafNo($safNo)
     {
         return DB::table('prop_active_safs as s')
             ->where('s.saf_no', $safNo)
-            ->where('s.ulb_id', $ulbId)
             ->select(
                 's.id',
                 's.saf_no',
@@ -288,4 +287,5 @@ class PropActiveSaf extends Model
         $activeSaf->is_field_verified = true;
         $activeSaf->save();
     }
+
 }

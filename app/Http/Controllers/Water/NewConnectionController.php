@@ -96,10 +96,10 @@ class NewConnectionController extends Controller
                     'areaSqft'           => 'required',
                     'landmark'           => 'required',
                     'pin'                => 'required|digits:6',
-                    'elecKNo'            => 'required',
-                    'elecBindBookNo'     => 'required',
-                    'elecAccountNo'      => 'required',
-                    'elecCategory'       => 'required',
+                    // 'elecKNo'            => 'required',
+                    // 'elecBindBookNo'     => 'required',
+                    // 'elecAccountNo'      => 'required',
+                    // 'elecCategory'       => 'required',
                     'connection_through' => 'required|integer',
                     'owners'             => 'required',
                     'ulbId'              => 'required'
@@ -863,7 +863,6 @@ class NewConnectionController extends Controller
         $request->validate([
             'connectionThrough' => 'required|numeric',
             'id' => 'required',
-            'ulbId' => 'required'
         ]);
         try {
             $key = $request->connectionThrough;
@@ -873,9 +872,10 @@ class NewConnectionController extends Controller
                     $mPropProperty = new PropProperty();
                     $mPropOwner = new PropOwner();
                     $mPropFloor = new PropFloor();
-                    $application = collect($mPropProperty->getPropByHolding($request->id, $request->ulbId));
+                    $application = collect($mPropProperty->getPropByHolding($request->id));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
+                        // $propType = $this->get_browser
                         $propUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropOwner->getOwnerByPropId($application['id']));
@@ -889,7 +889,7 @@ class NewConnectionController extends Controller
                     $mPropActiveSaf = new PropActiveSaf();
                     $mPropActiveSafOwners = new PropActiveSafsOwner();
                     $mPropActiveSafsFloor = new PropActiveSafsFloor();
-                    $application = collect($mPropActiveSaf->getSafDtlsBySafNo($request->id, $request->ulbId));
+                    $application = collect($mPropActiveSaf->getSafDtlsBySafNo($request->id));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
                         $safUsageType = $this->getPropUsageType($request, $application['id']);
@@ -963,10 +963,10 @@ class NewConnectionController extends Controller
                     ];
                     break;
 
-                case ($var == 'M'):  // Here is is differ
+                case ($var == 'M'):  // Here it's differ
                     return $metaData = [
-                        'id'        => null,
-                        'usageType' => 'Other'
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Commercial'),
+                        'usageType' => 'Other / Commercial'
                     ];
                     break;
             }

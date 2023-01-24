@@ -89,7 +89,7 @@ class PropProperty extends Model
     /**
      * | Get Proprty Details By Holding No
      */
-    public function getPropByHolding($holdingNo, $ulbId)
+    public function getPropByHolding($holdingNo)
     {
         return PropProperty::select(
             'prop_properties.id',
@@ -111,7 +111,6 @@ class PropProperty extends Model
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_properties.ward_mstr_id')
             ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'prop_properties.new_ward_mstr_id')
-            ->where('prop_properties.ulb_id', $ulbId)
             ->where('prop_properties.holding_no', $holdingNo)
             ->orwhere('prop_properties.new_holding_no', $holdingNo)
             ->first();
