@@ -229,10 +229,11 @@ class PropActiveSaf extends Model
      * | Get Saf Details by Saf No
      * | @param SafNo
      */
-    public function getSafDtlsBySafNo($safNo)
+    public function getSafDtlsBySafNo($safNo, $ulbId)
     {
         return DB::table('prop_active_safs as s')
             ->where('s.saf_no', $safNo)
+            ->where('s.ulb_id', $ulbId)
             ->select(
                 's.id',
                 's.saf_no',
