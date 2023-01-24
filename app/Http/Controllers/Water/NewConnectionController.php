@@ -866,6 +866,7 @@ class NewConnectionController extends Controller
         ]);
         try {
             $key = $request->connectionThrough;
+            $refTenanted = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
             switch ($key) {
                 case ("1"):
                     $mPropProperty = new PropProperty();
@@ -874,10 +875,10 @@ class NewConnectionController extends Controller
                     $application = collect($mPropProperty->getPropByHolding($request->id));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
-                        $refTenanted = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
+                        $propUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropOwner->getOwnerByPropId($application['id']));
-                        $details = $application->merge($owners)->merge($occupancyOwnerType);
+                        $details = $application->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to Holding Not Found!");
@@ -890,10 +891,10 @@ class NewConnectionController extends Controller
                     $application = collect($mPropActiveSaf->getSafDtlsBySafNo($request->id));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
-                        $refTenanted = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
+                        $safUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
-                        $details = $application->merge($owners)->merge($occupancyOwnerType);
+                        $details = $application->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to SAF Not Found!");
@@ -906,5 +907,47 @@ class NewConnectionController extends Controller
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    /**
+     * | Get Usage type according to holding
+     */
+    public function getPropUsageType($request, $Id)
+    {
+        switch ($request->connectionThrough) {
+            case '1':
+                $mPropFloor = new PropFloor();
+                $usageCatagory = $mPropFloor->getPropUsageCatagory($Id);
+                break;
+            case '2':
+                $mPropActiveSafsFloor = new PropActiveSafsFloor();
+                $usageCatagory = $mPropActiveSafsFloor->getSafUsageCatagory($Id);
+        }
+
+        $usage = collect($usageCatagory)->map(function ($value, $key) {
+            $var = $value['usage_code'];
+            switch (true) {
+                case ($var == 'A'):
+                    return $metaData = 'Residential';
+                    break;
+                case ($var == 'F'):
+                    return $metaData = 'Industrial';
+                    break;
+                case ($var == 'M'):
+                    return $metaData = 'Other';
+                    break;
+                case ($var == 'G' || $var == 'I'):
+                    return $metaData = 'Government & PSU';
+                    break;
+                case ($var == 'B' || $var == 'C' || $var == 'D' || $var == 'E'):
+                    return $metaData = 'Commercial';
+                    break;
+                case ($var == 'H' || $var == 'J' || $var == 'K' || $var == 'L'):
+                    return $metaData = 'Institutional';
+                    break;
+            }
+        });
+        $returnData['usageType'] = $usage->unique()->values();
+        return $returnData;
     }
 }
