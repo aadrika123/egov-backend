@@ -9,6 +9,7 @@ use App\Models\Payment\PaymentRequest;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropProperty;
 use App\Models\Trade\ActiveLicence;
+use App\Models\Trade\ActiveTradeLicence;
 use App\Models\User;
 use App\Models\Water\WaterApplication;
 use App\Models\WorkflowTrack;
@@ -174,7 +175,7 @@ class CitizenRepository implements iCitizenRepository
                 'prop_active_safs.created_at',
                 'prop_active_safs.updated_at'
             )
-            ->where('prop_active_safs.user_id', $userId)
+            ->where('prop_active_safs.citizen_id', $userId)
             ->where('prop_active_safs.status', 1)
             ->orderByDesc('prop_active_safs.id')
             ->get();
@@ -193,7 +194,7 @@ class CitizenRepository implements iCitizenRepository
                 'r.role_name as pending_at',
                 'prop_active_concessions.workflow_id'
             )
-            ->where('prop_active_concessions.user_id', $userId)
+            ->where('prop_active_concessions.citizen_id', $userId)
             ->get();
 
         $applications['concessions'] = $concessionApplications;
@@ -208,7 +209,7 @@ class CitizenRepository implements iCitizenRepository
     {
         $applications = array();
         $waterApplications = WaterApplication::select('id as application_id', 'category', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
-            ->where('user_id', $userId)
+            ->where('citizen_id', $userId)
             ->where('status', 1)
             ->orderByDesc('id')
             ->get();
@@ -224,7 +225,7 @@ class CitizenRepository implements iCitizenRepository
     public function appliedTradeApplications($userId)
     {
         $applications = array();
-        $tradeApplications = ActiveLicence::select('id as application_id', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
+        $tradeApplications = ActiveTradeLicence::select('id as application_id', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
             ->where('emp_details_id', $userId)
             ->where('status', 1)
             ->orderByDesc('id')
@@ -270,7 +271,7 @@ class CitizenRepository implements iCitizenRepository
                                     FROM prop_owners 
                                     ORDER BY id ASC 
                                     ) AS o ON o.property_id=p.id AND ROW1=1
-                                    WHERE p.user_id=$userId";
+                                    WHERE p.citizen_id=$userId";
             $properties = DB::select($query);
             $application['applications'] = $properties;
             $application['totalApplications'] = collect($properties)->count();
@@ -312,7 +313,7 @@ class CitizenRepository implements iCitizenRepository
     {
         try {
             $userId = auth()->user()->id;
-            $trans = PaymentRequest::where('user_id', $userId)
+            $trans = PaymentRequest::where('citizen_id', $userId)
                 ->get();
             return responseMsg(true, "Data Fetched", remove_null($trans));
         } catch (Exception $e) {

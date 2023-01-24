@@ -80,6 +80,7 @@ Route::controller(ApiMasterController::class)->group(function () {
 Route::controller(CitizenController::class)->group(function () {
     Route::post('citizen-register', 'citizenRegister');         // Citizen Registration
     Route::post('citizen-login', 'citizenLogin')->middleware('request_logger');
+    Route::post('citizen-logout', 'citizenLogout')->middleware('auth:sanctum');
 });
 
 /**
@@ -344,7 +345,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('workflow/role-map/delete', 'deleteRoleMap');                   // Delete Workflow
         Route::post('workflow/role-map/workflow-info', 'workflowInfo');
     });
-
 
 
     /**

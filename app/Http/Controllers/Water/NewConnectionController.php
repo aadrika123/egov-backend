@@ -96,10 +96,10 @@ class NewConnectionController extends Controller
                     'areaSqft'           => 'required',
                     'landmark'           => 'required',
                     'pin'                => 'required|digits:6',
-                    'elecKNo'            => 'required',
-                    'elecBindBookNo'     => 'required',
-                    'elecAccountNo'      => 'required',
-                    'elecCategory'       => 'required',
+                    // 'elecKNo'            => 'required',
+                    // 'elecBindBookNo'     => 'required',
+                    // 'elecAccountNo'      => 'required',
+                    // 'elecCategory'       => 'required',
                     'connection_through' => 'required|integer',
                     'owners'             => 'required',
                     'ulbId'              => 'required'
@@ -857,12 +857,12 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Serch the holding and the saf details
+    // Serch the holding and the saf details 
     public function getSafHoldingDetails(Request $request)
     {
         $request->validate([
             'connectionThrough' => 'required|numeric',
-            'id' => 'required'
+            'id' => 'required',
         ]);
         try {
             $key = $request->connectionThrough;
@@ -875,6 +875,7 @@ class NewConnectionController extends Controller
                     $application = collect($mPropProperty->getPropByHolding($request->id));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
+                        // $propType = $this->get_browser
                         $propUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropOwner->getOwnerByPropId($application['id']));
@@ -901,7 +902,7 @@ class NewConnectionController extends Controller
                     break;
 
                 default: {
-                        throw new Exception("Enter holding or SAF Property!");
+                        throw new Exception("Enter Holding or SAF Property!");
                     }
             }
         } catch (Exception $e) {
@@ -911,39 +912,62 @@ class NewConnectionController extends Controller
 
     /**
      * | Get Usage type according to holding
+        | Calling function : for the search of the property usage type 
      */
-    public function getPropUsageType($request, $Id)
+    public function getPropUsageType($request, $id)
     {
         switch ($request->connectionThrough) {
-            case '1':
+            case ('1'):
                 $mPropFloor = new PropFloor();
-                $usageCatagory = $mPropFloor->getPropUsageCatagory($Id);
+                $usageCatagory = $mPropFloor->getPropUsageCatagory($id);
                 break;
-            case '2':
+            case ('2'):
                 $mPropActiveSafsFloor = new PropActiveSafsFloor();
-                $usageCatagory = $mPropActiveSafsFloor->getSafUsageCatagory($Id);
+                $usageCatagory = $mPropActiveSafsFloor->getSafUsageCatagory($id);
         }
 
-        $usage = collect($usageCatagory)->map(function ($value, $key) {
+        $usage = collect($usageCatagory)->map(function ($value, $key) use ($id) {
             $var = $value['usage_code'];
             switch (true) {
                 case ($var == 'A'):
-                    return $metaData = 'Residential';
+                    return $metaData = [
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Residential'),
+                        'usageType' => 'Residential'
+                    ];
                     break;
                 case ($var == 'F'):
-                    return $metaData = 'Industrial';
+                    return $metaData = [
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Industrial'),
+                        'usageType' => 'Industrial'
+                    ];
                     break;
-                case ($var == 'M'):
-                    return $metaData = 'Other';
-                    break;
+
                 case ($var == 'G' || $var == 'I'):
-                    return $metaData = 'Government & PSU';
+                    return $metaData = [
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Government'),
+                        'usageType' => 'Government & PSU'
+                    ];
                     break;
+
                 case ($var == 'B' || $var == 'C' || $var == 'D' || $var == 'E'):
-                    return $metaData = 'Commercial';
+                    return $metaData = [
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Commercial'),
+                        'usageType' => 'Commercial'
+                    ];
                     break;
+
                 case ($var == 'H' || $var == 'J' || $var == 'K' || $var == 'L'):
-                    return $metaData = 'Institutional';
+                    return $metaData = [
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Institutional'),
+                        'usageType' => 'Institutional'
+                    ];
+                    break;
+
+                case ($var == 'M'):  // Here it's differ
+                    return $metaData = [
+                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Commercial'),
+                        'usageType' => 'Other / Commercial'
+                    ];
                     break;
             }
         });

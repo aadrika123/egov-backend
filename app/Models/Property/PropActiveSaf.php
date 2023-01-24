@@ -287,4 +287,5 @@ class PropActiveSaf extends Model
         $activeSaf->is_field_verified = true;
         $activeSaf->save();
     }
+
 }
