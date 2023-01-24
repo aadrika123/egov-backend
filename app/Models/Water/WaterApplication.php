@@ -31,11 +31,6 @@ class WaterApplication extends Model
         $saveNewApplication->address                = $req->address;
         $saveNewApplication->landmark               = $req->landmark ?? null;
         $saveNewApplication->pin                    = $req->pin;
-        $saveNewApplication->flat_count             = $req->flatCount ?? null;
-        // $saveNewApplication->elec_k_no              = $req->elecKNo;
-        // $saveNewApplication->elec_bind_book_no      = $req->elecBindBookNo;
-        // $saveNewApplication->elec_account_no        = $req->elecAccountNo;
-        // $saveNewApplication->elec_category          = $req->elecCategory;
         $saveNewApplication->connection_through     = $req->connection_through;
         $saveNewApplication->workflow_id            = $ulbWorkflowId->id;
         $saveNewApplication->connection_fee_id      = $waterFeeId;
@@ -46,6 +41,7 @@ class WaterApplication extends Model
         $saveNewApplication->ulb_id                 = $ulbId;
         $saveNewApplication->apply_date             = date('Y-m-d H:i:s');
         $saveNewApplication->user_id                = auth()->user()->id;
+        $saveNewApplication->user_type              = auth()->user()->user_type;    // <--------- here
 
         # condition entry 
         if ($req->connection_through == 3) {
