@@ -211,6 +211,7 @@ trait SAF
         $array['isWaterHarvesting'] = $req['is_water_harvesting'];
         $array['zone'] = $req['zone_mstr_id'];
         $array['roadTypeMstrId'] = $req['road_type_mstr_id'];
+        $array['ulbId'] = $req['ulb_id'];
         $refFloors = $req['floors'];
 
         foreach ($refFloors as $key => $refFloor) {

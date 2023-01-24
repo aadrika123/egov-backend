@@ -219,6 +219,7 @@ class ActiveSafController extends Controller
             $mApplyDate = Carbon::now()->format("Y-m-d");
             $user_id = auth()->user()->id;
             $ulb_id = $request->ulbId;
+            $userType = auth()->user()->user_type;
             $demand = array();
             $metaReqs = array();
             $assessmentTypeId = $request->assessmentType;
@@ -260,10 +261,15 @@ class ActiveSafController extends Controller
             $metaReqs['lateAssessPenalty'] = $mLateAssessPenalty;
             // $metaReqs['safNo'] = $safNo;
             $metaReqs['roadWidthType'] = $roadWidthType;
-            $metaReqs['userId'] = $user_id;
             $metaReqs['workflowId'] = $ulbWorkflowId->id;
             $metaReqs['ulbId'] = $ulb_id;
-            $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->role_id;;
+            $metaReqs['userId'] = $user_id;
+            $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->role_id;
+            if ($userType == 'Citizen') {
+                $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->forward_role_id;         // Send to DA in Case of Citizen
+                $metaReqs['userId'] = null;
+                $metaReqs['citizenId'] = $user_id;
+            }
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
 
             $request->merge($metaReqs);
@@ -1673,7 +1679,7 @@ class ActiveSafController extends Controller
             $request = new Request($array);
             $safTaxes = $safCalculation->calculateTax($request);
             $demand['amounts'] = $safTaxes->original['data']['demand'];
-            $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
+            $demand['details'] = collect($safTaxes->original['data']['details'])->groupBy('ruleSet');
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", "", "POST", $req->deviceId ?? "");
