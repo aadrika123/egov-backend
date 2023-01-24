@@ -5,6 +5,7 @@ namespace App\Repository\Property\Concrete;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
 use App\EloquentModels\Common\ModelWard;
+use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Property\PropActiveSafsFloor;
@@ -1750,6 +1751,27 @@ class PropertyBifurcation implements IPropertyBifurcation
     #-------------------------saf-----------------------
     public function getDocList($request)
     {
+        // $mRefReqDocs = new RefRequiredDocument();
+        // $refSafs = $this->getSafDtlById($request->applicationId);
+        // if ($refSafs->prop_type_mstr_id == 3)
+        //     $documentList = $mRefReqDocs->getDocsByDocCode(1, "PROP_FLATS")->requirements;
+
+        // $documentList = collect(explode('#', $documentList));
+        // $documentList = $documentList->map(function ($document) {
+        //     $document = explode(',', $document);
+        //     $a = collect($document)->map(function ($doc) {
+        //         $strLower = strtolower($doc);
+        //         $strReplace = str_replace('_', ' ', $strLower);
+        //         $arr = [
+        //             "documentCode" => $doc,
+        //             "docVal" => ucwords($strReplace)
+        //         ];
+        //         return $arr;
+        //     });
+        //     return $a;
+        // });
+        // return $documentList;
+        // return responseMsg(true, "", $documentList);
         try {
             $refUser = Auth()->user();
             $refUserId = $refUser->id;

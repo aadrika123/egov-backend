@@ -945,7 +945,8 @@ class ActiveSafController extends Controller
                         'apartment_details_id',
                         'ip_address',
                         'status',
-                        'user_id'
+                        'user_id',
+                        'citizen_id'
                     )->first();
 
                 $propProperties = $toBeProperties->replicate();
