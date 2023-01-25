@@ -405,16 +405,17 @@ class ConcessionController extends Controller
             $cardElement = $this->generateConcessionCardDtls($details, $ownerList);
             $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
 
-            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $req->id);
+            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $req->applicationId);
             $fullDetailsData['levelComment'] = $levelComment;
 
-            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $req->id, $details->user_id);
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $req->applicationId, $details->user_id);
             $fullDetailsData['citizenComment'] = $citizenComment;
 
             $metaReqs['customFor'] = 'PROPERTY-CONCESSION';
             $metaReqs['wfRoleId'] = $details->current_role;
             $metaReqs['workflowId'] = $details->workflow_id;
             $metaReqs['lastRoleId'] = $details->last_role_id;
+
             $req->request->add($metaReqs);
             $forwardBackward = $mForwardBackward->getRoleDetails($req);
             $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
