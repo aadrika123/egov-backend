@@ -107,6 +107,7 @@ class NewConnectionController extends Controller
             }
             return $this->newConnection->store($request);
         } catch (Exception $error) {
+            DB::rollBack();
             return responseMsg(false, $error->getMessage(), "");
         }
     }

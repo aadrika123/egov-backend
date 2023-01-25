@@ -115,13 +115,12 @@ class NewConnectionRepository implements iNewConnection
         $applicationNo = 'APP' . $now->getTimeStamp();
 
         # check the property type on vacant land
-        if ($req->connection_through != '3') {
-            $checkResponse = $this->checkVacantLand($req, $vacantLand);
-            if ($checkResponse) {
-                return $checkResponse;
-            }
+        $checkResponse = $this->checkVacantLand($req, $vacantLand);
+        if ($checkResponse) {
+            return $checkResponse;
         }
 
+        DB::beginTransaction();
         $objNewApplication = new WaterApplication();
         $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId);
 
@@ -139,6 +138,8 @@ class NewConnectionRepository implements iNewConnection
 
         $charges = new WaterConnectionCharge();
         $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
+        DB::commit();
+        
         $returnResponse = [
             'applicationNo' => $applicationNo,
             'applicationId' => $applicationId
@@ -203,7 +204,7 @@ class NewConnectionRepository implements iNewConnection
     public function checkPropertyExist($req)
     {
         switch ($req) {
-            case ($req->saf_no): {
+            case (!is_null($req->saf_no)): {
                     $safCheck = PropActiveSaf::select(
                         'id',
                         'saf_no'
@@ -215,13 +216,13 @@ class NewConnectionRepository implements iNewConnection
                         return true;
                     }
                 }
-            case ($req->holdingNo): {
+            case (!is_null($req->holdingNo)): {
                     $holdingCheck = PropProperty::select(
                         'id',
                         'new_holding_no'
                     )
                         ->where('new_holding_no', $req->holdingNo)
-                        ->get()
+                        ->orwhere('holding_no', $req->holdingNo)
                         ->first();
                     if ($holdingCheck) {
                         return true;
