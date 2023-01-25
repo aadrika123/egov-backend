@@ -91,7 +91,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    */
   Route::controller(SafDocController::class)->group(function () {
     Route::post('saf/document-upload', 'docUpload');                                                    // Upload Documents for SAF (01)
-    Route::post('saf/get-upload-documents', 'getUploadDocuments');                                      // View Uploaded Documents for SAF (02)
+    Route::post('saf/get-uploaded-documents', 'getUploadDocuments');                                      // View Uploaded Documents for SAF (02)
     Route::post('saf/get-doc-list', 'getDocList');                                                      // Get Document Lists(03)
   });
 
@@ -170,7 +170,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('concession/comment-independent', 'commentIndependent');                //18               ( Citizen Independent comment and Level Pendings )
     Route::post('concession/get-doc-type', 'getDocType');
     Route::post('concession/upload-document', 'uploadDocument');
-    Route::post('concession/get-uploaded-documents', 'getUploadDocuments');
+    Route::post('concession/get-upload-documents', 'getUploadDocuments');
   });
 
   /**
