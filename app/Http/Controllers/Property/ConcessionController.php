@@ -74,10 +74,20 @@ class ConcessionController extends Controller
         ]);
 
         try {
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+            // $userId = auth()->user()->id;
+            $ulbId = $request->ulbId;
             $userType = auth()->user()->user_type;
             $concessionNo = "";
+
+            if ($userType == 'Citizen') {
+                $citizenId = auth()->user()->id;
+            }
+
+            if ($userType != 'Citizen') {
+                $userId = auth()->user()->id;
+            }
+
+
 
             // $applicantName = $this->getOwnerName($request->propId);
             // $ownerName = $applicantName->ownerName;
@@ -101,24 +111,14 @@ class ConcessionController extends Controller
             $concession = new PropActiveConcession;
             $concession->property_id = $request->propId;
             $concession->applicant_name = $request->applicantName;
-
-
-            if ($request->gender == 1) {
-                $concession->gender = 'Male';
-            }
-            if ($request->gender == 2) {
-                $concession->gender = 'Female';
-            }
-            if ($request->gender == 3) {
-                $concession->gender = 'Transgender';
-            }
-
+            $concession->gender = $request->gender;
             $concession->dob = $request->dob;
             $concession->is_armed_force = $request->armedForce;
             $concession->is_specially_abled = $request->speciallyAbled;
             $concession->specially_abled_percentage = $request->speciallyAbledPercentage;
             $concession->remarks = $request->remarks;
-            $concession->user_id = $userId;
+            $concession->user_id = $userId ?? null;
+            $concession->citizen_id = $citizenId ?? null;
             $concession->ulb_id = $ulbId;
             $concession->workflow_id = $ulbWorkflowId->id;
             $concession->current_role = collect($initiatorRoleId)->first()->role_id;
@@ -668,8 +668,14 @@ class ConcessionController extends Controller
             $request->validate([
                 'propId' => "required"
             ]);
-            $ownerDetails = PropProperty::select('applicant_name as ownerName',  'id as ownerId')
-                ->where('prop_properties.id', $request->propId)
+            $ownerDetails = PropOwner::select(
+                'owner_name as ownerName',
+                'prop_owners.id as ownerId',
+                'ulb_id as ulbId'
+            )
+                ->join('prop_properties', 'prop_properties.id', 'prop_owners.property_id')
+                ->where('property_id', $request->propId)
+                ->orderBy('prop_owners.id')
                 ->first();
 
             $checkExisting = PropActiveConcession::where('property_id', $request->propId)

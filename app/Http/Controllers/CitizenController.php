@@ -100,7 +100,7 @@ class CitizenController extends Controller
         }
         // Authentication Using Sql Database
         catch (Exception $e) {
-            return $e;
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
