@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfActiveDocument;
 use App\Traits\Property\SafDoc;
 use Exception;
@@ -21,9 +22,13 @@ class SafDocController extends Controller
     {
         try {
             $mActiveSafs = new PropActiveSaf();
+            $safsOwners = new PropActiveSafsOwner();
             $refSafs = $mActiveSafs->getSafNo($req->applicationId);             // Get Saf Details
-            $propTypeDocs = $this->getSafDocLists($refSafs);                    // Current Object
-            return $propTypeDocs;
+            $refSafOwners = $safsOwners->getOwnerDtlsBySafId($req->applicationId);
+            $propTypeDocs = $this->getSafDocLists($refSafs);                    // Current Object(Saf Docuement List)
+            $safOwnerDocs = $this->getOwnerDocLists($refSafOwners, $refSafs);             // (Owner Document List)
+            $totalDocLists = collect($propTypeDocs)->merge($safOwnerDocs);
+            return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
@@ -58,7 +63,30 @@ class SafDocController extends Controller
         }
 
         $filteredDocs = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
-        return responseMsg(true, "", $filteredDocs);
+        return $filteredDocs;
+    }
+
+    /**
+     * | Get Owner Document Lists
+     */
+    public function getOwnerDocLists($refOwners, $refSafs)
+    {
+        $documentList = array();
+        $mRefReqDocs = new RefRequiredDocument();
+        $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
+        $isSpeciallyAbled = $refOwners->is_specially_abled;
+        $isArmedForce = $refOwners->is_armed_force;
+
+        if ($isSpeciallyAbled == true)
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "IS_SPECIALLY_ABLED")->requirements;
+        if ($isArmedForce == true)
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "IS_ARMED_FORCE")->requirements;
+
+        if (!empty($documentList))
+            $filteredDocs = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
+        else
+            $filteredDocs = [];
+        return $filteredDocs;
     }
 
     /**
