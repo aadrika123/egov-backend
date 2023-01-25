@@ -230,7 +230,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('store-ulb-wards', 'storeUlbWard');          // Save Ulb Ward
         Route::put('edit-ulb-ward/{id}', 'editUlbWard');         // Edit Ulb Ward
         Route::get('get-ulb-ward/{id}', 'getUlbWardByID');       // Get Ulb Ward Details by ID
-        Route::get('get-all-ulb-wards', 'getAllUlbWards');       // Get All Ulb Wards
+        Route::get('get-all-ulb-wards', 'getAllUlbWards'); //not for use      // Get All Ulb Wards
         Route::post('get-newward-by-oldward', 'getNewWardByOldWard');
     });
 });
