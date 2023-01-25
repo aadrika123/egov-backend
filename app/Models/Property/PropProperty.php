@@ -21,8 +21,8 @@ class PropProperty extends Model
     public function getPropertyId($holdingNo)
     {
         return PropProperty::where('holding_no', $holdingNo)
+            ->orWhere('new_holding_no', $holdingNo)
             ->select('id')
-            ->get()
             ->first();
     }
 
@@ -126,8 +126,9 @@ class PropProperty extends Model
             'new_holding_no',
             'holding_no'
         )
-        ->where('user_id',auth()->user()->id)
-        ->where('ulb_id',$request->ulbId)
-        ->get();
+            ->where('user_id', auth()->user()->id)
+            ->orWhere('citizen_id', auth()->user()->id)
+            ->where('ulb_id', $request->ulbId)
+            ->get();
     }
 }

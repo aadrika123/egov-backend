@@ -40,8 +40,9 @@ class WaterApplication extends Model
         $saveNewApplication->application_no         = $applicationNo;
         $saveNewApplication->ulb_id                 = $ulbId;
         $saveNewApplication->apply_date             = date('Y-m-d H:i:s');
-        $saveNewApplication->user_id                = auth()->user()->id;
-        $saveNewApplication->user_type              = auth()->user()->user_type;    // <--------- here
+        $saveNewApplication->user_id                = auth()->user()->id;    // <--------- here
+        $saveNewApplication->apply_from             = auth()->user()->user_type;
+
 
         # condition entry 
         if (!is_null($req->holdingNo)) {
@@ -56,6 +57,8 @@ class WaterApplication extends Model
             $saveNewApplication->saf_id = $safId->id;
             $saveNewApplication->saf_no = $req->saf_no;
         }
+
+        # applied
 
         $saveNewApplication->save();
 
