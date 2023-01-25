@@ -32,7 +32,7 @@ class newApplyRules extends FormRequest
         $rules['connection_through'] = 'required|int|in:1,2';
         $rules['ulbId'] = 'required|int';
         $rules['owners'] = "required|array";
-        if (isset($this->owner) && $this->owner) {
+        if (isset($this->owners) && $this->owners) {
             $rules["owners.*.ownerName"] = "required";
             $rules["owners.*.guardianName"] = "required";
             $rules["owners.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
