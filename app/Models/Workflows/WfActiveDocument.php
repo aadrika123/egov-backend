@@ -22,10 +22,11 @@ class WfActiveDocument extends Model
             "ulb_id" => $req->ulbId,
             "module_id" => $req->moduleId,
             "relative_path" => $req->relativePath,
-            "image" => $req->image,
+            "document" => $req->document,
             "uploaded_by" => authUser()->id,
+            "uploaded_by_type" => authUser()->user_type,
             "remarks" => $req->remarks ?? null,
-            "doc_mstr_id" => $req->docMstrId,
+            "doc_code" => $req->docCode,
             "owner_dtl_id" => $req->ownerDtlId,
         ];
 
@@ -35,22 +36,22 @@ class WfActiveDocument extends Model
     /**
      * | Get Application Details by Application No
      */
-    public function getDocsByAppNo($applicationNo)
+    public function getDocsByAppId($applicationId, $workflowId, $moduleId)
     {
         return DB::table('wf_active_documents as d')
             ->select(
                 'd.id',
-                'd.image',
-                DB::raw("concat(relative_path,'/',image) as doc_path"),
+                'd.document',
+                DB::raw("concat(relative_path,'/',document) as doc_path"),
                 'd.remarks',
                 'd.verify_status',
-                'd.doc_mstr_id',
-                'dm.doc_type',
+                'd.doc_code',
                 'o.owner_name'
             )
-            ->join('ref_prop_docs_required as dm', 'dm.id', '=', 'd.doc_mstr_id')
             ->leftJoin('prop_active_safs_owners as o', 'o.id', '=', 'd.owner_dtl_id')
-            ->where('d.active_id', $applicationNo)
+            ->where('d.active_id', $applicationId)
+            ->where('d.workflow_id', $workflowId)
+            ->where('d.module_id', $moduleId)
             ->get();
     }
 
@@ -161,5 +162,21 @@ class WfActiveDocument extends Model
             ->where("d.active_id", $applicationNo)
             ->whereIn("d.doc_mstr_id", $docId)
             ->first();
+    }
+
+    /**
+     * | Get Workflow Active Documents By Active Id
+     */
+    public function getDocByRefIds($activeId, $workflowId, $moduleId)
+    {
+        return WfActiveDocument::select(
+            DB::raw("concat(relative_path,'/',document) as doc_path"),
+            '*'
+        )
+            ->where('active_id', $activeId)
+            ->where('workflow_id', $workflowId)
+            ->where('module_id', $moduleId)
+            ->where('status', 1)
+            ->get();
     }
 }

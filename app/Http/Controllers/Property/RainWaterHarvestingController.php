@@ -139,7 +139,7 @@ class RainWaterHarvestingController extends Controller
             }
 
             /**
-             to be removed
+             
              */
             //level pending
             if (isset($waterHaravesting->application_no)) {
@@ -260,13 +260,13 @@ class RainWaterHarvestingController extends Controller
     public function postEscalate(Request $req)
     {
         $req->validate([
-            'id' => 'required|integer',
+            'applicationId' => 'required|integer',
             'escalateStatus' => 'required|bool',
         ]);
         try {
             $userId = auth()->user()->id;
             if ($req->escalateStatus == 1) {
-                $harvesting = PropActiveHarvesting::find($req->id);
+                $harvesting = PropActiveHarvesting::find($req->applicationId);
                 $harvesting->is_escalated = 1;
                 $harvesting->escalated_by = $userId;
                 $harvesting->save();
@@ -423,7 +423,7 @@ class RainWaterHarvestingController extends Controller
     {
         try {
             $req->validate([
-                'harvestingId' => 'required|integer',
+                'applicationId' => 'required|integer',
                 'senderRoleId' => 'required|integer',
                 'receiverRoleId' => 'required|integer',
                 'comment' => 'required'
@@ -432,11 +432,11 @@ class RainWaterHarvestingController extends Controller
             DB::beginTransaction();
 
             $track = new WorkflowTrack();
-            $harvesting = PropActiveHarvesting::find($req->harvestingId);
+            $harvesting = PropActiveHarvesting::find($req->applicationId);
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $harvesting->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
-            $metaReqs['refTableIdValue'] = $req->harvestingId;
+            $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['senderRoleId'] = $req->senderRoleId;
             $metaReqs['receiverRoleId'] = $req->receiverRoleId;
             $metaReqs['verificationStatus'] = $req->verificationStatus;
@@ -469,13 +469,13 @@ class RainWaterHarvestingController extends Controller
         try {
             $req->validate([
                 'roleId' => 'required',
-                'harvestingId' => 'required',
+                'applicationId' => 'required',
                 'status' => 'required',
 
             ]);
             // Check if the Current User is Finisher or Not         
             $activeHarvesting = PropActiveHarvesting::query()
-                ->where('id', $req->harvestingId)
+                ->where('id', $req->applicationId)
                 ->first();
             $getFinisherQuery = $this->getFinisherId($activeHarvesting->workflow_id);                                 // Get Finisher using Trait
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
@@ -523,7 +523,7 @@ class RainWaterHarvestingController extends Controller
     {
         try {
             $req->validate([
-                'harvestingId' => 'required',
+                'applicationId' => 'required',
             ]);
             $userId = authUser()->id;
             $getRole = $this->getRoleIdByUserId($userId);
@@ -536,7 +536,7 @@ class RainWaterHarvestingController extends Controller
             }
 
             $activeHarvesting = PropActiveHarvesting::query()
-                ->where('id', $req->harvestingId)
+                ->where('id', $req->applicationId)
                 ->first();
 
             $rejectedHarvesting = $activeHarvesting->replicate();
@@ -716,13 +716,13 @@ class RainWaterHarvestingController extends Controller
     {
         $req->validate([
             'comment' => 'required',
-            'harvestingId' => 'required|integer',
+            'applicationId' => 'required|integer',
             'senderRoleId' => 'nullable|integer'
         ]);
 
         try {
             $workflowTrack = new WorkflowTrack();
-            $harvesting = PropActiveHarvesting::find($req->harvestingId);                // SAF Details
+            $harvesting = PropActiveHarvesting::find($req->applicationId);                // SAF Details
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs = array();
             DB::beginTransaction();

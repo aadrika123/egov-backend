@@ -25,6 +25,7 @@ use App\Traits\Auth;
 use App\Traits\Helper;
 use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF;
+use App\Traits\Property\SafDoc;
 use App\Traits\Property\WardPermission;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
@@ -43,6 +44,7 @@ class PropertyBifurcation implements IPropertyBifurcation
     use SAF;
     use Razorpay;
     use Helper;
+    use SafDoc;
 
     protected $_common;
     protected $_modelWard;
@@ -1751,27 +1753,6 @@ class PropertyBifurcation implements IPropertyBifurcation
     #-------------------------saf-----------------------
     public function getDocList($request)
     {
-        // $mRefReqDocs = new RefRequiredDocument();
-        // $refSafs = $this->getSafDtlById($request->applicationId);
-        // if ($refSafs->prop_type_mstr_id == 3)
-        //     $documentList = $mRefReqDocs->getDocsByDocCode(1, "PROP_FLATS")->requirements;
-
-        // $documentList = collect(explode('#', $documentList));
-        // $documentList = $documentList->map(function ($document) {
-        //     $document = explode(',', $document);
-        //     $a = collect($document)->map(function ($doc) {
-        //         $strLower = strtolower($doc);
-        //         $strReplace = str_replace('_', ' ', $strLower);
-        //         $arr = [
-        //             "documentCode" => $doc,
-        //             "docVal" => ucwords($strReplace)
-        //         ];
-        //         return $arr;
-        //     });
-        //     return $a;
-        // });
-        // return $documentList;
-        // return responseMsg(true, "", $documentList);
         try {
             $refUser = Auth()->user();
             $refUserId = $refUser->id;

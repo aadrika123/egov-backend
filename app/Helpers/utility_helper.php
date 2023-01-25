@@ -442,3 +442,18 @@ if (!function_exists('authUser')) {
         return auth()->user();
     }
 }
+
+/**
+ * | Flip Constants
+ */
+if (!function_exists('flipConstants')) {
+    function flipConstants($constant)
+    {
+        $chunk = collect($constant)->chunk(1);
+        $flip = $chunk->map(function ($a) {
+            return collect($a)->flip();
+        });
+        $flip = $flip->collapse();
+        return $flip;
+    }
+}

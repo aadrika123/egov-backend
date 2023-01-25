@@ -710,9 +710,6 @@ class ActiveSafController extends Controller
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
-            $docList = $getDocuments->getUploadDocuments($req);
-            $fullDetailsData['documentList'] = collect($docList)['original']['data'];
-
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
