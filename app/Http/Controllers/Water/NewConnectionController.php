@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Water\newApplyRules;
 use App\Http\Requests\Water\reqSiteVerification;
 use App\MicroServices\DocUpload;
 use App\Models\Payment\WebhookPaymentData;
@@ -83,30 +84,12 @@ class NewConnectionController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(newApplyRules $request)
     {
         try {
-            $validateUser = Validator::make(
-                $request->all(),
-                [
-                    'connectionTypeId'   => 'required|integer',
-                    'propertyTypeId'     => 'required|integer',
-                    'ownerType'          => 'required',
-                    'wardId'             => 'required|integer',
-                    'areaSqft'           => 'required',
-                    'landmark'           => 'required',
-                    'pin'                => 'required|digits:6',
-                    'connection_through' => 'required|integer',
-                    'owners'             => 'required',
-                    'ulbId'              => 'required'
-                ]
-            );
-
-            if ($validateUser->fails()) {
-                return responseMsg(false, "Validation Error!", $validateUser->getMessageBag());
-            }
             return $this->newConnection->store($request);
         } catch (Exception $error) {
+            DB::rollBack();
             return responseMsg(false, $error->getMessage(), "");
         }
     }
@@ -995,11 +978,10 @@ class NewConnectionController extends Controller
                     break;
                 case ('2'):
                     $mPropActiveSaf = new PropActiveSaf();
-                    $listOfSaf=$mPropActiveSaf->getSafByIdUlb($request);
+                    $listOfSaf = $mPropActiveSaf->getSafByIdUlb($request);
                     $checkExist = collect($listOfSaf)->first();
-                    if($checkExist)
-                    {
-                        return responseMsgs(true,"List of Saf No !", collect($listOfSaf),"","","","","");
+                    if ($checkExist) {
+                        return responseMsgs(true, "List of Saf No !", collect($listOfSaf), "", "", "", "", "");
                     }
                     throw new Exception("Saf Not Found !");
             }
