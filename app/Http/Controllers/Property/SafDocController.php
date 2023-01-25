@@ -23,9 +23,11 @@ class SafDocController extends Controller
         try {
             $mActiveSafs = new PropActiveSaf();
             $safsOwners = new PropActiveSafsOwner();
-            $refSafs = $mActiveSafs->getSafNo($req->applicationId);             // Get Saf Details
+            $refSafs = $mActiveSafs->getSafNo($req->applicationId);                      // Get Saf Details
+            if (!$refSafs)
+                throw new Exception("Application Not Found for this id");
             $refSafOwners = $safsOwners->getOwnerDtlsBySafId($req->applicationId);
-            $propTypeDocs = $this->getSafDocLists($refSafs);                    // Current Object(Saf Docuement List)
+            $propTypeDocs = $this->getSafDocLists($refSafs);                              // Current Object(Saf Docuement List)
             $safOwnerDocs = $this->getOwnerDocLists($refSafOwners, $refSafs);             // (Owner Document List)
             $totalDocLists = collect($propTypeDocs)->merge($safOwnerDocs);
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
@@ -142,6 +144,7 @@ class SafDocController extends Controller
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
+                    "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                     "docPath" => $uploadedDoc->doc_path ?? ""
                 ];
                 return $arr;
@@ -203,13 +206,14 @@ class SafDocController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveSafs = new PropActiveSaf();
+            $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');              // 1
 
             $safDetails = $mActiveSafs->getSafNo($req->applicationId);
             if (!$safDetails)
                 throw new Exception("Application Not Found for this application Id");
 
-            $safNo = $safDetails->saf_no;
-            $documents = $mWfActiveDocument->getDocsByAppNo($safNo);
+            $workflowId = $safDetails->workflow_id;
+            $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");

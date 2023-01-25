@@ -150,7 +150,7 @@ class PropActiveSaf extends Model
                 'wr.role_name as current_role_name'
             )
             ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
-            ->join('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
+            ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
             ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
             ->join('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
@@ -292,11 +292,11 @@ class PropActiveSaf extends Model
      * | Get Saf Details by Saf No
      * | @param SafNo
      */
-    public function getSafDtlBySafUlbNo($safNo,$ulbId)
+    public function getSafDtlBySafUlbNo($safNo, $ulbId)
     {
         return DB::table('prop_active_safs as s')
             ->where('s.saf_no', $safNo)
-            ->where('s.ulb_id',$ulbId)
+            ->where('s.ulb_id', $ulbId)
             ->select(
                 's.id',
                 's.saf_no',
@@ -327,8 +327,8 @@ class PropActiveSaf extends Model
         PropActiveSaf::select(
             'saf_no',
         )
-        ->where('ulb_id',$request->ulbId)
-        ->where('user_id',auth()->user()->id)
-        ->get();
+            ->where('ulb_id', $request->ulbId)
+            ->where('user_id', auth()->user()->id)
+            ->get();
     }
 }
