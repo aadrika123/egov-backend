@@ -94,6 +94,9 @@ class NewConnectionRepository implements iNewConnection
         # get initiater and finisher
         $ulbWorkflowObj = new WfWorkflow();
         $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $ulbId);
+        if (!$ulbWorkflowId) {
+            throw new Exception("The respective Ulb is not maped to Water Workflow!");
+        }
         $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
         $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
         $finisherRoleId = DB::select($refFinisherRoleId);
@@ -115,13 +118,12 @@ class NewConnectionRepository implements iNewConnection
         $applicationNo = 'APP' . $now->getTimeStamp();
 
         # check the property type on vacant land
-        if ($req->connection_through != '3') {
-            $checkResponse = $this->checkVacantLand($req, $vacantLand);
-            if ($checkResponse) {
-                return $checkResponse;
-            }
+        $checkResponse = $this->checkVacantLand($req, $vacantLand);
+        if ($checkResponse) {
+            return $checkResponse;
         }
 
+        DB::beginTransaction();
         $objNewApplication = new WaterApplication();
         $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId);
 
@@ -139,6 +141,8 @@ class NewConnectionRepository implements iNewConnection
 
         $charges = new WaterConnectionCharge();
         $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
+        DB::commit();
+
         $returnResponse = [
             'applicationNo' => $applicationNo,
             'applicationId' => $applicationId
@@ -165,7 +169,7 @@ class NewConnectionRepository implements iNewConnection
                 if ($isExist) {
                     $propetySafCheck = PropActiveSaf::select('prop_type_mstr_id')
                         ->where('saf_no', $req->saf_no)
-                        ->get()
+                        ->where('ulb_id', $req->ulbId)
                         ->first();
                     if ($propetySafCheck->prop_type_mstr_id == $vacantLand) {
                         return responseMsg(false, "water cannot be applied on Vacant land!", "");
@@ -179,7 +183,8 @@ class NewConnectionRepository implements iNewConnection
                 if ($isExist) {
                     $propetyHoldingCheck = PropProperty::select('prop_type_mstr_id')
                         ->where('new_holding_no', $req->holdingNo)
-                        ->get()
+                        ->orwhere('holding_no', $req->holdingNo)
+                        ->where('ulb_id', $req->ulbId)
                         ->first();
                     if ($propetyHoldingCheck->prop_type_mstr_id == $vacantLand) {
                         return responseMsg(false, "water cannot be applied on Vacant land!", "");
@@ -203,25 +208,26 @@ class NewConnectionRepository implements iNewConnection
     public function checkPropertyExist($req)
     {
         switch ($req) {
-            case ($req->saf_no): {
+            case (!is_null($req->saf_no)): {
                     $safCheck = PropActiveSaf::select(
                         'id',
                         'saf_no'
                     )
                         ->where('saf_no', $req->saf_no)
-                        ->get()
+                        ->where('ulb_id', $req->ulbId)
                         ->first();
                     if ($safCheck) {
                         return true;
                     }
                 }
-            case ($req->holdingNo): {
+            case (!is_null($req->holdingNo)): {
                     $holdingCheck = PropProperty::select(
                         'id',
                         'new_holding_no'
                     )
                         ->where('new_holding_no', $req->holdingNo)
-                        ->get()
+                        ->orwhere('holding_no', $req->holdingNo)
+                        ->where('ulb_id', $req->ulbId)
                         ->first();
                     if ($holdingCheck) {
                         return true;

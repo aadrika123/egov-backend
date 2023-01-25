@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Water\newApplyRules;
 use App\Http\Requests\Water\reqSiteVerification;
 use App\MicroServices\DocUpload;
 use App\Models\Payment\WebhookPaymentData;
@@ -82,35 +83,14 @@ class NewConnectionController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
+     * @param \ New Request 
      */
-    public function store(Request $request)
+    public function store(newApplyRules $request)
     {
         try {
-            $validateUser = Validator::make(
-                $request->all(),
-                [
-                    'connectionTypeId'   => 'required|integer',
-                    'propertyTypeId'     => 'required|integer',
-                    'ownerType'          => 'required',
-                    'wardId'             => 'required|integer',
-                    'areaSqft'           => 'required',
-                    'landmark'           => 'required',
-                    'pin'                => 'required|digits:6',
-                    // 'elecKNo'            => 'required',
-                    // 'elecBindBookNo'     => 'required',
-                    // 'elecAccountNo'      => 'required',
-                    // 'elecCategory'       => 'required',
-                    'connection_through' => 'required|integer',
-                    'owners'             => 'required',
-                    'ulbId'              => 'required'
-                ]
-            );
-
-            if ($validateUser->fails()) {
-                return responseMsg(false, "Validation Error!", $validateUser->getMessageBag());
-            }
             return $this->newConnection->store($request);
         } catch (Exception $error) {
+            DB::rollBack();
             return responseMsg(false, $error->getMessage(), "");
         }
     }
@@ -863,6 +843,7 @@ class NewConnectionController extends Controller
         $request->validate([
             'connectionThrough' => 'required|numeric',
             'id' => 'required',
+            'ulbId' => 'required'
         ]);
         try {
             $key = $request->connectionThrough;
@@ -872,14 +853,14 @@ class NewConnectionController extends Controller
                     $mPropProperty = new PropProperty();
                     $mPropOwner = new PropOwner();
                     $mPropFloor = new PropFloor();
-                    $application = collect($mPropProperty->getPropByHolding($request->id));
+                    $application = collect($mPropProperty->getPropByHolding($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
-                        // $propType = $this->get_browser
+                        $areaInSqft = $this->convertDesmilToSqft($application['total_area_in_desimal']);
                         $propUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropOwner->getOwnerByPropId($application['id']));
-                        $details = $application->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
+                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to Holding Not Found!");
@@ -889,13 +870,14 @@ class NewConnectionController extends Controller
                     $mPropActiveSaf = new PropActiveSaf();
                     $mPropActiveSafOwners = new PropActiveSafsOwner();
                     $mPropActiveSafsFloor = new PropActiveSafsFloor();
-                    $application = collect($mPropActiveSaf->getSafDtlsBySafNo($request->id));
+                    $application = collect($mPropActiveSaf->getSafDtlBySafUlbNo($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
+                        $areaInSqft = $this->convertDesmilToSqft($application['total_area_in_desimal']);
                         $safUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
-                        $details = $application->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
+                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to SAF Not Found!");
@@ -910,12 +892,26 @@ class NewConnectionController extends Controller
         }
     }
 
+
+    /**
+     * | Calculation of area in desmil to sqFt
+        | calling function : for the conversion of dismil in Sqft 
+     */
+    public function convertDesmilToSqft($area)
+    {
+        $calculatedArea = $area * 435.6;
+        return [
+            'areaInSqFt' => $calculatedArea
+        ];
+    }
+
     /**
      * | Get Usage type according to holding
         | Calling function : for the search of the property usage type 
      */
     public function getPropUsageType($request, $id)
     {
+        $refPropertyTypeId = config::get('waterConstaint.PROPERTY_TYPE');
         switch ($request->connectionThrough) {
             case ('1'):
                 $mPropFloor = new PropFloor();
@@ -926,46 +922,42 @@ class NewConnectionController extends Controller
                 $usageCatagory = $mPropActiveSafsFloor->getSafUsageCatagory($id);
         }
 
-        $usage = collect($usageCatagory)->map(function ($value, $key) use ($id) {
+        $usage = collect($usageCatagory)->map(function ($value, $key) use ($id, $refPropertyTypeId) {
             $var = $value['usage_code'];
             switch (true) {
                 case ($var == 'A'):
-                    return $metaData = [
-                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Residential'),
+                    return [
+                        'id'        => $refPropertyTypeId['Residential'],
                         'usageType' => 'Residential'
                     ];
                     break;
                 case ($var == 'F'):
-                    return $metaData = [
-                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Industrial'),
+                    return [
+                        'id'        => $refPropertyTypeId['Industrial'],
                         'usageType' => 'Industrial'
                     ];
                     break;
-
                 case ($var == 'G' || $var == 'I'):
-                    return $metaData = [
-                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Government'),
+                    return [
+                        'id'        => $refPropertyTypeId['Government'],
                         'usageType' => 'Government & PSU'
                     ];
                     break;
-
                 case ($var == 'B' || $var == 'C' || $var == 'D' || $var == 'E'):
-                    return $metaData = [
-                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Commercial'),
+                    return [
+                        'id'        => $refPropertyTypeId['Commercial'],
                         'usageType' => 'Commercial'
                     ];
                     break;
-
                 case ($var == 'H' || $var == 'J' || $var == 'K' || $var == 'L'):
-                    return $metaData = [
-                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Institutional'),
+                    return [
+                        'id'        => $refPropertyTypeId['Institutional'],
                         'usageType' => 'Institutional'
                     ];
                     break;
-
                 case ($var == 'M'):  // Here it's differ
-                    return $metaData = [
-                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Commercial'),
+                    return [
+                        'id'        => $refPropertyTypeId['Commercial'],
                         'usageType' => 'Other / Commercial'
                     ];
                     break;
@@ -973,5 +965,41 @@ class NewConnectionController extends Controller
         });
         $returnData['usageType'] = $usage->unique()->values();
         return $returnData;
+    }
+
+    /**
+     * | Get Prperty relates details
+        | get property and saf details 
+     */
+    public function getProperyDetailsByLogin(Request $request)
+    {
+        $request->validate([
+            'connectionThrough' => 'required|numeric',
+            'ulbId' => 'required'
+        ]);
+        try {
+            $key = $request->connectionThrough;
+            switch ($key) {
+                case ('1'):
+                    $mPropProperty = new PropProperty();
+                    $listOfHolding = $mPropProperty->getpropByUserUlb($request);
+                    $checkExist = collect($listOfHolding)->first();
+                    if ($checkExist) {
+                        return responseMsgs(true, "list of holding!", collect($listOfHolding), "", "", "", "POST", "");
+                    }
+                    throw new Exception("Holdin Not Found!");
+                    break;
+                case ('2'):
+                    $mPropActiveSaf = new PropActiveSaf();
+                    $listOfSaf = $mPropActiveSaf->getSafByIdUlb($request);
+                    $checkExist = collect($listOfSaf)->first();
+                    if ($checkExist) {
+                        return responseMsgs(true, "List of Saf No !", collect($listOfSaf), "", "", "", "", "");
+                    }
+                    throw new Exception("Saf Not Found !");
+            }
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }

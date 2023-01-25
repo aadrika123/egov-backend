@@ -84,27 +84,37 @@ class RainWaterHarvestingController extends Controller
     public function waterHarvestingApplication(Request $request)
     {
         try {
-            $moduleId = 2;
             $request->validate([
                 'isWaterHarvestingBefore' => 'required',
                 'dateOfCompletion' => 'required|date',
                 'propertyId' => 'required',
+                'ulbId' => 'required'
             ]);
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+
+            $ulbId = $request->ulbId;
+            $userType = auth()->user()->user_type;
+
+            if ($userType == 'Citizen') {
+                $userId = auth()->user()->id;
+            }
+
+            if ($userType != 'Citizen') {
+                $userId = auth()->user()->id;
+            }
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
                 ->first();
 
-            $applicationNo = $this->generateApplicationNo($ulbId, $userId);
+            // $applicationNo = $this->generateApplicationNo($ulbId, $userId);
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
             $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
             $finisherRoleId = DB::select($refFinisherRoleId);
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
             $mPropActiveHarvesting = new PropActiveHarvesting();
-            $waterHaravestingId  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $applicationNo);
+            $waterHaravesting  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId);
+
 
             if ($file = $request->file('document')) {
 
@@ -115,7 +125,7 @@ class RainWaterHarvestingController extends Controller
 
                 $name = $this->moveFile($docName, $file);
                 $harvestingDoc = new PropHarvestingDoc();
-                $harvestingDoc->harvesting_id = $waterHaravestingId;
+                $harvestingDoc->harvesting_id = $waterHaravesting->id;
                 $harvestingDoc->citizenDocUpload($harvestingDoc, $name, $docName);
             }
 
@@ -124,7 +134,7 @@ class RainWaterHarvestingController extends Controller
                 $name = $this->moveFile($docName, $file);
 
                 $harvestingDoc = new PropHarvestingDoc();
-                $harvestingDoc->harvesting_id = $waterHaravestingId;
+                $harvestingDoc->harvesting_id = $waterHaravesting->id;
                 $harvestingDoc->citizenDocUpload($harvestingDoc, $name, $docName);
             }
 
@@ -132,24 +142,18 @@ class RainWaterHarvestingController extends Controller
              to be removed
              */
             //level pending
-            if (isset($applicationNo)) {
-
-                // $labelPending = new PropHarvestingLevelpending();
-                // $labelPending->harvesting_id = $waterHaravestingId;
-                // $labelPending->receiver_role_id = collect($initiatorRoleId)->first()->role_id;
-                // $labelPending->sender_user_id = $userId;
-                // $labelPending->save();
+            if (isset($waterHaravesting->application_no)) {
 
                 $track = new WorkflowTrack();
                 $metaReqs['workflowId'] = $ulbWorkflowId->id;
                 $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
-                $metaReqs['refTableIdValue'] = $waterHaravestingId;
-                $metaReqs['moduleId'] = $moduleId;
+                $metaReqs['refTableIdValue'] = $waterHaravesting->id;
+                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
 
                 $request->request->add($metaReqs);
                 $track->saveTrack($request);
             }
-            return responseMsg(true, "Application applied!", $applicationNo);
+            return responseMsg(true, "Application applied!", $waterHaravesting->application_no);
         } catch (Exception $error) {
             return responseMsg(false, "Error!", $error->getMessage());
         }

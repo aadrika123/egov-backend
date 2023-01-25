@@ -87,7 +87,7 @@ class reqApplySaf extends FormRequest
             $rules['owner']        = "required|array";
             if (isset($this->owner) && $this->owner) {
                 $rules["owner.*.ownerName"]           =   "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-                $rules["owner.*.gender"]              =   "required|int|in:1,2,3";
+                $rules["owner.*.gender"]              =   "required|string";
                 $rules["owner.*.dob"]                 =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
                 $rules["owner.*.guardianName"]        =   "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
                 $rules["owner.*.relation"]            =   "required|string|in:S/O,W/O,D/O,C/O";

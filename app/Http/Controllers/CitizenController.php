@@ -100,7 +100,7 @@ class CitizenController extends Controller
         }
         // Authentication Using Sql Database
         catch (Exception $e) {
-            return $e;
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -110,18 +110,13 @@ class CitizenController extends Controller
     public function citizenLogout(Request $req)
     {
         // token();
-        $id =  auth()->user();
-        // $user =  auth()->user()->tokens()->revoke();
+        $id =  auth()->user()->id;
 
         $user = ActiveCitizen::where('id', $id)->first();
         $user->remember_token = null;
         $user->save();
 
         $user->tokens()->delete();
-
-        return auth()->user();
-
-
 
         return response()->json([
             'message' => 'Successfully logged out',

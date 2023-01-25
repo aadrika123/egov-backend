@@ -68,6 +68,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('list_doc_to_upload', 'getDocToUpload');                                            //
 
         Route::post('get-related-saf-holding', 'getSafHoldingDetails');
+        Route::post('get-prop-saf-list', 'getProperyDetailsByLogin');
         // Route::post('list-doc', 'getWaterDocDetails');                                                  //
         // Route::post('verify-doc', 'waterDocStatus');                                                    //
         // Route::post('list-message', 'getIndependentComment');                                           //

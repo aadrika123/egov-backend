@@ -31,11 +31,6 @@ class WaterApplication extends Model
         $saveNewApplication->address                = $req->address;
         $saveNewApplication->landmark               = $req->landmark ?? null;
         $saveNewApplication->pin                    = $req->pin;
-        $saveNewApplication->flat_count             = $req->flatCount ?? null;
-        // $saveNewApplication->elec_k_no              = $req->elecKNo;
-        // $saveNewApplication->elec_bind_book_no      = $req->elecBindBookNo;
-        // $saveNewApplication->elec_account_no        = $req->elecAccountNo;
-        // $saveNewApplication->elec_category          = $req->elecCategory;
         $saveNewApplication->connection_through     = $req->connection_through;
         $saveNewApplication->workflow_id            = $ulbWorkflowId->id;
         $saveNewApplication->connection_fee_id      = $waterFeeId;
@@ -45,12 +40,11 @@ class WaterApplication extends Model
         $saveNewApplication->application_no         = $applicationNo;
         $saveNewApplication->ulb_id                 = $ulbId;
         $saveNewApplication->apply_date             = date('Y-m-d H:i:s');
-        $saveNewApplication->user_id                = auth()->user()->id;
+        $saveNewApplication->user_id                = auth()->user()->id;    // <--------- here
+        $saveNewApplication->apply_from             = auth()->user()->user_type;
+
 
         # condition entry 
-        if ($req->connection_through == 3) {
-            $saveNewApplication->id_proof = 3;
-        }
         if (!is_null($req->holdingNo)) {
             $propertyId = new PropProperty();
             $propertyId = $propertyId->getPropertyId($req->holdingNo);
@@ -63,6 +57,8 @@ class WaterApplication extends Model
             $saveNewApplication->saf_id = $safId->id;
             $saveNewApplication->saf_no = $req->saf_no;
         }
+
+        # applied
 
         $saveNewApplication->save();
 
@@ -143,12 +139,12 @@ class WaterApplication extends Model
     /**
      * |----------------------- Edit Water Application ----------------------------|
      */
-    public function editWaterApplication($req,$refWaterApplications)
+    public function editWaterApplication($req, $refWaterApplications)
     {
         $water = WaterApplication::find($req->id);
 
         $reqs = [
-            'connection_type_id'  => $req->connection_type_id  ?? $refWaterApplications->connection_type_id,   
+            'connection_type_id'  => $req->connection_type_id  ?? $refWaterApplications->connection_type_id,
             'property_type_id'    => $req->property_type_id    ?? $refWaterApplications->property_type_id,
             'owner_type'          => $req->owner_type          ?? $refWaterApplications->owner_type,
             'category'            => $req->category            ?? $refWaterApplications->category,
@@ -167,8 +163,8 @@ class WaterApplication extends Model
             'workflow_id'         => $req->workflow_id         ?? $refWaterApplications->workflow_id,
             'ulb_id'              => $req->ulb_id              ?? $refWaterApplications->ulb_id,
             'apply_date'          => $req->apply_date          ?? $refWaterApplications->apply_date,
-            'user_id'             => $req->user_id             ?? $refWaterApplications->user_id,                    
-           
+            'user_id'             => $req->user_id             ?? $refWaterApplications->user_id,
+
         ];
         return $water->update($reqs);
     }

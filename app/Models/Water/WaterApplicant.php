@@ -20,7 +20,7 @@ class WaterApplicant extends Model
         $applicant = new WaterApplicant();
         $applicant->application_id  = $applicationId;
         $applicant->applicant_name  = $owners['ownerName'];
-        $applicant->guardian_name   = $owners['guardianName'];
+        $applicant->guardian_name   = $owners['guardianName'] ?? null;
         $applicant->mobile_no       = $owners['mobileNo'];
         $applicant->email           = $owners['email'];
         $applicant->save();

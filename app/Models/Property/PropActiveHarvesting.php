@@ -35,10 +35,8 @@ class PropActiveHarvesting extends Model
             ->where('prop_active_harvestings.ulb_id', $ulbId);
     }
 
-    public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $applicationNo)
+    public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId)
     {
-        $userId = auth()->user()->id;
-        $ulbId = auth()->user()->ulb_id;
 
         $waterHaravesting = new PropActiveHarvesting();
         $waterHaravesting->property_id = $request->propertyId;
@@ -48,12 +46,19 @@ class PropActiveHarvesting extends Model
         $waterHaravesting->current_role = collect($initiatorRoleId)->first()->role_id;
         $waterHaravesting->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
         $waterHaravesting->finisher_role_id = collect($finisherRoleId)->first()->role_id;
-        $waterHaravesting->user_id = $userId;
-        $waterHaravesting->ulb_id = $ulbId;
-        $waterHaravesting->application_no = $applicationNo;
+        $waterHaravesting->citizen_id = $userId ?? null;
+        $waterHaravesting->user_id = $userId ?? null;
+        $waterHaravesting->ulb_id = $request->ulbId;
         $waterHaravesting->save();
 
-        return $waterHaravesting->id;
+        $harvestingNo = $this->harvestingNo($waterHaravesting->id);
+
+        PropActiveHarvesting::where('id', $waterHaravesting->id)
+            ->update(['application_no' => $harvestingNo]);
+
+        $waterHaravestingDtl = PropActiveHarvesting::where('id', $waterHaravesting->id)
+            ->first();
+        return $waterHaravestingDtl;
     }
 
     /**
@@ -115,5 +120,18 @@ class PropActiveHarvesting extends Model
         return PropActiveHarvesting::select('*')
             ->where('id', $appId)
             ->first();
+    }
+
+    /**
+     * 
+     */
+    public function harvestingNo($id)
+    {
+        $count = PropActiveHarvesting::where('id', $id)
+            ->select('id')
+            ->get();
+        $harvestingNo = 'HAR' . "/" . str_pad($count['0']->id, 5, '0', STR_PAD_LEFT);
+
+        return $harvestingNo;
     }
 }
