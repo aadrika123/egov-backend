@@ -856,7 +856,7 @@ class NewConnectionController extends Controller
                     $application = collect($mPropProperty->getPropByHolding($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
-                        $propUsageType = $this->getPropUsageType($request, $application['id']);
+                        return $propUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropOwner->getOwnerByPropId($application['id']));
                         $details = $application->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
@@ -896,6 +896,7 @@ class NewConnectionController extends Controller
      */
     public function getPropUsageType($request, $id)
     {
+        $refPropertyTypeId = config::get('waterConstaint.PROPERTY_TYPE');
         switch ($request->connectionThrough) {
             case ('1'):
                 $mPropFloor = new PropFloor();
@@ -906,46 +907,42 @@ class NewConnectionController extends Controller
                 $usageCatagory = $mPropActiveSafsFloor->getSafUsageCatagory($id);
         }
 
-        $usage = collect($usageCatagory)->map(function ($value, $key) use ($id) {
+        $usage = collect($usageCatagory)->map(function ($value, $key) use ($id, $refPropertyTypeId) {
             $var = $value['usage_code'];
             switch (true) {
                 case ($var == 'A'):
-                    return $metaData = [
-                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Residential'),
+                    return [
+                        'id'        => $refPropertyTypeId['Residential'],
                         'usageType' => 'Residential'
                     ];
                     break;
                 case ($var == 'F'):
-                    return $metaData = [
-                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Industrial'),
+                    return [
+                        'id'        => $refPropertyTypeId['Industrial'],
                         'usageType' => 'Industrial'
                     ];
                     break;
-
                 case ($var == 'G' || $var == 'I'):
-                    return $metaData = [
-                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Government'),
+                    return [
+                        'id'        => $refPropertyTypeId['Government'],
                         'usageType' => 'Government & PSU'
                     ];
                     break;
-
                 case ($var == 'B' || $var == 'C' || $var == 'D' || $var == 'E'):
                     return $metaData = [
-                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Commercial'),
+                        'id'        => $refPropertyTypeId['Commercial'],
                         'usageType' => 'Commercial'
                     ];
                     break;
-
                 case ($var == 'H' || $var == 'J' || $var == 'K' || $var == 'L'):
-                    return $metaData = [
-                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Institutional'),
+                    return [
+                        'id'        => $refPropertyTypeId['Institutional'],
                         'usageType' => 'Institutional'
                     ];
                     break;
-
                 case ($var == 'M'):  // Here it's differ
-                    return $metaData = [
-                        'id'        => config::get('waterConstaint.PROPERTY_TYPE.Commercial'),
+                    return [
+                        'id'        => $refPropertyTypeId['Commercial'],
                         'usageType' => 'Other / Commercial'
                     ];
                     break;
