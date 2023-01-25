@@ -155,7 +155,6 @@ class PropProperty extends Model
             'holding_no'
         )
             ->where('user_id', auth()->user()->id)
-            // ->orWhere('citizen_id', auth()->user()->id)
             ->where('ulb_id', $request->ulbId)
             ->get();
     }

@@ -676,6 +676,8 @@ class NewConnectionController extends Controller
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
             $mWaterTran = new WaterTran();
+            $mWaterConnectionCharge  = new WaterConnectionCharge();
+
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
 
@@ -696,7 +698,16 @@ class NewConnectionController extends Controller
             # owner details
             $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
 
-            $returnData = array_merge($applicationDetails, $documentDetails, $waterTransDetail, $ownerDetails);
+            # calculation details
+            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])->first();
+            $calculation['calculation'] =
+                [
+                    'connectionFee' => $charges['conn_fee'],
+                    'penalty' => $charges['penalty'],
+                    'totalAmount' => $charges['amount']
+                ];
+
+            $returnData = array_merge($applicationDetails, $documentDetails, $waterTransDetail, $ownerDetails, $calculation);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -704,6 +715,9 @@ class NewConnectionController extends Controller
     }
 
     // Application details
+    /**
+        | Modification --------------------------
+     */
     public function uploadWaterDoc(Request $req)
     {
         $req->validate([
@@ -747,6 +761,9 @@ class NewConnectionController extends Controller
     }
 
     // Get the upoaded docunment
+    /**
+        | Modification ---------------------------
+     */
     public function getUploadDocuments(Request $req)
     {
         $req->validate([
@@ -769,6 +786,9 @@ class NewConnectionController extends Controller
     }
 
     // Get the document to be upoaded with list of dock uploaded 
+    /**
+        | Modification ---------------------------
+     */
     public function getDocToUpload(Request $request)
     {
         $request->validate([
@@ -974,7 +994,7 @@ class NewConnectionController extends Controller
     public function getProperyDetailsByLogin(Request $request)
     {
         $request->validate([
-            'connectionThrough' => 'required|numeric',
+            'connectionThrough' => 'required|int|in:1,2',
             'ulbId' => 'required'
         ]);
         try {
