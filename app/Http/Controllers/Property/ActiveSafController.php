@@ -58,6 +58,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use PhpParser\JsonDecoder;
 
 class ActiveSafController extends Controller
 {
@@ -1056,10 +1057,12 @@ class ActiveSafController extends Controller
         try {
             $saf = PropActiveSaf::find($req->applicationId);
             $track = new WorkflowTrack();
+            $btcFields = json_decode($req->btcFields);
             DB::beginTransaction();
             $initiatorRoleId = $saf->initiator_role_id;
             $saf->current_role = $initiatorRoleId;
             $saf->parked = true;                        //<------ SAF Pending Status true
+            // $saf->btc_fields = $btcFields;
             $saf->save();
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -1698,4 +1701,18 @@ class ActiveSafController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+        not in use
+     */
+    // public function getBtcFields(Request $req)
+    // {
+    //     try {
+    //         $saf = PropActiveSaf::find($req->applicationId);
+    //         $btcFields = json_decode($saf->btc_fields);
+    //         return responseMsgs(true, "Btc Fields", remove_null($btcFields), "", "1.0", "", "POST", $req->deviceId ?? "");
+    //     } catch (Exception $e) {
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
 }
