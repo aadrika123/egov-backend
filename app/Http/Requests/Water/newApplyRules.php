@@ -24,7 +24,7 @@ class newApplyRules extends FormRequest
     public function rules()
     {
         $rules['connectionTypeId'] = 'required|int|in:1,2';
-        $rules['propertyTypeId'] = 'required|int|in:1,2,3,4,6';
+        $rules['propertyTypeId'] = 'required|int|in:1,2,3,4,6,7';
         $rules['ownerType'] = 'required|int|in:1,2';
         $rules['wardId'] = 'required|int';
         $rules['areaSqft'] = 'required|numeric';
