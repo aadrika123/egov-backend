@@ -15,11 +15,13 @@ trait SafDoc
      * | Gettting Document List (1)
      * | Transer type initial mode 0 for other Case
      */
-    public function getDocLists($propType, $transferType = 0)
+    public function getSafDocLists($refSafs)
     {
         $mRefReqDocs = new RefRequiredDocument();
         $propTypes = Config::get('PropertyConstaint.PROPERTY-TYPE');
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $propType = $refSafs->prop_type_mstr_id;
+        $transferType = $refSafs->transfer_mode_mstr_id;
 
         $flip = flipConstants($propTypes);
         switch ($propType) {
@@ -37,21 +39,7 @@ trait SafDoc
                 break;
         }
 
-        $explodeDocs = collect(explode('#', $documentList));
-        $filteredDocs = $explodeDocs->map(function ($explodeDoc) {
-            $document = explode(',', $explodeDoc);
-            $key = array_shift($document);
-            $reqDoc[$key] = collect($document)->map(function ($doc) {
-                $strLower = strtolower($doc);
-                $strReplace = str_replace('_', ' ', $strLower);
-                $arr = [
-                    "documentCode" => $doc,
-                    "docVal" => ucwords($strReplace)
-                ];
-                return $arr;
-            });
-            return $reqDoc;
-        });
+        $filteredDocs = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
         return responseMsg(true, "", $filteredDocs);
     }
 
@@ -86,5 +74,31 @@ trait SafDoc
         }
 
         return $documentList;
+    }
+
+    /**
+     * | Filter Document(1.2)
+     */
+    public function filterDocument($documentList, $refSafs)
+    {
+        $workflowId = $refSafs->workflow_id;
+        $ulbId = $refSafs->ulb_id;
+        $explodeDocs = collect(explode('#', $documentList));
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) {
+            $document = explode(',', $explodeDoc);
+            $key = array_shift($document);
+            $reqDoc[$key] = collect($document)->map(function ($doc) {
+                $strLower = strtolower($doc);
+                $strReplace = str_replace('_', ' ', $strLower);
+                $arr = [
+                    "documentCode" => $doc,
+                    "docVal" => ucwords($strReplace),
+                    "docPath" => ""
+                ];
+                return $arr;
+            });
+            return $reqDoc;
+        });
+        return $filteredDocs;
     }
 }
