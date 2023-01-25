@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
+use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Workflows\WfActiveDocument;
 use App\Traits\Property\SafDoc;
@@ -13,7 +14,6 @@ use Illuminate\Support\Facades\Config as FacadesConfig;
 
 class SafDocController extends Controller
 {
-    use SafDoc;
     /**
      * | Get Document Lists
      */
@@ -22,11 +22,105 @@ class SafDocController extends Controller
         try {
             $mActiveSafs = new PropActiveSaf();
             $refSafs = $mActiveSafs->getSafNo($req->applicationId);             // Get Saf Details
-            $propTypeDocs = $this->getDocLists($refSafs->prop_type_mstr_id, $refSafs->transfer_mode_mstr_id);             // Trait
+            $propTypeDocs = $this->getSafDocLists($refSafs);                    // Current Object
             return $propTypeDocs;
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
+    }
+
+    /**
+     * | Gettting Document List (1)
+     * | Transer type initial mode 0 for other Case
+     */
+    public function getSafDocLists($refSafs)
+    {
+        $mRefReqDocs = new RefRequiredDocument();
+        $propTypes = FacadesConfig::get('PropertyConstaint.PROPERTY-TYPE');
+        $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
+        $propType = $refSafs->prop_type_mstr_id;
+        $transferType = $refSafs->transfer_mode_mstr_id;
+
+        $flip = flipConstants($propTypes);
+        switch ($propType) {
+            case $flip['FLATS / UNIT IN MULTI STORIED BUILDING'];
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_FLATS")->requirements;
+                break;
+            case $flip['INDEPENDENT BUILDING'];
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_INDEPENDENT_BUILDING")->requirements;
+                break;
+            case $flip['SUPER STRUCTURE'];
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_SUPER_STRUCTURE")->requirements;
+                break;
+            case $flip['VACANT LAND'];
+                $documentList = $this->vacantDocLists($mRefReqDocs, $moduleId, $transferType);     // Function (1.1)
+                break;
+        }
+
+        $filteredDocs = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
+        return responseMsg(true, "", $filteredDocs);
+    }
+
+    /**
+     * | Vacant Land Required Doc lists (1.1)
+     */
+    public function vacantDocLists($mRefReqDocs, $moduleId, $transferType)
+    {
+        $confTransferTypes = FacadesConfig::get('PropertyConstaint.TRANSFER_MODES');
+        $transerTypes = flipConstants($confTransferTypes);
+        switch ($transferType) {
+            case  $transerTypes['Sale'];
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_SALE")->requirements;
+                break;
+            case  $transerTypes['Gift'];
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_GIFT")->requirements;
+                break;
+            case  $transerTypes['Will'];
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_WILL")->requirements;
+                break;
+            case  $transerTypes['Lease'];
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_LEASE")->requirements;
+                break;
+            case  $transerTypes['Partition'];
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_PARTITION")->requirements;
+                break;
+            case  $transerTypes['Succession'];
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_SUCCESSION")->requirements;
+                break;
+            default:
+                throw new Exception("Not Available Documents List for this Transfer Type");
+        }
+
+        return $documentList;
+    }
+
+    /**
+     * | Filter Document(1.2)
+     */
+    public function filterDocument($documentList, $refSafs)
+    {
+        $mWfActiveDocument = new WfActiveDocument();
+        $safId = $refSafs->id;
+        $workflowId = $refSafs->workflow_id;
+        $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, 1);
+        $explodeDocs = collect(explode('#', $documentList));
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
+            $document = explode(',', $explodeDoc);
+            $key = array_shift($document);
+            $reqDoc[$key] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
+                $strLower = strtolower($doc);
+                $strReplace = str_replace('_', ' ', $strLower);
+                $arr = [
+                    "documentCode" => $doc,
+                    "docVal" => ucwords($strReplace),
+                    "docPath" => $uploadedDoc->doc_path ?? ""
+                ];
+                return $arr;
+            });
+            return $reqDoc;
+        });
+        return $filteredDocs;
     }
 
     /**
@@ -38,8 +132,7 @@ class SafDocController extends Controller
             "applicationId" => "required|numeric",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
             "docCode" => "required",
-            "ownerId" => "nullable|numeric",
-            "docRefName" => "required"
+            "ownerId" => "nullable|numeric"
         ]);
 
         try {
@@ -49,7 +142,7 @@ class SafDocController extends Controller
             $mActiveSafs = new PropActiveSaf();
             $relativePath = FacadesConfig::get('PropertyConstaint.SAF_RELATIVE_PATH');
             $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
-            $refImageName = $req->docRefName;
+            $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
