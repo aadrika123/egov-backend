@@ -856,10 +856,11 @@ class NewConnectionController extends Controller
                     $application = collect($mPropProperty->getPropByHolding($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
-                        return $propUsageType = $this->getPropUsageType($request, $application['id']);
+                        $areaInSqft = $this->convertDesmilToSqft($application['total_area_in_desimal']);
+                        $propUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropOwner->getOwnerByPropId($application['id']));
-                        $details = $application->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
+                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to Holding Not Found!");
@@ -872,10 +873,11 @@ class NewConnectionController extends Controller
                     $application = collect($mPropActiveSaf->getSafDtlBySafUlbNo($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
+                        $areaInSqft = $this->convertDesmilToSqft($application['total_area_in_desimal']);
                         $safUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
-                        $details = $application->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
+                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to SAF Not Found!");
@@ -888,6 +890,19 @@ class NewConnectionController extends Controller
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+
+    /**
+     * | Calculation of area in desmil to sqFt
+        | calling function : for the conversion of dismil in Sqft 
+     */
+    public function convertDesmilToSqft($area)
+    {
+        $calculatedArea = $area * 435.6;
+        return [
+            'areaInSqFt' => $calculatedArea
+        ];
     }
 
     /**
@@ -929,7 +944,7 @@ class NewConnectionController extends Controller
                     ];
                     break;
                 case ($var == 'B' || $var == 'C' || $var == 'D' || $var == 'E'):
-                    return $metaData = [
+                    return [
                         'id'        => $refPropertyTypeId['Commercial'],
                         'usageType' => 'Commercial'
                     ];

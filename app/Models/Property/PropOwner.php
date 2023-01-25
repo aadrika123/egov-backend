@@ -44,7 +44,9 @@ class PropOwner extends Model
         return PropOwner::where('property_id', $propId)
             ->select(
                 'owner_name',
-                'mobile_no'
+                'mobile_no',
+                'guardian_name',
+                'email'
             )
             ->orderBy('id')
             ->first();

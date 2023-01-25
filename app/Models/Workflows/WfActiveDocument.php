@@ -22,10 +22,11 @@ class WfActiveDocument extends Model
             "ulb_id" => $req->ulbId,
             "module_id" => $req->moduleId,
             "relative_path" => $req->relativePath,
-            "image" => $req->image,
+            "document" => $req->document,
             "uploaded_by" => authUser()->id,
+            "uploaded_by_type" => authUser()->user_type,
             "remarks" => $req->remarks ?? null,
-            "doc_mstr_id" => $req->docMstrId,
+            "doc_code" => $req->docCode,
             "owner_dtl_id" => $req->ownerDtlId,
         ];
 
