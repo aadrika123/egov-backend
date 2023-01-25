@@ -91,7 +91,7 @@ class PropProperty extends Model
      */
     public function getPropByHolding($holdingNo, $ulbId)
     {
-        return PropProperty::select(
+        $oldHolding = PropProperty::select(
             'prop_properties.id',
             'prop_properties.holding_no',
             'prop_properties.new_holding_no',
@@ -111,10 +111,38 @@ class PropProperty extends Model
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_properties.ward_mstr_id')
             ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'prop_properties.new_ward_mstr_id')
-            ->where('prop_properties.ulb_id', $ulbId)
             ->where('prop_properties.holding_no', $holdingNo)
-            ->orwhere('prop_properties.new_holding_no', $holdingNo)
+            ->where('prop_properties.ulb_id', $ulbId)
             ->first();
+
+        if ($oldHolding) {
+            return $oldHolding;
+        }
+
+        $newHolding = PropProperty::select(
+            'prop_properties.id',
+            'prop_properties.holding_no',
+            'prop_properties.new_holding_no',
+            'prop_properties.ward_mstr_id',
+            'prop_properties.new_ward_mstr_id',
+            'prop_properties.elect_consumer_no',
+            'prop_properties.elect_acc_no',
+            'prop_properties.elect_bind_book_no',
+            'prop_properties.elect_cons_category',
+            'prop_properties.prop_pin_code',
+            'prop_properties.corr_pin_code',
+            'prop_properties.prop_address',
+            'prop_properties.corr_address',
+            'prop_properties.area_of_plot as total_area_in_desimal',
+            'ulb_ward_masters.ward_name as old_ward_no',
+            'u.ward_name as new_ward_no',
+        )
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_properties.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'prop_properties.new_ward_mstr_id')
+            ->orwhere('prop_properties.new_holding_no', $holdingNo)
+            ->where('prop_properties.ulb_id', $ulbId)
+            ->first();
+        return $newHolding;
     }
 
     /**
@@ -122,12 +150,12 @@ class PropProperty extends Model
      */
     public function getpropByUserUlb($request)
     {
-        PropProperty::select(
+        return PropProperty::select(
             'new_holding_no',
             'holding_no'
         )
             ->where('user_id', auth()->user()->id)
-            ->orWhere('citizen_id', auth()->user()->id)
+            // ->orWhere('citizen_id', auth()->user()->id)
             ->where('ulb_id', $request->ulbId)
             ->get();
     }

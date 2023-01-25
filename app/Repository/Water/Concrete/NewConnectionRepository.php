@@ -94,6 +94,9 @@ class NewConnectionRepository implements iNewConnection
         # get initiater and finisher
         $ulbWorkflowObj = new WfWorkflow();
         $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $ulbId);
+        if (!$ulbWorkflowId) {
+            throw new Exception("The respective Ulb is not maped to Water Workflow!");
+        }
         $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
         $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
         $finisherRoleId = DB::select($refFinisherRoleId);
@@ -166,6 +169,7 @@ class NewConnectionRepository implements iNewConnection
                 if ($isExist) {
                     $propetySafCheck = PropActiveSaf::select('prop_type_mstr_id')
                         ->where('saf_no', $req->saf_no)
+                        ->where('ulb_id', $req->ulbId)
                         ->first();
                     if ($propetySafCheck->prop_type_mstr_id == $vacantLand) {
                         return responseMsg(false, "water cannot be applied on Vacant land!", "");
@@ -180,6 +184,7 @@ class NewConnectionRepository implements iNewConnection
                     $propetyHoldingCheck = PropProperty::select('prop_type_mstr_id')
                         ->where('new_holding_no', $req->holdingNo)
                         ->orwhere('holding_no', $req->holdingNo)
+                        ->where('ulb_id', $req->ulbId)
                         ->first();
                     if ($propetyHoldingCheck->prop_type_mstr_id == $vacantLand) {
                         return responseMsg(false, "water cannot be applied on Vacant land!", "");
@@ -209,7 +214,7 @@ class NewConnectionRepository implements iNewConnection
                         'saf_no'
                     )
                         ->where('saf_no', $req->saf_no)
-                        ->get()
+                        ->where('ulb_id', $req->ulbId)
                         ->first();
                     if ($safCheck) {
                         return true;
@@ -222,6 +227,7 @@ class NewConnectionRepository implements iNewConnection
                     )
                         ->where('new_holding_no', $req->holdingNo)
                         ->orwhere('holding_no', $req->holdingNo)
+                        ->where('ulb_id', $req->ulbId)
                         ->first();
                     if ($holdingCheck) {
                         return true;

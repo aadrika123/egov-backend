@@ -83,6 +83,7 @@ class NewConnectionController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
+     * @param \ New Request 
      */
     public function store(newApplyRules $request)
     {
