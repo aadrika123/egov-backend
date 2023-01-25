@@ -139,7 +139,7 @@ class RainWaterHarvestingController extends Controller
             }
 
             /**
-             to be removed
+             
              */
             //level pending
             if (isset($waterHaravesting->application_no)) {

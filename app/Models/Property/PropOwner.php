@@ -46,7 +46,7 @@ class PropOwner extends Model
                 'owner_name',
                 'mobile_no'
             )
-            ->orderByDesc('id')
+            ->orderBy('id')
             ->first();
     }
 }

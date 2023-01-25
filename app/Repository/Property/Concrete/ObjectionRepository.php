@@ -68,7 +68,8 @@ class ObjectionRepository implements iObjectionRepository
     {
         try {
             $userId = authUser()->id;
-            $ulbId = auth()->user()->ulb_id;
+            // $ulbId = auth()->user()->ulb_id;
+            $ulbId = $request->ulbId;
             $userType = auth()->user()->user_type;
             $objectionFor = $request->objectionFor;
             $objectionNo = "";
@@ -91,6 +92,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection = new PropActiveObjection();
                 $objection->ulb_id = $ulbId;
                 $objection->user_id = $userId;
+                $objection->citizen_id = $userId;
                 $objection->objection_for =  $objectionFor;
                 $objection->property_id = $request->propId;
                 $objection->remarks = $request->remarks;
@@ -125,7 +127,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objectionOwner->save();
 
 
-                $this->docUpload($request, $objection, $objectionNo);
+                // $this->docUpload($request, $objection, $objectionNo);
 
 
                 //name document
@@ -236,7 +238,7 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_error = new PropActiveObjectionDtl;
                     $assement_error->objection_id = $objection->id;
                     $assement_error->objection_type_id = $otid->id;
-                    $assement_error->applicant_data =  $otid->value;
+                    // $assement_error->applicant_data =  $otid->value;
 
                     $assesmentDetail = $this->assesmentDetails($request);
                     $assesmentData = collect($assesmentDetail);
