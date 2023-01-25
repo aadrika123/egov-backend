@@ -6,13 +6,29 @@ use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Workflows\WfActiveDocument;
+use App\Traits\Property\SafDoc;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config as FacadesConfig;
-use PSpell\Config;
 
 class SafDocController extends Controller
 {
+    use SafDoc;
+    /**
+     * | Get Document Lists
+     */
+    public function getDocList(Request $req)
+    {
+        try {
+            $mActiveSafs = new PropActiveSaf();
+            $refSafs = $mActiveSafs->getSafNo($req->applicationId);             // Get Saf Details
+            $propTypeDocs = $this->getDocLists($refSafs->prop_type_mstr_id, $refSafs->transfer_mode_mstr_id);             // Trait
+            return $propTypeDocs;
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+
     /**
      * | Created for Document Upload for SAFs
      */
@@ -21,7 +37,7 @@ class SafDocController extends Controller
         $req->validate([
             "applicationId" => "required|numeric",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            "docMstrId" => "required|numeric",
+            "docCode" => "required",
             "ownerId" => "nullable|numeric",
             "docRefName" => "required"
         ]);
@@ -34,17 +50,17 @@ class SafDocController extends Controller
             $relativePath = FacadesConfig::get('PropertyConstaint.SAF_RELATIVE_PATH');
             $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
             $refImageName = $req->docRefName;
-            $refImageName = $getSafDtls->id . '-' . str_replace(' ', '_', $refImageName);
+            $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
             $metaReqs['moduleId'] = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs['activeId'] = $getSafDtls->saf_no;
+            $metaReqs['activeId'] = $getSafDtls->id;
             $metaReqs['workflowId'] = $getSafDtls->workflow_id;
             $metaReqs['ulbId'] = $getSafDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
-            $metaReqs['image'] = $imageName;
-            $metaReqs['docMstrId'] = $req->docMstrId;
+            $metaReqs['document'] = $imageName;
+            $metaReqs['docCode'] = $req->docCode;
             $metaReqs['ownerDtlId'] = $req->ownerId;
 
             $metaReqs = new Request($metaReqs);

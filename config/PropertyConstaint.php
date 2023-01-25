@@ -38,6 +38,14 @@ return [
         "4"     => "VACANT LAND",
         "5"     => "OCCUPIED PROPERTY"
     ],
+    "TRANSFER_MODES" => [
+        "1" => "Sale",
+        "2" => "Gift",
+        "3" => "Will",
+        "4" => "Lease",
+        "5" => "Partition",
+        "6" => "Succession"
+    ],
     "OWNERSHIP-TYPE" => [
         "1"     => "INDIVIDUAL",
         "2"     => "CO-OPERATIVE SOCIETY",

@@ -91,6 +91,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(SafDocController::class)->group(function () {
     Route::post('saf/document-upload', 'docUpload');                                                    // Upload Documents for SAF (01)
     Route::post('saf/get-upload-documents', 'getUploadDocuments');                                      // View Uploaded Documents for SAF (02)
+    Route::post('saf/get-doc-list', 'getDocList');                                                      // Get Document Lists(03)
   });
 
   /**
@@ -139,7 +140,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::match(["get", "post"], 'documentUpload/{id}', 'documentUpload');
 
     // Route::match(["get", "post"], 'safDocumentUpload/{id}', 'safDocumentUpload');
-    Route::post('get-doc-list', 'getDocList');
   });
 
   /**
