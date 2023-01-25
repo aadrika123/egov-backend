@@ -974,7 +974,7 @@ class NewConnectionController extends Controller
     public function getProperyDetailsByLogin(Request $request)
     {
         $request->validate([
-            'connectionThrough' => 'required|numeric',
+            'connectionThrough' => 'required|int|in:1,2',
             'ulbId' => 'required'
         ]);
         try {
