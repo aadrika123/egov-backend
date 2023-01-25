@@ -139,7 +139,7 @@ class NewConnectionRepository implements iNewConnection
         $charges = new WaterConnectionCharge();
         $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
         DB::commit();
-        
+
         $returnResponse = [
             'applicationNo' => $applicationNo,
             'applicationId' => $applicationId
@@ -166,7 +166,6 @@ class NewConnectionRepository implements iNewConnection
                 if ($isExist) {
                     $propetySafCheck = PropActiveSaf::select('prop_type_mstr_id')
                         ->where('saf_no', $req->saf_no)
-                        ->get()
                         ->first();
                     if ($propetySafCheck->prop_type_mstr_id == $vacantLand) {
                         return responseMsg(false, "water cannot be applied on Vacant land!", "");
@@ -180,7 +179,7 @@ class NewConnectionRepository implements iNewConnection
                 if ($isExist) {
                     $propetyHoldingCheck = PropProperty::select('prop_type_mstr_id')
                         ->where('new_holding_no', $req->holdingNo)
-                        ->get()
+                        ->orwhere('holding_no', $req->holdingNo)
                         ->first();
                     if ($propetyHoldingCheck->prop_type_mstr_id == $vacantLand) {
                         return responseMsg(false, "water cannot be applied on Vacant land!", "");
