@@ -253,12 +253,12 @@ class ObjectionController extends Controller
         try {
             $req->validate([
                 'escalateStatus' => 'required|bool',
-                'objectionId' => 'required|integer'
+                'applicationId' => 'required|integer'
             ]);
 
             DB::beginTransaction();
             $userId = authUser()->id;
-            $objId = $req->objectionId;
+            $objId = $req->applicationId;
             $data = PropActiveObjection::find($objId);
             $data->is_escalated = $req->escalateStatus;
             $data->escalated_by = $userId;
@@ -324,21 +324,21 @@ class ObjectionController extends Controller
     {
         try {
             $req->validate([
-                'objectionId' => 'required',
+                'applicationId' => 'required',
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
                 'comment' => 'required'
             ]);
             $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
             // objection Application Update Current Role Updation
-            $objection = PropActiveObjection::find($req->objectionId);
+            $objection = PropActiveObjection::find($req->applicationId);
             $objection->current_role = $req->receiverRoleId;
             $objection->save();
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $objection->workflow_id;
             $metaReqs['refTableDotId'] = $mRefTable;
-            $metaReqs['refTableIdValue'] = $req->objectionId;
+            $metaReqs['refTableIdValue'] = $req->applicationId;
             $req->request->add($metaReqs);
 
             DB::beginTransaction();
@@ -362,11 +362,11 @@ class ObjectionController extends Controller
     {
         try {
             $req->validate([
-                "objectionId" => "required",
+                "applicationId" => "required",
                 "status" => "required"
             ]);
             $activeObjection = PropActiveObjection::query()
-                ->where('id', $req->objectionId)
+                ->where('id', $req->applicationId)
                 ->first();
             // Check if the Current User is Finisher or Not
             $getFinisherQuery = $this->getFinisherId($activeObjection->workflow_id);                 // Get Finisher using Trait
@@ -411,11 +411,11 @@ class ObjectionController extends Controller
     public function backToCitizen(Request $req)
     {
         $req->validate([
-            'objectionId' => "required"
+            'applicationId' => "required"
         ]);
         try {
             $redis = Redis::connection();
-            $objection = PropActiveObjection::find($req->objectionId);
+            $objection = PropActiveObjection::find($req->applicationId);
             $workflowId = $objection->workflow_id;
             $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
             $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
@@ -433,7 +433,7 @@ class ObjectionController extends Controller
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $objection->workflow_id;
             $metaReqs['refTableDotId'] = $mRefTable;
-            $metaReqs['refTableIdValue'] = $req->objectionId;
+            $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['verificationStatus'] = $req->verificationStatus;
             $metaReqs['senderRoleId'] = $req->currentRoleId;
             $req->request->add($metaReqs);
@@ -511,13 +511,13 @@ class ObjectionController extends Controller
     {
         $req->validate([
             'comment' => 'required',
-            'objectionId' => 'required|integer',
+            'applicationId' => 'required|integer',
             'senderRoleId' => 'nullable|integer'
         ]);
 
         try {
             $workflowTrack = new WorkflowTrack();
-            $objection = PropActiveObjection::find($req->objectionId);                // SAF Details
+            $objection = PropActiveObjection::find($req->applicationId);                // SAF Details
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
             $metaReqs = array();

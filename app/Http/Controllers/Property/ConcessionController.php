@@ -524,7 +524,7 @@ class ConcessionController extends Controller
     public function postNextLevel(Request $req)
     {
         $req->validate([
-            'concessionId' => 'required|integer',
+            'applicationId' => 'required|integer',
             'senderRoleId' => 'required|integer',
             'receiverRoleId' => 'required|integer',
             'comment' => 'required'
@@ -533,14 +533,14 @@ class ConcessionController extends Controller
             DB::beginTransaction();
 
             // Concession Application Update Current Role Updation
-            $concession = PropActiveConcession::find($req->concessionId);
+            $concession = PropActiveConcession::find($req->applicationId);
             $concession->current_role = $req->receiverRoleId;
             $concession->save();
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $concession->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
-            $metaReqs['refTableIdValue'] = $req->concessionId;
+            $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['verificationStatus'] = $req->verificationStatus;
             $req->request->add($metaReqs);
             $track = new WorkflowTrack();
@@ -566,7 +566,7 @@ class ConcessionController extends Controller
     {
         try {
             $req->validate([
-                "concessionId" => "required",
+                "applicationId" => "required",
                 "status" => "required"
             ]);
             // Check if the Current User is Finisher or Not
@@ -581,7 +581,7 @@ class ConcessionController extends Controller
             if ($req->status == 1) {
                 // Concession Application replication
                 $activeConcession = PropActiveConcession::query()
-                    ->where('id', $req->concessionId)
+                    ->where('id', $req->applicationId)
                     ->first();
 
                 $approvedConcession = $activeConcession->replicate();
@@ -596,7 +596,7 @@ class ConcessionController extends Controller
             if ($req->status == 0) {
                 // Concession Application replication
                 $activeConcession = PropActiveConcession::query()
-                    ->where('id', $req->concessionId)
+                    ->where('id', $req->applicationId)
                     ->first();
 
                 $approvedConcession = $activeConcession->replicate();
@@ -648,7 +648,7 @@ class ConcessionController extends Controller
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $concession->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
-            $metaReqs['refTableIdValue'] = $req->concessionId;
+            $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['verificationStatus'] = $req->verificationStatus;
             $metaReqs['senderRoleId'] = $req->currentRoleId;
             $req->request->add($metaReqs);
@@ -947,13 +947,13 @@ class ConcessionController extends Controller
     {
         $req->validate([
             'comment' => 'required',
-            'concessionId' => 'required|integer',
+            'applicationId' => 'required|integer',
             'senderRoleId' => 'nullable|integer'
         ]);
 
         try {
             $workflowTrack = new WorkflowTrack();
-            $concession = PropActiveConcession::find($req->concessionId);                         // Concessions
+            $concession = PropActiveConcession::find($req->applicationId);                         // Concessions
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs = array();
             DB::beginTransaction();

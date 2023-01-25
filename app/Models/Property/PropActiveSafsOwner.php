@@ -52,7 +52,7 @@ class PropActiveSafsOwner extends Model
                 'guardian_name',
                 'email'
             )
-            ->orderByDesc('id')
+            ->orderBy('id')
             ->first();
     }
 }
