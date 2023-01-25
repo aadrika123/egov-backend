@@ -8,7 +8,6 @@ use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfActiveDocument;
-use App\Traits\Property\SafDoc;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config as FacadesConfig;
@@ -73,16 +72,18 @@ class SafDocController extends Controller
      */
     public function getOwnerDocLists($refOwners, $refSafs)
     {
-        $documentList = array();
         $mRefReqDocs = new RefRequiredDocument();
         $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
         $isSpeciallyAbled = $refOwners->is_specially_abled;
         $isArmedForce = $refOwners->is_armed_force;
+        $documentList = "";
 
-        if ($isSpeciallyAbled == true)
+        if ($isSpeciallyAbled == true) {
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "IS_SPECIALLY_ABLED")->requirements;
-        if ($isArmedForce == true)
-            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "IS_ARMED_FORCE")->requirements;
+        }
+        if ($isArmedForce == true) {
+            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "IS_ARMED_FORCE")->requirements;
+        }
 
         if (!empty($documentList))
             $filteredDocs = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
@@ -132,7 +133,8 @@ class SafDocController extends Controller
         $mWfActiveDocument = new WfActiveDocument();
         $safId = $refSafs->id;
         $workflowId = $refSafs->workflow_id;
-        $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, 1);
+        $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
+        $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
         $explodeDocs = collect(explode('#', $documentList));
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
             $document = explode(',', $explodeDoc);
