@@ -1093,7 +1093,7 @@ class SafCalculation
             ]);
         }
 
-        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  > 1 || $years >= $seniorCitizen) {
+        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  != 'Male' || $years >= $seniorCitizen) {
             $rebate += $speciallyAbledRebatePerc;
             $this->_GRID['demand']['speciallyAbledRebate'] = $speciallyAbledRebatePerc;
             array_push($rebates, [
