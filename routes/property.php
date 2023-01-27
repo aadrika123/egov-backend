@@ -50,6 +50,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    */
   Route::controller(CalculatorController::class)->group(function () {
     Route::post('calculatePropertyTax', 'calculator');
+    Route::post('review-calculation', 'reviewCalculation');       // Review for the Calculation
   });
 
   /**

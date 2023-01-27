@@ -75,7 +75,8 @@ class CalculatorRepository implements iCalculatorRepository
             $response = $this->calculation->calculateTax($request);
             $fetchDetails = collect($response->original['data']['details'])->groupBy('ruleSet');
             $finalResponse['demand'] = $response->original['data']['demand'];
-            $finalResponse['details'] = $fetchDetails;
+            $finalResponse['details']['review'] = $response->original['data']['demand'];
+            $finalResponse['details']['description'] = $fetchDetails;
             return responseMsg(true, "", $finalResponse);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
