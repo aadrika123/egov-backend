@@ -628,10 +628,8 @@ class ObjectionController extends Controller
         // return $request->owners[0]['gender'];
         try {
 
-
-
             $userId = authUser()->id;
-            $ulbId = auth()->user()->ulb_id;
+            $ulbId = $request->ulbId;
             $userType = auth()->user()->user_type;
             $objectionFor = $request->objectionFor;
             $owner = $request->owners;
