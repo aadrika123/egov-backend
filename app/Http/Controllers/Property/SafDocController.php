@@ -88,6 +88,8 @@ class SafDocController extends Controller
             $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_ARMED_FORCE")->requirements;
         if ($isSpeciallyAbled == true && $isArmedForce == true)
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_SPECIALLY_ARMED")->requirements;
+        else
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_EXTRA_DOCUMENT")->requirements;
 
         if (!empty($documentList))
             $filteredDocs = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
