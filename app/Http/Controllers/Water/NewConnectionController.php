@@ -673,10 +673,10 @@ class NewConnectionController extends Controller
             'applicationId' => 'required|integer',
         ]);
         try {
+            $mWaterConnectionCharge  = new WaterConnectionCharge();
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
             $mWaterTran = new WaterTran();
-            $mWaterConnectionCharge  = new WaterConnectionCharge();
 
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();

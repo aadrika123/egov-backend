@@ -520,14 +520,18 @@ class SafCalculation
         }
 
         if (is_numeric($key)) {                                                                 // For Floors
+            $floorNo = $this->_floors[$key]['floorNo'];
+            $useType = $this->_floors[$key]['useType'];
             $readFloorDetail =
                 [
-                    'floorNo' => $this->_floors[$key]['floorNo'],
-                    'useType' => $this->_floors[$key]['useType'],
+                    'floorNo' => $floorNo,
+                    'useType' => $useType,
                     'constructionType' => $this->_floors[$key]['constructionType'],
                     'buildupArea' => $this->_floors[$key]['buildupArea'],
                     'dateFrom' => $this->_floors[$key]['dateFrom'],
-                    'dateTo' => $this->_floors[$key]['dateUpto']
+                    'dateTo' => $this->_floors[$key]['dateUpto'],
+                    'mFloorNo' => Config::get("PropertyConstaint.FLOOR-TYPE.$floorNo"),
+                    'mUsageType' => Config::get("PropertyConstaint.USAGE-TYPE.$useType.TYPE"),
                 ];
         }
 
@@ -1089,7 +1093,7 @@ class SafCalculation
             ]);
         }
 
-        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  > 1 || $years >= $seniorCitizen) {
+        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  != 'Male' || $years >= $seniorCitizen) {
             $rebate += $speciallyAbledRebatePerc;
             $this->_GRID['demand']['speciallyAbledRebate'] = $speciallyAbledRebatePerc;
             array_push($rebates, [

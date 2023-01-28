@@ -25,9 +25,13 @@ class SafDocController extends Controller
             $refSafs = $mActiveSafs->getSafNo($req->applicationId);                      // Get Saf Details
             if (!$refSafs)
                 throw new Exception("Application Not Found for this id");
-            $refSafOwners = $safsOwners->getOwnerDtlsBySafId($req->applicationId);
-            $propTypeDocs = $this->getSafDocLists($refSafs);                              // Current Object(Saf Docuement List)
-            $safOwnerDocs = $this->getOwnerDocLists($refSafOwners, $refSafs);             // (Owner Document List)
+            $refSafOwners = $safsOwners->getOwnersBySafId($req->applicationId);
+            $propTypeDocs['propertyDocs'] = $this->getSafDocLists($refSafs);             // Current Object(Saf Docuement List)
+
+            $safOwnerDocs['ownerDocs'] = collect($refSafOwners)->map(function ($owner) use ($refSafs) {
+                return $this->getOwnerDocLists($owner, $refSafs);
+            });
+
             $totalDocLists = collect($propTypeDocs)->merge($safOwnerDocs);
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
@@ -78,12 +82,12 @@ class SafDocController extends Controller
         $isArmedForce = $refOwners->is_armed_force;
         $documentList = "";
 
-        if ($isSpeciallyAbled == true) {
-            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "IS_SPECIALLY_ABLED")->requirements;
-        }
-        if ($isArmedForce == true) {
-            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "IS_ARMED_FORCE")->requirements;
-        }
+        if ($isSpeciallyAbled == true)
+            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_SPECIALLY_ABLED")->requirements;
+        if ($isArmedForce == true)
+            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_ARMED_FORCE")->requirements;
+        if ($isSpeciallyAbled == true && $isArmedForce == true)
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_SPECIALLY_ARMED")->requirements;
 
         if (!empty($documentList))
             $filteredDocs = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
@@ -136,18 +140,29 @@ class SafDocController extends Controller
         $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
         $explodeDocs = collect(explode('#', $documentList));
+
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
-            $reqDoc[$key] = collect($document)->map(function ($doc) use ($uploadedDocs) {
-                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
+
+            $reqDoc[$key]['uploadedDoc'] = collect($document)->map(function ($item) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
+                if ($uploadedDoc) {
+                    $response = [
+                        "documentCode" => $item,
+                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
+                        "docPath" => $uploadedDoc->doc_path ?? ""
+                    ];
+                    return $response;
+                }
+            });
+
+            $reqDoc[$key]['masters'] = collect($document)->map(function ($doc) {
                 $strLower = strtolower($doc);
                 $strReplace = str_replace('_', ' ', $strLower);
                 $arr = [
                     "documentCode" => $doc,
-                    "docVal" => ucwords($strReplace),
-                    "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                    "docPath" => $uploadedDoc->doc_path ?? ""
+                    "docVal" => ucwords($strReplace)
                 ];
                 return $arr;
             });
