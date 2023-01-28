@@ -32,17 +32,16 @@ class WaterApplication extends Model
         $saveNewApplication->landmark               = $req->landmark ?? null;
         $saveNewApplication->pin                    = $req->pin;
         $saveNewApplication->connection_through     = $req->connection_through;
+        $saveNewApplication->elec_k_no              = $req->KNo;
         $saveNewApplication->workflow_id            = $ulbWorkflowId->id;
         $saveNewApplication->connection_fee_id      = $waterFeeId;
-        $saveNewApplication->current_role           = collect($initiatorRoleId)->first()->role_id;
         $saveNewApplication->initiator              = collect($initiatorRoleId)->first()->role_id;
         $saveNewApplication->finisher               = collect($finisherRoleId)->first()->role_id;
         $saveNewApplication->application_no         = $applicationNo;
         $saveNewApplication->ulb_id                 = $ulbId;
         $saveNewApplication->apply_date             = date('Y-m-d H:i:s');
         $saveNewApplication->user_id                = auth()->user()->id;    // <--------- here
-        $saveNewApplication->apply_from             = auth()->user()->user_type;
-
+        $saveNewApplication->user_type              = auth()->user()->user_type;
 
         # condition entry 
         if (!is_null($req->holdingNo)) {
@@ -58,7 +57,14 @@ class WaterApplication extends Model
             $saveNewApplication->saf_no = $req->saf_no;
         }
 
-        # applied
+        switch ($saveNewApplication->user_type) {
+            case ('Citizen'):
+                $saveNewApplication->apply_from = "Online";
+                break;
+            default:
+                $saveNewApplication->apply_from = auth()->user()->user_type;
+                break;
+        }
 
         $saveNewApplication->save();
 
@@ -89,7 +95,7 @@ class WaterApplication extends Model
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_applications.property_type_id')
-            ->join('water_owner_type_mstrs','water_owner_type_mstrs.id','=','water_applications.owner_type')
+            ->join('water_owner_type_mstrs', 'water_owner_type_mstrs.id', '=', 'water_applications.owner_type')
             ->leftjoin('water_param_pipeline_types', 'water_param_pipeline_types.id', '=', 'water_applications.pipeline_type_id')
             ->where('water_applications.id', $request->applicationId)
             ->where('water_applications.status', 1);
@@ -110,7 +116,7 @@ class WaterApplication extends Model
     /**
      * |------------------ Get Application details By Id ---------------|
      */
-    public function getWaterApplicationsDetails($req)
+    public function getWaterApplicationsDetails($applicationId)
     {
         return WaterApplication::select(
             'water_applications.*',
@@ -125,7 +131,7 @@ class WaterApplication extends Model
 
         )
             ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
-            ->where('water_applications.id', $req)
+            ->where('water_applications.id', $applicationId)
             ->first();
     }
 

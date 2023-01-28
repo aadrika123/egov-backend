@@ -383,6 +383,15 @@ if (!function_exists('decimalToSqMt')) {
     }
 }
 
+// Decimal to SqMt Conversion
+if (!function_exists('decimalToSqFt')) {
+    function decimalToSqFt(float $num)
+    {
+        $num = $num * 435.6;
+        return $num;
+    }
+}
+
 // Decimal to Acre Conversion
 if (!function_exists('decimalToAcre')) {
     function decimalToAcre(float $num)

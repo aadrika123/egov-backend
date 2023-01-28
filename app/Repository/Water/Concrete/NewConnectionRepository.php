@@ -92,6 +92,10 @@ class NewConnectionRepository implements iNewConnection
         $ulbId = $req->ulbId;
 
         # get initiater and finisher
+        // $findHoldingOrSaf = $this->checkHoldingOrSafPresence($req);
+        // if ($findHoldingOrSaf == true) {
+        //     throw new Exception("Water is Applied to this Holding!");
+        // }
         $ulbWorkflowObj = new WfWorkflow();
         $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $ulbId);
         if (!$ulbWorkflowId) {
@@ -152,6 +156,41 @@ class NewConnectionRepository implements iNewConnection
 
 
     /**
+     * |----------------------------------- check the respective holding has applied holding or not --------------------------|
+     * | @param req
+     * | @var safExist
+     * | @var holdingExist
+     * | @var checkExist
+     * | @return true/false
+        | Serial No : 01.1
+     */
+    public function checkHoldingOrSafPresence($req)
+    {
+        switch ($req) {
+            case (!is_null($req->saf_no)):
+                $safExist = WaterApplication::where('saf_no', $req->saf_no)
+                    ->first();
+                $checkExist = collect($safExist)->first();
+                if ($checkExist) {
+                    return true;
+                }
+                return false;
+                break;
+            case (!is_null($req->holdingNo)):
+            default:
+                $holdingExist = WaterApplication::where('holding_no', $req->holdingNo)
+                    ->first();
+                $checkExist = collect($holdingExist)->first();
+                if ($checkExist) {
+                    return true;
+                }
+                return false;
+                break;
+        }
+    }
+
+
+    /**
      * |--------------------------------- Check property for the vacant land ------------------------------|
      * | @param req
      * | @param vacantLand
@@ -159,7 +198,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var propetySafCheck
      * | @var propetyHoldingCheck
      * | Operation : check if the applied application is in vacant land 
-        | Serial No : 01.1
+        | Serial No : 01.2
      */
     public function checkVacantLand($req, $vacantLand)
     {
@@ -203,7 +242,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var safCheck
      * | @var holdingCheck
      * | @return value : true or nothing 
-        | Serial No : 01.1.1
+        | Serial No : 01.2.1
      */
     public function checkPropertyExist($req)
     {
