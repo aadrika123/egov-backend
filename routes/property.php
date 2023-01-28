@@ -249,6 +249,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/escalate', 'postEscalate');                         //14
     Route::post('harvesting/special-inbox', 'specialInbox');                    //15
     Route::post('harvesting/comment-independent', 'commentIndependent');        //16
+    Route::post('harvesting/get-doc-list', 'getDocList');
     Route::post('harvesting/upload-document', 'uploadDocument');
     Route::post('harvesting/get-upload-documents', 'getUploadDocuments');
 
