@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\CustomDetail;
+use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropHarvestingDoc;
@@ -888,9 +889,44 @@ class RainWaterHarvestingController extends Controller
                 ->orderByDesc('prop_active_harvestings.id')
                 ->get();
 
-            return responseMsgs(true, "BTC Inbox List", remove_null($harvesting), 010717, 1.0, "271ms", "POST", "", "");;
+            return responseMsgs(true, "BTC Inbox List", remove_null($harvesting), 010717, 1.0, "271ms", "POST", "", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010717, 1.0, "271ms", "POST", "", "");
         }
+    }
+
+    /**
+     * 
+     */
+    public function getDocList(Request $req)
+    {
+        $mRefReqDocs = new RefRequiredDocument();
+        $mWfActiveDocument = new WfActiveDocument();
+        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_RAIN_WATER_HARVESTING")->requirements;
+        $explodeDocs = collect(explode('#', $documentList));
+        // $uploadedDocs = "";
+
+        $uploadedDocs = $mWfActiveDocument->getDocByRefIds(200, 169, 1);
+
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
+            $document = explode(',', $explodeDoc);
+            $key = array_shift($document);
+            $reqDoc[$key] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
+                $strLower = strtolower($doc);
+                $strReplace = str_replace('_', ' ', $strLower);
+                $arr = [
+                    "documentCode" => $doc,
+                    "docVal" => ucwords($strReplace),
+                    "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
+                    "docPath" => $uploadedDoc->doc_path ?? ""
+                ];
+                return $arr;
+            });
+            return $reqDoc;
+        });
+        // return $filteredDocs;
+        return responseMsgs(true, "BTC Inbox List", remove_null($filteredDocs), 010717, 1.0, "271ms", "POST", "", "");
     }
 }
