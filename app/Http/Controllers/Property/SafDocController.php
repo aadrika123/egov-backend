@@ -30,7 +30,7 @@ class SafDocController extends Controller
             if (!$refSafs)
                 throw new Exception("Application Not Found for this id");
             $refSafOwners = $safsOwners->getOwnersBySafId($req->applicationId);
-            $propTypeDocs['propertyDocs'] = $this->getSafDocLists($refSafs);             // Current Object(Saf Docuement List)
+            $propTypeDocs['listDocs'] = $this->getSafDocLists($refSafs);                // Current Object(Saf Docuement List)
 
             $safOwnerDocs['ownerDocs'] = collect($refSafOwners)->map(function ($owner) use ($refSafs) {
                 return $this->getOwnerDocLists($owner, $refSafs);
@@ -171,10 +171,12 @@ class SafDocController extends Controller
                     ->first();
                 if ($uploadedDoc) {
                     $response = [
+                        "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" => $uploadedDoc->doc_path ?? "",
                         "verifyStatus" => $uploadedDoc->verify_status ?? "",
+                        "remarks" => $uploadedDoc->remarks ?? "",
                     ];
                     $documents->push($response);
                 }
@@ -189,8 +191,10 @@ class SafDocController extends Controller
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
-                    "uploadedDoc'" => $uploadedDoc->doc_path ?? "",
+                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
+                    "uploadedDocId" => $uploadedDoc->id ?? "",
                     "verifyStatus'" => $uploadedDoc->verify_status ?? "",
+                    "remarks'" => $uploadedDoc->remarks ?? "",
                 ];
                 return $arr;
             });
