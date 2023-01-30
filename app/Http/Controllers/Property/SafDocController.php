@@ -95,12 +95,13 @@ class SafDocController extends Controller
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_EXTRA_DOCUMENT")->requirements;
 
         if (!empty($documentList)) {
+            $ownerPhoto = $mWfActiveDocument->getOwnerPhotograph($refSafs['id'], $refSafs->workflow_id, $moduleId, $refOwners['id']);
             $filteredDocs['ownerDetails'] = [
                 'ownerId' => $refOwners['id'],
                 'name' => $refOwners['owner_name'],
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
-                'uploadedPhoto' => $mWfActiveDocument->getOwnerPhotograph($refSafs['id'], $refSafs->workflow_id, $moduleId, $refOwners['id'])
+                'uploadedDoc' => $ownerPhoto->doc_path
             ];
             $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
         } else

@@ -62,7 +62,7 @@ class WfActiveDocument extends Model
     {
         return DB::table('wf_active_documents as d')
             ->select(
-                DB::raw("concat(relative_path,'/',document) as doc_path"),
+                DB::raw("concat(relative_path,'/',document) as doc_path")
             )
             ->join('prop_active_safs_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationId)
