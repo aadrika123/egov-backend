@@ -885,7 +885,7 @@ class NewConnectionController extends Controller
                     $application = collect($mPropProperty->getPropByHolding($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
-                        $areaInSqft = decimalToSqFt($application['total_area_in_desimal']);
+                        $areaInSqft['areaInSqFt'] = decimalToSqFt($application['total_area_in_desimal']);
                         $propUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners['owners'] = collect($mPropOwner->getOwnerByPropId($application['id']));
@@ -902,7 +902,7 @@ class NewConnectionController extends Controller
                     $application = collect($mPropActiveSaf->getSafDtlBySafUlbNo($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
-                        $areaInSqft = decimalToSqFt($application['total_area_in_desimal']);
+                        $areaInSqft['areaInSqFt'] = decimalToSqFt($application['total_area_in_desimal']);
                         $safUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners['owners'] = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
