@@ -85,4 +85,37 @@ class HoldingTaxController extends Controller
         $propDetails['floor'] = $realFloor->toArray();
         return $propDetails;
     }
+
+    /**
+     * | Get Holding Dues 
+     */
+    public function getHoldingDues(Request $req)
+    {
+        $req->validate([
+            'propId' => 'required|digits_between:1,9223372036854775807'
+        ]);
+
+        try {
+            $mPropDemand = new PropDemand();
+            $demand = array();
+            $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
+            $demandList = collect($demandList);
+            if (!$demandList)
+                throw new Exception("Dues Not Found for this Property");
+
+            $totalDuesList = [
+                'totalDues' => $demandList->sum('balance'),
+                'duesFrom' => "quarter " . $demandList->last()->qtr . "/Year " . $demandList->last()->fyear,
+                'duesTo' => "quarter " . $demandList->first()->qtr . "/Year " . $demandList->last()->fyear,
+                'totalQuarters' => $demandList->count()
+            ];
+
+            $demand['duesList'] = $totalDuesList;
+            $demand['demandList'] = $demandList;
+
+            return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011602", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
 }
