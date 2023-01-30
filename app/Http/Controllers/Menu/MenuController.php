@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Menu;
 
 use App\Http\Controllers\Controller;
 use App\Models\Menu\MenuMaster;
+use App\Repository\Menu\Concrete\MenuRepo;
 use App\Repository\Menu\Interface\iMenuRepo;
 use Exception;
 use Illuminate\Http\Request;
@@ -24,19 +25,28 @@ class MenuController extends Controller
         $this->_repo = $repo;
     }
 
-    // Get All menues
+    // Get All menues // Working
     public function getAllMenues()
     {
         try {
-            $menuMaster = new MenuMaster();
-            $menues = $menuMaster->fetchAllMenues();
-            return responseMsgs(true, "List of Menues!", $menues, "", "02", "", "GET", "");
+            $mMenuMaster = new MenuMaster();
+            $refmenues = $mMenuMaster->fetchAllMenues();
+            $menues = $refmenues->sortByDesc("id");
+            $listedMenues = collect($menues)->map(function ($value, $key) use ($mMenuMaster) {
+                if ($value['parent_serial'] != 0) {
+                    $parent = $mMenuMaster->getMenuById($value['parent_serial']);
+                    $parentName = $parent['menu_string'];
+                    $value['parentName'] = $parentName;
+                    return  $value;
+                }
+            })->values();
+            return responseMsgs(true, "List of Menues!", $listedMenues, "", "02", "", "GET", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
-    // Get All the Menu By roles
+    // Get All the Menu By roles  // Working
     public function getMenuByRoles(Request $req)
     {
         try {
@@ -46,7 +56,7 @@ class MenuController extends Controller
         }
     }
 
-    // Enable or Disable Menu By Role
+    // Enable or Disable Menu By Role  // Working
     public function updateMenuByRole(Request $req)
     {
         try {
@@ -119,6 +129,18 @@ class MenuController extends Controller
             $mMenuMaster = new MenuMaster();
             $parentMenu = $mMenuMaster->getParentMenue()->get();
             return responseMsgs(true, "parent Menu!", $parentMenu, "", "", "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // git the child of the menu 
+    public function getChildrenNode(Request $request)
+    {
+        try {
+            $mMenuMaster = new MenuMaster();
+            $listedChild = $mMenuMaster->getChildrenNode($request->id)->get();
+            return responseMsgs(true, "child Menu!", $listedChild, "", "", "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

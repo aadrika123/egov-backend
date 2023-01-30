@@ -1043,5 +1043,4 @@ class NewConnectionController extends Controller
         }
         return $myRequest;
     }
-    
 }

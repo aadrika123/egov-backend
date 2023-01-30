@@ -940,6 +940,10 @@ class WaterNewConnection implements IWaterNewConnection
         {
             $type[]  = "Tenant";
         }
+        if ($application->property_type_id == 7)                        // Appartment
+        {
+            $type[]  = "Apartmentnew";
+        }
         $doc = WaterParamDocumentType::select(
             "doc_for",
             DB::raw("CASE WHEN doc_for ='Others' THEN 0 

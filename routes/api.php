@@ -435,6 +435,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('role-menu/get-role-by-menu', 'getRoleWiseMenu');     //<--------- (May not be USED)    // get menu according to the user role
         Route::post('sub-menu/tree-structure', 'getTreeStructureMenu');      // Generation of the menu tree Structure
         Route::post('menu-roles/list-parent-serial', 'listParentSerial');
+        Route::post('sub-menu/get-children-node', 'getChildrenNode');
     });
 });
 
