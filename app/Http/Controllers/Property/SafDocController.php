@@ -171,6 +171,7 @@ class SafDocController extends Controller
                     ->first();
                 if ($uploadedDoc) {
                     $response = [
+                        "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" => $uploadedDoc->doc_path ?? "",
@@ -189,7 +190,8 @@ class SafDocController extends Controller
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
-                    "uploadedDoc'" => $uploadedDoc->doc_path ?? "",
+                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
+                    "uploadedDocId" => $uploadedDoc->id ?? "",
                     "verifyStatus'" => $uploadedDoc->verify_status ?? "",
                 ];
                 return $arr;
