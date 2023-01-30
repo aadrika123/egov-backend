@@ -27,6 +27,7 @@ class PropertyDeactivateController extends Controller
      * | Created By-Sandeep Bara
      * --------------------------------------------------------------------------------------
      * | Controller regarding with Propery Module (Property Deactivation)
+     * | Status-Open
      */
     private $Repository;
     private $saf_repository;
