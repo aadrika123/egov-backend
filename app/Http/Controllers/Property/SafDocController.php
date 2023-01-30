@@ -77,31 +77,30 @@ class SafDocController extends Controller
     public function getOwnerDocLists($refOwners, $refSafs)
     {
         $mRefReqDocs = new RefRequiredDocument();
+        $mWfActiveDocument = new WfActiveDocument();
         $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
         $isSpeciallyAbled = $refOwners->is_specially_abled;
         $isArmedForce = $refOwners->is_armed_force;
-        $documentList = "";
 
         if ($isSpeciallyAbled == true)
-            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_SPECIALLY_ABLED")->requirements;
-        else
-            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_EXTRA_DOCUMENT")->requirements;
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_SPECIALLY_ABLED")->requirements;
 
         if ($isArmedForce == true)
-            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_ARMED_FORCE")->requirements;
-        else
-            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_EXTRA_DOCUMENT")->requirements;
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_ARMED_FORCE")->requirements;
 
         if ($isSpeciallyAbled == true && $isArmedForce == true)
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_SPECIALLY_ARMED")->requirements;
-        else
+
+        if ($isSpeciallyAbled == false && $isArmedForce == false)
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_EXTRA_DOCUMENT")->requirements;
 
         if (!empty($documentList)) {
             $filteredDocs['ownerDetails'] = [
+                'ownerId' => $refOwners['id'],
                 'name' => $refOwners['owner_name'],
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
+                'uploadedPhoto' => $mWfActiveDocument->getOwnerPhotograph($refSafs['id'], $refSafs->workflow_id, $moduleId, $refOwners['id'])
             ];
             $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
         } else
