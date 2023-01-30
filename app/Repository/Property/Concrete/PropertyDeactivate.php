@@ -9,6 +9,7 @@ use App\Models\Property\PropDeactivationRequest;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IPropertyDeactivate;
 use Carbon\Carbon;
@@ -30,10 +31,12 @@ class PropertyDeactivate implements IPropertyDeactivate
     */
     protected $_common;
     protected $_modelWard;
+    protected $_track;
     public function __construct()
     {
         $this->_common = new CommonFunction();
         $this->_modelWard = new ModelWard();
+        $this->_track = new WorkflowTrack();
     }
     /**
      * | Searching the valide Property With New Holding No
@@ -404,172 +407,6 @@ class PropertyDeactivate implements IPropertyDeactivate
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
-    public function postNextLevel(Request $request)
-    {
-        try{
-            $receiver_user_type_id="";
-            $sms = "";
-            $mRequestPending=2;
-            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\-, \s]+$/';
-            $user = Auth()->user();
-            $user_id = $user->id;
-            $ulb_id = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');                        
-            $mUserType = $this->_common->userType($refWorkflowId); 
-            $workflowId = WfWorkflow::where('id', $refWorkflowId)
-                ->where('ulb_id', $ulb_id)
-                ->first();
-            if (!$workflowId) 
-            {
-                throw new Exception("Workflow Not Available");
-            }
-            $role = $this->_common->getUserRoll($user_id,$ulb_id,$workflowId->wf_master_id);   
-            $init_finish = $this->_common->iniatorFinisher($user_id,$ulb_id,$refWorkflowId);         
-            if (!$role) 
-            {
-                throw new Exception("You Are Not Authorized");
-            }
-            $role_id = $role->role_id;           
-            $rules = [
-                "btn" => "required|in:btc,forward,backward",
-                "requestId" => "required|int",
-                "comment" => "required|min:10|regex:$regex",
-            ];
-            $message = [
-                "btn.in"=>"Button Value must be In BTC,FORWARD,BACKWARD",
-                "comment.required" => "Comment Is Required",
-                "comment.min" => "Comment Length can't be less than 10 charecters",
-            ];
-            $validator = Validator::make($request->all(), $rules, $message);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
-            }
-            if($role->is_initiator && in_array($request->btn,['btc','backward']))
-            {
-               throw new Exception("Initator Can Not send Back The Application");
-            }
-            $refDeactivationReq = PropDeactivationRequest::find($request->applicationId);            
-            $mLevelData = $this->getLevelData($request->applicationId);
-            if(!$refDeactivationReq)
-            {
-                throw new Exception("Data Not Found");
-            }
-            elseif($refDeactivationReq->pending_status==5)
-            {
-                throw new Exception("Deactivation Request Is Already Approved");
-            }
-            elseif(!$role->is_initiator && isset($mLevelData->receiver_user_type_id) && $mLevelData->receiver_user_type_id != $role->role_id)
-            {
-                throw new Exception("You are not authorised for this action");
-            }
-            elseif(!$role->is_initiator && ! $mLevelData)
-            {
-                throw new Exception("Data Not Found On Level. Please Contact Admin!!!...");
-            }  
-            elseif(isset($mLevelData->receiver_type_id) && $mLevelData->receiver_type_id != $role->role_id)
-            {
-                throw new Exception("You Have Already Taken The Action On This Application");
-            }           
-            if(!$init_finish)
-            {
-                throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
-            }
-            elseif(!$init_finish["initiator"])
-            {
-                throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
-            }
-            elseif(!$init_finish["finisher"])
-            {
-                throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
-            }
-            
-           
-            if($request->btn=="forward" && !$role->is_finisher && !$role->is_initiator)
-            {
-                $sms ="Application Forwarded To ".$role->forword_name;
-                $receiver_user_type_id = $role->forward_role_id;
-            }
-            elseif($request->btn=="backward" && !$role->is_initiator)
-            {
-                $sms ="Application Forwarded To ".$role->backword_name;
-                $receiver_user_type_id = $role->backward_role_id;
-                $mRequestPending = $init_finish["initiator"]['id']==$role->backward_role_id ? 3 : $mRequestPending;
-            }
-            elseif($request->btn=="btc" && !$role->is_initiator)
-            {
-                $mRequestPending = 0;
-                $sms ="Application Forwarded To ".$init_finish["initiator"]['role_name'];
-                $receiver_user_type_id = $init_finish["initiator"]['id'];
-            } 
-            elseif($request->btn=="forward" && !$role->is_initiator && $mLevelData)
-            {
-                $sms ="Application Forwarded ";
-                $receiver_user_type_id = $mLevelData->sender_user_type_id;
-            }
-            elseif($request->btn=="forward" && $role->is_initiator && !$mLevelData)
-            {
-                $mRequestPending = 2;
-                $sms ="Application Forwarded To ".$role->forword_name;
-                $receiver_user_type_id = $role->forward_role_id;
-
-            } 
-            elseif($request->btn=="forward" && $role->is_initiator && $mLevelData)
-            {
-                $mRequestPending = 2;
-                $sms ="Application Forwarded To ";
-                $receiver_user_type_id = $mLevelData->sender_user_type_id;
-
-            } 
-            if(!$role->is_finisher && !$receiver_user_type_id)  
-            {
-                throw new Exception("Next Role Not Found !!!....");
-            }
-            
-            DB::beginTransaction();
-            if($mLevelData)
-            {
-                
-                $mLevelData->verification_status = 1;
-                $mLevelData->receiver_user_id =$user_id;
-                $mLevelData->remarks =$request->comment;
-                $mLevelData->forward_date =Carbon::now()->format('Y-m-d');
-                $mLevelData->forward_time =Carbon::now()->format('H:s:i');
-                $mLevelData->update();
-            }
-            if(!$role->is_finisher || in_array($request->btn,["backward"]))
-            {                
-                $level_insert = new PropDeactivationReqInbox;
-                $level_insert->request_id = $refDeactivationReq->id;
-                $level_insert->sender_type_id = $role_id;
-                $level_insert->receiver_type_id = $receiver_user_type_id;
-                $level_insert->sender_user_id = $user_id;
-                $level_insert->save();
-            }
-            if(in_array($request->btn,["btc"]))
-            {                
-                $mRequestPending = 0;
-                $refDeactivationReq->update();
-            }
-            if($role->is_finisher && $request->btn=="forward")
-            {
-                $sms="Property Deactivated Successfully";
-                $mRequestPending = 5;
-                $PropProperty  = PropProperty::find($refDeactivationReq->property_id) ;
-                $PropProperty->status=0;
-                $PropProperty->update();                  
-            }
-            $refDeactivationReq->status = $mRequestPending;
-            $refDeactivationReq->update();  
-            DB::commit();
-            return responseMsg(true, $sms, "");
-
-        }
-        catch(Exception $e)
-        { 
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
-
     public function readDeactivationReq(Request $request)
     {
         try{
@@ -578,45 +415,34 @@ class PropertyDeactivate implements IPropertyDeactivate
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
             $mUserType = $this->_common->userType($refWorkflowId);
-            $init_finish = $this->_common->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
-            $finisher = $init_finish['finisher'];
-            $finisher['short_user_name'] = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.'.strtoupper($init_finish['finisher']['role_name']));
             $rules = [
-                "requestId" => "required|int",
+                "applicationId" => "required|int",
             ];
-            $message = [
-                "comment.required" => "Comment Is Required",
-            ];
-            $validator = Validator::make($request->all(), $rules, $message);
+            $validator = Validator::make($request->all(), $rules);
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
-            $refRequestData =  PropDeactivationRequest::find($request->requestId);
+            $refRequestData =  PropActiveDeactivationRequest::find($request->applicationId);
             if(!$refRequestData)
             {
                 throw new Exception("Data Not Found!");
             }
-            $mlevelData = $this->getLevelData($request->requestId);
-            $pendingAt  = $init_finish['initiator']['id'];                   
+
+            $pendingAt  = $refRequestData->current_role;                   
             $mworkflowRoles = $this->_common->getWorkFlowAllRoles($refUserId,$refUlbId,$refWorkflowId,true);
             $mileSton = $this->_common->sortsWorkflowRols($mworkflowRoles);
-            if($mlevelData)
-            {
-                $pendingAt = $mlevelData->receiver_type_id;                
-            } 
+           
             $refProperty = $this->getPropertyById($refRequestData->property_id);
             $refOwners   = $this->getPropOwnerByProId($refRequestData->property_id);
-            $refTimeLine = $this->getTimelin($request->requestId);
+            $refTimeLine =  $this->_track->getTracksByRefId("prop_active_deactivation_requests",$refRequestData->id);
             $data=[
                 "requestData"=> $refRequestData,
                 "property"   => $refProperty,
                 "owners"     => $refOwners,
                 'remarks'    => $refTimeLine,
                 "userType"   => $mUserType,
-                "levelData"  => $mlevelData,
                 "roles"      => $mileSton,
                 "pendingAt"  => $pendingAt,
-               'finisher'    => $finisher,
             ];
             return responseMsg(true,"",remove_null($data));
         }
@@ -688,59 +514,4 @@ class PropertyDeactivate implements IPropertyDeactivate
         $filePath = $file->storeAs('uploads/Property', $custumFileName, 'public');
         return  $filePath;
     }
-    public function getLevelData(int $requestId)
-    {
-        try{
-            $data = PropDeactivationReqInbox::select("*")
-                    ->where("request_id",$requestId)
-                    ->where("status",1)
-                    ->where("verification_status",0)
-                    ->orderBy("id","DESC")
-                    ->first();
-            return $data;
-        }
-        catch(Exception $e)
-        {
-            echo $e->getMessage();
-        }
-    }
-    public function getTimelin($id)
-    {
-        try{
-           
-            $time_line =  PropDeactivationReqInbox::select(
-                        "prop_deactivation_req_inboxes.remarks",
-                        "prop_deactivation_req_inboxes.forward_date",
-                        "prop_deactivation_req_inboxes.forward_time",
-                        "prop_deactivation_req_inboxes.receiver_type_id",
-                        "role_name",
-                        DB::raw("prop_deactivation_req_inboxes.created_at as receiving_date")
-                    )
-                    ->leftjoin(DB::raw("(SELECT receiver_type_id::bigint, request_id::bigint, remarks
-                                        FROM prop_deactivation_req_inboxes 
-                                        WHERE request_id = $id
-                                    )remaks_for"
-                                ),function($join){
-                                $join->on("remaks_for.receiver_type_id","prop_deactivation_req_inboxes.sender_type_id");
-                                // ->where("remaks_for.licence_id","trade_level_pendings.licence_id");
-                                }
-                    )
-                    ->leftjoin('wf_roles', "wf_roles.id", "prop_deactivation_req_inboxes.receiver_type_id")
-                    ->where('prop_deactivation_req_inboxes.request_id', $id)     
-                    ->whereIn('prop_deactivation_req_inboxes.status',[1,2])                 
-                    ->groupBy('prop_deactivation_req_inboxes.receiver_type_id',
-                            'prop_deactivation_req_inboxes.remarks',
-                            'prop_deactivation_req_inboxes.forward_date',
-                            'prop_deactivation_req_inboxes.forward_time','wf_roles.role_name',
-                            'prop_deactivation_req_inboxes.created_at'
-                    )
-                    ->orderBy('prop_deactivation_req_inboxes.created_at', 'desc')
-                    ->get();
-            return $time_line;
-        }
-        catch(Exception $e)
-        {
-            echo $e->getMessage();
-        }
-    }    
 }

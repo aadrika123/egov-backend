@@ -8,4 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class PropActiveObjectionOwner extends Model
 {
     use HasFactory;
+
+    public function getOwnerDetail($objId)
+    {
+        return PropActiveObjectionOwner::select('*')
+            ->where('objection_id', $objId)
+            ->first();
+    }
 }
