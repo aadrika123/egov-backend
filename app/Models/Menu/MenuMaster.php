@@ -78,7 +78,9 @@ class MenuMaster extends Model
     {
         return MenuMaster::select(
             'id',
-            'menu_string'
+            'menu_string',
+            'parent_serial',
+            'serial'
         )
             ->where('parent_serial', 0);
     }

@@ -37,8 +37,9 @@ class MenuController extends Controller
                     $parent = $mMenuMaster->getMenuById($value['parent_serial']);
                     $parentName = $parent['menu_string'];
                     $value['parentName'] = $parentName;
-                    return  $value;
+                    return $value;
                 }
+                return $value;
             })->values();
             return responseMsgs(true, "List of Menues!", $listedMenues, "", "02", "", "GET", "");
         } catch (Exception $e) {
