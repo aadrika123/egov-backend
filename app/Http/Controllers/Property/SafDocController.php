@@ -91,7 +91,7 @@ class SafDocController extends Controller
         if ($isSpeciallyAbled == true && $isArmedForce == true)
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_SPECIALLY_ARMED")->requirements;
 
-        if ($isSpeciallyAbled == false && $isArmedForce == false)
+        if ($isSpeciallyAbled == false && $isArmedForce == false)                                           // Condition for the Extra Documents
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_EXTRA_DOCUMENT")->requirements;
 
         if (!empty($documentList)) {
@@ -101,7 +101,7 @@ class SafDocController extends Controller
                 'name' => $refOwners['owner_name'],
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
-                'uploadedDoc' => $ownerPhoto->doc_path
+                'uploadedDoc' => $ownerPhoto->doc_path ?? ""
             ];
             $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
         } else
