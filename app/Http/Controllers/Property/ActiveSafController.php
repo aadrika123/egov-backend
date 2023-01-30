@@ -1054,12 +1054,10 @@ class ActiveSafController extends Controller
         try {
             $saf = PropActiveSaf::find($req->applicationId);
             $track = new WorkflowTrack();
-            $btcFields = json_decode($req->btcFields);
             DB::beginTransaction();
             $initiatorRoleId = $saf->initiator_role_id;
             $saf->current_role = $initiatorRoleId;
             $saf->parked = true;                        //<------ SAF Pending Status true
-            // $saf->btc_fields = $btcFields;
             $saf->save();
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
