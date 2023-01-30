@@ -255,7 +255,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/comment-independent', 'commentIndependent');        //16
     Route::post('harvesting/get-doc-list', 'getDocList');
     Route::post('harvesting/upload-document', 'uploadDocument');
-    Route::post('harvesting/get-upload-documents', 'getUploadDocuments');
+    Route::post('harvesting/get-uploaded-documents', 'getUploadedDocuments');
     Route::post('harvesting/citizen-doc-list', 'citizenDocList');
 
     Route::post('harvesting/backtocitizen', 'backToCitizen');
