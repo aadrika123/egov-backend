@@ -100,34 +100,13 @@ class HoldingTaxController extends Controller
             $demand = array();
             $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
             $demandList = collect($demandList);
-
-            $demandList = $demandList->map(function ($item) {                                // One Perc Penalty Tax
-                $currentDate = Carbon::now();
-                $currentDueDate = Carbon::now()->lastOfQuarter();
-                $quarterDueDate = Carbon::parse($item->due_date)->floorMonth();
-                $diffInMonths = $quarterDueDate->diffInMonths($currentDate);
-                if ($quarterDueDate >= $currentDueDate)                                       // Means the quarter due date is on current quarter or next quarter
-                    $onePercPenalty = 0;
-                else
-                    $onePercPenalty = $diffInMonths;
-
-                $item['onePercPenalty'] = $onePercPenalty;
-                $onePercPenaltyTax = ($item['balance'] * $onePercPenalty) / 100;
-                $item['onePercPenaltyTax'] = roundFigure($onePercPenaltyTax);
-                return $item;
-            });
-
             if (!$demandList)
                 throw new Exception("Dues Not Found for this Property");
 
-            $dues = $demandList->sum('balance');
-            $onePercTax = $demandList->sum('onePercPenaltyTax');
             $totalDuesList = [
-                'totalDues' => $dues,
+                'totalDues' => $demandList->sum('balance'),
                 'duesFrom' => "quarter " . $demandList->last()->qtr . "/Year " . $demandList->last()->fyear,
                 'duesTo' => "quarter " . $demandList->first()->qtr . "/Year " . $demandList->last()->fyear,
-                'onePercPenalty' => $onePercTax,
-                'payableAmt' => roundFigure($dues + $onePercTax),
                 'totalQuarters' => $demandList->count()
             ];
 
