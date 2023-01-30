@@ -303,38 +303,6 @@ class WaterNewConnection implements IWaterNewConnection
                 $val->update();
             }
 
-            /**
-             *  get the document details by (upload-document) api function 
-             *  run foreach for (documentsList) then check the (document Mandatory is 1 and  collect the uplode doc then it should be contain data)
-             *  then only the curent role will be farwarded to the current role  ie. below code 
-             */
-            // $req = [
-            //     'applicationId' => $application->id,
-            //     'userId' => $application->user_id,
-            //     'ulbId' => $application->ulb_id
-            // ];
-            // $refrequest = new Request($req);
-            // $details = $this->documentUpload($refrequest);
-            // $verified = collect($details)->map(function ($value, $key) use ($applicationId) {
-            //     if ($value['isMadatory'] == 1 && $value['uploadDoc'] != null) {
-            //         return true;
-            //     }
-            //     return false;
-            // })->reject(function ($value) {
-            //     return $value === false;
-            // });
-            // if ($verified == true) {
-            //     WaterApplication::where('id', $applicationId)
-            //         ->update([
-            //             'current_role' => $this->_dealingAssistent
-            //         ]);
-            // }
-
-            WaterApplication::where('id', $applicationId)
-                ->update([
-                    'current_role' => $this->_dealingAssistent
-                ]);
-
             $application->payment_status = true;
             $application->update();
             DB::commit();
@@ -949,25 +917,28 @@ class WaterNewConnection implements IWaterNewConnection
         $refUserId          = $refUser->id;
         $refUlbId           = $refUser->ulb_id;
         $WfWorkflow         = WfWorkflow::where('id', $application->workflow_id)->first();
-        $mUserType          = $this->_parent->userType($WfWorkflow->wf_master_id);
+        // $mUserType          = $this->_parent->userType($WfWorkflow->wf_master_id);
         $return = (array)null;
-        $type   = ["METER BILL", "ELECTRICITY_NEW", "ELECTRICITY_NEW", "Address Proof", "Others"];
-        if (in_array($application->connection_through_id, [1, 5]))    // Holding No, SAF No
+        $type   = ["METER BILL", "Address Proof", "CONSUMER_PHOTO", "Others"];
+        if (in_array($application->connection_through_id, [1, 2]))      // Holding No, SAF No
         {
             $type[] = "HOLDING PROOF";
         }
-        if (strtoupper($application->category) == "BPL")    // FOR BPL APPLICATION
+        if (strtoupper($application->category) == "BPL")                // FOR BPL APPLICATION
         {
             $type[] = "BPL";
         }
-        if ($application->property_type_id == 2)    // FOR COMERCIAL APPLICATION
+        if ($application->property_type_id == 2)                        // FOR COMERCIAL APPLICATION
         {
             $type[] = "Commercial";
         }
-
-        if (strtoupper($mUserType) == "ONLINE") // Online
+        if ($application->apply_from != "Online")                       // Online
         {
             $type[]  = "Form(Scan Copy)";
+        }
+        if ($application->owner_type == 2)                              // In case of Tanent
+        {
+            $type[]  = "Tenant";
         }
         $doc = WaterParamDocumentType::select(
             "doc_for",

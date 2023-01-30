@@ -56,6 +56,6 @@ class PropActiveSafsOwner extends Model
                 'is_specially_abled'
             )
             ->orderBy('id')
-            ->first();
+            ->get();
     }
 }
