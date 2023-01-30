@@ -329,5 +329,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    */
   Route::controller(HoldingTaxController::class)->group(function () {
     Route::post('generate-holding-demand', 'generateHoldingDemand');              // (01) Property/Holding Yearly Holding Tax Generation
+    Route::post('get-holding-dues', 'getHoldingDues');                            // (02) Property/ Holding Dues
   });
 });
