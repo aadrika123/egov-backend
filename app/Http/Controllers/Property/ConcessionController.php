@@ -747,34 +747,6 @@ class ConcessionController extends Controller
     //     }
     // }
 
-    // //get document status by id
-    // public function concessionDocList(Request $req)
-    // {
-    //     $req->validate([
-    //         'id' => 'required|integer'
-    //     ]);
-    //     try {
-    //         $list = PropConcessionDocDtl::select(
-    //             'id',
-    //             'doc_type as docName',
-    //             'relative_path',
-    //             'doc_name as docUrl',
-    //             'verify_status as docStatus',
-    //             'remarks as docRemarks'
-    //         )
-    //             ->where('prop_concession_doc_dtls.concession_id', $req->id)
-    //             ->get();
-    //         $list = $list->map(function ($val) {
-    //             $path = $this->_bifuraction->readDocumentPath($val->relative_path . $val->docUrl);
-    //             $val->docUrl = $path;
-    //             return $val;
-    //         });
-    //         return responseMsgs(true, "Successfully Done", remove_null($list), "", '010714', '01', '314ms-451ms', 'Post', '');
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
-
     //doc upload
     public function concessionDocUpload(Request $req)
     {
@@ -1032,7 +1004,7 @@ class ConcessionController extends Controller
     /**
      *  get uploaded documents
      */
-    public function getUploadDocuments(Request $req)
+    public function getUploadedDocuments(Request $req)
     {
         $req->validate([
             'applicationId' => 'required|numeric'
@@ -1105,7 +1077,7 @@ class ConcessionController extends Controller
             $refApplication = $mPropActiveConcession->getConcessionNo($req->applicationId);                      // Get Saf Details
             if (!$refApplication)
                 throw new Exception("Application Not Found for this id");
-            $concessionDoc['ConcessionDoc'] = $this->getDocList($refApplication);             // Current Object(Saf Docuement List)
+            $concessionDoc['listDocs'] = $this->getDocList($refApplication);             // Current Object(Saf Docuement List)
 
             return responseMsgs(true, "Successfully Done", remove_null($concessionDoc), "", '010714', '01', '314ms-451ms', 'Post', '');
         } catch (Exception $e) {
@@ -1154,7 +1126,9 @@ class ConcessionController extends Controller
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
 
-            $reqDoc[$key]['uploadedDoc'] = collect($document)->map(function ($item) use ($uploadedDocs) {
+            $documents = collect();
+
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
                 if ($uploadedDoc) {
                     $response = [
@@ -1162,16 +1136,20 @@ class ConcessionController extends Controller
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" => $uploadedDoc->doc_path ?? ""
                     ];
-                    return $response;
+                    $documents->push($response);
                 }
             });
+            $reqDoc['docType'] = $key;
+            $reqDoc['uploadedDoc'] = $documents->first();
 
-            $reqDoc[$key]['masters'] = collect($document)->map(function ($doc) {
+            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
                 $strLower = strtolower($doc);
                 $strReplace = str_replace('_', ' ', $strLower);
                 $arr = [
                     "documentCode" => $doc,
-                    "docVal" => ucwords($strReplace)
+                    "docVal" => ucwords($strReplace),
+                    "uploadedDoc'" => $uploadedDoc->doc_path ?? null
                 ];
                 return $arr;
             });

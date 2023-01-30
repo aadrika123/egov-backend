@@ -119,7 +119,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    */
   Route::controller(PropertyDeactivateController::class)->group(function () {
     Route::post('searchByHoldingNo', "readHoldigbyNo");
-    Route::match(["POST", "GET"], 'deactivationRequest/{id}', "deactivatProperty");
+    Route::post("get-prop-dtl-for-deactivation","readPorertyById");
+    Route::post('deactivationRequest', "deactivatProperty");
     Route::post('inboxDeactivation', "inbox");
     Route::post('outboxDeactivation', "outbox");
     Route::post('postNextDeactivation', "postNextLevel");
@@ -166,13 +167,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     // Route::post('concession/list', 'concessionList');                                   //12
     // Route::post('concession/list-id', 'concessionByid');                                //13
 
-    Route::post('concession/doc-upload', 'concessionDocUpload');                        //15
+    // Route::post('concession/doc-upload', 'concessionDocUpload');                        //15
     Route::post('concession/doc-status', 'concessionDocStatus');                        //16
     Route::post('concession/comment-independent', 'commentIndependent');                //18               ( Citizen Independent comment and Level Pendings )
     Route::post('concession/get-doc-type', 'getDocType');
     Route::post('concession/doc-list', 'concessionDocList');                            //14
     Route::post('concession/upload-document', 'uploadDocument');
-    Route::post('concession/get-upload-documents', 'getUploadDocuments');
+    Route::post('concession/get-uploaded-documents', 'getUploadedDocuments');
   });
 
   /**
@@ -255,7 +256,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/comment-independent', 'commentIndependent');        //16
     Route::post('harvesting/get-doc-list', 'getDocList');
     Route::post('harvesting/upload-document', 'uploadDocument');
-    Route::post('harvesting/get-upload-documents', 'getUploadDocuments');
+    Route::post('harvesting/get-uploaded-documents', 'getUploadedDocuments');
     Route::post('harvesting/citizen-doc-list', 'citizenDocList');
 
     Route::post('harvesting/backtocitizen', 'backToCitizen');
