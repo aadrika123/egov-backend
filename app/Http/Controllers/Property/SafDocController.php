@@ -19,6 +19,10 @@ class SafDocController extends Controller
      */
     public function getDocList(Request $req)
     {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+
         try {
             $mActiveSafs = new PropActiveSaf();
             $safsOwners = new PropActiveSafsOwner();
