@@ -171,8 +171,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('concession/comment-independent', 'commentIndependent');                //18               ( Citizen Independent comment and Level Pendings )
     Route::post('concession/get-doc-type', 'getDocType');
     Route::post('concession/doc-list', 'concessionDocList');                            //14
-    Route::post('concession/uploaded-document', 'uploadedDocument');
-    Route::post('concession/get-upload-documents', 'getUploadDocuments');
+    Route::post('concession/upload-document', 'uploadDocument');
+    Route::post('concession/get-uploaded-documents', 'getUploadedDocuments');
   });
 
   /**

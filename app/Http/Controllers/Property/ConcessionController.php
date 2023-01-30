@@ -1004,7 +1004,7 @@ class ConcessionController extends Controller
     /**
      *  get uploaded documents
      */
-    public function uploadedDocument(Request $req)
+    public function getUploadedDocuments(Request $req)
     {
         $req->validate([
             'applicationId' => 'required|numeric'
