@@ -15,7 +15,7 @@ class MenuMaster extends Model
     public function fetchAllMenues()
     {
         return MenuMaster::where('is_deleted', false)
-            ->orderByDesc('id')
+            ->orderBy("menu_masters.serial", "Asc")
             ->get();
     }
 
@@ -66,7 +66,7 @@ class MenuMaster extends Model
             ->join('wf_rolemenus', 'wf_rolemenus.menu_id', '=', 'menu_masters.id')
             ->where('menu_masters.is_deleted', false)
             ->where('wf_rolemenus.role_id', $roleId)
-            ->orderByDesc('menu_masters.id')
+            ->orderBy("menu_masters.serial", "Asc")
             ->get();
         return  objToArray($a);
     }
@@ -78,9 +78,12 @@ class MenuMaster extends Model
     {
         return MenuMaster::select(
             'id',
-            'menu_string'
+            'menu_string',
+            'parent_serial',
+            'serial'
         )
-        ->where('parent_serial',0);
+            ->where('parent_serial', 0)
+            ->orderBy("menu_masters.serial", "Asc");
     }
 
     /**
@@ -88,7 +91,13 @@ class MenuMaster extends Model
      */
     public function getMenuById($id)
     {
-        return MenuMaster::find($id)
-        ->first();
+        return MenuMaster::where('id',$id)
+            ->first();
+    }
+
+    public function getChildrenNode($id)
+    {
+        return MenuMaster::where('parent_serial', $id)
+            ->orderBy("menu_masters.serial", "Asc");
     }
 }

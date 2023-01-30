@@ -88,9 +88,11 @@ class MenuRepo implements iMenuRepo
                     break;
             }
         }
-        $mRoleMenus->role_id = $req->roleId;
-        $mRoleMenus->menu_id = $req->menuId;
-        $mRoleMenus->parent_serial = $req->parentSerial;
+        $mRoleMenus->role_id        = $req->roleId;
+        $mRoleMenus->menu_id        = $req->menuId;
+        $mRoleMenus->parent_serial  = $req->parentSerial;
+        $mRoleMenus->serial         = $req->serialNo;
+        $mRoleMenus->icon           = $req->icon;
         $mRoleMenus->save();
         return responseMsg(true, "Successfully Enabled the Menu Permission for the Role", "");
     }
@@ -142,7 +144,7 @@ class MenuRepo implements iMenuRepo
     {
         $mMenuMaster = new MenuMaster();
         $mMenues = $mMenuMaster->fetchAllMenues();
-        $mRoleMenues = $mMenuMaster->getMenuByRole($req->roleId);
+
 
         $data = collect($mMenues)->map(function ($value, $key) {
             $return = array();
@@ -150,6 +152,7 @@ class MenuRepo implements iMenuRepo
             $return['parentId'] = $value['parent_serial'];
             $return['path'] = $value['route'];
             $return['name'] = $value['menu_string'];
+            $return['order'] = $value['serial'];
             $return['children'] = array();
             return ($return);
         });
@@ -173,32 +176,22 @@ class MenuRepo implements iMenuRepo
         }
 
         $data = collect($data)->values();
-        $roleWise = collect($mRoleMenues)->map(function ($value) {
-            return $value['id'];
-        });
-        $retunProperValues = collect($data)->map(function ($value, $key) use ($roleWise) {
-            if ($roleWise->contains($value['id'])) {
-                return $value;
-            }
-        });
+        if ($req->roleId) {
+            $mRoleMenues = $mMenuMaster->getMenuByRole($req->roleId);
 
-        return responseMsgs(true, "OPERATION OK!", $retunProperValues->filter()->values(), "", "01", "308.ms", "POST", $req->deviceId);
+            $roleWise = collect($mRoleMenues)->map(function ($value) {
+                return $value['id'];
+            });
+            $retunProperValues = collect($data)->map(function ($value, $key) use ($roleWise) {
+                if ($roleWise->contains($value['id'])) {
+                    return $value;
+                }
+            });
+            return responseMsgs(true, "OPERATION OK!", $retunProperValues->filter()->values(), "", "01", "308.ms", "POST", $req->deviceId);
+        }
+        return responseMsgs(true, "OPERATION OK!", $data, "", "01", "308.ms", "POST", $req->deviceId);
     }
-
-   
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

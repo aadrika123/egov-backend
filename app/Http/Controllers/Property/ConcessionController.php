@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\CustomDetail;
+use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropConcessionDocDtl;
 use App\Models\Property\PropFloor;
@@ -143,18 +144,18 @@ class ConcessionController extends Controller
                 $docUpload = new DocUpload;
                 $mWfActiveDocument = new WfActiveDocument();
                 $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
-                $refImageName = $request->genderRefName;
+                $refImageName = $request->genderCode;
                 $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
                 $document = $request->genderDoc;
 
                 $imageName = $docUpload->upload($refImageName, $document, $relativePath);
                 $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-                $metaReqs['activeId'] = $concessionNo;
+                $metaReqs['activeId'] = $concession->id;
                 $metaReqs['workflowId'] = $concession->workflow_id;
                 $metaReqs['ulbId'] = $concession->ulb_id;
+                $metaReqs['document'] = $imageName;
                 $metaReqs['relativePath'] = $relativePath;
-                $metaReqs['image'] = $imageName;
-                $metaReqs['docMstrId'] = $request->genderMstrId;
+                $metaReqs['docCode'] = $request->genderCode;
 
                 $metaReqs = new Request($metaReqs);
                 $mWfActiveDocument->postDocuments($metaReqs);
@@ -166,18 +167,18 @@ class ConcessionController extends Controller
                 $docUpload = new DocUpload;
                 $mWfActiveDocument = new WfActiveDocument();
                 $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
-                $refImageName = $request->dobRefName;
+                $refImageName = $request->dobCode;
                 $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
                 $document = $request->dobDoc;
 
                 $imageName = $docUpload->upload($refImageName, $document, $relativePath);
                 $docReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-                $docReqs['activeId'] = $concessionNo;
+                $docReqs['activeId'] = $concession->id;
                 $docReqs['workflowId'] = $concession->workflow_id;
                 $docReqs['ulbId'] = $concession->ulb_id;
                 $docReqs['relativePath'] = $relativePath;
-                $docReqs['image'] = $imageName;
-                $docReqs['docMstrId'] = $request->dobMstrId;
+                $docReqs['document'] = $imageName;
+                $docReqs['docCode'] = $request->dobCode;
 
                 $docReqs = new Request($docReqs);
                 $mWfActiveDocument->postDocuments($docReqs);
@@ -194,18 +195,18 @@ class ConcessionController extends Controller
                 $docUpload = new DocUpload;
                 $mWfActiveDocument = new WfActiveDocument();
                 $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
-                $refImageName = $request->speciallyAbledRefName;
+                $refImageName = $request->speciallyAbledCode;
                 $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
                 $document = $request->speciallyAbledDoc;
 
                 $imageName = $docUpload->upload($refImageName, $document, $relativePath);
                 $speciallyAbledReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-                $speciallyAbledReqs['activeId'] = $concessionNo;
+                $speciallyAbledReqs['activeId'] = $concession->id;
                 $speciallyAbledReqs['workflowId'] = $concession->workflow_id;
                 $speciallyAbledReqs['ulbId'] = $concession->ulb_id;
                 $speciallyAbledReqs['relativePath'] = $relativePath;
-                $speciallyAbledReqs['image'] = $imageName;
-                $speciallyAbledReqs['docMstrId'] = $request->speciallyAbledMstrId;
+                $speciallyAbledReqs['document'] = $imageName;
+                $speciallyAbledReqs['docCode'] = $request->speciallyAbledCode;
 
                 $speciallyAbledReqs = new Request($speciallyAbledReqs);
                 $mWfActiveDocument->postDocuments($speciallyAbledReqs);
@@ -217,18 +218,18 @@ class ConcessionController extends Controller
                 $docUpload = new DocUpload;
                 $mWfActiveDocument = new WfActiveDocument();
                 $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
-                $refImageName = $request->armedForceRefName;
+                $refImageName = $request->armedForceCode;
                 $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
                 $document = $request->armedForceDoc;
 
                 $imageName = $docUpload->upload($refImageName, $document, $relativePath);
                 $armedForceReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-                $armedForceReqs['activeId'] = $concessionNo;
+                $armedForceReqs['activeId'] = $concession->id;
                 $armedForceReqs['workflowId'] = $concession->workflow_id;
                 $armedForceReqs['ulbId'] = $concession->ulb_id;
                 $armedForceReqs['relativePath'] = $relativePath;
-                $armedForceReqs['image'] = $imageName;
-                $armedForceReqs['docMstrId'] = $request->armedForceMstrId;
+                $armedForceReqs['document'] = $imageName;
+                $armedForceReqs['docCode'] = $request->armedForceCode;
 
                 $armedForceReqs = new Request($armedForceReqs);
                 $mWfActiveDocument->postDocuments($armedForceReqs);
@@ -694,85 +695,85 @@ class ConcessionController extends Controller
     }
 
     //concesssion list
-    public function concessionList()
-    {
-        try {
-            $list = PropActiveConcession::select(
-                'prop_active_concessions.id',
-                'prop_active_concessions.applicant_name as ownerName',
-                'holding_no as holdingNo',
-                'ward_name as wardId',
-                'property_type as propertyType'
-            )
-                ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
-                ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
-                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-                ->where('prop_active_concessions.status', 1)
-                ->orderByDesc('prop_active_concessions.id')
-                ->get();
+    // public function concessionList()
+    // {
+    //     try {
+    //         $list = PropActiveConcession::select(
+    //             'prop_active_concessions.id',
+    //             'prop_active_concessions.applicant_name as ownerName',
+    //             'holding_no as holdingNo',
+    //             'ward_name as wardId',
+    //             'property_type as propertyType'
+    //         )
+    //             ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
+    //             ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
+    //             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+    //             ->where('prop_active_concessions.status', 1)
+    //             ->orderByDesc('prop_active_concessions.id')
+    //             ->get();
 
-            return responseMsgs(true, "Successfully Done", $list, "", '010712', '01', '308ms-396ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
+    //         return responseMsgs(true, "Successfully Done", $list, "", '010712', '01', '308ms-396ms', 'Post', '');
+    //     } catch (Exception $e) {
+    //         echo $e->getMessage();
+    //     }
+    // }
 
-    //concesion list  by id
-    public function concessionByid(Request $req)
-    {
-        try {
-            $list = PropActiveConcession::select(
-                'prop_active_concessions.id',
-                'prop_active_concessions.applicant_name as ownerName',
-                'holding_no as holdingNo',
-                'ward_name as wardId',
-                'property_type as propertyType',
-                'dob',
-                'gender',
-                'is_armed_force as armedForce',
-                'is_specially_abled as speciallyAbled'
-            )
-                ->where('prop_active_concessions.id', $req->id)
-                ->where('prop_active_concessions.status', 1)
-                ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
-                ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
-                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-                ->orderByDesc('prop_active_concessions.id')
-                ->first();
+    // //concesion list  by id
+    // public function concessionByid(Request $req)
+    // {
+    //     try {
+    //         $list = PropActiveConcession::select(
+    //             'prop_active_concessions.id',
+    //             'prop_active_concessions.applicant_name as ownerName',
+    //             'holding_no as holdingNo',
+    //             'ward_name as wardId',
+    //             'property_type as propertyType',
+    //             'dob',
+    //             'gender',
+    //             'is_armed_force as armedForce',
+    //             'is_specially_abled as speciallyAbled'
+    //         )
+    //             ->where('prop_active_concessions.id', $req->id)
+    //             ->where('prop_active_concessions.status', 1)
+    //             ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
+    //             ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
+    //             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+    //             ->orderByDesc('prop_active_concessions.id')
+    //             ->first();
 
-            return responseMsgs(true, "Successfully Done", $list, "", '010713', '01', '312ms-389ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
+    //         return responseMsgs(true, "Successfully Done", $list, "", '010713', '01', '312ms-389ms', 'Post', '');
+    //     } catch (Exception $e) {
+    //         echo $e->getMessage();
+    //     }
+    // }
 
-    //get document status by id
-    public function concessionDocList(Request $req)
-    {
-        $req->validate([
-            'id' => 'required|integer'
-        ]);
-        try {
-            $list = PropConcessionDocDtl::select(
-                'id',
-                'doc_type as docName',
-                'relative_path',
-                'doc_name as docUrl',
-                'verify_status as docStatus',
-                'remarks as docRemarks'
-            )
-                ->where('prop_concession_doc_dtls.concession_id', $req->id)
-                ->get();
-            $list = $list->map(function ($val) {
-                $path = $this->_bifuraction->readDocumentPath($val->relative_path . $val->docUrl);
-                $val->docUrl = $path;
-                return $val;
-            });
-            return responseMsgs(true, "Successfully Done", remove_null($list), "", '010714', '01', '314ms-451ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
+    // //get document status by id
+    // public function concessionDocList(Request $req)
+    // {
+    //     $req->validate([
+    //         'id' => 'required|integer'
+    //     ]);
+    //     try {
+    //         $list = PropConcessionDocDtl::select(
+    //             'id',
+    //             'doc_type as docName',
+    //             'relative_path',
+    //             'doc_name as docUrl',
+    //             'verify_status as docStatus',
+    //             'remarks as docRemarks'
+    //         )
+    //             ->where('prop_concession_doc_dtls.concession_id', $req->id)
+    //             ->get();
+    //         $list = $list->map(function ($val) {
+    //             $path = $this->_bifuraction->readDocumentPath($val->relative_path . $val->docUrl);
+    //             $val->docUrl = $path;
+    //             return $val;
+    //         });
+    //         return responseMsgs(true, "Successfully Done", remove_null($list), "", '010714', '01', '314ms-451ms', 'Post', '');
+    //     } catch (Exception $e) {
+    //         echo $e->getMessage();
+    //     }
+    // }
 
     //doc upload
     public function concessionDocUpload(Request $req)
@@ -1001,31 +1002,31 @@ class ConcessionController extends Controller
     {
         switch ($req->doc) {
             case ('gender'):
-                $data =  RefPropDocsRequired::select('id', 'doc_name')
-                    ->where('doc_type', 'gender_document')
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OWNER_EXTRA_DOCUMENT')
                     ->first();
                 break;
 
             case ('seniorCitizen'):
-                $data =  RefPropDocsRequired::select('id', 'doc_name')
-                    ->where('doc_type', 'dob_document')
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OWNER_EXTRA_DOCUMENT')
                     ->first();
                 break;
 
             case ('speciallyAbled'):
-                $data =  RefPropDocsRequired::select('id', 'doc_name')
-                    ->where('doc_type', 'handicaped_document')
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'CONCESSION_SPECIALLY_ABLED')
                     ->first();
                 break;
 
             case ('armedForce'):
-                $data =  RefPropDocsRequired::select('id', 'doc_name')
-                    ->where('doc_type', 'armed_force_document')
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'CONCESSION_ARMED_FORCE')
                     ->first();
                 break;
         }
 
-        return responseMsg(true, '', $data);
+        return responseMsgs(true, "Citizen Doc List", remove_null($data), 010717, 1.0, "413ms", "POST", "", "");
     }
 
     /**
@@ -1039,13 +1040,14 @@ class ConcessionController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mPropActiveConcession = new PropActiveConcession();
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $concessionDetails = $mPropActiveConcession->getConcessionNo($req->applicationId);
             if (!$concessionDetails)
                 throw new Exception("Application Not Found for this application Id");
 
-            $appNo = $concessionDetails->application_no;
-            $documents = $mWfActiveDocument->getDocsByAppNo($appNo);
+            $workflowId = $concessionDetails->workflow_id;
+            $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
@@ -1060,8 +1062,8 @@ class ConcessionController extends Controller
         $req->validate([
             "applicationId" => "required|numeric",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            "docMstrId" => "required|numeric",
-            "docRefName" => "required"
+            "docCode" => "required",
+            "ownerId" => "nullable|numeric"
         ]);
 
         try {
@@ -1071,20 +1073,19 @@ class ConcessionController extends Controller
             $mPropActiveConcession = new PropActiveConcession();
             $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
             $getConcessionDtls = $mPropActiveConcession->getConcessionNo($req->applicationId);
-            $refImageName = $req->docRefName;
-            $refImageName = $getConcessionDtls->id . '-' . str_replace(' ', '_', $refImageName);
+            $refImageName = $req->docCode;
+            $refImageName = $getConcessionDtls->id . '-' . $refImageName;
             $document = $req->document;
-
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs['activeId'] = $getConcessionDtls->application_no;
+            $metaReqs['activeId'] = $getConcessionDtls->id;
             $metaReqs['workflowId'] = $getConcessionDtls->workflow_id;
             $metaReqs['ulbId'] = $getConcessionDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
-            $metaReqs['image'] = $imageName;
-            $metaReqs['docMstrId'] = $req->docMstrId;
-
+            $metaReqs['document'] = $imageName;
+            $metaReqs['docCode'] = $req->docCode;
+            $metaReqs['ownerDtlId'] = $req->ownerId;
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
@@ -1092,5 +1093,96 @@ class ConcessionController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
+    }
+
+    /**
+     * 
+     */
+    public function concessionDocList(Request $req)
+    {
+        try {
+            $mPropActiveConcession = new PropActiveConcession();
+            $refApplication = $mPropActiveConcession->getConcessionNo($req->applicationId);                      // Get Saf Details
+            if (!$refApplication)
+                throw new Exception("Application Not Found for this id");
+            $concessionDoc['ConcessionDoc'] = $this->getDocList($refApplication);             // Current Object(Saf Docuement List)
+
+            return responseMsgs(true, "Successfully Done", remove_null($concessionDoc), "", '010714', '01', '314ms-451ms', 'Post', '');
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+
+    /**
+     * get Doc List
+     */
+    public function getDocList($refApplication)
+    {
+        $mRefReqDocs = new RefRequiredDocument();
+        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $isSpeciallyAbled = $refApplication->is_specially_abled;
+        $isArmedForce = $refApplication->is_armed_force;
+        $documentList = "";
+
+        if ($isSpeciallyAbled == true)
+            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_SPECIALLY_ABLED")->requirements;
+        if ($isArmedForce == true)
+            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_ARMED_FORCE")->requirements;
+
+        if (!empty($documentList))
+            $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)
+        else
+            $filteredDocs = [];
+        return $filteredDocs;
+    }
+
+    /**
+     *  filterring
+     */
+
+    public function filterDocument($documentList, $refApplication)
+    {
+        $mWfActiveDocument = new WfActiveDocument();
+        $safId = $refApplication->id;
+        $workflowId = $refApplication->workflow_id;
+        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
+        $explodeDocs = collect(explode('#', $documentList));
+
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
+            $document = explode(',', $explodeDoc);
+            $key = array_shift($document);
+
+            $documents = collect();
+
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
+                if ($uploadedDoc) {
+                    $response = [
+                        "documentCode" => $item,
+                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
+                        "docPath" => $uploadedDoc->doc_path ?? ""
+                    ];
+                    $documents->push($response);
+                }
+            });
+            $reqDoc['docType'] = $key;
+            $reqDoc['uploadedDoc'] = $documents->first();
+
+            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
+                $strLower = strtolower($doc);
+                $strReplace = str_replace('_', ' ', $strLower);
+                $arr = [
+                    "documentCode" => $doc,
+                    "docVal" => ucwords($strReplace),
+                    "uploadedDoc'" => $uploadedDoc->doc_path ?? null
+                ];
+                return $arr;
+            });
+            return $reqDoc;
+        });
+        return $filteredDocs;
     }
 }
