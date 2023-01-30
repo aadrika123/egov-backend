@@ -87,7 +87,7 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Holding Dues 
+     * | Get Holding Dues 
      */
     public function getHoldingDues(Request $req)
     {
@@ -97,7 +97,7 @@ class HoldingTaxController extends Controller
 
         try {
             $mPropDemand = new PropDemand();
-            $demand = collect();
+            $demand = array();
             $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
             $demandList = collect($demandList);
             if (!$demandList)
@@ -110,13 +110,8 @@ class HoldingTaxController extends Controller
                 'totalQuarters' => $demandList->count()
             ];
 
-            $demand->push([
-                "duesList" => $totalDuesList
-            ]);
-
-            $demand->push([
-                "demandList" => $demandList
-            ]);
+            $demand['duesList'] = $totalDuesList;
+            $demand['demandList'] = $demandList;
 
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
