@@ -133,32 +133,48 @@ class ObjectionRepository implements iObjectionRepository
                 //name document
                 # call a funcion for the file uplode 
                 if ($file = $request->file('nameDoc')) {
-                    $docName = "nameDoc";
-                    $name = $this->moveFile($docName, $file);
 
-                    $objectionDoc = new PropActiveObjectionDocdtl();
-                    $objectionDoc->objection_id = $objection->id;
-                    $this->citizenDocUpload($objectionDoc, $name, $docName);
+                    $docUpload = new DocUpload;
+                    $mWfActiveDocument = new WfActiveDocument();
+                    $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
+                    $refImageName = $request->nameCode;
+                    $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
+                    $document = $request->nameDoc;
+                    $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+
+                    $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                    $metaReqs['activeId'] = $objection->id;
+                    $metaReqs['workflowId'] = $objection->workflow_id;
+                    $metaReqs['ulbId'] = $objection->ulb_id;
+                    $metaReqs['document'] = $imageName;
+                    $metaReqs['relativePath'] = $relativePath;
+                    $metaReqs['docCode'] = $request->nameCode;
+
+                    $metaReqs = new Request($metaReqs);
+                    $mWfActiveDocument->postDocuments($metaReqs);
                 }
 
                 // //address document 
                 if ($file = $request->file('addressDoc')) {
-                    $docName = "addressDoc";
-                    $name = $this->moveFile($docName, $file);
 
-                    $objectionDoc = new PropActiveObjectionDocdtl;
-                    $objectionDoc->objection_id = $objection->id;
-                    $this->citizenDocUpload($objectionDoc, $name, $docName);
-                }
+                    $docUpload = new DocUpload;
+                    $mWfActiveDocument = new WfActiveDocument();
+                    $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
+                    $refImageName = $request->addressCode;
+                    $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
+                    $document = $request->addressDoc;
+                    $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
-                // //saf doc
-                if ($file = $request->file('safMemberDoc')) {
-                    $docName = "safMemberDoc";
-                    $name = $this->moveFile($docName, $file);
+                    $addressReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                    $addressReqs['activeId'] = $objection->id;
+                    $addressReqs['workflowId'] = $objection->workflow_id;
+                    $addressReqs['ulbId'] = $objection->ulb_id;
+                    $addressReqs['relativePath'] = $relativePath;
+                    $addressReqs['document'] = $imageName;
+                    $addressReqs['docCode'] = $request->addressCode;
 
-                    $objectionDoc = new PropActiveObjectionDocdtl;
-                    $objectionDoc->objection_id = $objection->id;
-                    $this->citizenDocUpload($objectionDoc, $name, $docName);
+                    $addressReqs = new Request($addressReqs);
+                    $mWfActiveDocument->postDocuments($addressReqs);
                 }
             }
 
@@ -396,81 +412,6 @@ class ObjectionRepository implements iObjectionRepository
             echo $e->getMessage();
         }
     }
-
-    // /**
-    //  * | Forward Or BackWard Application
-    //  * | @param $req
-    //  */
-    // public function postNextLevel($req)
-    // {
-    //     try {
-    //         DB::beginTransaction();
-
-    //         // $levelPending = new PropObjectionLevelpending();
-    //         // $levelPending->objection_id = $req->objectionId;
-    //         // $levelPending->sender_role_id = $req->senderRoleId;
-    //         // $levelPending->receiver_role_id = $req->receiverRoleId;
-    //         // $levelPending->sender_user_id = auth()->user()->id;
-    //         // $levelPending->save();
-    //         $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-    //         $metaReqs['workflowId'] = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
-    //         $metaReqs['refTableDotId'] = 'prop_active_objections.id';
-    //         $metaReqs['refTableIdValue'] = $req->objectionId;
-    //         $req->request->add($metaReqs);
-
-    //         $track = new WorkflowTrack();
-    //         $track->saveTrack($req);
-
-    //         // objection Application Update Current Role Updation
-    //         $objection = PropActiveObjection::find($req->objectionId);
-    //         $objection->current_role = $req->receiverRoleId;
-    //         $objection->save();
-
-    //         // Add Comment On Prop Level Pending  and Verification Status true
-    //         // $ObjLevelPending = new PropObjectionLevelpending();
-    //         // $commentOnlevel = $ObjLevelPending->getCurrentObjByReceiver($req->objectionId, $req->senderRoleId);
-
-    //         // $commentOnlevel->remarks = $req->comment;
-    //         // $commentOnlevel->verification_status = 1;
-    //         // $commentOnlevel->save();
-
-    //         DB::commit();
-    //         return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', '474ms-573', 'Post', '');
-    //     } catch (Exception $e) {
-    //         DB::rollBack();
-    //         return responseMsg(false, $e->getMessage(), "");
-    //     }
-    // }
-
-
-    //get objection list
-    public function objectionDocList($req)
-    {
-        try {
-            $list = PropActiveObjectionDocdtl::select(
-                'id',
-                'doc_type as docName',
-                'doc_name as docUrl',
-                'relative_path',
-                'verify_status as docStatus',
-                'remarks as docRemarks'
-            )
-                ->where('prop_active_objection_docdtls.objection_id', $req->id)
-                ->orderByDesc('prop_active_objection_docdtls.id')
-                ->get();
-
-            $list = $list->map(function ($val) {
-                $path = $this->_bifuraction->readDocumentPath($val->relative_path . $val->docUrl);
-                $val->docUrl = $path;
-                return $val;
-            });
-
-            return responseMsgs(true, "Successfully Done", remove_null($list), '010815', '01', '329ms-400ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
 
     //objectionn document upload 
     public function objectionDocUpload($req)

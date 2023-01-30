@@ -6,6 +6,7 @@ use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\CustomDetail;
+use App\Models\Masters\RefRequiredDocument;
 use App\Models\PropActiveObjectionDocdtl;
 use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropActiveObjection;
@@ -478,11 +479,7 @@ class ObjectionController extends Controller
         }
     }
 
-    //get document status by id
-    public function objectionDocList(Request $req)
-    {
-        return $this->Repository->objectionDocList($req);
-    }
+
 
     //get document status by id
     public function objectionDocUpload(Request $req)
@@ -549,7 +546,7 @@ class ObjectionController extends Controller
     /**
      *  get uploaded documents
      */
-    public function getUploadDocuments(Request $req)
+    public function getUploadedDocuments(Request $req)
     {
         $req->validate([
             'applicationId' => 'required|numeric'
@@ -557,13 +554,14 @@ class ObjectionController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mPropActiveObjection = new PropActiveObjection();
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $objectionDetails = $mPropActiveObjection->getObjectionNo($req->applicationId);
             if (!$objectionDetails)
                 throw new Exception("Application Not Found for this application Id");
 
-            $appNo = $objectionDetails->objection_no;
-            $documents = $mWfActiveDocument->getDocsByAppNo($appNo);
+            $workflowId = $objectionDetails->workflow_id;
+            $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
@@ -579,8 +577,7 @@ class ObjectionController extends Controller
         $req->validate([
             "applicationId" => "required|numeric",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            "docMstrId" => "required|numeric",
-            "docRefName" => "required"
+            "docCode" => "required",
         ]);
 
         try {
@@ -589,27 +586,42 @@ class ObjectionController extends Controller
             $mWfActiveDocument = new WfActiveDocument();
             $mPropActiveObjection = new PropActiveObjection();
             $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
-            $getConcessionDtls = $mPropActiveObjection->getObjectionNo($req->applicationId);
-            $refImageName = $req->docRefName;
-            $refImageName = $getConcessionDtls->id . '-' . str_replace(' ', '_', $refImageName);
+            $getObjectionDtls = $mPropActiveObjection->getObjectionNo($req->applicationId);
+            $refImageName = $req->docCode;
+            $refImageName = $getObjectionDtls->id . '-' . $refImageName;
             $document = $req->document;
-
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs['activeId'] = $getConcessionDtls->objection_no;
-            $metaReqs['workflowId'] = $getConcessionDtls->workflow_id;
-            $metaReqs['ulbId'] = $getConcessionDtls->ulb_id;
+            $metaReqs['activeId'] = $getObjectionDtls->id;
+            $metaReqs['workflowId'] = $getObjectionDtls->workflow_id;
+            $metaReqs['ulbId'] = $getObjectionDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
-            $metaReqs['image'] = $imageName;
-            $metaReqs['docMstrId'] = $req->docMstrId;
-
+            $metaReqs['document'] = $imageName;
+            $metaReqs['docCode'] = $req->docCode;
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    //get document status by id
+    public function objectionDocList(Request $req)
+    {
+
+        try {
+            $mPropActiveObjection = new PropActiveObjection();
+            $refApplication = $mPropActiveObjection->getObjectionNo($req->applicationId);                      // Get Saf Details
+            if (!$refApplication)
+                throw new Exception("Application Not Found for this id");
+            // $getDocLists['ObjectionDoc'] = $this->getDocLists($refApplication);
+
+            return responseMsgs(true, "", remove_null($refApplication), "010203", "", "", 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
 
@@ -672,16 +684,6 @@ class ObjectionController extends Controller
             //saving objection owner details
             # Flag : call model <----------
             foreach ($owner as $owners) {
-                // return $request->owners['gender'];
-                // if ($request->gender == 1) {
-                //     $concession->gender = 'Male';
-                // }
-                // if ($request->gender == 2) {
-                //     $concession->gender = 'Female';
-                // }
-                // if ($request->gender == 3) {
-                //     $concession->gender = 'Transgender';
-                // }
 
                 $objectionOwner = new PropActiveObjectionOwner();
                 $objectionOwner->objection_id = $objection->id;
@@ -706,5 +708,23 @@ class ObjectionController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
         }
+    }
+
+    public function citizenDocList(Request $req)
+    {
+        switch ($req->doc) {
+            case ('name'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_CLERICAL_ID')
+                    ->first();
+                break;
+
+            case ('address'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_CLERICAL_ADDRESS')
+                    ->first();
+                break;
+        }
+        return responseMsgs(true, "Citizen Doc List", remove_null($data), 010717, 1.0, "413ms", "POST", "", "");
     }
 }
