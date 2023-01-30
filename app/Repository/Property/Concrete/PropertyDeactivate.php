@@ -3,7 +3,8 @@
 namespace App\Repository\Property\Concrete;
 
 use App\EloquentModels\Common\ModelWard;
-use App\Models\Property\PropDeactivationReqInbox;
+use App\Models\Property\PropActiveDeactivationRequest;
+// use App\Models\Property\PropDeactivationReqInbox;
 use App\Models\Property\PropDeactivationRequest;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
@@ -124,31 +125,27 @@ class PropertyDeactivate implements IPropertyDeactivate
      * | this->_common->iniatorFinisher(refUserId, refUlbId, refWorkflowId)
      * | this->getPropOwnerByProId(mProperty->id)
      */
-    public function deactivatProperty($propId,Request $request)
+    public function deactivatProperty(Request $request)
     {
         try{
+            $propId = $request->propertyId;
             $refUser    = Auth()->user();
             $refUserId  = $refUser->id;
             $refUlbId   = $refUser->ulb_id;
-            $mRegex     = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
-            $mNowDate   = Carbon::now()->format("Y-m-d");
             $refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');            
             $mUserType  = $this->_common->userType($refWorkflowId);
-            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+            $workflowId = WfWorkflow::where('id', $refWorkflowId)
                             ->where('ulb_id', $refUlbId)
                             ->first();
             if(!in_array($mUserType,['BO',"SUPER ADMIN"]))
             {
                 throw new Exception("You Are Not Authorized For Deactivate Property!");
             }
-            $mProperty  = $this->getPropertyById($propId);
             if (!$workflowId) 
             {
                 throw new Exception("Workflow Not Available");
-            }
-            $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$workflowId->wf_master_id);  
+            } 
             $init_finish = $this->_common->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
-            
             if(!$init_finish)
             {
                 throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
@@ -157,13 +154,13 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                 throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
             }
-
+            $mProperty  = PropProperty::where("status",1)->find($propId);
             if(!$mProperty)
             {
                 throw New Exception("Property Not Found");
             }
-            $PropDeactivationRequest    = PropDeactivationRequest::select("*")
-                                          ->where("property_id",$mProperty->id)
+            $PropDeactivationRequest    = PropActiveDeactivationRequest::select("*")
+                                          ->where("property_id",$propId)
                                           ->where("status",1)
                                           ->orderBy("id","DESC")
                                           ->first();
@@ -171,37 +168,22 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                 throw new Exception("Request is already submited. Please check request status...!");
             }
-            $mOwrners = $this->getPropOwnerByProId($mProperty->id);
-            if($request->getMethod()=="GET")
-            {
-                $data["userType"]  = $mUserType;
-                $data["property"] = $mProperty;
-                $data['owners']   = $mOwrners;
-                $data = remove_null($data);
-                return responseMsg(true,"",$data);                
-            }
-            elseif($request->getMethod()=="POST")
-            {
-                
-                $mProperty  = PropProperty::find($propId);
-                if(!$mProperty)
-                {
-                    throw New Exception("Property Not Found");
-                }
-                $rules["comments"] = "required|min:10|regex:$mRegex";
-                $rules["document"]="required|mimes:pdf,jpg,jpeg,png|max:2048";
-                $validator = Validator::make($request->all(), $rules,);
-                if ($validator->fails()) {
-                    return responseMsg(false, $validator->errors(),$request->all());
-                }
+            if($request->getMethod()=="POST")
+            {                          
                 
                 DB::beginTransaction();
 
-                $PropDeactivationRequest    = new PropDeactivationRequest;
-                $PropDeactivationRequest->ulb_id        = $refUlbId;
+                $PropDeactivationRequest    = new PropActiveDeactivationRequest;
+                $PropDeactivationRequest->ulb_id         = $mProperty->ulb_id;
                 $PropDeactivationRequest->property_id    = $mProperty->id;
                 $PropDeactivationRequest->emp_detail_id  = $refUserId;
                 $PropDeactivationRequest->remarks        = $request->comments;
+                $PropDeactivationRequest->workflow_id    = $refWorkflowId;
+                $PropDeactivationRequest->max_level_attained = $init_finish["initiator"]["serial_no"]??null;
+                $PropDeactivationRequest->current_role       = $init_finish["initiator"]["id"]??null;
+                $PropDeactivationRequest->initiator_role     = $init_finish["initiator"]["id"]??null;
+                $PropDeactivationRequest->finisher_role      = $init_finish["finisher"]["id"]??null;
+
                 $PropDeactivationRequest->save();
                 $DeactivationReqId = $PropDeactivationRequest->id;
                 if($DeactivationReqId)
@@ -212,18 +194,18 @@ class PropertyDeactivate implements IPropertyDeactivate
                     $filePath = $this->uplodeFile($file,$fileName);
                     
                     $PropDeactivationRequest->documents = $filePath ;
-                    $PropDeactivationRequest->save();
+                    $PropDeactivationRequest->update();
                 }
                 DB::commit();
 
-                return  responseMsg(true,"Property Deactivation Request Apply Succesfully!",[]);
+                return  responseMsgs(true,"Property Deactivation Request Apply Succesfully!",[],"00002", "1.0", "", "POST", $request->deviceId);
 
             }
 
         }
         catch(Exception $e)
         {
-            return responseMsg(false,$e->getMessage(),$request->all());
+            return responseMsgs(false,$e->getMessage(),$request->all(),"00002", "1.0", "", "POST", $request->deviceId);
         }
 
     }
@@ -235,7 +217,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
-            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+            $refWorkflowMstrId     = WfWorkflow::where('id', $refWorkflowId)
                                     ->where('ulb_id', $refUlbId)
                                     ->first();
             if (!$refWorkflowMstrId) 
@@ -245,24 +227,20 @@ class PropertyDeactivate implements IPropertyDeactivate
             $mJoins="";
             $mUserType = $this->_common->userType($refWorkflowId);
             $mWardPermission = $this->_common->WardPermission($refUserId);           
-            $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowMstrId->wf_master_id);            
+            $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowId); 
+                     
             if (!$mRole) 
             {
                 throw new Exception("You Are Not Authorized For This Action");
             } 
 
-            if($mRole->is_initiator )    //|| in_array(strtoupper($apply_from),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"])
+            if($mRole->is_initiator ) 
             {
                 $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
                 $mWardPermission = objToArray($mWardPermission);
-                $mJoins = "leftjoin";
-            }
-            else
-            {
-                $mJoins = "join";
             }
             $mWardIds = array_map(function ($val) {
                 return $val['id'];
@@ -274,23 +252,15 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                 $mWardIds = $inputs['wardNo']; 
             } 
-            
             // DB::enableQueryLog();          
-            $mProperty = PropDeactivationRequest::select("prop_deactivation_requests.id",
+            $mProperty = PropActiveDeactivationRequest::select("prop_active_deactivation_requests.id",
                                             "properties.holding_no",
                                             "properties.new_holding_no",
                                             "properties.owner_name",
                                             "properties.guardian_name",
                                             "properties.mobile_no",
                                             "properties.email_id",
-                                            DB::raw("prop_deactivation_req_inboxes.id AS level_id")
                                             )
-                        ->$mJoins("prop_deactivation_req_inboxes",function($join) use($mRoleId){
-                                $join->on("prop_deactivation_req_inboxes.request_id","prop_deactivation_requests.id")
-                                ->where("prop_deactivation_req_inboxes.receiver_type_id",$mRoleId)
-                                ->where("prop_deactivation_req_inboxes.status",1)
-                                ->where("prop_deactivation_req_inboxes.verification_status",0);
-                        })
                         ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
                                             STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -301,8 +271,8 @@ class PropertyDeactivate implements IPropertyDeactivate
                                         WHERE prop_properties.status =1 AND prop_properties.ulb_id=$refUlbId
                                         AND prop_properties.ward_mstr_id IN ($mWardIds)
                                         GROUP BY prop_properties.id,holding_no,new_holding_no
-                                        )properties"),function($join) use($inputs,$mWardIds){
-                                            $join = $join->on("properties.id","prop_deactivation_requests.property_id");
+                                        )properties"),function($join) use($inputs){
+                                            $join = $join->on("properties.id","prop_active_deactivation_requests.property_id");
                                             if(isset($inputs['key']) && trim($inputs['key']))
                                             {
                                                 $key = trim($inputs['key']);
@@ -313,30 +283,23 @@ class PropertyDeactivate implements IPropertyDeactivate
                                                         ->orwhere('properties.guardian_name', 'ILIKE', '%' . $key . '%')
                                                         ->orwhere('properties.mobile_no', 'ILIKE', '%' . $key . '%');
                                                 });
-                                            }                                            
-                                            // $join = $join->whereIn('properties.ward_mstr_id', $mWardIds);
+                                            }  
                                         }
                         )                       
-                        ->where("prop_deactivation_requests.ulb_id",$refUlbId);            
-            if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
-            {
-                $mProperty = $mProperty
-                            ->whereBetween('prop_deactivation_req_inboxes.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
-            }
-
-            if($mRole->is_initiator)
-            {
-                $mProperty = $mProperty->whereIn('prop_deactivation_requests.status',[1]);
-            }
-            else
-            {
-                $mProperty = $mProperty->whereIn('prop_deactivation_requests.status',[2]);
-            }           
-            $mProperty = $mProperty
-                    ->get();
+                        ->where("prop_active_deactivation_requests.ulb_id",$refUlbId)
+                        ->where('prop_active_deactivation_requests.is_parked', false)   
+                        ->where('prop_active_deactivation_requests.status', 1)
+                        ->where('prop_active_deactivation_requests.current_role',$mRoleId);
+                        if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
+                        {
+                            $mProperty = $mProperty
+                                        ->whereBetween('prop_active_deactivation_requests.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
+                        }
+                        $mProperty = $mProperty
+                                ->get();
             // dd(DB::getQueryLog());
             $data = [
-                "wardList"=>$mWardPermission,                
+                // "wardList"=>$mWardPermission,                
                 "property"=>$mProperty,
                 "userType"=>$mUserType,
             ] ;           
@@ -355,34 +318,29 @@ class PropertyDeactivate implements IPropertyDeactivate
             $refUserId = $user->id;
             $refUlbId = $user->ulb_id;
             $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
-            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+            $refWorkflowMstrId     = WfWorkflow::where('id', $refWorkflowId)
                                     ->where('ulb_id', $refUlbId)
                                     ->first();
             if (!$refWorkflowMstrId) 
             {
                 throw new Exception("Workflow Not Available");
             }
-            $mJoins="";
             $mUserType = $this->_common->userType($refWorkflowId);
             $mWardPermission = $this->_common->WardPermission($refUserId);           
-            $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowMstrId->wf_master_id);           
+            $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowId);           
             if (!$mRole) 
             {
                 throw new Exception("You Are Not Authorized");
             }
             if($mRole->is_initiator || in_array(strtoupper($mUserType),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
             {
-                $mJoins = "leftjoin";
                 $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
                 $mWardPermission = objToArray($mWardPermission);
             }
-            else
-            {
-                $mJoins = "join";
-            }
+
             $mWardIds = array_map(function ($val) {
                 return $val['id'];
             }, $mWardPermission);
@@ -390,21 +348,14 @@ class PropertyDeactivate implements IPropertyDeactivate
             $mRoleId = $mRole->role_id;
             $inputs = $request->all();
             // DB::enableQueryLog();
-            $mProperty = PropDeactivationRequest::select("prop_deactivation_requests.id",
-                                                    "properties.holding_no",
-                                                    "properties.new_holding_no",
-                                                    "properties.owner_name",
-                                                    "properties.guardian_name",
-                                                    "properties.mobile_no",
-                                                    "properties.email_id",
-                                                    DB::raw("prop_deactivation_req_inboxes.id AS level_id")
-                        )
-                        ->$mJoins("prop_deactivation_req_inboxes",function($join) use($mRoleId){
-                                $join->on("prop_deactivation_req_inboxes.request_id","prop_deactivation_requests.id")
-                                ->where("prop_deactivation_req_inboxes.receiver_type_id",$mRoleId)
-                                ->where("prop_deactivation_req_inboxes.status",1)
-                                ->where("prop_deactivation_req_inboxes.verification_status",0);
-                        })
+            $mProperty = PropActiveDeactivationRequest::select("prop_active_deactivation_requests.id",
+                                            "properties.holding_no",
+                                            "properties.new_holding_no",
+                                            "properties.owner_name",
+                                            "properties.guardian_name",
+                                            "properties.mobile_no",
+                                            "properties.email_id",
+                                            )
                         ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
                                             STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -415,8 +366,8 @@ class PropertyDeactivate implements IPropertyDeactivate
                                         WHERE prop_properties.status =1 AND prop_properties.ulb_id=$refUlbId
                                         AND prop_properties.ward_mstr_id IN ($mWardIds)
                                         GROUP BY prop_properties.id,holding_no,new_holding_no
-                                        )properties"),function($join) use($inputs,$mWardIds){
-                                            $join = $join->on("properties.id","prop_deactivation_requests.property_id");
+                                        )properties"),function($join) use($inputs){
+                                            $join = $join->on("properties.id","prop_active_deactivation_requests.property_id");
                                             if(isset($inputs['key']) && trim($inputs['key']))
                                             {
                                                 $key = trim($inputs['key']);
@@ -427,29 +378,23 @@ class PropertyDeactivate implements IPropertyDeactivate
                                                         ->orwhere('properties.guardian_name', 'ILIKE', '%' . $key . '%')
                                                         ->orwhere('properties.mobile_no', 'ILIKE', '%' . $key . '%');
                                                 });
-                                            } 
+                                            }  
                                         }
-                        ) 
-                        ->where("prop_deactivation_requests.ulb_id",$refUlbId);
-            
-            if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
-            {
-                $mProperty = $mProperty
-                            ->whereBetween('prop_deactivation_req_inboxes.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
-            }
-            if(!$mRole->is_initiator)
-            {
-                $mProperty = $mProperty->whereIn('prop_deactivation_requests.status',[1]);
-            }
-            else
-            {
-                $mProperty = $mProperty->whereIn('prop_deactivation_requests.status',[2]);
-            }
-            $mProperty = $mProperty
-                        ->get();
+                        )                       
+                        ->where("prop_active_deactivation_requests.ulb_id",$refUlbId)
+                        ->where('prop_active_deactivation_requests.is_parked', false)   
+                        ->where('prop_active_deactivation_requests.status', 1)
+                        ->where('prop_active_deactivation_requests.current_role',"<>",$mRoleId);
+                        if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
+                        {
+                            $mProperty = $mProperty
+                                        ->whereBetween('prop_active_deactivation_requests.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
+                        }
+                        $mProperty = $mProperty
+                                ->get();
                         // dd(DB::getQueryLog());
             $data = [
-                "wardList"=>$mWardPermission,                
+                // "wardList"=>$mWardPermission,                
                 "property"=>$mProperty,
                 "userType"=>$mUserType,
             ] ; 
@@ -471,7 +416,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             $ulb_id = $user->ulb_id;
             $refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');                        
             $mUserType = $this->_common->userType($refWorkflowId); 
-            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+            $workflowId = WfWorkflow::where('id', $refWorkflowId)
                 ->where('ulb_id', $ulb_id)
                 ->first();
             if (!$workflowId) 
@@ -503,8 +448,8 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                throw new Exception("Initator Can Not send Back The Application");
             }
-            $refDeactivationReq = PropDeactivationRequest::find($request->requestId);            
-            $mLevelData = $this->getLevelData($request->requestId);
+            $refDeactivationReq = PropDeactivationRequest::find($request->applicationId);            
+            $mLevelData = $this->getLevelData($request->applicationId);
             if(!$refDeactivationReq)
             {
                 throw new Exception("Data Not Found");
