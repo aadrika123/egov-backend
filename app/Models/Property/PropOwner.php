@@ -49,6 +49,6 @@ class PropOwner extends Model
                 'email'
             )
             ->orderBy('id')
-            ->first();
+            ->get();
     }
 }

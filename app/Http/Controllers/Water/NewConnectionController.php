@@ -22,6 +22,7 @@ use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterOwnerTypeMstr;
+use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterPropertyTypeMstr;
 use App\Models\Water\WaterSiteInspection;
@@ -54,9 +55,11 @@ class NewConnectionController extends Controller
     use WaterTrait;
 
     private iNewConnection $newConnection;
+    private $_dealingAssistent;
     public function __construct(iNewConnection $newConnection)
     {
         $this->newConnection = $newConnection;
+        $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
     }
     /**
      * Display a listing of the resource.
@@ -83,7 +86,7 @@ class NewConnectionController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
-     * @param \ New Request 
+     * @param \ newApplyRules 
      */
     public function store(newApplyRules $request)
     {
@@ -445,7 +448,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Get the Field fieldVerifiedInbox
+    // Get the Field fieldVerifiedInbox // recheck
     public function fieldVerifiedInbox(Request $request)
     {
         try {
@@ -455,7 +458,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Field Verification of water Applications
+    // Field Verification of water Applications // Recheck
     public function fieldVerification(reqSiteVerification $request)
     {
         try {
@@ -487,7 +490,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Generate the payment Recipt
+    // Generate the payment Recipt  
     public function generatePaymentReceipt(Request $req)
     {
         $req->validate([
@@ -553,7 +556,7 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Back to Citizen 
+    // Back to Citizen  // Recheck
     public function backToCitizen(Request $req)
     {
         $req->validate([
@@ -591,6 +594,9 @@ class NewConnectionController extends Controller
     }
 
     // Delete the Application
+    /**
+        | Caution Dont Perform Delete Operation
+     */
     public function deleteWaterApplication(Request $req)
     {
         $req->validate([
@@ -613,10 +619,10 @@ class NewConnectionController extends Controller
             }
             if ($applicantDetals->user_id == $userId) {
                 DB::beginTransaction();
-                $mWaterApplication->deleteWaterApplication($req->applicationId);
-                $mWaterApplicant->deleteWaterApplicant($req->applicationId);
-                $mWaterConnectionCharge->deleteWaterConnectionCharges($req->applicationId);
-                $mWaterPenaltyInstallment->deleteWaterPenelty($req->applicationId);
+                // $mWaterApplication->deleteWaterApplication($req->applicationId);
+                // $mWaterApplicant->deleteWaterApplicant($req->applicationId);
+                // $mWaterConnectionCharge->deleteWaterConnectionCharges($req->applicationId);
+                // $mWaterPenaltyInstallment->deleteWaterPenelty($req->applicationId);
                 DB::commit();
                 return responseMsgs(true, "Application Successfully Deleted", "", "", "1.0", "", "POST", $req->deviceId);
             }
@@ -674,13 +680,14 @@ class NewConnectionController extends Controller
         ]);
         try {
             $mWaterConnectionCharge  = new WaterConnectionCharge();
+            $mWaterParamConnFee = new WaterParamConnFee();
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
             $mWaterTran = new WaterTran();
 
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
-
+            $propertyId = $applicationDetails['applicationDetails']['property_type_id'];
             # Document Details
             $metaReqs = [
                 'userId' => auth()->user()->id,
@@ -700,14 +707,16 @@ class NewConnectionController extends Controller
 
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])->first();
+            $processCall = $mWaterParamConnFee->getCallParameter($propertyId)->first();  // <---------- here
             $calculation['calculation'] =
                 [
                     'connectionFee' => $charges['conn_fee'],
                     'penalty' => $charges['penalty'],
                     'totalAmount' => $charges['amount']
                 ];
+            $callParamenter['callParamenter'] = $processCall;
 
-            $returnData = array_merge($applicationDetails, $documentDetails, $waterTransDetail, $ownerDetails, $calculation);
+            $returnData = array_merge($applicationDetails, $documentDetails, $waterTransDetail, $ownerDetails, $calculation, $callParamenter);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -823,11 +832,11 @@ class NewConnectionController extends Controller
                 $docForId = collect($doc['docVal'])->map(function ($value) {
                     return $value['id'];
                 });
-                $doc['uploadDoc'] = $refWfActiveDocument->getWaterAppByAppNoDocId($refApplication->application_no, $docForId); # Check Document is Uploaded Of That Type
-                if (isset($doc["uploadDoc"]->doc_path)) {
-                    $path = $refWaterNewConnection->readDocumentPath($doc["uploadDoc"]->doc_path);
-                    $doc["uploadDoc"]->doc_path = !empty(trim($doc["uploadDoc"]->doc_path)) ? $path : null;
-                }
+                // $doc['uploadDoc'] = $refWfActiveDocument->getWaterAppByAppNoDocId($refApplication->application_no, $docForId); # Check Document is Uploaded Of That Type
+                // if (isset($doc["uploadDoc"]->doc_path)) {
+                //     $path = $refWaterNewConnection->readDocumentPath($doc["uploadDoc"]->doc_path);
+                //     $doc["uploadDoc"]->doc_path = !empty(trim($doc["uploadDoc"]->doc_path)) ? $path : null;
+                // }
                 array_push($requiedDocs, $doc);
             }
             foreach ($refOwneres as $key => $val) {
@@ -841,11 +850,11 @@ class NewConnectionController extends Controller
                 $refdocForId = collect($doc['docVal'])->map(function ($value, $key) {
                     return $value['id'];
                 });
-                $doc['uploadDoc'] = $refWfActiveDocument->getWaterAppByAppNoDocId($refApplication->application_no, $refdocForId);
-                if (isset($doc["uploadDoc"]->doc_path)) {
-                    $path = $refWaterNewConnection->readDocumentPath($doc["uploadDoc"]->doc_path);
-                    $doc["uploadDoc"]->doc_path = !empty(trim($doc["uploadDoc"]->doc_path)) ? $path : null;
-                }
+                // $doc['uploadDoc'] = $refWfActiveDocument->getWaterAppByAppNoDocId($refApplication->application_no, $refdocForId);
+                // if (isset($doc["uploadDoc"]->doc_path)) {
+                //     $path = $refWaterNewConnection->readDocumentPath($doc["uploadDoc"]->doc_path);
+                //     $doc["uploadDoc"]->doc_path = !empty(trim($doc["uploadDoc"]->doc_path)) ? $path : null;
+                // }
                 array_push($ownersDoc, $doc);
                 array_push($testOwnersDoc[$key], $doc);
             }
@@ -861,7 +870,7 @@ class NewConnectionController extends Controller
     public function getSafHoldingDetails(Request $request)
     {
         $request->validate([
-            'connectionThrough' => 'required|numeric',
+            'connectionThrough' => 'required|int|in:1,2',
             'id' => 'required',
             'ulbId' => 'required'
         ]);
@@ -876,10 +885,10 @@ class NewConnectionController extends Controller
                     $application = collect($mPropProperty->getPropByHolding($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
-                        $areaInSqft = $this->convertDesmilToSqft($application['total_area_in_desimal']);
+                        $areaInSqft = decimalToSqFt($application['total_area_in_desimal']);
                         $propUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
-                        $owners = collect($mPropOwner->getOwnerByPropId($application['id']));
+                        $owners['owners'] = collect($mPropOwner->getOwnerByPropId($application['id']));
                         $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
@@ -887,42 +896,25 @@ class NewConnectionController extends Controller
                     break;
 
                 case ("2"):
-                    $mPropActiveSaf = new PropActiveSaf();
                     $mPropActiveSafOwners = new PropActiveSafsOwner();
                     $mPropActiveSafsFloor = new PropActiveSafsFloor();
+                    $mPropActiveSaf = new PropActiveSaf();
                     $application = collect($mPropActiveSaf->getSafDtlBySafUlbNo($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if ($checkExist) {
-                        $areaInSqft = $this->convertDesmilToSqft($application['total_area_in_desimal']);
+                        $areaInSqft = decimalToSqFt($application['total_area_in_desimal']);
                         $safUsageType = $this->getPropUsageType($request, $application['id']);
                         $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
-                        $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
+                        $owners['owners'] = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
                         $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to SAF Not Found!");
                     break;
-
-                default: {
-                        throw new Exception("Enter Holding or SAF Property!");
-                    }
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
-    }
-
-
-    /**
-     * | Calculation of area in desmil to sqFt
-        | calling function : for the conversion of dismil in Sqft 
-     */
-    public function convertDesmilToSqft($area)
-    {
-        $calculatedArea = $area * 435.6;
-        return [
-            'areaInSqFt' => $calculatedArea
-        ];
     }
 
     /**
@@ -975,7 +967,7 @@ class NewConnectionController extends Controller
                         'usageType' => 'Institutional'
                     ];
                     break;
-                case ($var == 'M'):  // Here it's differ
+                case ($var == 'M'):   //<---------------- Check wether the property (M) belongs to the commercial catagory
                     return [
                         'id'        => $refPropertyTypeId['Commercial'],
                         'usageType' => 'Other / Commercial'
@@ -987,39 +979,69 @@ class NewConnectionController extends Controller
         return $returnData;
     }
 
-    /**
-     * | Get Prperty relates details
-        | get property and saf details 
-     */
-    public function getProperyDetailsByLogin(Request $request)
+    // final submition of the Water Application
+    public function finalSubmitionApplication(Request $request)
     {
-        $request->validate([
-            'connectionThrough' => 'required|int|in:1,2',
-            'ulbId' => 'required'
-        ]);
         try {
-            $key = $request->connectionThrough;
-            switch ($key) {
-                case ('1'):
-                    $mPropProperty = new PropProperty();
-                    $listOfHolding = $mPropProperty->getpropByUserUlb($request);
-                    $checkExist = collect($listOfHolding)->first();
-                    if ($checkExist) {
-                        return responseMsgs(true, "list of holding!", collect($listOfHolding), "", "", "", "POST", "");
+            $request->validate([
+                'applicationId' => 'required|int',
+            ]);
+
+            $mWaterApplication = new WaterApplication();
+            $refApplicationList = $mWaterApplication->getWaterApplicationsDetails($request->applicationId);
+            $checkExist = collect($refApplicationList)->first();
+            if (!$checkExist) {
+                throw new Exception("Application Data Not found!");
+            }
+
+            $documentList = $this->getDocToUpload($request);
+            $checkDocument = collect($documentList)->map(function ($value, $key) {
+                if ($value['isMadatory'] == 1) {
+                    if (isset($value['uploadDoc']) && !is_null($value['uploadDoc'])) {
+                        return false;
                     }
-                    throw new Exception("Holdin Not Found!");
+                    return true;
+                }
+                return true;
+            });
+            if ($checkDocument->contains(false)) {
+                throw new Exception("Please Upload Req Documents before Final Submition!");
+            }
+            if ($refApplicationList->payment_status == false) {
+                throw new Exception("Payment Not done!");
+            }
+            if ($refApplicationList->apply_from != 'Online') {
+                throw new Exception("Respective Application is Not Applied Online by Citizen!");
+            }
+            if (isset($refApplicationList->current_role)) {
+                throw new Exception("Application is already In workflow!");
+            }
+            switch ($refApplicationList->user_type) {
+                case ('Citizen'):
+                    WaterApplication::where('id', $request->applicationId)
+                        ->update([
+                            'current_role' => $this->_dealingAssistent
+                        ]);
                     break;
-                case ('2'):
-                    $mPropActiveSaf = new PropActiveSaf();
-                    $listOfSaf = $mPropActiveSaf->getSafByIdUlb($request);
-                    $checkExist = collect($listOfSaf)->first();
-                    if ($checkExist) {
-                        return responseMsgs(true, "List of Saf No !", collect($listOfSaf), "", "", "", "", "");
-                    }
-                    throw new Exception("Saf Not Found !");
+                default:
+                    throw new Exception("Citizen Application Not found!");
+                    break;
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    // function for the process of the operatio
+    public function try(Request $req)
+    {
+        $metaData = $this->maps($req->all());
+        $myRequest = new \Illuminate\Http\Request();
+        $myRequest->setMethod($req->getMethod());
+        foreach ($metaData as  $key => $value) {
+            $myRequest->request->add([$key => $value]);
+        }
+        return $myRequest;
+    }
+    
 }

@@ -102,6 +102,7 @@ class calculatorController extends Controller
                             'arv',
                             'buildupArea',
                             'dateFrom',
+                            'quarterYear',
                             'qtr',
                             'ruleSet',
                             'holdingTax',
@@ -130,22 +131,33 @@ class calculatorController extends Controller
                 return $table;
             });
 
-            $ruleSetCollections = collect($finalTaxReview)->groupBy('ruleSet');
+            $ruleSetCollections = collect($finalTaxReview)->groupBy(['ruleSet']);
             $reviewCalculation = collect($ruleSetCollections)->map(function ($collection) {
                 return collect($collection)->pipe(function ($collect) {
                     $quaters['floors'] = $collect;
-                    $quaters['totalQtrTaxes'] = [
-                        'effectingFrom' => $collect->first()['dateFrom'],
-                        'qtr' => $collect->first()['qtr'],
-                        'arv' => roundFigure($collect->sum('arv')),
-                        'holdingTax' => roundFigure($collect->sum('holdingTax')),
-                        'waterTax' => roundFigure($collect->sum('waterTax')),
-                        'latrineTax' => roundFigure($collect->sum('latrineTax')),
-                        'educationTax' => roundFigure($collect->sum('educationTax')),
-                        'healthTax' => roundFigure($collect->sum('healthTax')),
-                        'rwhPenalty' => roundFigure($collect->sum('rwhPenalty')),
-                        'quaterlyTax' => roundFigure($collect->sum('totalTax')),
-                    ];
+                    $groupByFloors = $collect->groupBy(['quarterYear', 'qtr']);
+                    $quaterlyTaxes = collect();
+                    collect($groupByFloors)->map(function ($qtrYear) use ($quaterlyTaxes) {
+                        return collect($qtrYear)->map(function ($qtr, $key) use ($quaterlyTaxes) {
+                            return collect($qtr)->pipe(function ($floors) use ($quaterlyTaxes, $key) {
+                                $taxes = [
+                                    'key' => $key,
+                                    'effectingFrom' => $floors->first()['dateFrom'],
+                                    'qtr' => $floors->first()['qtr'],
+                                    'arv' => roundFigure($floors->sum('arv')),
+                                    'holdingTax' => roundFigure($floors->sum('holdingTax')),
+                                    'waterTax' => roundFigure($floors->sum('waterTax')),
+                                    'latrineTax' => roundFigure($floors->sum('latrineTax')),
+                                    'educationTax' => roundFigure($floors->sum('educationTax')),
+                                    'healthTax' => roundFigure($floors->sum('healthTax')),
+                                    'rwhPenalty' => roundFigure($floors->sum('rwhPenalty')),
+                                    'quaterlyTax' => roundFigure($floors->sum('totalTax')),
+                                ];
+                                $quaterlyTaxes->push($taxes);
+                            });
+                        });
+                    });
+                    $quaters['totalQtrTaxes'] = $quaterlyTaxes;
                     return $quaters;
                 });
             });

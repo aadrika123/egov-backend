@@ -17,11 +17,13 @@ return [
     "WATER_DEPAPRTMENT_ID" => "2",
     "WATER_RELATIVE_PATH" => "Uploads/water",
 
-    "PROPERTY_TYPE" =>[
+    "PROPERTY_TYPE" => [
         "Residential" => "1",
         "Industrial" => "6",
         "Government" => "3",
         "Commercial" => "2",
         "Institutional" => "4"
-    ]
+    ],
+
+    "DESMIL_TO_SQFT" => 435.6,
 ];
