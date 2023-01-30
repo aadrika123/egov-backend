@@ -84,9 +84,9 @@ class SafDocController extends Controller
 
         if ($isSpeciallyAbled == true)
             $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_SPECIALLY_ABLED")->requirements;
-        if ($isArmedForce == true)
+        elseif ($isArmedForce == true)
             $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_ARMED_FORCE")->requirements;
-        if ($isSpeciallyAbled == true && $isArmedForce == true)
+        elseif ($isSpeciallyAbled == true && $isArmedForce == true)
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_SPECIALLY_ARMED")->requirements;
         else
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_EXTRA_DOCUMENT")->requirements;
