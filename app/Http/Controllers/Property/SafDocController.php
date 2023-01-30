@@ -105,9 +105,10 @@ class SafDocController extends Controller
                 'name' => $refOwners['owner_name'],
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
-                'uploadedDoc' => $ownerPhoto->doc_path ?? ""
+                'uploadedDoc' => $ownerPhoto->doc_path ?? "",
+                'verifyStatus' => $ownerPhoto->verify_status ?? ""
             ];
-            $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
+            $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs, $refOwners['id']);                                     // function(1.2)
         } else
             $filteredDocs = [];
         return $filteredDocs;
@@ -149,7 +150,7 @@ class SafDocController extends Controller
     /**
      * | Filter Document(1.2)
      */
-    public function filterDocument($documentList, $refSafs)
+    public function filterDocument($documentList, $refSafs, $ownerId = null)
     {
         $mWfActiveDocument = new WfActiveDocument();
         $safId = $refSafs->id;
@@ -158,19 +159,22 @@ class SafDocController extends Controller
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
         $explodeDocs = collect(explode('#', $documentList));
 
-        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
 
             $documents = collect();
 
-            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
-                $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $item)
+                    ->where('owner_dtl_id', $ownerId)
+                    ->first();
                 if ($uploadedDoc) {
                     $response = [
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $uploadedDoc->doc_path ?? ""
+                        "docPath" => $uploadedDoc->doc_path ?? "",
+                        "verifyStatus" => $uploadedDoc->verify_status ?? "",
                     ];
                     $documents->push($response);
                 }
@@ -185,7 +189,8 @@ class SafDocController extends Controller
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
-                    "uploadedDoc'" => $uploadedDoc->doc_path ?? null
+                    "uploadedDoc'" => $uploadedDoc->doc_path ?? "",
+                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
                 ];
                 return $arr;
             });
