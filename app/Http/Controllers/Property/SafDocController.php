@@ -8,6 +8,7 @@ use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfActiveDocument;
+use DeepCopy\Filter\Filter;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config as FacadesConfig;
@@ -147,7 +148,9 @@ class SafDocController extends Controller
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
 
-            $reqDoc[$key]['uploadedDoc'] = collect($document)->map(function ($item) use ($uploadedDocs) {
+            $documents = collect();
+
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
                 if ($uploadedDoc) {
                     $response = [
@@ -155,16 +158,20 @@ class SafDocController extends Controller
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" => $uploadedDoc->doc_path ?? ""
                     ];
-                    return $response;
+                    $documents->push($response);
                 }
             });
 
-            $reqDoc[$key]['masters'] = collect($document)->map(function ($doc) {
+            $reqDoc[$key]['uploadedDoc'] = $documents->first();
+
+            $reqDoc[$key]['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
                 $strLower = strtolower($doc);
                 $strReplace = str_replace('_', ' ', $strLower);
                 $arr = [
                     "documentCode" => $doc,
-                    "docVal" => ucwords($strReplace)
+                    "docVal" => ucwords($strReplace),
+                    "uploadedDoc'" => $uploadedDoc->doc_path ?? null
                 ];
                 return $arr;
             });

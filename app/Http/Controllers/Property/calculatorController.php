@@ -138,9 +138,10 @@ class calculatorController extends Controller
                     $groupByFloors = $collect->groupBy(['quarterYear', 'qtr']);
                     $quaterlyTaxes = collect();
                     collect($groupByFloors)->map(function ($qtrYear) use ($quaterlyTaxes) {
-                        return collect($qtrYear)->map(function ($qtr) use ($quaterlyTaxes) {
-                            return collect($qtr)->pipe(function ($floors) use ($quaterlyTaxes) {
+                        return collect($qtrYear)->map(function ($qtr, $key) use ($quaterlyTaxes) {
+                            return collect($qtr)->pipe(function ($floors) use ($quaterlyTaxes, $key) {
                                 $taxes = [
+                                    'key' => $key,
                                     'effectingFrom' => $floors->first()['dateFrom'],
                                     'qtr' => $floors->first()['qtr'],
                                     'arv' => roundFigure($floors->sum('arv')),
