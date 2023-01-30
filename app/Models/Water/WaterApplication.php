@@ -89,7 +89,7 @@ class WaterApplication extends Model
             'water_owner_type_mstrs.owner_type AS owner_char_type',
             'water_param_pipeline_types.pipeline_type'
         )
-            ->join('wf_roles', 'wf_roles.id', '=', 'water_applications.current_role')
+            ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_applications.current_role')
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')

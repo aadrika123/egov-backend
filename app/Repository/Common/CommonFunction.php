@@ -255,7 +255,7 @@ class CommonFunction implements ICommonFunction
             $data = $this->getWorkFlowRoles($user_id, $ulb_id, $work_flow_id);
             if ($all) {
                 $data = array_filter($data, function ($val) {
-                    if (($val['forward_role_id']) || $val['backward_role_id']) {
+                    if (($val['forward_id']) || $val['backward_id']) {
                         return true;
                     }
                 });

@@ -9,6 +9,8 @@ use App\Http\Requests\Property\PropertyDeactivation\reqPostNext;
 use App\Http\Requests\Property\PropertyDeactivation\reqReadProperty;
 use App\Models\Property\PropActiveDeactivationRequest;
 use App\Models\Property\PropDeactivationRequest;
+use App\Models\Property\PropProperty;
+use App\Models\Property\PropRejectedDeactivationRequest;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
@@ -33,12 +35,14 @@ class PropertyDeactivateController extends Controller
     private $saf_repository;
     protected $_common;
     protected $_modelWard;
+    protected $_track;
     public function __construct(IPropertyDeactivate $PropertyDeactivate,iSafRepository $saf_repository)
     {
         $this->Repository = $PropertyDeactivate ;
         $this->saf_repository = new ActiveSafController($saf_repository);
         $this->_common = new CommonFunction();
         $this->_modelWard = new ModelWard();
+        $this->_track = new WorkflowTrack();
     }
     public function readHoldigbyNo(Request $request)
     {
@@ -143,28 +147,31 @@ class PropertyDeactivateController extends Controller
                 throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
             }
             $allRolse = collect($this->_common->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
-            $max_rolse = $refDeactivationReq->max_level_attained;
             $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
             
             $sms ="Application BackWord To ".$receiverRole["role_name"]??"";
-            if($max_rolse>$receiverRole["serial_no"]??0)
+            if($refDeactivationReq->max_level_attained > $receiverRole["serial_no"]??0)
             {
                 $sms ="Application Forward To ".$receiverRole["role_name"]??"";
             }
             DB::beginTransaction();
-            if($max_rolse<$receiverRole["serial_no"]??0)
+            if($refDeactivationReq->max_level_attained < $receiverRole["serial_no"]??0)
             {
+                $refDeactivationReq->max_level_attained = $receiverRole["serial_no"];
                 $refDeactivationReq->current_role = $request->receiverRoleId;
                 $refDeactivationReq->update();
+            }
+            $myRequest = new \Illuminate\Http\Request();
+            $myRequest->setMethod($request->getMethod());
+            foreach ($request->all() as $key2 => $val2) {
+                $myRequest->request->add([$key2 => $val2]);
             }
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $refWorkflowId;
             $metaReqs['refTableDotId'] = 'prop_active_deactivation_requests';
             $metaReqs['refTableIdValue'] = $request->applicationId;
-            $request->request->add($metaReqs);
-
-            $track = new WorkflowTrack();
-            $track->saveTrack($request);
+            $myRequest->request->add($metaReqs);
+            $this->_track->saveTrack($myRequest);
 
             DB::commit();
 
@@ -175,6 +182,81 @@ class PropertyDeactivateController extends Controller
             return responseMsgs(false,$e->getMessage(),$request->all(), "00003", "1.0", "", "POST", $request->deviceId);
         }
         
+    }
+
+    public function approvalRejection(Request $request)
+    {
+        $request->validate([
+            'roleId' => 'required|integer',
+            'applicationId' => 'required|integer',
+            'status' => 'required|integer'
+        ]);
+
+        try {
+            // Check if the Current User is Finisher or Not
+            $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId);
+            if(!$refDeactivationReq)
+            {
+                throw new Exception("Data NOt Found!......");
+            }
+            // dd($refDeactivationReq);
+            if ($refDeactivationReq->finisher_role != $request->roleId) {
+                throw new Exception("Forbidden Access");
+            }
+            
+            $PropProperty = PropProperty::find($refDeactivationReq->property_id);
+            if(!$PropProperty)
+            {
+                throw new Exception("Property Not Found!..........");
+            }
+            DB::beginTransaction();
+            if ($request->status == 1) 
+            {
+                $verifired = new PropDeactivationRequest();
+                $this->transeferData($verifired,$refDeactivationReq);
+                $verifired->status = 5;
+                $PropProperty->status=0;
+                $PropProperty->update(); 
+                $msg = "Property Deactivated Successfully !! Holding No " . $PropProperty->holding_no;
+            }
+            // Rejection
+            if ($request->status == 0) 
+            {
+                $verifired = new PropRejectedDeactivationRequest();
+                $this->transeferData($verifired,$refDeactivationReq);
+                $verifired->status = 0;
+                $msg = "Application Rejected Successfully";
+            } 
+            $verifired->save();
+            $refDeactivationReq->forceDelete();
+            DB::commit();
+            return responseMsgs(true, $msg, [], "00004", "1.0", "410ms", "POST", $request->deviceId);
+        } 
+        catch (Exception $e) 
+        {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    private function transeferData($targerModel,$sorseModel)
+    {
+        $targerModel->id             = $sorseModel->id;
+        $targerModel->ulb_id         = $sorseModel->ulb_id;
+        $targerModel->property_id    = $sorseModel->property_id;
+        $targerModel->apply_date     = $sorseModel->apply_date;
+        $targerModel->emp_detail_id  = $sorseModel->emp_detail_id;
+        $targerModel->remarks        = $sorseModel->remarks;
+        $targerModel->documents      = $sorseModel->documents;
+        $targerModel->workflow_id    = $sorseModel->workflow_id;
+        $targerModel->max_level_attained = $sorseModel->max_level_attained;
+        $targerModel->is_parked      = $sorseModel->is_parked;
+        $targerModel->current_role   = $sorseModel->current_role;
+        $targerModel->initiator_role = $sorseModel->initiator_role;
+        $targerModel->finisher_role  = $sorseModel->finisher_role;
+        $targerModel->is_escalate    = $sorseModel->is_escalate;
+        $targerModel->escalate_by    = $sorseModel->escalate_by;
+        $targerModel->create_at      = $sorseModel->create_at;
+        $targerModel->create_at      = $sorseModel->create_at;
     }
     public function readDeactivationReq(Request $request)
     {
