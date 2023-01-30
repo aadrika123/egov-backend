@@ -19,6 +19,10 @@ class SafDocController extends Controller
      */
     public function getDocList(Request $req)
     {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+
         try {
             $mActiveSafs = new PropActiveSaf();
             $safsOwners = new PropActiveSafsOwner();
@@ -77,23 +81,34 @@ class SafDocController extends Controller
     public function getOwnerDocLists($refOwners, $refSafs)
     {
         $mRefReqDocs = new RefRequiredDocument();
+        $mWfActiveDocument = new WfActiveDocument();
         $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
         $isSpeciallyAbled = $refOwners->is_specially_abled;
         $isArmedForce = $refOwners->is_armed_force;
-        $documentList = "";
 
         if ($isSpeciallyAbled == true)
-            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_SPECIALLY_ABLED")->requirements;
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_SPECIALLY_ABLED")->requirements;
+
         if ($isArmedForce == true)
-            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_ARMED_FORCE")->requirements;
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_ARMED_FORCE")->requirements;
+
         if ($isSpeciallyAbled == true && $isArmedForce == true)
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_SPECIALLY_ARMED")->requirements;
-        else
+
+        if ($isSpeciallyAbled == false && $isArmedForce == false)                                           // Condition for the Extra Documents
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_EXTRA_DOCUMENT")->requirements;
 
-        if (!empty($documentList))
-            $filteredDocs = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
-        else
+        if (!empty($documentList)) {
+            $ownerPhoto = $mWfActiveDocument->getOwnerPhotograph($refSafs['id'], $refSafs->workflow_id, $moduleId, $refOwners['id']);
+            $filteredDocs['ownerDetails'] = [
+                'ownerId' => $refOwners['id'],
+                'name' => $refOwners['owner_name'],
+                'mobile' => $refOwners['mobile_no'],
+                'guardian' => $refOwners['guardian_name'],
+                'uploadedDoc' => $ownerPhoto->doc_path ?? ""
+            ];
+            $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
+        } else
             $filteredDocs = [];
         return $filteredDocs;
     }
@@ -147,7 +162,9 @@ class SafDocController extends Controller
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
 
-            $reqDoc[$key]['uploadedDoc'] = collect($document)->map(function ($item) use ($uploadedDocs) {
+            $documents = collect();
+
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
                 if ($uploadedDoc) {
                     $response = [
@@ -155,16 +172,20 @@ class SafDocController extends Controller
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" => $uploadedDoc->doc_path ?? ""
                     ];
-                    return $response;
+                    $documents->push($response);
                 }
             });
+            $reqDoc['docType'] = $key;
+            $reqDoc['uploadedDoc'] = $documents->first();
 
-            $reqDoc[$key]['masters'] = collect($document)->map(function ($doc) {
+            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
                 $strLower = strtolower($doc);
                 $strReplace = str_replace('_', ' ', $strLower);
                 $arr = [
                     "documentCode" => $doc,
-                    "docVal" => ucwords($strReplace)
+                    "docVal" => ucwords($strReplace),
+                    "uploadedDoc'" => $uploadedDoc->doc_path ?? null
                 ];
                 return $arr;
             });

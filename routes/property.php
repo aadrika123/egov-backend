@@ -163,13 +163,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('concession/backtocitizen', 'backToCitizen');                           //10               // Back To Citizen 
     Route::post('concession/owner-details', 'getOwnerDetails');                         //11
 
-    Route::post('concession/list', 'concessionList');                                   //12
-    Route::post('concession/list-id', 'concessionByid');                                //13
-    Route::post('concession/doc-list', 'concessionDocList');                            //14
+    // Route::post('concession/list', 'concessionList');                                   //12
+    // Route::post('concession/list-id', 'concessionByid');                                //13
+
     Route::post('concession/doc-upload', 'concessionDocUpload');                        //15
     Route::post('concession/doc-status', 'concessionDocStatus');                        //16
     Route::post('concession/comment-independent', 'commentIndependent');                //18               ( Citizen Independent comment and Level Pendings )
     Route::post('concession/get-doc-type', 'getDocType');
+    Route::post('concession/doc-list', 'concessionDocList');                            //14
     Route::post('concession/upload-document', 'uploadDocument');
     Route::post('concession/get-upload-documents', 'getUploadDocuments');
   });
@@ -203,15 +204,17 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('objection/backtocitizen', 'backToCitizen');              //12
     Route::post('objection/btc-inbox', 'btcInboxList');                   //18
 
-    Route::get('objection/list', 'objectionList');                        //13
-    Route::post('objection/list-id', 'objectionByid');                    //14
-    Route::post('objection/doc-list', 'objectionDocList');                //15
-    Route::post('objection/doc-upload', 'objectionDocUpload');            //16
-    Route::post('objection/doc-status', 'objectionDocStatus');            //17
-    Route::post('objection/comment-independent', 'commentIndependent');   //18
-    Route::post('objection/upload-document', 'uploadDocument');
-    Route::post('objection/get-upload-documents', 'getUploadDocuments');
-    Route::post('objection/add-members', 'addMembers');
+    Route::get('objection/list', 'objectionList');                          //13
+    Route::post('objection/list-id', 'objectionByid');                      //14
+    // Route::post('objection/doc-list', 'objectionDocList');                  //15
+    Route::post('objection/doc-upload', 'objectionDocUpload');              //16
+    Route::post('objection/doc-status', 'objectionDocStatus');              //17
+    Route::post('objection/comment-independent', 'commentIndependent');     //18
+    Route::post('objection/doc-list', 'objectionDocList');                            //14
+    Route::post('objection/upload-document', 'uploadDocument');             //19
+    Route::post('objection/get-uploaded-documents', 'getUploadedDocuments');  //20
+    Route::post('objection/add-members', 'addMembers');                     //21
+    Route::post('objection/citizen-doc-list', 'citizenDocList');
   });
 
 
@@ -236,11 +239,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(RainWaterHarvestingController::class)->group(function () {
     Route::get('get-wardmaster-data', 'getWardMasterData');                     //01
     Route::post('water-harvesting-application', 'waterHarvestingApplication');  //02
-    Route::post('get-harvesting-list', 'waterHarvestingList');                  //03
-    Route::post('harvesting-list-id', 'harvestingListById');                    //04
-    Route::post('harvesting-doc-id', 'harvestingDocList');                      //05
-    Route::post('harvesting-doc-upload', 'docUpload');                          //06
-    Route::post('harvesting-doc-status', 'docStatus');                          //07
+    // Route::post('get-harvesting-list', 'waterHarvestingList');                  //03
+    // Route::post('harvesting-list-id', 'harvestingListById');                    //04
+    // Route::post('harvesting-doc-id', 'harvestingDocList');                      //05
+    // Route::post('harvesting-doc-upload', 'docUpload');                          //06
+    // Route::post('harvesting-doc-status', 'docStatus');                          //07
     Route::post('harvesting/inbox', 'harvestingInbox');                         //08
     Route::post('harvesting/outbox', 'harvestingOutbox');                       //09
     Route::post('harvesting/next-level', 'postNextLevel');                      //10
@@ -253,6 +256,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/get-doc-list', 'getDocList');
     Route::post('harvesting/upload-document', 'uploadDocument');
     Route::post('harvesting/get-upload-documents', 'getUploadDocuments');
+    Route::post('harvesting/citizen-doc-list', 'citizenDocList');
 
     Route::post('harvesting/backtocitizen', 'backToCitizen');
     Route::post('harvesting/btc-inbox', 'btcInboxList');
