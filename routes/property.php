@@ -124,6 +124,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('inboxDeactivation', "inbox");
     Route::post('outboxDeactivation', "outbox");
     Route::post('postNextDeactivation', "postNextLevel");
+    Route::post('approve-reject-deactivation-request', "approvalRejection");
     Route::post('getDeactivationDtls', "readDeactivationReq");
   });
 
