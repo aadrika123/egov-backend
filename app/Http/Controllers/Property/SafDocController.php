@@ -8,7 +8,6 @@ use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfActiveDocument;
-use DeepCopy\Filter\Filter;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config as FacadesConfig;
@@ -92,9 +91,14 @@ class SafDocController extends Controller
         else
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_EXTRA_DOCUMENT")->requirements;
 
-        if (!empty($documentList))
-            $filteredDocs = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
-        else
+        if (!empty($documentList)) {
+            $filteredDocs['ownerDetails'] = [
+                'name' => $refOwners['owner_name'],
+                'mobile' => $refOwners['mobile_no'],
+                'guardian' => $refOwners['guardian_name'],
+            ];
+            $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
+        } else
             $filteredDocs = [];
         return $filteredDocs;
     }
@@ -161,10 +165,10 @@ class SafDocController extends Controller
                     $documents->push($response);
                 }
             });
+            $reqDoc['docType'] = $key;
+            $reqDoc['uploadedDoc'] = $documents->first();
 
-            $reqDoc[$key]['uploadedDoc'] = $documents->first();
-
-            $reqDoc[$key]['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
                 $strLower = strtolower($doc);
                 $strReplace = str_replace('_', ' ', $strLower);
