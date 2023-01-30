@@ -32,7 +32,7 @@ class MenuController extends Controller
             $mMenuMaster = new MenuMaster();
             $refmenues = $mMenuMaster->fetchAllMenues();
             $menues = $refmenues->sortByDesc("id");
-            $listedMenues = collect($menues)->map(function ($value, $key) use ($mMenuMaster) {
+            return $listedMenues = collect($menues)->map(function ($value, $key) use ($mMenuMaster) {
                 if ($value['parent_serial'] != 0) {
                     $parent = $mMenuMaster->getMenuById($value['parent_serial']);
                     $parentName = $parent['menu_string'];
@@ -79,7 +79,6 @@ class MenuController extends Controller
             $request->validate([
                 'menuName'      => 'required',
                 'route'         => 'required|unique:menu_masters,route',
-                'parentSerial'  => 'required',
             ]);
             $menuMaster = new MenuMaster();
             $menuMaster->putNewMenues($request);
@@ -142,6 +141,21 @@ class MenuController extends Controller
             $mMenuMaster = new MenuMaster();
             $listedChild = $mMenuMaster->getChildrenNode($request->id)->get();
             return responseMsgs(true, "child Menu!", $listedChild, "", "", "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // Upload menu master
+    public function updateMenuMaster(Request $request)
+    {
+        $request->validate([
+            'id' => 'required'
+        ]);
+        try {
+            $mMenuMaster = new MenuMaster();
+            $mMenuMaster->updateMenuMaster($request);
+            return responseMsgs(true, "Menu Updated!", "", "", "", "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

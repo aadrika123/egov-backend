@@ -82,7 +82,9 @@ class MenuMaster extends Model
             'parent_serial',
             'serial'
         )
-            ->where('parent_serial', 0);
+            ->where('parent_serial', 0)
+            ->where('is_deleted', false)
+            ->orderBy("menu_masters.serial", "Asc");
     }
 
     /**
@@ -90,13 +92,35 @@ class MenuMaster extends Model
      */
     public function getMenuById($id)
     {
-        return MenuMaster::find($id)
+        return MenuMaster::where('id', $id)
+            ->where('is_deleted', false)
             ->first();
     }
-
     public function getChildrenNode($id)
     {
         return MenuMaster::where('parent_serial', $id)
+            ->where('is_deleted', false)
             ->orderBy("menu_masters.serial", "Asc");
+    }
+
+
+    /**
+     * | Update the menu master details
+     */
+    public function updateMenuMaster($request)
+    {
+        $refValues = MenuMaster::where('id', $request->id)->first();
+        MenuMaster::where('id', $request->id)
+            ->update(
+                [
+                    'serial'        => $request->serial         ?? $refValues->serial,
+                    'description'   => $request->description    ?? $refValues->description,
+                    'menu_string'   => $request->menu_string    ?? $refValues->menu_string,
+                    'parent_serial' => $request->parent_serial  ?? $refValues->parent_serial,
+                    'route'         => $request->route          ?? $refValues->route,
+                    'icon'          => $request->icon           ?? $refValues->icon,
+                    'is_deleted'    => $request->delete         ?? $refValues->is_deleted,
+                ]
+            );
     }
 }

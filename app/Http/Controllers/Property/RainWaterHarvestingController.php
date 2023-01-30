@@ -116,54 +116,31 @@ class RainWaterHarvestingController extends Controller
             $mPropActiveHarvesting = new PropActiveHarvesting();
             $waterHaravesting  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId);
 
-            $metaReqs = array();
-            $docUpload = new DocUpload;
-            $mWfActiveDocument = new WfActiveDocument();
-            $mPropActiveHarvesting = new PropActiveHarvesting();
-            $relativePath = Config::get('PropertyConstaint.HARVESTING_RELATIVE_PATH');
-            // $getHarvestingDtls = $mPropActiveHarvesting->getHarvestingNo($request->applicationId);
-            $refImageName = $request->docCode;
-            $refImageName = $waterHaravesting->id . '-' . $refImageName;
-            $document = $request->document;
-            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+            if ($userType == 'Citizen') {
+                $metaReqs = array();
+                $docUpload = new DocUpload;
+                $mWfActiveDocument = new WfActiveDocument();
+                $mPropActiveHarvesting = new PropActiveHarvesting();
+                $relativePath = Config::get('PropertyConstaint.HARVESTING_RELATIVE_PATH');
+                // $getHarvestingDtls = $mPropActiveHarvesting->getHarvestingNo($request->applicationId);
+                $refImageName = $request->docCode;
+                $refImageName = $waterHaravesting->id . '-' . $refImageName;
+                $document = $request->document;
 
-            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs['activeId'] = $waterHaravesting->id;
-            $metaReqs['workflowId'] = $waterHaravesting->workflow_id;
-            $metaReqs['ulbId'] = $waterHaravesting->ulb_id;
-            $metaReqs['relativePath'] = $relativePath;
-            $metaReqs['document'] = $imageName;
-            $metaReqs['docCode'] = $request->docCode;
+                $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
-            $metaReqs = new Request($metaReqs);
-            $mWfActiveDocument->postDocuments($metaReqs);
+                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $metaReqs['activeId'] = $waterHaravesting->id;
+                $metaReqs['workflowId'] = $waterHaravesting->workflow_id;
+                $metaReqs['ulbId'] = $waterHaravesting->ulb_id;
+                $metaReqs['relativePath'] = $relativePath;
+                $metaReqs['document'] = $imageName;
+                $metaReqs['docCode'] = $request->docCode;
 
+                $metaReqs = new Request($metaReqs);
+                $mWfActiveDocument->postDocuments($metaReqs);
+            }
 
-            // if ($file = $request->file('document')) {
-
-            //     $docreq =  RefPropDocsRequired::select('id', 'doc_name')
-            //         ->where('doc_type', 'water_harvesting')
-            //         ->first();
-            //     $docName = $docreq->doc_name;
-
-            //     $name = $this->moveFile($docName, $file);
-            //     $harvestingDoc = new PropHarvestingDoc();
-            //     $harvestingDoc->harvesting_id = $waterHaravesting->id;
-            //     $harvestingDoc->citizenDocUpload($harvestingDoc, $name, $docName);
-            // }
-
-            // if ($file = $request->file('rwhForm')) {
-            //     $docName = "rwhForm";
-            //     $name = $this->moveFile($docName, $file);
-
-            //     $harvestingDoc = new PropHarvestingDoc();
-            //     $harvestingDoc->harvesting_id = $waterHaravesting->id;
-            //     $harvestingDoc->citizenDocUpload($harvestingDoc, $name, $docName);
-            // }
-
-            /**
-             
-             */
             //level pending
             if (isset($waterHaravesting->application_no)) {
 
@@ -776,7 +753,7 @@ class RainWaterHarvestingController extends Controller
     /**
      *  get uploaded documents
      */
-    public function getUploadDocuments(Request $req)
+    public function getUploadedDocuments(Request $req)
     {
         $req->validate([
             'applicationId' => 'required|numeric'
@@ -927,7 +904,7 @@ class RainWaterHarvestingController extends Controller
             if (!$refApplication)
                 throw new Exception("Application Not Found for this id");
 
-            $harvestingDoc['harvestingDoc'] = $this->getHarvestingDoc($refApplication);
+            $harvestingDoc['listDocs'] = $this->getHarvestingDoc($refApplication);
 
             return responseMsgs(true, "Doc List", remove_null($harvestingDoc), 010717, 1.0, "271ms", "POST", "", "");
         } catch (Exception $e) {
@@ -953,7 +930,9 @@ class RainWaterHarvestingController extends Controller
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
 
-            $reqDoc[$key]['uploadedDoc'] = collect($document)->map(function ($item) use ($uploadedDocs) {
+            $documents = collect();
+
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
                 if ($uploadedDoc) {
                     $response = [
@@ -961,16 +940,20 @@ class RainWaterHarvestingController extends Controller
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" => $uploadedDoc->doc_path ?? ""
                     ];
-                    return $response;
+                    $documents->push($response);
                 }
             });
+            $reqDoc['docType'] = $key;
+            $reqDoc['uploadedDoc'] = $documents->first();
 
-            $reqDoc[$key]['masters'] = collect($document)->map(function ($doc) {
+            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
                 $strLower = strtolower($doc);
                 $strReplace = str_replace('_', ' ', $strLower);
                 $arr = [
                     "documentCode" => $doc,
-                    "docVal" => ucwords($strReplace)
+                    "docVal" => ucwords($strReplace),
+                    "uploadedDoc'" => $uploadedDoc->doc_path ?? null
                 ];
                 return $arr;
             });
