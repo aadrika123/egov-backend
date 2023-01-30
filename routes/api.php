@@ -434,8 +434,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('crud/menu/add-new-menues', 'addNewMenues');         // adding the details of the menues in the menue table
         Route::get('role-menu/get-role-by-menu', 'getRoleWiseMenu');     //<--------- (May not be USED)    // get menu according to the user role
         Route::post('sub-menu/tree-structure', 'getTreeStructureMenu');      // Generation of the menu tree Structure
-        Route::post('menu-roles/list-parent-serial', 'listParentSerial');
-        Route::post('sub-menu/get-children-node', 'getChildrenNode');
+        Route::post('menu-roles/list-parent-serial', 'listParentSerial');   // Get the list of parent menues
+        Route::post('sub-menu/get-children-node', 'getChildrenNode');       // Get the children menues
+        Route::post('crud/menu/update-menues', 'updateMenuMaster');              // Update the menu master 
     });
 });
 
