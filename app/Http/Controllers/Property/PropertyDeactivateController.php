@@ -60,6 +60,7 @@ class PropertyDeactivateController extends Controller
             {
                 throw new Exception("Property Alerady Deactivated");
             }
+            $deactivationStatus = 0;
             $PropDeactivationRequest    = PropActiveDeactivationRequest::select("*")
                                               ->where("property_id",$request->propertyId)
                                               ->where("status",1)
@@ -67,8 +68,10 @@ class PropertyDeactivateController extends Controller
                                               ->first();
             if($PropDeactivationRequest)
             {
-                throw new Exception("Request is already submited. Please check request status...!");
+                $deactivationStatus =1;
+                // throw new Exception("Request is already submited. Please check request status...!");
             }
+            $mProperty->original['data']['deactivationStatus']=$deactivationStatus;
             return responseMsgs(true,$mProperty->original['message'],$mProperty->original['data'], "00001", "1.0", "", "POST", $request->deviceId);
         }
         catch(Exception $e)
