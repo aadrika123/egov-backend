@@ -82,7 +82,8 @@ class MenuMaster extends Model
             'parent_serial',
             'serial'
         )
-            ->where('parent_serial', 0);
+            ->where('parent_serial', 0)
+            ->orderBy("menu_masters.serial", "Asc");
     }
 
     /**
@@ -90,7 +91,7 @@ class MenuMaster extends Model
      */
     public function getMenuById($id)
     {
-        return MenuMaster::find($id)
+        return MenuMaster::where('id',$id)
             ->first();
     }
 

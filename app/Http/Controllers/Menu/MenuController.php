@@ -32,7 +32,7 @@ class MenuController extends Controller
             $mMenuMaster = new MenuMaster();
             $refmenues = $mMenuMaster->fetchAllMenues();
             $menues = $refmenues->sortByDesc("id");
-            $listedMenues = collect($menues)->map(function ($value, $key) use ($mMenuMaster) {
+            return $listedMenues = collect($menues)->map(function ($value, $key) use ($mMenuMaster) {
                 if ($value['parent_serial'] != 0) {
                     $parent = $mMenuMaster->getMenuById($value['parent_serial']);
                     $parentName = $parent['menu_string'];
