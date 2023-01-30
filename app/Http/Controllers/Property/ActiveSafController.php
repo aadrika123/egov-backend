@@ -1529,6 +1529,10 @@ class ActiveSafController extends Controller
                     ->where('prop_properties.id', $req->propertyId)
                     ->first();
             }
+            if(!$properties)
+            {
+                throw new Exception("Property Not Found");
+            }
 
             $floors = $mPropFloors->getPropFloors($properties->id);        // Model function to get Property Floors
             $owners = $mPropOwners->getOwnersByPropId($properties->id);    // Model function to get Property Owners
