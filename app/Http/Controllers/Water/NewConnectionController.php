@@ -887,6 +887,7 @@ class NewConnectionController extends Controller
                     if ($checkExist) {
                         $areaInSqft['areaInSqFt'] = decimalToSqFt($application['total_area_in_desimal']);
                         $propUsageType = $this->getPropUsageType($request, $application['id']);
+                        $getCatagory['catagory'] = $this->checkCatagory($request, $areaInSqft, $propUsageType);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners['owners'] = collect($mPropOwner->getOwnerByPropId($application['id']));
                         $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
@@ -914,6 +915,30 @@ class NewConnectionController extends Controller
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | check the catagory of the user 
+     */
+    public function checkCatagory($request, $areaInSqFt, $propUsageType)
+    {
+        $refResidential = collect($propUsageType)->first()->first()['usageType'];
+        switch ($request->connectionThrough) {
+            case ('1'):
+                if ($areaInSqFt < 350 && $refResidential == "Residential")   // Static
+                {
+                    return "BPL";
+                }
+                return "APL";
+                break;
+            case ('2'):
+                if ($areaInSqFt < 350 && $refResidential == "Residential")   // Static
+                {
+                    return "BPL";
+                }
+                return "APL";
+                break;
         }
     }
 

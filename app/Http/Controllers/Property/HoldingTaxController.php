@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
-use App\Models\ActiveSafDemand;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Traits\Property\SAF;
@@ -97,16 +98,31 @@ class HoldingTaxController extends Controller
 
         try {
             $mPropDemand = new PropDemand();
+            $penaltyRebateCalc = new PenaltyRebateCalculation;
+            $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
+            $loggedInUserType = authUser()->user_type;
+            $mPropOwners = new PropOwner();
+            $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
             $demand = array();
             $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
             $demandList = collect($demandList);
+
             if (!$demandList)
                 throw new Exception("Dues Not Found for this Property");
 
+            $demandList = $demandList->map(function ($item) {                                // One Perc Penalty Tax
+                return $this->calcOnePercPenalty($item);
+            });
+
+            $dues = $demandList->sum('balance');
+            $onePercTax = $demandList->sum('onePercPenaltyTax');
+            $mLastQuarterDemand = $demandList->last()->balance;
             $totalDuesList = [
-                'totalDues' => $demandList->sum('balance'),
+                'totalDues' => $dues,
                 'duesFrom' => "quarter " . $demandList->last()->qtr . "/Year " . $demandList->last()->fyear,
                 'duesTo' => "quarter " . $demandList->first()->qtr . "/Year " . $demandList->last()->fyear,
+                'onePercPenalty' => $onePercTax,
+                'payableAmt' => roundFigure($dues + $onePercTax),
                 'totalQuarters' => $demandList->count()
             ];
 
@@ -117,5 +133,18 @@ class HoldingTaxController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011602", "1.0", "", "POST", $req->deviceId ?? "");
         }
+    }
+
+    /**
+     * | One Percent Penalty Calculation
+     */
+    public function calcOnePercPenalty($item)
+    {
+        $penaltyRebateCalc = new PenaltyRebateCalculation;
+        $onePercPenalty = $penaltyRebateCalc->calcOnePercPenalty($item->due_date);        // Calculation One Percent Penalty
+        $item['onePercPenalty'] = $onePercPenalty;
+        $onePercPenaltyTax = ($item['balance'] * $onePercPenalty) / 100;
+        $item['onePercPenaltyTax'] = roundFigure($onePercPenaltyTax);
+        return $item;
     }
 }

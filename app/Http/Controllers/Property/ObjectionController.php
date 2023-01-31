@@ -482,24 +482,24 @@ class ObjectionController extends Controller
 
 
     //get document status by id
-    public function objectionDocUpload(Request $req)
-    {
-        return $this->Repository->objectionDocUpload($req);
-    }
+    // public function objectionDocUpload(Request $req)
+    // {
+    //     return $this->Repository->objectionDocUpload($req);
+    // }
 
-    //post document status
-    public function objectionDocStatus(Request $req)
-    {
-        try {
+    // //post document status
+    // public function objectionDocStatus(Request $req)
+    // {
+    //     try {
 
-            $docStatus = new PropActiveObjectionDocdtl();
-            $docStatus->verifyDoc($req);
+    //         $docStatus = new PropActiveObjectionDocdtl();
+    //         $docStatus->verifyDoc($req);
 
-            return responseMsgs(true, "Successfully Done", '', '010817', '01', '', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
+    //         return responseMsgs(true, "Successfully Done", '', '010817', '01', '', 'Post', '');
+    //     } catch (Exception $e) {
+    //         echo $e->getMessage();
+    //     }
+    // }
 
     /**
      * | Independent Comment
@@ -614,15 +614,92 @@ class ObjectionController extends Controller
 
         try {
             $mPropActiveObjection = new PropActiveObjection();
-            $refApplication = $mPropActiveObjection->getObjectionNo($req->applicationId);                      // Get Saf Details
+            $mPropActiveObjectionOwner = new PropActiveObjectionOwner();
+
+            $refApplication = $mPropActiveObjection->getObjectionNo($req->applicationId);
+            $ownerDetails = $mPropActiveObjectionOwner->getOwnerDetail($req->applicationId);                      // Get Saf Details
             if (!$refApplication)
                 throw new Exception("Application Not Found for this id");
-            // $getDocLists['ObjectionDoc'] = $this->getDocLists($refApplication);
+            $objectionDoc['listDocs'] = $this->getDocList($refApplication, $ownerDetails);
 
-            return responseMsgs(true, "", remove_null($refApplication), "010203", "", "", 'POST', "");
+            return responseMsgs(true, "", remove_null($objectionDoc), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
+    }
+
+    /**
+     * get Doc List
+     */
+    public function getDocList($refApplication, $ownerDetails)
+    {
+        $mRefReqDocs = new RefRequiredDocument();
+        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $isOwner = $ownerDetails->owner_name;
+        $pincode = $ownerDetails->corr_pin_code;
+        $documentList = "";
+
+        if (isset($isOwner))
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ID")->requirements;
+        if (isset($pincode))
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADDRESS")->requirements;
+        if (isset($pincode)  && isset($isOwner))
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADDRESS_ID")->requirements;
+
+        if (!empty($documentList))
+            $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)
+        else
+            $filteredDocs = [];
+        return $filteredDocs;
+    }
+
+    /**
+     *  filterring
+     */
+
+    public function filterDocument($documentList, $refApplication)
+    {
+        $mWfActiveDocument = new WfActiveDocument();
+        $applicationId = $refApplication->id;
+        $workflowId = $refApplication->workflow_id;
+        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
+        $explodeDocs = collect(explode('#', $documentList));
+
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
+            $document = explode(',', $explodeDoc);
+            $key = array_shift($document);
+
+            $documents = collect();
+
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
+                if ($uploadedDoc) {
+                    $response = [
+                        "documentCode" => $item,
+                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
+                        "docPath" => $uploadedDoc->doc_path ?? ""
+                    ];
+                    $documents->push($response);
+                }
+            });
+            $reqDoc['docType'] = $key;
+            $reqDoc['uploadedDoc'] = $documents->first();
+
+            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
+                $strLower = strtolower($doc);
+                $strReplace = str_replace('_', ' ', $strLower);
+                $arr = [
+                    "documentCode" => $doc,
+                    "docVal" => ucwords($strReplace),
+                    "uploadedDoc'" => $uploadedDoc->doc_path ?? null
+                ];
+                return $arr;
+            });
+            return $reqDoc;
+        });
+        return $filteredDocs;
     }
 
     /**

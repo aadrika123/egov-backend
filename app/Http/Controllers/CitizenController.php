@@ -21,6 +21,7 @@ class CitizenController extends Controller
 {
     // Initializing Repository
     protected $repository;
+    protected $Repository;
 
     public function __construct(iCitizenRepository $repository)
     {

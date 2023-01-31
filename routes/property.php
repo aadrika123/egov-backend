@@ -119,7 +119,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    */
   Route::controller(PropertyDeactivateController::class)->group(function () {
     Route::post('searchByHoldingNo', "readHoldigbyNo");
-    Route::post("get-prop-dtl-for-deactivation","readPorertyById");
+    Route::post("get-prop-dtl-for-deactivation", "readPorertyById");
     Route::post('deactivationRequest', "deactivatProperty");
     Route::post('inboxDeactivation', "inbox");
     Route::post('outboxDeactivation', "outbox");
@@ -208,11 +208,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     Route::get('objection/list', 'objectionList');                          //13
     Route::post('objection/list-id', 'objectionByid');                      //14
-    // Route::post('objection/doc-list', 'objectionDocList');                  //15
     Route::post('objection/doc-upload', 'objectionDocUpload');              //16
     Route::post('objection/doc-status', 'objectionDocStatus');              //17
     Route::post('objection/comment-independent', 'commentIndependent');     //18
-    Route::post('objection/doc-list', 'objectionDocList');                            //14
+    Route::post('objection/doc-list', 'objectionDocList');                  //14
     Route::post('objection/upload-document', 'uploadDocument');             //19
     Route::post('objection/get-uploaded-documents', 'getUploadedDocuments');  //20
     Route::post('objection/add-members', 'addMembers');                     //21
