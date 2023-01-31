@@ -135,7 +135,7 @@ class MenuRepo implements iMenuRepo
      * | Query Time = 308ms 
      * | Rating- 4
      * | Status- Working
-        | Serial No :   
+        | Serial No : 04
      */
     public function generateMenuTree($req)
     {
@@ -176,7 +176,10 @@ class MenuRepo implements iMenuRepo
             $mRoleMenues = $mMenuMaster->getMenuByRole($req->roleId);
 
             $roleWise = collect($mRoleMenues)->map(function ($value) use ($mMenuMaster) {
+                if($value['parent_serial'] > 0){
                 return $roleWise = $this->getParent($value['parent_serial']);
+                }
+                return $value['id'];
             });
             $retunProperValues = collect($data)->map(function ($value, $key) use ($roleWise) {
                 if ($roleWise->contains($value['id'])) {
@@ -189,7 +192,8 @@ class MenuRepo implements iMenuRepo
     }
 
     /**
-     * | calling function of the 
+     * | calling function of the for geting the top root parent
+        | serial No : 04.01
      */
     public function getParent($parentId)
     {

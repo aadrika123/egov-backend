@@ -301,8 +301,8 @@ class PaymentRepository implements iPayment
                 # calling function for the modules                  
                 switch ($depatmentId) {
                     case ('1'):
-                        $refpropertyType = $webhookEntity['notes']['property_type'];
-                        if ($refpropertyType = "holding") {
+                        $refpropertyType = $webhookEntity['notes']['propType'];
+                        if ($refpropertyType = "HoldingTax") {
                             $obj = new HoldingTaxController($this->_safRepo);
                             $transfer = new Request($transfer);
                             $obj->generateOrderId($transfer);

@@ -74,7 +74,7 @@ trait Razorpay
                 'workflowId' => $request->workflowId,
                 'applicationId' => $request->id,
                 'departmentId' => $request->departmentId,
-                'property_type' => $request->property_type
+                'propType' => $request->propType
             ];
 
             $saveRequestObj = new PaymentRequest();
