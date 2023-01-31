@@ -12,5 +12,5 @@ use Illuminate\Http\Request;
 interface iObjectionRepository
 {
     public function applyObjection($request);
-    // public function objectionDocUpload($req);
+    public function assesmentDetails($request);
 }

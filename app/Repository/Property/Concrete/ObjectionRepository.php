@@ -330,28 +330,6 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor->date_upto = $floors->dateUpto;
                     $assement_floor->save();
                 }
-
-                //objection_form
-                // if ($file = $request->file('objFormDoc')) {
-                //     $docName = "objectionForm";
-                //     $name = $this->moveFile($docName, $file);
-
-                //     $objectionDoc = new PropActiveObjectionDocdtl;
-                //     $objectionDoc->objection_id = $objection->id;
-                //     $objectionDoc->remarks = $request->objRemarks;
-                //     $this->citizenDocUpload($objectionDoc, $name, $docName);
-                // }
-
-                // //Evidence Doc
-                // if ($file = $request->file('objEvidenceDoc')) {
-                //     $docName = "evidenceDoc";
-                //     $name = $this->moveFile($docName, $file);
-
-                //     $objectionDoc = new PropActiveObjectionDocdtl;
-                //     $objectionDoc->objection_id = $objection->id;
-                //     $objectionDoc->remarks = $request->objRemarks;
-                //     $this->citizenDocUpload($objectionDoc, $name, $docName);
-                // }
             }
             DB::commit();
 
