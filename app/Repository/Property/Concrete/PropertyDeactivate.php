@@ -6,12 +6,14 @@ use App\EloquentModels\Common\ModelWard;
 use App\Models\Property\PropActiveDeactivationRequest;
 // use App\Models\Property\PropDeactivationReqInbox;
 use App\Models\Property\PropDeactivationRequest;
+use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IPropertyDeactivate;
+use App\Traits\Property\SafDetailsTrait;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -22,6 +24,7 @@ use Illuminate\Support\Facades\Validator;
 
 class PropertyDeactivate implements IPropertyDeactivate
 {
+    use SafDetailsTrait;
     /**
      * | Created On -19-11-2022
      * | Created By - Sandeep Bara
@@ -301,11 +304,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                         $mProperty = $mProperty
                                 ->get();
             // dd(DB::getQueryLog());
-            $data = [
-                // "wardList"=>$mWardPermission,                
-                "property"=>$mProperty,
-                "userType"=>$mUserType,
-            ] ;           
+            $data = $mProperty;
             return responseMsg(true, "", remove_null($data));
             
         } 
@@ -396,11 +395,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                         $mProperty = $mProperty
                                 ->get();
                         // dd(DB::getQueryLog());
-            $data = [
-                // "wardList"=>$mWardPermission,                
-                "property"=>$mProperty,
-                "userType"=>$mUserType,
-            ] ; 
+            $data = $mProperty;
             return responseMsg(true, "", remove_null($data));
             
         } catch (Exception $e) {
@@ -433,18 +428,80 @@ class PropertyDeactivate implements IPropertyDeactivate
             $mileSton = $this->_common->sortsWorkflowRols($mworkflowRoles);
            
             $refProperty = $this->getPropertyById($refRequestData->property_id);
+            $refProperty->old_ward_no = $refProperty->ward_no;
             $refOwners   = $this->getPropOwnerByProId($refRequestData->property_id);
             $refTimeLine =  $this->_track->getTracksByRefId("prop_active_deactivation_requests",$refRequestData->id);
-            $data=[
-                "requestData"=> $refRequestData,
-                "property"   => $refProperty,
-                "owners"     => $refOwners,
-                'remarks'    => $refTimeLine,
-                "userType"   => $mUserType,
-                "roles"      => $mileSton,
-                "pendingAt"  => $pendingAt,
+            
+            // Trait function to get Basic Details
+            $basicElement = [
+                'headerTitle' => "Basic Details",
+                "data" => $this->generateBasicDetails($refProperty)
             ];
-            return responseMsg(true,"",remove_null($data));
+            // Trait function to get Property Details
+            $propertyElement = [
+                'headerTitle' => "Property Details & Address",
+                'data' =>  $this->generatePropertyDetails($refProperty)
+            ];
+            // Trait function to generate corresponding address details
+            $corrElement = [
+                'headerTitle' => 'Corresponding Address',
+                'data' =>$this->generateCorrDtls($refProperty),
+            ];
+            // Trait function to generate Electricity Details
+            $electElement = [
+                'headerTitle' => 'Electricity & Water Details',
+                'data' =>  $this->generateElectDtls($refProperty),
+            ];
+            $fullDetailsData['application_no'] = $refProperty->holding_no;
+            $fullDetailsData['apply_date'] = $refRequestData->apply_date;
+            $fullDetailsData['fullDetailsData']['dataArray'] = collect([$basicElement, $propertyElement, $corrElement, $electElement]);
+            // Table Array
+            // Owner Details
+            $ownerElement = [
+                'headerTitle' => 'Owner Details',
+                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                'tableData' => $this->generateOwnerDetails($refOwners)
+            ];
+            // Floor Details
+            $getFloorDtls = (new PropFloor ())->getPropFloors($refProperty->id);      // Model Function to Get Floor Details
+            
+            $floorElement = [
+                'headerTitle' => 'Floor Details',
+                'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
+                'tableData' => $this->generateFloorDetails($getFloorDtls)
+            ];
+            $fullDetailsData['fullDetailsData']['tableArray'] = Collect([$ownerElement, $floorElement]);
+            // Card Detail Format
+            $cardElement = [
+                'headerTitle' => "About Property",
+                'data' => $this->generateCardDetails($refProperty, $refOwners)
+            ];
+            $fullDetailsData['fullDetailsData']['cardArray'] = Collect($cardElement);
+            $fullDetailsData['levelComment'] = $refTimeLine;
+            $fullDetailsData['citizenComment'] = $this->citizenComments("prop_active_deactivation_requests",$refRequestData->id);
+            $fullDetailsData['roleDetails'] = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowId);
+            
+            $metaReqs['customFor'] = 'PROPERTY DEACTIVATION';
+            $metaReqs['wfRoleId'] = $fullDetailsData['roleDetails']['role_id'];
+            $metaReqs['workflowId'] = $refWorkflowId;
+            $metaReqs['lastRoleId'] = $refRequestData->max_level_attained;
+
+            $request->request->add($metaReqs);
+
+            $fullDetailsData['timelineData'] = collect($mileSton);
+
+            $custom = (new \App\Models\CustomDetail())->getCustomDetails($request);
+            $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
+            // $data=[
+            //     "requestData"=> $refRequestData,
+            //     "property"   => $refProperty,
+            //     "owners"     => $refOwners,
+            //     'remarks'    => $refTimeLine,
+            //     "userType"   => $mUserType,
+            //     "roles"      => $mileSton,
+            //     "pendingAt"  => $pendingAt,
+            // ];
+            return responseMsg(true,"",remove_null($fullDetailsData));
         }
         catch(Exception $e)
         { 
@@ -472,6 +529,7 @@ class PropertyDeactivate implements IPropertyDeactivate
     public function getPropertyById($id)
     {
         try{ 
+            // DB::enableQueryLog();
             $application = PropProperty::select("prop_properties.*","ref_prop_ownership_types.ownership_type",
                             "ref_prop_types.property_type",
                     DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no")
@@ -486,6 +544,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 ->leftjoin("ref_prop_types","ref_prop_types.id","prop_properties.prop_type_mstr_id")            
                 ->where('prop_properties.id',$id)   
                 ->first();
+                // dd(DB::getQueryLog());
             return $application;
         }
         catch(Exception $e)
@@ -513,5 +572,31 @@ class PropertyDeactivate implements IPropertyDeactivate
     {
         $filePath = $file->storeAs('uploads/Property', $custumFileName, 'public');
         return  $filePath;
+    }
+
+    public function citizenComments($mRefTable, $tableId)
+    {
+        try{
+            $data = WorkflowTrack::select(
+                'workflow_tracks.ref_table_dot_id AS referenceTable',
+                'workflow_tracks.ref_table_id_value AS applicationId',
+                'workflow_tracks.message',
+                'workflow_tracks.track_date',
+                'workflow_tracks.forward_date',
+                'workflow_tracks.forward_time',
+                'u.user_name as commentedBy'
+            )
+            ->where('ref_table_dot_id', $mRefTable)
+            ->where('ref_table_id_value', $tableId)
+            ->whereNOtNull('citizen_id')
+            ->Join('users as u', 'u.id', '=', 'workflow_tracks.citizen_id')
+            ->get();
+            return $data;
+        }
+        catch(Exception $e)
+        {
+            echo $e->getMessage();
+        }
+        
     }
 }

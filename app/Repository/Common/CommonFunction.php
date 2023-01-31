@@ -44,8 +44,8 @@ class CommonFunction implements ICommonFunction
             $workflow_rolse = WfMaster::select(
                 DB::raw(
                     "wf_roles.id ,wf_roles.role_name,
-                                        forward_role_id as forward_id,
-                                        backward_role_id as backward_id,
+                                        forward_role_id as forward_role_id,
+                                        backward_role_id as backward_role_id,
                                         is_initiator,is_finisher,
                                         wf_masters.workflow_name,
                                         wf_masters.id as workflow_id,
@@ -255,7 +255,7 @@ class CommonFunction implements ICommonFunction
             $data = $this->getWorkFlowRoles($user_id, $ulb_id, $work_flow_id);
             if ($all) {
                 $data = array_filter($data, function ($val) {
-                    if (($val['forward_id']) || $val['backward_id']) {
+                    if (($val['forward_role_id']) || $val['backward_role_id']) {
                         return true;
                     }
                 });

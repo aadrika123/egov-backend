@@ -64,6 +64,7 @@ class SafCalculation
     private $_seniorCitizenRebateID;
     private $_capitalValueRateMPH;
     private $_currentQuarterDueDate;
+    private $_penaltyRebateCalc;
 
     /** 
      * | For Building
@@ -173,6 +174,7 @@ class SafCalculation
             $this->_vacantRentalRates = $this->readVacantRentalRates();
         }
 
+        $this->_penaltyRebateCalc = new PenaltyRebateCalculation();
         // Current Quarter End Date and Start Date for 1% Penalty
         $current = Carbon::now()->format('Y-m-d');
         $currentQuarterDueDate = Carbon::parse(calculateQuaterDueDate($current))->floorMonth();
@@ -586,13 +588,7 @@ class SafCalculation
      */
     public function onePercPenalty($quarterDueDate)
     {
-        // One Perc Penalty
-        $quarterDueDate = Carbon::parse($quarterDueDate)->floorMonth();
-        $diffInMonths = $quarterDueDate->diffInMonths($this->_currentQuarterDate);
-        if ($quarterDueDate >= $this->_currentQuarterDueDate)                                       // Means the quarter due date is on current quarter or next quarter
-            $onePercPenalty = 0;
-        else
-            $onePercPenalty = $diffInMonths;
+        $onePercPenalty = $this->_penaltyRebateCalc->calcOnePercPenalty($quarterDueDate);
         return $onePercPenalty;
     }
 
@@ -1095,7 +1091,6 @@ class SafCalculation
 
         if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  != 'Male' || $years >= $seniorCitizen) {
             $rebate += $speciallyAbledRebatePerc;
-            $this->_GRID['demand']['speciallyAbledRebate'] = $speciallyAbledRebatePerc;
             array_push($rebates, [
                 "rebateTypeId" => $this->_speciallyAbledRebateID,
                 "rebateType" => "speciallyAbledRebate",
