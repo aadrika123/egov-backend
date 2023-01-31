@@ -17,6 +17,7 @@ class PaymentPropPenaltyrebate extends Model
     {
         return PaymentPropPenaltyrebate::where($key, $id)
             ->where('head_name', $headName)
+            ->where('status', 1)
             ->first();
     }
 
@@ -43,6 +44,15 @@ class PaymentPropPenaltyrebate extends Model
     public function getPenalRebatesBySafId($safId)
     {
         return PaymentPropPenaltyrebate::where('saf_id', $safId)
+            ->get();
+    }
+
+    /**
+     * | Get Penal Rebates by Property ID
+     */
+    public function getPenalRebatesByPropId($propId)
+    {
+        return PaymentPropPenaltyrebate::where('prop_id', $propId)
             ->get();
     }
 }

@@ -5,18 +5,24 @@ namespace App\Http\Controllers\Property;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
+use App\Models\Property\PaymentPropPenaltyrebate;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
+use App\Models\Property\PropTranDtl;
+use App\Models\Property\PropTransaction;
+use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class HoldingTaxController extends Controller
 {
     use SAF;
+    use Razorpay;
     protected $_propertyDetails;
     /**
      * | Created On-19/01/2023 
@@ -98,6 +104,7 @@ class HoldingTaxController extends Controller
 
         try {
             $mPropDemand = new PropDemand();
+            $mPropProperty = new PropProperty();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
             $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
             $loggedInUserType = authUser()->user_type;
@@ -106,6 +113,8 @@ class HoldingTaxController extends Controller
             $demand = array();
             $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
             $demandList = collect($demandList);
+            $propDtls = $mPropProperty->getPropById($req->propId);
+            $balance = $propDtls->balance ?? 0;
 
             if ($demandList->isEmpty())
                 throw new Exception("Dues Not Available for this Property");
@@ -122,12 +131,13 @@ class HoldingTaxController extends Controller
                 'duesFrom' => "quarter " . $demandList->last()->qtr . "/Year " . $demandList->last()->fyear,
                 'duesTo' => "quarter " . $demandList->first()->qtr . "/Year " . $demandList->last()->fyear,
                 'onePercPenalty' => $onePercTax,
-                'totalQuarters' => $demandList->count()
+                'totalQuarters' => $demandList->count(),
+                'arrear' => $balance
             ];
 
             $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
 
-            $finalPayableAmt = ($dues + $onePercTax) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
+            $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
             $totalDuesList['payableAmount'] = roundFigure($finalPayableAmt);
 
             $demand['duesList'] = $totalDuesList;
@@ -150,5 +160,135 @@ class HoldingTaxController extends Controller
         $onePercPenaltyTax = ($item['balance'] * $onePercPenalty) / 100;
         $item['onePercPenaltyTax'] = roundFigure($onePercPenaltyTax);
         return $item;
+    }
+
+    /**
+     * | Generate Order ID
+     */
+    public function generateOrderId(Request $req)
+    {
+        $req->validate([
+            'propId' => 'required',
+            'amount' => 'required|numeric'
+        ]);
+        try {
+            $demand = $this->getHoldingDues($req);
+            $dueList = $demand->original['data']['duesList'];
+            $departmentId = 1;
+            $propProperties = new PropProperty();
+            $propDtls = $propProperties->getPropById($req->propId);
+            $req->request->add(['workflowId' => '4', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId, 'propType' => 'HoldingTax']);
+            $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
+            $this->postPaymentPenaltyRebate($dueList, $req);
+            return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011603", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011603", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Post Payment Penalty Rebates
+     */
+    public function postPaymentPenaltyRebate($dueList, $req)
+    {
+        $mPaymentRebatePanelties = new PaymentPropPenaltyrebate();
+        $headNames = [
+            [
+                'keyString' => '1% Monthly Penalty',
+                'value' => $dueList['onePercPenalty'],
+                'isRebate' => false
+            ],
+            [
+                'keyString' => 'Special Rebate',
+                'value' => $dueList['specialRebateAmt'],
+                'isRebate' => true
+            ],
+            [
+                'keyString' => 'Rebate',
+                'value' => $dueList['rebateAmt'],
+                'isRebate' => true
+            ]
+        ];
+
+        collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $req) {
+            $propPayRebatePenalty = $mPaymentRebatePanelties->getRebatePanelties('prop_id', $req->propId, $headName['keyString']);
+            if ($headName['value'] > 0) {
+                $reqs = [
+                    'prop_id' => $req->propId,
+                    'head_name' => $headName['keyString'],
+                    'amount' => $headName['value'],
+                    'is_rebate' => $headName['isRebate'],
+                    'tran_date' => Carbon::now()->format('Y-m-d')
+                ];
+
+                if ($propPayRebatePenalty)
+                    $mPaymentRebatePanelties->editRebatePenalty($propPayRebatePenalty->id, $reqs);
+                else
+                    $mPaymentRebatePanelties->postRebatePenalty($reqs);
+            }
+        });
+    }
+
+    /**
+     * | Payment Holding
+     */
+    public function paymentHolding(Request $req)
+    {
+        try {
+            $todayDate = Carbon::now();
+            $userId = $req['userId'];
+            $propDemand = new PropDemand();
+            $demands = $propDemand->getDemandByPropId($req['id']);
+            DB::beginTransaction();
+            // Property Transactions
+            $propTrans = new PropTransaction();
+            $propTrans->property_id = $req['id'];
+            $propTrans->amount = $req['amount'];
+            $propTrans->tran_date = $todayDate->format('Y-m-d');
+            $propTrans->tran_no = $req['transactionNo'];
+            $propTrans->payment_mode = $req['paymentMode'];
+            $propTrans->user_id = $userId;
+            $propTrans->ulb_id = $req['ulbId'];
+            $propTrans->save();
+
+            // Reflect on Prop Tran Details
+            foreach ($demands as $demand) {
+                $demand->balance = 0;
+                $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $demand->save();
+
+                $propTranDtl = new PropTranDtl();
+                $propTranDtl->tran_id = $propTrans->id;
+                $propTranDtl->prop_demand_id = $demand['id'];
+                $propTranDtl->total_demand = $demand['amount'];
+                $propTranDtl->ulb_id = $req['ulbId'];
+                $propTranDtl->save();
+            }
+
+            // Replication Prop Rebates Penalties
+            $mPropPenalRebates = new PaymentPropPenaltyrebate();
+            $rebatePenalties = $mPropPenalRebates->getPenalRebatesByPropId($req['id']);
+
+            collect($rebatePenalties)->map(function ($rebatePenalty) use ($propTrans, $todayDate) {
+                $replicate = $rebatePenalty->replicate();
+                $replicate->setTable('prop_penaltyrebates');
+                $replicate->tran_id = $propTrans->id;
+                $replicate->tran_date = $todayDate->format('Y-m-d');
+                $replicate->save();
+            });
+
+            DB::commit();
+            return responseMsgs(true, "Payment Successfully Done", "", "011604", "1.0", "", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Generate Payment Receipt
+     */
+    public function generatePaymentReceipt(Request $req)
+    {
     }
 }

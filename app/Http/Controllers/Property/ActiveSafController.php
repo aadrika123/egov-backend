@@ -1132,7 +1132,7 @@ class ActiveSafController extends Controller
             DB::beginTransaction();
 
             $this->postDemands($safDemandDetails, $req, $safDetails);                               // Update the data in saf prop demands
-            $this->postPenaltyRebates($calculateSafById, $req); // Post Penalty Rebates
+            $this->postPenaltyRebates($calculateSafById, $req);                                     // Post Penalty Rebates
 
             DB::commit();
             return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010114", "1.0", "1s", "POST", $req->deviceId);
@@ -1529,8 +1529,7 @@ class ActiveSafController extends Controller
                     ->where('prop_properties.id', $req->propertyId)
                     ->first();
             }
-            if(!$properties)
-            {
+            if (!$properties) {
                 throw new Exception("Property Not Found");
             }
 
