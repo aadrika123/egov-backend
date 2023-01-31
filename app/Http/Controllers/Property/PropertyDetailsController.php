@@ -75,6 +75,7 @@ class PropertyDetailsController extends Controller
                     $mPropActiveDeactivationRequest = new PropActiveDeactivationRequest();
                     $mPropOwners = new PropOwner();
                     $application = collect($mPropActiveDeactivationRequest->getDeactivationApplication($applicationNo));
+                    $application['application_no'] = "dummy";
                     $owners = collect($mPropOwners->getOwnerByPropId($application['property_id']));
                     $details = $application->merge($owners);
                     break;
