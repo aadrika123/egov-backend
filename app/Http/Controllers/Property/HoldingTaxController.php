@@ -10,11 +10,14 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
+use App\Models\Property\PropTranDtl;
+use App\Models\Property\PropTransaction;
 use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class HoldingTaxController extends Controller
 {
@@ -174,7 +177,7 @@ class HoldingTaxController extends Controller
             $departmentId = 1;
             $propProperties = new PropProperty();
             $propDtls = $propProperties->getPropById($req->propId);
-            $req->request->add(['workflowId' => 4, 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId]);
+            $req->request->add(['workflowId' => '4', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId, 'propType' => 'HoldingTax']);
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
             $this->postPaymentPenaltyRebate($dueList, $req);
             return $orderDetails;
@@ -224,5 +227,59 @@ class HoldingTaxController extends Controller
                     $mPaymentRebatePanelties->postRebatePenalty($reqs);
             }
         });
+    }
+
+    /**
+     * | Payment Holding
+     */
+    public function paymentHolding(Request $req)
+    {
+        try {
+            $todayDate = Carbon::now();
+            $userId = $req['userId'];
+            $propDemand = new PropDemand();
+            $demands = $propDemand->getDemandByPropId($req['id']);
+            DB::beginTransaction();
+            // Property Transactions
+            $propTrans = new PropTransaction();
+            $propTrans->prop_id = $req['id'];
+            $propTrans->amount = $req['amount'];
+            $propTrans->tran_date = $todayDate->format('Y-m-d');
+            $propTrans->tran_no = $req['transactionNo'];
+            $propTrans->payment_mode = $req['paymentMode'];
+            $propTrans->user_id = $userId;
+            $propTrans->save();
+
+            // Reflect on Prop Tran Details
+            foreach ($demands as $demand) {
+                $demand->balance = 0;
+                $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $demand->save();
+
+                $propTranDtl = new PropTranDtl();
+                $propTranDtl->tran_id = $propTrans->id;
+                $propTranDtl->prop_demand_id = $demand['id'];
+                $propTranDtl->total_demand = $demand['amount'];
+                $propTranDtl->save();
+            }
+
+            // Replication Prop Rebates Penalties
+            $mPropPenalRebates = new PaymentPropPenaltyrebate();
+            $rebatePenalties = $mPropPenalRebates->getPenalRebatesByPropId($req['id']);
+
+            collect($rebatePenalties)->map(function ($rebatePenalty) use ($propTrans, $todayDate) {
+                $replicate = $rebatePenalty->replicate();
+                $replicate->setTable('prop_penaltyrebates');
+                $replicate->tran_id = $propTrans->id;
+                $replicate->tran_date = $todayDate->format('Y-m-d');
+                $replicate->save();
+            });
+
+            DB::commit();
+            return responseMsgs(true, "Payment Successfully Done", "", "011604", "1.0", "", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $req->deviceId ?? "");
+        }
     }
 }
