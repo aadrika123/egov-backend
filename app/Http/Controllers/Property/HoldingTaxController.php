@@ -180,7 +180,7 @@ class HoldingTaxController extends Controller
             $req->request->add(['workflowId' => '4', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId, 'propType' => 'HoldingTax']);
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
             $this->postPaymentPenaltyRebate($dueList, $req);
-            return $orderDetails;
+            return responseMsgs(false, "Order id Generated", remove_null($orderDetails), "011603", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011603", "1.0", "", "POST", $req->deviceId ?? "");
         }
@@ -242,12 +242,13 @@ class HoldingTaxController extends Controller
             DB::beginTransaction();
             // Property Transactions
             $propTrans = new PropTransaction();
-            $propTrans->prop_id = $req['id'];
+            $propTrans->property_id = $req['id'];
             $propTrans->amount = $req['amount'];
             $propTrans->tran_date = $todayDate->format('Y-m-d');
             $propTrans->tran_no = $req['transactionNo'];
             $propTrans->payment_mode = $req['paymentMode'];
             $propTrans->user_id = $userId;
+            $propTrans->ulb_id = $req['ulbId'];
             $propTrans->save();
 
             // Reflect on Prop Tran Details
@@ -260,6 +261,7 @@ class HoldingTaxController extends Controller
                 $propTranDtl->tran_id = $propTrans->id;
                 $propTranDtl->prop_demand_id = $demand['id'];
                 $propTranDtl->total_demand = $demand['amount'];
+                $propTranDtl->ulb_id = $req['ulbId'];
                 $propTranDtl->save();
             }
 

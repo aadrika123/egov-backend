@@ -55,7 +55,7 @@ class PropDemand extends Model
      */
     public function getDemandByPropId($propId)
     {
-        return PropDemand::where('prop_id', $propId)
+        return PropDemand::where('property_id', $propId)
             ->where('status', 1)
             ->get();
     }
