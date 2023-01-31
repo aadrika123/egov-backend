@@ -76,7 +76,12 @@ class PropertyDetailsController extends Controller
                     $mPropOwners = new PropOwner();
                     $application = collect($mPropActiveDeactivationRequest->getDeactivationApplication($applicationNo));
                     $application['application_no'] = "dummy";
-                    $owners = collect($mPropOwners->getOwnerByPropId($application['property_id']));
+                    $refowners = collect($mPropOwners->getOwnerByPropId($application['property_id']));
+                    $owners = collect($refowners)->map(function ($value) {
+                        $returnVal['ownerName'] = $value['ownerName'];
+                        $returnVal['mobileNo'] = $value['mobileNo'];
+                        return $returnVal;
+                    })->first();
                     $details = $application->merge($owners);
                     break;
             }

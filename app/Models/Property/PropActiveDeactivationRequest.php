@@ -19,7 +19,7 @@ class PropActiveDeactivationRequest extends Model
             'prop_active_deactivation_requests.id',
             // 'application_no' == null,
             'prop_properties.new_holding_no',
-            'prop_active_deactivation_requests.id as property_id',
+            'prop_active_deactivation_requests.property_id',
             'prop_properties.ward_mstr_id',
             'prop_properties.new_ward_mstr_id',
             'u.ward_name as old_ward_no',
