@@ -179,7 +179,6 @@ class CitizenRepository implements iCitizenRepository
             ->where('prop_active_safs.status', 1)
             ->orderByDesc('prop_active_safs.id')
             ->get();
-
         $applications['SAF'] = collect($propertyApplications)->values();
 
         $concessionApplications = DB::table('prop_active_concessions')
@@ -196,8 +195,38 @@ class CitizenRepository implements iCitizenRepository
             )
             ->where('prop_active_concessions.citizen_id', $userId)
             ->get();
-
         $applications['concessions'] = $concessionApplications;
+
+        $objectionApplications = DB::table('prop_active_objections')
+            ->join('wf_roles as r', 'r.id', '=', 'prop_active_objections.current_role')
+            ->join('prop_properties as p', 'p.id', '=', 'prop_active_objections.property_id')
+            ->select(
+                'prop_active_objections.id as application_id',
+                'prop_active_objections.objection_no',
+                'prop_active_objections.date as apply_date',
+                'p.holding_no',
+                'r.role_name as pending_at',
+                'prop_active_objections.workflow_id'
+            )
+            ->where('prop_active_objections.citizen_id', $userId)
+            ->get();
+        $applications['objections'] = $objectionApplications;
+
+        $harvestingApplications = DB::table('prop_active_harvestings')
+            ->join('wf_roles as r', 'r.id', '=', 'prop_active_harvestings.current_role')
+            ->join('prop_properties as p', 'p.id', '=', 'prop_active_harvestings.property_id')
+            ->select(
+                'prop_active_harvestings.id as application_id',
+                'prop_active_harvestings.application_no',
+                'prop_active_harvestings.created_at as apply_date',
+                'p.holding_no',
+                'r.role_name as pending_at',
+                'prop_active_harvestings.workflow_id'
+            )
+            ->where('prop_active_harvestings.citizen_id', $userId)
+            ->get();
+        $applications['harvestings'] = $harvestingApplications;
+
         return collect($applications);
     }
 
