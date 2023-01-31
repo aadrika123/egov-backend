@@ -51,7 +51,7 @@ class ClusterRepository implements iCluster
      * | Time :
         | Serial No :  
      */
-    public function detailsByHolding($request)
+    public function detailsByHolding($holdingNo)
     {
         $holdingCheck = PropProperty::join('prop_owners', 'prop_owners.saf_id', '=', 'prop_properties.saf_id')
             ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
@@ -60,10 +60,13 @@ class ClusterRepository implements iCluster
                 'prop_owners.owner_name AS ownerName',
                 'prop_properties.prop_address AS address',
                 'ref_prop_types.property_type AS propertyType',
-                'prop_owners.mobile_no AS mobileNo'
+                'prop_owners.mobile_no AS mobileNo',
+                'prop_properties.holding_no'
             )
-            ->where('prop_properties.new_holding_no', $request->holdingNo)
+            ->where('prop_properties.holding_no', 'LIKE', '%' . $holdingNo . '%')
+            ->orWhere('prop_properties.new_holding_no', 'LIKE', '%' . $holdingNo . '%')
             ->where('prop_properties.status', '1')
+            ->where('ulb_id', auth()->user()->ulb_id)
             ->get();
         return $this->success($holdingCheck);
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveConcession;
+use App\Models\Property\PropActiveDeactivationRequest;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
@@ -67,6 +68,13 @@ class PropertyDetailsController extends Controller
                     $mPropHarvesting = new PropActiveHarvesting();
                     $mPropOwners = new PropOwner();
                     $application = collect($mPropHarvesting->getDtlsByHarvestingNo($applicationNo));
+                    $owners = collect($mPropOwners->getOwnerByPropId($application['property_id']));
+                    $details = $application->merge($owners);
+                    break;
+                case ('holdingDeactivation'):
+                    $mPropActiveDeactivationRequest = new PropActiveDeactivationRequest();
+                    $mPropOwners = new PropOwner();
+                    $application = collect($mPropActiveDeactivationRequest->getDeactivationApplication($applicationNo));
                     $owners = collect($mPropOwners->getOwnerByPropId($application['property_id']));
                     $details = $application->merge($owners);
                     break;
