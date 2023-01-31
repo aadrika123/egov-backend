@@ -21,7 +21,6 @@ use Illuminate\Support\Facades\Redis;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
-use App\Models\PropActiveObjectionDocdtl;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
@@ -127,7 +126,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objectionOwner->save();
 
 
-                // $this->docUpload($request, $objection, $objectionNo);
+                $this->docUpload($request, $objection, $objectionNo);
 
 
                 //name document
@@ -201,26 +200,26 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->save();
 
                 //objection_form
-                if ($file = $request->file('objFormDoc')) {
-                    $docName = "objectionForm";
-                    $name = $this->moveFile($docName, $file);
+                // if ($file = $request->file('objFormDoc')) {
+                //     $docName = "objectionForm";
+                //     $name = $this->moveFile($docName, $file);
 
-                    $objectionDoc = new PropActiveObjectionDocdtl;
-                    $objectionDoc->objection_id = $objection->id;
-                    $objectionDoc->remarks = $request->objRemarks;
-                    $this->citizenDocUpload($objectionDoc, $name, $docName);
-                }
+                //     $objectionDoc = new PropActiveObjectionDocdtl;
+                //     $objectionDoc->objection_id = $objection->id;
+                //     $objectionDoc->remarks = $request->objRemarks;
+                //     $this->citizenDocUpload($objectionDoc, $name, $docName);
+                // }
 
-                //Evidence Doc
-                if ($file = $request->file('objEvidenceDoc')) {
-                    $docName = "evidenceDoc";
-                    $name = $this->moveFile($docName, $file);
+                // //Evidence Doc
+                // if ($file = $request->file('objEvidenceDoc')) {
+                //     $docName = "evidenceDoc";
+                //     $name = $this->moveFile($docName, $file);
 
-                    $objectionDoc = new PropActiveObjectionDocdtl;
-                    $objectionDoc->objection_id = $objection->id;
-                    $objectionDoc->remarks = $request->objRemarks;
-                    $this->citizenDocUpload($objectionDoc, $name, $docName);
-                }
+                //     $objectionDoc = new PropActiveObjectionDocdtl;
+                //     $objectionDoc->objection_id = $objection->id;
+                //     $objectionDoc->remarks = $request->objRemarks;
+                //     $this->citizenDocUpload($objectionDoc, $name, $docName);
+                // }
                 return responseMsg(true, "Successfully Saved", '');
             }
 
@@ -333,26 +332,26 @@ class ObjectionRepository implements iObjectionRepository
                 }
 
                 //objection_form
-                if ($file = $request->file('objFormDoc')) {
-                    $docName = "objectionForm";
-                    $name = $this->moveFile($docName, $file);
+                // if ($file = $request->file('objFormDoc')) {
+                //     $docName = "objectionForm";
+                //     $name = $this->moveFile($docName, $file);
 
-                    $objectionDoc = new PropActiveObjectionDocdtl;
-                    $objectionDoc->objection_id = $objection->id;
-                    $objectionDoc->remarks = $request->objRemarks;
-                    $this->citizenDocUpload($objectionDoc, $name, $docName);
-                }
+                //     $objectionDoc = new PropActiveObjectionDocdtl;
+                //     $objectionDoc->objection_id = $objection->id;
+                //     $objectionDoc->remarks = $request->objRemarks;
+                //     $this->citizenDocUpload($objectionDoc, $name, $docName);
+                // }
 
-                //Evidence Doc
-                if ($file = $request->file('objEvidenceDoc')) {
-                    $docName = "evidenceDoc";
-                    $name = $this->moveFile($docName, $file);
+                // //Evidence Doc
+                // if ($file = $request->file('objEvidenceDoc')) {
+                //     $docName = "evidenceDoc";
+                //     $name = $this->moveFile($docName, $file);
 
-                    $objectionDoc = new PropActiveObjectionDocdtl;
-                    $objectionDoc->objection_id = $objection->id;
-                    $objectionDoc->remarks = $request->objRemarks;
-                    $this->citizenDocUpload($objectionDoc, $name, $docName);
-                }
+                //     $objectionDoc = new PropActiveObjectionDocdtl;
+                //     $objectionDoc->objection_id = $objection->id;
+                //     $objectionDoc->remarks = $request->objRemarks;
+                //     $this->citizenDocUpload($objectionDoc, $name, $docName);
+                // }
             }
             DB::commit();
 
@@ -414,169 +413,169 @@ class ObjectionRepository implements iObjectionRepository
     }
 
     //objectionn document upload 
-    public function objectionDocUpload($req)
-    {
-        try {
-            $validator = Validator::make($req->all(), [
-                // 'nameDoc' => 'max:2000',
-                // 'addressDoc' => 'max:2000',
-                // 'safMemberDoc' => 'max:2000',
-                // 'objectionFormDoc' => 'max:2000',
-            ]);
+    // public function objectionDocUpload($req)
+    // {
+    //     try {
+    //         $validator = Validator::make($req->all(), [
+    //             // 'nameDoc' => 'max:2000',
+    //             // 'addressDoc' => 'max:2000',
+    //             // 'safMemberDoc' => 'max:2000',
+    //             // 'objectionFormDoc' => 'max:2000',
+    //         ]);
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => false,
-                    'errors' => $validator->errors()
-                ], 401);
-            }
-            // return $req;
-            // $doc['nameDoc'] = $req->nameDoc;
-            // $doc['addressDoc'] = $req->addressDoc;
-            // $doc['safMemberDoc'] = $req->safMemberDoc;
+    //         if ($validator->fails()) {
+    //             return response()->json([
+    //                 'status' => false,
+    //                 'errors' => $validator->errors()
+    //             ], 401);
+    //         }
+    //         // return $req;
+    //         // $doc['nameDoc'] = $req->nameDoc;
+    //         // $doc['addressDoc'] = $req->addressDoc;
+    //         // $doc['safMemberDoc'] = $req->safMemberDoc;
 
-            // foreach ($req->doc as  $documents) {
+    //         // foreach ($req->doc as  $documents) {
 
-            //     $doc = array_key_last($documents);
-            //     $base64Encode = base64_encode($documents[$doc]->getClientOriginalName());
-            //     $extention = $documents[$doc]->getClientOriginalExtension();
-            //     $imageName = time() . '-' . $base64Encode . '.' . $extention;
-            //     $documents[$doc]->storeAs('public/objection/' . $doc, $imageName);
+    //         //     $doc = array_key_last($documents);
+    //         //     $base64Encode = base64_encode($documents[$doc]->getClientOriginalName());
+    //         //     $extention = $documents[$doc]->getClientOriginalExtension();
+    //         //     $imageName = time() . '-' . $base64Encode . '.' . $extention;
+    //         //     $documents[$doc]->storeAs('public/objection/' . $doc, $imageName);
 
-            //     $appDoc = new PropActiveObjectionDocdtl();
-            //     $appDoc->objection_id = $req->objectionId;
-            //     $appDoc->doc_name = $imageName;
-            //     $appDoc->relative_path = ('objection/' . $doc . '/');
-            //     $appDoc->doc_type = $doc;
-            //     $appDoc->save();
-            // }
-
-
-            //for address doc
-            // return $doc = key($req->nameDoc);
+    //         //     $appDoc = new PropActiveObjectionDocdtl();
+    //         //     $appDoc->objection_id = $req->objectionId;
+    //         //     $appDoc->doc_name = $imageName;
+    //         //     $appDoc->relative_path = ('objection/' . $doc . '/');
+    //         //     $appDoc->doc_type = $doc;
+    //         //     $appDoc->save();
+    //         // }
 
 
-            if ($file = $req->file('addressDoc')) {
-                $docName = "addressDoc";
-                $name = $this->moveFile($docName, $file);
-
-                $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
-                    ->where('doc_type', $docName)
-                    ->get()
-                    ->first();
-                if ($checkExisting) {
-                    $this->updateDocument($req, $name,  $docName);
-                } else {
-                    $this->saveObjectionDoc($req, $name,  $docName);
-                }
-            }
-
-            // saf doc
-            if ($file = $req->file('safMemberDoc')) {
-                $docName = "safMemberDoc";
-                $name = $this->moveFile($docName, $file);
-
-                $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
-                    ->where('doc_type', $docName)
-                    ->get()
-                    ->first();
-                if ($checkExisting) {
-                    $this->updateDocument($req, $name,  $docName);
-                } else {
-                    $this->saveObjectionDoc($req, $name,  $docName);
-                }
-            }
-
-            if ($file = $req->file('nameDoc')) {
-                $docName = "nameDoc";
-                $name = $this->moveFile($docName, $file);
-
-                $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
-                    ->where('doc_type', $docName)
-                    ->get()
-                    ->first();
-                if ($checkExisting) {
-                    $this->updateDocument($req, $name,  $docName);
-                } else {
-                    $this->saveObjectionDoc($req, $name,  $docName);
-                }
-            }
-
-            if ($file = $req->file('objectionFormDoc')) {
-                $docName = "objectionFormDoc";
-                $name = $this->moveFile($docName, $file);
-
-                $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
-                    ->where('doc_type', $docName)
-                    ->get()
-                    ->first();
-                if ($checkExisting) {
-                    $this->updateDocument($req, $name,  $docName);
-                } else {
-                    $this->saveObjectionDoc($req, $name,  $docName);
-                }
-            }
-            return responseMsgs(true, "Document Successfully Uploaded!", '', '010816', '01', '364ms-389ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
-    //citizen doc upload
-    public function citizenDocUpload($objectionDoc, $name, $docName)
-    {
-        $userId = auth()->user()->id;
-
-        $objectionDoc->doc_type = $docName;
-        $objectionDoc->relative_path = ('/objection/' . $docName . '/');
-        $objectionDoc->doc_name = $name;
-        $objectionDoc->user_id = $userId;
-        $objectionDoc->date = Carbon::now();
-        $objectionDoc->created_at = Carbon::now();
-        $objectionDoc->save();
-    }
-
-    //save objection
-    public function saveObjectionDoc($req, $name,  $docName)
-    {
-        $objectionDoc =  new PropActiveObjectionDocdtl();
-        $objectionDoc->objection_id = $req->id;
-        $objectionDoc->doc_type = $docName;
-        $objectionDoc->relative_path = ('/objection/' . $docName . '/');
-        $objectionDoc->doc_name = $name;
-        $objectionDoc->status = 1;
-        $objectionDoc->date = Carbon::now();
-        $objectionDoc->created_at = Carbon::now();
-        $objectionDoc->save();
-    }
+    //         //for address doc
+    //         // return $doc = key($req->nameDoc);
 
 
+    //         if ($file = $req->file('addressDoc')) {
+    //             $docName = "addressDoc";
+    //             $name = $this->moveFile($docName, $file);
 
-    public function updateDocument($req, $name,  $docName)
-    {
-        PropActiveObjectionDocdtl::where('objection_id', $req->id)
-            ->where('doc_type', $docName)
-            ->update([
-                'objection_id' => $req->id,
-                'doc_type' => $docName,
-                'relative_path' => ('/objection/' . $docName . '/'),
-                'doc_name' => $name,
-                'status' => 1,
-                'verify_status' => 0,
-                'remarks' => '',
-                'updated_at' => Carbon::now()
-            ]);
-    }
+    //             $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
+    //                 ->where('doc_type', $docName)
+    //                 ->get()
+    //                 ->first();
+    //             if ($checkExisting) {
+    //                 $this->updateDocument($req, $name,  $docName);
+    //             } else {
+    //                 $this->saveObjectionDoc($req, $name,  $docName);
+    //             }
+    //         }
 
-    //moving function to location
-    public function moveFile($docName, $file)
-    {
-        $name = time() . $docName . '.' . $file->getClientOriginalExtension();
-        $path = storage_path('app/public/objection/' . $docName . '/');
-        $file->move($path, $name);
+    //         // saf doc
+    //         if ($file = $req->file('safMemberDoc')) {
+    //             $docName = "safMemberDoc";
+    //             $name = $this->moveFile($docName, $file);
 
-        return $name;
-    }
+    //             $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
+    //                 ->where('doc_type', $docName)
+    //                 ->get()
+    //                 ->first();
+    //             if ($checkExisting) {
+    //                 $this->updateDocument($req, $name,  $docName);
+    //             } else {
+    //                 $this->saveObjectionDoc($req, $name,  $docName);
+    //             }
+    //         }
+
+    //         if ($file = $req->file('nameDoc')) {
+    //             $docName = "nameDoc";
+    //             $name = $this->moveFile($docName, $file);
+
+    //             $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
+    //                 ->where('doc_type', $docName)
+    //                 ->get()
+    //                 ->first();
+    //             if ($checkExisting) {
+    //                 $this->updateDocument($req, $name,  $docName);
+    //             } else {
+    //                 $this->saveObjectionDoc($req, $name,  $docName);
+    //             }
+    //         }
+
+    //         if ($file = $req->file('objectionFormDoc')) {
+    //             $docName = "objectionFormDoc";
+    //             $name = $this->moveFile($docName, $file);
+
+    //             $checkExisting = PropActiveObjectionDocdtl::where('objection_id', $req->id)
+    //                 ->where('doc_type', $docName)
+    //                 ->get()
+    //                 ->first();
+    //             if ($checkExisting) {
+    //                 $this->updateDocument($req, $name,  $docName);
+    //             } else {
+    //                 $this->saveObjectionDoc($req, $name,  $docName);
+    //             }
+    //         }
+    //         return responseMsgs(true, "Document Successfully Uploaded!", '', '010816', '01', '364ms-389ms', 'Post', '');
+    //     } catch (Exception $e) {
+    //         echo $e->getMessage();
+    //     }
+    // }
+
+    // //citizen doc upload
+    // public function citizenDocUpload($objectionDoc, $name, $docName)
+    // {
+    //     $userId = auth()->user()->id;
+
+    //     $objectionDoc->doc_type = $docName;
+    //     $objectionDoc->relative_path = ('/objection/' . $docName . '/');
+    //     $objectionDoc->doc_name = $name;
+    //     $objectionDoc->user_id = $userId;
+    //     $objectionDoc->date = Carbon::now();
+    //     $objectionDoc->created_at = Carbon::now();
+    //     $objectionDoc->save();
+    // }
+
+    // //save objection
+    // public function saveObjectionDoc($req, $name,  $docName)
+    // {
+    //     $objectionDoc =  new PropActiveObjectionDocdtl();
+    //     $objectionDoc->objection_id = $req->id;
+    //     $objectionDoc->doc_type = $docName;
+    //     $objectionDoc->relative_path = ('/objection/' . $docName . '/');
+    //     $objectionDoc->doc_name = $name;
+    //     $objectionDoc->status = 1;
+    //     $objectionDoc->date = Carbon::now();
+    //     $objectionDoc->created_at = Carbon::now();
+    //     $objectionDoc->save();
+    // }
+
+
+
+    // public function updateDocument($req, $name,  $docName)
+    // {
+    //     PropActiveObjectionDocdtl::where('objection_id', $req->id)
+    //         ->where('doc_type', $docName)
+    //         ->update([
+    //             'objection_id' => $req->id,
+    //             'doc_type' => $docName,
+    //             'relative_path' => ('/objection/' . $docName . '/'),
+    //             'doc_name' => $name,
+    //             'status' => 1,
+    //             'verify_status' => 0,
+    //             'remarks' => '',
+    //             'updated_at' => Carbon::now()
+    //         ]);
+    // }
+
+    // //moving function to location
+    // public function moveFile($docName, $file)
+    // {
+    //     $name = time() . $docName . '.' . $file->getClientOriginalExtension();
+    //     $path = storage_path('app/public/objection/' . $docName . '/');
+    //     $file->move($path, $name);
+
+    //     return $name;
+    // }
 
 
     /**

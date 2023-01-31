@@ -482,24 +482,24 @@ class ObjectionController extends Controller
 
 
     //get document status by id
-    public function objectionDocUpload(Request $req)
-    {
-        return $this->Repository->objectionDocUpload($req);
-    }
+    // public function objectionDocUpload(Request $req)
+    // {
+    //     return $this->Repository->objectionDocUpload($req);
+    // }
 
-    //post document status
-    public function objectionDocStatus(Request $req)
-    {
-        try {
+    // //post document status
+    // public function objectionDocStatus(Request $req)
+    // {
+    //     try {
 
-            $docStatus = new PropActiveObjectionDocdtl();
-            $docStatus->verifyDoc($req);
+    //         $docStatus = new PropActiveObjectionDocdtl();
+    //         $docStatus->verifyDoc($req);
 
-            return responseMsgs(true, "Successfully Done", '', '010817', '01', '', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
+    //         return responseMsgs(true, "Successfully Done", '', '010817', '01', '', 'Post', '');
+    //     } catch (Exception $e) {
+    //         echo $e->getMessage();
+    //     }
+    // }
 
     /**
      * | Independent Comment
