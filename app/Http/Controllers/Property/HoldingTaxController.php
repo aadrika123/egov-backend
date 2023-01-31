@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
-use App\Models\ActiveSafDemand;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Traits\Property\SAF;
@@ -97,19 +98,25 @@ class HoldingTaxController extends Controller
 
         try {
             $mPropDemand = new PropDemand();
+            $penaltyRebateCalc = new PenaltyRebateCalculation;
+            $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
+            $loggedInUserType = authUser()->user_type;
+            $mPropOwners = new PropOwner();
+            $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
             $demand = array();
             $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
             $demandList = collect($demandList);
+
+            if (!$demandList)
+                throw new Exception("Dues Not Found for this Property");
 
             $demandList = $demandList->map(function ($item) {                                // One Perc Penalty Tax
                 return $this->calcOnePercPenalty($item);
             });
 
-            if (!$demandList)
-                throw new Exception("Dues Not Found for this Property");
-
             $dues = $demandList->sum('balance');
             $onePercTax = $demandList->sum('onePercPenaltyTax');
+            $mLastQuarterDemand = $demandList->last()->balance;
             $totalDuesList = [
                 'totalDues' => $dues,
                 'duesFrom' => "quarter " . $demandList->last()->qtr . "/Year " . $demandList->last()->fyear,
@@ -133,15 +140,8 @@ class HoldingTaxController extends Controller
      */
     public function calcOnePercPenalty($item)
     {
-        $currentDate = Carbon::now();
-        $currentDueDate = Carbon::now()->lastOfQuarter()->floorMonth();
-        $quarterDueDate = Carbon::parse($item->due_date)->floorMonth();
-        $diffInMonths = $quarterDueDate->diffInMonths($currentDate);
-        if ($quarterDueDate >= $currentDueDate)                                       // Means the quarter due date is on current quarter or next quarter
-            $onePercPenalty = 0;
-        else
-            $onePercPenalty = $diffInMonths;
-
+        $penaltyRebateCalc = new PenaltyRebateCalculation;
+        $onePercPenalty = $penaltyRebateCalc->calcOnePercPenalty($item->due_date);        // Calculation One Percent Penalty
         $item['onePercPenalty'] = $onePercPenalty;
         $onePercPenaltyTax = ($item['balance'] * $onePercPenalty) / 100;
         $item['onePercPenaltyTax'] = roundFigure($onePercPenaltyTax);
