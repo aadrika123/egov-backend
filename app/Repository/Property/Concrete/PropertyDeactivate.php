@@ -230,7 +230,6 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                 throw new Exception("Workflow Not Available");
             }
-            $mJoins="";
             $mUserType = $this->_common->userType($refWorkflowId);
             $mWardPermission = $this->_common->WardPermission($refUserId);           
             $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowId); 
@@ -509,6 +508,103 @@ class PropertyDeactivate implements IPropertyDeactivate
         }        
     }
 
+    public function specialInbox(Request $request)
+    {
+        try {
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $refUlbId       = $refUser->ulb_id;
+            $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
+            $refWorkflowMstrId     = WfWorkflow::where('id', $refWorkflowId)
+                                    ->where('ulb_id', $refUlbId)
+                                    ->first();
+            if (!$refWorkflowMstrId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $mUserType = $this->_common->userType($refWorkflowId);
+            $mWardPermission = $this->_common->WardPermission($refUserId);           
+            $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowId); 
+                     
+            if (!$mRole) 
+            {
+                throw new Exception("You Are Not Authorized For This Action");
+            } 
+
+            if($mRole->is_initiator ) 
+            {
+                $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $mWardPermission = objToArray($mWardPermission);
+            }
+            $mWardIds = array_map(function ($val) {
+                return $val['id'];
+            }, $mWardPermission);
+            $mWardIds = implode(',',$mWardIds);
+            $mRoleId = $mRole->role_id;   
+            $inputs = $request->all(); 
+            if(isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo']!="ALL")
+            {
+                $mWardIds = $inputs['wardNo']; 
+            } 
+            // DB::enableQueryLog();          
+            $mProperty = PropActiveDeactivationRequest::select("prop_active_deactivation_requests.id",
+                                            "properties.holding_no",
+                                            "properties.new_holding_no",
+                                            "properties.owner_name",
+                                            "properties.guardian_name",
+                                            "properties.mobile_no",
+                                            "properties.email_id",
+                                            )
+                        ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                            STRING_AGG(guardian_name,',') AS guardian_name,
+                                            STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                            STRING_AGG(email,',') AS email_id,
+                                            prop_properties.id,holding_no,new_holding_no
+                                        FROM prop_properties  
+                                        LEFT JOIN prop_owners ON prop_properties.id = prop_owners.property_id AND prop_owners.status=1
+                                        WHERE prop_properties.status =1 AND prop_properties.ulb_id=$refUlbId
+                                        AND prop_properties.ward_mstr_id IN ($mWardIds)
+                                        GROUP BY prop_properties.id,holding_no,new_holding_no
+                                        )properties"),function($join) use($inputs){
+                                            $join = $join->on("properties.id","prop_active_deactivation_requests.property_id");
+                                            if(isset($inputs['key']) && trim($inputs['key']))
+                                            {
+                                                $key = trim($inputs['key']);
+                                                $join = $join->where(function ($query) use ($key) {
+                                                    $query->orwhere('properties.holding_no', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere('properties.new_holding_no', 'ILIKE', '%' . $key . '%')                                            
+                                                        ->orwhere('properties.owner_name', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere('properties.guardian_name', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere('properties.mobile_no', 'ILIKE', '%' . $key . '%');
+                                                });
+                                            }  
+                                        }
+                        )                       
+                        ->where("prop_active_deactivation_requests.ulb_id",$refUlbId)
+                        ->where('prop_active_deactivation_requests.is_parked', FALSE)   
+                        ->where('prop_active_deactivation_requests.status', 1)
+                        // ->where('prop_active_deactivation_requests.current_role',$mRoleId)
+                        ->where('prop_active_deactivation_requests.is_escalate', TRUE);
+                        if(isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate'])
+                        {
+                            $mProperty = $mProperty
+                                        ->whereBetween('prop_active_deactivation_requests.created_at::date',[$inputs['formDate'],$inputs['formDate']]); 
+                        }
+                        $mProperty = $mProperty
+                                ->get();
+            // dd(DB::getQueryLog());
+            $data = $mProperty;
+            return responseMsgs(true, "Data Fetched", remove_null($data),"00008", "1.0", "251ms", "POST", $request->deviceId);
+        } 
+        catch (Exception $e) 
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
     #---------------------Core Function--------------------------------------------------------
     public function getPropDtlByHoldingNo(string $holdingNo,$ulbId)
     {
@@ -572,6 +668,11 @@ class PropertyDeactivate implements IPropertyDeactivate
     {
         $filePath = $file->storeAs('uploads/Property', $custumFileName, 'public');
         return  $filePath;
+    }
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url') . '/api/getImageLink?path=' . $path);
+        return $path;
     }
 
     public function citizenComments($mRefTable, $tableId)
