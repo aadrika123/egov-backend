@@ -19,7 +19,7 @@ yarn-error.log
 /public/image/
 /public/custom/
 /storage/concession
-/razorpay-php
+# /razorpay-php
 public/Uploads/Property/
 public/Uploads/Trade/
 
