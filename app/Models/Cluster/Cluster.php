@@ -2,6 +2,7 @@
 
 namespace App\Models\Cluster;
 
+use App\Models\User;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -96,6 +97,7 @@ class Cluster extends Model
             'status'
         )
             ->where('status', 1)
+            ->where('ulb_id',auth()->user()->ulb_id)
             ->get();
     }
 
