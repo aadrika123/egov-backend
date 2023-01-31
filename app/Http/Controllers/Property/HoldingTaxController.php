@@ -180,7 +180,7 @@ class HoldingTaxController extends Controller
             $req->request->add(['workflowId' => '4', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId, 'propType' => 'HoldingTax']);
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
             $this->postPaymentPenaltyRebate($dueList, $req);
-            return $orderDetails;
+            return responseMsgs(false, "Order id Generated", remove_null($orderDetails), "011603", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011603", "1.0", "", "POST", $req->deviceId ?? "");
         }
