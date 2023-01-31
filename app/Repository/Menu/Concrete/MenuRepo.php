@@ -175,8 +175,8 @@ class MenuRepo implements iMenuRepo
         if ($req->roleId) {
             $mRoleMenues = $mMenuMaster->getMenuByRole($req->roleId);
 
-            $roleWise = collect($mRoleMenues)->map(function ($value) {
-                return $value['id'];
+            $roleWise = collect($mRoleMenues)->map(function ($value) use ($mMenuMaster) {
+                return $roleWise = $this->getParent($value['parent_serial']);
             });
             $retunProperValues = collect($data)->map(function ($value, $key) use ($roleWise) {
                 if ($roleWise->contains($value['id'])) {
@@ -186,6 +186,19 @@ class MenuRepo implements iMenuRepo
             return responseMsgs(true, "OPERATION OK!", $retunProperValues->filter()->values(), "", "01", "308.ms", "POST", $req->deviceId);
         }
         return responseMsgs(true, "OPERATION OK!", $data, "", "01", "308.ms", "POST", $req->deviceId);
+    }
+
+    /**
+     * | calling function of the 
+     */
+    public function getParent($parentId)
+    {
+        $mMenuMaster = new MenuMaster();
+        $refvalue = $mMenuMaster->getMenuById($parentId);
+        if ($refvalue['parent_serial'] > 0) {
+            $this->getParent($refvalue['parent_serial']);
+        }
+        return $refvalue['id'];
     }
 }
 
