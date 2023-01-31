@@ -49,6 +49,7 @@ class PenaltyRebateCalculation
         $rebate = 0;
         $rebateAmount = 0;
         $seniorCitizen = 60;
+        $specialRebateAmt = 0;
         $years = $currentDate->diffInYears(Carbon::parse($ownerDetails['dob']));
 
         if ($currentQuarter == 1) {                                                         // Rebate On Financial Year Payment On 1st Quarter
