@@ -484,10 +484,11 @@ class PropertyDeactivate implements IPropertyDeactivate
             $metaReqs['wfRoleId'] = $fullDetailsData['roleDetails']['role_id'];
             $metaReqs['workflowId'] = $refWorkflowId;
             $metaReqs['lastRoleId'] = $refRequestData->max_level_attained;
+            
 
             $request->request->add($metaReqs);
 
-            $fullDetailsData['timelineData'] = collect($mileSton);
+            $fullDetailsData['timelineData'] = collect($request);
 
             $custom = (new \App\Models\CustomDetail())->getCustomDetails($request);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
