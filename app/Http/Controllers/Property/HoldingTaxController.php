@@ -107,8 +107,8 @@ class HoldingTaxController extends Controller
             $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
             $demandList = collect($demandList);
 
-            if (!$demandList)
-                throw new Exception("Dues Not Found for this Property");
+            if ($demandList->isEmpty())
+                throw new Exception("Dues Not Available for this Property");
 
             $demandList = $demandList->map(function ($item) {                                // One Perc Penalty Tax
                 return $this->calcOnePercPenalty($item);
@@ -122,9 +122,13 @@ class HoldingTaxController extends Controller
                 'duesFrom' => "quarter " . $demandList->last()->qtr . "/Year " . $demandList->last()->fyear,
                 'duesTo' => "quarter " . $demandList->first()->qtr . "/Year " . $demandList->last()->fyear,
                 'onePercPenalty' => $onePercTax,
-                'payableAmt' => roundFigure($dues + $onePercTax),
                 'totalQuarters' => $demandList->count()
             ];
+
+            $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
+
+            $finalPayableAmt = ($dues + $onePercTax) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
+            $totalDuesList['payableAmount'] = roundFigure($finalPayableAmt);
 
             $demand['duesList'] = $totalDuesList;
             $demand['demandList'] = $demandList;

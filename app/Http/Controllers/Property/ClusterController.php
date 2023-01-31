@@ -82,11 +82,11 @@ class ClusterController extends Controller
             $validateUser = Validator::make(
                 $request->all(),
                 [
-                    'clusterName'   => 'required',
-                    'clusterType' => 'required',
-                    'clusterAddress' => 'required',
+                    'clusterName'           => 'required',
+                    'clusterType'           => 'required',
+                    'clusterAddress'        => 'required',
                     'clusterAuthPersonName' => 'required',
-                    'clusterMobileNo' => ['required', 'min:10', 'max:10']
+                    'clusterMobileNo'       => ['required', 'min:10', 'max:10']
                 ]
             );
             if ($validateUser->fails()) {

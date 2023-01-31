@@ -38,7 +38,7 @@ class PenaltyRebateCalculation
      * | @param mLastQuarterDemand Last Quarter Demand
      * | @param ownerDetails First owner Details
      */
-    public function readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $totalDemand)
+    public function readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $totalDemand, $totalDuesList)
     {
         $currentDate = Carbon::now();
         $citizenRebatePerc = 5;
@@ -49,6 +49,7 @@ class PenaltyRebateCalculation
         $rebate = 0;
         $rebateAmount = 0;
         $seniorCitizen = 60;
+        $specialRebateAmt = 0;
         $years = $currentDate->diffInYears(Carbon::parse($ownerDetails['dob']));
 
         if ($currentQuarter == 1) {                                                         // Rebate On Financial Year Payment On 1st Quarter
@@ -86,13 +87,19 @@ class PenaltyRebateCalculation
             $ownerDetails['gender']  == 'Female' || $ownerDetails['gender'] == 'Transgender'  || $years >= $seniorCitizen
         ) {
             $rebate += $speciallyAbledRebatePerc;
+            $specialRebateAmt = roundFigure(($totalDemand * $speciallyAbledRebatePerc) / 100);
             array_push($rebates, [
                 "rebateType" => "speciallyAbledRebate",
                 "rebatePerc" => $speciallyAbledRebatePerc,
-                "rebateAmount" => roundFigure(($totalDemand * $speciallyAbledRebatePerc) / 100)
+                "rebateAmount" => $specialRebateAmt,
             ]);
         }
 
-        return $rebates;
+        $totalDuesList['rebatePerc'] = $rebate1;
+        $totalDuesList['rebateAmt'] = $rebateAmount;
+        $totalDuesList['specialRebatePerc'] = $rebate;
+        $totalDuesList['specialRebateAmt'] = $specialRebateAmt;
+
+        return $totalDuesList;
     }
 }
