@@ -923,16 +923,22 @@ class NewConnectionController extends Controller
      */
     public function checkCatagory($request, $areaInSqFt, $propUsageType)
     {
-        $usageType = $propUsageType['usageType'];
+        $refResidential = collect($propUsageType)->first()->first()['usageType'];
         switch ($request->connectionThrough) {
             case ('1'):
-                if ($areaInSqFt < 350 && $usageType == "Residential")   // Static
+                if ($areaInSqFt < 350 && $refResidential == "Residential")   // Static
                 {
                     return "BPL";
                 }
                 return "APL";
                 break;
             case ('2'):
+                if ($areaInSqFt < 350 && $refResidential == "Residential")   // Static
+                {
+                    return "BPL";
+                }
+                return "APL";
+                break;
         }
     }
 
