@@ -17,6 +17,7 @@ class PaymentPropPenaltyrebate extends Model
     {
         return PaymentPropPenaltyrebate::where($key, $id)
             ->where('head_name', $headName)
+            ->where('status', 1)
             ->first();
     }
 
