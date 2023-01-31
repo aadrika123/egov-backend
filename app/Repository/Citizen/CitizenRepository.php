@@ -210,8 +210,23 @@ class CitizenRepository implements iCitizenRepository
             )
             ->where('prop_active_objections.citizen_id', $userId)
             ->get();
-
         $applications['objections'] = $objectionApplications;
+
+        $harvestingApplications = DB::table('prop_active_harvestings')
+            ->join('wf_roles as r', 'r.id', '=', 'prop_active_harvestings.current_role')
+            ->join('prop_properties as p', 'p.id', '=', 'prop_active_harvestings.property_id')
+            ->select(
+                'prop_active_harvestings.id as application_id',
+                'prop_active_harvestings.application_no',
+                'prop_active_harvestings.created_at as apply_date',
+                'p.holding_no',
+                'r.role_name as pending_at',
+                'prop_active_harvestings.workflow_id'
+            )
+            ->where('prop_active_harvestings.citizen_id', $userId)
+            ->get();
+        $applications['harvestings'] = $harvestingApplications;
+
         return collect($applications);
     }
 
