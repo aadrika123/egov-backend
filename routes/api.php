@@ -432,7 +432,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('menu-roles/update-menu-by-role', 'updateMenuByRole');      // Update Menu Permission By Role
         # Diff
         Route::post('crud/menu/add-new-menues', 'addNewMenues');         // adding the details of the menues in the menue table
-        Route::post('role-menu/get-role-by-menu', 'getRoleWiseMenu');     //<--------- (May not be USED)    // get menu according to the user role
+        Route::get('role-menu/get-role-by-menu', 'getRoleWiseMenu');     //<--------- (May not be USED)    // get menu according to the user role
         Route::post('sub-menu/tree-structure', 'getTreeStructureMenu');      // Generation of the menu tree Structure
         Route::post('menu-roles/list-parent-serial', 'listParentSerial');   // Get the list of parent menues
         Route::post('sub-menu/get-children-node', 'getChildrenNode');       // Get the children menues
