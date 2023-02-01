@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
+use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenaltyrebate;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
@@ -177,7 +178,7 @@ class HoldingTaxController extends Controller
             $departmentId = 1;
             $propProperties = new PropProperty();
             $propDtls = $propProperties->getPropById($req->propId);
-            $req->request->add(['workflowId' => '4', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId, 'propType' => 'HoldingTax']);
+            $req->request->add(['workflowId' => '0', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId]);
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
             $this->postPaymentPenaltyRebate($dueList, $req);
             return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011603", "1.0", "", "POST", $req->deviceId ?? "");
@@ -294,6 +295,9 @@ class HoldingTaxController extends Controller
             'tranNo' => 'required'
         ]);
         try {
+            $mPaymentData = new WebhookPaymentData();
+            $applicationDtls = $mPaymentData->getApplicationId($req->tranNo);
+            return $applicationDtls;
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011605", "1.0", "", "POST", $req->deviceId);
         }
