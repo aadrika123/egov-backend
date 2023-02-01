@@ -605,7 +605,7 @@ class ActiveSafController extends Controller
     public function safDetails(Request $req)
     {
         $req->validate([
-            'applicationId' => 'required|integer'
+            'applicationId' => 'required|digits_between:1,9223372036854775807'
         ]);
 
         try {
@@ -715,6 +715,36 @@ class ActiveSafController extends Controller
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Get Static Saf Details
+     */
+    public function getStaticSafDetails(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807'
+        ]);
+        try {
+            $mPropActiveSaf = new PropActiveSaf();
+            $mPropActiveSafOwner = new PropActiveSafsOwner();
+            $mActiveSafsFloors = new PropActiveSafsFloor();
+            $data = array();
+            $data = $mPropActiveSaf->getActiveSafDtls()      // <------- Model function Active SAF Details
+                ->where('prop_active_safs.id', $req->applicationId)
+                ->first();
+            if (!$data)
+                throw new Exception("Data Not Found");
+            $data = json_decode(json_encode($data), true);
+
+            $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
+            $data['owners'] = $ownerDtls;
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
+            $data['floors'] = $getFloorDtls;
+            return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return $e->getMessage();
         }
     }
 
