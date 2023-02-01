@@ -301,11 +301,11 @@ class PaymentRepository implements iPayment
                 # calling function for the modules                  
                 switch ($depatmentId) {
                     case ('1'):
-                        $refpropertyType = $webhookEntity['notes']['propType'];
-                        if ($refpropertyType = "HoldingTax") {
-                            $obj = new HoldingTaxController($this->_safRepo);
+                        $refpropertyType = $webhookEntity['notes']['workflowId'];
+                        if ($refpropertyType == 0) {
+                            $objHoldingTaxController = new HoldingTaxController();
                             $transfer = new Request($transfer);
-                            $obj->generateOrderId($transfer);
+                            $objHoldingTaxController->paymentHolding($transfer);
                         } else {                                     //<------------------ (SAF PAYMENT)
                             $obj = new ActiveSafController($this->_safRepo);
                             $transfer = new Request($transfer);

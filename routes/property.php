@@ -284,6 +284,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('cluster/details-by-holding', 'detailsByHolding');
     Route::post('cluster/holding-by-cluster', 'holdingByCluster');
     Route::post('cluster/save-holding-in-cluster', 'saveHoldingInCluster');
+    Route::post('cluster/get-saf-by-safno', 'getSafBySafNo');
+    Route::post('cluster/save-saf-in-cluster', 'saveSafInCluster');
   });
 
   /**

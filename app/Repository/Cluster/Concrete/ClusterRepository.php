@@ -50,6 +50,7 @@ class ClusterRepository implements iCluster
      * | Rating : 2
      * | Time :
         | Serial No :  
+        | Removal 
      */
     public function detailsByHolding($holdingNo)
     {
@@ -80,6 +81,7 @@ class ClusterRepository implements iCluster
      * | Time: 385ms
      * | Rating - 2
         | Serial No : 
+        | Removal
      */
     public function holdingByCluster($request)
     {

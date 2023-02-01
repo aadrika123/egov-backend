@@ -331,4 +331,39 @@ class PropActiveSaf extends Model
             ->where('user_id', auth()->user()->id)
             ->get();
     }
+
+    /**
+     * | Serch Saf 
+     */
+    public function searchSafDtlsBySafNo($safNo)
+    {
+        return DB::table('prop_active_safs as s')
+            ->select(
+                's.id',
+                's.saf_no',
+                's.ward_mstr_id as wardId',
+                's.new_ward_mstr_id',
+                's.prop_address as address',
+                's.corr_address',
+                's.prop_pin_code',
+                's.corr_pin_code',
+                'prop_active_safs_owners.owner_name as ownerName',
+                'prop_active_safs_owners.mobile_no as mobileNo',
+                'prop_active_safs_owners.email'
+            )
+            ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', '=', 's.id')
+            ->where('s.saf_no', 'LIKE', '%' . $safNo)
+            ->where('ulb_id', auth()->user()->ulb_id)
+            ->get();
+    }
+
+    /**
+     * | Saerch collective saf
+     */
+    public function searchCollectiveSaf($safList)
+    {
+        return PropActiveSaf::whereIn('saf_no', $safList)
+            ->where('status', 1)
+            ->get();
+    }
 }
