@@ -285,6 +285,8 @@ class PropActiveSaf extends Model
     public function verifyFieldStatus($safId)
     {
         $activeSaf = PropActiveSaf::find($safId);
+        if (!$activeSaf)
+            throw new Exception("Application Not Found");
         $activeSaf->is_field_verified = true;
         $activeSaf->save();
     }

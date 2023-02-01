@@ -7,7 +7,6 @@ use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenaltyrebate;
-use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropPenaltyrebate;
