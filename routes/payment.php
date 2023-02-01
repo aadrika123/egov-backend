@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Payment\CashVerificationController;
 use App\Http\Controllers\Payment\RazorpayPaymentController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,6 +38,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-reconcillation-details', 'getReconcillationDetails');                       // 11 
         Route::post('search-reconciliation-details', 'searchReconciliationDetails');                // 12
         Route::post('update-reconciliation-details', 'updateReconciliationDetails');                // 13
+    });
+
+
+    /**
+     * | Created On-31-01-2023 
+     * | Created by-Mrinal Kumar
+     * | Payment Cash Verification
+     */
+    Route::controller(CashVerificationController::class)->group(function () {
+        Route::post('list-cash-verification', 'cashVerificationList');
     });
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {
