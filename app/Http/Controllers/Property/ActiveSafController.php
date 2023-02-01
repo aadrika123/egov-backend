@@ -1713,4 +1713,202 @@ class ActiveSafController extends Controller
     //         return responseMsg(false, $e->getMessage(), "");
     //     }
     // }
+
+    # code by sandeep bara 
+    # date 31-01-2023
+    // ----------start------------
+    public function getVerifications(Request $request)
+    {
+        try{            
+            $data = array();
+            $request->validate([
+                'applicationId' => 'required|digits_between:1,9223372036854775807',
+            ]);
+            $verifications = PropSafVerification::select('prop_saf_verifications.*', 'p.property_type', 'r.road_type', 'u.ward_name as ward_no',
+                                                    "users.user_name"
+                            )
+                            ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_saf_verifications.prop_type_id')
+                            ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_saf_verifications.road_type_id')
+                            ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_saf_verifications.ward_id')
+                            ->leftjoin('users', 'users.id', '=', 'prop_saf_verifications.emp_id')
+                            ->where("prop_saf_verifications.id",$request->applicationId)
+                            ->first();
+            if(!$verifications)
+            {
+                throw new Exception("verification Data NOt Found");
+            }
+            $saf =PropActiveSaf::select('prop_active_safs.*', 'p.property_type', 'r.road_type', 'u.ward_name as ward_no')
+                ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
+                ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id')
+                ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_active_safs.ward_mstr_id')
+                ->where("prop_active_safs.id",$verifications->saf_id)
+                ->first();
+            $tbl = "prop_active_safs";
+            if(!$saf)
+            {
+                $saf =DB::table("prop_rejected_safs")
+                    ->select('prop_rejected_safs.*', 'p.property_type', 'r.road_type', 'u.ward_name as ward_no')
+                    ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_rejected_safs.prop_type_mstr_id')
+                    ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_rejected_safs.road_type_mstr_id')
+                    ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_rejected_safs.ward_mstr_id')
+                    ->where("prop_rejected_safs.id",$verifications->saf_id)
+                    ->first();
+                $tbl = "prop_rejected_safs";
+            }
+            if(!$saf)
+            {
+                $saf =DB::table("prop_safs")
+                    ->select('prop_safs.*', 'p.property_type', 'r.road_type', 'u.ward_name as ward_no')
+                    ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_safs.prop_type_mstr_id')
+                    ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_safs.road_type_mstr_id')
+                    ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_safs.ward_mstr_id')
+                    ->where("prop_safs.id",$verifications->saf_id)
+                    ->first();
+                $tbl = "prop_safs";
+            }
+            if(!$saf)
+            {
+                throw new Exception("Saf Data Not Found");
+            }
+            $floars = DB::table($tbl."_floors")
+                    ->select($tbl."_floors.*", 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')
+                    ->leftjoin('ref_prop_floors as f', 'f.id', '=', $tbl."_floors.floor_mstr_id")
+                    ->leftjoin('ref_prop_usage_types as u', 'u.id', '=', $tbl."_floors.usage_type_mstr_id")
+                    ->leftjoin('ref_prop_occupancy_types as o', 'o.id', '=', $tbl."_floors.occupancy_type_mstr_id")
+                    ->leftjoin('ref_prop_construction_types as c', 'c.id', '=', $tbl."_floors.const_type_mstr_id")
+                    ->where($tbl."_floors.saf_id",$saf->id)
+                    ->get();
+            $verifications_detals = PropSafVerificationDtl::select('prop_saf_verification_dtls.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')
+                                    ->leftjoin('ref_prop_floors as f', 'f.id', '=', 'prop_saf_verification_dtls.floor_mstr_id')
+                                    ->leftjoin('ref_prop_usage_types as u', 'u.id', '=', 'prop_saf_verification_dtls.usage_type_id')
+                                    ->leftjoin('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_saf_verification_dtls.occupancy_type_id')
+                                    ->leftjoin('ref_prop_construction_types as c', 'c.id', '=', 'prop_saf_verification_dtls.construction_type_id')
+                                    ->where("verification_id",$verifications->id)
+                                    ->get();
+            
+            $prop_compairs = [
+                    [
+                        "key"=>"Ward No",
+                        "values"=>$saf->ward_mstr_id==$verifications->ward_id,
+                        "according_application"=>$saf->ward_no,
+                        "according_verification"=>$verifications->ward_no,
+                    ],
+                    [
+                        "key"=>"Property Type",
+                        "values"=>$saf->prop_type_mstr_id==$verifications->prop_type_id,
+                        "according_application"=>$saf->property_type,
+                        "according_verification"=>$verifications->property_type,
+                    ],
+                    [
+                        "key"=>"Plot Area",
+                        "values"=>$saf->area_of_plot==$verifications->area_of_plot,
+                        "according_application"=>$saf->area_of_plot,
+                        "according_verification"=>$verifications->area_of_plot,
+                    ],
+                    [
+                        "key"=>"Road Type",
+                        "values"=>$saf->road_type_mstr_id==$verifications->road_type_id,
+                        "according_application"=>$saf->road_type,
+                        "according_verification"=>$verifications->road_type,
+                    ],
+                    [
+                        "key"=>"Mobile Tower",
+                        "values"=>$saf->is_mobile_tower==$verifications->has_mobile_tower,
+                        "according_application"=>$saf->is_mobile_tower,
+                        "according_verification"=>$verifications->has_mobile_tower,
+                    ],
+                    [
+                        "key"=>"Hoarding Board",
+                        "values"=>$saf->is_hoarding_board==$verifications->has_hoarding,
+                        "according_application"=>$saf->is_hoarding_board,
+                        "according_verification"=>$verifications->has_hoarding,
+                    ],
+                    [
+                        "key"=>"Petrol Pump",
+                        "values"=>$saf->is_petrol_pump==$verifications->is_petrol_pump,
+                        "according_application"=>$saf->is_petrol_pump,
+                        "according_verification"=>$verifications->is_petrol_pump,
+                    ],
+                    [
+                        "key"=>"Water Harvesting",
+                        "values"=>$saf->is_water_harvesting==$verifications->has_water_harvesting,
+                        "according_application"=>$saf->is_water_harvesting,
+                        "according_verification"=>$verifications->has_water_harvesting,
+                    ],
+                ];
+            $size = sizeOf($floars)>=sizeOf($verifications_detals)?$floars:$verifications_detals;
+            $keys = sizeOf($floars)>=sizeOf($verifications_detals)?"floars":"detals";
+            $floars_compais = array();
+            $floars_compais = $size->map(function($val,$key) use($floars,$verifications_detals,$keys){
+                    if($keys=="floars")
+                    {
+                        // $saf_data=($floars->where("id",$val->id))->values();
+                        // $verification=($verifications_detals->where("saf_floor_id",$val->id))->values();
+                        $saf_data=collect(array_values(objToArray(($floars->where("id",$val->id))->values())))->all();
+                        $verification=collect(array_values(objToArray(($verifications_detals->where("saf_floor_id",$val->id))->values())))->all();
+                    }
+                    else
+                    {
+                        // $saf_data=($floars->where("id",$val->saf_floor_id))->values();
+                        // $verification=($verifications_detals->where("id",$val->id))->values();
+                        $saf_data=collect(array_values(objToArray(($floars->where("id",$val->saf_floor_id))->values())))->all();
+                        $verification=collect(array_values(objToArray(($verifications_detals->where("id",$val->id))->values())))->all();
+                    }
+                return [
+                    "floar_name"=>$val->floor_name,
+                    "values"=>[
+                            [
+                                "key"=>"Usage Type",
+                                "values"=>($saf_data[0]->usage_type_mstr_id??"")==($verification[0]->usage_type_id??""),
+                                "according_application"=>$saf_data[0]->usage_type??"",
+                                "according_verification"=>$verification[0]->usage_type??"",
+                            ],
+                            [
+                                "key"=>"Occupancy Type",
+                                "values"=>($saf_data[0]->occupancy_type_mstr_id??"")==($verification[0]->occupancy_type_id??""),
+                                "according_application"=>$saf_data[0]->occupancy_type??"",
+                                "according_verification"=>$verification[0]->occupancy_type??"",
+                            ],
+                            [
+                                "key"=>"Construction Type",
+                                "values"=>($saf_data[0]->const_type_mstr_id??"")==($verification[0]->construction_type_id??""),
+                                "according_application"=>$saf_data[0]->construction_type??"",
+                                "according_verification"=>$verification[0]->construction_type??"",
+                            ],
+                            [
+                                "key"=>"Built Up Area (in Sq. Ft.)",
+                                "values"=>($saf_data[0]->builtup_area??"")==($verification[0]->builtup_area??""),
+                                "according_application"=>$saf_data[0]->builtup_area??"",
+                                "according_verification"=>$verification[0]->builtup_area??"",
+                            ],
+                            [
+                                "key"=>"Date of Completion",
+                                "values"=>($saf_data[0]->date_from??"")==($verification[0]->date_from??""),
+                                "according_application"=>$saf_data[0]->date_from??"",
+                                "according_verification"=>$verification[0]->date_from??"",
+                            ]
+                        ]
+                        ]; 
+            });
+            $message = "ULB TC Verification Details";
+            if($verifications->agency_verification)
+            {
+                $geoTagging = PropSafGeotagUpload::where("saf_id",$saf->id)->get();
+                $message = "TC Verification Details";
+                $data["geoTagging"] = $geoTagging;
+            }
+            $data["saf_details"] = $saf;
+            $data["employee_details"] = ["user_name"=>$verifications->user_name,"date"=>$verifications->created_at];
+            $data["propery_coparision"] = $prop_compairs;
+            $data["floar_coparision"] = $floars_compais;
+            return responseMsgs(true, $message, remove_null($data), "010121", "1.0", "258ms", "POST", $request->deviceId);
+            
+         
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    // ---------end----------------
 }

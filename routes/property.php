@@ -84,6 +84,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/proptransaction-by-id', 'getTransactionBySafPropId');                              // Get Property Transaction by Property ID or SAF id(22)
     Route::post('saf/get-demand-by-id', 'getDemandBySafId');                                            // Get the demandable Amount of the Property after payment done(26)
     // Route::post('saf/get-btc-fields', 'getBtcFields'); 
+    Route::post('saf/verifications-comp', 'getVerifications'); 
   });
 
   /**
