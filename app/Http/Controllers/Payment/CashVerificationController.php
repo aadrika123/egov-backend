@@ -84,7 +84,7 @@ class CashVerificationController extends Controller
                 ->get();
             $collection = collect($collection->groupBy("id")->all());
             // dd($collection);
-            $data = $collection->map(function ($val) {
+            $data = $collection->map(function ($val) use ($date) {
                 $total =  $val->sum('amount');
                 $verified_amount =  $val->sum('verified_amount');
                 $prop = $val->where("module", "property")->sum('amount');
@@ -100,9 +100,11 @@ class CashVerificationController extends Controller
                     "total" => $total,
                     "is_verified" => !$is_verified,
                     "verified_amount" => $verified_amount,
-                    "GB_saf" => 0
+                    "GB_saf" => 0,
+                    "date" => $date
                 ];
             });
+            $data = (array_values(objtoarray($data)));
             return responseMsgs(true, "List cash Verification", $data, "010201", "1.0", "", "POST", $request->deviceId ?? "");
 
 
@@ -205,5 +207,23 @@ class CashVerificationController extends Controller
         catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
         }
+    }
+
+
+    /**
+     * 
+     */
+    public function tcCollectionDtl(Request $request)
+    {
+        $userId = $request->id;
+        $date = date('Y-m-d', strtotime($request->date));
+
+        $propDtl = PropTransaction::select('prop_transactions.*', 'users.user_name')
+            ->join('users', 'users.id', 'prop_transactions.user_id')
+            ->where('tran_date', $date)
+            ->where('payment_mode', '!=', 'ONLINE')
+            ->where('user_id', $userId)
+            ->orderBy('tran_date')
+            ->get();
     }
 }
