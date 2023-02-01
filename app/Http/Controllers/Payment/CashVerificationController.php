@@ -215,15 +215,58 @@ class CashVerificationController extends Controller
      */
     public function tcCollectionDtl(Request $request)
     {
+        $request->validate([
+            "date" => "required|date",
+            "id" => "required|numeric",
+
+        ]);
+
         $userId = $request->id;
         $date = date('Y-m-d', strtotime($request->date));
 
         $propDtl = PropTransaction::select('prop_transactions.*', 'users.user_name')
             ->join('users', 'users.id', 'prop_transactions.user_id')
+            // ->join('prop_active_safs', 'prop_active_safs')
+            // ->join('ulb_ward_masters','ulb_ward_masters.id','')
             ->where('tran_date', $date)
             ->where('payment_mode', '!=', 'ONLINE')
             ->where('user_id', $userId)
             ->orderBy('tran_date')
             ->get();
+
+        $tradeDtl  = TradeTransaction::select(
+            'trade_transactions.*',
+            'users.user_name',
+            'owner_name',
+            'license_no',
+            'provisional_license_no',
+            'application_no',
+            'ward_name'
+        )
+            ->join('users', 'users.id', 'trade_transactions.emp_dtl_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'trade_transactions.ward_id')
+            ->join('active_trade_licences', 'active_trade_licences.id', 'trade_transactions.temp_id')
+            ->join('active_trade_owners', 'active_trade_owners.temp_id', 'active_trade_licences.id')
+            ->where('tran_date', $date)
+            ->where('payment_mode', '!=', 'ONLINE')
+            ->orderBy('tran_date')
+            ->where('emp_dtl_id', $userId)
+            ->get();
+
+
+
+        $waterDtl = WaterTran::select('water_trans.*', 'users.user_name')
+            ->join('users', 'users.id', 'water_trans.emp_dtl_id')
+            ->where('tran_date', $date)
+            ->where('payment_mode', '!=', 'ONLINE')
+            ->orderBy('tran_date')
+            ->where('emp_dtl_id', $userId)
+            ->get();
+
+        // $data['property'] = $propDtl;
+        $data['trade'] = $tradeDtl;
+        $data['water'] = $waterDtl;
+
+        return responseMsgs(true, "TC Collection", $data, "010201", "1.0", "", "POST", $request->deviceId ?? "");
     }
 }
