@@ -125,7 +125,7 @@ class ClusterController extends Controller
             if ($validateUser->fails()) {
                 return $this->validation($validateUser->errors());
             }
-            return $this->cluster->detailsByHolding($request);
+            return $this->cluster->detailsByHolding($request->holdingNo);
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }

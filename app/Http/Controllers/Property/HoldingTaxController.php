@@ -5,18 +5,22 @@ namespace App\Http\Controllers\Property;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
+use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenaltyrebate;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
+use App\Models\Property\PropPenaltyrebate;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
+use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class HoldingTaxController extends Controller
@@ -24,6 +28,7 @@ class HoldingTaxController extends Controller
     use SAF;
     use Razorpay;
     protected $_propertyDetails;
+    protected $_safRepo;
     /**
      * | Created On-19/01/2023 
      * | Created By-Anshu Kumar
@@ -31,6 +36,10 @@ class HoldingTaxController extends Controller
      * | Status-Open
      */
 
+    public function __construct(iSafRepository $safRepo)
+    {
+        $this->_safRepo = $safRepo;
+    }
     /**
      * | Generate Holding Demand(1)
      */
@@ -123,13 +132,13 @@ class HoldingTaxController extends Controller
                 return $this->calcOnePercPenalty($item);
             });
 
-            $dues = $demandList->sum('balance');
-            $onePercTax = $demandList->sum('onePercPenaltyTax');
+            $dues = roundFigure($demandList->sum('balance'));
+            $onePercTax = roundFigure($demandList->sum('onePercPenaltyTax'));
             $mLastQuarterDemand = $demandList->last()->balance;
             $totalDuesList = [
                 'totalDues' => $dues,
-                'duesFrom' => "quarter " . $demandList->last()->qtr . "/Year " . $demandList->last()->fyear,
-                'duesTo' => "quarter " . $demandList->first()->qtr . "/Year " . $demandList->last()->fyear,
+                'duesFrom' => "Quarter " . $demandList->last()->qtr . "/ Year " . $demandList->last()->fyear,
+                'duesTo' => "Quarter " . $demandList->first()->qtr . "/ Year " . $demandList->first()->fyear,
                 'onePercPenalty' => $onePercTax,
                 'totalQuarters' => $demandList->count(),
                 'arrear' => $balance
@@ -177,7 +186,7 @@ class HoldingTaxController extends Controller
             $departmentId = 1;
             $propProperties = new PropProperty();
             $propDtls = $propProperties->getPropById($req->propId);
-            $req->request->add(['workflowId' => '4', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId, 'propType' => 'HoldingTax']);
+            $req->request->add(['workflowId' => '0', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId]);
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
             $this->postPaymentPenaltyRebate($dueList, $req);
             return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011603", "1.0", "", "POST", $req->deviceId ?? "");
@@ -249,6 +258,11 @@ class HoldingTaxController extends Controller
             $propTrans->payment_mode = $req['paymentMode'];
             $propTrans->user_id = $userId;
             $propTrans->ulb_id = $req['ulbId'];
+            $propTrans->from_fyear = collect($demands)->last()['fyear'];
+            $propTrans->to_fyear = collect($demands)->first()['fyear'];
+            $propTrans->from_qtr = collect($demands)->last()['qtr'];
+            $propTrans->to_qtr = collect($demands)->first()['qtr'];
+            $propTrans->demand_amt = collect($demands)->sum('balance');
             $propTrans->save();
 
             // Reflect on Prop Tran Details
@@ -288,7 +302,73 @@ class HoldingTaxController extends Controller
     /**
      * | Generate Payment Receipt
      */
-    public function generatePaymentReceipt(Request $req)
+    public function propPaymentReceipt(Request $req)
     {
+        $req->validate([
+            'tranNo' => 'required'
+        ]);
+        try {
+            $mPaymentData = new WebhookPaymentData();
+            $mTransaction = new PropTransaction();
+            $mPropPenalties = new PropPenaltyrebate();
+            $safController = new ActiveSafController($this->_safRepo);
+
+            $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
+            $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
+            $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
+
+            $applicationDtls = $mPaymentData->getApplicationId($req->tranNo);
+            $propId = json_decode($applicationDtls)->applicationId;
+            $reqPropId = new Request(['propertyId' => $propId]);
+            $propProperty = $safController->getPropByHoldingNo($reqPropId)->original['data'];
+            $propTrans = $mTransaction->getPropByTranPropId($req->tranNo, $propId, 'property_id');
+
+            // Get Property Penalty and Rebates
+            $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
+
+            $onePercPenalty = collect($penalRebates)->where('head_name', '1% Monthly Penalty')->first()->amount ?? "";
+            $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
+            $specialRebate = collect($penalRebates)->where('head_name', 'Special Rebate')->first()->amount ?? 0;
+            $lateAssessmentPenalty = 0;
+
+            $taxDetails = $safController->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $propTrans->amount);
+            $responseData = [
+                "departmentSection" => $mDepartmentSection,
+                "accountDescription" => $mAccDescription,
+                "transactionDate" => $propTrans->tran_date,
+                "transactionNo" => $propTrans->tran_no,
+                "transactionTime" => $propTrans->created_at->format('H:i:s'),
+                "applicationNo" => $propProperty['new_holding_no'] ?? $propProperty['holding_no'],
+                "customerName" => $propProperty['applicant_name'],
+                "receiptWard" => $propProperty['new_ward_no'],
+                "address" => $propProperty['prop_address'],
+                "paidFrom" => $propTrans->from_year,
+                "paidFromQtr" => $propTrans->from_qtr,
+                "paidUpto" => $propTrans->to_year,
+                "paidUptoQtr" => $propTrans->to_qtr,
+                "paymentMode" => $propTrans->payment_mode,
+                "bankName" => "",
+                "branchName" => "",
+                "chequeNo" => "",
+                "chequeDate" => "",
+                "noOfFlats" => "",
+                "monthlyRate" => "",
+                "demandAmount" => $propTrans->demand_amt,
+                "taxDetails" => $taxDetails,
+                "ulbId" => $propProperty['ulb_id'],
+                "oldWardNo" => $propProperty['old_ward_no'],
+                "newWardNo" => $propProperty['new_ward_no'],
+                "towards" => $mTowards,
+                "description" => [
+                    "keyString" => "Holding Tax"
+                ],
+                "totalPaidAmount" => $propTrans->amount,
+                "paidAmtInWords" => getIndianCurrency($propTrans->amount),
+            ];
+
+            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "011605", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011605", "1.0", "", "POST", $req->deviceId);
+        }
     }
 }

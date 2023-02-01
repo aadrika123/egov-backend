@@ -108,4 +108,9 @@ class UserController extends Controller
     {
         return $this->EloquentAuth->deleteUser($request);
     }
+
+    public function employeeList(Request $request)
+    {
+        return $this->EloquentAuth->employeeList($request);
+    }
 }
