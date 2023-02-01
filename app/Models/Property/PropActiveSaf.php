@@ -157,6 +157,7 @@ class PropActiveSaf extends Model
             ->join('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id');
     }
 
+
     /**
      * |-------------------------- safs list whose Holding are not craeted -----------------------------------------------|
      * | @var safDetails
@@ -284,6 +285,8 @@ class PropActiveSaf extends Model
     public function verifyFieldStatus($safId)
     {
         $activeSaf = PropActiveSaf::find($safId);
+        if (!$activeSaf)
+            throw new Exception("Application Not Found");
         $activeSaf->is_field_verified = true;
         $activeSaf->save();
     }
