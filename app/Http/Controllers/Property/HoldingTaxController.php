@@ -371,4 +371,23 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "011605", "1.0", "", "POST", $req->deviceId);
         }
     }
+
+    /**
+     * | Property Payment History
+     */
+    public function propPaymentHistory(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807'
+        ]);
+
+        try {
+            $mPropTrans = new PropTransaction();
+            $transactions = $mPropTrans->getPropTransactions($req->applicationId, 'property_id');
+            $transactions = collect($transactions)->sortBy('id');
+            return responseMsgs(true, "", remove_null($transactions), "011606", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
 }

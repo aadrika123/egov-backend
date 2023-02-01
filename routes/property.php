@@ -339,5 +339,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('generate-prop-orderid', 'generateOrderId');                      // (03) Generate Property Order ID
     Route::post('payment-holding', 'paymentHolding');                             // (04) Payment Holding
     Route::post('prop-payment-receipt', 'propPaymentReceipt');                    // (05) Generate Property Payment Receipt
+    Route::post('prop-payment-history', 'propPaymentHistory');                    // (06) Property Payment History
   });
 });
