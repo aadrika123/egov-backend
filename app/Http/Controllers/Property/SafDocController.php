@@ -37,6 +37,8 @@ class SafDocController extends Controller
             });
 
             $totalDocLists = collect($propTypeDocs)->merge($safOwnerDocs);
+            $totalDocLists['docUploadStatus'] = $refSafs->doc_upload_status;
+            $totalDocLists['docVerifyStatus'] = $refSafs->doc_verify_status;
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
@@ -262,7 +264,8 @@ class SafDocController extends Controller
                 throw new Exception("Application Not Found for this application Id");
 
             $workflowId = $safDetails->workflow_id;
-            $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
+            $documents['docVerifyStatus'] = $safDetails->doc_verify_status;
+            $documents['documents'] = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");

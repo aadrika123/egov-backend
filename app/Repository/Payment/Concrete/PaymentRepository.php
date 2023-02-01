@@ -3,6 +3,7 @@
 namespace App\Repository\Payment\Concrete;
 
 use App\Http\Controllers\Property\ActiveSafController;
+use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Trade\TradeCitizenController;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\DepartmentMaster;
@@ -18,9 +19,7 @@ use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\Trade\Trade;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use App\Repository\Property\Interfaces\iSafRepository;
-use App\Repository\Trade\TradeCitizen;
-
-;
+use App\Repository\Trade\TradeCitizen;;
 
 use App\Traits\Payment\Razorpay;
 use Carbon\Carbon;
@@ -301,10 +300,17 @@ class PaymentRepository implements iPayment
 
                 # calling function for the modules                  
                 switch ($depatmentId) {
-                    case ('1'):                                     //<------------------ (SAF PAYMENT)
-                        $obj = new ActiveSafController($this->_safRepo);
-                        $transfer = new Request($transfer);
-                        $obj->paymentSaf($transfer);
+                    case ('1'):
+                        $refpropertyType = $webhookEntity['notes']['propType'];
+                        if ($refpropertyType = "HoldingTax") {
+                            $obj = new HoldingTaxController($this->_safRepo);
+                            $transfer = new Request($transfer);
+                            $obj->generateOrderId($transfer);
+                        } else {                                     //<------------------ (SAF PAYMENT)
+                            $obj = new ActiveSafController($this->_safRepo);
+                            $transfer = new Request($transfer);
+                            $obj->paymentSaf($transfer);
+                        }
                         break;
                     case ('2'):                                      //<-------------------(Water)
                         $objWater = new WaterNewConnection();

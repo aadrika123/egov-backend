@@ -78,7 +78,7 @@ class MenuController extends Controller
         try {
             $request->validate([
                 'menuName'      => 'required',
-                'route'         => 'required|unique:menu_masters,route',
+                'route'         => 'required',
             ]);
             $menuMaster = new MenuMaster();
             $menuMaster->putNewMenues($request);
@@ -146,7 +146,7 @@ class MenuController extends Controller
         }
     }
 
-    // Upload menu master
+    // Upload menu master 
     public function updateMenuMaster(Request $request)
     {
         $request->validate([

@@ -49,4 +49,14 @@ class PropDemand extends Model
             ->orderByDesc('id')
             ->get();
     }
+
+    /**
+     * | Get Property Demand by Property ID
+     */
+    public function getDemandByPropId($propId)
+    {
+        return PropDemand::where('property_id', $propId)
+            ->where('status', 1)
+            ->get();
+    }
 }

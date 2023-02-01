@@ -61,10 +61,12 @@ class MenuMaster extends Model
     public function getMenuByRole($roleId)
     {
         $a = MenuMaster::select(
-            'menu_masters.id'
+            'menu_masters.id',
+            'menu_masters.parent_serial'
         )
             ->join('wf_rolemenus', 'wf_rolemenus.menu_id', '=', 'menu_masters.id')
             ->where('menu_masters.is_deleted', false)
+            ->where('wf_rolemenus.status',true)
             ->where('wf_rolemenus.role_id', $roleId)
             ->orderBy("menu_masters.serial", "Asc")
             ->get();

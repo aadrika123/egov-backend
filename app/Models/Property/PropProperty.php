@@ -26,6 +26,12 @@ class PropProperty extends Model
             ->first();
     }
 
+    // Get Property by propID
+    public function getPropById($id)
+    {
+        return PropProperty::find($id);
+    }
+
     /**
      * | Get Property Details
      */

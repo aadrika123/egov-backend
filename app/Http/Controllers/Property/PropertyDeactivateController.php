@@ -265,5 +265,81 @@ class PropertyDeactivateController extends Controller
     {
         return $this->Repository-> readDeactivationReq($request);
     }
+    public function commentIndependent(Request $request)
+    {
+        $request->validate([
+            'comment' => 'required|min:10|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/',
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+            'senderRoleId' => 'nullable|integer'
+        ]);
+
+        try {
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId);                // SAF Details
+            $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs = array();
+            DB::beginTransaction();
+            // Save On Workflow Track For Level Independent
+            $metaReqs = [
+                'workflowId' => $refDeactivationReq->workflow_id,
+                'moduleId' => $mModuleId,
+                'refTableDotId' => "prop_active_deactivation_requests",
+                'refTableIdValue' => $refDeactivationReq->id,
+                'message' => $request->comment
+            ];
+            // For Citizen Independent Comment
+            $metaReqs = array_merge($metaReqs, ['citizenId' => $user_id]);
+
+            $request->request->add($metaReqs);
+            $this->_track->saveTrack($request);
+            DB::commit();
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "00006", "1.0", "", "POST", $request->deviceId);
+        } 
+        catch (Exception $e) 
+        {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
     
+    public function postEscalate(Request $request)
+    {
+        $request->validate([
+            "escalateStatus" => "required|int",
+            "applicationId" => "required|digits_between:1,9223372036854775807",
+        ]);
+        try {
+            $userId = auth()->user()->id;
+            $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId); 
+            $refDeactivationReq->is_escalate = $request->escalateStatus<=0?true:false;
+            $refDeactivationReq->escalate_by = $userId;
+            $refDeactivationReq->save();
+            return responseMsgs(true, $request->escalateStatus <= 0 ? "Data is removed from Escalated" : 'Data is Escalated', '', "00007", "1.0", "353ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    public function getUplodedDocuments(Request $request)
+    {
+        $request->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+        ]);
+        try{
+            $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId);
+            if(!$refDeactivationReq)
+            {
+                throw new Exception("Data Not Found!.......");
+            }
+            $docpath = !empty(trim($refDeactivationReq->documents))? $this->Repository->readDocumentPath($refDeactivationReq->documents):"";
+            
+            return responseMsgs(true, "Document Fetched", $docpath, "00008", "1.0", "", "POST", $request->deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 }

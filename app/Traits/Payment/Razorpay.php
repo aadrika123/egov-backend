@@ -73,8 +73,8 @@ trait Razorpay
                 'ulbId' => $mUlbID,
                 'workflowId' => $request->workflowId,
                 'applicationId' => $request->id,
-                'departmentId' => $request->departmentId
-
+                'departmentId' => $request->departmentId,
+                'propType' => $request->propType
             ];
 
             $saveRequestObj = new PaymentRequest();
@@ -236,5 +236,5 @@ trait Razorpay
     // }
 
 
-   
+
 }

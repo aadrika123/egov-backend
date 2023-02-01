@@ -50,8 +50,8 @@ class MenuRepo implements iMenuRepo
                                 FALSE
                             END) AS permission_status
                             FROM menu_masters AS m
-                    
-                    LEFT JOIN (SELECT * FROM wf_rolemenus WHERE role_id=$req->roleId AND status=1) AS r ON r.menu_id=m.id";
+                    LEFT JOIN (SELECT * FROM wf_rolemenus WHERE role_id=$req->roleId AND status=1) AS r ON r.menu_id=m.id
+                    WHERE m.parent_serial > '0'";
         $menues = DB::select($mQuery);
         $this->_redis->set('menu-by-role-' . $req->roleId, json_encode($menues));               // Caching the data should be flush while adding new menu to the role
 
@@ -111,9 +111,9 @@ class MenuRepo implements iMenuRepo
         )
             ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_rolemenus.role_id')
             ->join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
-            ->join('wf_roles', 'wf_roles', '=', 'wf_rolemenus.role_id')
+            ->join('wf_roles', 'wf_roles.id', '=', 'wf_rolemenus.role_id')
             ->where('wf_roleusermaps.user_id', $mUserId)
-            ->where('wf_rolemenus.is_suspended', false)
+            ->where('wf_rolemenus.status', true)
             ->where('wf_roleusermaps.is_suspended', false)
             ->get();
 
@@ -135,13 +135,13 @@ class MenuRepo implements iMenuRepo
      * | Query Time = 308ms 
      * | Rating- 4
      * | Status- Working
-        | Serial No :   
+        | Serial No : 04
      */
     public function generateMenuTree($req)
     {
         $mMenuMaster = new MenuMaster();
         $mMenues = $mMenuMaster->fetchAllMenues();
-        
+
         $data = collect($mMenues)->map(function ($value, $key) {
             $return = array();
             $return['id'] = $value['id'];
@@ -175,7 +175,10 @@ class MenuRepo implements iMenuRepo
         if ($req->roleId) {
             $mRoleMenues = $mMenuMaster->getMenuByRole($req->roleId);
 
-            $roleWise = collect($mRoleMenues)->map(function ($value) {
+            $roleWise = collect($mRoleMenues)->map(function ($value) use ($mMenuMaster) {
+                if($value['parent_serial'] > 0){
+                return $roleWise = $this->getParent($value['parent_serial']);
+                }
                 return $value['id'];
             });
             $retunProperValues = collect($data)->map(function ($value, $key) use ($roleWise) {
@@ -186,6 +189,20 @@ class MenuRepo implements iMenuRepo
             return responseMsgs(true, "OPERATION OK!", $retunProperValues->filter()->values(), "", "01", "308.ms", "POST", $req->deviceId);
         }
         return responseMsgs(true, "OPERATION OK!", $data, "", "01", "308.ms", "POST", $req->deviceId);
+    }
+
+    /**
+     * | calling function of the for geting the top root parent
+        | serial No : 04.01
+     */
+    public function getParent($parentId)
+    {
+        $mMenuMaster = new MenuMaster();
+        $refvalue = $mMenuMaster->getMenuById($parentId);
+        if ($refvalue['parent_serial'] > 0) {
+            $this->getParent($refvalue['parent_serial']);
+        }
+        return $refvalue['id'];
     }
 }
 

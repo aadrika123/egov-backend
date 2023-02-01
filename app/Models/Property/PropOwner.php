@@ -46,7 +46,10 @@ class PropOwner extends Model
                 'owner_name as ownerName',
                 'mobile_no as mobileNo',
                 'guardian_name as guardianName',
-                'email'
+                'email',
+                'gender',
+                'is_armed_force',
+                'is_specially_abled'
             )
             ->orderBy('id')
             ->get();

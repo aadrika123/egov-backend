@@ -64,6 +64,7 @@ class SafCalculation
     private $_seniorCitizenRebateID;
     private $_capitalValueRateMPH;
     private $_currentQuarterDueDate;
+    private $_penaltyRebateCalc;
 
     /** 
      * | For Building
@@ -173,6 +174,7 @@ class SafCalculation
             $this->_vacantRentalRates = $this->readVacantRentalRates();
         }
 
+        $this->_penaltyRebateCalc = new PenaltyRebateCalculation();
         // Current Quarter End Date and Start Date for 1% Penalty
         $current = Carbon::now()->format('Y-m-d');
         $currentQuarterDueDate = Carbon::parse(calculateQuaterDueDate($current))->floorMonth();
@@ -586,13 +588,7 @@ class SafCalculation
      */
     public function onePercPenalty($quarterDueDate)
     {
-        // One Perc Penalty
-        $quarterDueDate = Carbon::parse($quarterDueDate)->floorMonth();
-        $diffInMonths = $quarterDueDate->diffInMonths($this->_currentQuarterDate);
-        if ($quarterDueDate >= $this->_currentQuarterDueDate)                                       // Means the quarter due date is on current quarter or next quarter
-            $onePercPenalty = 0;
-        else
-            $onePercPenalty = $diffInMonths;
+        $onePercPenalty = $this->_penaltyRebateCalc->calcOnePercPenalty($quarterDueDate);
         return $onePercPenalty;
     }
 
@@ -1093,14 +1089,14 @@ class SafCalculation
             ]);
         }
 
-        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  != 'Male' || $years >= $seniorCitizen) {
+        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  == 'Male' || $ownerDetails['gender'] == 'Transgender' || $years >= $seniorCitizen) {
             $rebate += $speciallyAbledRebatePerc;
-            $this->_GRID['demand']['speciallyAbledRebate'] = $speciallyAbledRebatePerc;
+            $specialRebateAmt = roundFigure(($totalDemand * $speciallyAbledRebatePerc) / 100);
             array_push($rebates, [
                 "rebateTypeId" => $this->_speciallyAbledRebateID,
                 "rebateType" => "speciallyAbledRebate",
                 "rebatePerc" => $speciallyAbledRebatePerc,
-                "rebateAmount" => roundFigure(($totalDemand * $speciallyAbledRebatePerc) / 100)
+                "rebateAmount" => $specialRebateAmt
             ]);
         }
 
@@ -1108,6 +1104,7 @@ class SafCalculation
         $this->_GRID['rebates'] = $rebates;
         $this->_GRID['demand']['specialRebatePerc'] = $rebate;
         $this->_GRID['demand']['rebateAmount'] = $rebateAmount;
+        $this->_GRID['demand']['specialRebateAmount'] = $specialRebateAmt;
     }
 
     /**
@@ -1123,10 +1120,8 @@ class SafCalculation
     public function calculatePayableAmount()
     {
         $totalDemand = $this->_GRID['demand']['totalDemand'];
-        $rebatePerc = $this->_GRID['demand']['specialRebatePerc'];
         $mRebateAmount = $this->_GRID['demand']['rebateAmount'];
-        $mSpecialRebateAmount = roundFigure(($totalDemand * $rebatePerc) / 100);
-        $this->_GRID['demand']['specialRebateAmount'] = $mSpecialRebateAmount;
+        $mSpecialRebateAmount = $this->_GRID['demand']['specialRebateAmount'];
         $payableAmount = $totalDemand - ($mSpecialRebateAmount + $mRebateAmount);
         return roundFigure($payableAmount);
     }
