@@ -7,6 +7,7 @@ use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenaltyrebate;
+use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropPenaltyrebate;
@@ -378,13 +379,24 @@ class HoldingTaxController extends Controller
     public function propPaymentHistory(Request $req)
     {
         $req->validate([
-            'applicationId' => 'required|digits_between:1,9223372036854775807'
+            'propId' => 'required|digits_between:1,9223372036854775807'
         ]);
 
         try {
             $mPropTrans = new PropTransaction();
-            $transactions = $mPropTrans->getPropTransactions($req->applicationId, 'property_id');
-            $transactions = collect($transactions)->sortBy('id');
+            $mPropProperty = new PropProperty();
+
+            $transactions = array();
+            $propTrans = $mPropTrans->getPropTransactions($req->propId, 'property_id');
+            if (!$propTrans)
+                throw new Exception("No Transaction Found");
+
+            $propSafId = $mPropProperty->getSafByPropId($req->propId)->saf_id;
+            $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');
+
+            $transactions['Holding'] = collect($propTrans)->sortBy('id')->values();
+            $transactions['Saf'] = collect($safTrans)->sortBy('id')->values();
+
             return responseMsgs(true, "", remove_null($transactions), "011606", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");

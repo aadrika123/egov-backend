@@ -157,6 +157,7 @@ class PropActiveSaf extends Model
             ->join('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id');
     }
 
+
     /**
      * |-------------------------- safs list whose Holding are not craeted -----------------------------------------------|
      * | @var safDetails

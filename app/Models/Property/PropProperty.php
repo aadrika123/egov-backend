@@ -32,6 +32,14 @@ class PropProperty extends Model
         return PropProperty::find($id);
     }
 
+    // Get SAf id by Prop Id
+    public function getSafByPropId($propId)
+    {
+        return PropProperty::select('saf_id')
+            ->where('id', $propId)
+            ->first();
+    }
+
     /**
      * | Get Property Details
      */
