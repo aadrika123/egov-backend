@@ -99,6 +99,12 @@ class CustomDetail extends Model
                 $customDetails->save();
             }
 
+            if ($customFor == 'PROPERTY DEACTIVATION') {
+                $customDetails->ref_type = 'PROPERTY DEACTIVATION';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
             return responseMsg(true, "Successfully Saved", $customDetails);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

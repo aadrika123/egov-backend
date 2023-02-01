@@ -22,6 +22,16 @@ class PropTransaction extends Model
             ->get();
     }
 
+    /**
+     * | Get PropTran By tranno property id
+     */
+    public function getPropByTranPropId($tranNo, $propId, $key)
+    {
+        return PropTransaction::where("$key", $propId)
+            ->where('tran_no', $tranNo)
+            ->first();
+    }
+
     // getPropTrans as trait function on current object
     public function getPropTransTrait()
     {

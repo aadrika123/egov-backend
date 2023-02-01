@@ -419,4 +419,19 @@ class EloquentAuthRepository implements AuthRepository
         $data->save();
         return responseMsg(true, "Data Deleted", '');
     }
+
+    /**
+     *  get employee list
+     */
+    public function employeeList()
+    {
+        $ulbId = authUser()->ulb_id;
+        $data = User::select('user_name', 'id')
+            ->where('user_type', 'Employee')
+            ->where('ulb_id', $ulbId)
+            ->orderBy('id')
+            ->get();
+
+        return responseMsg(true, "List Employee", $data);
+    }
 }
