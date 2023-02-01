@@ -99,7 +99,8 @@ class CashVerificationController extends Controller
                     "trade" => $trad,
                     "total" => $total,
                     "is_verified" => !$is_verified,
-                    "verified_amount" => $verified_amount
+                    "verified_amount" => $verified_amount,
+                    "GB_saf" => 0
                 ];
             });
             return responseMsgs(true, "List cash Verification", $data, "010201", "1.0", "", "POST", $request->deviceId ?? "");
