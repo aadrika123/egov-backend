@@ -288,7 +288,14 @@ class HoldingTaxController extends Controller
     /**
      * | Generate Payment Receipt
      */
-    public function generatePaymentReceipt(Request $req)
+    public function propPaymentReceipt(Request $req)
     {
+        $req->validate([
+            'tranNo' => 'required'
+        ]);
+        try {
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011605", "1.0", "", "POST", $req->deviceId);
+        }
     }
 }
