@@ -1870,8 +1870,8 @@ class ActiveSafController extends Controller
                 ];
             $size = sizeOf($floars)>=sizeOf($verifications_detals)?$floars:$verifications_detals;
             $keys = sizeOf($floars)>=sizeOf($verifications_detals)?"floars":"detals";
-            $floars_compais = array();
-            $floars_compais = $size->map(function($val,$key) use($floars,$verifications_detals,$keys){
+            $floors_compais = array();
+            $floors_compais = $size->map(function($val,$key) use($floars,$verifications_detals,$keys){
                     if($keys=="floars")
                     {
                         // $saf_data=($floars->where("id",$val->id))->values();
@@ -1931,8 +1931,8 @@ class ActiveSafController extends Controller
             }
             $data["saf_details"] = $saf;
             $data["employee_details"] = ["user_name"=>$verifications->user_name,"date"=>$verifications->created_at];
-            $data["propery_coparision"] = $prop_compairs;
-            $data["floar_coparision"] = $floars_compais;
+            $data["property_comparison"] = $prop_compairs;
+            $data["floor_comparison"] = $floors_compais;
             return responseMsgs(true, $message, remove_null($data), "010121", "1.0", "258ms", "POST", $request->deviceId);
             
          
