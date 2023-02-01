@@ -1928,7 +1928,11 @@ class ActiveSafController extends Controller
             $message = "ULB TC Verification Details";
             if($verifications->agency_verification)
             {
-                $geoTagging = PropSafGeotagUpload::where("saf_id",$saf->id)->get();
+                $PropertyDeactivate = new \App\Repository\Property\Concrete\PropertyDeactivate();
+                $geoTagging = PropSafGeotagUpload::where("saf_id",$saf->id)->get()->map(function($val) use( $PropertyDeactivate){
+                    $val->paths = $PropertyDeactivate->readDocumentPath($val->relative_path."/".$val->image_path);
+                    return $val;
+                });
                 $message = "TC Verification Details";
                 $data["geoTagging"] = $geoTagging;
             }
