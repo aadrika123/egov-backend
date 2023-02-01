@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cluster\Cluster;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Repository\Cluster\Interfaces\iCluster;
 use Exception;
@@ -44,10 +45,30 @@ class ClusterController extends Controller
     }
 
     // get all details of the cluster accordin to the id
+    /**
+        | Remark 
+     */
     public function getClusterById(Request $request)
     {
+        $request->validate([
+            'clusterId'   => 'required|integer',
+        ]);
         try {
-            return $this->cluster->getClusterById($request);
+            $refCluster = $request->clusterId;
+            $mCluster = new Cluster();
+            $mPropProperty = new PropProperty();
+            $mPropActiveSaf = new PropActiveSaf();
+
+            $clusterList['Cluster'] = $mCluster->checkActiveCluster($refCluster);
+            $checkcluster=collect($clusterList['Cluster'])->first();
+            if(!$checkcluster)
+            {
+                throw new Exception("Cluster Not exist!");
+            }
+            $porpList['Property'] =  $mPropProperty->searchPropByCluster($refCluster);
+            $safList['Saf'] = $mPropActiveSaf->safByCluster($refCluster);
+            $returnValues = array_merge($clusterList, $porpList, $safList);
+            return responseMsgs(true, "List Of Data1", $returnValues, "", "", "", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -124,47 +145,17 @@ class ClusterController extends Controller
     // selecting details according to holding no // Change the repositery
     public function detailsByHolding(Request $request)
     {
+        $request->validate([
+            'holdingNo'     => 'required',
+        ]);
         try {
-            $validateUser = Validator::make(
-                $request->all(),
-                [
-                    'holdingNo'   => 'required',
-                ]
-            );
-            if ($validateUser->fails()) {
-                return $this->validation($validateUser->errors());
-            }
             $mPropProperty = new PropProperty();
-            $holdingDetails = $mPropProperty->searchHolding($request->holdingNo)->get();
+            $holdingDetails = $mPropProperty->searchHolding($request->holdingNo);
             return responseMsgs(true, "List of holding!", $holdingDetails, "", "02", "", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
     }
-
-
-    // selecting details according to clusterID
-    public function holdingByCluster(Request $request)
-    {
-        try {
-            $validateUser = Validator::make(
-                $request->all(),
-                [
-                    'clusterId'   => 'required|integer',
-                ]
-            );
-            if ($validateUser->fails()) {
-                return $this->validation($validateUser->errors());
-            }
-
-            $mPropProperty = new PropProperty();
-            $propDetails = $mPropProperty->searchPropByCluster($request->clusterId)->get();
-            return responseMsgs(true, "List of holding Grouped By Cluster!", $propDetails, "", "02", "", "POST", "");
-        } catch (Exception $error) {
-            return responseMsg(false, $error->getMessage(), "");
-        }
-    }
-
 
     // selecting details according to clusterID
     public function saveHoldingInCluster(Request $request)
@@ -204,7 +195,6 @@ class ClusterController extends Controller
 
     /**
      * | Search Saf by by Saf no
-        | Route creation
      */
     public function getSafBySafNo(Request $request)
     {
@@ -223,19 +213,19 @@ class ClusterController extends Controller
     // selecting details according to clusterID // Route
     public function saveSafInCluster(Request $request)
     {
+        $request->validate([
+            'clusterId'     => 'required|integer',
+            'safNo'     => "required|array",
+        ]);
         try {
-            $request->validate([
-                'clusterId'     => 'required|integer',
-                'safNo'     => "required|array",
-            ]);
             $uniqueValues = collect($request->safNo)->unique();
             if ($uniqueValues->count() !== count($request->safNo)) {
-                return responseMsg(false, "holding no Contain Dublicate Value!", "");
+                return responseMsg(false, "saf Contain Dublicate Value!", "");
             }
             $mPropActiveSaf = new PropActiveSaf();
             $results = $mPropActiveSaf->searchCollectiveSaf($request->safNo);
             if ($results->count() !== count($request->safNo)) {
-                return responseMsg(false, "the holding details contain invalid data", "");
+                return responseMsg(false, "the saf details contain invalid data", "");
             }
 
             $notActive = "Not a valid cluter ID!";
@@ -255,6 +245,7 @@ class ClusterController extends Controller
             return responseMsg(false, $error->getMessage(), "");
         }
     }
+
 
 
 

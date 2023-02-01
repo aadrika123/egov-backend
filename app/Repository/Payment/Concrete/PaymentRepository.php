@@ -303,7 +303,7 @@ class PaymentRepository implements iPayment
                     case ('1'):
                         $refpropertyType = $webhookEntity['notes']['workflowId'];
                         if ($refpropertyType == 0) {
-                            $objHoldingTaxController = new HoldingTaxController();
+                            $objHoldingTaxController = new HoldingTaxController($this->_safRepo);
                             $transfer = new Request($transfer);
                             $objHoldingTaxController->paymentHolding($transfer);
                         } else {                                     //<------------------ (SAF PAYMENT)

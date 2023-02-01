@@ -277,13 +277,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     #cluster data entry / Master
     Route::get('cluster/get-all-clusters', 'getAllClusters');
-    Route::post('cluster/get-cluster-by-id', 'getClusterById');
     Route::post('cluster/edit-cluster-details', 'editClusterDetails');
     Route::post('cluster/save-cluster-details', 'saveClusterDetails');
     Route::post('cluster/delete-cluster-data', 'deleteClusterData');
+    Route::post('cluster/get-cluster-by-id', 'getClusterById');           // Remark
     # cluster maping
     Route::post('cluster/details-by-holding', 'detailsByHolding');
-    Route::post('cluster/holding-by-cluster', 'holdingByCluster');
+    Route::post('cluster/property-by-cluster', 'propertyByCluster');
     Route::post('cluster/save-holding-in-cluster', 'saveHoldingInCluster');
     Route::post('cluster/get-saf-by-safno', 'getSafBySafNo');
     Route::post('cluster/save-saf-in-cluster', 'saveSafInCluster');

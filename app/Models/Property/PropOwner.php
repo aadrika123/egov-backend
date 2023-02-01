@@ -54,4 +54,5 @@ class PropOwner extends Model
             ->orderBy('id')
             ->get();
     }
+
 }

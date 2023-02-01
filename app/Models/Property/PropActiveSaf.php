@@ -349,9 +349,11 @@ class PropActiveSaf extends Model
                 's.corr_pin_code',
                 'prop_active_safs_owners.owner_name as ownerName',
                 'prop_active_safs_owners.mobile_no as mobileNo',
-                'prop_active_safs_owners.email'
+                'prop_active_safs_owners.email',
+                'ref_prop_types.property_type as propertyType'
             )
             ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', '=', 's.id')
+            ->join('ref_prop_types', 'ref_prop_types.id', '=', 's.prop_type_mstr_id')
             ->where('s.saf_no', 'LIKE', '%' . $safNo)
             ->where('ulb_id', auth()->user()->ulb_id)
             ->get();
@@ -364,6 +366,56 @@ class PropActiveSaf extends Model
     {
         return PropActiveSaf::whereIn('saf_no', $safList)
             ->where('status', 1)
+            ->get();
+    }
+
+    /**
+     * | Search Saf Details By Cluster Id
+     */
+    public function getSafByCluster($clusterId)
+    {
+        return  PropActiveSaf::join()
+            ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_active_safs.prop_type_mstr_id')
+            ->select(
+                'prop_active_safs.id',
+                'prop_active_safs.saf_no',
+                'prop_active_safs.ward_mstr_id as wardId',
+                'prop_active_safs.',
+                'prop_active_safs.',
+                'prop_active_safs.',
+                'prop_active_safs_owners.owner_name as ownerName',
+                'prop_active_safs_owners.mobile_no as mobileNo',
+                'prop_active_safs_owners.email',
+                'ref_prop_types.property_type as propertyType'
+            )
+            ->where('prop_active_safs.cluster_id', $clusterId)
+            ->where('prop_active_safs.status', 1)
+            ->where('ref_prop_types.status', 1);
+    }
+
+    /**
+     * | Get Saf Details
+     */
+    public function safByCluster($clusterId)
+    {
+        return  DB::table('prop_active_safs')
+            ->leftJoin('prop_active_safs_owners as o', 'o.saf_id', '=', 'prop_active_safs.id')
+            ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_active_safs.prop_type_mstr_id')
+            ->select(
+                'prop_active_safs.saf_no',
+                'prop_active_safs.id',
+                'prop_active_safs.ward_mstr_id as wardId',
+                DB::raw("string_agg(o.mobile_no::VARCHAR,',') as mobileNo"),
+                DB::raw("string_agg(o.owner_name,',') as ownerName"),
+                'ref_prop_types.property_type as propertyType',
+                'prop_active_safs.cluster_id',
+                'prop_active_safs.prop_address as address'
+            )
+            ->where('prop_active_safs.cluster_id', $clusterId)
+            ->where('ref_prop_types.status', 1)
+            ->where('prop_active_safs.status', 1)
+            ->where('o.status', 1)
+            ->groupBy('prop_active_safs.id', 'ref_prop_types.property_type')
             ->get();
     }
 }
