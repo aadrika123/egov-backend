@@ -84,7 +84,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/proptransaction-by-id', 'getTransactionBySafPropId');                              // Get Property Transaction by Property ID or SAF id(22)
     Route::post('saf/get-demand-by-id', 'getDemandBySafId');                                            // Get the demandable Amount of the Property after payment done(26)
     // Route::post('saf/get-btc-fields', 'getBtcFields'); 
-    Route::post('saf/verifications-comp', 'getVerifications'); 
+    Route::post('saf/verifications-comp', 'getVerifications');
     Route::post('saf/static-saf-dtls', 'getStaticSafDetails');                                          // (27) Static SAf Details
   });
 
@@ -338,5 +338,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('generate-prop-orderid', 'generateOrderId');                      // (03) Generate Property Order ID
     Route::post('payment-holding', 'paymentHolding');                             // (04) Payment Holding
     Route::post('prop-payment-receipt', 'propPaymentReceipt');                    // (05) Generate Property Payment Receipt
+    Route::post('prop-payment-history', 'propPaymentHistory');                    // (06) Property Payment History
   });
 });
