@@ -1942,5 +1942,30 @@ class ActiveSafController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+    public function getSafVerificationList(Request $request)
+    {
+        try{            
+            $data = array();
+            $request->validate([
+                'applicationId' => 'required|digits_between:1,9223372036854775807',
+            ]);
+            $verifications = PropSafVerification::select('id','created_at','agency_verification',"ulb_verification"
+                            )
+                            ->where("prop_saf_verifications.status",1)
+                            ->where("prop_saf_verifications.saf_id",$request->applicationId)
+                            ->get();
+            $data = $verifications->map(function($val){
+                    $val->veryfied_by = $val->agency_verification?"AGENCY TC":"ULB TC";
+                return $val;
+            });
+            return responseMsgs(true, "Data Fetched", remove_null($data), "010122", "1.0", "258ms", "POST", $request->deviceId);
+            
+         
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
     // ---------end----------------
 }
