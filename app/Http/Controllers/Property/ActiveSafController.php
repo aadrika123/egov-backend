@@ -1769,20 +1769,22 @@ class ActiveSafController extends Controller
             {
                 throw new Exception("verification Data NOt Found");
             }
-            $saf =PropActiveSaf::select('prop_active_safs.*', 'p.property_type', 'r.road_type', 'u.ward_name as ward_no')
+            $saf =PropActiveSaf::select('prop_active_safs.*', 'p.property_type', 'r.road_type', 'u.ward_name as ward_no',"ownership_types.ownership_type")
                 ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
                 ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id')
                 ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_active_safs.ward_mstr_id')
+                ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_active_safs.ownership_type_mstr_id')
                 ->where("prop_active_safs.id",$verifications->saf_id)
                 ->first();
             $tbl = "prop_active_safs";
             if(!$saf)
             {
                 $saf =DB::table("prop_rejected_safs")
-                    ->select('prop_rejected_safs.*', 'p.property_type', 'r.road_type', 'u.ward_name as ward_no')
+                    ->select('prop_rejected_safs.*', 'p.property_type', 'r.road_type', 'u.ward_name as ward_no',"ownership_types.ownership_type")
                     ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_rejected_safs.prop_type_mstr_id')
                     ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_rejected_safs.road_type_mstr_id')
                     ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_rejected_safs.ward_mstr_id')
+                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_active_safs.ownership_type_mstr_id')
                     ->where("prop_rejected_safs.id",$verifications->saf_id)
                     ->first();
                 $tbl = "prop_rejected_safs";
@@ -1790,10 +1792,11 @@ class ActiveSafController extends Controller
             if(!$saf)
             {
                 $saf =DB::table("prop_safs")
-                    ->select('prop_safs.*', 'p.property_type', 'r.road_type', 'u.ward_name as ward_no')
+                    ->select('prop_safs.*', 'p.property_type', 'r.road_type', 'u.ward_name as ward_no',"ownership_types.ownership_type")
                     ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_safs.prop_type_mstr_id')
                     ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_safs.road_type_mstr_id')
                     ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_safs.ward_mstr_id')
+                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_active_safs.ownership_type_mstr_id')
                     ->where("prop_safs.id",$verifications->saf_id)
                     ->first();
                 $tbl = "prop_safs";
