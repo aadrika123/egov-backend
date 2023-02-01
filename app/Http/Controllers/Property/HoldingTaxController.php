@@ -138,7 +138,7 @@ class HoldingTaxController extends Controller
             $totalDuesList = [
                 'totalDues' => $dues,
                 'duesFrom' => "Quarter " . $demandList->last()->qtr . "/ Year " . $demandList->last()->fyear,
-                'duesTo' => "Quarter " . $demandList->first()->qtr . "/ Year " . $demandList->last()->fyear,
+                'duesTo' => "Quarter " . $demandList->first()->qtr . "/ Year " . $demandList->first()->fyear,
                 'onePercPenalty' => $onePercTax,
                 'totalQuarters' => $demandList->count(),
                 'arrear' => $balance
