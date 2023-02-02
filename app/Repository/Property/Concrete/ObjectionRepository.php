@@ -190,6 +190,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection = new PropActiveObjection;
                 $objection->ulb_id = $ulbId;
                 $objection->user_id = $userId;
+                $objection->citizen_id = $userId;
                 $objection->objection_for =  $objectionFor;
                 $objection->property_id = $request->propId;
                 $objection->remarks = $request->remarks;
@@ -197,6 +198,8 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->created_at = Carbon::now();
                 $objection->workflow_id =  $ulbWorkflowId->id;
                 $objection->current_role = collect($initiatorRoleId)->first()->role_id;
+                $objection->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
+                $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
                 $objection->save();
 
                 //objection_form
