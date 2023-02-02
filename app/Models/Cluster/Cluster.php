@@ -114,4 +114,15 @@ class Cluster extends Model
         Cluster::where('id', $request->id)
             ->update(['status' => "0"]);
     }
+
+
+    /**
+     * | Get Active cluster 
+     */
+    public function checkActiveCluster($clusterId)
+    {
+        return Cluster::where('id',$clusterId)
+        ->where('status',1)
+        ->first();
+    }
 }

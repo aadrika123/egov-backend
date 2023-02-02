@@ -4,8 +4,13 @@ namespace App\Http\Controllers\property;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cluster\Cluster;
+use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropOwner;
+use App\Models\Property\PropProperty;
 use App\Repository\Cluster\Interfaces\iCluster;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -40,10 +45,30 @@ class ClusterController extends Controller
     }
 
     // get all details of the cluster accordin to the id
+    /**
+        | Remark 
+     */
     public function getClusterById(Request $request)
     {
+        $request->validate([
+            'clusterId'   => 'required|integer',
+        ]);
         try {
-            return $this->cluster->getClusterById($request);
+            $refCluster = $request->clusterId;
+            $mCluster = new Cluster();
+            $mPropProperty = new PropProperty();
+            $mPropActiveSaf = new PropActiveSaf();
+
+            $clusterList['Cluster'] = $mCluster->checkActiveCluster($refCluster);
+            $checkcluster=collect($clusterList['Cluster'])->first();
+            if(!$checkcluster)
+            {
+                throw new Exception("Cluster Not exist!");
+            }
+            $porpList['Property'] =  $mPropProperty->searchPropByCluster($refCluster);
+            $safList['Saf'] = $mPropActiveSaf->safByCluster($refCluster);
+            $returnValues = array_merge($clusterList, $porpList, $safList);
+            return responseMsgs(true, "List Of Data1", $returnValues, "", "", "", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -112,68 +137,117 @@ class ClusterController extends Controller
         }
     }
 
-    // selecting details according to holding no
+    /**
+     * |----------------------------------- Cluster Maping ----------------------------------------|
+     * | Date : 24-11-22
+     */
+
+    // selecting details according to holding no // Change the repositery
     public function detailsByHolding(Request $request)
     {
+        $request->validate([
+            'holdingNo'     => 'required',
+        ]);
         try {
-            $validateUser = Validator::make(
-                $request->all(),
-                [
-                    'holdingNo'   => 'required',
-                ]
-            );
-            if ($validateUser->fails()) {
-                return $this->validation($validateUser->errors());
+            $mPropProperty = new PropProperty();
+            $holdingDetails = $mPropProperty->searchHolding($request->holdingNo);
+            return responseMsgs(true, "List of holding!", $holdingDetails, "", "02", "", "POST", "");
+        } catch (Exception $error) {
+            return responseMsg(false, $error->getMessage(), "");
+        }
+    }
+
+    // selecting details according to clusterID
+    public function saveHoldingInCluster(Request $request)
+    {
+        try {
+            $request->validate([
+                'clusterId'     => 'required|integer',
+                'holdingNo'     => "required|array",
+            ]);
+            $uniqueValues = collect($request->holdingNo)->unique();
+            if ($uniqueValues->count() !== count($request->holdingNo)) {
+                return responseMsg(false, "holding no Contain Dublicate Value!", "");
             }
-            return $this->cluster->detailsByHolding($request->holdingNo);
+            $mPropProperty = new PropProperty();
+            $results = $mPropProperty->searchCollectiveHolding($request->holdingNo);
+            if ($results->count() !== count($request->holdingNo)) {
+                return responseMsg(false, "the holding details contain invalid data", "");
+            }
+
+            $notActive = "Not a valid cluter ID!";
+            $mCluster = new Cluster();
+            $checkActiveCluster =  $mCluster->checkActiveCluster($request->clusterId);
+            $verifyCluster = collect($checkActiveCluster)->first();
+            if ($verifyCluster) {
+                $holdingList = collect($request->holdingNo);
+                PropProperty::whereIn('new_holding_no', $holdingList)
+                    ->update([
+                        'cluster_id' => $request->clusterId
+                    ]);
+                return responseMsgs(true, "Holding is Added to the respective Cluster!", $request->clusterId, "", "02", "", "POST", "");
+            }
+            return responseMsg(false, $notActive, "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
     }
 
     /**
-     * |----------------------------------- Cluster Maping ----------------------------------------|
-     * | Date : 24-11-22
+     * | Search Saf by by Saf no
      */
-
-    // selecting details according to clusterID
-    public function holdingByCluster(Request $request)
+    public function getSafBySafNo(Request $request)
     {
+        $request->validate([
+            'safNo' => 'required',
+        ]);
         try {
-            $validateUser = Validator::make(
-                $request->all(),
-                [
-                    'clusterId'   => 'required|integer',
-                ]
-            );
-            if ($validateUser->fails()) {
-                return $this->validation($validateUser->errors());
+            $mPropActiveSaf = new PropActiveSaf();
+            $application = collect($mPropActiveSaf->searchSafDtlsBySafNo($request->safNo));
+            return responseMsgs(true, "Listed Saf!", $application, "", "02", "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    // selecting details according to clusterID // Route
+    public function saveSafInCluster(Request $request)
+    {
+        $request->validate([
+            'clusterId'     => 'required|integer',
+            'safNo'     => "required|array",
+        ]);
+        try {
+            $uniqueValues = collect($request->safNo)->unique();
+            if ($uniqueValues->count() !== count($request->safNo)) {
+                return responseMsg(false, "saf Contain Dublicate Value!", "");
             }
-            return $this->cluster->holdingByCluster($request);
+            $mPropActiveSaf = new PropActiveSaf();
+            $results = $mPropActiveSaf->searchCollectiveSaf($request->safNo);
+            if ($results->count() !== count($request->safNo)) {
+                return responseMsg(false, "the saf details contain invalid data", "");
+            }
+
+            $notActive = "Not a valid cluter ID!";
+            $mCluster = new Cluster();
+            $checkActiveCluster =  $mCluster->checkActiveCluster($request->clusterId);
+            $verifyCluster = collect($checkActiveCluster)->first();
+            if ($verifyCluster) {
+                $safNoList = collect($request->safNo);
+                PropActiveSaf::whereIn('saf_no', $safNoList)
+                    ->update([
+                        'cluster_id' => $request->clusterId
+                    ]);
+                return responseMsgs(true, "saf is Added to the respective Cluster!", $request->clusterId, "", "02", "", "POST", "");
+            }
+            return responseMsg(false, $notActive, "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
     }
 
 
-    // selecting details according to clusterID
-    public function saveHoldingInCluster(Request $request)
-    {
-        try {
-            $validateUser = Validator::make(
-                $request->all(),
-                [
-                    'clusterId'   => 'required|integer',
-                ]
-            );
-            if ($validateUser->fails()) {
-                return $this->validation($validateUser->errors());
-            }
-            return $this->cluster->saveHoldingInCluster($request);
-        } catch (Exception $error) {
-            return responseMsg(false, $error->getMessage(), "");
-        }
-    }
+
 
 
 
