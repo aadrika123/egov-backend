@@ -51,7 +51,7 @@ class WardController extends Controller
     {
         $newWard =   UlbNewWardmap::select('ulb_new_wardmaps.id', 'ulb_new_wardmaps.new_ward_mstr_id', 'ward_name')
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'ulb_new_wardmaps.new_ward_mstr_id')
-            ->where('old_ward_mstr_id', $req->oldWardM)
+            ->where('old_ward_mstr_id', $req->oldWard)
             ->where('ulb_new_wardmaps.ulb_id', $req->ulbId)
             ->orderBy('new_ward_mstr_id')
             ->get();
