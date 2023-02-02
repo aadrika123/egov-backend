@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Property\PropTransaction;
 use App\Models\Trade\TradeTransaction;
 use App\Models\Water\WaterTran;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -336,7 +337,7 @@ class CashVerificationController extends Controller
             trade_transaction AS 
         (
             SELECT trade_transactions.id,tran_no,
-                payment_mode,paid_amount,is_verified,verify_by,verify_date,ward_name,application_no,
+                payment_mode,paid_amount as amount,is_verified as verify_status,verify_by as verified_by,verify_date,ward_name,application_no,
                 tran_type,tran_date,owner_name,'active_trade_licences' AS tbl
             FROM trade_transactions
             inner join active_trade_licences on active_trade_licences.id = trade_transactions.temp_id
@@ -361,7 +362,7 @@ class CashVerificationController extends Controller
         union
             (
             SELECT trade_transactions.id,tran_no,
-                payment_mode,paid_amount,is_verified,verify_by,verify_date,ward_name,application_no,
+                payment_mode,paid_amount as amount,is_verified as verify_status,verify_by as verified_by,verify_date,ward_name,application_no,
                 tran_type,tran_date,owner_name,'trade_licences' AS tbl
             FROM trade_transactions
             inner join trade_licences on trade_licences.id = trade_transactions.temp_id
@@ -386,7 +387,7 @@ class CashVerificationController extends Controller
         union
             (
             SELECT trade_transactions.id,tran_no,
-                payment_mode,paid_amount,is_verified,verify_by,verify_date,ward_name,application_no,
+                payment_mode,paid_amount as amount,is_verified as verify_status,verify_by as verified_by,verify_date,ward_name,application_no,
                 tran_type,tran_date,owner_name,'rejected_trade_licences' AS tbl
             FROM trade_transactions
             inner join rejected_trade_licences on rejected_trade_licences.id = trade_transactions.temp_id
@@ -415,7 +416,7 @@ class CashVerificationController extends Controller
             water_transaction AS 
         (
             SELECT water_trans.id,tran_no,
-            payment_mode,amount,verify_status,verified_by,verified_date,ward_name,tran_date,application_no,tran_type,
+            payment_mode,amount,verify_status,verified_by,verified_date as verify_date,ward_name,tran_date,application_no,tran_type,
                     owner_name,'water_active' AS tbl
                 FROM water_trans
                 inner join water_applications on water_applications.id = water_trans.related_id
@@ -441,7 +442,7 @@ class CashVerificationController extends Controller
             (
             
             SELECT water_trans.id,tran_no,
-            payment_mode,amount,verify_status,verified_by,verified_date,ward_name,tran_date,application_no,tran_type,
+            payment_mode,amount,verify_status,verified_by,verified_date as verify_date,ward_name,tran_date,application_no,tran_type,
                     owner_name,'water_approved' AS tbl
                 FROM water_trans
                 inner join water_approval_application_details on water_approval_application_details.id = water_trans.related_id
@@ -467,7 +468,7 @@ class CashVerificationController extends Controller
             (
                 
             SELECT water_trans.id,tran_no,
-            payment_mode,amount,verify_status,verified_by,verified_date,ward_name,tran_date,application_no,tran_type,
+            payment_mode,amount,verify_status,verified_by,verified_date as verify_date,ward_name,tran_date,application_no,tran_type,
                     owner_name,'water_rejected' AS tbl
                 FROM water_trans
                 inner join water_rejection_application_details on water_rejection_application_details.id = water_trans.related_id
@@ -494,7 +495,7 @@ class CashVerificationController extends Controller
             (
                 
             SELECT water_trans.id,tran_no,
-            payment_mode,amount,verify_status,verified_by,verified_date,ward_name,tran_date,consumer_no,tran_type,
+            payment_mode,amount,verify_status,verified_by,verified_date as verify_date,ward_name,tran_date,consumer_no,tran_type,
                     owner_name,'water_consumer' AS tbl
                 FROM water_trans
                 inner join water_consumers on water_consumers.id = water_trans.related_id
@@ -581,5 +582,39 @@ class CashVerificationController extends Controller
         $data['water'] = $waterDtl;
 
         return responseMsgs(true, "TC Collection", $data, "010201", "1.0", "", "POST", $request->deviceId ?? "");
+    }
+
+
+    /**
+     * | For Verification of cash
+     */
+
+    public function cashVerify(Request $request)
+    {
+        $userId = authUser()->id;
+        $property =  $request->property;
+        $water =  $request->water;
+        $trade =  $request->trade;
+
+
+
+        foreach ($property as $a) {
+            $mPropTransaction = new PropTransaction();
+            $mPropTransaction->verify_status =
+
+                PropTransaction::where('tran_no', $a)
+                ->update(
+                    [
+                        'verify_status' => 1,
+                        'verify_date' => Carbon::now(),
+                        'verified_by' => $userId
+                    ]
+
+                );
+        }
+
+        // $amount['property'] = collect($property)->map(function ($value) {
+        //     return $value;
+        // });
     }
 }
