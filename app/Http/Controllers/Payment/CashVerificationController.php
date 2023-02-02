@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
 use App\Models\Property\PropTransaction;
+use App\Models\TempTransaction;
 use App\Models\Trade\TradeTransaction;
 use App\Models\Water\WaterTran;
 use Carbon\Carbon;
@@ -225,112 +226,107 @@ class CashVerificationController extends Controller
         $userId = $request->id;
         $date = date('Y-m-d', strtotime($request->date));
 
-
-
-
-        $sql =   "WITH 
-            prop_transactions AS 
-        (
-            SELECT prop_transactions.id,assessment_type AS application_type, saf_no AS application_no,tran_no,
-            payment_mode,amount,verify_status,verified_by,verify_date,ward_name,tran_date,
-                    prop_active_safs.ward_mstr_id AS ward_id , owner_name,'activ_saf' AS tbl
-                FROM prop_transactions
-                inner join prop_active_safs on prop_active_safs.id = prop_transactions.saf_id
-                inner join ulb_ward_masters on ulb_ward_masters.id = prop_active_safs.ward_mstr_id
-                LEFT JOIN (
-                    SELECT prop_active_safs_owners.saf_id,string_agg(owner_name,',') AS owner_name
-                    FROM prop_active_safs_owners
-                    JOIN prop_transactions ON prop_transactions.saf_id = prop_active_safs_owners.saf_id
-                    WHERE prop_active_safs_owners.status = 1
-                        AND prop_transactions.status = 1
-                        AND prop_transactions.tran_date = '" . $date . "'
-                        AND payment_mode != 'netbanking'
-                        AND prop_transactions.payment_mode != 'ONLINE'
-                    GROUP BY prop_active_safs_owners.saf_id
-                ) owners ON owners.saf_id = prop_active_safs.id
-                WHERE prop_transactions.status = 1 
-                    AND prop_transactions.tran_date = '" . $date . "'
-                    AND prop_transactions.payment_mode != 'ONLINE'
-                    AND payment_mode != 'netbanking'
-                    AND prop_transactions.user_id = $userId
-                
-            union
-                (
-                    SELECT prop_transactions.id,assessment_type AS application_type, saf_no AS application_no,tran_no,
-                    payment_mode,amount,verify_status,verified_by,verify_date,ward_name,tran_date,
-                        prop_rejected_safs.ward_mstr_id AS ward_id , owner_name,'rejected_saf' AS tbl
-                    FROM prop_transactions
-                    inner join prop_rejected_safs on prop_rejected_safs.id = prop_transactions.saf_id
-                    inner join ulb_ward_masters on ulb_ward_masters.id = prop_rejected_safs.ward_mstr_id
-                    LEFT JOIN (
-                        SELECT prop_rejected_safs_owners.saf_id,string_agg(owner_name,',') AS owner_name
-                        FROM prop_rejected_safs_owners
-                        JOIN prop_transactions ON prop_transactions.saf_id = prop_rejected_safs_owners.saf_id
-                        WHERE prop_rejected_safs_owners.status = 1
-                            AND prop_transactions.status = 1
-                            AND prop_transactions.tran_date = '2023-02-01'
-                            AND payment_mode != 'netbanking'
-                            AND prop_transactions.payment_mode != 'ONLINE'
-                        GROUP BY prop_rejected_safs_owners.saf_id
-                    ) owners ON owners.saf_id = prop_rejected_safs.id
-                    WHERE prop_transactions.status = 1 
-                        AND prop_transactions.tran_date = '" . $date . "'
-                        AND prop_transactions.payment_mode != 'ONLINE'
-                        AND payment_mode != 'netbanking'
-                        AND prop_transactions.user_id = $userId
-                )
-            union
-                (
-                    SELECT prop_transactions.id,assessment_type AS application_type, saf_no AS application_no,
-                    tran_no,payment_mode,amount,verify_status,verified_by,verify_date,ward_name,tran_date,
-                        prop_safs.ward_mstr_id AS ward_id , owner_name,'prop_saf' AS tbl
-                    FROM prop_transactions
-                    inner join prop_safs on prop_safs.id = prop_transactions.saf_id
-                    inner join ulb_ward_masters on ulb_ward_masters.id = prop_safs.ward_mstr_id
-                    LEFT JOIN (
-                        SELECT prop_safs_owners.saf_id,string_agg(owner_name,',') AS owner_name
-                        FROM prop_safs_owners
-                        JOIN prop_transactions ON prop_transactions.saf_id = prop_safs_owners.saf_id
-                        WHERE prop_safs_owners.status = 1
-                            AND prop_transactions.status = 1
-                            AND prop_transactions.tran_date = '" . $date . "'
-                            AND payment_mode != 'netbanking'
-                            AND prop_transactions.payment_mode != 'ONLINE'
-                        GROUP BY prop_safs_owners.saf_id
-                    ) owners ON owners.saf_id = prop_safs.id
-                    WHERE prop_transactions.status = 1 
-                        AND prop_transactions.tran_date = '" . $date . "'
-                        AND prop_transactions.payment_mode != 'ONLINE'
-                        AND payment_mode != 'netbanking'
-                        AND prop_transactions.user_id = $userId
-                )
-                
-            union
-                (
-                    SELECT prop_transactions.id,assessment_type AS application_type, holding_no AS application_no,tran_no,
-                    payment_mode,amount,verify_status,verified_by,verify_date,ward_name,tran_date,
-                        prop_properties.ward_mstr_id AS ward_id , owner_name,'prop_properties' AS tbl
-                    FROM prop_transactions
-                    inner join prop_properties on prop_properties.id = prop_transactions.property_id
-                    inner join ulb_ward_masters on ulb_ward_masters.id = prop_properties.ward_mstr_id
-                    LEFT JOIN (
-                        SELECT prop_owners.property_id,string_agg(owner_name,',') AS owner_name
-                        FROM prop_owners
-                        JOIN prop_transactions ON prop_transactions.property_id = prop_owners.property_id
-                        WHERE prop_owners.status = 1
-                            AND prop_transactions.status = 1
-                            AND prop_transactions.tran_date = '" . $date . "'
-                            AND prop_transactions.payment_mode != 'ONLINE'
-                            AND payment_mode != 'netbanking'
-                        GROUP BY prop_owners.property_id
-                    ) owners ON owners.property_id = prop_properties.id
-                    WHERE prop_transactions.status = 1 
-                        AND prop_transactions.tran_date = '" . $date . "'
-                        AND prop_transactions.payment_mode != 'ONLINE'
-                        AND payment_mode != 'netbanking'
-                        AND prop_transactions.user_id = $userId
-                )
-        )select * from  prop_transactions;";
+        // $sql =   "WITH 
+        //     prop_transactions AS 
+        // (
+        //     SELECT prop_transactions.id,assessment_type AS tran_type, saf_no AS application_no,tran_no,
+        //     payment_mode,amount,verify_status,verified_by,verify_date,ward_name,tran_date,
+        //             prop_active_safs.ward_mstr_id AS ward_id , owner_name,'activ_saf' AS tbl
+        //         FROM prop_transactions
+        //         inner join prop_active_safs on prop_active_safs.id = prop_transactions.saf_id
+        //         inner join ulb_ward_masters on ulb_ward_masters.id = prop_active_safs.ward_mstr_id
+        //         LEFT JOIN (
+        //             SELECT prop_active_safs_owners.saf_id,string_agg(owner_name,',') AS owner_name
+        //             FROM prop_active_safs_owners
+        //             JOIN prop_transactions ON prop_transactions.saf_id = prop_active_safs_owners.saf_id
+        //             WHERE prop_active_safs_owners.status = 1
+        //                 AND prop_transactions.status = 1
+        //                 AND prop_transactions.tran_date = '" . $date . "'
+        //                 AND payment_mode != 'netbanking'
+        //                 AND prop_transactions.payment_mode != 'ONLINE'
+        //             GROUP BY prop_active_safs_owners.saf_id
+        //         ) owners ON owners.saf_id = prop_active_safs.id
+        //         WHERE prop_transactions.status = 1 
+        //             AND prop_transactions.tran_date = '" . $date . "'
+        //             AND prop_transactions.payment_mode != 'ONLINE'
+        //             AND payment_mode != 'netbanking'
+        //             AND prop_transactions.user_id = $userId
+        //     union
+        //         (
+        //             SELECT prop_transactions.id,assessment_type AS tran_type, saf_no AS application_no,tran_no,
+        //             payment_mode,amount,verify_status,verified_by,verify_date,ward_name,tran_date,
+        //                 prop_rejected_safs.ward_mstr_id AS ward_id , owner_name,'rejected_saf' AS tbl
+        //             FROM prop_transactions
+        //             inner join prop_rejected_safs on prop_rejected_safs.id = prop_transactions.saf_id
+        //             inner join ulb_ward_masters on ulb_ward_masters.id = prop_rejected_safs.ward_mstr_id
+        //             LEFT JOIN (
+        //                 SELECT prop_rejected_safs_owners.saf_id,string_agg(owner_name,',') AS owner_name
+        //                 FROM prop_rejected_safs_owners
+        //                 JOIN prop_transactions ON prop_transactions.saf_id = prop_rejected_safs_owners.saf_id
+        //                 WHERE prop_rejected_safs_owners.status = 1
+        //                     AND prop_transactions.status = 1
+        //                     AND prop_transactions.tran_date = '2023-02-01'
+        //                     AND payment_mode != 'netbanking'
+        //                     AND prop_transactions.payment_mode != 'ONLINE'
+        //                 GROUP BY prop_rejected_safs_owners.saf_id
+        //             ) owners ON owners.saf_id = prop_rejected_safs.id
+        //             WHERE prop_transactions.status = 1 
+        //                 AND prop_transactions.tran_date = '" . $date . "'
+        //                 AND prop_transactions.payment_mode != 'ONLINE'
+        //                 AND payment_mode != 'netbanking'
+        //                 AND prop_transactions.user_id = $userId
+        //         )
+        //     union
+        //         (
+        //             SELECT prop_transactions.id,assessment_type AS tran_type, saf_no AS application_no,
+        //             tran_no,payment_mode,amount,verify_status,verified_by,verify_date,ward_name,tran_date,
+        //                 prop_safs.ward_mstr_id AS ward_id , owner_name,'prop_saf' AS tbl
+        //             FROM prop_transactions
+        //             inner join prop_safs on prop_safs.id = prop_transactions.saf_id
+        //             inner join ulb_ward_masters on ulb_ward_masters.id = prop_safs.ward_mstr_id
+        //             LEFT JOIN (
+        //                 SELECT prop_safs_owners.saf_id,string_agg(owner_name,',') AS owner_name
+        //                 FROM prop_safs_owners
+        //                 JOIN prop_transactions ON prop_transactions.saf_id = prop_safs_owners.saf_id
+        //                 WHERE prop_safs_owners.status = 1
+        //                     AND prop_transactions.status = 1
+        //                     AND prop_transactions.tran_date = '" . $date . "'
+        //                     AND payment_mode != 'netbanking'
+        //                     AND prop_transactions.payment_mode != 'ONLINE'
+        //                 GROUP BY prop_safs_owners.saf_id
+        //             ) owners ON owners.saf_id = prop_safs.id
+        //             WHERE prop_transactions.status = 1 
+        //                 AND prop_transactions.tran_date = '" . $date . "'
+        //                 AND prop_transactions.payment_mode != 'ONLINE'
+        //                 AND payment_mode != 'netbanking'
+        //                 AND prop_transactions.user_id = $userId
+        //         )
+        //     union
+        //         (
+        //             SELECT prop_transactions.id,assessment_type AS tran_type, holding_no AS application_no,tran_no,
+        //             payment_mode,amount,verify_status,verified_by,verify_date,ward_name,tran_date,
+        //                 prop_properties.ward_mstr_id AS ward_id , owner_name,'prop_properties' AS tbl
+        //             FROM prop_transactions
+        //             inner join prop_properties on prop_properties.id = prop_transactions.property_id
+        //             inner join ulb_ward_masters on ulb_ward_masters.id = prop_properties.ward_mstr_id
+        //             LEFT JOIN (
+        //                 SELECT prop_owners.property_id,string_agg(owner_name,',') AS owner_name
+        //                 FROM prop_owners
+        //                 JOIN prop_transactions ON prop_transactions.property_id = prop_owners.property_id
+        //                 WHERE prop_owners.status = 1
+        //                     AND prop_transactions.status = 1
+        //                     AND prop_transactions.tran_date = '" . $date . "'
+        //                     AND prop_transactions.payment_mode != 'ONLINE'
+        //                     AND payment_mode != 'netbanking'
+        //                 GROUP BY prop_owners.property_id
+        //             ) owners ON owners.property_id = prop_properties.id
+        //             WHERE prop_transactions.status = 1 
+        //                 AND prop_transactions.tran_date = '" . $date . "'
+        //                 AND prop_transactions.payment_mode != 'ONLINE'
+        //                 AND payment_mode != 'netbanking'
+        //                 AND prop_transactions.user_id = $userId
+        //         )
+        // )select * from  prop_transactions;";
 
         //trade
         $trade =   "WITH 
@@ -358,7 +354,6 @@ class CashVerificationController extends Controller
                 AND trade_transactions.payment_mode != 'ONLINE'
                 AND payment_mode != 'netbanking'
                 AND emp_dtl_id = $userId
-            
         union
             (
             SELECT trade_transactions.id,tran_no,
@@ -437,10 +432,9 @@ class CashVerificationController extends Controller
                     AND water_trans.payment_mode != 'Online'
                     AND payment_mode != 'netbanking'
                     AND emp_dtl_id = $userId
-            
+        
         union
             (
-            
             SELECT water_trans.id,tran_no,
             payment_mode,amount,verify_status,verified_by,verified_date as verify_date,ward_name,tran_date,application_no,tran_type,
                     owner_name,'water_approved' AS tbl
@@ -466,7 +460,6 @@ class CashVerificationController extends Controller
             )
         union
             (
-                
             SELECT water_trans.id,tran_no,
             payment_mode,amount,verify_status,verified_by,verified_date as verify_date,ward_name,tran_date,application_no,tran_type,
                     owner_name,'water_rejected' AS tbl
@@ -521,15 +514,11 @@ class CashVerificationController extends Controller
 
 
 
-        $data['property'] =  DB::select($sql);
+        // $data['property'] =  DB::select($sql);
         $data['trade'] =  DB::select($trade);
         $data['water'] =  DB::select($water);
 
         return responseMsgs(true, "TC Collection", $data, "010201", "1.0", "", "POST", $request->deviceId ?? "");
-
-
-
-
 
         $propDtl = PropTransaction::select('prop_transactions.*', 'users.user_name')
             ->join('users', 'users.id', 'prop_transactions.user_id')
@@ -616,5 +605,31 @@ class CashVerificationController extends Controller
         // $amount['property'] = collect($property)->map(function ($value) {
         //     return $value;
         // });
+    }
+
+    /**
+     * | for storing temporary transaction data in temporary transaction table
+     */
+    public function tempTransaction(Request $req)
+    {
+        $mTempTransaction = new TempTransaction();
+        // $mTempTransaction->tempTransaction($req);
+
+        $mTempTransaction->transaction_id = $req->transactionId;
+        $mTempTransaction->application_id = $req->applicationId;
+        $mTempTransaction->module_id = $req->moduleId;
+        $mTempTransaction->workflow_id = $req->workflowId;
+        $mTempTransaction->transaction_no = $req->transactionNo;
+        $mTempTransaction->application_no = $req->applicationNo;
+        $mTempTransaction->amount = $req->amount;
+        $mTempTransaction->payment_mode = $req->paymentNo;
+        $mTempTransaction->cheque_dd_no = $req->chequeddNo;
+        $mTempTransaction->bank_name = $req->bankName;
+        $mTempTransaction->tran_date = $req->tranDate;
+        $mTempTransaction->user_id = $req->userId;
+        $mTempTransaction->created_at = Carbon::now();
+        $mTempTransaction->save();
+
+        return "all ok";
     }
 }
