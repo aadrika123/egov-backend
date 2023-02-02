@@ -494,28 +494,37 @@ class SafCalculation
     {
         if (is_string($key)) {                                                                          // Mobile Tower or Hoarding Board Or Petrol Pump
             switch ($key) {
-                case "mobileTower";
+                case "mobileTower":
                     $readFloorDetail = [
                         'floorNo' => "MobileTower",
-                        'buildupArea' => $this->_mobileTowerArea
+                        'buildupArea' => $this->_mobileTowerArea,
+                        'dateFrom' => $this->_mobileTowerInstallDate,
+                        'mFloorNo' => 'Mobile Tower',
                     ];
                     break;
-                case "hoardingBoard";
+                case "hoardingBoard":
                     $readFloorDetail = [
                         'floorNo' => "hoardingBoard",
-                        'buildupArea' => $this->_hoardingBoard['area']
+                        'buildupArea' => $this->_hoardingBoard['area'],
+                        'dateFrom' => $this->_hoardingBoard['installDate'],
+                        'mFloorNo' => 'Hoarding Board',
+                        'mUsageType' => 'Commercial',
                     ];
                     break;
-                case "petrolPump";
+                case "petrolPump":
                     $readFloorDetail = [
                         'floorNo' => "petrolPump",
-                        'buildupArea' => $this->_petrolPump['area']
+                        'buildupArea' => $this->_petrolPump['area'],
+                        'dateFrom' => $this->_petrolPump['installDate'],
+                        'mFloorNo' => 'Petrol Pump',
                     ];
                     break;
-                case "vacantLand";
+                case "vacantLand":
                     $readFloorDetail = [
                         'propertyType' => "vacantLand",
-                        'buildupArea' => $this->_propertyDetails['areaOfPlot']
+                        'buildupArea' => $this->_propertyDetails['areaOfPlot'],
+                        'dateFrom' => $this->_propertyDetails['dateOfPurchase'],
+                        'mFloorNo' => 'Vacant Land',
                     ];
                     break;
             }
@@ -1089,7 +1098,7 @@ class SafCalculation
             ]);
         }
 
-        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  == 'Male' || $ownerDetails['gender'] == 'Transgender' || $years >= $seniorCitizen) {
+        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  == 'Female' || $ownerDetails['gender'] == 'Transgender' || $years >= $seniorCitizen) {
             $rebate += $speciallyAbledRebatePerc;
             $specialRebateAmt = roundFigure(($totalDemand * $speciallyAbledRebatePerc) / 100);
             array_push($rebates, [
@@ -1104,7 +1113,7 @@ class SafCalculation
         $this->_GRID['rebates'] = $rebates;
         $this->_GRID['demand']['specialRebatePerc'] = $rebate;
         $this->_GRID['demand']['rebateAmount'] = $rebateAmount;
-        $this->_GRID['demand']['specialRebateAmount'] = $specialRebateAmt??0;
+        $this->_GRID['demand']['specialRebateAmount'] = $specialRebateAmt ?? 0;
     }
 
     /**
