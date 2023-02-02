@@ -327,7 +327,7 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor->const_type_mstr_id = $floors->constructionType;
                     $assement_floor->builtup_area = $floors->buildupArea;
                     $assement_floor->date_from = $floors->dateFrom;
-                    $assement_floor->date_upto = $floors->dateUpto;
+                    $assement_floor->date_upto = $floors->dateUpto ?? null;
                     $assement_floor->save();
                 }
             }
