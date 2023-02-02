@@ -242,7 +242,7 @@ class CashVerificationController extends Controller
                     JOIN prop_transactions ON prop_transactions.saf_id = prop_active_safs_owners.saf_id
                     WHERE prop_active_safs_owners.status = 1
                         AND prop_transactions.status = 1
-                        AND prop_transactions.tran_date = '2023-02-01'
+                        AND prop_transactions.tran_date = '" . $date . "'
                         AND payment_mode != 'netbanking'
                         AND prop_transactions.payment_mode != 'ONLINE'
                     GROUP BY prop_active_safs_owners.saf_id
@@ -292,7 +292,7 @@ class CashVerificationController extends Controller
                         JOIN prop_transactions ON prop_transactions.saf_id = prop_safs_owners.saf_id
                         WHERE prop_safs_owners.status = 1
                             AND prop_transactions.status = 1
-                            AND prop_transactions.tran_date = '2023-02-01'
+                            AND prop_transactions.tran_date = '" . $date . "'
                             AND payment_mode != 'netbanking'
                             AND prop_transactions.payment_mode != 'ONLINE'
                         GROUP BY prop_safs_owners.saf_id
@@ -318,7 +318,7 @@ class CashVerificationController extends Controller
                         JOIN prop_transactions ON prop_transactions.property_id = prop_owners.property_id
                         WHERE prop_owners.status = 1
                             AND prop_transactions.status = 1
-                            AND prop_transactions.tran_date = '2023-02-01'
+                            AND prop_transactions.tran_date = '" . $date . "'
                             AND prop_transactions.payment_mode != 'ONLINE'
                             AND payment_mode != 'netbanking'
                         GROUP BY prop_owners.property_id
@@ -347,7 +347,7 @@ class CashVerificationController extends Controller
                 JOIN trade_transactions ON trade_transactions.temp_id = active_trade_owners.temp_id
                 WHERE active_trade_owners.is_active = true
                     AND trade_transactions.status = 1
-                    AND trade_transactions.tran_date = '2023-02-01'
+                    AND trade_transactions.tran_date = '" . $date . "'
                     AND payment_mode != 'netbanking'
                     AND trade_transactions.payment_mode != 'ONLINE'
                 GROUP BY active_trade_owners.temp_id
@@ -372,7 +372,7 @@ class CashVerificationController extends Controller
                 JOIN trade_transactions ON trade_transactions.temp_id = trade_owners.temp_id
                 WHERE trade_owners.is_active = true
                     AND trade_transactions.status = 1
-                    AND trade_transactions.tran_date = '2023-02-01'
+                    AND trade_transactions.tran_date = '" . $date . "'
                     AND payment_mode != 'netbanking'
                     AND trade_transactions.payment_mode != 'ONLINE'
                 GROUP BY trade_owners.temp_id
@@ -397,7 +397,7 @@ class CashVerificationController extends Controller
                 JOIN trade_transactions ON trade_transactions.temp_id = rejected_trade_owners.temp_id
                 WHERE rejected_trade_owners.is_active = true
                     AND trade_transactions.status = 1
-                    AND trade_transactions.tran_date = '2023-02-01'
+                    AND trade_transactions.tran_date = '" . $date . "'
                     AND payment_mode != 'netbanking'
                     AND trade_transactions.payment_mode != 'ONLINE'
                 GROUP BY rejected_trade_owners.temp_id
@@ -410,11 +410,119 @@ class CashVerificationController extends Controller
             )
         )select * from  trade_transaction;";
 
+        //water
+        $water =   "WITH 
+            water_transaction AS 
+        (
+            SELECT water_trans.id,tran_no,
+            payment_mode,amount,verify_status,verified_by,verified_date,ward_name,tran_date,application_no,tran_type,
+                    owner_name,'water_active' AS tbl
+                FROM water_trans
+                inner join water_applications on water_applications.id = water_trans.related_id
+                inner join ulb_ward_masters on ulb_ward_masters.id = water_trans.ward_id
+                LEFT JOIN (
+                    SELECT water_applicants.application_id,string_agg(applicant_name,',') AS owner_name
+                    FROM water_applicants
+                    JOIN water_trans ON water_trans.related_id = water_applicants.application_id
+                    WHERE water_applicants.status = true
+                        AND water_trans.status = 1
+                        AND water_trans.tran_date = '" . $date . "'
+                        AND payment_mode != 'netbanking'
+                        AND water_trans.payment_mode != 'Online'
+                    GROUP BY water_applicants.application_id
+                ) owners ON owners.application_id = water_applications.id
+                WHERE water_trans.status = 1 
+            		AND water_trans.tran_date = '" . $date . "'
+                    AND water_trans.payment_mode != 'Online'
+                    AND payment_mode != 'netbanking'
+                    AND emp_dtl_id = $userId
+            
+        union
+            (
+            
+            SELECT water_trans.id,tran_no,
+            payment_mode,amount,verify_status,verified_by,verified_date,ward_name,tran_date,application_no,tran_type,
+                    owner_name,'water_approved' AS tbl
+                FROM water_trans
+                inner join water_approval_application_details on water_approval_application_details.id = water_trans.related_id
+                inner join ulb_ward_masters on ulb_ward_masters.id = water_trans.ward_id
+                LEFT JOIN (
+                    SELECT water_approval_applicants.application_id,string_agg(applicant_name,',') AS owner_name
+                    FROM water_approval_applicants
+                    JOIN water_trans ON water_trans.related_id = water_approval_applicants.application_id
+                    WHERE water_approval_applicants.status = true
+                        AND water_trans.status = 1
+                        AND water_trans.tran_date = '" . $date . "'
+                        AND payment_mode != 'netbanking'
+                        AND water_trans.payment_mode != 'Online'
+                    GROUP BY water_approval_applicants.application_id
+                ) owners ON owners.application_id = water_approval_application_details.id
+                WHERE water_trans.status = 1 
+            		AND water_trans.tran_date = '" . $date . "'
+                    AND water_trans.payment_mode != 'Online'
+                    AND payment_mode != 'netbanking'
+                    AND emp_dtl_id = $userId
+            )
+        union
+            (
+                
+            SELECT water_trans.id,tran_no,
+            payment_mode,amount,verify_status,verified_by,verified_date,ward_name,tran_date,application_no,tran_type,
+                    owner_name,'water_rejected' AS tbl
+                FROM water_trans
+                inner join water_rejection_application_details on water_rejection_application_details.id = water_trans.related_id
+                inner join ulb_ward_masters on ulb_ward_masters.id = water_trans.ward_id
+                LEFT JOIN (
+                    SELECT water_rejection_applicants.application_id,string_agg(applicant_name,',') AS owner_name
+                    FROM water_rejection_applicants
+                    JOIN water_trans ON water_trans.related_id = water_rejection_applicants.application_id
+                    WHERE water_rejection_applicants.status = true
+                        AND water_trans.status = 1
+                        AND water_trans.tran_date = '" . $date . "'
+                        AND payment_mode != 'netbanking'
+                        AND water_trans.payment_mode != 'Online'
+                    GROUP BY water_rejection_applicants.application_id
+                ) owners ON owners.application_id = water_rejection_application_details.id
+                WHERE water_trans.status = 1 
+            		AND water_trans.tran_date = '" . $date . "'
+                    AND water_trans.payment_mode != 'Online'
+                    AND payment_mode != 'netbanking'
+                    AND emp_dtl_id = $userId
+            )
+            
+        union
+            (
+                
+            SELECT water_trans.id,tran_no,
+            payment_mode,amount,verify_status,verified_by,verified_date,ward_name,tran_date,consumer_no,tran_type,
+                    owner_name,'water_consumer' AS tbl
+                FROM water_trans
+                inner join water_consumers on water_consumers.id = water_trans.related_id
+                inner join ulb_ward_masters on ulb_ward_masters.id = water_trans.ward_id
+                LEFT JOIN (
+                    SELECT water_consumer_owners.consumer_id,string_agg(applicant_name,',') AS owner_name
+                    FROM water_consumer_owners
+                    JOIN water_trans ON water_trans.related_id = water_consumer_owners.consumer_id
+                    WHERE water_consumer_owners.status = true
+                        AND water_trans.status = 1
+                        AND water_trans.tran_date = '" . $date . "'
+                        AND payment_mode != 'netbanking'
+                        AND water_trans.payment_mode != 'Online'
+                    GROUP BY water_consumer_owners.consumer_id
+                ) owners ON owners.consumer_id = water_consumers.id
+                WHERE water_trans.status = 1 
+            		AND water_trans.tran_date = '" . $date . "'
+                    AND water_trans.payment_mode != 'Online'
+                    AND payment_mode != 'netbanking'
+                    AND emp_dtl_id = $userId
+            )
+        )select * from  water_transaction;";
+
 
 
         $data['property'] =  DB::select($sql);
         $data['trade'] =  DB::select($trade);
-        // $data['water'] =  DB::select($water);
+        $data['water'] =  DB::select($water);
 
         return responseMsgs(true, "TC Collection", $data, "010201", "1.0", "", "POST", $request->deviceId ?? "");
 
