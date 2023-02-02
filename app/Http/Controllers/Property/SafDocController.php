@@ -12,6 +12,11 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config as FacadesConfig;
 
+/**
+ * | Created On=01-02-2023 
+ * | Created By=Anshu Kumar
+ * | Created for=Document Upload 
+ */
 class SafDocController extends Controller
 {
     /**
@@ -39,6 +44,29 @@ class SafDocController extends Controller
             $totalDocLists = collect($propTypeDocs)->merge($safOwnerDocs);
             $totalDocLists['docUploadStatus'] = $refSafs->doc_upload_status;
             $totalDocLists['docVerifyStatus'] = $refSafs->doc_verify_status;
+
+            $countPropDocs = collect($totalDocLists['listDocs'])->pipe(function ($docs) {
+                $reqDocs = $docs->where('docType', 'R')->count('docType');
+                $optDocs = $docs->where('docType', 'O')->count('docType');
+                return [
+                    'required' => $reqDocs,
+                    'options' => $optDocs
+                ];
+            });
+
+            $countOwnerDocs = collect($safOwnerDocs['ownerDocs'])->map(function ($owners) {
+                $docs = $owners['documents']->pipe(function ($docs) {
+                    $reqDocs = $docs->where('docType', 'R')->count('docType');
+                    $optDocs = $docs->where('docType', 'O')->count('docType');
+                    return [
+                        'required' => $reqDocs,
+                        'options' => $optDocs
+                    ];
+                });
+                return $docs;
+            });
+            $countOwnerDocs = collect($countOwnerDocs)->sum('required');
+
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
