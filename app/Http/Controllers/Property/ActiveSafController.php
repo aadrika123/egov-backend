@@ -1996,6 +1996,7 @@ class ActiveSafController extends Controller
 
                 $safTaxes3=$this->reviewTaxCalculation($safTaxes);
                 $safTaxes4=$this->reviewTaxCalculation($safTaxes2);
+                // dd(json_decode(json_encode($safTaxes), true));
                 $compairTax = $this->reviewTaxCalculationCom($safTaxes,$safTaxes2);
                 
                 $safTaxes2 = json_decode(json_encode($safTaxes4), true);
@@ -2004,7 +2005,6 @@ class ActiveSafController extends Controller
                 $data["Tax"]["according_application"]= $safTaxes["original"]["data"];
                 $data["Tax"]["according_verification"]= $safTaxes2["original"]["data"];
                 $data["Tax"]["compairTax"]= $compairTax["original"]["data"];
-                
                 
             }
             $data["saf_details"] = $saf;
@@ -2130,11 +2130,11 @@ class ActiveSafController extends Controller
 
     private function reviewTaxCalculationCom(object $response,object $response2)
     {
-        // dd( $response, $response2);
+        
         try{
             $finalResponse['demand'] = $response->original['data']['demand'];
             $finalResponse2['demand'] = $response2->original['data']['demand'];
-            
+            // dd( $response->original['data'],  $response2->original['data']);
             $reviewDetails = collect($response->original['data']['details'])->groupBy(['ruleSet', 'mFloorNo', 'mUsageType']);
             $reviewDetails2 = collect($response2->original['data']['details'])->groupBy(['ruleSet', 'mFloorNo', 'mUsageType']);
 
@@ -2231,25 +2231,25 @@ class ActiveSafController extends Controller
             $ruleSetCollections2 = collect($finalTaxReview2)->groupBy(['ruleSet']);
 
             $reviewCalculation = collect($ruleSetCollections2)->map(function ($collection,$key) use($ruleSetCollections){
-                $collection2 = collect($ruleSetCollections[$key]);
-                
+                $collection2 = collect($ruleSetCollections[$key]??[]);
+                // dd($key);
                 return collect($collection)->pipe(function ($collect) use($collection2){
                     
                     $quaters['floors'] = $collect;
                     $quaters2['floors'] = $collection2;
 
                     $groupByFloors = $collect->groupBy(['quarterYear', 'qtr']);
-                    $groupByFloors2 = $collection2->groupBy(['quarterYear', 'qtr']);                    
+                    $groupByFloors2 = $collection2->groupBy(['quarterYear', 'qtr'])??[];                    
 
                     $quaterlyTaxes = collect();
 
                     collect($groupByFloors)->map(function ($qtrYear,$key1) use ($quaterlyTaxes,$groupByFloors2) {
                         
-                        $qtrYear2 = collect($groupByFloors2[$key1]);
+                        $qtrYear2 = collect($groupByFloors2[$key1]??[]);
 
                         return collect($qtrYear)->map(function ($qtr, $key) use ($quaterlyTaxes,$qtrYear2 ) {
                             
-                            $qtr2 = $qtrYear2[$key];
+                            $qtr2 = $qtrYear2[$key]??collect([]);
 
                             return collect($qtr)->pipe(function ($floors) use ($quaterlyTaxes, $key,$qtr2) {
                                 
@@ -2279,6 +2279,7 @@ class ActiveSafController extends Controller
             return responseMsg(true, "", $finalResponse2);
         }
         catch (Exception $e) {
+            dd($e->getMessage(),$e->getFile(),$e->getLine());
             return responseMsg(false, $e->getMessage(), "");
         } 
     }
