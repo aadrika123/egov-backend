@@ -1098,7 +1098,7 @@ class SafCalculation
             ]);
         }
 
-        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  == 'Male' || $ownerDetails['gender'] == 'Transgender' || $years >= $seniorCitizen) {
+        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  == 'Female' || $ownerDetails['gender'] == 'Transgender' || $years >= $seniorCitizen) {
             $rebate += $speciallyAbledRebatePerc;
             $specialRebateAmt = roundFigure(($totalDemand * $speciallyAbledRebatePerc) / 100);
             array_push($rebates, [
