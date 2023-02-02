@@ -8,7 +8,9 @@ use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfActiveDocument;
+use App\Traits\Property\SafDoc;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config as FacadesConfig;
 
@@ -19,6 +21,7 @@ use Illuminate\Support\Facades\Config as FacadesConfig;
  */
 class SafDocController extends Controller
 {
+    use SafDoc;
     /**
      * | Get Document Lists
      */
@@ -45,28 +48,7 @@ class SafDocController extends Controller
             $totalDocLists['docUploadStatus'] = $refSafs->doc_upload_status;
             $totalDocLists['docVerifyStatus'] = $refSafs->doc_verify_status;
 
-            $countPropDocs = collect($totalDocLists['listDocs'])->pipe(function ($docs) {
-                $reqDocs = $docs->where('docType', 'R')->count('docType');
-                $optDocs = $docs->where('docType', 'O')->count('docType');
-                return [
-                    'required' => $reqDocs,
-                    'options' => $optDocs
-                ];
-            });
-
-            $countOwnerDocs = collect($safOwnerDocs['ownerDocs'])->map(function ($owners) {
-                $docs = $owners['documents']->pipe(function ($docs) {
-                    $reqDocs = $docs->where('docType', 'R')->count('docType');
-                    $optDocs = $docs->where('docType', 'O')->count('docType');
-                    return [
-                        'required' => $reqDocs,
-                        'options' => $optDocs
-                    ];
-                });
-                return $docs;
-            });
-            $countOwnerDocs = collect($countOwnerDocs)->sum('required');
-
+            // return $this->countDocs($totalDocLists);
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
@@ -224,7 +206,7 @@ class SafDocController extends Controller
                     "uploadedDoc" => $uploadedDoc->doc_path ?? "",
                     "uploadedDocId" => $uploadedDoc->id ?? "",
                     "verifyStatus'" => $uploadedDoc->verify_status ?? "",
-                    "remarks'" => $uploadedDoc->remarks ?? "",
+                    "remarks" => $uploadedDoc->remarks ?? "",
                 ];
                 return $arr;
             });
