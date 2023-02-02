@@ -195,9 +195,9 @@ trait SAF
 
         $array['ward'] = $req['ward_mstr_id'];
         $array['propertyType'] = $req['prop_type_mstr_id'];
-        $array['dateOfPurchase'] = $req['ward_mstr_id'];
+        $array['dateOfPurchase'] = $req['land_occupation_date'];
         $array['ownershipType'] = $req['ownership_type_mstr_id'];
-        $array['roadType'] = $req['road_width'];
+        $array['roadType'] = isset($req['road_width'])?$req['road_width']:0;
         $array['areaOfPlot'] = $req['area_of_plot'];
         $array['isMobileTower'] = $req['is_mobile_tower'];
         $array['mobileTower']['area'] = $req['tower_area'];

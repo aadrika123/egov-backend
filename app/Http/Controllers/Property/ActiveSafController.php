@@ -1936,6 +1936,29 @@ class ActiveSafController extends Controller
                 $message = "TC Verification Details";
                 $data["geoTagging"] = $geoTagging;
             }
+            else
+            {
+                $owners = DB::table($tbl."_owners")
+                    ->select($tbl."_owners.*")
+                    ->where($tbl."_owners.saf_id",$saf->id)
+                    ->get();
+                $safDetails = $saf;
+                $safDetails = json_decode(json_encode($safDetails), true);
+                $safDetails['floors'] =$floars;
+                $safDetails['owners'] =$owners;
+                $req = $safDetails;
+                $array = $this->generateSafRequest($req);                                                                       // Generate SAF Request by SAF Id Using Trait
+                $safCalculation = new SafCalculation();
+                $request = new Request($array);
+                $safTaxes = $safCalculation->calculateTax($request);
+                $safTaxes = json_decode(json_encode($safTaxes), true);
+                
+                $safDetails2 = json_decode(json_encode($verifications), true);$verifications;
+                $safDetails2['floors'] =$verifications_detals;
+                $safDetails2['owners'] =$owners;
+                $array2 = $this->generateSafRequest($safDetails2);
+                dd($array,$array2);
+            }
             $data["saf_details"] = $saf;
             $data["employee_details"] = ["user_name"=>$verifications->user_name,"date"=>$verifications->created_at];
             $data["property_comparison"] = $prop_compairs;
@@ -1946,6 +1969,7 @@ class ActiveSafController extends Controller
         }
         catch(Exception $e)
         {
+            dd($e->getMessage(),$e->getLine(),$e->getfile());
             return responseMsg(false, $e->getMessage(), "");
         }
     }
