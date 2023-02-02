@@ -1942,69 +1942,85 @@ class ActiveSafController extends Controller
                     ->select($tbl."_owners.*")
                     ->where($tbl."_owners.saf_id",$saf->id)
                     ->get();
-                $safDetails = $saf;
-                $safDetails = json_decode(json_encode($safDetails), true);
-                $safDetails['floors'] =$floars;
-                $safDetails['owners'] =$owners;
-                $req = $safDetails;
-                $array = $this->generateSafRequest($req);                                                                       // Generate SAF Request by SAF Id Using Trait
-                $safCalculation = new SafCalculation();
-                $request = new Request($array);
-                $safTaxes = $safCalculation->calculateTax($request);
-                // $safTaxes = json_decode(json_encode($safTaxes), true);
+
+                $redis = Redis::connection();
+                $redissafTaxes = Redis::get('safTaxes:'.$verifications->id.".".$saf->id);                           // Ward No Value from Redis
+                if (!$redissafTaxes) 
+                {
+                    $safDetails = $saf;
+                    $safDetails = json_decode(json_encode($safDetails), true);
+                    $safDetails['floors'] =$floars;
+                    $safDetails['owners'] =$owners;
+                    $req = $safDetails;
+                    $array = $this->generateSafRequest($req);                                                                       // Generate SAF Request by SAF Id Using Trait
+                    $safCalculation = new SafCalculation();
+                    $request = new Request($array);
+                    $safTaxes = $safCalculation->calculateTax($request);
+                    
+                    // $safTaxes = json_decode(json_encode($safTaxes), true);
+                    
+                    $safDetails2 = json_decode(json_encode($verifications), true);
+
+                    $safDetails2["ward_mstr_id"] = $safDetails2["ward_id"];
+                    $safDetails2["prop_type_mstr_id"] = $safDetails2["prop_type_id"];
+                    $safDetails2["land_occupation_date"] =$saf->land_occupation_date;
+                    $safDetails2["ownership_type_mstr_id"] = $saf->ownership_type_mstr_id;
+                    $safDetails2["zone_mstr_id"] = $saf->zone_mstr_id;
+                    $safDetails2["road_type_mstr_id"] = $saf->road_type_mstr_id;
+                    $safDetails2["road_width"] = $saf->road_width;
+
+                    $safDetails2["is_mobile_tower"] = $safDetails2["has_mobile_tower"];
+                    $safDetails2["tower_area"] = $safDetails2["tower_area"];
+                    $safDetails2["tower_installation_date"] = $safDetails2["tower_installation_date"];
+
+                    $safDetails2["is_hoarding_board"] = $safDetails2["has_hoarding"];
+                    $safDetails2["hoarding_area"] = $safDetails2["hoarding_area"];
+                    $safDetails2["hoarding_installation_date"] = $safDetails2["hoarding_installation_date"];
+
+                    $safDetails2["is_petrol_pump"] = $safDetails2["is_petrol_pump"];
+                    $safDetails2["under_ground_area"] = $safDetails2["underground_area"];
+                    $safDetails2["petrol_pump_completion_date"] = $safDetails2["petrol_pump_completion_date"];
+
+                    $safDetails2["is_water_harvesting"] = $safDetails2["has_water_harvesting"];
                 
-                $safDetails2 = json_decode(json_encode($verifications), true);
-                $safDetails2["ward_mstr_id"] = $safDetails2["ward_id"];
-                $safDetails2["prop_type_mstr_id"] = $safDetails2["prop_type_id"];
-                $safDetails2["land_occupation_date"] =$saf->land_occupation_date;
-                $safDetails2["ownership_type_mstr_id"] = $saf->ownership_type_mstr_id;
-                $safDetails2["zone_mstr_id"] = $saf->zone_mstr_id;
-                $safDetails2["road_type_mstr_id"] = $saf->road_type_mstr_id;
-                $safDetails2["road_width"] = $saf->road_width;
+                    $safDetails2['floors'] =$verifications_detals;
+                    $safDetails2['floors']= $safDetails2['floors']->map(function($val){
+                        $val->usage_type_mstr_id    =$val->usage_type_id;
+                        $val->const_type_mstr_id    =$val->construction_type_id;
+                        $val->occupancy_type_mstr_id=$val->occupancy_type_id;
+                        $val->builtup_area          =$val->builtup_area;
+                        $val->date_from             =$val->date_from;
+                        $val->date_upto             =$val->date_to;
+                        return $val;
+                    });
+                    
 
-                $safDetails2["is_mobile_tower"] = $safDetails2["has_mobile_tower"];
-                $safDetails2["tower_area"] = $safDetails2["tower_area"];
-                $safDetails2["tower_installation_date"] = $safDetails2["tower_installation_date"];
+                    $safDetails2['owners'] =$owners;
 
-                $safDetails2["is_hoarding_board"] = $safDetails2["has_hoarding"];
-                $safDetails2["hoarding_area"] = $safDetails2["hoarding_area"];
-                $safDetails2["hoarding_installation_date"] = $safDetails2["hoarding_installation_date"];
+                    $array2 = $this->generateSafRequest($safDetails2); 
+                    $request2 = new Request($array2);
+                    $safTaxes2 = $safCalculation->calculateTax($request2);
+                    // $safTaxes2 = json_decode(json_encode($safTaxes2), true);
 
-                $safDetails2["is_petrol_pump"] = $safDetails2["is_petrol_pump"];
-                $safDetails2["under_ground_area"] = $safDetails2["underground_area"];
-                $safDetails2["petrol_pump_completion_date"] = $safDetails2["petrol_pump_completion_date"];
-
-                $safDetails2["is_water_harvesting"] = $safDetails2["has_water_harvesting"];
-               
-                $safDetails2['floors'] =$verifications_detals;
-                $safDetails2['floors']= $safDetails2['floors']->map(function($val){
-                    $val->usage_type_mstr_id    =$val->usage_type_id;
-                    $val->const_type_mstr_id    =$val->construction_type_id;
-                    $val->occupancy_type_mstr_id=$val->occupancy_type_id;
-                    $val->builtup_area          =$val->builtup_area;
-                    $val->date_from             =$val->date_from;
-                    $val->date_upto             =$val->date_to;
-                    return $val;
-                });
-                
-
-                $safDetails2['owners'] =$owners;
-                $array2 = $this->generateSafRequest($safDetails2); 
-                $request2 = new Request($array2);
-                $safTaxes2 = $safCalculation->calculateTax($request2);
-                // $safTaxes2 = json_decode(json_encode($safTaxes2), true);
-
-                $safTaxes3=$this->reviewTaxCalculation($safTaxes);
-                $safTaxes4=$this->reviewTaxCalculation($safTaxes2);
-                // dd(json_decode(json_encode($safTaxes), true));
-                $compairTax = $this->reviewTaxCalculationCom($safTaxes,$safTaxes2);
-                
-                $safTaxes2 = json_decode(json_encode($safTaxes4), true);
-                $safTaxes = json_decode(json_encode($safTaxes3), true);
-                $compairTax = json_decode(json_encode($compairTax), true);
-                $data["Tax"]["according_application"]= $safTaxes["original"]["data"];
-                $data["Tax"]["according_verification"]= $safTaxes2["original"]["data"];
-                $data["Tax"]["compairTax"]= $compairTax["original"]["data"];
+                    $safTaxes3=$this->reviewTaxCalculation($safTaxes);
+                    $safTaxes4=$this->reviewTaxCalculation($safTaxes2);
+                    // dd(json_decode(json_encode($safTaxes), true));
+                    $compairTax = $this->reviewTaxCalculationCom($safTaxes,$safTaxes2);
+                    
+                    $safTaxes2 = json_decode(json_encode($safTaxes4), true);
+                    $safTaxes = json_decode(json_encode($safTaxes3), true);
+                    $compairTax = json_decode(json_encode($compairTax), true);
+                    
+                    $data["Tax"]["according_application"]= $safTaxes["original"]["data"];
+                    $data["Tax"]["according_verification"]= $safTaxes2["original"]["data"];
+                    $data["Tax"]["compairTax"]= $compairTax["original"]["data"];
+                    $redis->set('safTaxes:' . $verifications->id.".".$saf->id,json_encode($data));
+                    $redis->expire('safTaxes:' . $verifications->id.".".$saf->id, 18000);
+                }
+                else
+                {
+                    $data = json_decode($redissafTaxes,true);
+                }
                 
             }
             $data["saf_details"] = $saf;
@@ -2279,7 +2295,6 @@ class ActiveSafController extends Controller
             return responseMsg(true, "", $finalResponse2);
         }
         catch (Exception $e) {
-            dd($e->getMessage(),$e->getFile(),$e->getLine());
             return responseMsg(false, $e->getMessage(), "");
         } 
     }
