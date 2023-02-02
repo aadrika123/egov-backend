@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
+use App\Models\Payment\WebhookPaymentData;
 use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
 use Exception;
@@ -172,15 +173,32 @@ class RazorpayPaymentController extends Controller
      */
     public function searchTransaction(Request $request)
     {
-        try{
+        try {
             $request->validate([
                 'fromDate' => 'required',
                 'toDate' => 'required',
             ]);
             return $this->Prepository->searchTransaction($request);
-        }catch(Exception $e)
-        {
-            return responseMsg(false,$e->getMessage(),"");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Get Transaction dtls by orderid and paymentid
+     */
+    public function getTranByOrderId(Request $req)
+    {
+        $req->validate([
+            'orderId' => 'required',
+            'paymentId' => 'required'
+        ]);
+        try {
+            $mWebhook = new WebhookPaymentData();
+            $webhookData = $mWebhook = $mWebhook->getTranByOrderPayId($req);
+            return responseMsgs(true, "Transaction No", remove_null($webhookData), "15", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return $e->getMessage();
         }
     }
 }

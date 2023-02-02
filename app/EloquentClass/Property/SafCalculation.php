@@ -1104,7 +1104,7 @@ class SafCalculation
         $this->_GRID['rebates'] = $rebates;
         $this->_GRID['demand']['specialRebatePerc'] = $rebate;
         $this->_GRID['demand']['rebateAmount'] = $rebateAmount;
-        $this->_GRID['demand']['specialRebateAmount'] = $specialRebateAmt;
+        $this->_GRID['demand']['specialRebateAmount'] = $specialRebateAmt??0;
     }
 
     /**

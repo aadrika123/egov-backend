@@ -46,7 +46,7 @@ class PropDemand extends Model
             ->where('property_id', $propId)
             ->where('paid_status', 0)
             ->where('status', 1)
-            ->orderByDesc('id')
+            ->orderByDesc('due_date')
             ->get();
     }
 
@@ -56,7 +56,9 @@ class PropDemand extends Model
     public function getDemandByPropId($propId)
     {
         return PropDemand::where('property_id', $propId)
+            ->where('paid_status', 0)
             ->where('status', 1)
+            ->orderByDesc('due_date')
             ->get();
     }
 }

@@ -19,4 +19,14 @@ class PropPenaltyrebate extends Model
             ->orderByDesc('id')
             ->first();
     }
+
+    /**
+     * | Get Penalty Rebates
+     */
+    public function getPropPenalRebateByTranId($tranId)
+    {
+        return PropPenaltyrebate::where('tran_id', $tranId)
+            ->orderByDesc('id')
+            ->get();
+    }
 }

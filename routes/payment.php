@@ -38,6 +38,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-reconcillation-details', 'getReconcillationDetails');                       // 11 
         Route::post('search-reconciliation-details', 'searchReconciliationDetails');                // 12
         Route::post('update-reconciliation-details', 'updateReconciliationDetails');                // 13
+        Route::post('get-tran-by-orderid', 'getTranByOrderId');                                         // 15 Get Transaction by Order ID and payment ID
     });
 
 

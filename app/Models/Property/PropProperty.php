@@ -32,6 +32,14 @@ class PropProperty extends Model
         return PropProperty::find($id);
     }
 
+    // Get SAf id by Prop Id
+    public function getSafByPropId($propId)
+    {
+        return PropProperty::select('saf_id')
+            ->where('id', $propId)
+            ->first();
+    }
+
     /**
      * | Get Property Details
      */
@@ -42,6 +50,7 @@ class PropProperty extends Model
                 'prop_properties.*',
                 'prop_properties.assessment_type as assessment',
                 'w.ward_name as old_ward_no',
+                'nw.ward_name as new_ward_no',
                 'o.ownership_type',
                 'ref_prop_types.property_type',
                 'r.road_type',
@@ -162,6 +171,64 @@ class PropProperty extends Model
         )
             ->where('user_id', auth()->user()->id)
             ->where('ulb_id', $request->ulbId)
+            ->get();
+    }
+
+    /**
+     * | Search holding
+     */
+    public function searchHolding($holdingNo)
+    {
+        return PropProperty::leftjoin('prop_owners', 'prop_owners.saf_id', '=', 'prop_properties.saf_id')
+            ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
+            ->select(
+                'prop_properties.new_ward_mstr_id AS wardId',
+                'prop_properties.prop_address AS address',
+                'ref_prop_types.property_type AS propertyType',
+                'prop_properties.new_holding_no as holding_no',
+                DB::raw("string_agg(prop_owners.owner_name,',') as ownerName"),
+                DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobileNo"),
+                'prop_properties.holding_no as holdingNo'
+            )
+            ->where('prop_properties.holding_no', 'LIKE', '%'.$holdingNo)
+            ->orWhere('prop_properties.new_holding_no', 'LIKE', '%'.$holdingNo)
+            ->where('prop_properties.status', 1)
+            ->where('ulb_id', auth()->user()->ulb_id)
+            ->groupBy('prop_properties.id', 'ref_prop_types.property_type')
+            ->get();
+    }
+
+    /**
+     * | Search prop Details by Cluster Id
+     */
+    public function searchPropByCluster($clusterId)
+    {
+        return  PropProperty::leftjoin('prop_owners','prop_owners.property_id','=','prop_properties.id')
+        ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
+            ->select(
+                'prop_properties.id',
+                'prop_properties.new_ward_mstr_id AS wardId',
+                DB::raw("string_agg(prop_owners.owner_name,',') as ownerName"),
+                DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobileNo"),
+                'prop_properties.prop_address AS address',
+                'ref_prop_types.property_type AS propertyType',
+                'prop_properties.cluster_id',
+                'prop_properties.holding_no as holdingNo'
+            )
+            ->where('prop_properties.cluster_id', $clusterId)
+            ->where('prop_properties.status', 1)
+            ->where('ref_prop_types.status', 1)
+            ->groupBy('prop_properties.id', 'ref_prop_types.property_type')
+            ->get();
+    }
+
+    /**
+     * | Collective holding search
+     */
+    public function searchCollectiveHolding($holdingArray)
+    {
+        return PropProperty::whereIn('new_holding_no', $holdingArray)
+            ->where('status',1)
             ->get();
     }
 }
