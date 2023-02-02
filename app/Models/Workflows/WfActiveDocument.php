@@ -198,4 +198,17 @@ class WfActiveDocument extends Model
             ->where('status', 1)
             ->get();
     }
+
+    /**
+     * | Get Uploaded documents
+     */
+    public function getDocsByActiveId($activeId)
+    {
+        return WfActiveDocument::where('active_id', $activeId)
+            ->select('doc_code', 'owner_dtl_id')
+            ->where('workflow_id', 4)
+            ->where('module_id', 1)
+            ->where('status', 1)
+            ->get();
+    }
 }

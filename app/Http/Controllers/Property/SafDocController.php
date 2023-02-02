@@ -10,7 +10,6 @@ use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfActiveDocument;
 use App\Traits\Property\SafDoc;
 use Exception;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config as FacadesConfig;
 
@@ -48,7 +47,6 @@ class SafDocController extends Controller
             $totalDocLists['docUploadStatus'] = $refSafs->doc_upload_status;
             $totalDocLists['docVerifyStatus'] = $refSafs->doc_verify_status;
 
-            // return $this->countDocs($totalDocLists);
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
@@ -61,29 +59,8 @@ class SafDocController extends Controller
      */
     public function getSafDocLists($refSafs)
     {
-        $mRefReqDocs = new RefRequiredDocument();
-        $propTypes = FacadesConfig::get('PropertyConstaint.PROPERTY-TYPE');
-        $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
-        $propType = $refSafs->prop_type_mstr_id;
-        $transferType = $refSafs->transfer_mode_mstr_id;
-
-        $flip = flipConstants($propTypes);
-        switch ($propType) {
-            case $flip['FLATS / UNIT IN MULTI STORIED BUILDING'];
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_FLATS")->requirements;
-                break;
-            case $flip['INDEPENDENT BUILDING'];
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_INDEPENDENT_BUILDING")->requirements;
-                break;
-            case $flip['SUPER STRUCTURE'];
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_SUPER_STRUCTURE")->requirements;
-                break;
-            case $flip['VACANT LAND'];
-                $documentList = $this->vacantDocLists($mRefReqDocs, $moduleId, $transferType);     // Function (1.1)
-                break;
-        }
-
-        $filteredDocs = $this->filterDocument($documentList, $refSafs);                                     // function(1.2)
+        $documentList = $this->getPropTypeDocList($refSafs);
+        $filteredDocs = $this->filterDocument($documentList, $refSafs);                            // function(1.2)
         return $filteredDocs;
     }
 
@@ -92,23 +69,9 @@ class SafDocController extends Controller
      */
     public function getOwnerDocLists($refOwners, $refSafs)
     {
-        $mRefReqDocs = new RefRequiredDocument();
         $mWfActiveDocument = new WfActiveDocument();
         $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
-        $isSpeciallyAbled = $refOwners->is_specially_abled;
-        $isArmedForce = $refOwners->is_armed_force;
-
-        if ($isSpeciallyAbled == true)
-            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_SPECIALLY_ABLED")->requirements;
-
-        if ($isArmedForce == true)
-            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_IS_ARMED_FORCE")->requirements;
-
-        if ($isSpeciallyAbled == true && $isArmedForce == true)
-            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_SPECIALLY_ARMED")->requirements;
-
-        if ($isSpeciallyAbled == false && $isArmedForce == false)                                           // Condition for the Extra Documents
-            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OWNER_EXTRA_DOCUMENT")->requirements;
+        $documentList = $this->getOwnerDocs($refOwners);
 
         if (!empty($documentList)) {
             $ownerPhoto = $mWfActiveDocument->getOwnerPhotograph($refSafs['id'], $refSafs->workflow_id, $moduleId, $refOwners['id']);
@@ -124,39 +87,6 @@ class SafDocController extends Controller
         } else
             $filteredDocs = [];
         return $filteredDocs;
-    }
-
-    /**
-     * | Vacant Land Required Doc lists (1.1)
-     */
-    public function vacantDocLists($mRefReqDocs, $moduleId, $transferType)
-    {
-        $confTransferTypes = FacadesConfig::get('PropertyConstaint.TRANSFER_MODES');
-        $transerTypes = flipConstants($confTransferTypes);
-        switch ($transferType) {
-            case  $transerTypes['Sale'];
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_SALE")->requirements;
-                break;
-            case  $transerTypes['Gift'];
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_GIFT")->requirements;
-                break;
-            case  $transerTypes['Will'];
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_WILL")->requirements;
-                break;
-            case  $transerTypes['Lease'];
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_LEASE")->requirements;
-                break;
-            case  $transerTypes['Partition'];
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_PARTITION")->requirements;
-                break;
-            case  $transerTypes['Succession'];
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_SUCCESSION")->requirements;
-                break;
-            default:
-                throw new Exception("Not Available Documents List for this Transfer Type");
-        }
-
-        return $documentList;
     }
 
     /**
@@ -226,7 +156,7 @@ class SafDocController extends Controller
             "docCode" => "required",
             "ownerId" => "nullable|numeric"
         ]);
-
+        // return $this->checkFullDocUpload($req->applicationId);
         try {
             $metaReqs = array();
             $docUpload = new DocUpload;
@@ -279,5 +209,34 @@ class SafDocController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
+    }
+
+    /**
+     * | Check Full Upload Doc Status
+     */
+    public function checkFullDocUpload($applicationId)
+    {
+        $docList = array();
+        $uploadDocList = array();
+        $mActiveSafs = new PropActiveSaf();
+        $mSafsOwners = new PropActiveSafsOwner();
+        $mWfActiveDocument = new WfActiveDocument();
+        $refSafs = $mActiveSafs->getSafNo($applicationId);                      // Get Saf Details
+        $refSafOwners = $mSafsOwners->getOwnersBySafId($applicationId);
+        $propListDocs = $this->getPropTypeDocList($refSafs);
+        $docList['propDocs'] = explode('#', $propListDocs);
+        $ownerDocList = collect($refSafOwners)->map(function ($owner) use ($refSafs) {
+            return [
+                'ownerId' => $owner->id,
+                'docs'  => explode('#', $this->getOwnerDocs($owner))
+            ];
+        });
+        $docList['ownerDocs'] = $ownerDocList;
+
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($applicationId);
+        $uploadDocList['ownerDocs'] = $refDocList->where('owner_dtl_id', '!=', null)->values()->groupBy('owner_dtl_id');
+        $uploadDocList['propDocs'] = $refDocList->where('owner_dtl_id', null)->values();
+        return $uploadDocList;
+        return $docList;
     }
 }
