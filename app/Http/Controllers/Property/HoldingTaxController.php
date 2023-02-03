@@ -311,7 +311,6 @@ class HoldingTaxController extends Controller
             'tranNo' => 'required'
         ]);
         try {
-            $mPaymentData = new WebhookPaymentData();
             $mTransaction = new PropTransaction();
             $mPropPenalties = new PropPenaltyrebate();
             $safController = new ActiveSafController($this->_safRepo);
@@ -320,14 +319,15 @@ class HoldingTaxController extends Controller
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
 
-            $applicationDtls = $mPaymentData->getApplicationId($req->tranNo);
-            $propId = json_decode($applicationDtls)->applicationId;
-            $reqPropId = new Request(['propertyId' => $propId]);
+            $propTrans = $mTransaction->getPropByTranPropId($req->tranNo);
+
+            $reqPropId = new Request(['propertyId' => $propTrans->property_id]);
             $propProperty = $safController->getPropByHoldingNo($reqPropId)->original['data'];
-            $propTrans = $mTransaction->getPropByTranPropId($req->tranNo, $propId, 'property_id');
 
             // Get Property Penalty and Rebates
             $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
+            if ($penalRebates->isEmpty())
+                throw new Exception("Data In Penalty Rebates Model Not Available");
 
             $onePercPenalty = collect($penalRebates)->where('head_name', '1% Monthly Penalty')->first()->amount ?? "";
             $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
@@ -345,9 +345,9 @@ class HoldingTaxController extends Controller
                 "customerName" => $propProperty['applicant_name'],
                 "receiptWard" => $propProperty['new_ward_no'],
                 "address" => $propProperty['prop_address'],
-                "paidFrom" => $propTrans->from_year,
+                "paidFrom" => $propTrans->from_fyear,
                 "paidFromQtr" => $propTrans->from_qtr,
-                "paidUpto" => $propTrans->to_year,
+                "paidUpto" => $propTrans->to_fyear,
                 "paidUptoQtr" => $propTrans->to_qtr,
                 "paymentMode" => $propTrans->payment_mode,
                 "bankName" => "",
@@ -395,7 +395,7 @@ class HoldingTaxController extends Controller
                 throw new Exception("Property Not Found");
 
             $propTrans = $mPropTrans->getPropTransactions($req->propId, 'property_id');         // Holding Payment History
-            if (!$propTrans)
+            if (!$propTrans || $propTrans->isEmpty())
                 throw new Exception("No Transaction Found");
 
             $propSafId = $propertyDtls->saf_id;
