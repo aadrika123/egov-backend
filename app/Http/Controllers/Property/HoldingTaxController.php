@@ -326,8 +326,6 @@ class HoldingTaxController extends Controller
 
             // Get Property Penalty and Rebates
             $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
-            if ($penalRebates->isEmpty())
-                throw new Exception("Data In Penalty Rebates Model Not Available");
 
             $onePercPenalty = collect($penalRebates)->where('head_name', '1% Monthly Penalty')->first()->amount ?? "";
             $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
