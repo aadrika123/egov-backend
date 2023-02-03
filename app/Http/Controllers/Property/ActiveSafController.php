@@ -1849,26 +1849,26 @@ class ActiveSafController extends Controller
                     [
                         "key"=>"Mobile Tower",
                         "values"=>$saf->is_mobile_tower==$verifications->has_mobile_tower,
-                        "according_application"=>$saf->is_mobile_tower,
-                        "according_verification"=>$verifications->has_mobile_tower,
+                        "according_application"=>$saf->is_mobile_tower?"Yes":"No",
+                        "according_verification"=>$verifications->has_mobile_tower?"Yes":"No",
                     ],
                     [
                         "key"=>"Hoarding Board",
                         "values"=>$saf->is_hoarding_board==$verifications->has_hoarding,
-                        "according_application"=>$saf->is_hoarding_board,
-                        "according_verification"=>$verifications->has_hoarding,
+                        "according_application"=>$saf->is_hoarding_board?"Yes":"No",
+                        "according_verification"=>$verifications->has_hoarding?"Yes":"No",
                     ],
                     [
                         "key"=>"Petrol Pump",
                         "values"=>$saf->is_petrol_pump==$verifications->is_petrol_pump,
-                        "according_application"=>$saf->is_petrol_pump,
-                        "according_verification"=>$verifications->is_petrol_pump,
+                        "according_application"=>$saf->is_petrol_pump?"Yes":"No",
+                        "according_verification"=>$verifications->is_petrol_pump?"Yes":"No",
                     ],
                     [
                         "key"=>"Water Harvesting",
                         "values"=>$saf->is_water_harvesting==$verifications->has_water_harvesting,
-                        "according_application"=>$saf->is_water_harvesting,
-                        "according_verification"=>$verifications->has_water_harvesting,
+                        "according_application"=>$saf->is_water_harvesting?"Yes":"No",
+                        "according_verification"=>$verifications->has_water_harvesting?"Yes":"No",
                     ],
                 ];
             $size = sizeOf($floars)>=sizeOf($verifications_detals)?$floars:$verifications_detals;
