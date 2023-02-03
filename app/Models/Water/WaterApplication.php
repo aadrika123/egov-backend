@@ -80,6 +80,7 @@ class WaterApplication extends Model
     {
         return  WaterApplication::select(
             'water_applications.*',
+            'water_applications.connection_through as connection_through_id',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
             'water_connection_type_mstrs.connection_type',
@@ -175,5 +176,13 @@ class WaterApplication extends Model
 
         ];
         return $water->update($reqs);
+    }
+
+    /**
+     * | Get Water Application By Id
+     */
+    public function getApplicationById($applicationId)
+    {
+        return  WaterApplication::where('id', $applicationId);
     }
 }
