@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Auth\ChangePassRequest;
 use App\Models\ActiveCitizen;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
@@ -165,5 +166,36 @@ class CitizenController extends Controller
     public function getTransactionHistory()
     {
         return $this->Repository->getTransactionHistory();
+    }
+
+    /**
+     * -----------------------------------------------
+     * Parent @Controller- function changePass()
+     * -----------------------------------------------
+     * @param App\Http\Requests\Request 
+     * @param App\Http\Requests\Request $request 
+     * 
+     * 
+     */
+    public function changeCitizenPass(ChangePassRequest $request)
+    {
+        try {
+            $validator = $request->validated();
+
+            $id = auth()->user()->id;
+            $citizen = ActiveCitizen::where('id', $id)->firstOrFail();
+            $oldPass = Hash::make($request->password);
+            if ($citizen->password == $oldPass) {
+
+                $citizen->password = Hash::make($request->newPassword);
+                $citizen->save();
+
+                Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
+                return response()->json(['Status' => 'True', 'Message' => 'Successfully Changed the Password'], 200);
+            }
+            throw new Exception("Old Password dosen't Match!");
+        } catch (Exception $e) {
+            return response()->json(["status" => false, "message" => $e->getMessage(), "data" => $request->password], 400);
+        }
     }
 }

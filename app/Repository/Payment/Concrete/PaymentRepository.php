@@ -26,7 +26,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 use Exception;
-
+use Illuminate\Support\Facades\Http;
 
 /**
  * |--------------------------------------------------------------------------------------------------------|
@@ -319,6 +319,10 @@ class PaymentRepository implements iPayment
                     case ('3'):                                      //<-------------------(TRADE)
                         $objTrade = new TradeCitizen();
                         $objTrade->razorPayResponse($transfer);
+                        break;
+                    case ('5'):
+                        Http::withHeaders([])
+                            ->post("http://192.168.0.140:8000/api/advertisements/payment-success-failure", $transfer);
                         break;
                 }
             }
