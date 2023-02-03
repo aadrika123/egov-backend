@@ -1377,8 +1377,9 @@ class ActiveSafController extends Controller
             $mOnePercPenalty = $propPenalties->getPenalRebateByTranId($propTrans->id, "1% Monthly Penalty");
             $mRebate = $propPenalties->getPenalRebateByTranId($propTrans->id, "Rebate");
             $mSpecialRebate = $propPenalties->getPenalRebateByTranId($propTrans->id, "Special Rebate") ?? 0;
+            $firstQtrRebate = 0;
 
-            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $mOnePercPenalty->amount, $mRebate->amount, $mSpecialRebate->amount ?? 0, $propTrans->amount);   // Get Holding Tax Dtls
+            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $mOnePercPenalty->amount, $mRebate->amount, $mSpecialRebate->amount ?? 0, $firstQtrRebate, $propTrans->amount);   // Get Holding Tax Dtls
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
@@ -1452,7 +1453,7 @@ class ActiveSafController extends Controller
     /**
      * | Read Penalty Tax Details with Penalties and final payable amount(1.2)
      */
-    public function readPenalyPmtAmts($lateAssessPenalty = 0, $onePercPenalty = 0, $rebate = 0, $specialRebate = 0, $amount)
+    public function readPenalyPmtAmts($lateAssessPenalty = 0, $onePercPenalty = 0, $rebate = 0, $specialRebate = 0, $firstQtrRebate = 0, $amount)
     {
         $amount = [
             [
@@ -1470,6 +1471,10 @@ class ActiveSafController extends Controller
             [
                 "keyString" => "Special Rebate",
                 "value" => roundFigure((float)$specialRebate)
+            ],
+            [
+                "keyString" => "First Qtr Rebate",
+                "value" => roundFigure((float)$firstQtrRebate)
             ],
             [
                 "keyString" => "Total Paid Amount",

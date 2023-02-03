@@ -332,9 +332,10 @@ class HoldingTaxController extends Controller
             $onePercPenalty = collect($penalRebates)->where('head_name', '1% Monthly Penalty')->first()->amount ?? "";
             $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
             $specialRebate = collect($penalRebates)->where('head_name', 'Special Rebate')->first()->amount ?? 0;
+            $firstQtrRebate = collect($penalRebates)->where('head_name', 'First Qtr Rebate')->first()->amount ?? 0;
             $lateAssessmentPenalty = 0;
 
-            $taxDetails = $safController->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $propTrans->amount);
+            $taxDetails = $safController->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount);
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
