@@ -1461,19 +1461,19 @@ class ActiveSafController extends Controller
             ],
             [
                 "keyString" => "1% Interest On Monthly Penalty(Notification No-641)",
-                "value" => roundFigure($onePercPenalty)
+                "value" => roundFigure((float)$onePercPenalty)
             ],
             [
                 "keyString" => "Rebate",
-                "value" => roundFigure($rebate)
+                "value" => roundFigure((float)$rebate)
             ],
             [
                 "keyString" => "Special Rebate",
-                "value" => roundFigure($specialRebate)
+                "value" => roundFigure((float)$specialRebate)
             ],
             [
                 "keyString" => "Total Paid Amount",
-                "value" => roundFigure($amount)
+                "value" => roundFigure((float)$amount)
             ],
             [
                 "keyString" => "Remaining Amount",

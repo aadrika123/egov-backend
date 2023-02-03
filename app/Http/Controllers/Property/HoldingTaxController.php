@@ -323,11 +323,11 @@ class HoldingTaxController extends Controller
 
             $reqPropId = new Request(['propertyId' => $propTrans->property_id]);
             $propProperty = $safController->getPropByHoldingNo($reqPropId)->original['data'];
+            if (empty($propProperty))
+                throw new Exception("Property Not Found");
 
             // Get Property Penalty and Rebates
             $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
-            if ($penalRebates->isEmpty())
-                throw new Exception("Data In Penalty Rebates Model Not Available");
 
             $onePercPenalty = collect($penalRebates)->where('head_name', '1% Monthly Penalty')->first()->amount ?? "";
             $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
@@ -341,7 +341,7 @@ class HoldingTaxController extends Controller
                 "transactionDate" => $propTrans->tran_date,
                 "transactionNo" => $propTrans->tran_no,
                 "transactionTime" => $propTrans->created_at->format('H:i:s'),
-                "applicationNo" => $propProperty['new_holding_no'] ?? $propProperty['holding_no'],
+                "applicationNo" => !empty($propProperty['new_holding_no']) ? $propProperty['new_holding_no'] : $propProperty['holding_no'],
                 "customerName" => $propProperty['applicant_name'],
                 "receiptWard" => $propProperty['new_ward_no'],
                 "address" => $propProperty['prop_address'],

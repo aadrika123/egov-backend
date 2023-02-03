@@ -245,12 +245,16 @@ class EloquentAuthRepository implements AuthRepository
 
             $id = auth()->user()->id;
             $user = User::find($id);
-            $user->password = Hash::make($request->password);
-            $user->save();
+            $oldPass = Hash::make($request->password);
+            if ($user->password == $oldPass) {
 
-            Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
+                $user->password = Hash::make($request->newPassword);
+                $user->save();
 
-            return response()->json(['Status' => 'True', 'Message' => 'Successfully Changed the Password'], 200);
+                Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
+                return response()->json(['Status' => 'True', 'Message' => 'Successfully Changed the Password'], 200);
+            }
+            throw new Exception("Old password not Exist!");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }

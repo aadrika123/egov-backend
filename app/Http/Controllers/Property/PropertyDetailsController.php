@@ -112,6 +112,7 @@ class PropertyDetailsController extends Controller
                         'prop_properties.new_holding_no',
                         'ward_name',
                         'prop_address',
+                        'prop_properties.status',
                         DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
                         DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
                     )

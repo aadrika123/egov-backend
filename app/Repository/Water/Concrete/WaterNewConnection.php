@@ -72,10 +72,8 @@ class WaterNewConnection implements IWaterNewConnection
         try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
-            $mWebhookPaymentData = new WebhookPaymentData();
-            $departmnetId       = Config::get('waterConstaint.WATER_DEPAPRTMENT_ID');
-            // $refUlbId           = $request->ulbId;
-            // AND water_applications.ulb_id = $refUlbId (btw line 95 96)
+            $mWaterTran         = new WaterTran();
+            // $departmnetId       = Config::get('waterConstaint.WATER_DEPAPRTMENT_ID');
             $connection         = WaterApplication::select(
                 "water_applications.id",
                 "water_applications.application_no",
@@ -114,30 +112,16 @@ class WaterNewConnection implements IWaterNewConnection
                 // ->whereNotIn("status",[0,6,7])
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
                 ->where("water_applications.user_id", $refUserId)
-                // ->where("water_applications.ulb_id", $refUlbId)
                 ->orderbydesc('id')
                 ->get();
 
-            $TransData = $mWebhookPaymentData->getTransactionDetails($departmnetId, $refUser);
-            $returnValue = collect($connection)->map(function ($value) use ($TransData) {
-                $id = $value['id'];
-                $transactionIdDetail = collect($TransData)->map(function ($secondVal) use ($id) {
-                    if ($secondVal['applicationId'] == $id) {
-                        return $secondVal;
-                    }
-                });
-                $filtered = collect($transactionIdDetail)->filter(function ($nonEmpty,) {
-                    if ($nonEmpty != null) {
-                        return $nonEmpty;
-                    }
-                });
-                $value['transDetails'] = $filtered->values();
+            $returnValue = collect($connection)->map(function ($value) use ($mWaterTran) {
+                $TransData = $mWaterTran->getTransNo($value['id'], null)->first();
+                $value['transDetails'] = $TransData;
                 return $value;
             });
-
-            return responseMsg(true, "", remove_null($returnValue));
+            return $returnValue;
         } catch (Exception $e) {
-
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
@@ -913,14 +897,9 @@ class WaterNewConnection implements IWaterNewConnection
     }
     public function getDocumentTypeList(WaterApplication $application)
     {
-        $refUser            = Auth()->user();
-        $refUserId          = $refUser->id;
-        $refUlbId           = $refUser->ulb_id;
-        $WfWorkflow         = WfWorkflow::where('id', $application->workflow_id)->first();
-        // $mUserType          = $this->_parent->userType($WfWorkflow->wf_master_id);
         $return = (array)null;
-        $type   = ["METER_BILL", "ADDRESS_PROOF", "CONSUMER_PHOTO", "OTHER"];
-        if (in_array($application->connection_through_id, [1, 2]))      // Holding No, SAF No
+        $type   = ["METER_BILL", "ADDRESS_PROOF", "OTHER"];
+        if (in_array($application->connection_through, [1, 2]))      // Holding No, SAF No
         {
             $type[] = "HOLDING_PROOF";
         }
