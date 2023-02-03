@@ -843,17 +843,18 @@ class NewConnectionController extends Controller
                     $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
                     $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
                     $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()->doc_code;
+                    $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()->verify_status;
                 }
                 array_push($requiedDocs, $doc);
             }
             foreach ($refOwneres as $key => $val) {
                 $doc = (array) null;
-                $testOwnersDoc[$key] = (array) null;
+                $testOwnersDoc[] = (array) null;
                 $doc["ownerId"] = $val->id;
                 $doc["ownerName"] = $val->applicant_name;
                 $doc["docName"]   = "ID Proof";
                 $doc['isMadatory'] = 1;
-                $doc['docVal'] = $refWaterNewConnection->getDocumentList("ID_PROOF");
+                $doc['docVal'] = $refWaterNewConnection->getDocumentList(["ID_PROOF", "CONSUMER_PHOTO"]);
                 $refdocForId = collect($doc['docVal'])->map(function ($value, $key) {
                     return $value['doc_name'];
                 });
@@ -863,12 +864,14 @@ class NewConnectionController extends Controller
                     $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
                     $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
                     $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()->doc_code;
+                    $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()->verify_status;
                 }
-                array_push($ownersDoc, $doc);
-                array_push($testOwnersDoc[$key], $doc);
+                array_push($testOwnersDoc, $doc);
             }
+            $ownerDoc = collect($testOwnersDoc)->filter()->values();
+
             $data["documentsList"]  = $requiedDocs;
-            $data["ownersDocList"]  = collect($testOwnersDoc)->first();
+            $data["ownersDocList"]  = $ownerDoc;
             return responseMsg(true, "Document Uploaded!", $data);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
@@ -1040,7 +1043,7 @@ class NewConnectionController extends Controller
                 }
                 return true;
             });
-            
+
             if ($checkDocument->contains(false)) {
                 throw new Exception("Please Upload Req Documents before Final Submition!");
             }
