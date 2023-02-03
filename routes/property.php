@@ -42,7 +42,7 @@ use App\Http\Controllers\Property\ZoneController;
 
 
 // Inside Middleware Routes with API Authenticate 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'XssSanitizer']], function () {
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
 
   /**
    * | Route Outside the Middleware

@@ -946,7 +946,7 @@ class WaterNewConnection implements IWaterNewConnection
         }
         $doc = WaterParamDocumentType::select(
             "doc_for",
-            DB::raw("CASE WHEN doc_for ='Others' THEN 0 
+            DB::raw("CASE WHEN doc_for ='OTHER' THEN 0 
                                                 ELSE 1 END AS is_mandatory")
         )
             ->whereIn("doc_for", $type)

@@ -1029,15 +1029,18 @@ class NewConnectionController extends Controller
             }
 
             $documentList = $this->getDocToUpload($request);
-            $checkDocument = collect($documentList)->map(function ($value, $key) {
+            $refDoc = collect($documentList)['original']['data']['documentsList'];
+            $checkDocument = collect($refDoc)->map(function ($value, $key) {
                 if ($value['isMadatory'] == 1) {
-                    if (isset($value['uploadDoc']) && !is_null($value['uploadDoc'])) {
+                    $doc = collect($value['uploadDoc'])->first();
+                    if (is_null($doc)) {
                         return false;
                     }
                     return true;
                 }
                 return true;
             });
+            
             if ($checkDocument->contains(false)) {
                 throw new Exception("Please Upload Req Documents before Final Submition!");
             }
