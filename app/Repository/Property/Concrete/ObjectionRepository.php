@@ -16,7 +16,6 @@ use App\Models\Property\PropActiveObjectionOwner;
 use App\Traits\Property\Objection;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Property\PropProperty;
-use App\Models\Property\PropObjectionLevelpending;
 use Illuminate\Support\Facades\Redis;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\PropActiveObjectionDtl;
@@ -124,10 +123,6 @@ class ObjectionRepository implements iObjectionRepository
                 $objectionOwner->corr_state = $request->corrState;
                 $objectionOwner->created_at = Carbon::now();
                 $objectionOwner->save();
-
-
-                $this->docUpload($request, $objection, $objectionNo);
-
 
                 //name document
                 # call a funcion for the file uplode 
@@ -559,44 +554,7 @@ class ObjectionRepository implements iObjectionRepository
     // }
 
 
-    /**
-     * =================================================================
-     */
 
-    public function docUpload($req, $objection, $objectionNo)
-    {
-        $req->validate([
-            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            "docMstrId" => "required|numeric",
-            // "ownerId" => "nullable|numeric",
-            "docRefName" => "required"
-        ]);
 
-        try {
-            $metaReqs = array();
-            $docUpload = new DocUpload;
-            $mWfActiveDocument = new WfActiveDocument();
-            // $mActiveSafs = new PropActiveSaf();
-            $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
-            // $getSafDtls = $mActiveSafs->getSafNo($objection->id);
-            $refImageName = $req->docRefName;
-            $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
-            $document = $req->document;
-            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
-            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs['activeId'] = $objectionNo;
-            $metaReqs['workflowId'] = $objection->workflow_id;
-            $metaReqs['ulbId'] = $objection->ulb_id;
-            $metaReqs['relativePath'] = $relativePath;
-            $metaReqs['image'] = $imageName;
-            $metaReqs['docMstrId'] = $req->docMstrId;
-            // $metaReqs['ownerDtlId'] = $req->ownerId;
-            $metaReqs = new Request($metaReqs);
-            $mWfActiveDocument->postDocuments($metaReqs);
-            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
 }
