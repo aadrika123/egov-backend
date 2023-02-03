@@ -33,7 +33,6 @@ class WfActiveDocument extends Model
 
         WfActiveDocument::create($metaReqs);
     }
-
     /**
      * | Get Application Details by Application No
      */
@@ -184,7 +183,9 @@ class WfActiveDocument extends Model
             ->where("d.ulb_id", $ulb_id)
             ->where("d.module_id", Config::get('module-constants.TRADE_MODULE_ID'))
             ->where("d.owner_dtl_id", $owner_id)
+            ->where("d.status", 1)
             ->whereIn("dr.id", $docId)
+            ->orderBy("d.id","DESC")
             ->first();
     }
 
