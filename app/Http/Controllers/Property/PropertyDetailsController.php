@@ -50,7 +50,7 @@ class PropertyDetailsController extends Controller
                     $mPropActiveSaf = new PropActiveSaf();
                     $mPropActiveSafOwners = new PropActiveSafsOwner();
                     $application = collect($mPropActiveSaf->getSafDtlsBySafNo($applicationNo));
-                    $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
+                    $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId1($application['id']));
                     $details = $application->merge($owners);
                     break;
                 case ("concession"):
