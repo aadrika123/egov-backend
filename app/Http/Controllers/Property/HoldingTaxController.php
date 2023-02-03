@@ -395,7 +395,7 @@ class HoldingTaxController extends Controller
                 throw new Exception("Property Not Found");
 
             $propTrans = $mPropTrans->getPropTransactions($req->propId, 'property_id');         // Holding Payment History
-            if ($propTrans->empty() || !$propTrans)
+            if (!$propTrans)
                 throw new Exception("No Transaction Found");
 
             $propSafId = $propertyDtls->saf_id;
