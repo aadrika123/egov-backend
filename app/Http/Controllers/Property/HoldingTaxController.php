@@ -389,11 +389,17 @@ class HoldingTaxController extends Controller
             $mPropProperty = new PropProperty();
 
             $transactions = array();
+
+            $propertyDtls = $mPropProperty->getSafByPropId($req->propId);
+            if (!$propertyDtls)
+                throw new Exception("Property Not Found");
+
             $propTrans = $mPropTrans->getPropTransactions($req->propId, 'property_id');         // Holding Payment History
-            if (!$propTrans)
+            if ($propTrans->empty() || !$propTrans)
                 throw new Exception("No Transaction Found");
 
-            $propSafId = $mPropProperty->getSafByPropId($req->propId)->saf_id;
+            $propSafId = $propertyDtls->saf_id;
+
             $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');                 // Saf payment History
 
             $transactions['Holding'] = collect($propTrans)->sortBy('id')->values();
