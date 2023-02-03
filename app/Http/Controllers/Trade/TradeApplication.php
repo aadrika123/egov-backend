@@ -615,7 +615,7 @@ class TradeApplication extends Controller
             $metaReqs['docCode'] = $req->docRefName;
             if(in_array($req->docRefName,explode(",",$docName)) && in_array($req->docMstrId,explode(",",$specifids2)))
             {
-                $metaReqs['ownerId'] = $req->ownerId;
+                $metaReqs['ownerDtlId'] = $req->ownerId;
             }
 
             #reupload documents;
@@ -627,7 +627,7 @@ class TradeApplication extends Controller
                     $arr['relative_path'] = $relativePath;
                     $arr['document'] = $imageName;
                     $arr['doc_code'] = $req->docRefName;
-                    $arr['owner_dtl_id'] = $metaReqs['ownerId']??null;
+                    $arr['owner_dtl_id'] = $metaReqs['ownerDtlId']??null;
                     $mWfActiveDocument->docVerifyReject($privDoc->id,$arr);
                 }
                 else
