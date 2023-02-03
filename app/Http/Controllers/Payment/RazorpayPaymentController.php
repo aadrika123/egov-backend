@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Payment\WebhookPaymentData;
 use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
+use App\Traits\Payment\Razorpay;
 use Exception;
 use Illuminate\Support\Facades\Validator;
+
 
 /**
  * |-------------------------------- Razorpay Payments ------------------------------------------|
@@ -18,6 +20,8 @@ use Illuminate\Support\Facades\Validator;
 class RazorpayPaymentController extends Controller
 {
     //  Construct Function
+    # traits
+    use Razorpay;
     private iPayment $Prepository;
     public function __construct(iPayment $Prepository)
     {
@@ -121,6 +125,17 @@ class RazorpayPaymentController extends Controller
             return responseMsg(false, "validation error", $validated->errors(), 401);
         }
         return $this->Prepository->getTransactionNoDetails($req);
+    }
+
+    // saveGenerateOrderid
+    public function generateOrderid(Request $req)
+    {
+        // return $req;
+        try {
+            return  $this->saveGenerateOrderid($req);  
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     /**

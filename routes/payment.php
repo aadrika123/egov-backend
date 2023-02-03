@@ -33,6 +33,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('verify-payment-status', 'verifyPaymentStatus');                                // 08 verifiying the payment status and saving both success, fails, suspeciousdata  
         Route::post('get-transaction-no-details', 'getTransactionNoDetails');                       // 09 geting details of the transaction according to the orderId, paymentId and payment status
         Route::get('all-module-transaction', 'allModuleTransaction');                               // 10 all details of payments according to user Id 
+        Route::post('generate-orderid','generateOrderid');
 
         # Payment Reconciliation
         Route::get('get-reconcillation-details', 'getReconcillationDetails');                       // 11 

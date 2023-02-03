@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\newApplyRules;
 use App\Http\Requests\Water\reqSiteVerification;
 use App\MicroServices\DocUpload;
+use App\Models\Masters\RefRequiredDocument;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
@@ -619,10 +620,10 @@ class NewConnectionController extends Controller
             }
             if ($applicantDetals->user_id == $userId) {
                 DB::beginTransaction();
-                // $mWaterApplication->deleteWaterApplication($req->applicationId);
-                // $mWaterApplicant->deleteWaterApplicant($req->applicationId);
-                // $mWaterConnectionCharge->deleteWaterConnectionCharges($req->applicationId);
-                // $mWaterPenaltyInstallment->deleteWaterPenelty($req->applicationId);
+                $mWaterApplication->deleteWaterApplication($req->applicationId);
+                $mWaterApplicant->deleteWaterApplicant($req->applicationId);
+                $mWaterConnectionCharge->deleteWaterConnectionCharges($req->applicationId);
+                $mWaterPenaltyInstallment->deleteWaterPenelty($req->applicationId);
                 DB::commit();
                 return responseMsgs(true, "Application Successfully Deleted", "", "", "1.0", "", "POST", $req->deviceId);
             }
@@ -725,16 +726,15 @@ class NewConnectionController extends Controller
 
     // Application details
     /**
-        | Modification --------------------------
+        | Working
      */
     public function uploadWaterDoc(Request $req)
     {
         $req->validate([
             "applicationId" => "required|numeric",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            "docMstrId" => "required|numeric",
-            "ownerId" => "nullable|numeric",
-            "docRefName" => "required"
+            "docCode" => "required",
+            "ownerId" => "nullable|numeric"
         ]);
 
         try {
@@ -752,12 +752,12 @@ class NewConnectionController extends Controller
 
             $metaReqs = [
                 'moduleId' => Config::get('module-constants.WATER_MODULE_ID'),
-                'activeId' => $getWaterDetails->application_no,
+                'activeId' => $getWaterDetails->id,
                 'workflowId' => $getWaterDetails->workflow_id,
                 'ulbId' => $getWaterDetails->ulb_id,
                 'relativePath' => $relativePath,
-                'image' => $imageName,
-                'docMstrId' => $req->docMstrId,
+                'document' => $imageName,
+                'docCode' => $req->docCode,
                 'ownerDtlId' => $req->ownerId,
             ];
 
@@ -771,7 +771,7 @@ class NewConnectionController extends Controller
 
     // Get the upoaded docunment
     /**
-        | Modification ---------------------------
+        | Working
      */
     public function getUploadDocuments(Request $req)
     {
@@ -781,13 +781,14 @@ class NewConnectionController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mWaterApplication = new WaterApplication();
+            $moduleId = Config::get('module-constants.WATER_MODULE_ID');
 
-            $waterDetails = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
+            $waterDetails = $mWaterApplication->getApplicationById($req->applicationId)->first();
             if (!$waterDetails)
                 throw new Exception("Application Not Found for this application Id");
 
-            $applicationNo = $waterDetails->application_no;
-            $documents = $mWfActiveDocument->getWaterDocsByAppNo($applicationNo);
+            $workflowId = $waterDetails->workflow_id;
+            $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
@@ -796,7 +797,7 @@ class NewConnectionController extends Controller
 
     // Get the document to be upoaded with list of dock uploaded 
     /**
-        | Modification ---------------------------
+        | Working
      */
     public function getDocToUpload(Request $request)
     {
@@ -810,9 +811,9 @@ class NewConnectionController extends Controller
             $ownersDoc          = (array)null;
             $testOwnersDoc      = (array)null;
             $data               = (array)null;
-            $sms                = "";
             $refWaterNewConnection = new WaterNewConnection();
             $refWfActiveDocument = new WfActiveDocument();
+            $moduleId = Config::get('module-constants.WATER_MODULE_ID');
 
             $connectionId = $request->applicationId;
             $refApplication = WaterApplication::where("status", 1)->find($connectionId);
@@ -822,21 +823,27 @@ class NewConnectionController extends Controller
 
             $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication);  # get All Related Document Type List
             $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
+            $ownerList = collect($refOwneres)->map(function ($value) {
+                $return['applicant_name'] = $value['applicant_name'];
+                $return['ownerID'] = $value['id'];
+                return $return;
+            });
             foreach ($requiedDocType as $val) {
                 $doc = (array) null;
-                $doc["ownerId"] = collect($refOwneres)->first()->id;
-                $doc["ownerName"] = collect($refOwneres)->first()->applicant_name;
+                $doc["ownerName"] = $ownerList;
                 $doc['docName'] = $val->doc_for;
                 $doc['isMadatory'] = $val->is_mandatory;
                 $doc['docVal'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
-                $docForId = collect($doc['docVal'])->map(function ($value) {
-                    return $value['id'];
+                $docFor = collect($doc['docVal'])->map(function ($value) {
+                    return $value['doc_name'];
                 });
-                // $doc['uploadDoc'] = $refWfActiveDocument->getWaterAppByAppNoDocId($refApplication->application_no, $docForId); # Check Document is Uploaded Of That Type
-                // if (isset($doc["uploadDoc"]->doc_path)) {
-                //     $path = $refWaterNewConnection->readDocumentPath($doc["uploadDoc"]->doc_path);
-                //     $doc["uploadDoc"]->doc_path = !empty(trim($doc["uploadDoc"]->doc_path)) ? $path : null;
-                // }
+                $doc['uploadDoc'] = [];
+                $uploadDoc = $refWfActiveDocument->getDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $docFor); # Check Document is Uploaded Of That Type
+                if (isset($uploadDoc->first()->doc_path)) {
+                    $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
+                    $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
+                    $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()->doc_code;
+                }
                 array_push($requiedDocs, $doc);
             }
             foreach ($refOwneres as $key => $val) {
@@ -846,21 +853,23 @@ class NewConnectionController extends Controller
                 $doc["ownerName"] = $val->applicant_name;
                 $doc["docName"]   = "ID Proof";
                 $doc['isMadatory'] = 1;
-                $doc['docVal'] = $refWaterNewConnection->getDocumentList("ID Proof");
+                $doc['docVal'] = $refWaterNewConnection->getDocumentList("ID_PROOF");
                 $refdocForId = collect($doc['docVal'])->map(function ($value, $key) {
-                    return $value['id'];
+                    return $value['doc_name'];
                 });
-                // $doc['uploadDoc'] = $refWfActiveDocument->getWaterAppByAppNoDocId($refApplication->application_no, $refdocForId);
-                // if (isset($doc["uploadDoc"]->doc_path)) {
-                //     $path = $refWaterNewConnection->readDocumentPath($doc["uploadDoc"]->doc_path);
-                //     $doc["uploadDoc"]->doc_path = !empty(trim($doc["uploadDoc"]->doc_path)) ? $path : null;
-                // }
+                $doc['uploadDoc'] = [];
+                $uploadDoc = $refWfActiveDocument->getDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $refdocForId); # Check Document is Uploaded Of That Type
+                if (isset($uploadDoc->first()->doc_path)) {
+                    $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
+                    $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
+                    $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()->doc_code;
+                }
                 array_push($ownersDoc, $doc);
                 array_push($testOwnersDoc[$key], $doc);
             }
             $data["documentsList"]  = $requiedDocs;
             $data["ownersDocList"]  = collect($testOwnersDoc)->first();
-            return responseMsg(true, $sms, $data);
+            return responseMsg(true, "Document Uploaded!", $data);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -1057,15 +1066,214 @@ class NewConnectionController extends Controller
         }
     }
 
-    // function for the process of the operatio
-    public function try(Request $req)
+    /**
+        |-------------------------------------------------------------------------------------------------------|
+     */
+
+    /**
+     * | Get Document Lists
+     */
+    public function getDocList(Request $req)
     {
-        $metaData = $this->maps($req->all());
-        $myRequest = new \Illuminate\Http\Request();
-        $myRequest->setMethod($req->getMethod());
-        foreach ($metaData as  $key => $value) {
-            $myRequest->request->add([$key => $value]);
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+
+        try {
+            $mWaterApplication = new WaterApplication();
+            $mWaterApplicant = new WaterApplicant();
+            $refWaterApplication = $mWaterApplication->getApplicationById($req->applicationId)->first();                      // Get Saf Details
+            if (!$refWaterApplication) {
+                throw new Exception("Application Not Found for this id");
+            }
+            $refWaterApplicant = $mWaterApplicant->getOwnerList($req->applicationId)->get();
+            $waterTypeDocs['listDocs'] = $this->getWaterDocLists($refWaterApplication);                // Current Object(Saf Docuement List)
+            $waterOwnerDocs['ownerDocs'] = collect($refWaterApplicant)->map(function ($owner) use ($refWaterApplication) {
+                return $this->getOwnerDocLists($owner, $refWaterApplication);
+            })->first();
+
+            $totalDocLists = collect($waterTypeDocs)->merge($waterOwnerDocs);
+            $totalDocLists['docUploadStatus'] = $refWaterApplication->doc_upload_status;
+            $totalDocLists['docVerifyStatus'] = $refWaterApplication->doc_status;
+            return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
-        return $myRequest;
+    }
+
+
+    /**
+     * | Filter Document(1.2)
+     */
+    public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
+    {
+        $mWfActiveDocument = new WfActiveDocument();
+        $applicationId = $refWaterApplication->id;
+        $workflowId = $refWaterApplication->workflow_id;
+        $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+        $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
+
+        $explodeDocs = collect(explode('#', $documentList->requirements));
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $documentList) {
+            $document = explode(',', $explodeDoc);
+            $key = array_shift($document);
+
+            $documents = collect();
+
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $documentList) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $item)
+                    ->where('owner_dtl_id', $ownerId)
+                    ->first();
+                if ($uploadedDoc) {
+                    $response = [
+                        "uploadedDocId" => $uploadedDoc->id ?? "",
+                        "documentCode" => $item,
+                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
+                        "docPath" => $uploadedDoc->doc_path ?? "",
+                        "verifyStatus" => $uploadedDoc->verify_status ?? "",
+                        "remarks" => $uploadedDoc->remarks ?? "",
+                    ];
+                    $documents->push($response);
+                }
+            });
+            $reqDoc['docType'] = $key;
+            $reqDoc['uploadedDoc'] = $documents->first();
+            $reqDoc['docFor'] = $documentList->code;
+
+            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
+                $strLower = strtolower($doc);
+                $strReplace = str_replace('_', ' ', $strLower);
+                $arr = [
+                    "documentCode" => $doc,
+                    "docVal" => ucwords($strReplace),
+                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
+                    "uploadedDocId" => $uploadedDoc->id ?? "",
+                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
+                    "remarks'" => $uploadedDoc->remarks ?? "",
+                ];
+                return $arr;
+            });
+            return $reqDoc;
+        });
+        return $filteredDocs;
+    }
+
+
+    // List of the doc to upload
+    public function getWaterDocLists($application)
+    {
+        $mRefReqDocs = new RefRequiredDocument();
+        $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+
+        $type   = ["METER_BILL", "ADDRESS_PROOF", "OTHER"];
+        if (in_array($application->connection_through_id, [1, 2]))      // Holding No, SAF No
+        {
+            $type[] = "HOLDING_PROOF";
+        }
+        if (strtoupper($application->category) == "BPL")                // FOR BPL APPLICATION
+        {
+            $type[] = "BPL";
+        }
+        if ($application->property_type_id == 2)                        // FOR COMERCIAL APPLICATION
+        {
+            $type[] = "COMMERCIAL";
+        }
+        if ($application->apply_from != "Online")                       // Online
+        {
+            $type[]  = "FORM_SCAN_COPY";
+        }
+        if ($application->owner_type == 2)                              // In case of Tanent
+        {
+            $type[]  = "TENANT";
+        }
+        if ($application->property_type_id == 7)                        // Appartment
+        {
+            $type[]  = "APPARTMENT";
+        }
+        $documentList = $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);
+        return collect($documentList)->map(function ($value, $key) use ($application) {
+            return $filteredDocs = $this->filterDocument($value, $application)->first();
+        });
+    }
+
+    // Get owner Doc list
+    public function getOwnerDocLists($refOwners, $application)
+    {
+        $mRefReqDocs = new RefRequiredDocument();
+        $mWfActiveDocument = new WfActiveDocument();
+        $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+        $type   = ["ID_PROOF", "CONSUMER_PHOTO"];
+
+        $documentList = $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);
+        $ownerDocList['documents'] = collect($documentList)->map(function ($value, $key) use ($application) {
+            return $filteredDocs = $this->filterDocument($value, $application)->first();
+        });
+        if (!empty($documentList)) {
+            $ownerPhoto = $mWfActiveDocument->getOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);
+            $ownerDocList['ownerDetails'] = [
+                'ownerId' => $refOwners['id'],
+                'name' => $refOwners['owner_name'],
+                'mobile' => $refOwners['mobile_no'],
+                'guardian' => $refOwners['guardian_name'],
+                'uploadedDoc' => $ownerPhoto->doc_path ?? "",
+                'verifyStatus' => $ownerPhoto->verify_status ?? ""
+            ];
+            return $ownerDocList;
+        }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// function for the process of the operatio
+// public function try(Request $req)
+// {
+//     $metaData = $this->maps($req->all());
+//     $myRequest = new \Illuminate\Http\Request();
+//     $myRequest->setMethod($req->getMethod());
+//     foreach ($metaData as  $key => $value) {
+//         $myRequest->request->add([$key => $value]);
+//     }
+//     return $myRequest;
+// }
