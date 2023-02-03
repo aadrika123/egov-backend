@@ -4,6 +4,7 @@ namespace App\Models\Workflows;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class WfActiveDocument extends Model
@@ -75,22 +76,22 @@ class WfActiveDocument extends Model
     }
 
     # water document View
-    public function getWaterDocsByAppNo($applicationNo)
+    public function getWaterDocsByAppNo($applicationId, $workflowId, $moduleId)
     {
         return DB::table('wf_active_documents as d')
             ->select(
                 'd.id',
-                'd.image',
-                DB::raw("concat(relative_path,'/',image) as doc_path"),
+                'd.document',
+                DB::raw("concat(relative_path,'/',document) as doc_path"),
                 'd.remarks',
                 'd.verify_status',
-                'd.doc_mstr_id',
-                'dm.document_name',
+                'd.doc_code',
                 'o.applicant_name as owner_name'
             )
-            ->join('water_param_document_types as dm', 'dm.id', '=', 'd.doc_mstr_id')
             ->leftJoin('water_applicants as o', 'o.id', '=', 'd.owner_dtl_id')
-            ->where('d.active_id', $applicationNo)
+            ->where('d.active_id', $applicationId)
+            ->where('d.workflow_id', $workflowId)
+            ->where('d.module_id', $moduleId)
             ->get();
     }
 
@@ -166,20 +167,24 @@ class WfActiveDocument extends Model
     /**
      * | trade
      */
-    public function getTradeAppByAppNoDocId($applicationNo, $docId)
+    public function getTradeAppByAppNoDocId($appid,$ulb_id, $docId,$owner_id=null)
     {
         return DB::table('wf_active_documents as d')
             ->select(
                 'd.id',
                 'dr.doc_name',
                 'd.verify_status',
-                DB::raw("concat(relative_path,'/',image) as doc_path"),
+                DB::raw("concat(relative_path,'/',document) as doc_path"),
                 'remarks',
-                'doc_mstr_id'
+                'dr.id as doc_mstr_id'
             )
-            ->join('trade_param_document_types as dr', 'dr.id', '=', 'd.doc_mstr_id')
-            ->where("d.active_id", $applicationNo)
-            ->whereIn("d.doc_mstr_id", $docId)
+            ->join('trade_param_document_types as dr', 'dr.doc_for', '=', 'd.doc_code')
+            ->where("d.active_id", $appid)
+            ->where("d.workflow_id", Config::get('workflow-constants.TRADE_WORKFLOW_ID'))
+            ->where("d.ulb_id", $ulb_id)
+            ->where("d.module_id", Config::get('module-constants.TRADE_MODULE_ID'))
+            ->where("d.owner_dtl_id", $owner_id)
+            ->whereIn("dr.id", $docId)
             ->first();
     }
 
@@ -199,6 +204,22 @@ class WfActiveDocument extends Model
             ->get();
     }
 
+     /**
+     * | Get Workflow Active Documents By Active Id
+     */
+    public function getDocByRefIdsDocCode($activeId, $workflowId, $moduleId, $docCode)
+    {
+        return WfActiveDocument::select(
+            DB::raw("concat(relative_path,'/',document) as doc_path"),
+            '*'
+        )
+            ->where('active_id', $activeId)
+            ->where('workflow_id', $workflowId)
+            ->where('module_id', $moduleId)
+            ->where('status', 1)
+            ->whereIn('doc_code',$docCode)
+            ->get();
+    }
     /**
      * | Get Uploaded documents
      */

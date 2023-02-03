@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
-use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfActiveDocument;
@@ -156,7 +155,7 @@ class SafDocController extends Controller
             "docCode" => "required",
             "ownerId" => "nullable|numeric"
         ]);
-        // return $this->checkFullDocUpload($req->applicationId);
+        return $this->checkFullDocUpload($req->applicationId);
         try {
             $metaReqs = array();
             $docUpload = new DocUpload;
@@ -232,11 +231,24 @@ class SafDocController extends Controller
             ];
         });
         $docList['ownerDocs'] = $ownerDocList;
-
         $refDocList = $mWfActiveDocument->getDocsByActiveId($applicationId);
         $uploadDocList['ownerDocs'] = $refDocList->where('owner_dtl_id', '!=', null)->values()->groupBy('owner_dtl_id');
         $uploadDocList['propDocs'] = $refDocList->where('owner_dtl_id', null)->values();
-        return $uploadDocList;
-        return $docList;
+
+        $collectUploadDocList = collect();
+        collect($uploadDocList['propDocs'])->map(function ($item) use ($collectUploadDocList) {
+            return $collectUploadDocList->push($item['doc_code']);
+        });
+
+        $collectUploadDocList;
+        $mPropDocs = collect($docList['propDocs']);
+        $flag = 0;
+        collect($mPropDocs)->map(function ($doc) use ($collectUploadDocList, $flag) {
+            $explodeDoc = explode(',', $doc);
+            array_shift($explodeDoc);
+            $flag = 1;
+            return $explodeDoc;
+        });
+        return $flag;
     }
 }

@@ -45,9 +45,6 @@ class ClusterController extends Controller
     }
 
     // get all details of the cluster accordin to the id
-    /**
-        | Remark 
-     */
     public function getClusterById(Request $request)
     {
         $request->validate([
@@ -60,9 +57,8 @@ class ClusterController extends Controller
             $mPropActiveSaf = new PropActiveSaf();
 
             $clusterList['Cluster'] = $mCluster->checkActiveCluster($refCluster);
-            $checkcluster=collect($clusterList['Cluster'])->first();
-            if(!$checkcluster)
-            {
+            $checkcluster = collect($clusterList['Cluster'])->first();
+            if (!$checkcluster) {
                 throw new Exception("Cluster Not exist!");
             }
             $porpList['Property'] =  $mPropProperty->searchPropByCluster($refCluster);
@@ -160,11 +156,12 @@ class ClusterController extends Controller
     // selecting details according to clusterID
     public function saveHoldingInCluster(Request $request)
     {
+        $request->validate([
+            'clusterId'     => 'required|integer',
+            'holdingNo'     => "required|array",
+        ]);
         try {
-            $request->validate([
-                'clusterId'     => 'required|integer',
-                'holdingNo'     => "required|array",
-            ]);
+
             $uniqueValues = collect($request->holdingNo)->unique();
             if ($uniqueValues->count() !== count($request->holdingNo)) {
                 return responseMsg(false, "holding no Contain Dublicate Value!", "");

@@ -528,10 +528,11 @@ class TradeApplication extends Controller
     public function uploadDocument(Request $req)
     {
         $req->validate([
-            "applicationId" => "required|numeric",
+            "applicationId" => "required|digits_between:1,9223372036854775807",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            "docMstrId" => "required|numeric",
-            "docRefName" => "required"
+            "docMstrId" => "required|digits_between:1,9223372036854775807",
+            "docRefName" => "required",
+            "ownerId" => "nullable|digits_between:1,9223372036854775807"
         ]);
 
         try {
@@ -548,13 +549,14 @@ class TradeApplication extends Controller
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
             $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
-            $metaReqs['activeId'] = $getLicenceDtls->application_no;
+            $metaReqs['activeId'] = $getLicenceDtls->id;
             $metaReqs['workflowId'] = $getLicenceDtls->workflow_id;
             $metaReqs['ulbId'] = $getLicenceDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
-            $metaReqs['image'] = $imageName;
+            $metaReqs['document'] = $imageName;
             $metaReqs['docMstrId'] = $req->docMstrId;
-
+            $metaReqs['docCode'] = $req->docRefName;
+            
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);

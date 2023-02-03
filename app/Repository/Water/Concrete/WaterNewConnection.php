@@ -919,10 +919,10 @@ class WaterNewConnection implements IWaterNewConnection
         $WfWorkflow         = WfWorkflow::where('id', $application->workflow_id)->first();
         // $mUserType          = $this->_parent->userType($WfWorkflow->wf_master_id);
         $return = (array)null;
-        $type   = ["METER BILL", "Address Proof", "CONSUMER_PHOTO", "Others"];
+        $type   = ["METER_BILL", "ADDRESS_PROOF", "CONSUMER_PHOTO", "OTHER"];
         if (in_array($application->connection_through_id, [1, 2]))      // Holding No, SAF No
         {
-            $type[] = "HOLDING PROOF";
+            $type[] = "HOLDING_PROOF";
         }
         if (strtoupper($application->category) == "BPL")                // FOR BPL APPLICATION
         {
@@ -930,23 +930,23 @@ class WaterNewConnection implements IWaterNewConnection
         }
         if ($application->property_type_id == 2)                        // FOR COMERCIAL APPLICATION
         {
-            $type[] = "Commercial";
+            $type[] = "COMMERCIAL";
         }
         if ($application->apply_from != "Online")                       // Online
         {
-            $type[]  = "Form(Scan Copy)";
+            $type[]  = "FORM_SCAN_COPY";
         }
         if ($application->owner_type == 2)                              // In case of Tanent
         {
-            $type[]  = "Tenant";
+            $type[]  = "TENANT";
         }
         if ($application->property_type_id == 7)                        // Appartment
         {
-            $type[]  = "Apartmentnew";
+            $type[]  = "APPARTMENT";
         }
         $doc = WaterParamDocumentType::select(
             "doc_for",
-            DB::raw("CASE WHEN doc_for ='Others' THEN 0 
+            DB::raw("CASE WHEN doc_for ='OTHER' THEN 0 
                                                 ELSE 1 END AS is_mandatory")
         )
             ->whereIn("doc_for", $type)
