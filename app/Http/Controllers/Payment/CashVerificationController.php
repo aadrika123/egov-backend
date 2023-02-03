@@ -221,6 +221,91 @@ class CashVerificationController extends Controller
         }
     }
 
+    /**
+     * | Verified Cash Verification List
+     */
+    public function verifiedCashVerificationList(Request $req)
+    {
+        $ulbId =  authUser()->ulb_id;
+        $userId =  $req->id;
+        $date = date('Y-m-d', strtotime($req->date));
+
+        // DB::enableQueryLog();
+        $propTraDtl = PropTransaction::select(
+            'users.id',
+            'users.user_name',
+            DB::raw("sum(prop_transactions.amount) as amount,'property' as module,
+            sum(case when prop_transactions.verify_status = 1 then prop_transactions.amount else 0 end ) as verified_amount,
+            string_agg((case when prop_transactions.verify_status = 1 then 1 else 0 end)::text,',') As verify_status
+            "),
+        )
+            ->join('users', 'users.id', 'prop_transactions.user_id')
+            ->where('tran_date', $date)
+            ->where('prop_transactions.status', '<>', 0)
+            ->where('payment_mode', '!=', 'ONLINE')
+            ->groupBy(["users.id", "users.user_name"]);
+
+        $tradeDtl  = TradeTransaction::select(
+            'users.id',
+            'users.user_name',
+            DB::raw("sum(trade_transactions.paid_amount) as amount,'trade' as module , 
+            sum(case when trade_transactions.is_verified is true  then trade_transactions.paid_amount else 0 end ) as verified_amount,
+            string_agg((case when trade_transactions.is_verified is true then 1 else 0 end)::text,',') As verify_status
+            "),
+        )
+            ->join('users', 'users.id', 'trade_transactions.emp_dtl_id')
+            ->where('tran_date', $date)
+            ->where('trade_transactions.status', '<>', 0)
+            ->where('payment_mode', '!=', 'ONLINE')
+            ->groupBy(["users.id", "users.user_name"]);
+
+        $waterDtl = WaterTran::select(
+            'users.id',
+            'users.user_name',
+            DB::raw("sum(water_trans.amount) as amount,'water' as module,
+            sum(case when water_trans.verify_status =1  then water_trans.amount else 0 end ) as verified_amount,
+            string_agg((case when water_trans.verify_status =1 then 1 else 0 end)::text,',') As verify_status
+            "),
+        )
+            ->join('users', 'users.id', 'water_trans.emp_dtl_id')
+            ->where('tran_date', $date)
+            ->where('water_trans.status', '<>', 0)
+            ->where('payment_mode', '!=', 'ONLINE')
+            ->groupBy(["users.id", "users.user_name"]);
+        if ($userId) {
+            $propTraDtl = $propTraDtl->where('user_id', $userId);
+            $tradeDtl = $tradeDtl->where('emp_dtl_id', $userId);
+            $waterDtl = $waterDtl->where('emp_dtl_id', $userId);
+        }
+        $propTraDtl1 = $propTraDtl;
+        $collection = $propTraDtl1
+            ->union($tradeDtl)
+            ->union($waterDtl)
+            ->get();
+        $collection = collect($collection->groupBy("id")->all());
+        // dd($collection);
+        $data = $collection->map(function ($val) use ($date) {
+            $total =  $val->sum('amount');
+            $verified_amount =  $val->sum('verified_amount');
+            $prop = $val->where("module", "property")->sum('amount');
+            $trad = $val->where("module", "trade")->sum('amount');
+            $water = $val->where("module", "water")->sum('amount');
+            $is_verified = in_array(0, (objToArray(collect(explode(',', ($val->implode("verify_status", ',')))))));
+            return [
+                "user_name" => $val[0]['user_name'],
+                "id" => $val[0]['id'],
+                "property" => $prop,
+                "water" => $water,
+                "trade" => $trad,
+                "total" => $total,
+                "is_verified" => !$is_verified,
+                "verified_amount" => $verified_amount,
+                "date" => $date
+            ];
+        });
+        return  $data = (array_values(objtoarray($data)));
+    }
+
 
     /**
      * 
@@ -622,7 +707,7 @@ class CashVerificationController extends Controller
         $RevDailycollectiondetail->bank_name = $request->bank_name;
         $RevDailycollectiondetail->deposit_mode = $request->deposit_mode;
         $RevDailycollectiondetail->comment = $request->comment;
-        $RevDailycollectiondetail->transaction_id = $request->transaction_id;
+        $RevDailycollectiondetail->transaction_id = $request->id;
         $RevDailycollectiondetail->save();
     }
 
