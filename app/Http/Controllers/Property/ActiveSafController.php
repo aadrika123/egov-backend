@@ -1453,7 +1453,7 @@ class ActiveSafController extends Controller
     /**
      * | Read Penalty Tax Details with Penalties and final payable amount(1.2)
      */
-    public function readPenalyPmtAmts($lateAssessPenalty = 0, $onePercPenalty = 0, $rebate = 0, $specialRebate = 0, $firstQtrRebate = 0, $amount)
+    public function readPenalyPmtAmts($lateAssessPenalty = 0, $onePercPenalty = 0, $rebate = 0, $specialRebate = 0, $firstQtrRebate = 0, $amount, $onlineRebate = 0)
     {
         $amount = [
             [
@@ -1467,6 +1467,10 @@ class ActiveSafController extends Controller
             [
                 "keyString" => "Rebate",
                 "value" => roundFigure((float)$rebate)
+            ],
+            [
+                "keyString" => "Rebate From Jsk/Online Payment",
+                "value" => roundFigure((float)$onlineRebate)
             ],
             [
                 "keyString" => "Special Rebate",

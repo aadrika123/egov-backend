@@ -333,9 +333,10 @@ class HoldingTaxController extends Controller
             $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
             $specialRebate = collect($penalRebates)->where('head_name', 'Special Rebate')->first()->amount ?? 0;
             $firstQtrRebate = collect($penalRebates)->where('head_name', 'First Qtr Rebate')->first()->amount ?? 0;
+            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', 'Rebate From Jsk/Online Payment')->first()->amount ?? 0;
             $lateAssessmentPenalty = 0;
 
-            $taxDetails = $safController->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount);
+            $taxDetails = $safController->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
