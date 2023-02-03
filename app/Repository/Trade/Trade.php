@@ -1211,6 +1211,7 @@ class Trade implements ITrade
                 $doc['docVal'] = $this->getDocumentList($val->doc_for, $refLicence->application_type_id, $val->show);
                 array_push($requiedDocs, $doc);
             }
+            
             // return   collect($requiedDocs)->first()['docVal'];
             if ($refLicence->application_type_id == 1) {
                 $doc = (array) null;
@@ -1218,6 +1219,7 @@ class Trade implements ITrade
                 $doc['isMadatory'] = 1;
                 $doc['docVal'] = $this->getDocumentList("Identity Proof", $refLicence->application_type_id, 0);
             }
+            
             foreach ($requiedDocs as $key => $val) {
                 if ($val['docName'] == "Identity Proof") {
                     continue;
@@ -1231,9 +1233,9 @@ class Trade implements ITrade
                 $docForId = collect($val['docVal'])->map(function ($value, $key) {
                     return $value['id'];
                 });
-                $requiedDocs[$key]['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->application_no, $docForId);
+                $requiedDocs[$key]['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id,$refLicence->ulb_id, $docForId);
             }
-
+            // dd( $requiedDocs);
             if ($refLicence->application_type_id == 1) {
                 foreach ($refOwneres as $key => $val) {
                     $doc = (array) null;
@@ -1247,7 +1249,7 @@ class Trade implements ITrade
                     $ownerdocForId = collect($doc['docVal'])->map(function ($value, $key) {
                         return $value['id'];
                     });
-                    $doc['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->application_no, $ownerdocForId);
+                    $doc['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id,$refLicence->ulb_id, $ownerdocForId,$val->id);
                     //     $refOwneres[$key]["Identity Proof"];
                     // if (isset($refOwneres[$key]["Identity Proof"]["document_path"])) {
                     //     $path = $this->readDocumentPath($refOwneres[$key]["Identity Proof"]["document_path"]);
@@ -1266,7 +1268,7 @@ class Trade implements ITrade
                     $refdocumentId = collect($doc2['docVal'])->map(function ($value, $key) {
                         return $value['id'];
                     });
-                    $doc2['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->application_no, $refdocumentId);
+                    $doc2['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id, $refLicence->ulb_id,$refdocumentId,$val->id);
                     // $doc2['docVal'][] = ["id" => 93, "doc_name" => "Photo"];
                     // $refOwneres[$key]["image"] = $this->check_doc_exist_owner($licenceId, $val->id, 0);
                     // $doc2['uploadDoc'] = $refOwneres[$key]["image"];
@@ -1287,6 +1289,7 @@ class Trade implements ITrade
 
             return responseMsg(true, "ABC Ok", remove_null($data));
         } catch (Exception $e) {
+            dd($e->getMessage(),$e->getFile(),$e->getLine());
             return responseMsg(false, $e->getMessage(), '');
         }
     }

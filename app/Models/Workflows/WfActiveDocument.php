@@ -4,6 +4,7 @@ namespace App\Models\Workflows;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class WfActiveDocument extends Model
@@ -166,20 +167,24 @@ class WfActiveDocument extends Model
     /**
      * | trade
      */
-    public function getTradeAppByAppNoDocId($applicationNo, $docId)
+    public function getTradeAppByAppNoDocId($appid,$ulb_id, $docId,$owner_id=null)
     {
         return DB::table('wf_active_documents as d')
             ->select(
                 'd.id',
                 'dr.doc_name',
                 'd.verify_status',
-                DB::raw("concat(relative_path,'/',image) as doc_path"),
+                DB::raw("concat(relative_path,'/',document) as doc_path"),
                 'remarks',
-                'doc_mstr_id'
+                'dr.id as doc_mstr_id'
             )
-            ->join('trade_param_document_types as dr', 'dr.id', '=', 'd.doc_mstr_id')
-            ->where("d.active_id", $applicationNo)
-            ->whereIn("d.doc_mstr_id", $docId)
+            ->join('trade_param_document_types as dr', 'dr.doc_for', '=', 'd.doc_code')
+            ->where("d.active_id", $appid)
+            ->where("d.workflow_id", Config::get('workflow-constants.TRADE_WORKFLOW_ID'))
+            ->where("d.ulb_id", $ulb_id)
+            ->where("d.module_id", Config::get('module-constants.TRADE_MODULE_ID'))
+            ->where("d.owner_dtl_id", $owner_id)
+            ->whereIn("dr.id", $docId)
             ->first();
     }
 
