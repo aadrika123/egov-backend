@@ -29,6 +29,7 @@ use App\Models\Workflows\WfActiveDocument;
 use Illuminate\Support\Facades\DB;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
+use App\Repository\Trade\Trade;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Validator;
@@ -536,6 +537,62 @@ class TradeApplication extends Controller
         ]);
 
         try {
+            $tradC = new Trade();
+            $documents = $tradC->getDocList($req);
+            if(!$documents->original["status"])
+            {
+                throw new Exception($documents->original["message"]);
+            }
+            $applicationDoc = $documents->original["data"]["documentsList"];
+            $ownerDoc = $documents->original["data"]["ownersDocList"];
+            $requiredDocs = $applicationDoc->implode("docName",",");            
+            $docId = $applicationDoc->map(function($val1){
+                return($val1["docVal"]->implode("id",","));
+            });
+            $docId = $docId->implode(",");
+            $requiredDocs2 = $ownerDoc->map(function($val){
+                $docName = $val->implode("docName",",");
+                $docId = $val->map(function($val1){
+                    return($val1["docVal"]->implode("id",","));
+                });
+                $docId= collect($docId)->implode(",");
+                $ownerId = $val->implode("ownerId",",");
+                return["docName"=>$docName,"docId"=>$docId,"ownerId"=>$ownerId];
+            });
+            $ownerId = $requiredDocs2->implode("ownerId",",");
+            $docId2 = $requiredDocs2->implode("docId",",");
+            $docName = $requiredDocs2->implode("docName",",");
+            $docRefName = $req->docRefName;
+            $specifids = collect($applicationDoc->where("docName",$req->docRefName))->map(function($val){
+                return $val["docVal"]->implode("id",",");
+            });
+            $specifids2 = $requiredDocs2 = $ownerDoc->map(function($val) use($docRefName){
+                $docName = $val->where("docName",$docRefName);
+                $docId = $docName->map(function($val1){
+                    return($val1["docVal"]->implode("id",","));
+                });
+                $docId= collect($docId)->implode(",");
+                return["docId"=>$docId,];
+            });
+            $specifids = $specifids->implode("docId",",");
+            $specifids2 = $specifids2->implode("docId",",");
+            if(!(in_array($req->docRefName,explode(",",$requiredDocs))==true || in_array($req->docRefName,explode(",",$docName)) ==true))
+            {
+                throw new Exception("Invalid Doc Code Pass");
+            }
+            if(in_array($req->docRefName,explode(",",$requiredDocs)) && !in_array($req->docMstrId,explode(",",$specifids)))
+            {
+                throw new Exception("Invalid docMstrId Pass For Application");
+            }
+            if(in_array($req->docRefName,explode(",",$docName)) && !in_array($req->docMstrId,explode(",",$specifids2)))
+            {
+                throw new Exception("Invalid docMstrId Pass For Owners");
+            }
+            if(in_array($req->docRefName,explode(",",$docName)) && in_array($req->docMstrId,explode(",",$specifids2)) && !in_array($req->ownerId,explode(",",$ownerId)))
+            {
+                throw new Exception("Invalid ownerId Pass");
+            }
+            
             $metaReqs = array();
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
@@ -556,11 +613,35 @@ class TradeApplication extends Controller
             $metaReqs['document'] = $imageName;
             $metaReqs['docMstrId'] = $req->docMstrId;
             $metaReqs['docCode'] = $req->docRefName;
-            
+            if(in_array($req->docRefName,explode(",",$docName)) && in_array($req->docMstrId,explode(",",$specifids2)))
+            {
+                $metaReqs['ownerDtlId'] = $req->ownerId;
+            }
 
+            #reupload documents;
+            if($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id,$getLicenceDtls->ulb_id, collect($req->docMstrId), $metaReqs['ownerId']??null))
+            {
+                if($privDoc->verify_status!=2)
+                {
+                    $arr["verify_status"] = 0;
+                    $arr['relative_path'] = $relativePath;
+                    $arr['document'] = $imageName;
+                    $arr['doc_code'] = $req->docRefName;
+                    $arr['owner_dtl_id'] = $metaReqs['ownerDtlId']??null;
+                    $mWfActiveDocument->docVerifyReject($privDoc->id,$arr);
+                }
+                else
+                {
+                    $mWfActiveDocument->docVerifyReject($privDoc->id,["status"=>0]);
+                    $metaReqs = new Request($metaReqs);
+                    $mWfActiveDocument->postDocuments($metaReqs);
+                }
+                return responseMsgs(true, $req->docRefName." Update Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            }
+            #new documents;
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
-            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true,  $req->docRefName." Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }

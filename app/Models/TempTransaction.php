@@ -29,6 +29,7 @@ class TempTransaction extends Model
         $mTempTransaction->tran_date = $req->tranDate;
         $mTempTransaction->user_id = $req->userId;
         $mTempTransaction->ulb_id = $req->ulbId;
+        $mTempTransaction->ward_no = $req->wardNo;
         $mTempTransaction->created_at = Carbon::now();
         $mTempTransaction->save();
     }

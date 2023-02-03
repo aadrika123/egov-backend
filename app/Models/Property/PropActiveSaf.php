@@ -22,7 +22,7 @@ class PropActiveSaf extends Model
             'previous_holding_id' => $req->previousHoldingId,
             'previous_ward_mstr_id' => $req->previousWard,
             'is_owner_changed' => $req->isOwnerChanged,
-            'transfer_mode_mstr_id' => $req->transferModeId,
+            'transfer_mode_mstr_id' => $req->transferModeId ?? null,
             'holding_no' => $req->holdingNo,
             'ward_mstr_id' => $req->ward,
             'ownership_type_mstr_id' => $req->ownershipType,
