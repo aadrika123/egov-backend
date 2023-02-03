@@ -321,6 +321,7 @@ class HoldingTaxController extends Controller
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
 
             $applicationDtls = $mPaymentData->getApplicationId($req->tranNo);
+
             $propId = json_decode($applicationDtls)->applicationId;
             $reqPropId = new Request(['propertyId' => $propId]);
             $propProperty = $safController->getPropByHoldingNo($reqPropId)->original['data'];
@@ -395,7 +396,7 @@ class HoldingTaxController extends Controller
                 throw new Exception("Property Not Found");
 
             $propTrans = $mPropTrans->getPropTransactions($req->propId, 'property_id');         // Holding Payment History
-            if (!$propTrans)
+            if (!$propTrans || $propTrans->isEmpty())
                 throw new Exception("No Transaction Found");
 
             $propSafId = $propertyDtls->saf_id;

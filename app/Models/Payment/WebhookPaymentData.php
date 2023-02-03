@@ -2,6 +2,7 @@
 
 namespace App\Models\Payment;
 
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -47,6 +48,9 @@ class WebhookPaymentData extends Model
                 'payment_notes AS userDetails'
             )
             ->get();
+
+        if ($userDetails->isEmpty())
+            throw new Exception("Application Not Found");
         $data = collect($userDetails)->first()->userDetails;
         return $data;
     }
