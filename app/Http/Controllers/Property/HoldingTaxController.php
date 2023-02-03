@@ -182,7 +182,10 @@ class HoldingTaxController extends Controller
         ]);
         try {
             $demand = $this->getHoldingDues($req);
-            $dueList = $demand->original['data']['duesList'];
+            $demandData = $demand->original['data'];
+            if (!$demandData)
+                throw new Exception("Demand Not Available");
+            $dueList = $demandData['duesList'];
             $departmentId = 1;
             $propProperties = new PropProperty();
             $propDtls = $propProperties->getPropById($req->propId);
