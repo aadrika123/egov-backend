@@ -155,7 +155,7 @@ class SafDocController extends Controller
             "docCode" => "required",
             "ownerId" => "nullable|numeric"
         ]);
-        // return $this->checkFullDocUpload($req->applicationId);
+        return $this->checkFullDocUpload($req->applicationId);
         try {
             $metaReqs = array();
             $docUpload = new DocUpload;
@@ -236,12 +236,19 @@ class SafDocController extends Controller
         $uploadDocList['propDocs'] = $refDocList->where('owner_dtl_id', null)->values();
 
         $collectUploadDocList = collect();
-        return collect($uploadDocList['propDocs'])->map(function ($item) use ($collectUploadDocList) {
+        collect($uploadDocList['propDocs'])->map(function ($item) use ($collectUploadDocList) {
             return $collectUploadDocList->push($item['doc_code']);
         });
+
+        $collectUploadDocList;
         $mPropDocs = collect($docList['propDocs']);
-        collect($mPropDocs)->map(function ($doc) {
+        $flag = 0;
+        collect($mPropDocs)->map(function ($doc) use ($collectUploadDocList, $flag) {
             $explodeDoc = explode(',', $doc);
+            array_shift($explodeDoc);
+            $flag = 1;
+            return $explodeDoc;
         });
+        return $flag;
     }
 }
