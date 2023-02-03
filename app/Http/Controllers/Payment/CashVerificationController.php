@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
+use App\Models\Payment\RevDailycollection;
+use App\Models\Payment\RevDailycollectiondetail;
+use App\Models\Payment\TempTransaction;
 use App\Models\Property\PropTransaction;
-use App\Models\TempTransaction;
 use App\Models\Trade\TradeTransaction;
 use App\Models\Water\WaterTran;
 use Carbon\Carbon;
@@ -186,7 +188,8 @@ class CashVerificationController extends Controller
                     "water" => $water,
                     "trade" => $trade,
                     "total" => $total,
-                    "date" => $date
+                    "date" => $date,
+                    "verified_amount" => 0,
                 ];
             });
 
@@ -564,30 +567,63 @@ class CashVerificationController extends Controller
     public function cashVerify(Request $request)
     {
         $userId = authUser()->id;
+        $ulbId = authUser()->ulb_id;
         $property =  $request->property;
         $water =  $request->water;
         $trade =  $request->trade;
 
-
-
-        foreach ($property as $a) {
-            $mPropTransaction = new PropTransaction();
-            $mPropTransaction->verify_status =
-
-                PropTransaction::where('tran_no', $a)
+        foreach ($property as $p) {
+            PropTransaction::where('tran_no', $p)
                 ->update(
                     [
                         'verify_status' => 1,
                         'verify_date' => Carbon::now(),
                         'verified_by' => $userId
                     ]
-
                 );
         }
 
-        // $amount['property'] = collect($property)->map(function ($value) {
-        //     return $value;
-        // });
+        foreach ($water as $p) {
+            WaterTran::where('tran_no', $p)
+                ->update(
+                    [
+                        'verify_status' => 1,
+                        'verified_date' => Carbon::now(),
+                        'verified_by' => $userId
+                    ]
+                );
+        }
+
+        foreach ($trade as $t) {
+            TradeTransaction::where('tran_no', $t)
+                ->update(
+                    [
+                        'is_verified' => 1,
+                        'verify_date' => Carbon::now(),
+                        'verify_by' => $userId
+                    ]
+                );
+        }
+
+        $mRevDailycollection = new RevDailycollection();
+        $mRevDailycollection->tran_no = $request->transactionNo;
+        $mRevDailycollection->user_id = $userId;
+        $mRevDailycollection->demand_date = $request->date;
+        $mRevDailycollection->deposit_date = Carbon::now();
+        $mRevDailycollection->ulb_id = $ulbId;
+        $mRevDailycollection->save();
+
+        $RevDailycollectiondetail = new RevDailycollectiondetail();
+        $RevDailycollectiondetail->collection_id = $mRevDailycollection->id;
+        $RevDailycollectiondetail->module_id = $request->moduleId;
+        $RevDailycollectiondetail->demand = $request->demand;
+        $RevDailycollectiondetail->deposit_amount = $request->deposit_amount;
+        $RevDailycollectiondetail->cheq_dd_no = $request->cheq_dd_no;
+        $RevDailycollectiondetail->bank_name = $request->bank_name;
+        $RevDailycollectiondetail->deposit_mode = $request->deposit_mode;
+        $RevDailycollectiondetail->comment = $request->comment;
+        $RevDailycollectiondetail->transaction_id = $request->transaction_id;
+        $RevDailycollectiondetail->save();
     }
 
     /**
@@ -598,6 +634,7 @@ class CashVerificationController extends Controller
         $mTempTransaction = new TempTransaction();
         // $mTempTransaction->tempTransaction($req);
 
+        $mTempTransaction = new TempTransaction();
         $mTempTransaction->transaction_id = $req->transactionId;
         $mTempTransaction->application_id = $req->applicationId;
         $mTempTransaction->module_id = $req->moduleId;
@@ -610,6 +647,8 @@ class CashVerificationController extends Controller
         $mTempTransaction->bank_name = $req->bankName;
         $mTempTransaction->tran_date = $req->tranDate;
         $mTempTransaction->user_id = $req->userId;
+        $mTempTransaction->ulb_id = $req->ulbId;
+        $mTempTransaction->ward_no = $req->wardNo;
         $mTempTransaction->created_at = Carbon::now();
         $mTempTransaction->save();
 
