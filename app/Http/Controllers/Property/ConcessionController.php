@@ -1095,12 +1095,18 @@ class ConcessionController extends Controller
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $isSpeciallyAbled = $refApplication->is_specially_abled;
         $isArmedForce = $refApplication->is_armed_force;
+        $gender = $refApplication->gender;
+        $dob = $refApplication->dob;
         $documentList = "";
 
         if ($isSpeciallyAbled == true)
-            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_SPECIALLY_ABLED")->requirements;
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_SPECIALLY_ABLED")->requirements;
         if ($isArmedForce == true)
             $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_ARMED_FORCE")->requirements;
+        if (isset($gender))
+            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_GENDER")->requirements;
+        if (isset($dob))
+            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_DOB")->requirements;
 
         if (!empty($documentList))
             $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)

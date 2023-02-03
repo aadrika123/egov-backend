@@ -21,31 +21,6 @@ class calculatorController extends Controller
     {
         try {
             $calculation = new SafCalculation;
-            $calculateArr = array();
-            $mobileTower = array();
-            $hordingBoard = array();
-            $petrolPump = array();
-
-            $mobileTower['area'] = $request->mobileTowerArea;
-            $mobileTower['dateFrom'] = $request->mobileTowerDate;
-
-            $hordingBoard['area'] = $request->hoardingArea;
-            $hordingBoard['dateFrom'] = $request->hoardingDate;
-
-            $petrolPump['area'] = $request->petrolPumpArea;
-            $petrolPump['dateFrom'] = $request->petrolPumpDate;
-
-            $calculateArr['ulbId'] = $request->ulbId;
-            $calculateArr['isMobileTower'] = ($request->mobileTowerArea) ? 1 : 0;
-            $calculateArr['mobileTower'] = $mobileTower;
-            $calculateArr['isHoardingBoard'] = ($request->hoardingArea) ? 1 : 0;
-            $calculateArr['hoardingBoard'] = $hordingBoard;
-            $calculateArr['isPetrolPump'] = ($request->petrolPumpArea) ? 1 : 0;
-            $calculateArr['petrolPump'] = $petrolPump;
-
-
-            $request->request->add($calculateArr);
-
             $response = $calculation->calculateTax($request);
             $fetchDetails = collect($response->original['data']['details'])->groupBy('ruleSet');
             $finalResponse['demand'] = $response->original['data']['demand'];
@@ -63,32 +38,7 @@ class calculatorController extends Controller
     {
         try {
             $calculation = new SafCalculation;
-            $calculateArr = array();
-            $mobileTower = array();
-            $hordingBoard = array();
-            $petrolPump = array();
-
-            $mobileTower['area'] = $req->mobileTowerArea;
-            $mobileTower['dateFrom'] = $req->mobileTowerDate;
-
-            $hordingBoard['area'] = $req->hoardingArea;
-            $hordingBoard['dateFrom'] = $req->hoardingDate;
-
-            $petrolPump['area'] = $req->petrolPumpArea;
-            $petrolPump['dateFrom'] = $req->petrolPumpDate;
-
-            $calculateArr['ulbId'] = $req->ulbId;
-            $calculateArr['isMobileTower'] = ($req->mobileTowerArea) ? 1 : 0;
-            $calculateArr['mobileTower'] = $mobileTower;
-            $calculateArr['isHoardingBoard'] = ($req->hoardingArea) ? 1 : 0;
-            $calculateArr['hoardingBoard'] = $hordingBoard;
-            $calculateArr['isPetrolPump'] = ($req->petrolPumpArea) ? 1 : 0;
-            $calculateArr['petrolPump'] = $petrolPump;
-
-
-            $req->request->add($calculateArr);
             $response = $calculation->calculateTax($req);
-
             $finalResponse['demand'] = $response->original['data']['demand'];
             $reviewDetails = collect($response->original['data']['details'])->groupBy(['ruleSet', 'mFloorNo', 'mUsageType']);
             $finalTaxReview = collect();

@@ -314,11 +314,13 @@ return [
         "1" => "_main",
         "2" => "_main",
         "3" => "_other",
+        "4" => "_other",
         // RuleSet 3 Circle Rate Road
         "2022-04-01" => [
             "1" => "_main",
             "2" => "_other",
             "3" => "_other",
+            "4" => "_other",
         ]
     ],
     "CIRCALE-RATE-PROP" => [

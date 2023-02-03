@@ -51,6 +51,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(CashVerificationController::class)->group(function () {
         Route::post('list-cash-verification', 'cashVerificationList');
         Route::post('tc-collections', 'tcCollectionDtl');
+        Route::post('verify-cash', 'cashVerify');
+        Route::post('temp-transaction', 'tempTransaction');
     });
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {

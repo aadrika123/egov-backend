@@ -1936,6 +1936,93 @@ class ActiveSafController extends Controller
                 $message = "TC Verification Details";
                 $data["geoTagging"] = $geoTagging;
             }
+            else
+            {
+                $owners = DB::table($tbl."_owners")
+                    ->select($tbl."_owners.*")
+                    ->where($tbl."_owners.saf_id",$saf->id)
+                    ->get();
+
+                $redis = Redis::connection();
+                $redissafTaxes = Redis::get('safTaxes:'.$verifications->id.".".$saf->id);                           // Ward No Value from Redis
+                if (!$redissafTaxes) 
+                {
+                    $safDetails = $saf;
+                    $safDetails = json_decode(json_encode($safDetails), true);
+                    $safDetails['floors'] =$floars;
+                    $safDetails['owners'] =$owners;
+                    $req = $safDetails;
+                    $array = $this->generateSafRequest($req);                                                                       // Generate SAF Request by SAF Id Using Trait
+                    $safCalculation = new SafCalculation();
+                    $request = new Request($array);
+                    $safTaxes = $safCalculation->calculateTax($request);
+                    
+                    // $safTaxes = json_decode(json_encode($safTaxes), true);
+                    
+                    $safDetails2 = json_decode(json_encode($verifications), true);
+
+                    $safDetails2["ward_mstr_id"] = $safDetails2["ward_id"];
+                    $safDetails2["prop_type_mstr_id"] = $safDetails2["prop_type_id"];
+                    $safDetails2["land_occupation_date"] =$saf->land_occupation_date;
+                    $safDetails2["ownership_type_mstr_id"] = $saf->ownership_type_mstr_id;
+                    $safDetails2["zone_mstr_id"] = $saf->zone_mstr_id;
+                    $safDetails2["road_type_mstr_id"] = $saf->road_type_mstr_id;
+                    $safDetails2["road_width"] = $saf->road_width;
+
+                    $safDetails2["is_mobile_tower"] = $safDetails2["has_mobile_tower"];
+                    $safDetails2["tower_area"] = $safDetails2["tower_area"];
+                    $safDetails2["tower_installation_date"] = $safDetails2["tower_installation_date"];
+
+                    $safDetails2["is_hoarding_board"] = $safDetails2["has_hoarding"];
+                    $safDetails2["hoarding_area"] = $safDetails2["hoarding_area"];
+                    $safDetails2["hoarding_installation_date"] = $safDetails2["hoarding_installation_date"];
+
+                    $safDetails2["is_petrol_pump"] = $safDetails2["is_petrol_pump"];
+                    $safDetails2["under_ground_area"] = $safDetails2["underground_area"];
+                    $safDetails2["petrol_pump_completion_date"] = $safDetails2["petrol_pump_completion_date"];
+
+                    $safDetails2["is_water_harvesting"] = $safDetails2["has_water_harvesting"];
+                
+                    $safDetails2['floors'] =$verifications_detals;
+                    $safDetails2['floors']= $safDetails2['floors']->map(function($val){
+                        $val->usage_type_mstr_id    =$val->usage_type_id;
+                        $val->const_type_mstr_id    =$val->construction_type_id;
+                        $val->occupancy_type_mstr_id=$val->occupancy_type_id;
+                        $val->builtup_area          =$val->builtup_area;
+                        $val->date_from             =$val->date_from;
+                        $val->date_upto             =$val->date_to;
+                        return $val;
+                    });
+                    
+
+                    $safDetails2['owners'] =$owners;
+
+                    $array2 = $this->generateSafRequest($safDetails2); 
+                    $request2 = new Request($array2);
+                    $safTaxes2 = $safCalculation->calculateTax($request2);
+                    // $safTaxes2 = json_decode(json_encode($safTaxes2), true);
+
+                    $safTaxes3=$this->reviewTaxCalculation($safTaxes);
+                    $safTaxes4=$this->reviewTaxCalculation($safTaxes2);
+                    // dd(json_decode(json_encode($safTaxes), true));
+                    $compairTax = $this->reviewTaxCalculationCom($safTaxes,$safTaxes2);
+                    
+                    $safTaxes2 = json_decode(json_encode($safTaxes4), true);
+                    $safTaxes = json_decode(json_encode($safTaxes3), true);
+                    $compairTax = json_decode(json_encode($compairTax), true);
+                    
+                    $data["Tax"]["according_application"]= $safTaxes["original"]["data"];
+                    $data["Tax"]["according_verification"]= $safTaxes2["original"]["data"];
+                    $data["Tax"]["compairTax"]= $compairTax["original"]["data"];
+                    $redis->set('safTaxes:' . $verifications->id.".".$saf->id,json_encode($data));
+                    $redis->expire('safTaxes:' . $verifications->id.".".$saf->id, 18000);
+                }
+                else
+                {
+                    $data = json_decode($redissafTaxes,true);
+                }
+                
+            }
             $data["saf_details"] = $saf;
             $data["employee_details"] = ["user_name"=>$verifications->user_name,"date"=>$verifications->created_at];
             $data["property_comparison"] = $prop_compairs;
@@ -1973,6 +2060,243 @@ class ActiveSafController extends Controller
         {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    private function reviewTaxCalculation(object $response)
+    {
+        try{
+            $finalResponse['demand'] = $response->original['data']['demand'];
+            $reviewDetails = collect($response->original['data']['details'])->groupBy(['ruleSet', 'mFloorNo', 'mUsageType']);
+            $finalTaxReview = collect();
+            $review = collect($reviewDetails)->map(function ($reviewDetail) use ($finalTaxReview) {
+                $table = collect($reviewDetail)->map(function ($floors) use ($finalTaxReview) {
+                    $usageType = collect($floors)->map(function ($floor) use ($finalTaxReview) {
+                        $first = $floor->first();
+                        $response = $first->only([
+                            'mFloorNo',
+                            'mUsageType',
+                            'arv',
+                            'buildupArea',
+                            'dateFrom',
+                            'quarterYear',
+                            'qtr',
+                            'ruleSet',
+                            'holdingTax',
+                            'waterTax',
+                            'latrineTax',
+                            'educationTax',
+                            'healthTax',
+                            'totalTax',
+                            'rwhPenalty',
+                            'rentalValue',
+                            'carpetArea',
+                            'calculationPercFactor',
+                            'multiFactor',
+                            'rentalRate',
+                            'occupancyFactor',
+                            'circleRate',
+                            'taxPerc',
+                            'calculationFactor',
+                            'matrixFactor'
+                        ]);
+                        $finalTaxReview->push($response);
+                        return $response;
+                    });
+                    return $usageType;
+                });
+                return $table;
+            });
+            $ruleSetCollections = collect($finalTaxReview)->groupBy(['ruleSet']);
+            $reviewCalculation = collect($ruleSetCollections)->map(function ($collection) {
+                return collect($collection)->pipe(function ($collect) {
+                    $quaters['floors'] = $collect;
+                    $groupByFloors = $collect->groupBy(['quarterYear', 'qtr']);
+                    $quaterlyTaxes = collect();
+                    collect($groupByFloors)->map(function ($qtrYear) use ($quaterlyTaxes) {
+                        return collect($qtrYear)->map(function ($qtr, $key) use ($quaterlyTaxes) {
+                            return collect($qtr)->pipe(function ($floors) use ($quaterlyTaxes, $key) {
+                                $taxes = [
+                                    'key' => $key,
+                                    'effectingFrom' => $floors->first()['dateFrom'],
+                                    'qtr' => $floors->first()['qtr'],
+                                    'arv' => roundFigure($floors->sum('arv')),
+                                    'holdingTax' => roundFigure($floors->sum('holdingTax')),
+                                    'waterTax' => roundFigure($floors->sum('waterTax')),
+                                    'latrineTax' => roundFigure($floors->sum('latrineTax')),
+                                    'educationTax' => roundFigure($floors->sum('educationTax')),
+                                    'healthTax' => roundFigure($floors->sum('healthTax')),
+                                    'rwhPenalty' => roundFigure($floors->sum('rwhPenalty')),
+                                    'quaterlyTax' => roundFigure($floors->sum('totalTax')),
+                                ];
+                                $quaterlyTaxes->push($taxes);
+                            });
+                        });
+                    });
+                    $quaters['totalQtrTaxes'] = $quaterlyTaxes;
+                    return $quaters;
+                });
+            });
+            $finalResponse['details'] = $reviewCalculation;
+            return responseMsg(true, "", $finalResponse);
+        }
+        catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        } 
+    }
+
+    private function reviewTaxCalculationCom(object $response,object $response2)
+    {
+        
+        try{
+            $finalResponse['demand'] = $response->original['data']['demand'];
+            $finalResponse2['demand'] = $response2->original['data']['demand'];
+            // dd( $response->original['data'],  $response2->original['data']);
+            $reviewDetails = collect($response->original['data']['details'])->groupBy(['ruleSet', 'mFloorNo', 'mUsageType']);
+            $reviewDetails2 = collect($response2->original['data']['details'])->groupBy(['ruleSet', 'mFloorNo', 'mUsageType']);
+
+            $finalTaxReview = collect();
+            $finalTaxReview2 = collect();
+
+            $review = collect($reviewDetails)->map(function ($reviewDetail) use ($finalTaxReview) {
+
+                $table = collect($reviewDetail)->map(function ($floors) use ($finalTaxReview) {
+
+                    $usageType = collect($floors)->map(function ($floor) use ($finalTaxReview) {
+
+                        $first = $floor->first();
+
+                        $response = $first->only([
+                            'mFloorNo',
+                            'mUsageType',
+                            'arv',
+                            'buildupArea',
+                            'dateFrom',
+                            'quarterYear',
+                            'qtr',
+                            'ruleSet',
+                            'holdingTax',
+                            'waterTax',
+                            'latrineTax',
+                            'educationTax',
+                            'healthTax',
+                            'totalTax',
+                            'rwhPenalty',
+                            'rentalValue',
+                            'carpetArea',
+                            'calculationPercFactor',
+                            'multiFactor',
+                            'rentalRate',
+                            'occupancyFactor',
+                            'circleRate',
+                            'taxPerc',
+                            'calculationFactor',
+                            'matrixFactor'
+                        ]);
+                        $finalTaxReview->push($response);
+                        return $response;
+                    });
+                    return $usageType;
+                });
+                return $table;
+            });
+
+            $review2 = collect($reviewDetails2)->map(function ($reviewDetail) use ($finalTaxReview2) {
+
+                $table = collect($reviewDetail)->map(function ($floors) use ($finalTaxReview2) {
+
+                    $usageType = collect($floors)->map(function ($floor) use ($finalTaxReview2) {
+
+                        $first = $floor->first();
+
+                        $response = $first->only([
+                            'mFloorNo',
+                            'mUsageType',
+                            'arv',
+                            'buildupArea',
+                            'dateFrom',
+                            'quarterYear',
+                            'qtr',
+                            'ruleSet',
+                            'holdingTax',
+                            'waterTax',
+                            'latrineTax',
+                            'educationTax',
+                            'healthTax',
+                            'totalTax',
+                            'rwhPenalty',
+                            'rentalValue',
+                            'carpetArea',
+                            'calculationPercFactor',
+                            'multiFactor',
+                            'rentalRate',
+                            'occupancyFactor',
+                            'circleRate',
+                            'taxPerc',
+                            'calculationFactor',
+                            'matrixFactor'
+                        ]);
+                        $finalTaxReview2->push($response);
+                        return $response;
+                    });
+                    return $usageType;
+                });
+                return $table;
+            });
+
+            $ruleSetCollections = collect($finalTaxReview)->groupBy(['ruleSet']);
+            $ruleSetCollections2 = collect($finalTaxReview2)->groupBy(['ruleSet']);
+
+            $reviewCalculation = collect($ruleSetCollections2)->map(function ($collection,$key) use($ruleSetCollections){
+                $collection2 = collect($ruleSetCollections[$key]??[]);
+                // dd($key);
+                return collect($collection)->pipe(function ($collect) use($collection2){
+                    
+                    $quaters['floors'] = $collect;
+                    $quaters2['floors'] = $collection2;
+
+                    $groupByFloors = $collect->groupBy(['quarterYear', 'qtr']);
+                    $groupByFloors2 = $collection2->groupBy(['quarterYear', 'qtr'])??[];                    
+
+                    $quaterlyTaxes = collect();
+
+                    collect($groupByFloors)->map(function ($qtrYear,$key1) use ($quaterlyTaxes,$groupByFloors2) {
+                        
+                        $qtrYear2 = collect($groupByFloors2[$key1]??[]);
+
+                        return collect($qtrYear)->map(function ($qtr, $key) use ($quaterlyTaxes,$qtrYear2 ) {
+                            
+                            $qtr2 = $qtrYear2[$key]??collect([]);
+
+                            return collect($qtr)->pipe(function ($floors) use ($quaterlyTaxes, $key,$qtr2) {
+                                
+                                $taxes = [
+                                    'key' => $key,
+                                    'effectingFrom' => $floors->first()['dateFrom'],
+                                    'qtr' => $floors->first()['qtr'],
+                                    'arv' => roundFigure(($floors->sum('arv'))- ($qtr2->sum('arv'))),
+                                    'holdingTax' => roundFigure(($floors->sum('holdingTax')) - ($qtr2->sum('holdingTax'))),
+                                    'waterTax' => roundFigure(($floors->sum('waterTax')) - ($qtr2->sum('waterTax'))),
+                                    'latrineTax' => roundFigure(($floors->sum('latrineTax')) - ($qtr2->sum('latrineTax'))),
+                                    'educationTax' => roundFigure(($floors->sum('educationTax')) - ($qtr2->sum('educationTax'))),
+                                    'healthTax' => roundFigure(($floors->sum('healthTax')) - ($qtr2->sum('healthTax'))),
+                                    'rwhPenalty' => roundFigure(($floors->sum('rwhPenalty')) - ($qtr2->sum('rwhPenalty')) ),
+                                    'quaterlyTax' => roundFigure(($floors->sum('totalTax')) - ($qtr2->sum('totalTax')) ),
+                                ];
+                                $quaterlyTaxes->push($taxes);
+                            });
+                        });
+                    });
+
+                    $quaters['totalQtrTaxes'] = $quaterlyTaxes;
+                    return $quaters;
+                });
+            });
+            $finalResponse2['details'] = $reviewCalculation;
+            return responseMsg(true, "", $finalResponse2);
+        }
+        catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        } 
     }
     // ---------end----------------
 }
