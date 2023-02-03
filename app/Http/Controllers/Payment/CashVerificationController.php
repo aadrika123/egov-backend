@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
+use App\Models\Payment\RevDailycollection;
+use App\Models\Payment\RevDailycollectiondetail;
+use App\Models\Payment\TempTransaction;
 use App\Models\Property\PropTransaction;
-use App\Models\TempTransaction;
 use App\Models\Trade\TradeTransaction;
 use App\Models\Water\WaterTran;
 use Carbon\Carbon;
@@ -186,7 +188,8 @@ class CashVerificationController extends Controller
                     "water" => $water,
                     "trade" => $trade,
                     "total" => $total,
-                    "date" => $date
+                    "date" => $date,
+                    "verified_amount" => 0,
                 ];
             });
 
@@ -216,6 +219,91 @@ class CashVerificationController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
         }
+    }
+
+    /**
+     * | Verified Cash Verification List
+     */
+    public function verifiedCashVerificationList(Request $req)
+    {
+        $ulbId =  authUser()->ulb_id;
+        $userId =  $req->id;
+        $date = date('Y-m-d', strtotime($req->date));
+
+        // DB::enableQueryLog();
+        $propTraDtl = PropTransaction::select(
+            'users.id',
+            'users.user_name',
+            DB::raw("sum(prop_transactions.amount) as amount,'property' as module,
+            sum(case when prop_transactions.verify_status = 1 then prop_transactions.amount else 0 end ) as verified_amount,
+            string_agg((case when prop_transactions.verify_status = 1 then 1 else 0 end)::text,',') As verify_status
+            "),
+        )
+            ->join('users', 'users.id', 'prop_transactions.user_id')
+            ->where('tran_date', $date)
+            ->where('prop_transactions.status', '<>', 0)
+            ->where('payment_mode', '!=', 'ONLINE')
+            ->groupBy(["users.id", "users.user_name"]);
+
+        $tradeDtl  = TradeTransaction::select(
+            'users.id',
+            'users.user_name',
+            DB::raw("sum(trade_transactions.paid_amount) as amount,'trade' as module , 
+            sum(case when trade_transactions.is_verified is true  then trade_transactions.paid_amount else 0 end ) as verified_amount,
+            string_agg((case when trade_transactions.is_verified is true then 1 else 0 end)::text,',') As verify_status
+            "),
+        )
+            ->join('users', 'users.id', 'trade_transactions.emp_dtl_id')
+            ->where('tran_date', $date)
+            ->where('trade_transactions.status', '<>', 0)
+            ->where('payment_mode', '!=', 'ONLINE')
+            ->groupBy(["users.id", "users.user_name"]);
+
+        $waterDtl = WaterTran::select(
+            'users.id',
+            'users.user_name',
+            DB::raw("sum(water_trans.amount) as amount,'water' as module,
+            sum(case when water_trans.verify_status =1  then water_trans.amount else 0 end ) as verified_amount,
+            string_agg((case when water_trans.verify_status =1 then 1 else 0 end)::text,',') As verify_status
+            "),
+        )
+            ->join('users', 'users.id', 'water_trans.emp_dtl_id')
+            ->where('tran_date', $date)
+            ->where('water_trans.status', '<>', 0)
+            ->where('payment_mode', '!=', 'ONLINE')
+            ->groupBy(["users.id", "users.user_name"]);
+        if ($userId) {
+            $propTraDtl = $propTraDtl->where('user_id', $userId);
+            $tradeDtl = $tradeDtl->where('emp_dtl_id', $userId);
+            $waterDtl = $waterDtl->where('emp_dtl_id', $userId);
+        }
+        $propTraDtl1 = $propTraDtl;
+        $collection = $propTraDtl1
+            ->union($tradeDtl)
+            ->union($waterDtl)
+            ->get();
+        $collection = collect($collection->groupBy("id")->all());
+        // dd($collection);
+        $data = $collection->map(function ($val) use ($date) {
+            $total =  $val->sum('amount');
+            $verified_amount =  $val->sum('verified_amount');
+            $prop = $val->where("module", "property")->sum('amount');
+            $trad = $val->where("module", "trade")->sum('amount');
+            $water = $val->where("module", "water")->sum('amount');
+            $is_verified = in_array(0, (objToArray(collect(explode(',', ($val->implode("verify_status", ',')))))));
+            return [
+                "user_name" => $val[0]['user_name'],
+                "id" => $val[0]['id'],
+                "property" => $prop,
+                "water" => $water,
+                "trade" => $trad,
+                "total" => $total,
+                "is_verified" => !$is_verified,
+                "verified_amount" => $verified_amount,
+                "date" => $date
+            ];
+        });
+        return  $data = (array_values(objtoarray($data)));
     }
 
 
@@ -564,30 +652,63 @@ class CashVerificationController extends Controller
     public function cashVerify(Request $request)
     {
         $userId = authUser()->id;
+        $ulbId = authUser()->ulb_id;
         $property =  $request->property;
         $water =  $request->water;
         $trade =  $request->trade;
 
-
-
-        foreach ($property as $a) {
-            $mPropTransaction = new PropTransaction();
-            $mPropTransaction->verify_status =
-
-                PropTransaction::where('tran_no', $a)
+        foreach ($property as $p) {
+            PropTransaction::where('tran_no', $p)
                 ->update(
                     [
                         'verify_status' => 1,
                         'verify_date' => Carbon::now(),
                         'verified_by' => $userId
                     ]
-
                 );
         }
 
-        // $amount['property'] = collect($property)->map(function ($value) {
-        //     return $value;
-        // });
+        foreach ($water as $p) {
+            WaterTran::where('tran_no', $p)
+                ->update(
+                    [
+                        'verify_status' => 1,
+                        'verified_date' => Carbon::now(),
+                        'verified_by' => $userId
+                    ]
+                );
+        }
+
+        foreach ($trade as $t) {
+            TradeTransaction::where('tran_no', $t)
+                ->update(
+                    [
+                        'is_verified' => 1,
+                        'verify_date' => Carbon::now(),
+                        'verify_by' => $userId
+                    ]
+                );
+        }
+
+        $mRevDailycollection = new RevDailycollection();
+        $mRevDailycollection->tran_no = $request->transactionNo;
+        $mRevDailycollection->user_id = $userId;
+        $mRevDailycollection->demand_date = $request->date;
+        $mRevDailycollection->deposit_date = Carbon::now();
+        $mRevDailycollection->ulb_id = $ulbId;
+        $mRevDailycollection->save();
+
+        $RevDailycollectiondetail = new RevDailycollectiondetail();
+        $RevDailycollectiondetail->collection_id = $mRevDailycollection->id;
+        $RevDailycollectiondetail->module_id = $request->moduleId;
+        $RevDailycollectiondetail->demand = $request->demand;
+        $RevDailycollectiondetail->deposit_amount = $request->deposit_amount;
+        $RevDailycollectiondetail->cheq_dd_no = $request->cheq_dd_no;
+        $RevDailycollectiondetail->bank_name = $request->bank_name;
+        $RevDailycollectiondetail->deposit_mode = $request->deposit_mode;
+        $RevDailycollectiondetail->comment = $request->comment;
+        $RevDailycollectiondetail->transaction_id = $request->id;
+        $RevDailycollectiondetail->save();
     }
 
     /**
@@ -598,6 +719,7 @@ class CashVerificationController extends Controller
         $mTempTransaction = new TempTransaction();
         // $mTempTransaction->tempTransaction($req);
 
+        $mTempTransaction = new TempTransaction();
         $mTempTransaction->transaction_id = $req->transactionId;
         $mTempTransaction->application_id = $req->applicationId;
         $mTempTransaction->module_id = $req->moduleId;
@@ -610,6 +732,8 @@ class CashVerificationController extends Controller
         $mTempTransaction->bank_name = $req->bankName;
         $mTempTransaction->tran_date = $req->tranDate;
         $mTempTransaction->user_id = $req->userId;
+        $mTempTransaction->ulb_id = $req->ulbId;
+        $mTempTransaction->ward_no = $req->wardNo;
         $mTempTransaction->created_at = Carbon::now();
         $mTempTransaction->save();
 

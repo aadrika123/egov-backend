@@ -416,8 +416,8 @@ class ConcessionController extends Controller
             $metaReqs['wfRoleId'] = $details->current_role;
             $metaReqs['workflowId'] = $details->workflow_id;
             $metaReqs['lastRoleId'] = $details->last_role_id;
-
             $req->request->add($metaReqs);
+
             $forwardBackward = $mForwardBackward->getRoleDetails($req);
             $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
 

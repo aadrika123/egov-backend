@@ -266,7 +266,7 @@ class PropActiveSaf extends Model
     {
         return PropActiveSaf::select('*')
             ->where('id', $safId)
-            ->first();
+            ->firstOrFail();
     }
 
     /**
