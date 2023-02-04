@@ -77,7 +77,7 @@ trait TradeTrait
                 $val['tran_no'],
                 $val['payment_mode'],
                 $val['tran_date'],
-                $val['id'],
+                // $val['id'],
 
             ];
         });

@@ -342,6 +342,10 @@ class TradeApplication extends Controller
             {
                 throw new Exception("Data Not Found");
             }
+            if($licence->payment_status!=1)
+            {
+                throw new Excetion("Payment Not Clear");
+            }
             
             
             $allRolse = collect($this->_parent->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
