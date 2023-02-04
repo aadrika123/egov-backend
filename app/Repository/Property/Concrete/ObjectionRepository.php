@@ -239,8 +239,14 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->date = Carbon::now();
                 $objection->created_at = Carbon::now();
                 $objection->workflow_id = $ulbWorkflowId->id;
+                // $objection->citizen_id = $citizenId;
                 $objection->current_role = $initiatorRoleId[0]->role_id;
+                $objection->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
+                $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
                 $objection->save();
+
+                PropActiveObjection::where('id', $objection->id)
+                    ->update(['objection_no' => $objectionNo]);
 
                 $abc =  json_decode($request->assessmentData);
                 $a = collect($abc);
