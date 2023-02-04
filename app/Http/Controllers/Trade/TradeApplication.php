@@ -344,7 +344,7 @@ class TradeApplication extends Controller
             }
             if($licence->payment_status!=1)
             {
-                throw new Excetion("Payment Not Clear");
+                throw new Exception("Payment Not Clear");
             }
             
             
