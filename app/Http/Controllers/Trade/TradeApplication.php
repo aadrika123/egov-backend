@@ -342,16 +342,15 @@ class TradeApplication extends Controller
             {
                 throw new Exception("Data Not Found");
             }
-            if($licence->payment_status!=1)
+            $allRolse = collect($this->_parent->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
+            $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
+            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            if($licence->payment_status!=1 && ($role->serial_no  < $receiverRole["serial_no"]??0))
             {
                 throw new Exception("Payment Not Clear");
             }
             
-            
-            $allRolse = collect($this->_parent->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
-            $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
-            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
-            if($licence->current_role != $role->role_id && ($role->serial_no  > $receiverRole["serial_no"]??0))
+            if($licence->current_role != $role->role_id)
             {
                 throw new Exception("You Have Not Pending This Application");
             }
