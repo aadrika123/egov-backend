@@ -1914,7 +1914,9 @@ class Trade implements ITrade
             $paymentDetail = sizeOf($transactionDtl) > 0 ? $this->generatepaymentDetails($transactionDtl) : (array) null;      // Trait function to get payment Details
             $paymentElement = [
                 'headerTitle' => "Transaction Details",
-                "data" => $paymentDetail
+                'tableHead' => ["#", "Payment For", "Tran No", "Payment Mode", "Date"],
+                'tableData' => $paymentDetail,
+                // "data" => $paymentDetail
             ];
 
             $ownerDetails = $this->generateOwnerDetails($ownerDetails);
@@ -1932,8 +1934,8 @@ class Trade implements ITrade
 
             $fullDetailsData['application_no'] = $licenseDetail->application_no;
             $fullDetailsData['apply_date'] = $licenseDetail->application_date;
-            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement,   $paymentElement]);
-            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement]);
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement]);
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement,$paymentElement]);
             $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
 
             $metaReqs['customFor'] = 'Trade';

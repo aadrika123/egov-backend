@@ -57,17 +57,31 @@ trait TradeTrait
     }
 
 
+    // public function generatepaymentDetails($data)
+    // {
+    //     return new Collection([
+    //         ['displayString' => 'Transaction No', 'key' => 'tranNo', 'value' => $data->tran_no],
+    //         ['displayString' => 'Payment Mode', 'key' => 'paymentMode', 'value' => $data->payment_mode],
+    //         ['displayString' => 'Paid Amount', 'key' => 'paidAmount', 'value' => $data->paid_amount],
+    //         ['displayString' => 'Payment For', 'key' => 'tranType', 'value' => $data->tran_type],
+    //         ['displayString' => 'Trasaction Date', 'key' => 'created_at', 'value' => $data->created_at],
+    //     ]);
+    // }
+
     public function generatepaymentDetails($data)
     {
-        return new Collection([
-            ['displayString' => 'Transaction No', 'key' => 'tranNo', 'value' => $data->tran_no],
-            ['displayString' => 'Payment Mode', 'key' => 'paymentMode', 'value' => $data->payment_mode],
-            ['displayString' => 'Paid Amount', 'key' => 'paidAmount', 'value' => $data->paid_amount],
-            ['displayString' => 'Payment For', 'key' => 'tranType', 'value' => $data->tran_type],
-            ['displayString' => 'Trasaction Date', 'key' => 'created_at', 'value' => $data->created_at],
-        ]);
-    }
+        return collect($data)->map(function ($val, $key) {
+            return [
+                $key + 1,
+                $val['tran_type'],
+                $val['tran_no'],
+                $val['payment_mode'],
+                $val['tran_date'],
+                $val['id'],
 
+            ];
+        });
+    }
     public function generateOwnerDetails($ownerDetails)
     {
         return collect($ownerDetails)->map(function ($ownerDetail, $key) {
