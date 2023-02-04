@@ -1376,10 +1376,14 @@ class ActiveSafController extends Controller
             // Get Property Penalties against property transaction
             $mOnePercPenalty = $propPenalties->getPenalRebateByTranId($propTrans->id, "1% Monthly Penalty");
             $mRebate = $propPenalties->getPenalRebateByTranId($propTrans->id, "Rebate");
-            $mSpecialRebate = $propPenalties->getPenalRebateByTranId($propTrans->id, "Special Rebate") ?? 0;
+            $mSpecialRebate = $propPenalties->getPenalRebateByTranId($propTrans->id, "Special Rebate");
             $firstQtrRebate = 0;
 
-            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $mOnePercPenalty->amount, $mRebate->amount, $mSpecialRebate->amount ?? 0, $firstQtrRebate, $propTrans->amount);   // Get Holding Tax Dtls
+            $rebateAmt = ($mRebate == null) ? 0 : $mRebate->amount;
+            $specialRebateAmt = ($mSpecialRebate == null) ? 0 : $mSpecialRebate->amount;
+            $onePercPanalAmt = ($mOnePercPenalty == null) ? 0 : $mOnePercPenalty->amount;
+
+            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $propTrans->amount);   // Get Holding Tax Dtls
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
