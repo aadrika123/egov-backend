@@ -323,25 +323,27 @@ class HoldingTaxController extends Controller
 
             $reqPropId = new Request(['propertyId' => $propTrans->property_id]);
             $propProperty = $safController->getPropByHoldingNo($reqPropId)->original['data'];
+            if (empty($propProperty))
+                throw new Exception("Property Not Found");
 
             // Get Property Penalty and Rebates
             $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
-            if ($penalRebates->isEmpty())
-                throw new Exception("Data In Penalty Rebates Model Not Available");
 
             $onePercPenalty = collect($penalRebates)->where('head_name', '1% Monthly Penalty')->first()->amount ?? "";
             $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
             $specialRebate = collect($penalRebates)->where('head_name', 'Special Rebate')->first()->amount ?? 0;
+            $firstQtrRebate = collect($penalRebates)->where('head_name', 'First Qtr Rebate')->first()->amount ?? 0;
+            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', 'Rebate From Jsk/Online Payment')->first()->amount ?? 0;
             $lateAssessmentPenalty = 0;
 
-            $taxDetails = $safController->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $propTrans->amount);
+            $taxDetails = $safController->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
                 "transactionDate" => $propTrans->tran_date,
                 "transactionNo" => $propTrans->tran_no,
                 "transactionTime" => $propTrans->created_at->format('H:i:s'),
-                "applicationNo" => $propProperty['new_holding_no'] ?? $propProperty['holding_no'],
+                "applicationNo" => !empty($propProperty['new_holding_no']) ? $propProperty['new_holding_no'] : $propProperty['holding_no'],
                 "customerName" => $propProperty['applicant_name'],
                 "receiptWard" => $propProperty['new_ward_no'],
                 "address" => $propProperty['prop_address'],
@@ -402,7 +404,7 @@ class HoldingTaxController extends Controller
 
             $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');                 // Saf payment History
 
-            $transactions['Holding'] = collect($propTrans)->sortBy('id')->values();
+            $transactions['Holding'] = collect($propTrans)->sortBy(['id' => 'desc'])->values();
             $transactions['Saf'] = collect($safTrans)->sortBy('id')->values();
 
             return responseMsgs(true, "", remove_null($transactions), "011606", "1.0", "", "POST", $req->deviceId ?? "");

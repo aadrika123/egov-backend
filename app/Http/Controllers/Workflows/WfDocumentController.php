@@ -15,8 +15,8 @@ class WfDocumentController extends Controller
     public function docVerifyReject(Request $req)
     {
         $req->validate([
-            'id' => 'required|numeric',
-            'docRemarks' => 'required',
+            'id' => 'required|digits_between:1,9223372036854775807',
+            'docRemarks' =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
             'docStatus' => 'required|in:Verified,Rejected'
         ]);
 

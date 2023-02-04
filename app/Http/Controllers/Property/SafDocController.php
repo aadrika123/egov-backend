@@ -155,7 +155,7 @@ class SafDocController extends Controller
             "docCode" => "required",
             "ownerId" => "nullable|numeric"
         ]);
-        // return $this->checkFullDocUpload($req->applicationId);
+        $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
         try {
             $metaReqs = array();
             $docUpload = new DocUpload;
@@ -163,6 +163,10 @@ class SafDocController extends Controller
             $mActiveSafs = new PropActiveSaf();
             $relativePath = FacadesConfig::get('PropertyConstaint.SAF_RELATIVE_PATH');
             $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
+            if ($docUploadStatus == 1) {
+                $getSafDtls->doc_upload_status = 1;
+                $getSafDtls->save();
+            }
             $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
@@ -232,30 +236,62 @@ class SafDocController extends Controller
         });
         $docList['ownerDocs'] = $ownerDocList;
         $refDocList = $mWfActiveDocument->getDocsByActiveId($applicationId);
-        $uploadDocList['ownerDocs'] = $refDocList->where('owner_dtl_id', '!=', null)->values()->groupBy('owner_dtl_id');
+        $uploadDocList['ownerDocs'] = $refDocList->where('owner_dtl_id', '!=', null)->values();
         $uploadDocList['propDocs'] = $refDocList->where('owner_dtl_id', null)->values();
 
         $collectUploadDocList = collect();
         collect($uploadDocList['propDocs'])->map(function ($item) use ($collectUploadDocList) {
             return $collectUploadDocList->push($item['doc_code']);
         });
-
-        $collectUploadDocList;
         $mPropDocs = collect($docList['propDocs']);
 
-        $flag = 0;
-        // collect($mPropDocs)->map(function ($doc) use ($collectUploadDocList, $flag) {
-        //     $explodeDoc = explode(',', $doc);
-        //     array_shift($explodeDoc);
-        //     $flag = 1;
-        //     return $explodeDoc;
-        // });
+        $flag = array();
         foreach ($mPropDocs as $item) {
-            $explodeDoc = explode(',', $item);
-            array_shift($explodeDoc);
-            $flag = 1;
-            return $explodeDoc;
+            $explodeDocs = explode(',', $item);
+            array_shift($explodeDocs);
+            foreach ($explodeDocs as $explodeDoc) {
+                $changeStatus = 0;
+                if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
+                    array_push($flag, 1);
+                    $changeStatus = 1;
+                    break;
+                }
+            }
+            if ($changeStatus == 0)
+                array_push($flag, 0);
         }
-        return $flag;
+
+        $unUploadStatus = collect($flag)->contains(0);
+        if ($unUploadStatus == 1)
+            return 0;
+
+        $ownerFlags = array();
+        foreach ($ownerDocList as $item) {
+            $ownerUploadedDocLists = $uploadDocList['ownerDocs']->where('owner_dtl_id', $item['ownerId']);
+            $arrayOwners = array();
+            foreach ($ownerUploadedDocLists as $list) {
+                array_push($arrayOwners, $list->doc_code);
+            }
+
+            foreach ($item['docs'] as $doc) {
+                $explodeDocs = explode(',', $doc);
+                array_shift($explodeDocs);
+                foreach ($explodeDocs as $explodeDoc) {
+                    $changeStatus = 0;
+                    if (in_array($explodeDoc, $arrayOwners)) {
+                        array_push($ownerFlags, 1);
+                        $changeStatus = 1;
+                        break;
+                    }
+                }
+                if ($changeStatus == 0)
+                    array_push($ownerFlags, 0);
+            }
+        }
+        $ownerDocUnuploadStatus = collect($ownerFlags)->contains(0);
+        if ($ownerDocUnuploadStatus == 1)
+            return 0;
+        else
+            return 1;
     }
 }

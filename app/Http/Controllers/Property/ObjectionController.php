@@ -222,7 +222,7 @@ class ObjectionController extends Controller
             $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $req->id, $details->user_id);
             $fullDetailsData['citizenComment'] = $citizenComment;
 
-            $metaReqs['customFor']  = 'Objection';
+            $metaReqs['customFor']  = 'PROPERTY-OBJECTION';
             $metaReqs['wfRoleId']   =  $details->current_role;
             $metaReqs['workflowId'] =  $details->workflow_id;
             $metaReqs['lastRoleId'] =  $details->last_role_id;
@@ -756,7 +756,6 @@ class ObjectionController extends Controller
                 $objectionOwner->created_at = Carbon::now();
                 $objectionOwner->save();
             }
-
             DB::commit();
 
             return responseMsgs(true, "member added use this for future use", $objectionNo, "010201", "1.0", "", "POST", $request->deviceId ?? "");

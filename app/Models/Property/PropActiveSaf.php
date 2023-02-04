@@ -149,12 +149,12 @@ class PropActiveSaf extends Model
                 'r.road_type as road_type_master',
                 'wr.role_name as current_role_name'
             )
-            ->join('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
             ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
-            ->join('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
-            ->join('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
-            ->join('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id');
+            ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+            ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
+            ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id');
     }
 
 
@@ -266,7 +266,7 @@ class PropActiveSaf extends Model
     {
         return PropActiveSaf::select('*')
             ->where('id', $safId)
-            ->first();
+            ->firstOrFail();
     }
 
     /**

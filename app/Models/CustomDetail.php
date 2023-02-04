@@ -63,8 +63,8 @@ class CustomDetail extends Model
             }
 
             $customDetails = new CustomDetail;
-            if ($customFor == 'Concession') {
-                $customDetails->ref_type = 'Concession';
+            if ($customFor == 'PROPERTY-CONCESSION') {
+                $customDetails->ref_type = 'PROPERTY-CONCESSION';
                 $this->saveCustomDetail($request, $filename, $customDetails);
                 $customDetails->save();
             }
@@ -75,14 +75,14 @@ class CustomDetail extends Model
                 $customDetails->save();
             }
 
-            if ($customFor == 'Objection') {
-                $customDetails->ref_type = 'Objection';
+            if ($customFor == 'PROPERTY-OBJECTION') {
+                $customDetails->ref_type = 'PROPERTY-OBJECTION';
                 $this->saveCustomDetail($request, $filename, $customDetails);
                 $customDetails->save();
             }
 
-            if ($customFor == 'Harvesting') {
-                $customDetails->ref_type = 'Harvesting';
+            if ($customFor == 'PROPERTY-HARVESTING') {
+                $customDetails->ref_type = 'PROPERTY-HARVESTING';
                 $this->saveCustomDetail($request, $filename, $customDetails);
                 $customDetails->save();
             }

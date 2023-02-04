@@ -174,7 +174,7 @@ class WfActiveDocument extends Model
     /**
      * | trade
      */
-    public function getTradeAppByAppNoDocId($appid,$ulb_id, $docId,$owner_id=null)
+    public function getTradeAppByAppNoDocId($appid, $ulb_id, $docId, $owner_id = null)
     {
         return DB::table('wf_active_documents as d')
             ->select(
@@ -193,7 +193,7 @@ class WfActiveDocument extends Model
             ->where("d.owner_dtl_id", $owner_id)
             ->where("d.status", 1)
             ->whereIn("dr.id", $docId)
-            ->orderBy("d.id","DESC")
+            ->orderBy("d.id", "DESC")
             ->first();
     }
 
@@ -213,7 +213,7 @@ class WfActiveDocument extends Model
             ->get();
     }
 
-     /**
+    /**
      * | Get Workflow Active Documents By Active Id
      */
     public function getDocByRefIdsDocCode($activeId, $workflowId, $moduleId, $docCode)
@@ -226,7 +226,21 @@ class WfActiveDocument extends Model
             ->where('workflow_id', $workflowId)
             ->where('module_id', $moduleId)
             ->where('status', 1)
-            ->whereIn('doc_code',$docCode)
+            ->whereIn('doc_code', $docCode)
+            ->get();
+    }
+    public function getOwnerDocByRefIdsDocCode($activeId, $workflowId, $moduleId, $docCode, $ownerId)
+    {
+        return WfActiveDocument::select(
+            DB::raw("concat(relative_path,'/',document) as doc_path"),
+            '*'
+        )
+            ->where('active_id', $activeId)
+            ->where('workflow_id', $workflowId)
+            ->where('module_id', $moduleId)
+            ->where('status', 1)
+            ->where('owner_dtl_id', $ownerId ?? null)
+            ->whereIn('doc_code', $docCode)
             ->get();
     }
     /**

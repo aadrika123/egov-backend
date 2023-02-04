@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Payment;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,9 +10,6 @@ class TempTransaction extends Model
 {
     use HasFactory;
 
-    /**
-     * | for storing temporary transaction data in temporary transaction table
-     */
     public function tempTransaction($req)
     {
         $mTempTransaction = new TempTransaction();
