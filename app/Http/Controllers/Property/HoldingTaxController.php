@@ -401,6 +401,8 @@ class HoldingTaxController extends Controller
                 throw new Exception("No Transaction Found");
 
             $propSafId = $propertyDtls->saf_id;
+            if (!$propSafId)
+                throw new Exception("This Property has not Saf Id");
 
             $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');                 // Saf payment History
 
