@@ -341,15 +341,77 @@ class TradeApplication extends Controller
 
         try {
             // SAF Application Update Current Role Updation
-            DB::beginTransaction();
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $workflowId = WfWorkflow::where('id', $refWorkflowId)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+            if (!$workflowId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            
             $licence = ActiveTradeLicence::find($request->applicationId);
+            if(!$licence)
+            {
+                throw new Exception("Data Not Found");
+            }
+            
+            $allRolse = collect($this->_parent->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
+            $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
+            
+            $sms ="Application BackWord To ".$receiverRole["role_name"]??"";
+            if($licence->max_level_attained > $receiverRole["serial_no"]??0)
+            {
+                $sms ="Application Forward To ".$receiverRole["role_name"]??"";
+            }
+            $tradC = new Trade();
+            $documents = $tradC->checkWorckFlowForwardBackord($request);
+            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            if(($licence->max_level_attained < $receiverRole["serial_no"]??0) && !$documents)
+            {
+                throw new Exception("Not Every Actoin Are Performed");
+            }
+            // dd($role,$licence);
+            if($role->can_upload_document)
+            {
+                if(($role->serial_no < $receiverRole["serial_no"]??0))
+                {
+                    $licence->document_upload_status = true;
+                    $licence->pending_status = 1;
+                    $licence->is_parked = false;
+                }
+                if(($role->serial_no > $receiverRole["serial_no"]??0))
+                {
+                    $licence->document_upload_status = false;
+                }
+            }
+            if($role->can_verify_document)
+            {
+                if(($role->serial_no < $receiverRole["serial_no"]??0))
+                {
+                    $licence->is_doc_verified = true;
+                    $licence->doc_verified_by = $user_id;
+                    $licence->doc_verify_date = Carbon::now()->format("Y-m-d");
+                }
+                if(($role->serial_no > $receiverRole["serial_no"]??0))
+                {
+                    $licence->is_doc_verified = false;
+                }
+                
+            }
+
+            DB::beginTransaction();
+            $licence->max_level_attained = $request->receiverRoleId;
             $licence->current_role = $request->receiverRoleId;
-            $licence->save();
+            $licence->update();
 
 
             $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
             $metaReqs['workflowId'] = $licence->workflow_id;
-            $metaReqs['refTableDotId'] = 'active_trade_licences.id';
+            $metaReqs['refTableDotId'] = 'active_trade_licences';
             $metaReqs['refTableIdValue'] = $request->applicationId;
             $request->request->add($metaReqs);
 
@@ -357,7 +419,7 @@ class TradeApplication extends Controller
             $track->saveTrack($request);
 
             DB::commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);
+            return responseMsgs(true, $sms, "", "010109", "1.0", "286ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -509,13 +571,19 @@ class TradeApplication extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveTradeLicence = new ActiveTradeLicence();
-
+            $modul_id = Config::get('module-constants.TRADE_MODULE_ID');
             $licenceDetails = $mActiveTradeLicence->getLicenceNo($req->applicationId);
             if (!$licenceDetails)
                 throw new Exception("Application Not Found for this application Id");
 
             $appNo = $licenceDetails->application_no;
-            $documents = $mWfActiveDocument->getTradeDocByAppNo($appNo);
+            $tradR = new Trade();
+            $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id,$licenceDetails->workflow_id,$modul_id);
+            $documents = $documents->map(function($val) use($tradR){
+                $path =  $tradR->readDocumentPath($val->doc_path);
+                $val->doc_path = !empty(trim($val->doc_path)) ? $path : null;
+                return $val;
+            });
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");

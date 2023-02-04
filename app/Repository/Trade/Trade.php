@@ -1278,13 +1278,9 @@ class Trade implements ITrade
             }
             $data["documentsList"]  = $requiedDocs;
             $data["ownersDocList"]  = $testOwnersDoc;
-            // $data["licence"] = $refLicence;
-            // $data["owners"] = $refOwneres;
-            // $data["uploadDocument"] = $mUploadDocument;
 
             return responseMsg(true, "ABC Ok", remove_null($data));
         } catch (Exception $e) {
-            dd($e->getMessage(),$e->getFile(),$e->getLine());
             return responseMsg(false, $e->getMessage(), '');
         }
     }
@@ -1719,17 +1715,17 @@ class Trade implements ITrade
         $user = Auth()->user();
         $user_id = $user->id;
         $ulb_id = $user->ulb_id;
-        $redis = new Redis;
-        $user_data = json_decode($redis::get('user:' . $user_id), true);
         $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
         $workflows = $this->_parent->iniatorFinisher($user_id, $ulb_id, $workflow_id);
-        $roll_id =  $this->_parent->getUserRoll($user_id, $ulb_id, $workflow_id)->role_id ?? null;
+        $rolles = $this->_parent->getUserRoll($user_id, $ulb_id, $workflow_id);
+        $roll_id =  $rolles->role_id ?? null;
         $mUserType = $this->_parent->userType($workflow_id);
+        // dd($this->_parent->getUserRoll($user_id, $ulb_id, $workflow_id));
         $licenceId = $request->licenceId;
         $rules = [];
         $message = [];
         try {
-            if (!$roll_id || strtoupper($mUserType) != "DA") {
+            if (!$roll_id || !$rolles->can_verify_document) {
                 throw new Exception("You are Not Authorized For Document Verify");
             }
             if (!$licenceId) {
@@ -1737,7 +1733,7 @@ class Trade implements ITrade
             }
             $licence = $this->getActiveLicenseById($licenceId);
             if (!$licence) {
-                throw new Exception("Data Not Found");
+                throw new Exception("Data Not Found2");
             }
             $item_name = "";
             $cods = "";
@@ -4648,7 +4644,57 @@ class Trade implements ITrade
         } catch (Exception $e) {
         }
     }
+    public function checkWorckFlowForwardBackord(Request $request)
+    {
+        $user = Auth()->user();
+        $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        $allRolse = collect($this->_parent->getAllRoles($user->id,$user->ulb_id,$refWorkflowId,0,true));
+        $init_finish = $this->_parent->iniatorFinisher($user->id,$user->ulb_id,$refWorkflowId);
+        $mUserType      = $this->_parent->userType($refWorkflowId);
+        $fromRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];
+        // dd($mUserType,$fromRole);
+        if(($fromRole["can_upload_document"]??false) || ($fromRole["can_verify_document"] ??false))
+        {
+            $documents = $this->getDocList($request);
+            if(!$documents->original["status"])
+            {
+                return false;
+            }
+            $applicationDoc = $documents->original["data"]["documentsList"];
+            $ownerDoc = $documents->original["data"]["ownersDocList"];
 
+            $uploadeDocs  = collect($applicationDoc)->map(function($val){
+                $is_docVerify = !empty($val["uploadDoc"]) ?  ((collect($val["uploadDoc"]->all())["verify_status"] !=0 ) ? true : false ) :true;
+                return [ 
+                    "is_docVerify"=>$is_docVerify,
+                    "is_uploded"=> ($val["isMadatory"]==1)  ? ((!empty($val["uploadDoc"])) ? true : false ) :true
+                ];
+            });
+            $uploadedOwneresDocs=[];
+            foreach($ownerDoc as $val)
+            {
+                foreach($val as $val2)
+                {
+                    $uploadedOwneresDocs[]= [
+                        "is_docVerify" => !empty($val2["uploadDoc"]) ?  ((collect($val2["uploadDoc"]->all())["verify_status"] !=0 ) ? true : false ) :true ,
+                        "is_uploded" => ($val2["isMadatory"]==1)  ? ((!empty($val2["uploadDoc"])) ? true : false ) :true ,
+                    ];
+                }
+            }
+            $uploadedOwneresDocs = collect($uploadedOwneresDocs);
+            // dd(empty($uploadeDocs->where("is_uploded",false)->all()),$uploadedOwneresDocs,$uploadeDocs);
+            if($fromRole["can_upload_document"])
+            {
+                return (empty($uploadedOwneresDocs->where("is_uploded",false)->all()) && empty($uploadeDocs->where("is_uploded",false)->all()));
+            }
+            if($fromRole["can_verify_document"])
+            {
+                return (empty($uploadedOwneresDocs->where("is_docVerify",false)->all()) && empty($uploadeDocs->where("is_docVerify",false)->all()));
+            }
+        }
+        return true;
+
+    }
     #-------------------- End core function of core function --------------
 
 }
