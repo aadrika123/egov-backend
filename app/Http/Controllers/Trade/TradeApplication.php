@@ -414,6 +414,7 @@ class TradeApplication extends Controller
             DB::commit();
             return responseMsgs(true, $sms, "", "010109", "1.0", "286ms", "POST", $request->deviceId);
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
