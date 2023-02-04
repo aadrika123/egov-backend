@@ -756,7 +756,6 @@ class ObjectionController extends Controller
                 $objectionOwner->created_at = Carbon::now();
                 $objectionOwner->save();
             }
-
             DB::commit();
 
             return responseMsgs(true, "member added use this for future use", $objectionNo, "010201", "1.0", "", "POST", $request->deviceId ?? "");
