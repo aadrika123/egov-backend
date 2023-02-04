@@ -181,7 +181,69 @@ class TradeApplication extends Controller
 
     public function getDocList(Request $request)
     {
-        return $this->Repository->getDocList($request);
+        $refUser            = Auth()->user();
+        $refUserId          = $refUser->id;
+        $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
+        $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        $mUserType          = $this->_parent->userType($refWorkflowId);
+        $data = $this->Repository->getDocList($request);
+        if(strtoupper($mUserType)!="ONLINE")
+        {
+            
+            $data->original["data"]["listDocs"] = collect($data->original["data"]["documentsList"])
+                                                    ->map(function($val){
+                                                        $docType = (sizeOf($val["docVal"])>1)?"O":"R";
+                                                       
+                                                        $uploadedDoc = !empty($val["uploadDoc"]) ?
+                                                                        [
+                                                                            "uploadedDocId"=>$val["uploadDoc"]["id"],
+                                                                            "documentCode"=>$val["uploadDoc"]["doc_name"],
+                                                                            "docPath"=>$val["uploadDoc"]["doc_path"],
+                                                                            "verifyStatus"=>$val["uploadDoc"]["verify_status"],
+                                                                            "remarks"=>$val["uploadDoc"]["remarks"],
+                                                                        ]
+                                                                        :$val["uploadDoc"];
+
+                                                        $masters = $val["docVal"];
+                                                        return(["docType"=>$docType,"uploadedDoc"=>$uploadedDoc,"masters"=>$masters]);
+
+                                                    });
+            
+            $data->original["data"]["ownerDocs"] = collect($data->original["data"]["ownersDocList"])
+                                                    ->map(function($val){
+                                                        
+                                                        $ownerDetails = [
+                                                            "ownerId"=>$val[0]["ownerId"] ,
+                                                            "name"=>$val[0]["ownerName"],
+                                                            "mobile"=>"",
+                                                            "guardian"=>"",
+                                                            "uploadedDoc"=>$val[0]["uploadDoc"],
+                                                            "verifyStatus"=>"",
+                                                        ];
+                                                        $documents = collect($val)->map(function($val1){
+                                                            $docType = (sizeOf($val1["docVal"])>1)?"O":"R";
+                                                           
+                                                            $uploadedDoc = !empty($val1["uploadDoc"]) ?
+                                                                            [
+                                                                                "uploadedDocId"=>$val1["uploadDoc"]["id"],
+                                                                                "documentCode"=>$val1["uploadDoc"]["doc_name"],
+                                                                                "docPath"=>$val1["uploadDoc"]["doc_path"],
+                                                                                "verifyStatus"=>$val1["uploadDoc"]["verify_status"],
+                                                                                "remarks"=>$val1["uploadDoc"]["remarks"],
+                                                                            ]
+                                                                            :$val1["uploadDoc"];
+    
+                                                            $masters = $val1["docVal"];
+                                                            return(["docType"=>$docType,"uploadedDoc"=>$uploadedDoc,"masters"=>$masters]);
+    
+                                                        });
+                                                        return(["ownerDetails"=>$ownerDetails,"documents"=>$documents,]);
+
+                                                    });
+        }
+       
+        return responseMsg($data->original["status"],$data->original["message"],$data->original["data"],);
+        
     }
 
 
@@ -575,6 +637,7 @@ class TradeApplication extends Controller
             $documents = $documents->map(function($val) use($tradR){
                 $path =  $tradR->readDocumentPath($val->doc_path);
                 $val->doc_path = !empty(trim($val->doc_path)) ? $path : null;
+                $val->doc_code = $val->doc_for;
                 return $val;
             });
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");

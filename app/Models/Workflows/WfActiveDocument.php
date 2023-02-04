@@ -104,7 +104,7 @@ class WfActiveDocument extends Model
                 DB::raw("concat(d.relative_path,'/',d.document) as doc_path"),
                 'd.remarks',
                 'd.verify_status',
-                'dm.doc_for AS doc_code',
+                'dm.doc_for',
                 'o.owner_name'
             )
             ->join(DB::raw("(
