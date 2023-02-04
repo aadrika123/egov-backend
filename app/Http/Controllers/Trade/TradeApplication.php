@@ -2,37 +2,37 @@
 
 namespace App\Http\Controllers\Trade;
 
-use App\Http\Controllers\Controller;
-use App\EloquentModels\Common\ModelWard;
-use App\Repository\Common\CommonFunction;
-use App\Repository\Trade\ITrade;
-use Illuminate\Foundation\Auth\User;
+use Exception;
+use Carbon\Carbon;
+use App\Models\UlbMaster;
 use Illuminate\Http\Request;
+use App\Models\WorkflowTrack;
+use App\Repository\Trade\Trade;
+use App\MicroServices\DocUpload;
+use App\Models\Trade\TradeOwner;
+use App\Repository\Trade\ITrade;
+use App\Models\Trade\TradeLicence;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use App\Models\Workflows\WfWorkflow;
+use Illuminate\Foundation\Auth\User;
+use App\Http\Requests\Trade\ReqInbox;
 use Illuminate\Support\Facades\Config;
+use App\EloquentModels\Common\ModelWard;
+use App\Models\Trade\ActiveTradeLicence;
+use App\Models\Trade\TradeParamFirmType;
+use App\Models\Trade\TradeParamItemType;
+use App\Repository\Common\CommonFunction;
+use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\Trade\ReqAddRecorde;
+use App\Models\Workflows\WfActiveDocument;
 use App\Http\Requests\Trade\paymentCounter;
 use App\Http\Requests\Trade\ReqApplyDenail;
 use App\Http\Requests\Trade\ReqPaybleAmount;
-use App\Http\Requests\Trade\ReqInbox;
-use App\Http\Requests\Trade\ReqPostNextLevel;
-use App\Http\Requests\Trade\ReqUpdateBasicDtl;
-use App\MicroServices\DocUpload;
-use App\Models\Trade\ActiveTradeLicence;
-use App\Models\Trade\TradeLicence;
-use App\Models\Trade\TradeOwner;
 use App\Models\Trade\TradeParamCategoryType;
-use App\Models\Trade\TradeParamFirmType;
-use App\Models\Trade\TradeParamItemType;
+use App\Http\Requests\Trade\ReqPostNextLevel;
 use App\Models\Trade\TradeParamOwnershipType;
-use App\Models\UlbMaster;
-use App\Models\Workflows\WfActiveDocument;
-use Illuminate\Support\Facades\DB;
-use App\Models\Workflows\WfWorkflow;
-use App\Models\WorkflowTrack;
-use App\Repository\Trade\Trade;
-use Carbon\Carbon;
-use Exception;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\Trade\ReqUpdateBasicDtl;
 
 class TradeApplication extends Controller
 {
@@ -204,7 +204,11 @@ class TradeApplication extends Controller
                                                                         ]
                                                                         :$val["uploadDoc"];
 
-                                                        $masters = $val["docVal"];
+                                                        $masters = $val["docVal"]->map(function($val1){
+                                                            
+                                                            $val1["documentCode"] = $val1["doc_name"];
+                                                            return$val1;
+                                                        });
                                                         return(["docType"=>$docType,"uploadedDoc"=>$uploadedDoc,"masters"=>$masters]);
 
                                                     });
@@ -233,7 +237,11 @@ class TradeApplication extends Controller
                                                                             ]
                                                                             :$val1["uploadDoc"];
     
-                                                            $masters = $val1["docVal"];
+                                                            $masters = $val1["docVal"]->map(function($val2){
+                                                               
+                                                                $val2["documentCode"] = $val2["doc_name"];
+                                                                return$val2;
+                                                            });
                                                             return(["docType"=>$docType,"uploadedDoc"=>$uploadedDoc,"masters"=>$masters]);
     
                                                         });
