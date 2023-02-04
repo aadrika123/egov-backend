@@ -859,7 +859,7 @@ class NewConnectionController extends Controller
                     return $value['doc_name'];
                 });
                 $doc['uploadDoc'] = [];
-                $uploadDoc = $refWfActiveDocument->getDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $refdocForId); # Check Document is Uploaded Of That Type
+                $uploadDoc = $refWfActiveDocument->getOwnerDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $refdocForId, $doc["ownerId"]); # Check Document is Uploaded Of That Type
                 if (isset($uploadDoc->first()->doc_path)) {
                     $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
                     $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
@@ -1062,6 +1062,7 @@ class NewConnectionController extends Controller
                         ->update([
                             'current_role' => $this->_dealingAssistent
                         ]);
+                    return responseMsgs(true, "Application Submited to Workflow!", $request, "", "01", "", "POST", "");
                     break;
                 default:
                     throw new Exception("Citizen Application Not found!");

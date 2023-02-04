@@ -50,7 +50,7 @@ class PropertyDetailsController extends Controller
                     $mPropActiveSaf = new PropActiveSaf();
                     $mPropActiveSafOwners = new PropActiveSafsOwner();
                     $application = collect($mPropActiveSaf->getSafDtlsBySafNo($applicationNo));
-                    $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
+                    $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId1($application['id']));
                     $details = $application->merge($owners);
                     break;
                 case ("concession"):
@@ -128,6 +128,7 @@ class PropertyDetailsController extends Controller
                     $data = PropProperty::select(
                         'prop_properties.id',
                         'prop_properties.holding_no',
+                        'prop_properties.new_holding_no',
                         'ward_name',
                         'prop_address',
                         DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
@@ -144,6 +145,7 @@ class PropertyDetailsController extends Controller
                     $data = PropProperty::select(
                         'prop_properties.id',
                         'prop_properties.holding_no',
+                        'prop_properties.new_holding_no',
                         'ward_name',
                         'prop_address',
                         DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
@@ -160,6 +162,7 @@ class PropertyDetailsController extends Controller
                     $data = PropProperty::select(
                         'prop_properties.id',
                         'prop_properties.holding_no',
+                        'prop_properties.new_holding_no',
                         DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
                         DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
                         'ward_name',

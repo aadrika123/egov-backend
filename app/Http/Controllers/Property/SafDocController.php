@@ -155,7 +155,7 @@ class SafDocController extends Controller
             "docCode" => "required",
             "ownerId" => "nullable|numeric"
         ]);
-        // return $this->checkFullDocUpload($req->applicationId);
+        $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
         try {
             $metaReqs = array();
             $docUpload = new DocUpload;
@@ -163,6 +163,10 @@ class SafDocController extends Controller
             $mActiveSafs = new PropActiveSaf();
             $relativePath = FacadesConfig::get('PropertyConstaint.SAF_RELATIVE_PATH');
             $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
+            if ($docUploadStatus == 1) {
+                $getSafDtls->doc_upload_status = 1;
+                $getSafDtls->save();
+            }
             $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
@@ -257,9 +261,9 @@ class SafDocController extends Controller
                 array_push($flag, 0);
         }
 
-        $propDocStatus = collect($flag)->contains(0);
-        if ($propDocStatus == 1)
-            return "Document Not Fully Uploaded";
+        $unUploadStatus = collect($flag)->contains(0);
+        if ($unUploadStatus == 1)
+            return 0;
 
         $ownerFlags = array();
         foreach ($ownerDocList as $item) {
@@ -284,6 +288,10 @@ class SafDocController extends Controller
                     array_push($ownerFlags, 0);
             }
         }
-        return $ownerFlags;
+        $ownerDocUnuploadStatus = collect($ownerFlags)->contains(0);
+        if ($ownerDocUnuploadStatus == 1)
+            return 0;
+        else
+            return 1;
     }
 }
