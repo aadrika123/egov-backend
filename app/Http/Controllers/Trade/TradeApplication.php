@@ -315,22 +315,6 @@ class TradeApplication extends Controller
     # Serial No : 18
     public function postNextLevel(Request $request)
     {
-        // try {
-        // $refUser = Auth()->user();
-        // $user_id = $refUser->id;
-        // $ulb_id = $refUser->ulb_id;
-        // $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-        // $init_finish = $this->_parent->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
-        // if (!$init_finish) {
-        //     throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
-        // }
-        // if (!$init_finish["initiator"]) {
-        //     throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
-        // }
-        // if (!$init_finish["finisher"]) {
-        //     throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
-        // }
-        // return $this->Repository->postNextLevel($request);
 
         $request->validate([
             'applicationId' => 'required|integer',
@@ -340,7 +324,7 @@ class TradeApplication extends Controller
         ]);
 
         try {
-            // SAF Application Update Current Role Updation
+            // Trade Application Update Current Role Updation
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
@@ -359,22 +343,27 @@ class TradeApplication extends Controller
                 throw new Exception("Data Not Found");
             }
             
+            
             $allRolse = collect($this->_parent->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
             $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
-            
+            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            if($licence->current_role != $role->role_id)
+            {
+                throw new Exception("You Have Not Pending This Application");
+            }
             $sms ="Application BackWord To ".$receiverRole["role_name"]??"";
-            if($licence->max_level_attained > $receiverRole["serial_no"]??0)
+            
+            if($role->serial_no  < $receiverRole["serial_no"]??0)
             {
                 $sms ="Application Forward To ".$receiverRole["role_name"]??"";
             }
             $tradC = new Trade();
             $documents = $tradC->checkWorckFlowForwardBackord($request);
-            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
             if(($licence->max_level_attained < $receiverRole["serial_no"]??0) && !$documents)
             {
                 throw new Exception("Not Every Actoin Are Performed");
             }
-            // dd($role,$licence);
+            
             if($role->can_upload_document)
             {
                 if(($role->serial_no < $receiverRole["serial_no"]??0))
@@ -404,7 +393,7 @@ class TradeApplication extends Controller
             }
 
             DB::beginTransaction();
-            $licence->max_level_attained = $request->receiverRoleId;
+            $licence->max_level_attained = ($licence->max_level_attained < ($receiverRole["serial_no"]??0)) ? ($receiverRole["serial_no"]??0) : $licence->max_level_attained;
             $licence->current_role = $request->receiverRoleId;
             $licence->update();
 
