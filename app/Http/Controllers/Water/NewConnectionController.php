@@ -321,7 +321,10 @@ class NewConnectionController extends Controller
         }
     }
 
-    // View Uploaded Documents   // NOT used
+    // View Uploaded Documents   
+    /**
+        | Not used
+     */
     public function getWaterDocDetails(Request $request)
     {
         try {
@@ -334,7 +337,10 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Verification/Rejection of Document  // NOT used
+    // Verification/Rejection of Document 
+    /**
+        | Not used
+     */
     public function waterDocStatus(Request $request)
     {
         try {
@@ -432,7 +438,10 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Get the water payment details and track details  // RECHECK  // Not used
+    // Get the water payment details and track details  // RECHECK  
+    /**
+        | Not used
+     */
     public function getIndependentComment(Request $request)
     {
         try {
@@ -902,7 +911,7 @@ class NewConnectionController extends Controller
                         $getCatagory['catagory'] = $this->checkCatagory($request, $areaInSqft, $propUsageType);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners['owners'] = collect($mPropOwner->getOwnerByPropId($application['id']));
-                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
+                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType)->merge($getCatagory);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to Holding Not Found!");
@@ -917,9 +926,10 @@ class NewConnectionController extends Controller
                     if ($checkExist) {
                         $areaInSqft['areaInSqFt'] = decimalToSqFt($application['total_area_in_desimal']);
                         $safUsageType = $this->getPropUsageType($request, $application['id']);
+                        $getCatagory['catagory'] = $this->checkCatagory($request, $areaInSqft, $safUsageType);
                         $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners['owners'] = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
-                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
+                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType)->merge($getCatagory);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to SAF Not Found!");
@@ -1078,7 +1088,18 @@ class NewConnectionController extends Controller
      */
 
     /**
-     * | Get Document Lists
+     * |---------------------------- Get Document Lists To Upload ----------------------------|
+     * | @param req "applicationId"
+     * | @var mWaterApplication "Model for WaterApplication"
+     * | @var mWaterApplicant "Model for WaterApplicant"
+     * | @var refWaterApplication "Contain the detail of water Application"
+     * | @var refWaterApplicant "Contain the list of owners"
+     * | @var waterTypeDocs "contain the list of Doc to Upload"
+     * | @var waterOwnerDocs "Contain the list of owner Doc to Upload"
+     * | @var totalDocLists "Application's Doc details"
+     * | @return totalDocLists "Collective Data of Doc is returned"
+        | RECHECK
+        | Serial No : 
      */
     public function getDocList(Request $req)
     {
@@ -1097,7 +1118,7 @@ class NewConnectionController extends Controller
             $waterTypeDocs['listDocs'] = $this->getWaterDocLists($refWaterApplication);                // Current Object(Saf Docuement List)
             $waterOwnerDocs['ownerDocs'] = collect($refWaterApplicant)->map(function ($owner) use ($refWaterApplication) {
                 return $this->getOwnerDocLists($owner, $refWaterApplication);
-            })->first();
+            });
 
             $totalDocLists = collect($waterTypeDocs)->merge($waterOwnerDocs);
             $totalDocLists['docUploadStatus'] = $refWaterApplication->doc_upload_status;
@@ -1109,8 +1130,17 @@ class NewConnectionController extends Controller
     }
 
 
+    // Filter Document(1.2)
     /**
-     * | Filter Document(1.2)
+     * |---------------------------- Filter The Document For Viewing ----------------------------|
+     * | @param documentList
+     * | @param refWaterApplication
+     * | @param ownerId
+     * | @var mWfActiveDocument
+     * | @var applicationId
+     * | @var workflowId
+     * | @var moduleId
+     * | @var uploadedDocs
      */
     public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
     {
@@ -1166,7 +1196,6 @@ class NewConnectionController extends Controller
         return $filteredDocs;
     }
 
-
     // List of the doc to upload
     public function getWaterDocLists($application)
     {
@@ -1217,7 +1246,7 @@ class NewConnectionController extends Controller
             return $filteredDocs = $this->filterDocument($value, $application)->first();
         });
         if (!empty($documentList)) {
-            $ownerPhoto = $mWfActiveDocument->getOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);
+            $ownerPhoto = $mWfActiveDocument->getWaterOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);
             $ownerDocList['ownerDetails'] = [
                 'ownerId' => $refOwners['id'],
                 'name' => $refOwners['owner_name'],

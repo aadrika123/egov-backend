@@ -74,6 +74,25 @@ class WfActiveDocument extends Model
             ->first();
     }
 
+    /**
+     * | Get Owner PhotoGraph By applicationId Water Module
+     */
+    public function getWaterOwnerPhotograph($applicationId, $workflowId, $moduleId, $ownerId)
+    {
+        return DB::table('wf_active_documents as d')
+            ->select(
+                'd.verify_status',
+                DB::raw("concat(relative_path,'/',document) as doc_path")
+            )
+            ->join('water_applicants as o', 'o.id', '=', 'd.owner_dtl_id')
+            ->where('d.active_id', $applicationId)
+            ->where('d.workflow_id', $workflowId)
+            ->where('d.module_id', $moduleId)
+            ->where('doc_code', 'PHOTOGRAPH')
+            ->where('owner_dtl_id', $ownerId)
+            ->first();
+    }
+
     # water document View
     public function getWaterDocsByAppNo($applicationId, $workflowId, $moduleId)
     {
