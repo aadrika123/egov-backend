@@ -669,7 +669,7 @@ class TradeApplication extends Controller
             "applicationId" => "required|digits_between:1,9223372036854775807",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
             // "docMstrId" => "required|digits_between:1,9223372036854775807",
-            "docRefName" => "required",
+            "docCode" => "required",
             "ownerId" => "nullable|digits_between:1,9223372036854775807"
         ]);
 
@@ -713,7 +713,7 @@ class TradeApplication extends Controller
             });
             $specifids = $specifids->implode("docId",",");
             $specifids2 = $specifids2->implode("docId",",");
-            if(!(in_array($req->docRefName,explode(",",$requiredDocs))==true || in_array($req->docRefName,explode(",",$docName)) ==true))
+            if(!(in_array($req->docCode,explode(",",$requiredDocs))==true || in_array($req->docCode,explode(",",$docName)) ==true))
             {
                 throw new Exception("Invalid Doc Code Pass");
             }
@@ -749,8 +749,8 @@ class TradeApplication extends Controller
             $metaReqs['relativePath'] = $relativePath;
             $metaReqs['document'] = $imageName;
             $metaReqs['docMstrId'] = $req->docMstrId;
-            $metaReqs['docCode'] = $req->docRefName;
-            if(in_array($req->docRefName,explode(",",$docName)) ) //&& in_array($req->docMstrId,explode(",",$specifids2))
+            $metaReqs['docCode'] = $req->docCode;
+            if(in_array($req->docCode,explode(",",$docName)) ) //&& in_array($req->docMstrId,explode(",",$specifids2))
             {
                 $metaReqs['ownerDtlId'] = $req->ownerId;
             }
@@ -763,7 +763,7 @@ class TradeApplication extends Controller
                     $arr["verify_status"] = 0;
                     $arr['relative_path'] = $relativePath;
                     $arr['document'] = $imageName;
-                    $arr['doc_code'] = $req->docRefName;
+                    $arr['doc_code'] = $req->docCode;
                     $arr['owner_dtl_id'] = $metaReqs['ownerDtlId']??null;
                     $mWfActiveDocument->docVerifyReject($privDoc->id,$arr);
                 }
