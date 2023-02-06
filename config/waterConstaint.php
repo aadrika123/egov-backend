@@ -26,4 +26,9 @@ return [
     ],
 
     "DESMIL_TO_SQFT" => 435.6,
+
+    "CONNECTION_TYPE" => [
+        "NEW_CONNECTION" => 1,
+        "REGULAIZATION" => 2
+    ]
 ];

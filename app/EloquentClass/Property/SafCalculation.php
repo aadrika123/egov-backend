@@ -1132,7 +1132,7 @@ class SafCalculation
         $mRebateAmount = $this->_GRID['demand']['rebateAmount'];
         $mSpecialRebateAmount = $this->_GRID['demand']['specialRebateAmount'];
         $payableAmount = $totalDemand - ($mSpecialRebateAmount + $mRebateAmount);
-        return roundFigure($payableAmount);
+        return round($payableAmount);
     }
 
     /**

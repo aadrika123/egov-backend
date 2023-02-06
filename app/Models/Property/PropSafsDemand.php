@@ -15,8 +15,17 @@ class PropSafsDemand extends Model
     public function getDemandBySafId($safId)
     {
         return PropSafsDemand::where('saf_id', $safId)
-            ->where('status', 1)
+            ->where('paid_status', 0)
+            ->orderByDesc('id')
             ->get();
+    }
+
+    // Get Saf First Demand
+    public function getFirstDemandBySafId($safId)
+    {
+        return PropSafsDemand::where('saf_id', $safId)
+            ->orderBy('id')
+            ->first();
     }
 
     // Get Demand By ID
