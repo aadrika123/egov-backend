@@ -2,12 +2,12 @@
 
 namespace App\Traits\Trade;
 
-use App\Models\Masters\RefRequiredDocument;
+use Illuminate\Support\Facades\Config;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\Masters\RefRequiredDocument;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Config;
 
 /***
  * @Parent - App\Http\Request\AuthUserRequest
@@ -175,8 +175,8 @@ trait TradeTrait
                 $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC")->requirements;
                 break;
         }
-        $List[] = $this->filterDocument($documentList,$refApplication);
-        return $List;
+        $documentList = $this->filterDocument($documentList,$refApplication);
+        return $documentList;
     }
     /**
      * | Filter Document(1.2)
@@ -233,8 +233,7 @@ trait TradeTrait
             });
             return $reqDoc;
         });
-        
-        return $filteredDocs;
+        return collect($filteredDocs)->values()??[];
     }
     public function getOwnerDocLists($refOwners, $refApplication)
     {
@@ -247,7 +246,7 @@ trait TradeTrait
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
             ];
-            $filteredDocs['documents'][] = $this->filterDocument($documentList, $refApplication, $refOwners['id']); 
+            $filteredDocs['documents']= $this->filterDocument($documentList, $refApplication, $refOwners['id']); 
                                                // function(1.2)
         } 
         else
