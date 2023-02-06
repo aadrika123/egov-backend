@@ -45,7 +45,7 @@ class WaterConsumer extends Model
      * | @var 
      * | @return 
      */
-    public function getDetailByOwnerDetails($key, $consumerNo)
+    public function getDetailByOwnerDetails($key, $refVal)
     {
         return WaterConsumer::select(
             'water_consumers.consumer_no',
@@ -54,13 +54,13 @@ class WaterConsumer extends Model
             'water_consumers.holding_no',
             'water_consumers.saf_no',
             'ulb_ward_masters.ward_name',
-            'water_consumer_owners.applicant_nameas as ownerName',
+            'water_consumer_owners.applicant_name as ownerName',
             'water_consumer_owners.mobile_no as mobileNo',
-            'water_consumer_owners.father_nameas as FatherName',
+            'water_consumer_owners.father_name as FatherName',
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_id')
-            ->where('water_consumer_owners.' . $key, 'LIKE', '%' . $consumerNo . '%')
+            ->where('water_consumer_owners.' . $key, 'LIKE', '%' . $refVal . '%')
             ->where('consumer_status', true)
             ->where('ulb_ward_masters.status', true)
             ->get();

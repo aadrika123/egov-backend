@@ -1266,42 +1266,56 @@ class NewConnectionController extends Controller
     {
         $request->validate([
             'filterBy' => 'required',
-            'paramenter' => 'required'
+            'parameter' => 'required'
         ]);
         try {
             $key = $request->filterBy;
-            $paramenter = $request->paramenter;
+            $paramenter = $request->parameter;
             switch ($key) {
-                case ("consumer_no"):
+                case ("consumerNo"):
                     $mWaterConsumer = new WaterConsumer();
-                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($key, $paramenter);
+                    $string = preg_replace("/([A-Z])/", "_$1", $key);
+                    $refstring = strtolower($string);
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data Not Found!");
                     break;
-                case ("holding_no"):
+                case ("holdingNo"):
                     $mWaterConsumer = new WaterConsumer();
-                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($key, $paramenter);
+                    $string = preg_replace("/([A-Z])/", "_$1", $key);
+                    $refstring = strtolower($string);
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data Not Found!");
                     break;
-                case ("saf_no"):
+                case ("safNo"):
                     $mWaterConsumer = new WaterConsumer();
-                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($key, $paramenter);
+                    $string = preg_replace("/([A-Z])/", "_$1", $key);
+                    $refstring = strtolower($string);
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data Not Found!");
                     break;
-                case ("applicant_name"):
+                case ("applicantName"):
                     $mWaterConsumer = new WaterConsumer();
-                    $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($key, $paramenter);
+                    $string = preg_replace("/([A-Z])/", "_$1", $key);
+                    $refstring = strtolower($string);
+                    $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data Not Found!");
                     break;
-                case ('mobile_no'):
-
+                case ('mobileNo'):
+                    $mWaterConsumer = new WaterConsumer();
+                    $string = preg_replace("/([A-Z])/", "_$1", $key);
+                    $refstring = strtolower($string);
+                    $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
+                    $checkVal = collect($waterReturnDetails)->first();
+                    if (!$checkVal)
+                        throw new Exception("Data Not Found!");
                     break;
             }
             return responseMsgs(true, "Water Consumer Data According To Parameter!", $waterReturnDetails, "", "01", "", "POST", "");
