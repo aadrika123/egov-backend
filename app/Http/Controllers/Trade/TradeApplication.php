@@ -668,7 +668,7 @@ class TradeApplication extends Controller
         $req->validate([
             "applicationId" => "required|digits_between:1,9223372036854775807",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            "docMstrId" => "required|digits_between:1,9223372036854775807",
+            // "docMstrId" => "required|digits_between:1,9223372036854775807",
             "docRefName" => "required",
             "ownerId" => "nullable|digits_between:1,9223372036854775807"
         ]);
@@ -717,18 +717,18 @@ class TradeApplication extends Controller
             {
                 throw new Exception("Invalid Doc Code Pass");
             }
-            if(in_array($req->docRefName,explode(",",$requiredDocs)) && !in_array($req->docMstrId,explode(",",$specifids)))
-            {
-                throw new Exception("Invalid docMstrId Pass For Application");
-            }
-            if(in_array($req->docRefName,explode(",",$docName)) && !in_array($req->docMstrId,explode(",",$specifids2)))
-            {
-                throw new Exception("Invalid docMstrId Pass For Owners");
-            }
-            if(in_array($req->docRefName,explode(",",$docName)) && in_array($req->docMstrId,explode(",",$specifids2)) && !in_array($req->ownerId,explode(",",$ownerId)))
-            {
-                throw new Exception("Invalid ownerId Pass");
-            }
+            // if(in_array($req->docRefName,explode(",",$requiredDocs)) && !in_array($req->docMstrId,explode(",",$specifids)))
+            // {
+            //     throw new Exception("Invalid docMstrId Pass For Application");
+            // }
+            // if(in_array($req->docRefName,explode(",",$docName)) && !in_array($req->docMstrId,explode(",",$specifids2)))
+            // {
+            //     throw new Exception("Invalid docMstrId Pass For Owners");
+            // }
+            // if(in_array($req->docRefName,explode(",",$docName)) && in_array($req->docMstrId,explode(",",$specifids2)) && !in_array($req->ownerId,explode(",",$ownerId)))
+            // {
+            //     throw new Exception("Invalid ownerId Pass");
+            // }
             
             $metaReqs = array();
             $docUpload = new DocUpload;
