@@ -58,4 +58,19 @@ class PropActiveSafsOwner extends Model
             ->orderBy('id')
             ->get();
     }
+
+    public function getOwnerDtlsBySafId1($safId)
+    {
+        return PropActiveSafsOwner::where('saf_id', $safId)
+            ->select(
+                'owner_name',
+                'mobile_no',
+                'guardian_name',
+                'email',
+                'is_armed_force',
+                'is_specially_abled'
+            )
+            ->orderBy('id')
+            ->first();
+    }
 }

@@ -52,6 +52,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('list-cash-verification', 'cashVerificationList');
         Route::post('verified-cash-verification', 'verifiedCashVerificationList');
         Route::post('tc-collections', 'tcCollectionDtl');
+        Route::post('verified-tc-collections', 'verifiedTcCollectionDtl');
         Route::post('verify-cash', 'cashVerify');
         Route::post('temp-transaction', 'tempTransaction');
     });
