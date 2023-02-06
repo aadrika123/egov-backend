@@ -4714,7 +4714,8 @@ class Trade implements ITrade
             $DocsType['listDocs'] = $this->getApplTypeDocList($refApplication); 
             $DocsType['ownerDocs'] = collect($refOwners)->map(function ($owner) use ($refApplication) {
                 return $this->getOwnerDocLists($owner, $refApplication);
-            });     
+            }); 
+            // dd( $DocsType['ownerDocs'],$DocsType['listDocs']);    
             return responseMsgs(true, "Documents Fetched", $DocsType, "010203", "1.0", "", 'POST', "");
         }
         catch(Exception $e)

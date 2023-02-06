@@ -233,6 +233,7 @@ trait TradeTrait
             });
             return $reqDoc;
         });
+        
         return $filteredDocs;
     }
     public function getOwnerDocLists($refOwners, $refApplication)
@@ -246,7 +247,8 @@ trait TradeTrait
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
             ];
-            $filteredDocs['documents'] = $this->filterDocument($documentList, $refApplication, $refOwners['id']);                                     // function(1.2)
+            $filteredDocs['documents'][] = $this->filterDocument($documentList, $refApplication, $refOwners['id']); 
+                                               // function(1.2)
         } 
         else
         {
