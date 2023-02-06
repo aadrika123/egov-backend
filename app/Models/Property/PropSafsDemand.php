@@ -20,6 +20,14 @@ class PropSafsDemand extends Model
             ->get();
     }
 
+    // Get Saf First Demand
+    public function getFirstDemandBySafId($safId)
+    {
+        return PropSafsDemand::where('saf_id', $safId)
+            ->orderBy('id')
+            ->first();
+    }
+
     // Get Demand By ID
     public function getDemandById($id)
     {

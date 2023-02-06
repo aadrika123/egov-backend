@@ -1364,9 +1364,8 @@ class ActiveSafController extends Controller
             $safId = $safTrans->saf_id;
             $reqSafId = new Request(['id' => $safId]);
             $activeSafDetails = $this->details($reqSafId);
-            $demands = $propSafsDemand->getDemandBySafId($safId);
             $calDemandAmt = $safTrans->demand_amt;
-            $checkOtherTaxes = collect($demands)->first();
+            $checkOtherTaxes =  $propSafsDemand->getFirstDemandBySafId($safId);
 
             $mDescriptions = $this->readDescriptions($checkOtherTaxes);      // Check the Taxes are Only Holding or Not
 
