@@ -147,7 +147,7 @@ class HoldingTaxController extends Controller
             $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
 
             $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
-            $totalDuesList['payableAmount'] = roundFigure($finalPayableAmt);
+            $totalDuesList['payableAmount'] = round($finalPayableAmt);
 
             $demand['duesList'] = $totalDuesList;
             $demand['demandList'] = $demandList;
