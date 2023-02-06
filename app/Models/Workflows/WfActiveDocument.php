@@ -115,8 +115,8 @@ class WfActiveDocument extends Model
 
     public function getTradeDocByAppNo($applicationId, $workflowId, $moduleId)
     {
-       
-         return DB::table('wf_active_documents as d')
+
+        return DB::table('wf_active_documents as d')
             ->select(
                 'd.id',
                 'd.document',
@@ -130,14 +130,13 @@ class WfActiveDocument extends Model
                 select doc_for
                 from trade_param_document_types
                 group by doc_for
-            ) dm"),'dm.doc_for', '=', 'd.doc_code')
+            ) dm"), 'dm.doc_for', '=', 'd.doc_code')
             ->leftJoin('active_trade_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationId)
             ->where('d.workflow_id', $workflowId)
             ->where('d.module_id', $moduleId)
             ->where('d.status', 1)
             ->get();
-            
     }
 
 
@@ -265,12 +264,12 @@ class WfActiveDocument extends Model
     /**
      * | Get Uploaded documents
      */
-    public function getDocsByActiveId($activeId)
+    public function getDocsByActiveId($req)
     {
-        return WfActiveDocument::where('active_id', $activeId)
+        return WfActiveDocument::where('active_id', $req->activeId)
             ->select('doc_code', 'owner_dtl_id')
-            ->where('workflow_id', 4)
-            ->where('module_id', 1)
+            ->where('workflow_id', $req->workflowId)
+            ->where('module_id', $req->moduleId)
             ->where('status', 1)
             ->get();
     }
