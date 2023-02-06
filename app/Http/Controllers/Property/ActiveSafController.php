@@ -1375,14 +1375,12 @@ class ActiveSafController extends Controller
             $upToFinQtr = $safTrans->to_qtr;
 
             // Get Property Penalties against property transaction
-            $mOnePercPenalty = $propPenalties->getPenalRebateByTranId($safTrans->id, "1% Monthly Penalty");
-            $mRebate = $propPenalties->getPenalRebateByTranId($safTrans->id, "Rebate");
-            $mSpecialRebate = $propPenalties->getPenalRebateByTranId($safTrans->id, "Special Rebate");
-            $firstQtrRebate = 0;
+            $penalRebates = $propPenalties->getPropPenalRebateByTranId($safTrans->id);
 
-            $rebateAmt = ($mRebate == null) ? 0 : $mRebate->amount;
-            $specialRebateAmt = ($mSpecialRebate == null) ? 0 : $mSpecialRebate->amount;
-            $onePercPanalAmt = ($mOnePercPenalty == null) ? 0 : $mOnePercPenalty->amount;
+            $onePercPanalAmt = $penalRebates->where('head_name', '1% Monthly Penalty')->first()['amount'] ?? "";
+            $rebateAmt = $penalRebates->where('head_name', 'Rebate')->first()['amount'] ?? "";
+            $specialRebateAmt = $penalRebates->where('head_name', 'Special Rebate')->first()['amount'] ?? "";
+            $firstQtrRebate = $penalRebates->where('head_name', 'First Qtr Rebate')->first()['amount'] ?? "";
 
             $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $safTrans->amount);   // Get Holding Tax Dtls
             // Response Return Data
