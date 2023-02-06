@@ -21,7 +21,9 @@ use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
+use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerOwner;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
@@ -1256,6 +1258,55 @@ class NewConnectionController extends Controller
                 'verifyStatus' => $ownerPhoto->verify_status ?? ""
             ];
             return $ownerDocList;
+        }
+    }
+
+    // Search Application
+    public function searchWaterConsumer(Request $request)
+    {
+        $request->validate([
+            'filterBy' => 'required',
+            'paramenter' => 'required'
+        ]);
+        try {
+            $key = $request->filterBy;
+            $paramenter = $request->paramenter;
+            switch ($key) {
+                case ("consumer_no"):
+                    $mWaterConsumer = new WaterConsumer();
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($key, $paramenter);
+                    $checkVal = collect($waterReturnDetails)->first();
+                    if (!$checkVal)
+                        throw new Exception("Data Not Found!");
+                    break;
+                case ("holding_no"):
+                    $mWaterConsumer = new WaterConsumer();
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($key, $paramenter);
+                    $checkVal = collect($waterReturnDetails)->first();
+                    if (!$checkVal)
+                        throw new Exception("Data Not Found!");
+                    break;
+                case ("saf_no"):
+                    $mWaterConsumer = new WaterConsumer();
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($key, $paramenter);
+                    $checkVal = collect($waterReturnDetails)->first();
+                    if (!$checkVal)
+                        throw new Exception("Data Not Found!");
+                    break;
+                case ("applicant_name"):
+                    $mWaterConsumer = new WaterConsumer();
+                    $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($key, $paramenter);
+                    $checkVal = collect($waterReturnDetails)->first();
+                    if (!$checkVal)
+                        throw new Exception("Data Not Found!");
+                    break;
+                case ('mobile_no'):
+
+                    break;
+            }
+            return responseMsgs(true, "Water Consumer Data According To Parameter!", $waterReturnDetails, "", "01", "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(true, $e->getMessage(), "");
         }
     }
 }
