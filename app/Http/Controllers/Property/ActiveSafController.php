@@ -1606,7 +1606,6 @@ class ActiveSafController extends Controller
 
             $propActiveSaf = new PropActiveSaf();
             $verification = new PropSafVerification();
-            $mPropSafVeriDtls = new PropSafVerificationDtl();
 
             switch ($req->currentRoleId) {
                 case $taxCollectorRole;                                                                  // In Case of Agency TAX Collector
