@@ -750,13 +750,13 @@ class TradeApplication extends Controller
             $metaReqs['document'] = $imageName;
             $metaReqs['docMstrId'] = $req->docMstrId;
             $metaReqs['docCode'] = $req->docRefName;
-            if(in_array($req->docRefName,explode(",",$docName)) && in_array($req->docMstrId,explode(",",$specifids2)))
+            if(in_array($req->docRefName,explode(",",$docName)) ) //&& in_array($req->docMstrId,explode(",",$specifids2))
             {
                 $metaReqs['ownerDtlId'] = $req->ownerId;
             }
 
             #reupload documents;
-            if($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id,$getLicenceDtls->ulb_id, collect($req->docMstrId), $metaReqs['ownerId']??null))
+            if($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id,$getLicenceDtls->ulb_id, collect($req->docRefName), $metaReqs['ownerId']??null))
             {
                 if($privDoc->verify_status!=2)
                 {

@@ -192,7 +192,7 @@ class WfActiveDocument extends Model
     /**
      * | trade
      */
-    public function getTradeAppByAppNoDocId($appid, $ulb_id, $docId, $owner_id = null)
+    public function getTradeAppByAppNoDocId($appid, $ulb_id, $doc_code, $owner_id = null)
     {
         return DB::table('wf_active_documents as d')
             ->select(
@@ -210,7 +210,7 @@ class WfActiveDocument extends Model
             ->where("d.module_id", Config::get('module-constants.TRADE_MODULE_ID'))
             ->where("d.owner_dtl_id", $owner_id)
             ->where("d.status", 1)
-            ->whereIn("dr.id", $docId)
+            ->whereIn("d.doc_code", $doc_code)
             ->orderBy("d.id", "DESC")
             ->first();
     }

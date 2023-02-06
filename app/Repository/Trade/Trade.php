@@ -1228,7 +1228,7 @@ class Trade implements ITrade
                 $docForId = collect($val['docVal'])->map(function ($value, $key) {
                     return $value['id'];
                 });
-                $requiedDocs[$key]['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id,$refLicence->ulb_id, $docForId);
+                $requiedDocs[$key]['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id,$refLicence->ulb_id, [$val['docName']]);
                
                 if (isset($requiedDocs[$key]['uploadDoc']->doc_path)) {
                     $path = $this->readDocumentPath($requiedDocs[$key]['uploadDoc']->doc_path);
@@ -1248,7 +1248,7 @@ class Trade implements ITrade
                     $ownerdocForId = collect($doc['docVal'])->map(function ($value, $key) {
                         return $value['id'];
                     });
-                    $doc['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id,$refLicence->ulb_id, $ownerdocForId,$val->id);
+                    $doc['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id,$refLicence->ulb_id,  [$doc["docName"]],$val->id);
                     
                     if (isset($doc['uploadDoc']->doc_path)) {
                         $path = $this->readDocumentPath($doc['uploadDoc']->doc_path);
@@ -1267,7 +1267,7 @@ class Trade implements ITrade
                     $refdocumentId = collect($doc2['docVal'])->map(function ($value, $key) {
                         return $value['id'];
                     });
-                    $doc2['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id, $refLicence->ulb_id,$refdocumentId,$val->id);
+                    $doc2['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id, $refLicence->ulb_id,[$doc2["docName"]],$val->id);
                     if (isset($doc2['uploadDoc']->doc_path)) {
                         $path = $this->readDocumentPath($doc2['uploadDoc']->doc_path);
                         $doc2['uploadDoc']->doc_path = !empty(trim($doc2['uploadDoc']->doc_path)) ? $path : null;
