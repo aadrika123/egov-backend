@@ -70,6 +70,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get-related-saf-holding', 'getSafHoldingDetails');
         Route::post('final-submit-application', 'finalSubmitionApplication');
         Route::post('search-water-consumer', 'searchWaterConsumer');
+        Route::post('search-active-applictaions', 'getActiveApplictaions');
 
         Route::post('getDocList', 'getDocList');
         Route::post('try', 'try');

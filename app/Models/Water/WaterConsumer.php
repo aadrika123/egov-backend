@@ -35,6 +35,7 @@ class WaterConsumer extends Model
             ->where('water_consumers.' . $key, 'LIKE', '%' . $refNo . '%')
             ->where('consumer_status', true)
             ->where('ulb_ward_masters.status', true)
+            ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
             ->groupBy('water_consumers.saf_no', 'water_consumers.holding_no', 'water_consumers.address', 'water_consumers.id', 'water_consumer_owners.consumer_id', 'water_consumers.consumer_no', 'water_consumers.ward_id', 'ulb_ward_masters.ward_name')
             ->get();
     }

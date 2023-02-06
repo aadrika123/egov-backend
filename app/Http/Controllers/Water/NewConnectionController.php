@@ -944,6 +944,7 @@ class NewConnectionController extends Controller
 
     /**
      * | check the catagory of the user 
+        | Not Used
      */
     public function checkCatagory($request, $areaInSqFt, $propUsageType)
     {
@@ -1334,18 +1335,20 @@ class NewConnectionController extends Controller
     {
         $request->validate([
             'filterBy' => 'required',
-            'parameter' => 'required'
+            'applicationNo' => 'required'
         ]);
         $key = $request->filterBy;
-        $paramenter = $request->parameter;
+        $applicationNo = $request->applicationNo;
+        $connectionTypes = Config::get('waterConstaint.CONNECTION_TYPE');
         try {
             switch ($key) {
                 case ("newConnection"):
-                    $mWaterApplicant = new WaterApplicant();
-                    $mWaterApplicant->
-                    $returnData;
+                    $mWaterApplicant = new WaterApplication();
+                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['NEW_CONNECTION'], $applicationNo);
                     break;
-                case ("Regularization"):
+                case ("regularization"):
+                    $mWaterApplicant = new WaterApplication();
+                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['REGULAIZATION'], $applicationNo);
                     break;
             }
             return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
