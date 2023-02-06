@@ -1339,11 +1339,10 @@ class ActiveSafController extends Controller
     public function generatePaymentReceipt(Request $req)
     {
         $req->validate([
-            'paymentId' => 'required'
+            'tranNo' => 'required|integer'
         ]);
 
         try {
-            $paymentData = new WebhookPaymentData();
             $propSafsDemand = new PropSafsDemand();
             $transaction = new PropTransaction();
             $propPenalties = new PropPenaltyrebate();
@@ -1352,10 +1351,9 @@ class ActiveSafController extends Controller
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
 
-            $applicationDtls = $paymentData->getApplicationId1($req->paymentId);
+            $safTrans = $transaction->getPropByTranPropId($req->tranNo);
             // Saf Payment
-            $safId = json_decode($applicationDtls)->applicationId;
-
+            $safId = $safTrans->saf_id;
             $reqSafId = new Request(['id' => $safId]);
             $activeSafDetails = $this->details($reqSafId);
             $demands = $propSafsDemand->getDemandBySafId($safId);
@@ -1369,28 +1367,24 @@ class ActiveSafController extends Controller
             $upToFinYear = $demands->last()['fyear'];
             $upToFinQtr = $demands->last()['qtr'];
 
-            // Get PropertyTransactions
-            $propTrans = $transaction->getPropTransactions($safId, "saf_id");
-            $propTrans = collect($propTrans)->last();
-
             // Get Property Penalties against property transaction
-            $mOnePercPenalty = $propPenalties->getPenalRebateByTranId($propTrans->id, "1% Monthly Penalty");
-            $mRebate = $propPenalties->getPenalRebateByTranId($propTrans->id, "Rebate");
-            $mSpecialRebate = $propPenalties->getPenalRebateByTranId($propTrans->id, "Special Rebate");
+            $mOnePercPenalty = $propPenalties->getPenalRebateByTranId($safTrans->id, "1% Monthly Penalty");
+            $mRebate = $propPenalties->getPenalRebateByTranId($safTrans->id, "Rebate");
+            $mSpecialRebate = $propPenalties->getPenalRebateByTranId($safTrans->id, "Special Rebate");
             $firstQtrRebate = 0;
 
             $rebateAmt = ($mRebate == null) ? 0 : $mRebate->amount;
             $specialRebateAmt = ($mSpecialRebate == null) ? 0 : $mSpecialRebate->amount;
             $onePercPanalAmt = ($mOnePercPenalty == null) ? 0 : $mOnePercPenalty->amount;
 
-            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $propTrans->amount);   // Get Holding Tax Dtls
+            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $safTrans->amount);   // Get Holding Tax Dtls
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
-                "transactionDate" => $propTrans->tran_date,
-                "transactionNo" => $propTrans->tran_no,
-                "transactionTime" => $propTrans->created_at->format('H:i:s'),
+                "transactionDate" => $safTrans->tran_date,
+                "transactionNo" => $safTrans->tran_no,
+                "transactionTime" => $safTrans->created_at->format('H:i:s'),
                 "applicationNo" => $activeSafDetails['saf_no'],
                 "customerName" => $activeSafDetails['applicant_name'],
                 "receiptWard" => $activeSafDetails['new_ward_no'],
@@ -1399,7 +1393,7 @@ class ActiveSafController extends Controller
                 "paidFromQtr" => $fromFinQtr,
                 "paidUpto" => $upToFinYear,
                 "paidUptoQtr" => $upToFinQtr,
-                "paymentMode" => $propTrans->payment_mode,
+                "paymentMode" => $safTrans->payment_mode,
                 "bankName" => "",
                 "branchName" => "",
                 "chequeNo" => "",
@@ -1413,8 +1407,8 @@ class ActiveSafController extends Controller
                 "newWardNo" => $activeSafDetails['new_ward_no'],
                 "towards" => $mTowards,
                 "description" => $mDescriptions,
-                "totalPaidAmount" => $propTrans->amount,
-                "paidAmtInWords" => getIndianCurrency($propTrans->amount),
+                "totalPaidAmount" => $safTrans->amount,
+                "paidAmtInWords" => getIndianCurrency($safTrans->amount),
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
