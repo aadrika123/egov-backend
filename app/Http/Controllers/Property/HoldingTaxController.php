@@ -406,8 +406,11 @@ class HoldingTaxController extends Controller
 
             $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');                 // Saf payment History
 
-            $transactions['Holding'] = collect($propTrans)->sortBy(['id' => 'desc'])->values();
-            $transactions['Saf'] = collect($safTrans)->sortBy('id')->values();
+            if (!$safTrans)
+                throw new Exception("Saf Tran Details not Found");
+
+            $transactions['Holding'] = collect($propTrans)->sortByDesc('id')->values();
+            $transactions['Saf'] = collect($safTrans)->sortByDesc('id')->values();
 
             return responseMsgs(true, "", remove_null($transactions), "011606", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
