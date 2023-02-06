@@ -1282,6 +1282,8 @@ class ActiveSafController extends Controller
             $userId = $req['userId'];
             $propSafsDemand = new PropSafsDemand();
             $demands = $propSafsDemand->getDemandBySafId($req['id']);
+            if (!$demands || $demands->isEmpty())
+                throw new Exception("Demand Not Available for Payment");
             DB::beginTransaction();
             // Property Transactions
             $propTrans = new PropTransaction();
@@ -1302,7 +1304,6 @@ class ActiveSafController extends Controller
             // Reflect on Prop Tran Details
             foreach ($demands as $demand) {
                 $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
-                $demand->status = 0;
                 $demand->save();
 
                 $propTranDtl = new PropTranDtl();
@@ -1346,7 +1347,7 @@ class ActiveSafController extends Controller
     public function generatePaymentReceipt(Request $req)
     {
         $req->validate([
-            'tranNo' => 'required|integer'
+            'tranNo' => 'required'
         ]);
 
         try {
