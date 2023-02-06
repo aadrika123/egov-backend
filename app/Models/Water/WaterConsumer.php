@@ -19,15 +19,16 @@ class WaterConsumer extends Model
     public function getDetailByConsumerNo($key, $refNo)
     {
         return WaterConsumer::select(
+            'water_consumers.id',
             'water_consumers.consumer_no',
             'water_consumers.ward_id',
             'water_consumers.address',
             'water_consumers.holding_no',
             'water_consumers.saf_no',
             'ulb_ward_masters.ward_name',
-            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as ownerName"),
-            DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobileNo"),
-            DB::raw("string_agg(water_consumer_owners.father_name,',') as FatherName"),
+            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+            DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            DB::raw("string_agg(water_consumer_owners.father_name,',') as father_name"),
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_id')
@@ -48,15 +49,16 @@ class WaterConsumer extends Model
     public function getDetailByOwnerDetails($key, $refVal)
     {
         return WaterConsumer::select(
+            'water_consumers.id',
             'water_consumers.consumer_no',
             'water_consumers.ward_id',
             'water_consumers.address',
             'water_consumers.holding_no',
             'water_consumers.saf_no',
             'ulb_ward_masters.ward_name',
-            'water_consumer_owners.applicant_name as ownerName',
-            'water_consumer_owners.mobile_no as mobileNo',
-            'water_consumer_owners.father_name as FatherName',
+            'water_consumer_owners.applicant_name as applicant_name',
+            'water_consumer_owners.mobile_no as mobile_no',
+            'water_consumer_owners.father_name as father_name',
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_id')

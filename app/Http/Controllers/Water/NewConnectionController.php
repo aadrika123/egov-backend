@@ -1318,9 +1318,39 @@ class NewConnectionController extends Controller
                         throw new Exception("Data Not Found!");
                     break;
             }
-            return responseMsgs(true, "Water Consumer Data According To Parameter!", $waterReturnDetails, "", "01", "", "POST", "");
+            return responseMsgs(true, "Water Consumer Data According To Parameter!", $waterReturnDetails, "", "01", "652 ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(true, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Search the Active Application 
+     * | @param request
+     * | @var 
+     * | @return  
+     */
+    public function getActiveApplictaions(Request $request)
+    {
+        $request->validate([
+            'filterBy' => 'required',
+            'parameter' => 'required'
+        ]);
+        $key = $request->filterBy;
+        $paramenter = $request->parameter;
+        try {
+            switch ($key) {
+                case ("newConnection"):
+                    $mWaterApplicant = new WaterApplicant();
+                    $mWaterApplicant->
+                    $returnData;
+                    break;
+                case ("Regularization"):
+                    break;
+            }
+            return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }
