@@ -4699,4 +4699,28 @@ class Trade implements ITrade
     }
     #-------------------- End core function of core function --------------
 
+    public function getLicenseDocLists(Request $request)
+    {
+        $request->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try{
+            $refApplication = ActiveTradeLicence::find($request->applicationId);
+            if (!$refApplication)
+            {
+                throw new Exception("Application Not Found for this id");
+            }
+            $refOwners = ActiveTradeOwner::owneresByLId($request->applicationId);
+            $DocsType['listDocs'] = $this->getApplTypeDocList($refApplication); 
+            $DocsType['ownerDocs'] = collect($refOwners)->map(function ($owner) use ($refApplication) {
+                return $this->getOwnerDocLists($owner, $refApplication);
+            });     
+            return responseMsgs(true, "Documents Fetched", $DocsType, "010203", "1.0", "", 'POST', "");
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+
 }
