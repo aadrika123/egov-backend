@@ -175,8 +175,8 @@ trait TradeTrait
                 $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC")->requirements;
                 break;
         }
-        $documentList = $this->filterDocument($documentList,$refApplication);
-        return $documentList;
+        $List[] = $this->filterDocument($documentList,$refApplication);
+        return $List;
     }
     /**
      * | Filter Document(1.2)
