@@ -1291,11 +1291,18 @@ class ActiveSafController extends Controller
             $propTrans->tran_no = $req['transactionNo'];
             $propTrans->payment_mode = $req['paymentMode'];
             $propTrans->user_id = $userId;
+            $propTrans->ulb_id = $req['ulbId'];
+            $propTrans->from_fyear = collect($demands)->last()['fyear'];
+            $propTrans->to_fyear = collect($demands)->first()['fyear'];
+            $propTrans->from_qtr = collect($demands)->first()['qtr'];
+            $propTrans->to_qtr = collect($demands)->first()['qtr'];
+            $propTrans->demand_amt = collect($demands)->sum('amount');
             $propTrans->save();
 
             // Reflect on Prop Tran Details
             foreach ($demands as $demand) {
                 $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $demand->status = 0;
                 $demand->save();
 
                 $propTranDtl = new PropTranDtl();
@@ -1357,15 +1364,15 @@ class ActiveSafController extends Controller
             $reqSafId = new Request(['id' => $safId]);
             $activeSafDetails = $this->details($reqSafId);
             $demands = $propSafsDemand->getDemandBySafId($safId);
-            $calDemandAmt = collect($demands)->sum('amount');
+            $calDemandAmt = $safTrans->demand_amt;
             $checkOtherTaxes = collect($demands)->first();
 
             $mDescriptions = $this->readDescriptions($checkOtherTaxes);      // Check the Taxes are Only Holding or Not
 
-            $fromFinYear = $demands->first()['fyear'];
-            $fromFinQtr = $demands->first()['qtr'];
-            $upToFinYear = $demands->last()['fyear'];
-            $upToFinQtr = $demands->last()['qtr'];
+            $fromFinYear = $safTrans->from_fyear;
+            $fromFinQtr = $safTrans->from_qtr;
+            $upToFinYear = $safTrans->to_fyear;
+            $upToFinQtr = $safTrans->to_qtr;
 
             // Get Property Penalties against property transaction
             $mOnePercPenalty = $propPenalties->getPenalRebateByTranId($safTrans->id, "1% Monthly Penalty");
@@ -1400,7 +1407,7 @@ class ActiveSafController extends Controller
                 "chequeDate" => "",
                 "noOfFlats" => "",
                 "monthlyRate" => "",
-                "demandAmount" => roundFigure($calDemandAmt),
+                "demandAmount" => roundFigure((float)$calDemandAmt),
                 "taxDetails" => $taxDetails,
                 "ulbId" => $activeSafDetails['ulb_id'],
                 "oldWardNo" => $activeSafDetails['old_ward_no'],

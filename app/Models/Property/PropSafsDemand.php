@@ -16,6 +16,7 @@ class PropSafsDemand extends Model
     {
         return PropSafsDemand::where('saf_id', $safId)
             ->where('status', 1)
+            ->orderByDesc('id')
             ->get();
     }
 
