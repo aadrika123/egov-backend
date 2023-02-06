@@ -406,7 +406,7 @@ class HoldingTaxController extends Controller
 
             $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');                 // Saf payment History
 
-            $transactions['Holding'] = collect($propTrans)->sortBy(['id' => 'desc'])->values();
+            $transactions['Holding'] = collect($propTrans)->sortByDesc('id')->values();
             $transactions['Saf'] = collect($safTrans)->sortBy('id')->values();
 
             return responseMsgs(true, "", remove_null($transactions), "011606", "1.0", "", "POST", $req->deviceId ?? "");
