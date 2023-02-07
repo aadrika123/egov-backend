@@ -31,9 +31,9 @@ class MenuRepo implements iMenuRepo
      * | @var menues
      * | @return menues
      * | Query Time - 343ms 
-     * | status-Closed
      * | rating-2
-        |  Serial No : 
+        | Serial No : 00
+        | Closed
      */
     public function getMenuByRoles($req)
     {
@@ -67,7 +67,7 @@ class MenuRepo implements iMenuRepo
      * | Query Time - 366 ms 
      * | Status-Closed 
      * | Rating-2
-        |  Serial No : 
+        |  Serial No : 01
      */
     public function updateMenuByRole($req)
     {
@@ -114,6 +114,8 @@ class MenuRepo implements iMenuRepo
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_rolemenus.role_id')
             ->where('wf_roleusermaps.user_id', $mUserId)
             ->where('wf_rolemenus.status', true)
+            ->where('menu_masters.is_deleted', false)
+            ->where('wf_roles.is_suspended', false)
             ->where('wf_roleusermaps.is_suspended', false)
             ->get();
 
@@ -176,8 +178,8 @@ class MenuRepo implements iMenuRepo
             $mRoleMenues = $mMenuMaster->getMenuByRole($req->roleId);
 
             $roleWise = collect($mRoleMenues)->map(function ($value) use ($mMenuMaster) {
-                if($value['parent_serial'] > 0){
-                return $roleWise = $this->getParent($value['parent_serial']);
+                if ($value['parent_serial'] > 0) {
+                    return $roleWise = $this->getParent($value['parent_serial']);
                 }
                 return $value['id'];
             });

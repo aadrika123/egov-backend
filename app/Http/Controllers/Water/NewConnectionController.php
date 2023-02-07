@@ -365,7 +365,7 @@ class NewConnectionController extends Controller
                 "roleId" => "required",
                 "status" => "required"
             ]);
-            $waterDetails = WaterApplication::find($request->id);
+            $waterDetails = WaterApplication::find($request->applicationId);
             if ($waterDetails) {
                 return $this->newConnection->approvalRejectionWater($request);
             }
@@ -401,22 +401,13 @@ class NewConnectionController extends Controller
             }
 
             $userId = auth()->user()->id;
-            $obj = new WaterApprovalApplicationDetail();
-            $chargesObj = new WaterConnectionCharge();
-            $approvedWater = $obj->getApplicationRelatedDetails()
-                ->select(
-                    'water_approval_application_details.id',
-                    'consumer_no',
-                    'water_approval_application_details.address',
-                    'ulb_masters.ulb_name',
-                    'water_approval_application_details.ward_id',
-                    'ulb_ward_masters.ward_name'
-                )
-                ->where('user_id', $userId)
-                ->get();
-            // return $approvedWater->first()->id;
-            if ($approvedWater) {
-                $connectionCharge = $chargesObj->getWaterchargesById($approvedWater->first()->id)->first();
+            $mWaterConsumer = new WaterConsumer();
+            $mWaterConsumerOwner = new WaterConsumerOwner();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
+            $approvedWater = $mWaterConsumer->getConsumerDetails();
+            $checkExist = $approvedWater->first()->id;
+            if ($checkExist) {
+                $connectionCharge = $mWaterConnectionCharge->getWaterchargesById($approvedWater->first()->id);
                 $returnWater = collect($approvedWater)->map(
                     function ($value, $key) {
                         $owner = WaterApplicant::select(
@@ -700,6 +691,7 @@ class NewConnectionController extends Controller
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
             $propertyId = $applicationDetails['applicationDetails']['property_type_id'];
+
             # Document Details
             $metaReqs = [
                 'userId' => auth()->user()->id,
@@ -808,7 +800,7 @@ class NewConnectionController extends Controller
 
     // Get the document to be upoaded with list of dock uploaded 
     /**
-        | Working
+        | Working / Citizen Upload
      */
     public function getDocToUpload(Request $request)
     {
@@ -1356,6 +1348,28 @@ class NewConnectionController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+
+    /**
+     * | View all Consumer Details
+     * | @param request
+     * | @var
+     * | @return  
+     */
+    // public function getFullConsumerDetails(Request $req)
+    // {
+    //     try {
+    //         // Consumer details , Owners Details , Payment details ,
+    //         $mWaterConsumer = new WaterConsumer();
+    //         $mWaterTran = new WaterTran();
+    //         $mWaterConsumerOwner = new WaterConsumerOwner(); 
+    //         $consumerDetails['consumerDetails'] =
+    //         $ownerDetails['OwnerDetails'] = 
+    //         $paymentDetails['paymentDetails'] = 
+    //     } catch (Exception $e) {
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
 }
 
 

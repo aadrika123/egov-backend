@@ -25,14 +25,25 @@ class MenuController extends Controller
         $this->_repo = $repo;
     }
 
-    // Get All menues // Working
+    /**
+     * |--------------------- Get the list of menues that are child Nodes ---------------------|
+     * | @param 
+     * | @var mMenuMaster model
+     * | @var refmenues get menu list
+     * | @var menues shorted menues
+     * | @var listedMenues collecting the menu Parent
+     * | @var value final List of menues
+     * | @return listedMenues returning values
+        | Serial No : 01
+        | 
+     */
     public function getAllMenues()
     {
         try {
             $mMenuMaster = new MenuMaster();
             $refmenues = $mMenuMaster->fetchAllMenues();
             $menues = $refmenues->sortByDesc("id");
-            return $listedMenues = collect($menues)->map(function ($value, $key) use ($mMenuMaster) {
+            $listedMenues = collect($menues)->map(function ($value, $key) use ($mMenuMaster) {
                 if ($value['parent_serial'] != 0) {
                     $parent = $mMenuMaster->getMenuById($value['parent_serial']);
                     $parentName = $parent['menu_string'];
@@ -47,7 +58,12 @@ class MenuController extends Controller
         }
     }
 
-    // Get All the Menu By roles  // Working
+
+    /**
+     * |--------------------- Get Menu according to Roles ---------------------|
+     * | @param req roleId
+        | Serial No : 02
+     */
     public function getMenuByRoles(Request $req)
     {
         try {
@@ -57,7 +73,12 @@ class MenuController extends Controller
         }
     }
 
-    // Enable or Disable Menu By Role  // Working
+
+    /**
+     * |--------------------- Enable or Desable the menu for roles ---------------------|
+     * | @param req
+        | Serial No : 03
+     */
     public function updateMenuByRole(Request $req)
     {
         try {
@@ -72,7 +93,13 @@ class MenuController extends Controller
         }
     }
 
-    // adding new menu in menu master
+
+    /**
+     * |--------------------- Adding new Menu ---------------------|
+     * | @param request menuName,Route
+     * | @var mMenuMaster Model
+        | Serial NO : 04
+     */
     public function addNewMenues(Request $request)
     {
         try {
@@ -80,9 +107,9 @@ class MenuController extends Controller
                 'menuName'      => 'required',
                 'route'         => 'required',
             ]);
-            $menuMaster = new MenuMaster();
-            $menuMaster->putNewMenues($request);
-            return responseMsg(true, "Data Saved!", "");
+            $mMenuMaster = new MenuMaster();
+            $mMenuMaster->putNewMenues($request);
+            return responseMsgs(true, "Data Saved!", "", "", "02", "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -156,6 +183,37 @@ class MenuController extends Controller
             $mMenuMaster = new MenuMaster();
             $mMenuMaster->updateMenuMaster($request);
             return responseMsgs(true, "Menu Updated!", "", "", "", "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * |--------------------- Get menu by Menu Id ---------------------|
+     * | @param request menuId
+     * | @var mMenuMaster model
+     * | @var menues menu list
+     * | @var parent list of parent 
+     * | @var parentName collect the name of the parent node 
+     * | @return menues list of menu according to menu id
+        | Serial No :
+        | Open
+     */
+    public function getMenuById(Request $request)
+    {
+        $request->validate([
+            'menuId' => 'required|int'
+        ]);
+        try {
+            $mMenuMaster = new MenuMaster();
+            $menues = $mMenuMaster->getMenuById($request->menuId);
+            if ($menues['parent_serial'] == 0) {
+                return responseMsgs(true, "Menu List!", $menues, "", "01", "", "POST", "");
+            }
+            $parent = $mMenuMaster->getMenuById($menues['parent_serial']);
+            $parentName = $parent['menu_string'];
+            $menues['parentName'] = $parentName;
+            return responseMsgs(true, "Menu List!", $menues, "", "01", "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
