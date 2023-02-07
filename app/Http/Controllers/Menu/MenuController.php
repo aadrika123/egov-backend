@@ -109,7 +109,7 @@ class MenuController extends Controller
         try {
             $request->validate([
                 'menuName'      => 'required',
-                'route'         => 'required',
+                'route'         => 'nullable',
             ]);
             $mMenuMaster = new MenuMaster();
             $mMenuMaster->putNewMenues($request);

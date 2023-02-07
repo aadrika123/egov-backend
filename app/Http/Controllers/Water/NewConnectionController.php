@@ -323,38 +323,6 @@ class NewConnectionController extends Controller
         }
     }
 
-    // View Uploaded Documents   
-    /**
-        | Not used
-     */
-    public function getWaterDocDetails(Request $request)
-    {
-        try {
-            $request->validate([
-                "applicationId" => "required",
-            ]);
-            return $this->newConnection->getWaterDocDetails($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    // Verification/Rejection of Document 
-    /**
-        | Not used
-     */
-    public function waterDocStatus(Request $request)
-    {
-        try {
-            $request->validate([
-                "applicationId" => "required",
-                "docStatus" => "required"
-            ]);
-            return $this->newConnection->waterDocStatus($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 
     // final Approval or Rejection of the Application
     public function approvalRejectionWater(Request $request)
@@ -407,28 +375,8 @@ class NewConnectionController extends Controller
            return  $approvedWater = $mWaterConsumer->getConsumerDetails();
             $checkExist = $approvedWater->first()->id;
             if ($checkExist) {
-                // return responseMsgs(true,"Approved Application Details!");
+                return responseMsgs(true,"Approved Application Details!",$approvedWater);
             }
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    // Get the water payment details and track details  // RECHECK  
-    /**
-        | Not used
-     */
-    public function getIndependentComment(Request $request)
-    {
-        try {
-            $request->validate([
-                "id" => "required|int",
-            ]);
-            $userId = auth()->user()->id;
-            $trackObj = new WorkflowTrack();
-            $mWaterRef = 'water_applications.id';
-            $responseData = $trackObj->getTracksByRefId($mWaterRef, $request->id);
-            return responseMsgs(true, "payment Details!", remove_null($responseData), "01", "", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
