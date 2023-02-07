@@ -33,7 +33,7 @@ class HoldingTaxController extends Controller
      * | Created On-19/01/2023 
      * | Created By-Anshu Kumar
      * | Created for Holding Property Tax Demand and Receipt Generation
-     * | Status-Open
+     * | Status-Closed
      */
 
     public function __construct(iSafRepository $safRepo)
@@ -103,7 +103,7 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Get Holding Dues 
+     * | Get Holding Dues(2)
      */
     public function getHoldingDues(Request $req)
     {
@@ -147,7 +147,7 @@ class HoldingTaxController extends Controller
             $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
 
             $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
-            $totalDuesList['payableAmount'] = roundFigure($finalPayableAmt);
+            $totalDuesList['payableAmount'] = round($finalPayableAmt);
 
             $demand['duesList'] = $totalDuesList;
             $demand['demandList'] = $demandList;
@@ -159,7 +159,7 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | One Percent Penalty Calculation
+     * | One Percent Penalty Calculation(2.1)
      */
     public function calcOnePercPenalty($item)
     {
@@ -172,7 +172,7 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Generate Order ID
+     * | Generate Order ID(3)
      */
     public function generateOrderId(Request $req)
     {
@@ -199,7 +199,7 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Post Payment Penalty Rebates
+     * | Post Payment Penalty Rebates(3.1)
      */
     public function postPaymentPenaltyRebate($dueList, $req)
     {
@@ -401,11 +401,16 @@ class HoldingTaxController extends Controller
                 throw new Exception("No Transaction Found");
 
             $propSafId = $propertyDtls->saf_id;
+            if (!$propSafId)
+                throw new Exception("This Property has not Saf Id");
 
             $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');                 // Saf payment History
 
-            $transactions['Holding'] = collect($propTrans)->sortBy(['id' => 'desc'])->values();
-            $transactions['Saf'] = collect($safTrans)->sortBy('id')->values();
+            if (!$safTrans)
+                throw new Exception("Saf Tran Details not Found");
+
+            $transactions['Holding'] = collect($propTrans)->sortByDesc('id')->values();
+            $transactions['Saf'] = collect($safTrans)->sortByDesc('id')->values();
 
             return responseMsgs(true, "", remove_null($transactions), "011606", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {

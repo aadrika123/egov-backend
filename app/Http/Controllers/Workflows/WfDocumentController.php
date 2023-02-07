@@ -10,6 +10,13 @@ use Illuminate\Http\Request;
 class WfDocumentController extends Controller
 {
     /**
+     * | Created On=01-02-2023 
+     * | Created By=Anshu Kumar
+     * | Created for=Document Upload 
+     * | Status-Closed
+     */
+
+    /**
      * | Approve Or Reject Document 
      */
     public function docVerifyReject(Request $req)

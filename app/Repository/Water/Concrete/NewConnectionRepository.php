@@ -518,12 +518,28 @@ class NewConnectionRepository implements iNewConnection
                 ->where('id', $request->applicationId)
                 ->first();
 
+            $consumerNo = 'CON' . $now->getTimeStamp();
+
             $approvedWaterRep = $approvedWater->replicate();
             $approvedWaterRep->setTable('water_approval_application_details');
+            $approvedWaterRep->setTable('water_consumers');
             $approvedWaterRep->id = $approvedWater->id;
-            $approvedWaterRep->consumer_no = 'CON' . $now->getTimeStamp();
+            $approvedWaterRep->consumer_no = $consumerNo;
             $approvedWaterRep->save();
             $approvedWater->delete();
+
+            $approvedWaterApplicant = WaterApplicant::query()
+                ->where('application_id', $request->applicationId)
+                ->get();
+
+            collect($approvedWaterApplicant)->map(function ($value) {
+                $approvedWaterOwners = $value->replicate();
+                $approvedWaterOwners->setTable('water_approval_applicants');
+                $approvedWaterOwners->setTable('water_consumers');
+                $approvedWaterOwners->id = $value->id;
+                $approvedWaterOwners->save();
+                $approvedWaterOwners->delete();
+            });
 
             $msg = "Application Successfully Approved !!";
         }
@@ -538,6 +554,19 @@ class NewConnectionRepository implements iNewConnection
             $rejectedWaterRep->id = $rejectedWater->id;
             $rejectedWaterRep->save();
             $rejectedWater->delete();
+
+            $approvedWaterApplicant = WaterApplicant::query()
+                ->where('application_id', $request->applicationId)
+                ->get();
+
+            collect($approvedWaterApplicant)->map(function ($value) {
+                $approvedWaterOwners = $value->replicate();
+                $approvedWaterOwners->setTable('water_rejection_applicants');
+                $approvedWaterOwners->id = $value->id;
+                $approvedWaterOwners->save();
+                $approvedWaterOwners->delete();
+            });
+
             $msg = "Application Successfully Rejected !!";
         }
         DB::commit();

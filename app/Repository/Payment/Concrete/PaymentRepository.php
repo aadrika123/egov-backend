@@ -290,7 +290,8 @@ class PaymentRepository implements iPayment
                 'ulbId' => $webhookData->ulb_id,
                 'departmentId' => $webhookData->department_id,    //ModuleId
                 'orderId' => $webhookData->payment_order_id,
-                'paymentId' => $webhookData->payment_id
+                'paymentId' => $webhookData->payment_id,
+                'tranDate' => $request->created_at,
             ];
 
             # conditionaly upadting the request data

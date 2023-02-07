@@ -317,7 +317,7 @@ class TradeCitizen implements ITradeCitizen
                 $join->on("owner.temp_id", "active_trade_licences.id");
             })
             ->where("active_trade_licences.is_active", true)
-            ->where("active_trade_licences.user_id", $refUserId)
+            ->where("active_trade_licences.citizen_id", $refUserId)
             ->get();
         // if ($request->ulbId) {
         //     $licence =  $licence->where("active_trade_licences.ulb_id", $request->ulbId);

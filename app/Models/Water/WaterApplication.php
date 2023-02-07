@@ -7,6 +7,7 @@ use App\Models\Property\PropProperty;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class WaterApplication extends Model
 {
@@ -184,5 +185,36 @@ class WaterApplication extends Model
     public function getApplicationById($applicationId)
     {
         return  WaterApplication::where('id', $applicationId);
+    }
+
+
+    /**
+     * | Get the Application details by applicationNo 
+     * | @param applicationNo
+     * | @var 
+     * | @return 
+     */
+    public function getDetailsByApplicationNo($connectionTypes, $applicationNo)
+    {
+        return WaterApplication::select(
+            'water_applications.id',
+            'water_applications.application_no',
+            'water_applications.ward_id',
+            'water_applications.address',
+            'water_applications.holding_no',
+            'water_applications.saf_no',
+            'ulb_ward_masters.ward_name',
+            DB::raw("string_agg(water_applicants.applicant_name,',') as applicantName"),
+            DB::raw("string_agg(water_applicants.mobile_no::VARCHAR,',') as mobileNo"),
+            DB::raw("string_agg(water_applicants.guardian_name,',') as guardianName"),
+        )
+            ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
+            ->where('water_applications.status', true)
+            ->where('water_applications.connection_type_id', $connectionTypes)
+            ->where('water_applications.application_no', 'LIKE', '%' . $applicationNo . '%')
+            ->where('water_applications.ulb_id', auth()->user()->ulb_id)
+            ->groupBy('water_applications.saf_no', 'water_applications.holding_no', 'water_applications.address', 'water_applications.id', 'water_applicants.application_id', 'water_applications.application_no', 'water_applications.ward_id', 'ulb_ward_masters.ward_name')
+            ->get();
     }
 }

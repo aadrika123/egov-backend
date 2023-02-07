@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Redis;
  * | --------- Saf Calculation Class -----------------
  * | Created On - 12-10-2022 
  * | Created By - Anshu Kumar
+ * | Status-Closed
  */
 class SafCalculation
 {
@@ -1132,7 +1133,7 @@ class SafCalculation
         $mRebateAmount = $this->_GRID['demand']['rebateAmount'];
         $mSpecialRebateAmount = $this->_GRID['demand']['specialRebateAmount'];
         $payableAmount = $totalDemand - ($mSpecialRebateAmount + $mRebateAmount);
-        return roundFigure($payableAmount);
+        return round($payableAmount);
     }
 
     /**

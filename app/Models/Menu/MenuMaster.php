@@ -66,7 +66,7 @@ class MenuMaster extends Model
         )
             ->join('wf_rolemenus', 'wf_rolemenus.menu_id', '=', 'menu_masters.id')
             ->where('menu_masters.is_deleted', false)
-            ->where('wf_rolemenus.status',true)
+            ->where('wf_rolemenus.status', true)
             ->where('wf_rolemenus.role_id', $roleId)
             ->orderBy("menu_masters.serial", "Asc")
             ->get();
@@ -96,7 +96,7 @@ class MenuMaster extends Model
     {
         return MenuMaster::where('id', $id)
             ->where('is_deleted', false)
-            ->first();
+            ->firstOrFail();
     }
     public function getChildrenNode($id)
     {
@@ -117,8 +117,8 @@ class MenuMaster extends Model
                 [
                     'serial'        => $request->serial         ?? $refValues->serial,
                     'description'   => $request->description    ?? $refValues->description,
-                    'menu_string'   => $request->menu_string    ?? $refValues->menu_string,
-                    'parent_serial' => $request->parent_serial  ?? $refValues->parent_serial,
+                    'menu_string'   => $request->menuName       ?? $refValues->menu_string,
+                    'parent_serial' => $request->parentSerial   ?? $refValues->parent_serial,
                     'route'         => $request->route          ?? $refValues->route,
                     'icon'          => $request->icon           ?? $refValues->icon,
                     'is_deleted'    => $request->delete         ?? $refValues->is_deleted,

@@ -69,6 +69,7 @@ class ActiveSafController extends Controller
     /**
      * | Created On-10-08-2022
      * | Created By-Anshu Kumar
+     * | Status - Open
      * -----------------------------------------------------------------------------------------
      * | SAF Module all operations 
      * | --------------------------- Workflow Parameters ---------------------------------------
@@ -822,11 +823,11 @@ class ActiveSafController extends Controller
     }
 
     /**
+     * | Function for Post Next Level(9)
      * | @param mixed $request
      * | @var preLevelPending Get the Previous level pending data for the saf id
      * | @var levelPending new Level Pending to be add
      * | Status-Closed
-     * | Query Costing-348ms 
      * | Rating-3 
      */
     public function postNextLevel(Request $request)
@@ -836,10 +837,17 @@ class ActiveSafController extends Controller
             'senderRoleId' => 'required|integer',
             'receiverRoleId' => 'required|integer',
             'comment' => 'required',
+            'action' => 'required|In:forward,backward'
         ]);
 
         try {
+            $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
+            $senderRoleId = $request->senderRoleId;
             $saf = PropActiveSaf::find($request->applicationId);
+
+            if ($request->action == 'forward') {
+                $this->checkPostCondition($senderRoleId, $wfLevels, $saf);          // Check Post Next level condition
+            }
             // SAF Application Update Current Role Updation
             DB::beginTransaction();
             $saf->current_role = $request->receiverRoleId;
@@ -847,7 +855,7 @@ class ActiveSafController extends Controller
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
-            $metaReqs['refTableDotId'] = 'prop_active_safs.id';
+            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
             $metaReqs['refTableIdValue'] = $request->applicationId;
             $request->request->add($metaReqs);
 
@@ -859,6 +867,23 @@ class ActiveSafController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    /**
+     * | check Post Condition for backward forward(9.1)
+     */
+    public function checkPostCondition($senderRoleId, $wfLevels, $saf)
+    {
+        switch ($senderRoleId) {
+            case $wfLevels['BO']:                        // Back Office Condition
+                if ($saf->doc_upload_status == 0)
+                    throw new Exception("Document Not Fully Uploaded");
+                break;
+            case $wfLevels['DA']:                       // DA Condition
+                if ($saf->doc_verify_status == 0)
+                    throw new Exception("Document Not Fully Verified");
+                break;
         }
     }
 
@@ -1282,6 +1307,8 @@ class ActiveSafController extends Controller
             $userId = $req['userId'];
             $propSafsDemand = new PropSafsDemand();
             $demands = $propSafsDemand->getDemandBySafId($req['id']);
+            if (!$demands || $demands->isEmpty())
+                throw new Exception("Demand Not Available for Payment");
             DB::beginTransaction();
             // Property Transactions
             $propTrans = new PropTransaction();
@@ -1291,6 +1318,12 @@ class ActiveSafController extends Controller
             $propTrans->tran_no = $req['transactionNo'];
             $propTrans->payment_mode = $req['paymentMode'];
             $propTrans->user_id = $userId;
+            $propTrans->ulb_id = $req['ulbId'];
+            $propTrans->from_fyear = collect($demands)->last()['fyear'];
+            $propTrans->to_fyear = collect($demands)->first()['fyear'];
+            $propTrans->from_qtr = collect($demands)->first()['qtr'];
+            $propTrans->to_qtr = collect($demands)->first()['qtr'];
+            $propTrans->demand_amt = collect($demands)->sum('amount');
             $propTrans->save();
 
             // Reflect on Prop Tran Details
@@ -1339,11 +1372,10 @@ class ActiveSafController extends Controller
     public function generatePaymentReceipt(Request $req)
     {
         $req->validate([
-            'paymentId' => 'required'
+            'tranNo' => 'required'
         ]);
 
         try {
-            $paymentData = new WebhookPaymentData();
             $propSafsDemand = new PropSafsDemand();
             $transaction = new PropTransaction();
             $propPenalties = new PropPenaltyrebate();
@@ -1352,45 +1384,37 @@ class ActiveSafController extends Controller
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
 
-            $applicationDtls = $paymentData->getApplicationId1($req->paymentId);
+            $safTrans = $transaction->getPropByTranPropId($req->tranNo);
             // Saf Payment
-            $safId = json_decode($applicationDtls)->applicationId;
-
+            $safId = $safTrans->saf_id;
             $reqSafId = new Request(['id' => $safId]);
             $activeSafDetails = $this->details($reqSafId);
-            $demands = $propSafsDemand->getDemandBySafId($safId);
-            $calDemandAmt = collect($demands)->sum('amount');
-            $checkOtherTaxes = collect($demands)->first();
+            $calDemandAmt = $safTrans->demand_amt;
+            $checkOtherTaxes =  $propSafsDemand->getFirstDemandBySafId($safId);
 
             $mDescriptions = $this->readDescriptions($checkOtherTaxes);      // Check the Taxes are Only Holding or Not
 
-            $fromFinYear = $demands->first()['fyear'];
-            $fromFinQtr = $demands->first()['qtr'];
-            $upToFinYear = $demands->last()['fyear'];
-            $upToFinQtr = $demands->last()['qtr'];
-
-            // Get PropertyTransactions
-            $propTrans = $transaction->getPropTransactions($safId, "saf_id");
-            $propTrans = collect($propTrans)->last();
+            $fromFinYear = $safTrans->from_fyear;
+            $fromFinQtr = $safTrans->from_qtr;
+            $upToFinYear = $safTrans->to_fyear;
+            $upToFinQtr = $safTrans->to_qtr;
 
             // Get Property Penalties against property transaction
-            $mOnePercPenalty = $propPenalties->getPenalRebateByTranId($propTrans->id, "1% Monthly Penalty");
-            $mRebate = $propPenalties->getPenalRebateByTranId($propTrans->id, "Rebate");
-            $mSpecialRebate = $propPenalties->getPenalRebateByTranId($propTrans->id, "Special Rebate");
-            $firstQtrRebate = 0;
+            $penalRebates = $propPenalties->getPropPenalRebateByTranId($safTrans->id);
 
-            $rebateAmt = ($mRebate == null) ? 0 : $mRebate->amount;
-            $specialRebateAmt = ($mSpecialRebate == null) ? 0 : $mSpecialRebate->amount;
-            $onePercPanalAmt = ($mOnePercPenalty == null) ? 0 : $mOnePercPenalty->amount;
+            $onePercPanalAmt = $penalRebates->where('head_name', '1% Monthly Penalty')->first()['amount'] ?? "";
+            $rebateAmt = $penalRebates->where('head_name', 'Rebate')->first()['amount'] ?? "";
+            $specialRebateAmt = $penalRebates->where('head_name', 'Special Rebate')->first()['amount'] ?? "";
+            $firstQtrRebate = $penalRebates->where('head_name', 'First Qtr Rebate')->first()['amount'] ?? "";
 
-            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $propTrans->amount);   // Get Holding Tax Dtls
+            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $safTrans->amount);   // Get Holding Tax Dtls
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
-                "transactionDate" => $propTrans->tran_date,
-                "transactionNo" => $propTrans->tran_no,
-                "transactionTime" => $propTrans->created_at->format('H:i:s'),
+                "transactionDate" => $safTrans->tran_date,
+                "transactionNo" => $safTrans->tran_no,
+                "transactionTime" => $safTrans->created_at->format('H:i:s'),
                 "applicationNo" => $activeSafDetails['saf_no'],
                 "customerName" => $activeSafDetails['applicant_name'],
                 "receiptWard" => $activeSafDetails['new_ward_no'],
@@ -1399,22 +1423,22 @@ class ActiveSafController extends Controller
                 "paidFromQtr" => $fromFinQtr,
                 "paidUpto" => $upToFinYear,
                 "paidUptoQtr" => $upToFinQtr,
-                "paymentMode" => $propTrans->payment_mode,
+                "paymentMode" => $safTrans->payment_mode,
                 "bankName" => "",
                 "branchName" => "",
                 "chequeNo" => "",
                 "chequeDate" => "",
                 "noOfFlats" => "",
                 "monthlyRate" => "",
-                "demandAmount" => roundFigure($calDemandAmt),
+                "demandAmount" => roundFigure((float)$calDemandAmt),
                 "taxDetails" => $taxDetails,
                 "ulbId" => $activeSafDetails['ulb_id'],
                 "oldWardNo" => $activeSafDetails['old_ward_no'],
                 "newWardNo" => $activeSafDetails['new_ward_no'],
                 "towards" => $mTowards,
                 "description" => $mDescriptions,
-                "totalPaidAmount" => $propTrans->amount,
-                "paidAmtInWords" => getIndianCurrency($propTrans->amount),
+                "totalPaidAmount" => $safTrans->amount,
+                "paidAmtInWords" => getIndianCurrency($safTrans->amount),
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -1604,7 +1628,6 @@ class ActiveSafController extends Controller
 
             $propActiveSaf = new PropActiveSaf();
             $verification = new PropSafVerification();
-            $mPropSafVeriDtls = new PropSafVerificationDtl();
 
             switch ($req->currentRoleId) {
                 case $taxCollectorRole;                                                                  // In Case of Agency TAX Collector
@@ -1744,20 +1767,6 @@ class ActiveSafController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-
-    /**
-        not in use
-     */
-    // public function getBtcFields(Request $req)
-    // {
-    //     try {
-    //         $saf = PropActiveSaf::find($req->applicationId);
-    //         $btcFields = json_decode($saf->btc_fields);
-    //         return responseMsgs(true, "Btc Fields", remove_null($btcFields), "", "1.0", "", "POST", $req->deviceId ?? "");
-    //     } catch (Exception $e) {
-    //         return responseMsg(false, $e->getMessage(), "");
-    //     }
-    // }
 
     # code by sandeep bara 
     # date 31-01-2023

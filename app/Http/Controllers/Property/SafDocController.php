@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Config as FacadesConfig;
  * | Created On=01-02-2023 
  * | Created By=Anshu Kumar
  * | Created for=Document Upload 
+ * | Status-Closed
  */
 class SafDocController extends Controller
 {
@@ -103,13 +104,14 @@ class SafDocController extends Controller
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
-
+            $label = array_shift($document);
             $documents = collect();
 
             collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
+
                 if ($uploadedDoc) {
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
@@ -123,6 +125,7 @@ class SafDocController extends Controller
                 }
             });
             $reqDoc['docType'] = $key;
+            $reqDoc['docName'] = substr($label, 1, -1);
             $reqDoc['uploadedDoc'] = $documents->first();
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
@@ -155,7 +158,7 @@ class SafDocController extends Controller
             "docCode" => "required",
             "ownerId" => "nullable|numeric"
         ]);
-        $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
+
         try {
             $metaReqs = array();
             $docUpload = new DocUpload;
@@ -163,10 +166,7 @@ class SafDocController extends Controller
             $mActiveSafs = new PropActiveSaf();
             $relativePath = FacadesConfig::get('PropertyConstaint.SAF_RELATIVE_PATH');
             $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
-            if ($docUploadStatus == 1) {
-                $getSafDtls->doc_upload_status = 1;
-                $getSafDtls->save();
-            }
+
             $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
@@ -183,6 +183,12 @@ class SafDocController extends Controller
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
+
+            $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
+            if ($docUploadStatus == 1) {
+                $getSafDtls->doc_upload_status = 1;                                             // Doc Upload Status Update
+                $getSafDtls->save();
+            }
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
@@ -228,14 +234,20 @@ class SafDocController extends Controller
         $refSafOwners = $mSafsOwners->getOwnersBySafId($applicationId);
         $propListDocs = $this->getPropTypeDocList($refSafs);
         $docList['propDocs'] = explode('#', $propListDocs);
-        $ownerDocList = collect($refSafOwners)->map(function ($owner) use ($refSafs) {
+        $ownerDocList = collect($refSafOwners)->map(function ($owner) {
             return [
                 'ownerId' => $owner->id,
                 'docs'  => explode('#', $this->getOwnerDocs($owner))
             ];
         });
         $docList['ownerDocs'] = $ownerDocList;
-        $refDocList = $mWfActiveDocument->getDocsByActiveId($applicationId);
+        $refReq = [
+            'activeId' => $applicationId,
+            'workflowId' => $refSafs->workflow_id,
+            'moduleId' => 1
+        ];
+        $req = new Request($refReq);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
         $uploadDocList['ownerDocs'] = $refDocList->where('owner_dtl_id', '!=', null)->values();
         $uploadDocList['propDocs'] = $refDocList->where('owner_dtl_id', null)->values();
 
@@ -244,28 +256,30 @@ class SafDocController extends Controller
             return $collectUploadDocList->push($item['doc_code']);
         });
         $mPropDocs = collect($docList['propDocs']);
-
-        $flag = array();
+        // Property List Documents
+        $flag = 1;
         foreach ($mPropDocs as $item) {
             $explodeDocs = explode(',', $item);
             array_shift($explodeDocs);
             foreach ($explodeDocs as $explodeDoc) {
                 $changeStatus = 0;
                 if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
-                    array_push($flag, 1);
+                    $flag = 1;
                     $changeStatus = 1;
                     break;
                 }
             }
-            if ($changeStatus == 0)
-                array_push($flag, 0);
+            if ($changeStatus == 0) {
+                $flag = 0;
+                break;
+            }
         }
 
-        $unUploadStatus = collect($flag)->contains(0);
-        if ($unUploadStatus == 1)
+        if ($flag == 0)
             return 0;
 
-        $ownerFlags = array();
+        // Owner Documents
+        $ownerFlags = 1;
         foreach ($ownerDocList as $item) {
             $ownerUploadedDocLists = $uploadDocList['ownerDocs']->where('owner_dtl_id', $item['ownerId']);
             $arrayOwners = array();
@@ -277,19 +291,22 @@ class SafDocController extends Controller
                 $explodeDocs = explode(',', $doc);
                 array_shift($explodeDocs);
                 foreach ($explodeDocs as $explodeDoc) {
-                    $changeStatus = 0;
+                    $changeStatusV1 = 0;
                     if (in_array($explodeDoc, $arrayOwners)) {
-                        array_push($ownerFlags, 1);
-                        $changeStatus = 1;
+                        $ownerFlags = 1;
+                        $changeStatusV1 = 1;
                         break;
                     }
                 }
-                if ($changeStatus == 0)
-                    array_push($ownerFlags, 0);
+                if ($changeStatusV1 == 0) {
+                    $ownerFlags = 0;
+                    break;
+                }
             }
+            if ($changeStatusV1 == 0)
+                break;
         }
-        $ownerDocUnuploadStatus = collect($ownerFlags)->contains(0);
-        if ($ownerDocUnuploadStatus == 1)
+        if ($ownerFlags == 0)
             return 0;
         else
             return 1;
