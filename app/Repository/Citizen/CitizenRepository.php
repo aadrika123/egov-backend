@@ -200,15 +200,27 @@ class CitizenRepository implements iCitizenRepository
         $objectionApplications = DB::table('prop_active_objections')
             ->join('wf_roles as r', 'r.id', '=', 'prop_active_objections.current_role')
             ->join('prop_properties as p', 'p.id', '=', 'prop_active_objections.property_id')
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'p.id')
             ->select(
                 'prop_active_objections.id as application_id',
                 'prop_active_objections.objection_no',
                 'prop_active_objections.date as apply_date',
                 'p.holding_no',
+                DB::raw("string_agg(prop_owners.owner_name,',') as applicant_name"),
                 'r.role_name as pending_at',
-                'prop_active_objections.workflow_id'
+                'prop_active_objections.workflow_id',
+                'prop_active_objections.objection_for'
             )
             ->where('prop_active_objections.citizen_id', $userId)
+            ->groupBy(
+                'prop_active_objections.id',
+                'objection_no',
+                'date',
+                'holding_no',
+                'r.role_name',
+                'prop_active_objections.workflow_id',
+                'prop_active_objections.objection_for'
+            )
             ->get();
         $applications['objections'] = $objectionApplications;
 

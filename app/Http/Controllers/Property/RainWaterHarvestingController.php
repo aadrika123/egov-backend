@@ -349,20 +349,21 @@ class RainWaterHarvestingController extends Controller
                 'data' => $propertyDetails
             ];
 
-            $corrDetails = $this->generateCorrDtls($details);              // (Corresponding Address Details) Trait function to generate corresponding address details
-            $corrElement = [
-                'headerTitle' => 'Corresponding Address',
-                'data' => $corrDetails,
-            ];
+            // $corrDetails = $this->generateCorrDtls($details);              // (Corresponding Address Details) Trait function to generate corresponding address details
+            // $corrElement = [
+            //     'headerTitle' => 'Corresponding Address',
+            //     'data' => $corrDetails,
+            // ];
 
-            $electDetails = $this->generateElectDtls($details);            // (Electricity & Water Details) Trait function to generate Electricity Details
-            $electElement = [
-                'headerTitle' => 'Electricity & Water Details',
-                'data' => $electDetails
-            ];
+            // $electDetails = $this->generateElectDtls($details);            // (Electricity & Water Details) Trait function to generate Electricity Details
+            // $electElement = [
+            //     'headerTitle' => 'Electricity & Water Details',
+            //     'data' => $electDetails
+            // ];
+
             $fullDetailsData['application_no'] = $details->application_no;
             $fullDetailsData['apply_date'] = Carbon::parse($details->created_at)->format('Y-m-d');
-            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement]);
 
             // Table Array
             $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);
@@ -373,14 +374,16 @@ class RainWaterHarvestingController extends Controller
                 'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
                 'tableData' => $ownerDetails
             ];
-            $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
-            $floorDetails = $this->generateFloorDetails($floorList);
-            $floorElement = [
-                'headerTitle' => 'Floor Details',
-                'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
-                'tableData' => $floorDetails
-            ];
-            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement]);
+
+            // $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
+            // $floorDetails = $this->generateFloorDetails($floorList);
+            // $floorElement = [
+            //     'headerTitle' => 'Floor Details',
+            //     'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
+            //     'tableData' => $floorDetails
+            // ];
+
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement]);
             // Card Details
             $cardElement = $this->generateHarvestingCardDtls($details, $ownerList);
             $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
@@ -401,9 +404,6 @@ class RainWaterHarvestingController extends Controller
             $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
 
             $fullDetailsData['timelineData'] = collect($req);
-
-            $custom = $mCustomDetails->getCustomDetails($req);
-            $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
