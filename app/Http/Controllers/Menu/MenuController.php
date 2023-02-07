@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Menu;
 
 use App\Http\Controllers\Controller;
 use App\Models\Menu\MenuMaster;
+use App\Models\Menu\WfRolemenu;
 use App\Repository\Menu\Concrete\MenuRepo;
 use App\Repository\Menu\Interface\iMenuRepo;
 use Exception;
@@ -76,7 +77,7 @@ class MenuController extends Controller
 
     /**
      * |--------------------- Enable or Desable the menu for roles ---------------------|
-     * | @param req
+     * | @param req roleId,menuId,status
         | Serial No : 03
      */
     public function updateMenuByRole(Request $req)
@@ -115,17 +116,13 @@ class MenuController extends Controller
         }
     }
 
-    // Getting userRole wise menus
-    public function getRoleWiseMenu(Request $request)
-    {
-        try {
-            return $this->_repo->getRoleWiseMenu($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 
-    // Soft Delition of the Menu in Menu Master
+    /**
+     * |--------------------- Soft Delition of the Menu in Menu Master ---------------------|
+     * | @param request menu Id
+     * | @var menuDeletion model
+        | Serial No : 
+     */
     public function deleteMenuesDetails(Request $request)
     {
         try {
@@ -139,7 +136,12 @@ class MenuController extends Controller
         }
     }
 
-    // Generate the menu tree srtucture
+
+    /**
+     * |--------------------- Generate the menu tree srtucture ---------------------|
+     * | @param request roleId -> opetional 
+        | Serial No : 
+     */
     public function getTreeStructureMenu(Request $request)
     {
         try {
@@ -149,7 +151,12 @@ class MenuController extends Controller
         }
     }
 
-    // List all the Parent Menu
+
+    /**
+     * |--------------------- List all parent Menu ---------------------|
+     * | @var mMenuMaster model
+        | Serial No :
+     */
     public function listParentSerial()
     {
         try {
@@ -161,7 +168,15 @@ class MenuController extends Controller
         }
     }
 
-    // git the child of the menu 
+
+    /**
+     * |--------------------- Get the child of the menu  ---------------------|
+     * | @param request
+     * | @var mMenuMaster Model 
+     * | @var listedChild List of chil nodes
+     * | @return listedChild 
+        | Serial No : 00
+     */
     public function getChildrenNode(Request $request)
     {
         try {
@@ -173,11 +188,21 @@ class MenuController extends Controller
         }
     }
 
-    // Upload menu master 
+
+    /**
+     * |--------------------- Update menu Master ---------------------|
+     * | @param request
+     * | @var mMenuMaster Model
+        | Serial No : 00 
+     */
     public function updateMenuMaster(Request $request)
     {
         $request->validate([
-            'id' => 'required'
+            'id' => 'required',
+            'serial' => 'nullable|int',
+            'parentSerial' => 'nullable|int',
+            'route' => 'nullable|',
+            'delete' => 'nullable|boolean'
         ]);
         try {
             $mMenuMaster = new MenuMaster();
@@ -211,9 +236,28 @@ class MenuController extends Controller
                 return responseMsgs(true, "Menu List!", $menues, "", "01", "", "POST", "");
             }
             $parent = $mMenuMaster->getMenuById($menues['parent_serial']);
-            $parentName = $parent['menu_string'];
-            $menues['parentName'] = $parentName;
+            $menues['parentName'] = $parent['menu_string'];
+            $menues['parentId'] = $parent['id'];
             return responseMsgs(true, "Menu List!", $menues, "", "01", "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    /**
+        | Terminate
+     */
+    public function getRoleWiseMenu(Request $request)
+    {
+        try {
+            $mWfRolemenu = new WfRolemenu();
+            $menuList = $mWfRolemenu->getRoleWiseMenu();
+            $checkExist = collect($menuList)->first()->id;
+            if (!$checkExist) {
+                throw new Exception("Menu Not found!");
+            }
+            return responseMsgs(true, "Role Waise Menu!", $menuList, "", "02", "", "", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
