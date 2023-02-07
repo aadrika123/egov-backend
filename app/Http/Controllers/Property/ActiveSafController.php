@@ -69,6 +69,7 @@ class ActiveSafController extends Controller
     /**
      * | Created On-10-08-2022
      * | Created By-Anshu Kumar
+     * | Status - Open
      * -----------------------------------------------------------------------------------------
      * | SAF Module all operations 
      * | --------------------------- Workflow Parameters ---------------------------------------
@@ -826,7 +827,6 @@ class ActiveSafController extends Controller
      * | @var preLevelPending Get the Previous level pending data for the saf id
      * | @var levelPending new Level Pending to be add
      * | Status-Closed
-     * | Query Costing-348ms 
      * | Rating-3 
      */
     public function postNextLevel(Request $request)
@@ -839,6 +839,7 @@ class ActiveSafController extends Controller
         ]);
 
         try {
+            $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $saf = PropActiveSaf::find($request->applicationId);
             // SAF Application Update Current Role Updation
             DB::beginTransaction();
@@ -847,7 +848,7 @@ class ActiveSafController extends Controller
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
-            $metaReqs['refTableDotId'] = 'prop_active_safs.id';
+            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
             $metaReqs['refTableIdValue'] = $request->applicationId;
             $request->request->add($metaReqs);
 
@@ -1742,20 +1743,6 @@ class ActiveSafController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-
-    /**
-        not in use
-     */
-    // public function getBtcFields(Request $req)
-    // {
-    //     try {
-    //         $saf = PropActiveSaf::find($req->applicationId);
-    //         $btcFields = json_decode($saf->btc_fields);
-    //         return responseMsgs(true, "Btc Fields", remove_null($btcFields), "", "1.0", "", "POST", $req->deviceId ?? "");
-    //     } catch (Exception $e) {
-    //         return responseMsg(false, $e->getMessage(), "");
-    //     }
-    // }
 
     # code by sandeep bara 
     # date 31-01-2023

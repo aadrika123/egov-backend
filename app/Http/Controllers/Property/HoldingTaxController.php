@@ -33,7 +33,7 @@ class HoldingTaxController extends Controller
      * | Created On-19/01/2023 
      * | Created By-Anshu Kumar
      * | Created for Holding Property Tax Demand and Receipt Generation
-     * | Status-Open
+     * | Status-Closed
      */
 
     public function __construct(iSafRepository $safRepo)
@@ -103,7 +103,7 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Get Holding Dues 
+     * | Get Holding Dues(2)
      */
     public function getHoldingDues(Request $req)
     {
@@ -159,7 +159,7 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | One Percent Penalty Calculation
+     * | One Percent Penalty Calculation(2.1)
      */
     public function calcOnePercPenalty($item)
     {
@@ -172,7 +172,7 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Generate Order ID
+     * | Generate Order ID(3)
      */
     public function generateOrderId(Request $req)
     {
@@ -199,7 +199,7 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Post Payment Penalty Rebates
+     * | Post Payment Penalty Rebates(3.1)
      */
     public function postPaymentPenaltyRebate($dueList, $req)
     {
