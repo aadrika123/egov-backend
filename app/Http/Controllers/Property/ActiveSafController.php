@@ -823,6 +823,7 @@ class ActiveSafController extends Controller
     }
 
     /**
+     * | Function for Post Next Level(9)
      * | @param mixed $request
      * | @var preLevelPending Get the Previous level pending data for the saf id
      * | @var levelPending new Level Pending to be add
@@ -836,11 +837,17 @@ class ActiveSafController extends Controller
             'senderRoleId' => 'required|integer',
             'receiverRoleId' => 'required|integer',
             'comment' => 'required',
+            'action' => 'required|In:forward,backward'
         ]);
 
         try {
             $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
+            $senderRoleId = $request->senderRoleId;
             $saf = PropActiveSaf::find($request->applicationId);
+
+            if ($request->action == 'forward') {
+                $this->checkPostCondition($senderRoleId, $wfLevels, $saf);          // Check Post Next level condition
+            }
             // SAF Application Update Current Role Updation
             DB::beginTransaction();
             $saf->current_role = $request->receiverRoleId;
@@ -860,6 +867,23 @@ class ActiveSafController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    /**
+     * | check Post Condition for backward forward(9.1)
+     */
+    public function checkPostCondition($senderRoleId, $wfLevels, $saf)
+    {
+        switch ($senderRoleId) {
+            case $wfLevels['BO']:                        // Back Office Condition
+                if ($saf->doc_upload_status == 0)
+                    throw new Exception("Document Not Fully Uploaded");
+                break;
+            case $wfLevels['DA']:                       // DA Condition
+                if ($saf->doc_verify_status == 0)
+                    throw new Exception("Document Not Fully Verified");
+                break;
         }
     }
 

@@ -158,7 +158,7 @@ class SafDocController extends Controller
             "docCode" => "required",
             "ownerId" => "nullable|numeric"
         ]);
-        $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
+
         try {
             $metaReqs = array();
             $docUpload = new DocUpload;
@@ -166,10 +166,7 @@ class SafDocController extends Controller
             $mActiveSafs = new PropActiveSaf();
             $relativePath = FacadesConfig::get('PropertyConstaint.SAF_RELATIVE_PATH');
             $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
-            if ($docUploadStatus == 1) {
-                $getSafDtls->doc_upload_status = 1;                                             // Doc Upload Status Update
-                $getSafDtls->save();
-            }
+
             $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
@@ -186,6 +183,12 @@ class SafDocController extends Controller
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
+
+            $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
+            if ($docUploadStatus == 1) {
+                $getSafDtls->doc_upload_status = 1;                                             // Doc Upload Status Update
+                $getSafDtls->save();
+            }
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
