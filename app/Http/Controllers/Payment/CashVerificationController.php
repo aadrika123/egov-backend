@@ -167,15 +167,16 @@ class CashVerificationController extends Controller
             $water = $val->where("module", "water")->sum('amount');
             $is_verified = in_array(0, (objToArray(collect(explode(',', ($val->implode("verify_status", ',')))))));
             return [
-                "user_name" => $val[0]['user_name'],
+
                 "id" => $val[0]['id'],
+                "user_name" => $val[0]['user_name'],
                 "property" => $prop,
                 "water" => $water,
                 "trade" => $trad,
                 "total" => $total,
-                "is_verified" => !$is_verified,
+                // "is_verified" => $is_verified,
+                "date" => $date,
                 "verified_amount" => $verified_amount,
-                "date" => $date
             ];
         });
         $data = (array_values(objtoarray($data)));
@@ -198,23 +199,70 @@ class CashVerificationController extends Controller
         $ulbId =  authUser()->ulb_id;
         $date = date('Y-m-d', strtotime($request->date));
 
-        $data = TempTransaction::select(
+        $data['Transaction'] = TempTransaction::select(
             'temp_transactions.id',
             'transaction_no',
             'payment_mode',
             'amount',
             'ward_no',
             'application_no',
-            'tran_date'
+            'tran_date',
+            'user_name'
         )
             ->join('users', 'users.id', 'temp_transactions.user_id')
             ->where('tran_date', $date)
             ->where('payment_mode', '!=', 'ONLINE')
             ->where('user_id', $userId)
             ->where('temp_transactions.ulb_id', $ulbId)
+            ->groupBy('temp_transactions.id', 'user_name')
             ->get();
 
-        return responseMsgs(true, "TC Collection", $data, "010201", "1.0", "", "POST", $request->deviceId ?? "");
+        $data['Cash'] = TempTransaction::select(
+            DB::raw("sum(temp_transactions.amount) as amount"),
+            // 'payment_mode'
+        )
+            ->where('user_id', $userId)
+            ->where('tran_date', $date)
+            ->where('payment_mode', '=', 'Cash')
+            // ->groupBy('temp_transactions.payment_mode')
+            ->first();
+
+        $data['Cheque'] = TempTransaction::select(
+            DB::raw("sum(temp_transactions.amount) as amount"),
+            // 'payment_mode'
+        )
+            ->where('user_id', $userId)
+            ->where('tran_date', $date)
+            ->where('payment_mode', '=', 'Cheque')
+            // ->groupBy('temp_transactions.payment_mode')
+            ->first();
+
+        $data['DD'] = TempTransaction::select(
+            DB::raw("sum(temp_transactions.amount) as amount"),
+            // 'payment_mode'
+        )
+            ->where('user_id', $userId)
+            ->where('tran_date', $date)
+            ->where('payment_mode', '=', 'DD')
+            // ->groupBy('temp_transactions.payment_mode')
+            ->first();
+
+        $data['RTGS'] = TempTransaction::select(
+            DB::raw("sum(temp_transactions.amount) as amount"),
+            // 'payment_mode'
+        )
+            ->where('user_id', $userId)
+            ->where('tran_date', $date)
+            ->where('payment_mode', '=', 'RTGS')
+            // ->groupBy('temp_transactions.payment_mode')
+            ->first();
+
+        $data['Total Amount'] =  $data['Transaction']->sum('amount');
+        $data['No. of Transaction'] =  $data['Transaction']->count();
+        $data['Collector Name'] =  collect($data['Transaction'])[0]->user_name;
+        $data['Date'] = $date;
+
+        return responseMsgs(true, "TC Collection", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
     }
 
     /**
