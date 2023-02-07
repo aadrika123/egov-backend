@@ -36,7 +36,7 @@ class MenuController extends Controller
      * | @var value final List of menues
      * | @return listedMenues returning values
         | Serial No : 01
-        | 
+        | Closed
      */
     public function getAllMenues()
     {
@@ -44,7 +44,7 @@ class MenuController extends Controller
             $mMenuMaster = new MenuMaster();
             $refmenues = $mMenuMaster->fetchAllMenues();
             $menues = $refmenues->sortByDesc("id");
-            $listedMenues = collect($menues)->map(function ($value, $key) use ($mMenuMaster) {
+            $listedMenues = collect($menues)->map(function ($value) use ($mMenuMaster) {
                 if ($value['parent_serial'] != 0) {
                     $parent = $mMenuMaster->getMenuById($value['parent_serial']);
                     $parentName = $parent['menu_string'];
@@ -64,6 +64,7 @@ class MenuController extends Controller
      * |--------------------- Get Menu according to Roles ---------------------|
      * | @param req roleId
         | Serial No : 02
+        | Closed
      */
     public function getMenuByRoles(Request $req)
     {
@@ -79,6 +80,7 @@ class MenuController extends Controller
      * |--------------------- Enable or Desable the menu for roles ---------------------|
      * | @param req roleId,menuId,status
         | Serial No : 03
+        | Closed
      */
     public function updateMenuByRole(Request $req)
     {
@@ -100,6 +102,7 @@ class MenuController extends Controller
      * | @param request menuName,Route
      * | @var mMenuMaster Model
         | Serial NO : 04
+        | Closed
      */
     public function addNewMenues(Request $request)
     {
@@ -121,7 +124,8 @@ class MenuController extends Controller
      * |--------------------- Soft Delition of the Menu in Menu Master ---------------------|
      * | @param request menu Id
      * | @var menuDeletion model
-        | Serial No : 
+        | Serial No : 05
+        | Closed
      */
     public function deleteMenuesDetails(Request $request)
     {
@@ -140,7 +144,8 @@ class MenuController extends Controller
     /**
      * |--------------------- Generate the menu tree srtucture ---------------------|
      * | @param request roleId -> opetional 
-        | Serial No : 
+        | Serial No : 06
+        | Closed
      */
     public function getTreeStructureMenu(Request $request)
     {
@@ -155,7 +160,8 @@ class MenuController extends Controller
     /**
      * |--------------------- List all parent Menu ---------------------|
      * | @var mMenuMaster model
-        | Serial No :
+        | Serial No : 07
+        | Closed
      */
     public function listParentSerial()
     {
@@ -175,7 +181,8 @@ class MenuController extends Controller
      * | @var mMenuMaster Model 
      * | @var listedChild List of chil nodes
      * | @return listedChild 
-        | Serial No : 00
+        | Serial No : 08
+        | Closed
      */
     public function getChildrenNode(Request $request)
     {
@@ -193,7 +200,8 @@ class MenuController extends Controller
      * |--------------------- Update menu Master ---------------------|
      * | @param request
      * | @var mMenuMaster Model
-        | Serial No : 00 
+        | Serial No : 09
+        | Closed
      */
     public function updateMenuMaster(Request $request)
     {
@@ -207,7 +215,7 @@ class MenuController extends Controller
         try {
             $mMenuMaster = new MenuMaster();
             $mMenuMaster->updateMenuMaster($request);
-            return responseMsgs(true, "Menu Updated!", "", "", "", "", "POST", "");
+            return responseMsgs(true, "Menu Updated!", "", "", "02", "733", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -221,7 +229,7 @@ class MenuController extends Controller
      * | @var parent list of parent 
      * | @var parentName collect the name of the parent node 
      * | @return menues list of menu according to menu id
-        | Serial No :
+        | Serial No : 10
         | Open
      */
     public function getMenuById(Request $request)
@@ -237,7 +245,6 @@ class MenuController extends Controller
             }
             $parent = $mMenuMaster->getMenuById($menues['parent_serial']);
             $menues['parentName'] = $parent['menu_string'];
-            $menues['parentId'] = $parent['id'];
             return responseMsgs(true, "Menu List!", $menues, "", "01", "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

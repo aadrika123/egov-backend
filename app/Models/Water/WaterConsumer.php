@@ -91,6 +91,11 @@ class WaterConsumer extends Model
             DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
             DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
+            'water_connection_charges.charge_category',
+            'water_connection_charges.amount',
+            'water_connection_charges.penalty',
+            'water_connection_charges.conn_fee',
+            'water_connection_charges.rule_set'
 
         )
             ->leftjoin('water_connection_charges', 'water_connection_charges.application_id', '=', 'water_consumers.id')
@@ -110,6 +115,11 @@ class WaterConsumer extends Model
                 'water_consumers.saf_no',
                 'water_consumers.ward_id',
                 'water_connection_charges.application_id',
+                'water_connection_charges.charge_category',
+                'water_connection_charges.amount',
+                'water_connection_charges.penalty',
+                'water_connection_charges.conn_fee',
+                'water_connection_charges.rule_set'
             )
             ->get();
     }

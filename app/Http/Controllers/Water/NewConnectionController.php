@@ -404,28 +404,11 @@ class NewConnectionController extends Controller
             $mWaterConsumer = new WaterConsumer();
             $mWaterConsumerOwner = new WaterConsumerOwner();
             $mWaterConnectionCharge = new WaterConnectionCharge();
-            $approvedWater = $mWaterConsumer->getConsumerDetails();
+           return  $approvedWater = $mWaterConsumer->getConsumerDetails();
             $checkExist = $approvedWater->first()->id;
             if ($checkExist) {
-                $connectionCharge = $mWaterConnectionCharge->getWaterchargesById($approvedWater->first()->id);
-                $returnWater = collect($approvedWater)->map(
-                    function ($value, $key) {
-                        $owner = WaterApplicant::select(
-                            'applicant_name',
-                            'guardian_name',
-                            'mobile_no',
-                            'email'
-                        )
-                            ->where('application_id', $value['id'])
-                            ->get();
-                        $owner = collect($owner)->first();
-                        $user = collect($value);
-                        return $user->merge($owner);
-                    }
-                );
-                return responseMsgs(true, "List of Approved water Applications!", remove_null($returnWater), "", "02", ".ms", "POST", $request->deviceId);
+                // return responseMsgs(true,"Approved Application Details!");
             }
-            throw new Exception("Data Not Found!");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
