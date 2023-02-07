@@ -406,7 +406,7 @@ class SafDocController extends Controller
         $refReq = [
             'activeId' => $applicationId,
             'workflowId' => $refSafs->workflow_id,
-            'moduleId' => 1
+            'moduleId' => FacadesConfig::get('module-constants.PROPERTY_MODULE_ID')
         ];
         $req = new Request($refReq);
         $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
