@@ -92,10 +92,6 @@ class NewConnectionRepository implements iNewConnection
         $ulbId = $req->ulbId;
 
         # get initiater and finisher
-        // $findHoldingOrSaf = $this->checkHoldingOrSafPresence($req);
-        // if ($findHoldingOrSaf == true) {
-        //     throw new Exception("Water is Applied to this Holding!");
-        // }
         $ulbWorkflowObj = new WfWorkflow();
         $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $ulbId);
         if (!$ulbWorkflowId) {
@@ -152,41 +148,6 @@ class NewConnectionRepository implements iNewConnection
             'applicationId' => $applicationId
         ];
         return responseMsgs(true, "Successfully Saved!", $returnResponse, "", "02", "", "POST", "");
-    }
-
-
-    /**
-     * |----------------------------------- check the respective holding has applied holding or not --------------------------|
-     * | @param req
-     * | @var safExist
-     * | @var holdingExist
-     * | @var checkExist
-     * | @return true/false
-        | Serial No : 01.1
-     */
-    public function checkHoldingOrSafPresence($req)
-    {
-        switch ($req) {
-            case (!is_null($req->saf_no)):
-                $safExist = WaterApplication::where('saf_no', $req->saf_no)
-                    ->first();
-                $checkExist = collect($safExist)->first();
-                if ($checkExist) {
-                    return true;
-                }
-                return false;
-                break;
-            case (!is_null($req->holdingNo)):
-            default:
-                $holdingExist = WaterApplication::where('holding_no', $req->holdingNo)
-                    ->first();
-                $checkExist = collect($holdingExist)->first();
-                if ($checkExist) {
-                    return true;
-                }
-                return false;
-                break;
-        }
     }
 
 
@@ -804,47 +765,6 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Total Area (sqt)',     'key' => 'TotalArea',         'value' => $collectionApplications->area_sqft]
         ]);
     }
-
-
-    /**
-     * |-------------------------------- get the document details ---------------------------|
-     * | @param request
-     * | @var applicationNo
-     * | @var mUploadDocument
-     * | @var refApplicationNo
-     * | @var refApplicationId
-     * | @var data
-     * | @return data : document details
-        | Serial No : 10
-        | Working / not used
-     */
-    public function getWaterDocDetails($request)
-    {
-        $applicationId = null;
-        $mUploadDocument = (array)null;
-        $applicationId   = $request->applicationId;
-
-        $refApplicationNo = WaterApplication::where('id', $applicationId)->get();
-        if (!collect($refApplicationNo)->first()) {
-            throw new Exception("Data Not Found!");
-        }
-
-        $refApplicationId = collect($refApplicationNo)->first();
-        $mUploadDocument = $this->getWaterDocuments($refApplicationId->id)
-            ->map(function ($val) {
-                if (isset($val["doc_name"])) {
-                    $path = $this->readDocumentPath($val["doc_name"]);
-                    $val["doc_path"] = !empty(trim($val["doc_name"])) ? $path : null;
-                }
-                return $val;
-            });
-        if (collect($mUploadDocument)->first()) {
-            $data["uploadDocument"] = $mUploadDocument;
-            return responseMsgs(true, "list Of Uploaded Doc!", $data, "", "02", ".ms", "POST", $request->deviceId);
-        }
-        throw new Exception("document Not found!");
-    }
-
 
     /**
      * |---------------------------------- Calling function for the doc details from database -------------------------------|

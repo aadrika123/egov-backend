@@ -74,6 +74,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::post('getDocList', 'getDocList');
         Route::post('try', 'try');
+        
         // Route::post('list-doc', 'getWaterDocDetails');                                                  //
         // Route::post('verify-doc', 'waterDocStatus');                                                    //
         // Route::post('list-message', 'getIndependentComment');                                           //
