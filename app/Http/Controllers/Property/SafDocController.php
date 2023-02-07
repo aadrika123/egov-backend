@@ -103,13 +103,14 @@ class SafDocController extends Controller
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
-
+            $label = array_shift($document);
             $documents = collect();
 
             collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
+
                 if ($uploadedDoc) {
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
@@ -123,6 +124,7 @@ class SafDocController extends Controller
                 }
             });
             $reqDoc['docType'] = $key;
+            $reqDoc['docName'] = substr($label, 1, -1);
             $reqDoc['uploadedDoc'] = $documents->first();
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
