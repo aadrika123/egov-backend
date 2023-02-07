@@ -840,7 +840,19 @@ class ActiveSafController extends Controller
 
         try {
             $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
+            $senderRoleId = $request->senderRoleId;
             $saf = PropActiveSaf::find($request->applicationId);
+
+            switch ($senderRoleId) {
+                case $wfLevels['BO']:                        // Back Office Condition
+                    if ($saf->doc_upload_status == 0)
+                        throw new Exception("Document Not Fully Uploaded");
+                    break;
+                case $wfLevels['DA']:                       // DA Condition
+                    if ($saf->doc_verify_status == 0)
+                        throw new Exception("Document Not Fully Verified");
+                    break;
+            }
             // SAF Application Update Current Role Updation
             DB::beginTransaction();
             $saf->current_role = $request->receiverRoleId;
