@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Redis;
  * | --------- Saf Calculation Class -----------------
  * | Created On - 12-10-2022 
  * | Created By - Anshu Kumar
+ * | Status-Closed
  */
 class SafCalculation
 {

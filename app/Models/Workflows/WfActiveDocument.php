@@ -115,8 +115,8 @@ class WfActiveDocument extends Model
 
     public function getTradeDocByAppNo($applicationId, $workflowId, $moduleId)
     {
-       
-         return DB::table('wf_active_documents as d')
+
+        return DB::table('wf_active_documents as d')
             ->select(
                 'd.id',
                 'd.document',
@@ -130,14 +130,13 @@ class WfActiveDocument extends Model
                 select doc_for
                 from trade_param_document_types
                 group by doc_for
-            ) dm"),'dm.doc_for', '=', 'd.doc_code')
+            ) dm"), 'dm.doc_for', '=', 'd.doc_code')
             ->leftJoin('active_trade_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationId)
             ->where('d.workflow_id', $workflowId)
             ->where('d.module_id', $moduleId)
             ->where('d.status', 1)
             ->get();
-            
     }
 
 
@@ -193,7 +192,7 @@ class WfActiveDocument extends Model
     /**
      * | trade
      */
-    public function getTradeAppByAppNoDocId($appid, $ulb_id, $docId, $owner_id = null)
+    public function getTradeAppByAppNoDocId($appid, $ulb_id, $doc_code, $owner_id = null)
     {
         return DB::table('wf_active_documents as d')
             ->select(
@@ -211,7 +210,7 @@ class WfActiveDocument extends Model
             ->where("d.module_id", Config::get('module-constants.TRADE_MODULE_ID'))
             ->where("d.owner_dtl_id", $owner_id)
             ->where("d.status", 1)
-            ->whereIn("dr.id", $docId)
+            ->whereIn("d.doc_code", $doc_code)
             ->orderBy("d.id", "DESC")
             ->first();
     }
@@ -265,12 +264,12 @@ class WfActiveDocument extends Model
     /**
      * | Get Uploaded documents
      */
-    public function getDocsByActiveId($activeId)
+    public function getDocsByActiveId($req)
     {
-        return WfActiveDocument::where('active_id', $activeId)
+        return WfActiveDocument::where('active_id', $req->activeId)
             ->select('doc_code', 'owner_dtl_id')
-            ->where('workflow_id', 4)
-            ->where('module_id', 1)
+            ->where('workflow_id', $req->workflowId)
+            ->where('module_id', $req->moduleId)
             ->where('status', 1)
             ->get();
     }

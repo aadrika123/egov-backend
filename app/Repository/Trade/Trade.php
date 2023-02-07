@@ -1228,7 +1228,7 @@ class Trade implements ITrade
                 $docForId = collect($val['docVal'])->map(function ($value, $key) {
                     return $value['id'];
                 });
-                $requiedDocs[$key]['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id,$refLicence->ulb_id, $docForId);
+                $requiedDocs[$key]['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id,$refLicence->ulb_id, [$val['docName']]);
                
                 if (isset($requiedDocs[$key]['uploadDoc']->doc_path)) {
                     $path = $this->readDocumentPath($requiedDocs[$key]['uploadDoc']->doc_path);
@@ -1248,7 +1248,7 @@ class Trade implements ITrade
                     $ownerdocForId = collect($doc['docVal'])->map(function ($value, $key) {
                         return $value['id'];
                     });
-                    $doc['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id,$refLicence->ulb_id, $ownerdocForId,$val->id);
+                    $doc['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id,$refLicence->ulb_id,  [$doc["docName"]],$val->id);
                     
                     if (isset($doc['uploadDoc']->doc_path)) {
                         $path = $this->readDocumentPath($doc['uploadDoc']->doc_path);
@@ -1267,7 +1267,7 @@ class Trade implements ITrade
                     $refdocumentId = collect($doc2['docVal'])->map(function ($value, $key) {
                         return $value['id'];
                     });
-                    $doc2['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id, $refLicence->ulb_id,$refdocumentId,$val->id);
+                    $doc2['uploadDoc'] = $mWfActiveDocument->getTradeAppByAppNoDocId($refLicence->id, $refLicence->ulb_id,[$doc2["docName"]],$val->id);
                     if (isset($doc2['uploadDoc']->doc_path)) {
                         $path = $this->readDocumentPath($doc2['uploadDoc']->doc_path);
                         $doc2['uploadDoc']->doc_path = !empty(trim($doc2['uploadDoc']->doc_path)) ? $path : null;
@@ -4698,5 +4698,30 @@ class Trade implements ITrade
 
     }
     #-------------------- End core function of core function --------------
+
+    public function getLicenseDocLists(Request $request)
+    {
+        $request->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try{
+            $refApplication = ActiveTradeLicence::find($request->applicationId);
+            if (!$refApplication)
+            {
+                throw new Exception("Application Not Found for this id");
+            }
+            $refOwners = ActiveTradeOwner::owneresByLId($request->applicationId);
+            $DocsType['listDocs'] = $this->getApplTypeDocList($refApplication); 
+            $DocsType['ownerDocs'] = collect($refOwners)->map(function ($owner) use ($refApplication) {
+                return $this->getOwnerDocLists($owner, $refApplication);
+            }); 
+            // dd( $DocsType['ownerDocs'],$DocsType['listDocs']);    
+            return responseMsgs(true, "Documents Fetched", $DocsType, "010203", "1.0", "", 'POST', "");
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
 
 }
