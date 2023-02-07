@@ -702,13 +702,13 @@ class RainWaterHarvestingController extends Controller
     // }
 
     //moving function to location
-    public function moveFile($docName, $file)
-    {
-        $name = time() . $docName . '.' . $file->getClientOriginalExtension();
-        $path = storage_path('app/public/harvesting/' . $docName . '/');
-        $file->move($path, $name);
-        return $name;
-    }
+    // public function moveFile($docName, $file)
+    // {
+    //     $name = time() . $docName . '.' . $file->getClientOriginalExtension();
+    //     $path = storage_path('app/public/harvesting/' . $docName . '/');
+    //     $file->move($path, $name);
+    //     return $name;
+    // }
 
     /**
      * | Independent Comments
@@ -778,7 +778,7 @@ class RainWaterHarvestingController extends Controller
 
 
     /**
-     * 
+     * to upload documenr
      */
     public function uploadDocument(Request $req)
     {
