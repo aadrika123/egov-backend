@@ -65,22 +65,45 @@ class WaterApplicant extends Model
      */
     public function deleteWaterApplicant($id)
     {
-        WaterApplicant::where('application_id',$id)
-        ->delete();
+        WaterApplicant::where('application_id', $id)
+            ->delete();
     }
 
     /**
      * |---------- Edit the water owner Details ----------|
      */
-    public function editWaterOwners($req,$refWaterApplications)
+    public function editWaterOwners($req, $refWaterApplications)
     {
-            $owner = WaterApplicant::find($req->ownerId);
-            $reqs = [
-                'applicant_name'  =>$req->applicant_name ?? $refWaterApplications->applicant_name,
-                'guardian_name'   =>$req->guardian_name  ?? $refWaterApplications->guardian_name,
-                'mobile_no'       =>$req->mobile_no      ?? $refWaterApplications->mobile_no,
-                'email'           =>$req->email          ?? $refWaterApplications->email,
-            ];
-            $owner->update($reqs);
+        $owner = WaterApplicant::find($req->ownerId);
+        $reqs = [
+            'applicant_name'  => $req->applicant_name ?? $refWaterApplications->applicant_name,
+            'guardian_name'   => $req->guardian_name  ?? $refWaterApplications->guardian_name,
+            'mobile_no'       => $req->mobile_no      ?? $refWaterApplications->mobile_no,
+            'email'           => $req->email          ?? $refWaterApplications->email,
+        ];
+        $owner->update($reqs);
+    }
+
+    /**
+     * |
+     */
+    public function finalApplicantApproval($request)
+    {
+        $approvedWaterApplicant = WaterApplicant::query()
+            ->where('application_id', $request->applicationId)
+            ->get();
+
+        collect($approvedWaterApplicant)->map(function ($value) {
+            $approvedWaterOwners = $value->replicate();
+            $approvedWaterOwners->setTable('water_approval_applicants');
+            $approvedWaterOwners->id = $value->id;
+            $approvedWaterOwners->save();
+
+            $approvedWaterOwners = $value->replicate();
+            $approvedWaterOwners->setTable('water_consumer_owners');
+            $approvedWaterOwners->id = $value->id;
+            $approvedWaterOwners->save();
+            // $approvedWaterOwners->delete();
+        });
     }
 }

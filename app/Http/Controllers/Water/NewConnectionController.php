@@ -359,23 +359,31 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Get Approved Water Appliction   // RECHECK
+    // Get Approved Water Appliction 
+    /**
+        | Recheck / Updated 
+     */
     public function approvedWaterApplications(Request $request)
     {
         try {
-            $consumerNo = collect($request)->first();
-            if ($consumerNo) {
-                return $this->newConnection->getApprovedWater($request);
+            if ($request->consumerNo) {
+                $request->validate([
+                    "consumerNo" => "nullable",
+                ]);
+                $consumerDetails = $this->newConnection->getApprovedWater($request);
+                $refApplicationId['applicationId'] = $consumerDetails['id'];
+                $metaRequest = new Request($refApplicationId);
+                $refDocumentDetails = $this->getUploadDocuments($metaRequest);
+                $documentDetails['documentDetails'] = collect($refDocumentDetails)['original']['data'];
+                $consumerDetails = $consumerDetails->merge($documentDetails);
+                return responseMsgs(true, "Consumer Details!", remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
             }
 
-            $userId = auth()->user()->id;
             $mWaterConsumer = new WaterConsumer();
-            $mWaterConsumerOwner = new WaterConsumerOwner();
-            $mWaterConnectionCharge = new WaterConnectionCharge();
-           return  $approvedWater = $mWaterConsumer->getConsumerDetails();
+            $approvedWater = $mWaterConsumer->getConsumerDetails();
             $checkExist = $approvedWater->first()->id;
             if ($checkExist) {
-                return responseMsgs(true,"Approved Application Details!",$approvedWater);
+                return responseMsgs(true, "Approved Application Details!", $approvedWater, "", "03", "ms", "POST", "");
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -508,7 +516,7 @@ class NewConnectionController extends Controller
 
             $initiatorRoleId = $mWaterApplication->initiator_role_id;
             $mWaterApplication->current_role = $initiatorRoleId;
-            $mWaterApplication->parked = true;                        //<------ SAF Pending Status true
+            $mWaterApplication->parked = true;                        //<------  Pending Status true
             $mWaterApplication->save();
 
             $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
@@ -812,7 +820,10 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Serch the holding and the saf details 
+    /**
+     * | Serch the holding and the saf details
+     * | 01
+     */
     public function getSafHoldingDetails(Request $request)
     {
         $request->validate([
@@ -867,7 +878,8 @@ class NewConnectionController extends Controller
 
     /**
      * | check the catagory of the user 
-        | Not Used
+     * | calling function 01.01
+        | may Not Used
      */
     public function checkCatagory($request, $areaInSqFt, $propUsageType)
     {
@@ -892,7 +904,7 @@ class NewConnectionController extends Controller
 
     /**
      * | Get Usage type according to holding
-        | Calling function : for the search of the property usage type 
+     * | Calling function : for the search of the property usage type 01.02
      */
     public function getPropUsageType($request, $id)
     {
@@ -1024,6 +1036,8 @@ class NewConnectionController extends Controller
      * | @var waterOwnerDocs "Contain the list of owner Doc to Upload"
      * | @var totalDocLists "Application's Doc details"
      * | @return totalDocLists "Collective Data of Doc is returned"
+     * | Doc Upload for the Workflow
+     * | 01
         | RECHECK
         | Serial No : 
      */
@@ -1056,7 +1070,6 @@ class NewConnectionController extends Controller
     }
 
 
-    // Filter Document(1.2)
     /**
      * |---------------------------- Filter The Document For Viewing ----------------------------|
      * | @param documentList
@@ -1067,6 +1080,7 @@ class NewConnectionController extends Controller
      * | @var workflowId
      * | @var moduleId
      * | @var uploadedDocs
+     * | Calling Function 01.01.01/ 01.02.01
      */
     public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
     {
@@ -1122,7 +1136,11 @@ class NewConnectionController extends Controller
         return $filteredDocs;
     }
 
-    // List of the doc to upload
+    /**
+     * |---------------------------- List of the doc to upload ----------------------------|
+     * | Calling function
+     * | 01.01
+     */
     public function getWaterDocLists($application)
     {
         $mRefReqDocs = new RefRequiredDocument();
@@ -1159,7 +1177,12 @@ class NewConnectionController extends Controller
         });
     }
 
-    // Get owner Doc list
+
+    /**
+     * |---------------------------- Get owner Doc list ----------------------------|
+     * | Calling Function
+     * | 01.02
+     */
     public function getOwnerDocLists($refOwners, $application)
     {
         $mRefReqDocs = new RefRequiredDocument();
@@ -1185,7 +1208,10 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Search Application
+    /**
+     * |---------------------------- Search Application ----------------------------|
+     * | Search Application using provided condition For the Admin 
+     */
     public function searchWaterConsumer(Request $request)
     {
         $request->validate([
@@ -1280,27 +1306,6 @@ class NewConnectionController extends Controller
         }
     }
 
-
-    /**
-     * | View all Consumer Details
-     * | @param request
-     * | @var
-     * | @return  
-     */
-    // public function getFullConsumerDetails(Request $req)
-    // {
-    //     try {
-    //         // Consumer details , Owners Details , Payment details ,
-    //         $mWaterConsumer = new WaterConsumer();
-    //         $mWaterTran = new WaterTran();
-    //         $mWaterConsumerOwner = new WaterConsumerOwner(); 
-    //         $consumerDetails['consumerDetails'] =
-    //         $ownerDetails['OwnerDetails'] = 
-    //         $paymentDetails['paymentDetails'] = 
-    //     } catch (Exception $e) {
-    //         return responseMsg(false, $e->getMessage(), "");
-    //     }
-    // }
 }
 
 
