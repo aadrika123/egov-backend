@@ -198,69 +198,25 @@ class CashVerificationController extends Controller
         $userId =  $request->id;
         $ulbId =  authUser()->ulb_id;
         $date = date('Y-m-d', strtotime($request->date));
+        $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
+        $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+        $mTempTransaction = new TempTransaction();
+        $details = $mTempTransaction->transactionList($date, $userId, $ulbId);
 
-        $data['Transaction'] = TempTransaction::select(
-            'temp_transactions.id',
-            'transaction_no',
-            'payment_mode',
-            'amount',
-            'ward_no',
-            'application_no',
-            'tran_date',
-            'user_name'
-        )
-            ->join('users', 'users.id', 'temp_transactions.user_id')
-            ->where('tran_date', $date)
-            ->where('payment_mode', '!=', 'ONLINE')
-            ->where('user_id', $userId)
-            ->where('temp_transactions.ulb_id', $ulbId)
-            ->groupBy('temp_transactions.id', 'user_name')
-            ->get();
+        $data['property'] = collect($details)->where('module_id', $propertyModuleId)->values();
+        $data['water'] = collect($details)->where('module_id', $waterModuleId)->values();
+        $data['trade'] = collect($details)->where('module_id', $tradeModuleId)->values();
 
-        $data['Cash'] = TempTransaction::select(
-            DB::raw("sum(temp_transactions.amount) as amount"),
-            // 'payment_mode'
-        )
-            ->where('user_id', $userId)
-            ->where('tran_date', $date)
-            ->where('payment_mode', '=', 'Cash')
-            // ->groupBy('temp_transactions.payment_mode')
-            ->first();
-
-        $data['Cheque'] = TempTransaction::select(
-            DB::raw("sum(temp_transactions.amount) as amount"),
-            // 'payment_mode'
-        )
-            ->where('user_id', $userId)
-            ->where('tran_date', $date)
-            ->where('payment_mode', '=', 'Cheque')
-            // ->groupBy('temp_transactions.payment_mode')
-            ->first();
-
-        $data['DD'] = TempTransaction::select(
-            DB::raw("sum(temp_transactions.amount) as amount"),
-            // 'payment_mode'
-        )
-            ->where('user_id', $userId)
-            ->where('tran_date', $date)
-            ->where('payment_mode', '=', 'DD')
-            // ->groupBy('temp_transactions.payment_mode')
-            ->first();
-
-        $data['RTGS'] = TempTransaction::select(
-            DB::raw("sum(temp_transactions.amount) as amount"),
-            // 'payment_mode'
-        )
-            ->where('user_id', $userId)
-            ->where('tran_date', $date)
-            ->where('payment_mode', '=', 'RTGS')
-            // ->groupBy('temp_transactions.payment_mode')
-            ->first();
-
-        $data['Total Amount'] =  $data['Transaction']->sum('amount');
-        $data['No. of Transaction'] =  $data['Transaction']->count();
-        $data['Collector Name'] =  collect($data['Transaction'])[0]->user_name;
-        $data['Date'] = $date;
+        $data['Cash'] = collect($details)->where('payment_mode', '=', 'Cash')->first()->amount;
+        $data['Cash'] = collect($details)->where('payment_mode', '=', 'Cash')->first()->amount;
+        $data['Cheque'] = collect($details)->where('payment_mode', '=', 'Cheque')->first()->amount;
+        // $data['DD'] = collect($details)->where('payment_mode', '=', 'DD')->first()->amount;
+        // $data['RTGS'] = collect($details)->where('payment_mode', '=', 'RTGS')->first()->amount;
+        $data['totalAmount'] =  $details->sum('amount');
+        $data['numberOfTransaction'] =  $details->count();
+        $data['collectorName'] =  collect($details)[0]->user_name;
+        $data['date'] = $date;
 
         return responseMsgs(true, "TC Collection", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
     }
@@ -282,7 +238,7 @@ class CashVerificationController extends Controller
         $sql =   "WITH 
             prop_transactions AS 
         (
-            SELECT prop_transactions.id,assessment_type AS tran_type, saf_no AS application_no,tran_no,
+            SELECT prop_transactions.id, saf_no AS application_no,tran_no,
             payment_mode,amount,verify_status,verified_by,verify_date,ward_name,tran_date,
                     prop_active_safs.ward_mstr_id AS ward_id , owner_name,'activ_saf' AS tbl
                 FROM prop_transactions
@@ -306,7 +262,7 @@ class CashVerificationController extends Controller
                     AND prop_transactions.user_id = $userId
             union
                 (
-                    SELECT prop_transactions.id,assessment_type AS tran_type, saf_no AS application_no,tran_no,
+                    SELECT prop_transactions.id, saf_no AS application_no,tran_no,
                     payment_mode,amount,verify_status,verified_by,verify_date,ward_name,tran_date,
                         prop_rejected_safs.ward_mstr_id AS ward_id , owner_name,'rejected_saf' AS tbl
                     FROM prop_transactions
@@ -331,7 +287,7 @@ class CashVerificationController extends Controller
                 )
             union
                 (
-                    SELECT prop_transactions.id,assessment_type AS tran_type, saf_no AS application_no,
+                    SELECT prop_transactions.id, saf_no AS application_no,
                     tran_no,payment_mode,amount,verify_status,verified_by,verify_date,ward_name,tran_date,
                         prop_safs.ward_mstr_id AS ward_id , owner_name,'prop_saf' AS tbl
                     FROM prop_transactions
@@ -356,7 +312,7 @@ class CashVerificationController extends Controller
                 )
             union
                 (
-                    SELECT prop_transactions.id,assessment_type AS tran_type, holding_no AS application_no,tran_no,
+                    SELECT prop_transactions.id, holding_no AS application_no,tran_no,
                     payment_mode,amount,verify_status,verified_by,verify_date,ward_name,tran_date,
                         prop_properties.ward_mstr_id AS ward_id , owner_name,'prop_properties' AS tbl
                     FROM prop_transactions
@@ -568,6 +524,21 @@ class CashVerificationController extends Controller
         $data['property'] =  DB::select($sql);
         $data['trade'] =  DB::select($trade);
         $data['water'] =  DB::select($water);
+
+        $total['property'] =  collect($data['property'])->map(function ($value) {
+            return $value->amount;
+        })->sum();
+
+        $total['trade'] =  collect($data['trade'])->map(function ($value) {
+            return $value->amount;
+        })->sum();
+
+        $total['water'] =  collect($data['water'])->map(function ($value) {
+            return $value->amount;
+        })->sum();
+
+        $data['totalAmount'] = collect($total)->sum();
+        $data['date'] = $date;
 
         return responseMsgs(true, "TC Collection", $data, "010201", "1.0", "", "POST", $request->deviceId ?? "");
     }

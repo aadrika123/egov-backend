@@ -847,6 +847,7 @@ class ActiveSafController extends Controller
 
             if ($request->action == 'forward') {
                 $this->checkPostCondition($senderRoleId, $wfLevels, $saf);          // Check Post Next level condition
+                $saf->last_role_id = $request->receiverRoleId;                      // Update Last Role Id
             }
             // SAF Application Update Current Role Updation
             DB::beginTransaction();
@@ -863,10 +864,10 @@ class ActiveSafController extends Controller
             $track->saveTrack($request);
 
             DB::commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "", "010109", "1.0", "", "POST", $request->deviceId);
         }
     }
 

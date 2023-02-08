@@ -95,15 +95,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    */
   Route::controller(SafDocController::class)->group(function () {
     Route::post('saf/document-upload', 'docUpload');                                                    // Upload Documents for SAF (01)
-    Route::post('saf/get-uploaded-documents', 'getUploadDocuments');                                      // View Uploaded Documents for SAF (02)
+    Route::post('saf/get-uploaded-documents', 'getUploadDocuments');                                    // View Uploaded Documents for SAF (02)
     Route::post('saf/get-doc-list', 'getDocList');                                                      // Get Document Lists(03)
-  });
-
-  /**
-   * | SAF Reassessment
-       | Serial No : 03
-   */
-  Route::controller(SafReassessmentController::class)->group(function () {
+    Route::post('saf/doc-verify-reject', 'docVerifyReject');                                            // Verify or Reject Saf Documents(04)
   });
 
   /**
@@ -138,7 +132,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    * | PropertyBifurcation Process
    * | Crated By - Sandeep Bara
    * | Created On- 23-11-2022
-       | Serial No : 06
+     | Serial No : 06
    */
   Route::controller(PropertyBifurcationController::class)->group(function () {
     Route::post('searchByHoldingNoBi', "readHoldigbyNo");
