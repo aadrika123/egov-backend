@@ -187,76 +187,13 @@ class TradeApplication extends Controller
         $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
         $mUserType          = $this->_parent->userType($refWorkflowId);
         
+        
         // if(strtoupper($mUserType)!="ONLINE")
-        // {
-            
-        //     $data->original["data"]["listDocs"] = collect($data->original["data"]["documentsList"])
-        //                                             ->map(function($val){
-        //                                                 $docType = (sizeOf($val["docVal"])>1)?"O":"R";
-                                                       
-        //                                                 $uploadedDoc = !empty($val["uploadDoc"]) ?
-        //                                                                 [
-        //                                                                     "uploadedDocId"=>$val["uploadDoc"]["id"],
-        //                                                                     "documentCode"=>$val["uploadDoc"]["doc_name"],
-        //                                                                     "docPath"=>$val["uploadDoc"]["doc_path"],
-        //                                                                     "verifyStatus"=>$val["uploadDoc"]["verify_status"],
-        //                                                                     "remarks"=>$val["uploadDoc"]["remarks"],
-        //                                                                 ]
-        //                                                                 :$val["uploadDoc"];
-
-        //                                                 $masters = $val["docVal"]->map(function($val1){
-                                                            
-        //                                                     $val1["documentCode"] = $val1["doc_name"];
-        //                                                     return$val1;
-        //                                                 });
-        //                                                 return(["docType"=>$docType,"uploadedDoc"=>$uploadedDoc,"masters"=>$masters]);
-
-        //                                             });
-            
-        //     $data->original["data"]["ownerDocs"] = collect($data->original["data"]["ownersDocList"])
-        //                                             ->map(function($val){
-                                                        
-        //                                                 $ownerDetails = [
-        //                                                     "ownerId"=>$val[0]["ownerId"] ,
-        //                                                     "name"=>$val[0]["ownerName"],
-        //                                                     "mobile"=>"",
-        //                                                     "guardian"=>"",
-        //                                                     "uploadedDoc"=>$val[0]["uploadDoc"],
-        //                                                     "verifyStatus"=>"",
-        //                                                 ];
-        //                                                 $documents = collect($val)->map(function($val1){
-        //                                                     $docType = (sizeOf($val1["docVal"])>1)?"O":"R";
-                                                           
-        //                                                     $uploadedDoc = !empty($val1["uploadDoc"]) ?
-        //                                                                     [
-        //                                                                         "uploadedDocId"=>$val1["uploadDoc"]["id"],
-        //                                                                         "documentCode"=>$val1["uploadDoc"]["doc_name"],
-        //                                                                         "docPath"=>$val1["uploadDoc"]["doc_path"],
-        //                                                                         "verifyStatus"=>$val1["uploadDoc"]["verify_status"],
-        //                                                                         "remarks"=>$val1["uploadDoc"]["remarks"],
-        //                                                                     ]
-        //                                                                     :$val1["uploadDoc"];
-    
-        //                                                     $masters = $val1["docVal"]->map(function($val2){
-                                                               
-        //                                                         $val2["documentCode"] = $val2["doc_name"];
-        //                                                         return$val2;
-        //                                                     });
-        //                                                     return(["docType"=>$docType,"uploadedDoc"=>$uploadedDoc,"masters"=>$masters]);
-    
-        //                                                 });
-        //                                                 return(["ownerDetails"=>$ownerDetails,"documents"=>$documents,]);
-
-        //                                             });
-        // }
-        if(strtoupper($mUserType)!="ONLINE")
         {
             $tradC = new Trade();
             return $tradC->getLicenseDocLists($request);
         }
         return $this->Repository->getDocList($request);
-        // return responseMsg($data->original["status"],$data->original["message"],$data->original["data"],);
-        
     }
 
 
@@ -668,67 +605,57 @@ class TradeApplication extends Controller
         $req->validate([
             "applicationId" => "required|digits_between:1,9223372036854775807",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            // "docMstrId" => "required|digits_between:1,9223372036854775807",
+            "docName" => "required",
             "docCode" => "required",
             "ownerId" => "nullable|digits_between:1,9223372036854775807"
         ]);
 
         try {
             $tradC = new Trade();
-            $documents = $tradC->getDocList($req);
+            $documents = $tradC->getLicenseDocLists($req);
             if(!$documents->original["status"])
             {
                 throw new Exception($documents->original["message"]);
-            }
-            $applicationDoc = $documents->original["data"]["documentsList"];
-            $ownerDoc = $documents->original["data"]["ownersDocList"];
-            $requiredDocs = $applicationDoc->implode("docName",",");            
-            $docId = $applicationDoc->map(function($val1){
-                return($val1["docVal"]->implode("id",","));
-            });
-            $docId = $docId->implode(",");
-            $requiredDocs2 = $ownerDoc->map(function($val){
-                $docName = $val->implode("docName",",");
-                $docId = $val->map(function($val1){
-                    return($val1["docVal"]->implode("id",","));
+            };
+            $applicationDoc = $documents->original["data"]["listDocs"];
+            $applicationDocName = $applicationDoc->implode("docName",",");
+            $applicationDocCode = $applicationDoc->where("docName",$req->docName)->first();
+            $applicationCode = $applicationDocCode?$applicationDocCode["masters"]->implode("documentCode",","):"";
+            // $mandetoryDoc = $applicationDoc->whereIn("docType",["R","OR"]);
+
+            $ownerDoc = $documents->original["data"]["ownerDocs"];
+            $ownerDocsName = $ownerDoc->map(function($val){
+                $doc = $val["documents"]->map(function($val1){
+                    return["docType"=>$val1["docType"],"docName"=>$val1["docName"],"documentCode"=>$val1["masters"]->implode("documentCode",",")];
                 });
-                $docId= collect($docId)->implode(",");
-                $ownerId = $val->implode("ownerId",",");
-                return["docName"=>$docName,"docId"=>$docId,"ownerId"=>$ownerId];
+                $ownereId = $val["ownerDetails"]["ownerId"];
+                $docNames = $val["documents"]->implode("docName",",");
+                return ["ownereId"=>$ownereId,"docNames"=>$docNames,"doc"=>$doc];
             });
-            $ownerId = $requiredDocs2->implode("ownerId",",");
-            $docId2 = $requiredDocs2->implode("docId",",");
-            $docName = $requiredDocs2->implode("docName",",");
-            $docRefName = $req->docRefName;
-            $specifids = collect($applicationDoc->where("docName",$req->docRefName))->map(function($val){
-                return $val["docVal"]->implode("id",",");
-            });
-            $specifids2 = $requiredDocs2 = $ownerDoc->map(function($val) use($docRefName){
-                $docName = $val->where("docName",$docRefName);
-                $docId = $docName->map(function($val1){
-                    return($val1["docVal"]->implode("id",","));
-                });
-                $docId= collect($docId)->implode(",");
-                return["docId"=>$docId,];
-            });
-            $specifids = $specifids->implode("docId",",");
-            $specifids2 = $specifids2->implode("docId",",");
-            if(!(in_array($req->docCode,explode(",",$requiredDocs))==true || in_array($req->docCode,explode(",",$docName)) ==true))
+            $ownerDocNames = $ownerDocsName->implode("docNames",",");
+            
+            $ownerIds = $ownerDocsName->implode("ownereId",",");
+            $particuler = (collect($ownerDocsName)->where("ownereId",$req->ownerId)->values())->first();
+           
+            $ownereDocCode = $particuler?collect($particuler["doc"])->where("docName",$req->docName)->all():"";
+            
+            $particulerDocCode = collect($ownereDocCode)->implode("documentCode",",");
+            if(!(in_array($req->docName,explode(",",$applicationDocName))==true || in_array($req->docName,explode(",",$ownerDocNames)) ==true))
             {
-                throw new Exception("Invalid Doc Code Pass");
+                throw new Exception("Invalid Doc Name Pass");
             }
-            // if(in_array($req->docRefName,explode(",",$requiredDocs)) && !in_array($req->docMstrId,explode(",",$specifids)))
-            // {
-            //     throw new Exception("Invalid docMstrId Pass For Application");
-            // }
-            // if(in_array($req->docRefName,explode(",",$docName)) && !in_array($req->docMstrId,explode(",",$specifids2)))
-            // {
-            //     throw new Exception("Invalid docMstrId Pass For Owners");
-            // }
-            // if(in_array($req->docRefName,explode(",",$docName)) && in_array($req->docMstrId,explode(",",$specifids2)) && !in_array($req->ownerId,explode(",",$ownerId)))
-            // {
-            //     throw new Exception("Invalid ownerId Pass");
-            // }
+            if(in_array($req->docName,explode(",",$applicationDocName)) && (empty($applicationDocCode) || !(in_array($req->docCode,explode(",",$applicationCode)))))
+            {
+                throw new Exception("Invalid Application Doc Code Pass");
+            }
+            if(in_array($req->docName,explode(",",$ownerDocNames)) && (!(in_array($req->ownerId,explode(",",$ownerIds)))))
+            {
+                throw new Exception("Invalid ownerId Pass");
+            }
+            if(in_array($req->docName,explode(",",$ownerDocNames)) && ($ownereDocCode && !(in_array($req->docCode,explode(",",$particulerDocCode)))))
+            {
+                throw new Exception("Invalid Ownere Doc Code Pass");
+            }
             
             $metaReqs = array();
             $docUpload = new DocUpload;
@@ -736,7 +663,7 @@ class TradeApplication extends Controller
             $mActiveTradeLicence = new ActiveTradeLicence();
             $relativePath = Config::get('TradeConstant.TRADE_RELATIVE_PATH');
             $getLicenceDtls = $mActiveTradeLicence->getLicenceNo($req->applicationId);
-            $refImageName = $req->docRefName;
+            $refImageName = $req->docCode;
             $refImageName = $getLicenceDtls->id . '-' . str_replace(' ', '_', $refImageName);
             $document = $req->document;
 
@@ -748,27 +675,29 @@ class TradeApplication extends Controller
             $metaReqs['ulbId'] = $getLicenceDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
             $metaReqs['document'] = $imageName;
-            $metaReqs['docMstrId'] = $req->docMstrId;
-            $metaReqs['docCode'] = $req->docCode;
-            if(in_array($req->docCode,explode(",",$docName)) ) //&& in_array($req->docMstrId,explode(",",$specifids2))
+            $metaReqs['docCode'] = $req->docName;//$req->docCode;
+            
+            if(in_array($req->docName,explode(",",$ownerDocNames)) ) 
             {
                 $metaReqs['ownerDtlId'] = $req->ownerId;
             }
-
+            
             #reupload documents;
-            if($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id,$getLicenceDtls->ulb_id, collect($req->docRefName), $metaReqs['ownerId']??null))
+            if($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id,$getLicenceDtls->ulb_id, collect($req->docName), $metaReqs['ownerDtlId']??null))
             {
                 if($privDoc->verify_status!=2)
                 {
+                    // dd("update");
                     $arr["verify_status"] = 0;
                     $arr['relative_path'] = $relativePath;
                     $arr['document'] = $imageName;
-                    $arr['doc_code'] = $req->docCode;
+                    $arr['docCode'] = $req->docName;
                     $arr['owner_dtl_id'] = $metaReqs['ownerDtlId']??null;
                     $mWfActiveDocument->docVerifyReject($privDoc->id,$arr);
                 }
                 else
                 {
+                    // dd("reupload");
                     $mWfActiveDocument->docVerifyReject($privDoc->id,["status"=>0]);
                     $metaReqs = new Request($metaReqs);
                     $mWfActiveDocument->postDocuments($metaReqs);
@@ -776,10 +705,14 @@ class TradeApplication extends Controller
                 return responseMsgs(true, $req->docRefName." Update Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
             }
             #new documents;
+            
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
             return responseMsgs(true,  $req->docRefName." Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {
+            // dd($e->getMessage(),$e->getFile(),$e->getLine());
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }

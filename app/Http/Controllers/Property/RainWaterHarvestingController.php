@@ -8,8 +8,6 @@ use App\Models\CustomDetail;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropFloor;
-use App\Models\Property\PropHarvestingDoc;
-use App\Models\Property\PropHarvestingLevelpending;
 use App\Models\Property\PropOwner;
 use App\Models\Property\RefPropDocsRequired;
 use App\Models\Workflows\WfActiveDocument;
@@ -94,9 +92,11 @@ class RainWaterHarvestingController extends Controller
 
             $ulbId = $request->ulbId;
             $userType = auth()->user()->user_type;
+            $citizenId = NULL;
+            $userId = NULL;
 
             if ($userType == 'Citizen') {
-                $userId = auth()->user()->id;
+                $citizenId = auth()->user()->id;
             }
 
             if ($userType != 'Citizen') {
@@ -114,7 +114,7 @@ class RainWaterHarvestingController extends Controller
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
             $mPropActiveHarvesting = new PropActiveHarvesting();
-            $waterHaravesting  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId);
+            $waterHaravesting  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId, $citizenId);
 
             if ($userType == 'Citizen') {
                 $metaReqs = array();
@@ -954,7 +954,10 @@ class RainWaterHarvestingController extends Controller
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
-                    "uploadedDoc'" => $uploadedDoc->doc_path ?? null
+                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
+                    "uploadedDocId" => $uploadedDoc->id ?? "",
+                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
+                    "remarks" => $uploadedDoc->remarks ?? "",
                 ];
                 return $arr;
             });
@@ -971,6 +974,26 @@ class RainWaterHarvestingController extends Controller
         $data =  RefRequiredDocument::where('code', 'PROP_RAIN_WATER_HARVESTING')
             ->first();
 
-        return responseMsgs(true, "Citizen Doc List", remove_null($data), 010717, 1.0, "413ms", "POST", "", "");
+        $document = explode(',', $data->requirements);
+        $key = array_shift($document);
+        $code = collect($document);
+        $label = array_shift($document);
+        $documents = collect();
+
+        $reqDoc['docType'] = $key;
+        $reqDoc['docName'] = substr($label, 1, -1);
+        $reqDoc['uploadedDoc'] = $documents->first();
+
+        $reqDoc['masters'] = collect($document)->map(function ($doc) {
+            $strLower = strtolower($doc);
+            $strReplace = str_replace('_', ' ', $strLower);
+            $arr = [
+                "documentCode" => $doc,
+                "docVal" => ucwords($strReplace),
+            ];
+            return $arr;
+        });
+
+        return responseMsgs(true, "Citizen Doc List", remove_null($reqDoc), 010717, 1.0, "413ms", "POST", "", "");
     }
 }

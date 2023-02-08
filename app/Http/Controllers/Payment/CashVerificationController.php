@@ -551,11 +551,11 @@ class CashVerificationController extends Controller
     {
         $userId = authUser()->id;
         $ulbId = authUser()->ulb_id;
-        $property =  $request->property;
+        $tNo =  $request->transactionNo;
         $water =  $request->water;
         $trade =  $request->trade;
 
-        foreach ($property as $p) {
+        foreach ($tNo as $p) {
             PropTransaction::where('tran_no', $p)
                 ->update(
                     [
@@ -566,7 +566,7 @@ class CashVerificationController extends Controller
                 );
         }
 
-        foreach ($water as $p) {
+        foreach ($tNo as $p) {
             WaterTran::where('tran_no', $p)
                 ->update(
                     [
@@ -577,7 +577,7 @@ class CashVerificationController extends Controller
                 );
         }
 
-        foreach ($trade as $t) {
+        foreach ($tNo as $t) {
             TradeTransaction::where('tran_no', $t)
                 ->update(
                     [

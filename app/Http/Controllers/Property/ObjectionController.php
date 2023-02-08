@@ -654,21 +654,11 @@ class ObjectionController extends Controller
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
-
+            $label = array_shift($document);
             $documents = collect();
 
-            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
-                $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
-                if ($uploadedDoc) {
-                    $response = [
-                        "documentCode" => $item,
-                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $uploadedDoc->doc_path ?? ""
-                    ];
-                    $documents->push($response);
-                }
-            });
             $reqDoc['docType'] = $key;
+            $reqDoc['docName'] = substr($label, 1, -1);
             $reqDoc['uploadedDoc'] = $documents->first();
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
@@ -678,7 +668,10 @@ class ObjectionController extends Controller
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
-                    "uploadedDoc'" => $uploadedDoc->doc_path ?? null
+                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
+                    "uploadedDocId" => $uploadedDoc->id ?? "",
+                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
+                    "remarks" => $uploadedDoc->remarks ?? "",
                 ];
                 return $arr;
             });
@@ -778,14 +771,43 @@ class ObjectionController extends Controller
                 $data =  RefRequiredDocument::select('*')
                     ->where('code', 'OBJECTION_CLERICAL_ID')
                     ->first();
+                $code = $this->filterCitizenDoc($data);
                 break;
 
             case ('address'):
                 $data =  RefRequiredDocument::select('*')
                     ->where('code', 'OBJECTION_CLERICAL_ADDRESS')
                     ->first();
+                $code = $this->filterCitizenDoc($data);
                 break;
         }
-        return responseMsgs(true, "Citizen Doc List", remove_null($data), 010717, 1.0, "413ms", "POST", "", "");
+        return responseMsgs(true, "Citizen Doc List", remove_null($code), 010717, 1.0, "413ms", "POST", "", "");
+    }
+
+    /**
+     * 
+     */
+    public function filterCitizenDoc($data)
+    {
+        $document = explode(',', $data->requirements);
+        $key = array_shift($document);
+        $code = collect($document);
+        $label = array_shift($document);
+        $documents = collect();
+
+        $reqDoc['docType'] = $key;
+        $reqDoc['docName'] = substr($label, 1, -1);
+        $reqDoc['uploadedDoc'] = $documents->first();
+
+        $reqDoc['masters'] = collect($document)->map(function ($doc) {
+            $strLower = strtolower($doc);
+            $strReplace = str_replace('_', ' ', $strLower);
+            $arr = [
+                "documentCode" => $doc,
+                "docVal" => ucwords($strReplace),
+            ];
+            return $arr;
+        });
+        return $reqDoc;
     }
 }
