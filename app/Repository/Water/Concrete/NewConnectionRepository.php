@@ -331,29 +331,48 @@ class NewConnectionRepository implements iNewConnection
      */
     public function postNextLevel($req)
     {
+        $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
+        $waterApplication = WaterApplication::find($req->applicationId);
+
+        if ($req->action == 'forward') {
+            $this->checkPostCondition($req->senderRoleId, $wfLevels, $waterApplication);            // Check Post Next level condition
+            $waterApplication->last_role_id = $req->receiverRoleId;                                 // Update Last Role Id
+        }
         $metaReqs['moduleId'] =  $this->_waterModulId;
         $metaReqs['workflowId'] = $this->_waterWorkId;
         $metaReqs['refTableDotId'] = 'water_applications.id';
         $metaReqs['refTableIdValue'] = $req->applicationId;
         $req->request->add($metaReqs);
 
+        DB::beginTransaction();
         $waterTrack = new WorkflowTrack();
         $waterTrack->saveTrack($req);
 
-        # objection Application Update Current Role Updation
-        // return $currentRolecount = $waterApplication->current_role;
-        // WfWorkflowrolemap::select('serial_no')
-        // ->where('wf_role_id',$currentRolecount)
-        // ->where('workflow_id',$this->_waterWorkflowId)
-        // ->first();
-
-        $waterApplication = WaterApplication::find($req->applicationId);
         $waterApplication->current_role = $req->receiverRoleId;
         $waterApplication->save();
+        DB::commit();
 
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
 
+    /**
+     * | check Post Condition for backward forward
+        | Serial No : 04.01
+        | working 
+     */
+    public function checkPostCondition($senderRoleId, $wfLevels, $saf)
+    {
+        switch ($senderRoleId) {
+            case $wfLevels['BO']:                        // Back Office Condition
+                if ($saf->doc_upload_status == 0)
+                    throw new Exception("Document Not Fully Uploaded");
+                break;
+            case $wfLevels['DA']:                       // DA Condition
+                if ($saf->doc_verify_status == 0)
+                    throw new Exception("Document Not Fully Verified");
+                break;
+        }
+    }
 
     /**
      * |---------------------------------------------- Special Inbox -----------------------------------------|
@@ -420,7 +439,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var rejectedWater
      * | @var msg
         | Serial No : 07 
-        | Working / Check it / remove the comment ??
+        | Working / Check it / remove the comment ?? for delete
      */
     public function approvalRejectionWater($request)
     {
@@ -433,7 +452,7 @@ class NewConnectionRepository implements iNewConnection
             throw new Exception("Application has not Reached to the finisher!");
         }
         DB::beginTransaction();
-        // Approval
+        // Approval of water application 
         if ($request->status == 1) {
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
@@ -442,7 +461,7 @@ class NewConnectionRepository implements iNewConnection
             $mWaterApplicant->finalApplicantApproval($request);
             $msg = "Application Successfully Approved !!";
         }
-        // Rejection
+        // Rejection of water application
         if ($request->status == 0) {
             $rejectedWater = WaterApplication::query()
                 ->where('id', $request->applicationId)

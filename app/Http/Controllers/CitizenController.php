@@ -184,8 +184,8 @@ class CitizenController extends Controller
 
             $id = auth()->user()->id;
             $citizen = ActiveCitizen::where('id', $id)->firstOrFail();
-            $oldPass = Hash::make($request->password);
-            if ($citizen->password == $oldPass) {
+            $validPassword = Hash::check($request->password, $citizen->password);
+            if ($validPassword) {
 
                 $citizen->password = Hash::make($request->newPassword);
                 $citizen->save();
