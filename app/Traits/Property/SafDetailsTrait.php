@@ -21,7 +21,8 @@ trait SafDetailsTrait
             ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $data->property_type, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Zone', 'key' => 'zone', 'value' => ($data->zone_mstr_id == 1) ? 'Zone 1' : 'Zone 2', 'canBtc' => 'true', 'canEdit' => 'false'],
             ['displayString' => 'Property has Mobile Tower(s) ?', 'key' => 'isMobileTower', 'value' => ($data->is_mobile_tower == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true'],
-            ['displayString' => 'Property has Hoarding Board(s) ?', 'key' => 'isHoardingBoard', 'value' => ($data->is_hoarding_board == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true']
+            ['displayString' => 'Property has Hoarding Board(s) ?', 'key' => 'isHoardingBoard', 'value' => ($data->is_hoarding_board == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Property has Rain Water Harvesting ?', 'key' => 'isWaterHarvesting', 'value' => ($data->is_water_harvesting == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true']
         ]);
     }
 
@@ -145,16 +146,16 @@ trait SafDetailsTrait
         $owners = collect($ownerDetails)->implode('owner_name', ',');
 
         $propertyDetails = new Collection([
+            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
+            ['displayString' => 'Holding No', 'key' => 'safNo', 'value' => $req->holding_no],
             ['displayString' => 'DOB', 'key' => 'dob', 'value' => $req->dob],
             ['displayString' => 'Gender', 'key' => 'gender', 'value' => $req->gender],
             ['displayString' => 'Is Armed Force', 'key' => 'isArmedForce', 'value' => ($req->is_armed_force == true) ? 'Yes' : 'No'],
             ['displayString' => 'Is Specially Abled', 'key' => 'isSpeciallyAbled', 'value' => ($req->is_specially_abled == true) ? 'Yes' : 'No'],
-            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
-            ['displayString' => 'Holding No', 'key' => 'safNo', 'value' => $req->holding_no],
-            ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
-            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
-            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
-            ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot]
+            ['displayString' => 'Owner', 'key' => 'ownerName', 'value' => $req->owner_name],
+            // ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
+            // ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
+            // ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot]
         ]);
 
         $cardElement = [
@@ -202,13 +203,16 @@ trait SafDetailsTrait
             ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
             ['displayString' => 'Holding No', 'key' => 'holdingNo', 'value' => $req->holding_no],
             ['displayString' => 'Harvesting No.', 'key' => 'harvestingNo', 'value' => $req->application_no],
-            ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
-            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
-            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
-            ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            // ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
+            // ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
+            // ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
+            ['displayString' => 'Plot-Area(decimal)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
             ['displayString' => 'Is Hoarding Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
             ['displayString' => 'Is Petrol Pump', 'key' => 'isPetrolPump', 'value' => ($req->is_petrol_pump == true) ? 'Yes' : 'No'],
-            ['displayString' => 'Is Water Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Previous Water Harvesting Status', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Is Harvesting done before 31-03-2017?', 'key' => 'harvestingBefore2017', 'value' => ($req->harvesting_status == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Date of Completion', 'key' => 'dateOfCompletion', 'value' => $req->date_of_completion],
+            ['displayString' => 'Pending At', 'key' => 'pendingStatus', 'value' => $req->current_role],
         ]);
 
         $cardElement = [

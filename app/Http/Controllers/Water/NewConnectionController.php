@@ -323,38 +323,6 @@ class NewConnectionController extends Controller
         }
     }
 
-    // View Uploaded Documents   
-    /**
-        | Not used
-     */
-    public function getWaterDocDetails(Request $request)
-    {
-        try {
-            $request->validate([
-                "applicationId" => "required",
-            ]);
-            return $this->newConnection->getWaterDocDetails($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    // Verification/Rejection of Document 
-    /**
-        | Not used
-     */
-    public function waterDocStatus(Request $request)
-    {
-        try {
-            $request->validate([
-                "applicationId" => "required",
-                "docStatus" => "required"
-            ]);
-            return $this->newConnection->waterDocStatus($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 
     // final Approval or Rejection of the Application
     public function approvalRejectionWater(Request $request)
@@ -365,7 +333,7 @@ class NewConnectionController extends Controller
                 "roleId" => "required",
                 "status" => "required"
             ]);
-            $waterDetails = WaterApplication::find($request->id);
+            $waterDetails = WaterApplication::find($request->applicationId);
             if ($waterDetails) {
                 return $this->newConnection->approvalRejectionWater($request);
             }
@@ -391,70 +359,32 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Get Approved Water Appliction   // RECHECK
+    // Get Approved Water Appliction 
+    /**
+        | Recheck / Updated 
+     */
     public function approvedWaterApplications(Request $request)
     {
         try {
-            $consumerNo = collect($request)->first();
-            if ($consumerNo) {
-                return $this->newConnection->getApprovedWater($request);
+            if ($request->consumerNo) {
+                $request->validate([
+                    "consumerNo" => "nullable",
+                ]);
+                $consumerDetails = $this->newConnection->getApprovedWater($request);
+                $refApplicationId['applicationId'] = $consumerDetails['id'];
+                $metaRequest = new Request($refApplicationId);
+                $refDocumentDetails = $this->getUploadDocuments($metaRequest);
+                $documentDetails['documentDetails'] = collect($refDocumentDetails)['original']['data'];
+                $consumerDetails = $consumerDetails->merge($documentDetails);
+                return responseMsgs(true, "Consumer Details!", remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
             }
 
-            $userId = auth()->user()->id;
-            $obj = new WaterApprovalApplicationDetail();
-            $chargesObj = new WaterConnectionCharge();
-            $approvedWater = $obj->getApplicationRelatedDetails()
-                ->select(
-                    'water_approval_application_details.id',
-                    'consumer_no',
-                    'water_approval_application_details.address',
-                    'ulb_masters.ulb_name',
-                    'water_approval_application_details.ward_id',
-                    'ulb_ward_masters.ward_name'
-                )
-                ->where('user_id', $userId)
-                ->get();
-            // return $approvedWater->first()->id;
-            if ($approvedWater) {
-                $connectionCharge = $chargesObj->getWaterchargesById($approvedWater->first()->id)->first();
-                $returnWater = collect($approvedWater)->map(
-                    function ($value, $key) {
-                        $owner = WaterApplicant::select(
-                            'applicant_name',
-                            'guardian_name',
-                            'mobile_no',
-                            'email'
-                        )
-                            ->where('application_id', $value['id'])
-                            ->get();
-                        $owner = collect($owner)->first();
-                        $user = collect($value);
-                        return $user->merge($owner);
-                    }
-                );
-                return responseMsgs(true, "List of Approved water Applications!", remove_null($returnWater), "", "02", ".ms", "POST", $request->deviceId);
+            $mWaterConsumer = new WaterConsumer();
+            $approvedWater = $mWaterConsumer->getConsumerDetails();
+            $checkExist = $approvedWater->first()->id;
+            if ($checkExist) {
+                return responseMsgs(true, "Approved Application Details!", $approvedWater, "", "03", "ms", "POST", "");
             }
-            throw new Exception("Data Not Found!");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    // Get the water payment details and track details  // RECHECK  
-    /**
-        | Not used
-     */
-    public function getIndependentComment(Request $request)
-    {
-        try {
-            $request->validate([
-                "id" => "required|int",
-            ]);
-            $userId = auth()->user()->id;
-            $trackObj = new WorkflowTrack();
-            $mWaterRef = 'water_applications.id';
-            $responseData = $trackObj->getTracksByRefId($mWaterRef, $request->id);
-            return responseMsgs(true, "payment Details!", remove_null($responseData), "01", "", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -586,7 +516,7 @@ class NewConnectionController extends Controller
 
             $initiatorRoleId = $mWaterApplication->initiator_role_id;
             $mWaterApplication->current_role = $initiatorRoleId;
-            $mWaterApplication->parked = true;                        //<------ SAF Pending Status true
+            $mWaterApplication->parked = true;                        //<------  Pending Status true
             $mWaterApplication->save();
 
             $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
@@ -700,6 +630,7 @@ class NewConnectionController extends Controller
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
             $propertyId = $applicationDetails['applicationDetails']['property_type_id'];
+
             # Document Details
             $metaReqs = [
                 'userId' => auth()->user()->id,
@@ -808,7 +739,7 @@ class NewConnectionController extends Controller
 
     // Get the document to be upoaded with list of dock uploaded 
     /**
-        | Working
+        | Working / Citizen Upload
      */
     public function getDocToUpload(Request $request)
     {
@@ -889,7 +820,10 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Serch the holding and the saf details 
+    /**
+     * | Serch the holding and the saf details
+     * | 01
+     */
     public function getSafHoldingDetails(Request $request)
     {
         $request->validate([
@@ -944,7 +878,8 @@ class NewConnectionController extends Controller
 
     /**
      * | check the catagory of the user 
-        | Not Used
+     * | calling function 01.01
+        | may Not Used
      */
     public function checkCatagory($request, $areaInSqFt, $propUsageType)
     {
@@ -969,7 +904,7 @@ class NewConnectionController extends Controller
 
     /**
      * | Get Usage type according to holding
-        | Calling function : for the search of the property usage type 
+     * | Calling function : for the search of the property usage type 01.02
      */
     public function getPropUsageType($request, $id)
     {
@@ -1101,6 +1036,8 @@ class NewConnectionController extends Controller
      * | @var waterOwnerDocs "Contain the list of owner Doc to Upload"
      * | @var totalDocLists "Application's Doc details"
      * | @return totalDocLists "Collective Data of Doc is returned"
+     * | Doc Upload for the Workflow
+     * | 01
         | RECHECK
         | Serial No : 
      */
@@ -1133,7 +1070,6 @@ class NewConnectionController extends Controller
     }
 
 
-    // Filter Document(1.2)
     /**
      * |---------------------------- Filter The Document For Viewing ----------------------------|
      * | @param documentList
@@ -1144,6 +1080,7 @@ class NewConnectionController extends Controller
      * | @var workflowId
      * | @var moduleId
      * | @var uploadedDocs
+     * | Calling Function 01.01.01/ 01.02.01
      */
     public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
     {
@@ -1199,7 +1136,11 @@ class NewConnectionController extends Controller
         return $filteredDocs;
     }
 
-    // List of the doc to upload
+    /**
+     * |---------------------------- List of the doc to upload ----------------------------|
+     * | Calling function
+     * | 01.01
+     */
     public function getWaterDocLists($application)
     {
         $mRefReqDocs = new RefRequiredDocument();
@@ -1236,7 +1177,12 @@ class NewConnectionController extends Controller
         });
     }
 
-    // Get owner Doc list
+
+    /**
+     * |---------------------------- Get owner Doc list ----------------------------|
+     * | Calling Function
+     * | 01.02
+     */
     public function getOwnerDocLists($refOwners, $application)
     {
         $mRefReqDocs = new RefRequiredDocument();
@@ -1262,7 +1208,10 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Search Application
+    /**
+     * |---------------------------- Search Application ----------------------------|
+     * | Search Application using provided condition For the Admin 
+     */
     public function searchWaterConsumer(Request $request)
     {
         $request->validate([
@@ -1356,6 +1305,7 @@ class NewConnectionController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
 }
 
 

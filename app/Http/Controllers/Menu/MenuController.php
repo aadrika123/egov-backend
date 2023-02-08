@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Menu;
 
 use App\Http\Controllers\Controller;
 use App\Models\Menu\MenuMaster;
+use App\Models\Menu\WfRolemenu;
 use App\Repository\Menu\Concrete\MenuRepo;
 use App\Repository\Menu\Interface\iMenuRepo;
 use Exception;
@@ -25,14 +26,25 @@ class MenuController extends Controller
         $this->_repo = $repo;
     }
 
-    // Get All menues // Working
+    /**
+     * |--------------------- Get the list of menues that are child Nodes ---------------------|
+     * | @param 
+     * | @var mMenuMaster model
+     * | @var refmenues get menu list
+     * | @var menues shorted menues
+     * | @var listedMenues collecting the menu Parent
+     * | @var value final List of menues
+     * | @return listedMenues returning values
+        | Serial No : 01
+        | Closed
+     */
     public function getAllMenues()
     {
         try {
             $mMenuMaster = new MenuMaster();
             $refmenues = $mMenuMaster->fetchAllMenues();
             $menues = $refmenues->sortByDesc("id");
-            return $listedMenues = collect($menues)->map(function ($value, $key) use ($mMenuMaster) {
+            $listedMenues = collect($menues)->map(function ($value) use ($mMenuMaster) {
                 if ($value['parent_serial'] != 0) {
                     $parent = $mMenuMaster->getMenuById($value['parent_serial']);
                     $parentName = $parent['menu_string'];
@@ -47,7 +59,13 @@ class MenuController extends Controller
         }
     }
 
-    // Get All the Menu By roles  // Working
+
+    /**
+     * |--------------------- Get Menu according to Roles ---------------------|
+     * | @param req roleId
+        | Serial No : 02
+        | Closed
+     */
     public function getMenuByRoles(Request $req)
     {
         try {
@@ -57,7 +75,13 @@ class MenuController extends Controller
         }
     }
 
-    // Enable or Disable Menu By Role  // Working
+
+    /**
+     * |--------------------- Enable or Desable the menu for roles ---------------------|
+     * | @param req roleId,menuId,status
+        | Serial No : 03
+        | Closed
+     */
     public function updateMenuByRole(Request $req)
     {
         try {
@@ -72,33 +96,37 @@ class MenuController extends Controller
         }
     }
 
-    // adding new menu in menu master
+
+    /**
+     * |--------------------- Adding new Menu ---------------------|
+     * | @param request menuName,Route
+     * | @var mMenuMaster Model
+        | Serial NO : 04
+        | Closed
+     */
     public function addNewMenues(Request $request)
     {
         try {
             $request->validate([
                 'menuName'      => 'required',
-                'route'         => 'required',
+                'route'         => 'nullable',
             ]);
-            $menuMaster = new MenuMaster();
-            $menuMaster->putNewMenues($request);
-            return responseMsg(true, "Data Saved!", "");
+            $mMenuMaster = new MenuMaster();
+            $mMenuMaster->putNewMenues($request);
+            return responseMsgs(true, "Data Saved!", "", "", "02", "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
-    // Getting userRole wise menus
-    public function getRoleWiseMenu(Request $request)
-    {
-        try {
-            return $this->_repo->getRoleWiseMenu($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 
-    // Soft Delition of the Menu in Menu Master
+    /**
+     * |--------------------- Soft Delition of the Menu in Menu Master ---------------------|
+     * | @param request menu Id
+     * | @var menuDeletion model
+        | Serial No : 05
+        | Closed
+     */
     public function deleteMenuesDetails(Request $request)
     {
         try {
@@ -112,7 +140,13 @@ class MenuController extends Controller
         }
     }
 
-    // Generate the menu tree srtucture
+
+    /**
+     * |--------------------- Generate the menu tree srtucture ---------------------|
+     * | @param request roleId -> opetional 
+        | Serial No : 06
+        | Closed
+     */
     public function getTreeStructureMenu(Request $request)
     {
         try {
@@ -122,7 +156,13 @@ class MenuController extends Controller
         }
     }
 
-    // List all the Parent Menu
+
+    /**
+     * |--------------------- List all parent Menu ---------------------|
+     * | @var mMenuMaster model
+        | Serial No : 07
+        | Closed
+     */
     public function listParentSerial()
     {
         try {
@@ -134,7 +174,16 @@ class MenuController extends Controller
         }
     }
 
-    // git the child of the menu 
+
+    /**
+     * |--------------------- Get the child of the menu  ---------------------|
+     * | @param request
+     * | @var mMenuMaster Model 
+     * | @var listedChild List of chil nodes
+     * | @return listedChild 
+        | Serial No : 08
+        | Closed
+     */
     public function getChildrenNode(Request $request)
     {
         try {
@@ -146,16 +195,76 @@ class MenuController extends Controller
         }
     }
 
-    // Upload menu master 
+
+    /**
+     * |--------------------- Update menu Master ---------------------|
+     * | @param request
+     * | @var mMenuMaster Model
+        | Serial No : 09
+        | Closed
+     */
     public function updateMenuMaster(Request $request)
     {
         $request->validate([
-            'id' => 'required'
+            'id' => 'required',
+            'serial' => 'nullable|int',
+            'parentSerial' => 'nullable|int',
+            'route' => 'nullable|',
+            'delete' => 'nullable|boolean'
         ]);
         try {
             $mMenuMaster = new MenuMaster();
             $mMenuMaster->updateMenuMaster($request);
-            return responseMsgs(true, "Menu Updated!", "", "", "", "", "POST", "");
+            return responseMsgs(true, "Menu Updated!", "", "", "02", "733", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * |--------------------- Get menu by Menu Id ---------------------|
+     * | @param request menuId
+     * | @var mMenuMaster model
+     * | @var menues menu list
+     * | @var parent list of parent 
+     * | @var parentName collect the name of the parent node 
+     * | @return menues list of menu according to menu id
+        | Serial No : 10
+        | Open
+     */
+    public function getMenuById(Request $request)
+    {
+        $request->validate([
+            'menuId' => 'required|int'
+        ]);
+        try {
+            $mMenuMaster = new MenuMaster();
+            $menues = $mMenuMaster->getMenuById($request->menuId);
+            if ($menues['parent_serial'] == 0) {
+                return responseMsgs(true, "Menu List!", $menues, "", "01", "", "POST", "");
+            }
+            $parent = $mMenuMaster->getMenuById($menues['parent_serial']);
+            $menues['parentName'] = $parent['menu_string'];
+            return responseMsgs(true, "Menu List!", $menues, "", "01", "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    /**
+        | Terminate
+     */
+    public function getRoleWiseMenu(Request $request)
+    {
+        try {
+            $mWfRolemenu = new WfRolemenu();
+            $menuList = $mWfRolemenu->getRoleWiseMenu();
+            $checkExist = collect($menuList)->first()->id;
+            if (!$checkExist) {
+                throw new Exception("Menu Not found!");
+            }
+            return responseMsgs(true, "Role Waise Menu!", $menuList, "", "02", "", "", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

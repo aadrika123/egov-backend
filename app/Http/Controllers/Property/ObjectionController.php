@@ -30,6 +30,12 @@ use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * | Created On-22-11-2022 
+ * | Created By-Mrinal Kumar
+ * --------------------------------------------------------------------------------------
+ * */
+
 class ObjectionController extends Controller
 {
     use WorkflowTrait;
@@ -194,6 +200,7 @@ class ObjectionController extends Controller
             ];
             $fullDetailsData['application_no'] = $details->objection_no;
             $fullDetailsData['apply_date'] = $details->date;
+            $fullDetailsData['objection_for'] = $details->objection_for;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
             // Table Array
             $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);

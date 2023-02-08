@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Redis;
 /**
  * | Created On-23-11-2022 
  * | Created By-Anshu Kumar
+ * | Updated On-25-11-2022
  * | Updated By-Sam Kerketta
  * | Repository for the Menu Permission
  */
@@ -31,9 +32,9 @@ class MenuRepo implements iMenuRepo
      * | @var menues
      * | @return menues
      * | Query Time - 343ms 
-     * | status-Closed
      * | rating-2
-        |  Serial No : 
+        | Serial No : 01
+        | Closed
      */
     public function getMenuByRoles($req)
     {
@@ -67,7 +68,8 @@ class MenuRepo implements iMenuRepo
      * | Query Time - 366 ms 
      * | Status-Closed 
      * | Rating-2
-        |  Serial No : 
+        |  Serial No : 02
+        | Closed
      */
     public function updateMenuByRole($req)
     {
@@ -95,36 +97,6 @@ class MenuRepo implements iMenuRepo
     }
 
     /**
-     * |------------------------------------------- user->roles->menu getting userRole wise menues ----------------------------------------------------------|
-     * | @param request 
-     * | Query Time = 328ms 
-     * | Status- Closed
-     * | Rating- 2 
-        | Serial No : 
-     */
-    public function getRoleWiseMenu()
-    {
-        $mUserId = auth()->user()->id;
-        $mMenuDetails = WfRolemenu::select(
-            'menu_masters.menu_string AS menuName',
-            'menu_masters.route',
-        )
-            ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_rolemenus.role_id')
-            ->join('menu_masters', 'menu_masters.id', '=', 'wf_rolemenus.menu_id')
-            ->join('wf_roles', 'wf_roles.id', '=', 'wf_rolemenus.role_id')
-            ->where('wf_roleusermaps.user_id', $mUserId)
-            ->where('wf_rolemenus.status', true)
-            ->where('wf_roleusermaps.is_suspended', false)
-            ->get();
-
-        if (!empty($mMenuDetails['0'])) {
-            return responseMsg(true, "Data according to roles", $mMenuDetails);
-        }
-        return responseMsg(false, "Data not Found!", "");
-    }
-
-
-    /**
      * |---------------------- Algorithem for the generation of the menu  paren/childeran structure -------------------|
      * | @param req
      * | @var menuMaster / Obj
@@ -135,7 +107,8 @@ class MenuRepo implements iMenuRepo
      * | Query Time = 308ms 
      * | Rating- 4
      * | Status- Working
-        | Serial No : 04
+        | Serial No : 03
+        | Closed
      */
     public function generateMenuTree($req)
     {
@@ -176,8 +149,8 @@ class MenuRepo implements iMenuRepo
             $mRoleMenues = $mMenuMaster->getMenuByRole($req->roleId);
 
             $roleWise = collect($mRoleMenues)->map(function ($value) use ($mMenuMaster) {
-                if($value['parent_serial'] > 0){
-                return $roleWise = $this->getParent($value['parent_serial']);
+                if ($value['parent_serial'] > 0) {
+                    return $roleWise = $this->getParent($value['parent_serial']);
                 }
                 return $value['id'];
             });
@@ -193,7 +166,8 @@ class MenuRepo implements iMenuRepo
 
     /**
      * | calling function of the for geting the top root parent
-        | serial No : 04.01
+        | serial No : 03.01
+        | Closed
      */
     public function getParent($parentId)
     {
@@ -205,6 +179,48 @@ class MenuRepo implements iMenuRepo
         return $refvalue['id'];
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

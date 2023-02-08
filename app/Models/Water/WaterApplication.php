@@ -217,4 +217,27 @@ class WaterApplication extends Model
             ->groupBy('water_applications.saf_no', 'water_applications.holding_no', 'water_applications.address', 'water_applications.id', 'water_applicants.application_id', 'water_applications.application_no', 'water_applications.ward_id', 'ulb_ward_masters.ward_name')
             ->get();
     }
+
+    /**
+     * | Get water 
+     */
+    public function finalApproval($request,$consumerNo)
+    {
+        $approvedWater = WaterApplication::query()
+                ->where('id', $request->applicationId)
+                ->first();
+                
+            $approvedWaterRep = $approvedWater->replicate();
+            $approvedWaterRep->setTable('water_approval_application_details');
+            $approvedWaterRep->id = $approvedWater->id;
+            $approvedWaterRep->consumer_no = $consumerNo;
+            $approvedWaterRep->save();
+        
+            $consumerWaterRep = $approvedWater->replicate();
+            $consumerWaterRep->setTable('water_consumers');
+            $consumerWaterRep->id = $approvedWater->id;
+            $consumerWaterRep->consumer_no = $consumerNo;
+            $consumerWaterRep->save();
+            // $approvedWater->delete();
+    }
 }

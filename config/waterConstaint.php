@@ -30,5 +30,7 @@ return [
     "CONNECTION_TYPE" => [
         "NEW_CONNECTION" => 1,
         "REGULAIZATION" => 2
-    ]
+    ],
+
+    "JSK" => "JSK"
 ];

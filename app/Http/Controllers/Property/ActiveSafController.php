@@ -69,6 +69,7 @@ class ActiveSafController extends Controller
     /**
      * | Created On-10-08-2022
      * | Created By-Anshu Kumar
+     * | Status - Open
      * -----------------------------------------------------------------------------------------
      * | SAF Module all operations 
      * | --------------------------- Workflow Parameters ---------------------------------------
@@ -822,11 +823,11 @@ class ActiveSafController extends Controller
     }
 
     /**
+     * | Function for Post Next Level(9)
      * | @param mixed $request
      * | @var preLevelPending Get the Previous level pending data for the saf id
      * | @var levelPending new Level Pending to be add
      * | Status-Closed
-     * | Query Costing-348ms 
      * | Rating-3 
      */
     public function postNextLevel(Request $request)
@@ -836,10 +837,18 @@ class ActiveSafController extends Controller
             'senderRoleId' => 'required|integer',
             'receiverRoleId' => 'required|integer',
             'comment' => 'required',
+            'action' => 'required|In:forward,backward'
         ]);
 
         try {
+            $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
+            $senderRoleId = $request->senderRoleId;
             $saf = PropActiveSaf::find($request->applicationId);
+
+            if ($request->action == 'forward') {
+                $this->checkPostCondition($senderRoleId, $wfLevels, $saf);          // Check Post Next level condition
+                $saf->last_role_id = $request->receiverRoleId;                      // Update Last Role Id
+            }
             // SAF Application Update Current Role Updation
             DB::beginTransaction();
             $saf->current_role = $request->receiverRoleId;
@@ -847,7 +856,7 @@ class ActiveSafController extends Controller
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
-            $metaReqs['refTableDotId'] = 'prop_active_safs.id';
+            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
             $metaReqs['refTableIdValue'] = $request->applicationId;
             $request->request->add($metaReqs);
 
@@ -855,10 +864,27 @@ class ActiveSafController extends Controller
             $track->saveTrack($request);
 
             DB::commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "286ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "", "010109", "1.0", "", "POST", $request->deviceId);
+        }
+    }
+
+    /**
+     * | check Post Condition for backward forward(9.1)
+     */
+    public function checkPostCondition($senderRoleId, $wfLevels, $saf)
+    {
+        switch ($senderRoleId) {
+            case $wfLevels['BO']:                        // Back Office Condition
+                if ($saf->doc_upload_status == 0)
+                    throw new Exception("Document Not Fully Uploaded");
+                break;
+            case $wfLevels['DA']:                       // DA Condition
+                if ($saf->doc_verify_status == 0)
+                    throw new Exception("Document Not Fully Verified");
+                break;
         }
     }
 
@@ -1742,20 +1768,6 @@ class ActiveSafController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-
-    /**
-        not in use
-     */
-    // public function getBtcFields(Request $req)
-    // {
-    //     try {
-    //         $saf = PropActiveSaf::find($req->applicationId);
-    //         $btcFields = json_decode($saf->btc_fields);
-    //         return responseMsgs(true, "Btc Fields", remove_null($btcFields), "", "1.0", "", "POST", $req->deviceId ?? "");
-    //     } catch (Exception $e) {
-    //         return responseMsg(false, $e->getMessage(), "");
-    //     }
-    // }
 
     # code by sandeep bara 
     # date 31-01-2023

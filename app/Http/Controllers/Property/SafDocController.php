@@ -7,15 +7,19 @@ use App\MicroServices\DocUpload;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\Workflows\WfRoleusermap;
 use App\Traits\Property\SafDoc;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config as FacadesConfig;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Facade;
 
 /**
  * | Created On=01-02-2023 
  * | Created By=Anshu Kumar
  * | Created for=Document Upload 
+ * | Status-Open
  */
 class SafDocController extends Controller
 {
@@ -103,13 +107,14 @@ class SafDocController extends Controller
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
-
+            $label = array_shift($document);
             $documents = collect();
 
             collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
+
                 if ($uploadedDoc) {
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
@@ -123,6 +128,7 @@ class SafDocController extends Controller
                 }
             });
             $reqDoc['docType'] = $key;
+            $reqDoc['docName'] = substr($label, 1, -1);
             $reqDoc['uploadedDoc'] = $documents->first();
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
@@ -155,18 +161,18 @@ class SafDocController extends Controller
             "docCode" => "required",
             "ownerId" => "nullable|numeric"
         ]);
-        $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
+
         try {
+            $preCondition = $this->checkFullDocUpload($req->applicationId);                         // Pre Condition to Upload Document
+            if ($preCondition == 1)
+                throw new Exception("Document Has Fully Uploaded");
             $metaReqs = array();
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveSafs = new PropActiveSaf();
             $relativePath = FacadesConfig::get('PropertyConstaint.SAF_RELATIVE_PATH');
             $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
-            if ($docUploadStatus == 1) {
-                $getSafDtls->doc_upload_status = 1;                                             // Doc Upload Status Update
-                $getSafDtls->save();
-            }
+
             $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
@@ -183,6 +189,12 @@ class SafDocController extends Controller
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
+
+            $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
+            if ($docUploadStatus == 1) {
+                $getSafDtls->doc_upload_status = 1;                                             // Doc Upload Status Update
+                $getSafDtls->save();
+            }
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
@@ -301,6 +313,106 @@ class SafDocController extends Controller
                 break;
         }
         if ($ownerFlags == 0)
+            return 0;
+        else
+            return 1;
+    }
+
+    /**
+     * | Document Verify Reject (04)
+     */
+    public function docVerifyReject(Request $req)
+    {
+        $req->validate([
+            'id' => 'required|digits_between:1,9223372036854775807',
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+            'docRemarks' =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
+            'docStatus' => 'required|in:Verified,Rejected'
+        ]);
+
+        try {
+            // Variable Assignments
+            $mWfDocument = new WfActiveDocument();
+            $mActiveSafs = new PropActiveSaf();
+            $mWfRoleusermap = new WfRoleusermap();
+            $wfDocId = $req->id;
+            $userId = authUser()->id;
+            $applicationId = $req->applicationId;
+            $wfLevel = FacadesConfig::get('PropertyConstaint.SAF-LABEL');
+            // Derivative Assigments
+            $safDtls = $mActiveSafs->getSafNo($applicationId);
+            $safReq = new Request([
+                'userId' => $userId,
+                'workflowId' => $safDtls->workflow_id
+            ]);
+            $senderRoleDtls = $mWfRoleusermap->getRoleByUserWfId($safReq);
+            if (!$senderRoleDtls || collect($senderRoleDtls)->isEmpty())
+                throw new Exception("Role Not Available");
+
+            $senderRoleId = $senderRoleDtls->wf_role_id;
+
+            if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
+                throw new Exception("You are not Authorized");
+
+            if (!$safDtls || collect($safDtls)->isEmpty())
+                throw new Exception("Saf Details Not Found");
+
+            $ifFullDocVerified = $this->ifFullDocVerified($applicationId);       // (Current Object Derivative Function 4.1)
+
+            if ($ifFullDocVerified == 1)
+                throw new Exception("Document Fully Verified");
+
+            DB::beginTransaction();
+            if ($req->docStatus == "Verified") {
+                $status = 1;
+            }
+            if ($req->docStatus == "Rejected") {
+                $status = 2;
+                // For Rejection Doc Upload Status and Verify Status will disabled
+                $safDtls->doc_upload_status = 0;
+                $safDtls->doc_verify_status = 0;
+                $safDtls->save();
+            }
+
+            $reqs = [
+                'remarks' => $req->docRemarks,
+                'verify_status' => $status,
+                'action_taken_by' => $userId
+            ];
+            $mWfDocument->docVerifyReject($wfDocId, $reqs);
+            $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
+
+            if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
+                $safDtls->doc_verify_status = 1;
+                $safDtls->save();
+            }
+
+            DB::commit();
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Check if the Document is Fully Verified or Not (4.1)
+     */
+    public function ifFullDocVerified($applicationId)
+    {
+        $mActiveSafs = new PropActiveSaf();
+        $mWfActiveDocument = new WfActiveDocument();
+        $refSafs = $mActiveSafs->getSafNo($applicationId);                      // Get Saf Details
+        $refReq = [
+            'activeId' => $applicationId,
+            'workflowId' => $refSafs->workflow_id,
+            'moduleId' => FacadesConfig::get('module-constants.PROPERTY_MODULE_ID')
+        ];
+        $req = new Request($refReq);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
+        // Property List Documents
+        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
+        if ($ifPropDocUnverified == 1)
             return 0;
         else
             return 1;

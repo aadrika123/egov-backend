@@ -18,7 +18,7 @@ class newApplyRules extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
-     *
+     * Check the ulb_id for the case of jsk
      * @return array
      */
     public function rules()

@@ -370,20 +370,21 @@ class ConcessionController extends Controller
                 'data' => $propertyDetails
             ];
 
-            $corrDetails = $this->generateCorrDtls($details);              // (Corresponding Address Details) Trait function to generate corresponding address details
-            $corrElement = [
-                'headerTitle' => 'Corresponding Address',
-                'data' => $corrDetails,
-            ];
+            // $corrDetails = $this->generateCorrDtls($details);              // (Corresponding Address Details) Trait function to generate corresponding address details
+            // $corrElement = [
+            //     'headerTitle' => 'Corresponding Address',
+            //     'data' => $corrDetails,
+            // ];
 
-            $electDetails = $this->generateElectDtls($details);            // (Electricity & Water Details) Trait function to generate Electricity Details
-            $electElement = [
-                'headerTitle' => 'Electricity & Water Details',
-                'data' => $electDetails
-            ];
+            // $electDetails = $this->generateElectDtls($details);            // (Electricity & Water Details) Trait function to generate Electricity Details
+            // $electElement = [
+            //     'headerTitle' => 'Electricity & Water Details',
+            //     'data' => $electDetails
+            // ];
+
             $fullDetailsData['application_no'] = $details->application_no;
             $fullDetailsData['apply_date'] = $details->date;
-            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement]);
 
             // Table Array
             $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);
@@ -394,14 +395,14 @@ class ConcessionController extends Controller
                 'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
                 'tableData' => $ownerDetails
             ];
-            $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
-            $floorDetails = $this->generateFloorDetails($floorList);
-            $floorElement = [
-                'headerTitle' => 'Floor Details',
-                'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
-                'tableData' => $floorDetails
-            ];
-            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement]);
+            // $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
+            // $floorDetails = $this->generateFloorDetails($floorList);
+            // $floorElement = [
+            //     'headerTitle' => 'Floor Details',
+            //     'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
+            //     'tableData' => $floorDetails
+            // ];
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement]);
             // Card Details
             $cardElement = $this->generateConcessionCardDtls($details, $ownerList);
             $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
@@ -422,9 +423,6 @@ class ConcessionController extends Controller
             $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
 
             $fullDetailsData['timelineData'] = collect($req);
-
-            $custom = $mCustomDetails->getCustomDetails($req);
-            $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
@@ -692,224 +690,6 @@ class ConcessionController extends Controller
         } catch (Exception $e) {
             echo $e->getMessage();
         }
-    }
-
-    //concesssion list
-    // public function concessionList()
-    // {
-    //     try {
-    //         $list = PropActiveConcession::select(
-    //             'prop_active_concessions.id',
-    //             'prop_active_concessions.applicant_name as ownerName',
-    //             'holding_no as holdingNo',
-    //             'ward_name as wardId',
-    //             'property_type as propertyType'
-    //         )
-    //             ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
-    //             ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
-    //             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-    //             ->where('prop_active_concessions.status', 1)
-    //             ->orderByDesc('prop_active_concessions.id')
-    //             ->get();
-
-    //         return responseMsgs(true, "Successfully Done", $list, "", '010712', '01', '308ms-396ms', 'Post', '');
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
-
-    // //concesion list  by id
-    // public function concessionByid(Request $req)
-    // {
-    //     try {
-    //         $list = PropActiveConcession::select(
-    //             'prop_active_concessions.id',
-    //             'prop_active_concessions.applicant_name as ownerName',
-    //             'holding_no as holdingNo',
-    //             'ward_name as wardId',
-    //             'property_type as propertyType',
-    //             'dob',
-    //             'gender',
-    //             'is_armed_force as armedForce',
-    //             'is_specially_abled as speciallyAbled'
-    //         )
-    //             ->where('prop_active_concessions.id', $req->id)
-    //             ->where('prop_active_concessions.status', 1)
-    //             ->join('prop_properties', 'prop_properties.id', 'prop_active_concessions.property_id')
-    //             ->join('ref_prop_types', 'ref_prop_types.id', 'prop_properties.prop_type_mstr_id')
-    //             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-    //             ->orderByDesc('prop_active_concessions.id')
-    //             ->first();
-
-    //         return responseMsgs(true, "Successfully Done", $list, "", '010713', '01', '312ms-389ms', 'Post', '');
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
-
-    //doc upload
-    public function concessionDocUpload(Request $req)
-    {
-        $req->validate([
-            'id' => 'required|integer'
-        ]);
-        try {
-            //gender doc
-            if ($file = $req->file('genderDoc')) {
-                $docName = "genderDoc";
-                $name = $this->moveFile($docName, $file);
-
-                $checkExisting = PropConcessionDocDtl::where('concession_id', $req->id)
-                    ->where('doc_type', $docName)
-                    ->get()
-                    ->first();
-                if ($checkExisting) {
-                    $this->updateDocument($req, $name, $docName);
-                } else {
-                    $this->saveConcessionDoc($req, $name, $docName);
-                }
-            }
-
-            //dob doc
-            if ($file = $req->file('dobDoc')) {
-                $docName = "dobDoc";
-                $name = $this->moveFile($docName, $file);
-
-                $checkExisting = PropConcessionDocDtl::where('concession_id', $req->id)
-                    ->where('doc_type', $docName)
-                    ->get()
-                    ->first();
-                if ($checkExisting) {
-                    $this->updateDocument($req, $name, $docName);
-                } else {
-                    $this->saveConcessionDoc($req, $name, $docName);
-                }
-            }
-
-            //specially abled doc
-            if ($file = $req->file('speciallyAbledDoc')) {
-                $docName = "speciallyAbledDoc";
-                $name = $this->moveFile($docName, $file);
-
-                $checkExisting = PropConcessionDocDtl::where('concession_id', $req->id)
-                    ->where('doc_type', $docName)
-                    ->get()
-                    ->first();
-                if ($checkExisting) {
-                    $this->updateDocument($req, $name, $docName);
-                } else {
-                    $this->saveConcessionDoc($req, $name, $docName);
-                }
-            }
-
-            //armed forcce doc
-            if ($file = $req->file('armedForceDoc')) {
-                $docName = "armedForceDoc";
-                $name = $this->moveFile($docName, $file);
-
-                $checkExisting = PropConcessionDocDtl::where('concession_id', $req->id)
-                    ->where('doc_type', $docName)
-                    ->get()
-                    ->first();
-                if ($checkExisting) {
-                    $this->updateDocument($req, $name, $docName);
-                } else {
-                    $this->saveConcessionDoc($req, $name, $docName);
-                }
-            }
-
-            //concession doc
-            if ($file = $req->file('concessionFormDoc')) {
-                $docName = "concessionFormDoc";
-                $name = $this->moveFile($docName, $file);
-
-                $checkExisting = PropConcessionDocDtl::where('concession_id', $req->id)
-                    ->where('doc_type', $docName)
-                    ->get()
-                    ->first();
-                if ($checkExisting) {
-                    $this->updateDocument($req, $name, $docName);
-                } else {
-                    $this->saveConcessionDoc($req, $name, $docName);
-                }
-            }
-
-            return responseMsgs(true, "Successfully Uploaded", '', "", '010715', '01', '434ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
-    //post document status
-    public function concessionDocStatus(Request $req)
-    {
-        try {
-            $docStatus = new PropConcessionDocDtl();
-            $docStatus->docVerify($req);
-
-            return responseMsgs(true, "Successfully Done", '', "", '010716', '01', '308ms-431ms', 'Post', '');
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
-    //citizen doc upload
-    public function citizenDocUpload($concessionDoc, $name, $docName)
-    {
-        $userId = auth()->user()->id;
-
-        $concessionDoc->doc_type = $docName;
-        $concessionDoc->relative_path = '/concession/' . $docName . '/';
-        $concessionDoc->doc_name = $name;
-        $concessionDoc->status = '1';
-        $concessionDoc->user_id = $userId;
-        $concessionDoc->date = Carbon::now();
-        $concessionDoc->created_at = Carbon::now();
-        $concessionDoc->save();
-    }
-
-    //save documents
-    public function saveConcessionDoc($req, $name, $docName)
-    {
-        $userId = auth()->user()->id;
-        $concessionDoc = new PropConcessionDocDtl();
-        $concessionDoc->concession_id = $req->id;
-
-        $concessionDoc->doc_type = $docName;
-        $concessionDoc->relative_path = '/concession/' . $docName . '/';
-        $concessionDoc->doc_name = $name;
-        $concessionDoc->status = '1';
-        $concessionDoc->user_id = $userId;
-        $concessionDoc->date = Carbon::now();
-        $concessionDoc->created_at = Carbon::now();
-        $concessionDoc->save();
-    }
-
-    //update documents
-    public function updateDocument($req, $name, $docName)
-    {
-        PropConcessionDocDtl::where('concession_id', $req->id)
-            ->where('doc_type', $docName)
-            ->update([
-                'concession_id' => $req->id,
-                'doc_type' => $docName,
-                'relative_path' => ('/concession/' . $docName . '/'),
-                'doc_name' => $name,
-                'status' => 1,
-                'verify_status' => 0,
-                'remarks' => '',
-                'updated_at' => Carbon::now()
-            ]);
-    }
-
-    //move file to location
-    public function moveFile($docName, $file)
-    {
-        $name = time() . $docName . '.' . $file->getClientOriginalExtension();
-        $path = storage_path('app/public/concession/' . $docName . '/');
-        $file->move($path, $name);
-
-        return $name;
     }
 
 
