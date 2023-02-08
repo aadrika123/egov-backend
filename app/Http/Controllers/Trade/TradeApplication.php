@@ -181,19 +181,8 @@ class TradeApplication extends Controller
 
     public function getDocList(Request $request)
     {
-        $refUser            = Auth()->user();
-        $refUserId          = $refUser->id;
-        $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
-        $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-        $mUserType          = $this->_parent->userType($refWorkflowId);
-        
-        
-        // if(strtoupper($mUserType)!="ONLINE")
-        {
-            $tradC = new Trade();
-            return $tradC->getLicenseDocLists($request);
-        }
-        return $this->Repository->getDocList($request);
+        $tradC = new Trade();
+        return $tradC->getLicenseDocLists($request);
     }
 
 
@@ -691,7 +680,7 @@ class TradeApplication extends Controller
                     $arr["verify_status"] = 0;
                     $arr['relative_path'] = $relativePath;
                     $arr['document'] = $imageName;
-                    $arr['docCode'] = $req->docName;
+                    $arr['doc_code'] = $req->docName;
                     $arr['owner_dtl_id'] = $metaReqs['ownerDtlId']??null;
                     $mWfActiveDocument->docVerifyReject($privDoc->id,$arr);
                 }
@@ -702,13 +691,13 @@ class TradeApplication extends Controller
                     $metaReqs = new Request($metaReqs);
                     $mWfActiveDocument->postDocuments($metaReqs);
                 }
-                return responseMsgs(true, $req->docRefName." Update Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+                return responseMsgs(true, $req->docName." Update Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
             }
             #new documents;
             
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
-            return responseMsgs(true,  $req->docRefName." Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true,  $req->docName." Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } 
         catch (Exception $e) 
         {
