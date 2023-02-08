@@ -123,4 +123,25 @@ class WaterConsumer extends Model
             )
             ->get();
     }
+
+
+    /**
+     * | get the water consumer detaials by consumr No / accurate search
+     * | @param consumerNo
+     * | @var 
+     * | @return 
+     */
+    public function getConsumerByConsumerNo($consumerNo)
+    {
+        return WaterConsumer::select(
+            'water_consumers.*',
+            'ulb_ward_masters.ward_name',
+        )
+            ->Join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_id')
+            ->where('water_consumers.consumer_no', $consumerNo)
+            ->where('consumer_status', true)
+            ->where('ulb_ward_masters.status', true)
+            ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
+            ->firstOrFail();
+    }
 }
