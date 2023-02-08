@@ -88,11 +88,6 @@ class ConcessionController extends Controller
                 $userId = auth()->user()->id;
             }
 
-
-
-            // $applicantName = $this->getOwnerName($request->propId);
-            // $ownerName = $applicantName->ownerName;
-
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
                 ->first();
@@ -182,11 +177,6 @@ class ConcessionController extends Controller
 
                 $docReqs = new Request($docReqs);
                 $mWfActiveDocument->postDocuments($docReqs);
-
-                // $name = $this->moveFile($docName, $file);
-                // $concessionDoc = new PropConcessionDocDtl();
-                // $concessionDoc->concession_id = $concession->id;
-                // $this->citizenDocUpload($concessionDoc, $name, $docName);
             }
 
             // specially abled Doc
@@ -736,18 +726,6 @@ class ConcessionController extends Controller
     }
 
     /**
-     * get owner name
-     */
-    public function getOwnerName($propId)
-    {
-        $ownerDetails = PropProperty::select('applicant_name as ownerName')
-            ->where('prop_properties.id', $propId)
-            ->first();
-
-        return $ownerDetails;
-    }
-
-    /**
      *  get document ttype
      */
     public function getDocType(Request $req)
@@ -755,31 +733,67 @@ class ConcessionController extends Controller
         switch ($req->doc) {
             case ('gender'):
                 $data =  RefRequiredDocument::select('*')
-                    ->where('code', 'OWNER_EXTRA_DOCUMENT')
+                    ->where('code', 'CONCESSION_GENDER')
                     ->first();
+
+                $code = $this->filterCitizenDoc($data);
                 break;
 
             case ('seniorCitizen'):
                 $data =  RefRequiredDocument::select('*')
-                    ->where('code', 'OWNER_EXTRA_DOCUMENT')
+                    ->where('code', 'CONCESSION_DOB')
                     ->first();
+
+                $code = $this->filterCitizenDoc($data);
                 break;
 
             case ('speciallyAbled'):
                 $data =  RefRequiredDocument::select('*')
                     ->where('code', 'CONCESSION_SPECIALLY_ABLED')
                     ->first();
+
+                $code = $this->filterCitizenDoc($data);
                 break;
 
             case ('armedForce'):
                 $data =  RefRequiredDocument::select('*')
                     ->where('code', 'CONCESSION_ARMED_FORCE')
                     ->first();
+
+                $code = $this->filterCitizenDoc($data);
                 break;
         }
 
-        return responseMsgs(true, "Citizen Doc List", remove_null($data), 010717, 1.0, "413ms", "POST", "", "");
+        return responseMsgs(true, "Citizen Doc List", remove_null($code), 010717, 1.0, "413ms", "POST", "", "");
     }
+
+    /**
+     * | Filter Doc
+     */
+    public function filterCitizenDoc($data)
+    {
+        $document = explode(',', $data->requirements);
+        $key = array_shift($document);
+        $code = collect($document);
+        $label = array_shift($document);
+        $documents = collect();
+
+        $reqDoc['docType'] = $key;
+        $reqDoc['docName'] = substr($label, 1, -1);
+        $reqDoc['uploadedDoc'] = $documents->first();
+
+        $reqDoc['masters'] = collect($document)->map(function ($doc) {
+            $strLower = strtolower($doc);
+            $strReplace = str_replace('_', ' ', $strLower);
+            $arr = [
+                "documentCode" => $doc,
+                "docVal" => ucwords($strReplace),
+            ];
+            return $arr;
+        });
+        return $reqDoc;
+    }
+
 
     /**
      *  get uploaded documents
@@ -882,11 +896,11 @@ class ConcessionController extends Controller
         if ($isSpeciallyAbled == true)
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_SPECIALLY_ABLED")->requirements;
         if ($isArmedForce == true)
-            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_ARMED_FORCE")->requirements;
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_ARMED_FORCE")->requirements;
         if (isset($gender))
-            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_GENDER")->requirements;
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_GENDER")->requirements;
         if (isset($dob))
-            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_DOB")->requirements;
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_DOB")->requirements;
 
         if (!empty($documentList))
             $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)
@@ -911,21 +925,11 @@ class ConcessionController extends Controller
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
-
+            $label = array_shift($document);
             $documents = collect();
 
-            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
-                $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
-                if ($uploadedDoc) {
-                    $response = [
-                        "documentCode" => $item,
-                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $uploadedDoc->doc_path ?? ""
-                    ];
-                    $documents->push($response);
-                }
-            });
             $reqDoc['docType'] = $key;
+            $reqDoc['docName'] = substr($label, 1, -1);
             $reqDoc['uploadedDoc'] = $documents->first();
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
@@ -935,7 +939,10 @@ class ConcessionController extends Controller
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
-                    "uploadedDoc'" => $uploadedDoc->doc_path ?? null
+                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
+                    "uploadedDocId" => $uploadedDoc->id ?? "",
+                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
+                    "remarks" => $uploadedDoc->remarks ?? "",
                 ];
                 return $arr;
             });
