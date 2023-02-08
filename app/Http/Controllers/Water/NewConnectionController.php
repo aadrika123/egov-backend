@@ -287,7 +287,8 @@ class NewConnectionController extends Controller
                 'applicationId' => 'required',
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
-                'comment' => "required"
+                'comment' => "required",
+                'action' => 'required|In:forward,backward'
             ]);
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
@@ -965,6 +966,10 @@ class NewConnectionController extends Controller
     }
 
     // final submition of the Water Application
+    /**
+        | dont check the application payment status 
+        | call the payment ineciate function
+     */
     public function finalSubmitionApplication(Request $request)
     {
         try {
@@ -1006,6 +1011,7 @@ class NewConnectionController extends Controller
             }
             switch ($refApplicationList->user_type) {
                 case ('Citizen'):
+                    // call the payment function
                     WaterApplication::where('id', $request->applicationId)
                         ->update([
                             'current_role' => $this->_dealingAssistent
@@ -1305,59 +1311,4 @@ class NewConnectionController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// function for the process of the operatio
-// public function try(Request $req)
-// {
-//     $metaData = $this->maps($req->all());
-//     $myRequest = new \Illuminate\Http\Request();
-//     $myRequest->setMethod($req->getMethod());
-//     foreach ($metaData as  $key => $value) {
-//         $myRequest->request->add([$key => $value]);
-//     }
-//     return $myRequest;
-// }

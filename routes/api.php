@@ -321,7 +321,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     /**
      * | Created On-23-11-2022 
-     * | Created By-Anshu Kumar / Sam kerketta
+     * | Created By-Sam kerketta
      * | Menu Permissions
      */
     Route::controller(MenuController::class)->group(function () {

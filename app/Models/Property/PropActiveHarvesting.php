@@ -35,7 +35,7 @@ class PropActiveHarvesting extends Model
             ->where('prop_active_harvestings.ulb_id', $ulbId);
     }
 
-    public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId)
+    public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId, $citizenId)
     {
 
         $waterHaravesting = new PropActiveHarvesting();
@@ -46,7 +46,7 @@ class PropActiveHarvesting extends Model
         $waterHaravesting->current_role = collect($initiatorRoleId)->first()->role_id;
         $waterHaravesting->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
         $waterHaravesting->finisher_role_id = collect($finisherRoleId)->first()->role_id;
-        $waterHaravesting->citizen_id = $userId ?? null;
+        $waterHaravesting->citizen_id = $citizenId ?? null;
         $waterHaravesting->user_id = $userId ?? null;
         $waterHaravesting->ulb_id = $request->ulbId;
         $waterHaravesting->save();

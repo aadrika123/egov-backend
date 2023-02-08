@@ -165,11 +165,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('concession/backtocitizen', 'backToCitizen');                           //10               // Back To Citizen 
     Route::post('concession/owner-details', 'getOwnerDetails');                         //11
 
-    // Route::post('concession/list', 'concessionList');                                   //12
-    // Route::post('concession/list-id', 'concessionByid');                                //13
-
-    // Route::post('concession/doc-upload', 'concessionDocUpload');                        //15
-    Route::post('concession/doc-status', 'concessionDocStatus');                        //16
     Route::post('concession/comment-independent', 'commentIndependent');                //18               ( Citizen Independent comment and Level Pendings )
     Route::post('concession/get-doc-type', 'getDocType');
     Route::post('concession/doc-list', 'concessionDocList');                            //14
