@@ -123,14 +123,10 @@ class WfActiveDocument extends Model
                 DB::raw("concat(d.relative_path,'/',d.document) as doc_path"),
                 'd.remarks',
                 'd.verify_status',
-                'dm.doc_for',
+                'd.doc_code as doc_for',
+                'd.doc_code',
                 'o.owner_name'
             )
-            ->join(DB::raw("(
-                select doc_for
-                from trade_param_document_types
-                group by doc_for
-            ) dm"), 'dm.doc_for', '=', 'd.doc_code')
             ->leftJoin('active_trade_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationId)
             ->where('d.workflow_id', $workflowId)

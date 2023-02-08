@@ -573,12 +573,12 @@ class TradeApplication extends Controller
             $appNo = $licenceDetails->application_no;
             $tradR = new Trade();
             $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id,$licenceDetails->workflow_id,$modul_id);
-            $documents = $documents->map(function($val) use($tradR){
-                $path =  $tradR->readDocumentPath($val->doc_path);
-                $val->doc_path = !empty(trim($val->doc_path)) ? $path : null;
-                $val->doc_code = $val->doc_for;
-                return $val;
-            });
+            
+            // $documents = $documents->map(function($val) use($tradR){
+            //     $path =  $tradR->readDocumentPath($val->doc_path);
+            //     $val->doc_path = !empty(trim($val->doc_path)) ? $path : null;
+            //     return $val;
+            // });
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
