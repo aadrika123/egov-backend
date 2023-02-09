@@ -275,7 +275,7 @@ class ActiveSafController extends Controller
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
 
             $request->merge($metaReqs);
-            $createSaf = $saf->store($request);                                             // Store SAF Using Model function 
+            $createSaf = $saf->store($request);                                                             // Store SAF Using Model function 
             $safId = $createSaf->original['safId'];
             $safNo = $createSaf->original['safNo'];
 
@@ -1694,16 +1694,22 @@ class ActiveSafController extends Controller
     public function geoTagging(Request $req)
     {
         $req->validate([
-            "safId" => "required|integer",
-            "imagePath.*" => "image|mimes:jpeg,jpg,png,gif|required"
+            "safId" => "required|numeric",
+            "imagePath" => "required|array",
+            "imagePath.*" => "image|mimes:jpeg,jpg,png,gif",
+            "directionType" => "required|array",
+            "longitude" => "required",
+            "latitude" => "required"
         ]);
         try {
             $docUpload = new DocUpload;
             $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
             $images = $req->imagePath;
             $directionTypes = $req->directionType;
+            $longitude = $req->longitude;
+            $latitude = $req->latitude;
 
-            collect($images)->map(function ($image, $key) use ($directionTypes, $relativePath, $req, $docUpload) {
+            collect($images)->map(function ($image, $key) use ($directionTypes, $relativePath, $req, $docUpload, $longitude, $latitude) {
                 $geoTagging = new PropSafGeotagUpload();
                 $refImageName = 'saf-geotagging-' . $directionTypes[$key] . '-' . $req->safId;
 
@@ -1712,6 +1718,8 @@ class ActiveSafController extends Controller
                 $geoTagging->saf_id = $req->safId;
                 $geoTagging->image_path = $imageName;
                 $geoTagging->direction_type = $directionTypes[$key];
+                $geoTagging->longitude = $longitude;
+                $geoTagging->latitude = $latitude;
                 $geoTagging->relative_path = $relativePath;
                 $geoTagging->user_id = authUser()->id;
                 $geoTagging->save();
