@@ -270,7 +270,6 @@ class SafDocController extends Controller
             foreach ($explodeDocs as $explodeDoc) {
                 $changeStatus = 0;
                 if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
-                    $flag = 1;
                     $changeStatus = 1;
                     break;
                 }
@@ -299,7 +298,6 @@ class SafDocController extends Controller
                 foreach ($explodeDocs as $explodeDoc) {
                     $changeStatusV1 = 0;
                     if (in_array($explodeDoc, $arrayOwners)) {
-                        $ownerFlags = 1;
                         $changeStatusV1 = 1;
                         break;
                     }
