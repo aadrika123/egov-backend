@@ -245,8 +245,8 @@ class EloquentAuthRepository implements AuthRepository
 
             $id = auth()->user()->id;
             $user = User::find($id);
-            $oldPass = Hash::make($request->password);
-            if ($user->password == $oldPass) {
+            $validPassword = Hash::check($request->password, $user->password);
+            if ($validPassword) {
 
                 $user->password = Hash::make($request->newPassword);
                 $user->save();
