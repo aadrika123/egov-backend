@@ -18,6 +18,7 @@ use App\Models\UlbWardMaster;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
+use App\Models\Water\waterAudit;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
@@ -580,33 +581,45 @@ class NewConnectionController extends Controller
     /**
         | Not / validate the payment status / Check the use / Not used
      */
-    public function editWaterDetails(Request $req)
+    public function editWaterAppliction(Request $req)
     {
         $req->validate([
             'applicatonId' => 'required|integer',
-            // 'owner' => 'array',
-            // 'owner.*.ownerId' => 'required|integer',
-            // 'owner.*.ownerName' => 'required',
-            // 'owner.*.guardianName' => 'required',
-            // 'owner.*.mobileNo' => 'numeric|string|digits:10',
-            // 'owner.*.aadhar' => 'numeric|string|digits:12|nullable',
-            // 'owner.*.email' => 'email|nullable',
+            'owner' => 'nullable|array',
         ]);
 
         try {
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
-            $refWaterApplications = $mWaterApplication->getWaterApplicationsDetails($req->applicatonId);
-            $mOwners = $req->owner;
+            $mWaterConnectionCharge = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+            $mwaterAudit = new waterAudit();
+            $levelRoles = Config::get('waterConstaint.ROLE-LABEL');
+            $refApplicationId =  $req->applicatonId;
 
-            if ($refWaterApplications->payment_status == true) {
-                throw new Exception("Payment has been made!");
-            }
             DB::beginTransaction();
-            // $mWaterApplication->editWaterApplication($req, $refWaterApplications);                              // Updation water Basic Details
-            // collect($mOwners)->map(function ($owner) use ($mWaterApplicant, $refWaterApplications) {            // Updation of Owner Basic Details
-            //     $mWaterApplicant->editWaterOwners($owner, $refWaterApplications);
-            // });
+            $refWaterApplications = $mWaterApplication->getApplicationById($refApplicationId)->firstorFail();
+            // if ($refWaterApplications->current_role == $levelRoles['BO']) {
+            //     $mWaterApplication->editWaterApplication($req);
+            // }
+            // if ($refWaterApplications->payment_status == true) {
+            //     throw new Exception("Payment has been made Water Cannot be Modified!");
+            // }
+
+            $refConnectionCharges = $mWaterConnectionCharge->getWaterchargesById($refApplicationId)->firstOrFail();
+            $Waterowner = $mWaterApplicant->getOwnerList($refApplicationId)->get();
+            $refWaterowner = collect($Waterowner)->map(function($value,$key)
+            {
+                return $value['id'];
+            });
+            $penaltyInstallment = $mWaterPenaltyInstallment->getPenaltyByApplicationId($refApplicationId)->get();
+            $refPenaltyInstallment = collect($penaltyInstallment)->map(function($value)
+            {
+               return  $value['id'];
+            });
+            
+            $mwaterAudit->saveUpdatedDetailsId($refWaterApplications->id,$refWaterowner,$refConnectionCharges->id,$refPenaltyInstallment);
+            
             DB::commit();
             return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -631,6 +644,7 @@ class NewConnectionController extends Controller
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
             $propertyId = $applicationDetails['applicationDetails']['property_type_id'];
+            $refAreaInSqFt = $applicationDetails['applicationDetails']['area_sqft'];
 
             # Document Details
             $metaReqs = [
@@ -641,17 +655,17 @@ class NewConnectionController extends Controller
             $document = $this->getDocToUpload($request);
             $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
+            # owner details
+            $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
+
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
             $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
-            # owner details
-            $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
-
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])->first();
-            $processCall = $mWaterParamConnFee->getCallParameter($propertyId)->first();  // <---------- here
+            $processCall = $mWaterParamConnFee->getCallParameter($propertyId, $refAreaInSqFt)->first();  // <---------- here
             $calculation['calculation'] =
                 [
                     'connectionFee' => $charges['conn_fee'],
@@ -660,7 +674,7 @@ class NewConnectionController extends Controller
                 ];
             $callParamenter['callParamenter'] = $processCall;
 
-            $returnData = array_merge($applicationDetails, $documentDetails, $waterTransDetail, $ownerDetails, $calculation, $callParamenter);
+            $returnData = array_merge($applicationDetails, $ownerDetails, $documentDetails, $waterTransDetail, $calculation, $callParamenter);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -1100,7 +1114,7 @@ class NewConnectionController extends Controller
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $documentList) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
-
+            $label = array_shift($document);
             $documents = collect();
 
             collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $documentList) {
@@ -1121,7 +1135,7 @@ class NewConnectionController extends Controller
             });
             $reqDoc['docType'] = $key;
             $reqDoc['uploadedDoc'] = $documents->first();
-            $reqDoc['docFor'] = $documentList->code;
+            $reqDoc['docName'] = substr($label, 1, -1);
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();

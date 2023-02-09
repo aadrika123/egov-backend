@@ -33,7 +33,8 @@ class SafRepository implements iSafRepository
                 'prop_active_safs.application_date as apply_date',
                 'prop_active_safs.parked'
             )
-            ->whereIn('workflow_id', $workflowIds);
+            ->whereIn('workflow_id', $workflowIds)
+            ->where('payment_status', 1);
         return $data;
     }
 }

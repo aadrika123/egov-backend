@@ -13,11 +13,11 @@ class WfActiveDocument extends Model
     protected $guarded = [];
 
     /**
-     * | Post Workflow Document
+     * | Meta Request function for updation and post the request
      */
-    public function postDocuments($req)
+    public function metaReqs($req)
     {
-        $metaReqs = [
+        return [
             "active_id" => $req->activeId,
             "workflow_id" => $req->workflowId,
             "ulb_id" => $req->ulbId,
@@ -30,9 +30,41 @@ class WfActiveDocument extends Model
             "doc_code" => $req->docCode,
             "owner_dtl_id" => $req->ownerDtlId,
         ];
+    }
 
+    /**
+     * | Post Workflow Document
+     */
+    public function postDocuments($req)
+    {
+        $metaReqs = $this->metaReqs($req);
         WfActiveDocument::create($metaReqs);
     }
+
+    /**
+     * | Edit Existing Document
+     */
+    public function editDocuments($wfActiveDocument, $req)
+    {
+        $metaReqs = $this->metaReqs($req);
+        $wfActiveDocument->update($metaReqs);
+    }
+
+    /**
+     * | Check if the document is already existing or not
+     */
+    public function ifDocExists($activeId, $workflowId, $moduleId, $docCode, $ownerId = null)
+    {
+        return WfActiveDocument::where('active_id', $activeId)
+            ->where('workflow_id', $workflowId)
+            ->where('module_id', $moduleId)
+            ->where('doc_code', $docCode)
+            ->where('owner_dtl_id', $ownerId)
+            ->where('verify_status', 0)
+            ->where('status', 1)
+            ->first();
+    }
+
     /**
      * | Get Application Details by Application No
      */
@@ -191,7 +223,7 @@ class WfActiveDocument extends Model
     public function getTradeAppByAppNoDocId($appid, $ulb_id, $doc_code, $owner_id = null)
     {
         // DB::enableQueryLog();
-        $data= DB::table('wf_active_documents as d')
+        $data = DB::table('wf_active_documents as d')
             ->select(
                 'd.id',
                 'd.verify_status',
@@ -207,7 +239,7 @@ class WfActiveDocument extends Model
             ->whereIn("d.doc_code", $doc_code)
             ->orderBy("d.id", "DESC")
             ->first();
-            return $data;
+        return $data;
     }
 
     /**

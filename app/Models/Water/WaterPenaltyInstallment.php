@@ -27,6 +27,7 @@ class WaterPenaltyInstallment extends Model
 
     /**
      * |------------- Delete the Penelty Installment -------------------|
+        | Soft Deleta the data
      */
     public function deleteWaterPenelty($applicationId)
     {
@@ -36,5 +37,15 @@ class WaterPenaltyInstallment extends Model
             WaterPenaltyInstallment::where('apply_connection_id', $applicationId)
                 ->delete();
         }
+    }
+
+
+    /**
+     * | Get the penalty installment according to application Id
+     * | @param applicationId
+     */
+    public function getPenaltyByApplicationId($applicationId)
+    {
+        return WaterPenaltyInstallment::where('apply_connection_id',$applicationId);
     }
 }

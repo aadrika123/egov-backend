@@ -5,8 +5,10 @@ namespace App\Models\Water;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class WaterApplication extends Model
@@ -61,9 +63,11 @@ class WaterApplication extends Model
         switch ($saveNewApplication->user_type) {
             case ('Citizen'):
                 $saveNewApplication->apply_from = "Online";
+                $saveNewApplication->current_role = Config::get('waterConstaint.ROLE-LABEL.DA');
                 break;
             default:
                 $saveNewApplication->apply_from = auth()->user()->user_type;
+                $saveNewApplication->current_role = Config::get('waterConstaint.ROLE-LABEL.BO');
                 break;
         }
 
@@ -147,39 +151,6 @@ class WaterApplication extends Model
     }
 
     /**
-     * |----------------------- Edit Water Application ----------------------------|
-     */
-    public function editWaterApplication($req, $refWaterApplications)
-    {
-        $water = WaterApplication::find($req->id);
-
-        $reqs = [
-            'connection_type_id'  => $req->connection_type_id  ?? $refWaterApplications->connection_type_id,
-            'property_type_id'    => $req->property_type_id    ?? $refWaterApplications->property_type_id,
-            'owner_type'          => $req->owner_type          ?? $refWaterApplications->owner_type,
-            'category'            => $req->category            ?? $refWaterApplications->category,
-            'pipeline_type_id'    => $req->pipeline_type_id    ?? $refWaterApplications->pipeline_type_id,
-            'ward_id'             => $req->ward_id             ?? $refWaterApplications->ward_id,
-            'area_sqft'           => $req->area_sqft           ?? $refWaterApplications->area_sqft,
-            'address'             => $req->address             ?? $refWaterApplications->address,
-            'landmark'            => $req->landmark            ?? $refWaterApplications->landmark,
-            'pin'                 => $req->pin                 ?? $refWaterApplications->pin,
-            'flat_count'          => $req->flat_count          ?? $refWaterApplications->flat_count,
-            'elec_k_no'           => $req->elec_k_no           ?? $refWaterApplications->elec_k_no,
-            'elec_bind_book_no'   => $req->elec_bind_book_no   ?? $refWaterApplications->elec_bind_book_no,
-            'elec_account_no'     => $req->elec_account_no     ?? $refWaterApplications->elec_account_no,
-            'elec_category'       => $req->elec_category       ?? $refWaterApplications->elec_category,
-            'connection_through'  => $req->connection_through  ?? $refWaterApplications->connection_through,
-            'workflow_id'         => $req->workflow_id         ?? $refWaterApplications->workflow_id,
-            'ulb_id'              => $req->ulb_id              ?? $refWaterApplications->ulb_id,
-            'apply_date'          => $req->apply_date          ?? $refWaterApplications->apply_date,
-            'user_id'             => $req->user_id             ?? $refWaterApplications->user_id,
-
-        ];
-        return $water->update($reqs);
-    }
-
-    /**
      * | Get Water Application By Id
      */
     public function getApplicationById($applicationId)
@@ -221,23 +192,55 @@ class WaterApplication extends Model
     /**
      * | Get water 
      */
-    public function finalApproval($request,$consumerNo)
+    public function finalApproval($request, $consumerNo)
     {
         $approvedWater = WaterApplication::query()
-                ->where('id', $request->applicationId)
-                ->first();
-                
-            $approvedWaterRep = $approvedWater->replicate();
-            $approvedWaterRep->setTable('water_approval_application_details');
-            $approvedWaterRep->id = $approvedWater->id;
-            $approvedWaterRep->consumer_no = $consumerNo;
-            $approvedWaterRep->save();
-        
-            $consumerWaterRep = $approvedWater->replicate();
-            $consumerWaterRep->setTable('water_consumers');
-            $consumerWaterRep->id = $approvedWater->id;
-            $consumerWaterRep->consumer_no = $consumerNo;
-            $consumerWaterRep->save();
-            // $approvedWater->delete();
+            ->where('id', $request->applicationId)
+            ->first();
+
+        $checkExist = WaterApprovalApplicationDetail::where('id', $approvedWater->id)->first();
+        if ($checkExist) {
+            throw new Exception("Access Denied ! Consumer Already Exist!");
+        }
+        $checkconsumer = WaterConsumer::where('id', $approvedWater->id)->first();
+        if ($checkconsumer) {
+            throw new Exception("Access Denied ! Consumer Already Exist!");
+        }
+
+        $approvedWaterRep = $approvedWater->replicate();
+        $approvedWaterRep->setTable('water_approval_application_details');
+        $approvedWaterRep->id = $approvedWater->id;
+        $approvedWaterRep->save();
+
+        $mWaterConsumer = new WaterConsumer();
+        $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
+        // $approvedWater->delete();
+    }
+
+    /**
+     * | Final rejection of the Application 
+     * | Transfer the data to new table
+     */
+    public function finalRejectionOfAppication($request)
+    {
+        $rejectedWater = WaterApplication::query()
+            ->where('id', $request->applicationId)
+            ->first();
+
+        $rejectedWaterRep = $rejectedWater->replicate();
+        $rejectedWaterRep->setTable('water_rejection_application_details');
+        $rejectedWaterRep->id = $rejectedWater->id;
+        $rejectedWaterRep->save();
+        // $rejectedWater->delete();
+
+    }
+
+    /**
+     * | Edit the details of the application 
+     * | Send the details of the apllication in the audit table
+     */
+    public function editWaterApplication($applicationId)
+    {
+
     }
 }

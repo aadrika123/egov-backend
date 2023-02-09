@@ -113,7 +113,7 @@ class Consumer implements IConsumer
         }
         catch(Exception $e)
         {
-            dd($e->getMessage(),$e->getLine());
+            // dd($e->getMessage(),$e->getLine());
             $response["status"] = false;
             $response["errors"] = $e->getMessage();
             return collect($response); 
