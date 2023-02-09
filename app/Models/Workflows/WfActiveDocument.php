@@ -123,14 +123,10 @@ class WfActiveDocument extends Model
                 DB::raw("concat(d.relative_path,'/',d.document) as doc_path"),
                 'd.remarks',
                 'd.verify_status',
-                'dm.doc_for',
+                'd.doc_code as doc_for',
+                'd.doc_code',
                 'o.owner_name'
             )
-            ->join(DB::raw("(
-                select doc_for
-                from trade_param_document_types
-                group by doc_for
-            ) dm"), 'dm.doc_for', '=', 'd.doc_code')
             ->leftJoin('active_trade_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationId)
             ->where('d.workflow_id', $workflowId)
@@ -194,17 +190,14 @@ class WfActiveDocument extends Model
      */
     public function getTradeAppByAppNoDocId($appid, $ulb_id, $doc_code, $owner_id = null)
     {
-        DB::enableQueryLog();
+        // DB::enableQueryLog();
         $data= DB::table('wf_active_documents as d')
             ->select(
                 'd.id',
-                // 'dr.doc_name',
                 'd.verify_status',
                 DB::raw("concat(relative_path,'/',document) as doc_path"),
                 'remarks',
-                // 'dr.id as doc_mstr_id'
             )
-            // ->join('trade_param_document_types as dr', 'dr.doc_for', '=', 'd.doc_code')
             ->where("d.active_id", $appid)
             ->where("d.workflow_id", Config::get('workflow-constants.TRADE_WORKFLOW_ID'))
             ->where("d.ulb_id", $ulb_id)
@@ -214,7 +207,7 @@ class WfActiveDocument extends Model
             ->whereIn("d.doc_code", $doc_code)
             ->orderBy("d.id", "DESC")
             ->first();
-            return$data;
+            return $data;
     }
 
     /**

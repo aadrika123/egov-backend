@@ -4646,6 +4646,7 @@ class Trade implements ITrade
         } catch (Exception $e) {
         }
     }
+    /*
     public function checkWorckFlowForwardBackord(Request $request)
     {
         $user = Auth()->user();
@@ -4653,8 +4654,7 @@ class Trade implements ITrade
         $allRolse = collect($this->_parent->getAllRoles($user->id,$user->ulb_id,$refWorkflowId,0,true));
         $init_finish = $this->_parent->iniatorFinisher($user->id,$user->ulb_id,$refWorkflowId);
         $mUserType      = $this->_parent->userType($refWorkflowId);
-        $fromRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];
-        // dd($mUserType,$fromRole);
+        $fromRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];        
         if(($fromRole["can_upload_document"]??false) || ($fromRole["can_verify_document"] ??false))
         {
             $documents = $this->getDocList($request);
@@ -4684,7 +4684,6 @@ class Trade implements ITrade
                 }
             }
             $uploadedOwneresDocs = collect($uploadedOwneresDocs);
-            // dd(empty($uploadeDocs->where("is_uploded",false)->all()),$uploadedOwneresDocs,$uploadeDocs);
             if($fromRole["can_upload_document"])
             {
                 return (empty($uploadedOwneresDocs->where("is_uploded",false)->all()) && empty($uploadeDocs->where("is_uploded",false)->all()));
@@ -4692,6 +4691,59 @@ class Trade implements ITrade
             if($fromRole["can_verify_document"])
             {
                 return (empty($uploadedOwneresDocs->where("is_docVerify",false)->all()) && empty($uploadeDocs->where("is_docVerify",false)->all()));
+            }
+        }
+        return true;
+
+    }
+    */
+    public function checkWorckFlowForwardBackord(Request $request)
+    {
+        $user = Auth()->user();
+        $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        $allRolse = collect($this->_parent->getAllRoles($user->id,$user->ulb_id,$refWorkflowId,0,true));
+        $init_finish = $this->_parent->iniatorFinisher($user->id,$user->ulb_id,$refWorkflowId);
+        $mUserType      = $this->_parent->userType($refWorkflowId);
+        $fromRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];        
+        if(($fromRole["can_upload_document"]??false) || strtoupper($mUserType)=="ONLINE" || ($fromRole["can_verify_document"] ??false))
+        {
+            $documents = $this->getLicenseDocLists($request);
+            if(!$documents->original["status"])
+            {
+                return false;
+            }
+            $applicationDoc = $documents->original["data"]["listDocs"];
+            $ownerDoc = $documents->original["data"]["ownerDocs"];
+            $appMandetoryDoc = $applicationDoc->whereIn("docType",["R","OR"]);
+            $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
+            $appUploadedDocVerified = collect();
+            $appUploadedDoc->map(function($val) use($appUploadedDocVerified){   
+                $appUploadedDocVerified->push(["is_docVerify"=>(!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] !=0 ) ? true : false ) :true)]);             
+                
+            });
+            $is_appUploadedDocVerified = $appUploadedDocVerified->where("is_docVerify",false);            
+            $is_appMandUploadedDoc  = $appMandetoryDoc->whereNull("uploadedDoc");
+            $Wdocuments = collect();
+            $ownerDoc->map(function($val) use($Wdocuments){                
+                $ownerId = $val["ownerDetails"]["ownerId"]??"";           
+                $val["documents"]->map(function($val1)use($Wdocuments,$ownerId){
+                    $val1["ownerId"] = $ownerId;
+                    $val1["is_uploded"] = (in_array($val1["docType"],["R","OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false ) :true;
+                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] !=0 ) ? true : false ) :true;
+                    $Wdocuments->push($val1);
+                });
+            });
+            $ownerMandetoryDoc = $Wdocuments->whereIn("docType",["R","OR"]);            
+            $is_ownerUploadedDoc = $Wdocuments->where("is_uploded",false);
+            $is_ownerDocVerify = $Wdocuments->where("is_docVerify",false);
+            
+            if($fromRole["can_upload_document"] || strtoupper($mUserType)=="ONLINE")
+            {
+                return (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()));
+            }
+            if($fromRole["can_verify_document"])
+            {
+                return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()));
             }
         }
         return true;
@@ -4714,8 +4766,7 @@ class Trade implements ITrade
             $DocsType['listDocs'] = $this->getApplTypeDocList($refApplication); 
             $DocsType['ownerDocs'] = collect($refOwners)->map(function ($owner) use ($refApplication) {
                 return $this->getOwnerDocLists($owner, $refApplication);
-            }); 
-            // dd( $DocsType['ownerDocs'],$DocsType['listDocs']);    
+            });     
             return responseMsgs(true, "Documents Fetched", $DocsType, "010203", "1.0", "", 'POST', "");
         }
         catch(Exception $e)

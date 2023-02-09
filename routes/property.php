@@ -170,6 +170,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('concession/doc-list', 'concessionDocList');                            //14
     Route::post('concession/upload-document', 'uploadDocument');
     Route::post('concession/get-uploaded-documents', 'getUploadedDocuments');
+    Route::post('concession/doc-verify-reject', 'docVerifyReject');
   });
 
   /**
@@ -211,6 +212,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('objection/get-uploaded-documents', 'getUploadedDocuments');  //20
     Route::post('objection/add-members', 'addMembers');                     //21
     Route::post('objection/citizen-doc-list', 'citizenDocList');
+    Route::post('objection/doc-verify-reject', 'docVerifyReject');
   });
 
 
@@ -253,6 +255,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/upload-document', 'uploadDocument');
     Route::post('harvesting/get-uploaded-documents', 'getUploadedDocuments');
     Route::post('harvesting/citizen-doc-list', 'citizenDocList');
+    Route::post('harvesting/doc-verify-reject', 'docVerifyReject');
+    Route::post('harvesting/field-verification-inbox', 'fieldVerifiedInbox');
 
     Route::post('harvesting/backtocitizen', 'backToCitizen');
     Route::post('harvesting/btc-inbox', 'btcInboxList');
