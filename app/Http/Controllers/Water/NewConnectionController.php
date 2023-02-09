@@ -580,7 +580,7 @@ class NewConnectionController extends Controller
     /**
         | Not / validate the payment status / Check the use / Not used
      */
-    public function editWaterDetails(Request $req)
+    public function editWaterAppliction(Request $req)
     {
         $req->validate([
             'applicatonId' => 'required|integer',
@@ -631,6 +631,7 @@ class NewConnectionController extends Controller
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
             $propertyId = $applicationDetails['applicationDetails']['property_type_id'];
+            $refAreaInSqFt = $applicationDetails['applicationDetails']['area_sqft'];
 
             # Document Details
             $metaReqs = [
@@ -641,17 +642,17 @@ class NewConnectionController extends Controller
             $document = $this->getDocToUpload($request);
             $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
+            # owner details
+            $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
+
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
             $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
-            # owner details
-            $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
-
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])->first();
-            $processCall = $mWaterParamConnFee->getCallParameter($propertyId)->first();  // <---------- here
+            $processCall = $mWaterParamConnFee->getCallParameter($propertyId,$refAreaInSqFt)->first();  // <---------- here
             $calculation['calculation'] =
                 [
                     'connectionFee' => $charges['conn_fee'],
@@ -660,7 +661,7 @@ class NewConnectionController extends Controller
                 ];
             $callParamenter['callParamenter'] = $processCall;
 
-            $returnData = array_merge($applicationDetails, $documentDetails, $waterTransDetail, $ownerDetails, $calculation, $callParamenter);
+            $returnData = array_merge($applicationDetails, $ownerDetails, $documentDetails, $waterTransDetail, $calculation, $callParamenter);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

@@ -11,6 +11,7 @@ use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerOwner;
+use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
@@ -780,12 +781,14 @@ class NewConnectionRepository implements iNewConnection
         $mWaterConsumer = new WaterConsumer();
         $mWaterConnectionCharge = new WaterConnectionCharge();
         $mWaterConsumerOwner = new WaterConsumerOwner();
+        $mWaterParamConnFee = new WaterParamConnFee();
 
         $approvedWater = $mWaterConsumer->getConsumerByConsumerNo($request->consumerNo);
         $connectionCharge = $mWaterConnectionCharge->getWaterchargesById($approvedWater['id'])->firstOrFail();
         $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['id']);
+        $water['calcullation'] = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'],$approvedWater['area_sqft'])->first();
 
-        $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner);
+        $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
         return remove_null($consumerDetails);
     }
 

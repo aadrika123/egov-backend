@@ -55,7 +55,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('escalate', 'postEscalate');                                                        //       
         Route::post('approval-rejection-application', 'approvalRejectionWater');                        //
         Route::post('post-message', 'commentIndependent');                                              //
-        Route::post('approved-water-applications', 'approvedWaterApplications');                        //       
+        Route::post('get-approved-water-application-details', 'approvedWaterApplications');                        //       
         Route::post('list-field-verified-inbox', 'fieldVerifiedInbox');                                 //
         Route::post('verification-field', 'fieldVerification');                                         //
         Route::post('generate_payment_receipt', 'generatePaymentReceipt');                              //
@@ -78,7 +78,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         // Route::post('list-doc', 'getWaterDocDetails');                                                  //
         // Route::post('verify-doc', 'waterDocStatus');                                                    //
         // Route::post('list-message', 'getIndependentComment');                                           //
-        // Route::post('edit_water_details', 'editWaterDetails');                                          //
+        // Route::post('edit_water_application', 'editWaterAppliction');                                          //
     });
 });
 

@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class WaterApplication extends Model
@@ -62,9 +63,11 @@ class WaterApplication extends Model
         switch ($saveNewApplication->user_type) {
             case ('Citizen'):
                 $saveNewApplication->apply_from = "Online";
+                $saveNewApplication->current_role = Config::get('waterConstaint.ROLE-LABEL.DA');
                 break;
             default:
                 $saveNewApplication->apply_from = auth()->user()->user_type;
+                $saveNewApplication->current_role = Config::get('waterConstaint.ROLE-LABEL.BO');
                 break;
         }
 
