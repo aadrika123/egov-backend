@@ -25,6 +25,7 @@ use App\Models\Property\PropPenalty;
 use App\Models\Property\PropPenaltyrebate;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafGeotagUpload;
+use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
@@ -843,13 +844,12 @@ class ActiveSafController extends Controller
             $saf = PropActiveSaf::find($request->applicationId);
             $mWfMstr = new WfWorkflow();
             $track = new WorkflowTrack();
-            $reAssessWfMstrId = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
             $samHoldingDtls = array();
 
             // Derivative Assignments
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
-                $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $reAssessWfMstrId);          // Check Post Next level condition
+                $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId);          // Check Post Next level condition
                 $saf->last_role_id = $request->receiverRoleId;                      // Update Last Role Id
             }
             // SAF Application Update Current Role Updation
@@ -876,26 +876,158 @@ class ActiveSafController extends Controller
     /**
      * | check Post Condition for backward forward(9.1)
      */
-    public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $reAssessWfMstrId)
+    public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId)
     {
+        // Variable Assigments
+        $reAssessWfMstrId = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
+        $mPropSafDemand = new PropSafsDemand();
+        $mPropMemoDtl = new PropSafMemoDtl();
+
+        // Derivative Assignments
+        $demand = $mPropSafDemand->getFirstDemandBySafId($saf->id);
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
                 if ($saf->doc_upload_status == 0)
                     throw new Exception("Document Not Fully Uploaded");
                 break;
+
             case $wfLevels['DA']:                       // DA Condition
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
+
                 if ($wfMstrId != $reAssessWfMstrId) {
-                    $saf->holding_no = 'HOL-SAF-' . $saf->id;
+                    $holdingNo = 'HOL-SAF-' . $saf->id;
+                    $saf->holding_no = $holdingNo;
                 }
+
                 $samNo = "SAM-" . $saf->id;
+                $mergedDemand = array_merge($demand->toArray(), [
+                    'memo_type' => 'SAM',
+                    'sam_no' => $samNo,
+                    'holding_no' => $holdingNo,
+                    'ward_id' => $saf->ward_mstr_id
+                ]);
+                $memoReqs = new Request($mergedDemand);
+                $mPropMemoDtl->postSafMemoDtls($memoReqs);
+                $this->replicateSaf($saf->id);
                 break;
         }
         return [
-            'holdingNo' => $saf->holding_no ?? "",
+            'holdingNo' =>  $holdingNo ?? "",
             'samNo' => $samNo ?? ""
         ];
+    }
+
+    /**
+     * | Replicate Tables of saf to property
+     */
+    public function replicateSaf($safId)
+    {
+        $activeSaf = PropActiveSaf::query()
+            ->where('id', $safId)
+            ->first();
+        $ownerDetails = PropActiveSafsOwner::query()
+            ->where('saf_id', $safId)
+            ->get();
+        $floorDetails = PropActiveSafsFloor::query()
+            ->where('saf_id', $safId)
+            ->get();
+
+        $toBeProperties = PropActiveSaf::query()
+            ->where('id', $safId)
+            ->select(
+                'ulb_id',
+                'cluster_id',
+                'holding_no',
+                'applicant_name',
+                'ward_mstr_id',
+                'ownership_type_mstr_id',
+                'prop_type_mstr_id',
+                'appartment_name',
+                'no_electric_connection',
+                'elect_consumer_no',
+                'elect_acc_no',
+                'elect_bind_book_no',
+                'elect_cons_category',
+                'building_plan_approval_no',
+                'building_plan_approval_date',
+                'water_conn_no',
+                'water_conn_date',
+                'khata_no',
+                'plot_no',
+                'village_mauja_name',
+                'road_type_mstr_id',
+                'area_of_plot',
+                'prop_address',
+                'prop_city',
+                'prop_dist',
+                'prop_pin_code',
+                'prop_state',
+                'corr_address',
+                'corr_city',
+                'corr_dist',
+                'corr_pin_code',
+                'corr_state',
+                'is_mobile_tower',
+                'tower_area',
+                'tower_installation_date',
+                'is_hoarding_board',
+                'hoarding_area',
+                'hoarding_installation_date',
+                'is_petrol_pump',
+                'under_ground_area',
+                'petrol_pump_completion_date',
+                'is_water_harvesting',
+                'land_occupation_date',
+                'new_ward_mstr_id',
+                'zone_mstr_id',
+                'flat_registry_date',
+                'assessment_type',
+                'holding_type',
+                'apartment_details_id',
+                'ip_address',
+                'status',
+                'user_id',
+                'citizen_id'
+            )->first();
+
+        $propProperties = $toBeProperties->replicate();
+        $propProperties->setTable('prop_properties');
+        $propProperties->saf_id = $activeSaf->id;
+        $propProperties->new_holding_no = $activeSaf->holding_no;
+        $propProperties->save();
+
+        $approvedSaf = $activeSaf->replicate();
+        $approvedSaf->setTable('prop_safs');
+        $approvedSaf->id = $activeSaf->id;
+        $approvedSaf->property_id = $propProperties->id;
+        $approvedSaf->save();
+
+        // SAF Owners replication
+        foreach ($ownerDetails as $ownerDetail) {
+            $approvedOwner = $ownerDetail->replicate();
+            $approvedOwner->setTable('prop_safs_owners');
+            $approvedOwner->id = $ownerDetail->id;
+            $approvedOwner->save();
+
+            $approvedOwners = $ownerDetail->replicate();
+            $approvedOwners->setTable('prop_owners');
+            $approvedOwners->property_id = $propProperties->id;
+            $approvedOwners->save();
+        }
+
+        // SAF Floors Replication
+        foreach ($floorDetails as $floorDetail) {
+            $approvedFloor = $floorDetail->replicate();
+            $approvedFloor->setTable('prop_safs_floors');
+            $approvedFloor->id = $floorDetail->id;
+            $approvedFloor->save();
+
+            $propFloor = $floorDetail->replicate();
+            $propFloor->setTable('prop_floors');
+            $propFloor->property_id = $propProperties->id;
+            $propFloor->save();
+        }
     }
 
     /**
@@ -1009,13 +1141,13 @@ class ActiveSafController extends Controller
                     )->first();
 
                 $propProperties = $toBeProperties->replicate();
-                $propProperties->setTable('prop_properties');
+                $propProperties->setTable('prop_properties')->where('saf_id', $req->applicationId)->first();
                 $propProperties->saf_id = $activeSaf->id;
                 $propProperties->new_holding_no = $activeSaf->holding_no;
                 $propProperties->save();
 
                 $approvedSaf = $activeSaf->replicate();
-                $approvedSaf->setTable('prop_safs');
+                $approvedSaf->setTable('prop_safs')->find($req->applicationId);
                 $approvedSaf->id = $activeSaf->id;
                 $approvedSaf->property_id = $propProperties->id;
                 $approvedSaf->save();
