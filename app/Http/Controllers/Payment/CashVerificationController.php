@@ -550,13 +550,13 @@ class CashVerificationController extends Controller
     public function cashVerify(Request $request)
     {
         $userId = authUser()->id;
-        $ulbId = authUser()->ulb_id;
-        $tNo =  $request->transactionNo;
+        $property =  $request->property;
         $water =  $request->water;
         $trade =  $request->trade;
 
-        foreach ($tNo as $p) {
-            PropTransaction::where('tran_no', $p)
+        foreach ($property as $propertyDtl) {
+            $tran_no =  $propertyDtl['tran_no'];
+            PropTransaction::where('tran_no', $tran_no)
                 ->update(
                     [
                         'verify_status' => 1,
@@ -564,10 +564,12 @@ class CashVerificationController extends Controller
                         'verified_by' => $userId
                     ]
                 );
+            $this->dailyCollection($propertyDtl);
+            // $propertyDtl->delete();
         }
 
-        foreach ($tNo as $p) {
-            WaterTran::where('tran_no', $p)
+        foreach ($water as $waterDtl) {
+            WaterTran::where('tran_no', $waterDtl['tran_no'])
                 ->update(
                     [
                         'verify_status' => 1,
@@ -575,10 +577,12 @@ class CashVerificationController extends Controller
                         'verified_by' => $userId
                     ]
                 );
+            $this->dailyCollection($waterDtl);
+            // $waterDtl->delete();
         }
 
-        foreach ($tNo as $t) {
-            TradeTransaction::where('tran_no', $t)
+        foreach ($trade as $tradeDtl) {
+            TradeTransaction::where('tran_no', $tradeDtl['tran_no'])
                 ->update(
                     [
                         'is_verified' => 1,
@@ -586,28 +590,40 @@ class CashVerificationController extends Controller
                         'verify_by' => $userId
                     ]
                 );
+            $this->dailyCollection($tradeDtl);
+            // $tradeDtl->delete();
         }
+    }
 
+
+    public function dailyCollection($tranDtl)
+    {
+        $userId = authUser()->id;
+        $ulbId = authUser()->ulb_id;
+
+        DB::beginTransaction();
         $mRevDailycollection = new RevDailycollection();
-        $mRevDailycollection->tran_no = $request->transactionNo;
         $mRevDailycollection->user_id = $userId;
-        $mRevDailycollection->demand_date = $request->date;
+        $mRevDailycollection->tran_no = $tranDtl['tran_no'];
+        $mRevDailycollection->demand_date = $tranDtl['tran_date'];
         $mRevDailycollection->deposit_date = Carbon::now();
         $mRevDailycollection->ulb_id = $ulbId;
         $mRevDailycollection->save();
 
         $RevDailycollectiondetail = new RevDailycollectiondetail();
         $RevDailycollectiondetail->collection_id = $mRevDailycollection->id;
-        $RevDailycollectiondetail->module_id = $request->moduleId;
-        $RevDailycollectiondetail->demand = $request->demand;
-        $RevDailycollectiondetail->deposit_amount = $request->deposit_amount;
-        $RevDailycollectiondetail->cheq_dd_no = $request->cheq_dd_no;
-        $RevDailycollectiondetail->bank_name = $request->bank_name;
-        $RevDailycollectiondetail->deposit_mode = $request->deposit_mode;
-        $RevDailycollectiondetail->comment = $request->comment;
-        $RevDailycollectiondetail->transaction_id = $request->id;
+        $RevDailycollectiondetail->module_id = $tranDtl['module_id'];
+        $RevDailycollectiondetail->demand = $tranDtl['amount'];
+        $RevDailycollectiondetail->deposit_amount = $tranDtl['amount'];
+        $RevDailycollectiondetail->cheq_dd_no = $tranDtl['cheque_dd_no'];
+        $RevDailycollectiondetail->bank_name = $tranDtl['bank_name'];
+        $RevDailycollectiondetail->deposit_mode = $tranDtl['payment_mode'];
+        $RevDailycollectiondetail->comment = $tranDtl['amount'];
+        $RevDailycollectiondetail->transaction_id = $tranDtl['id'];
         $RevDailycollectiondetail->save();
+        DB::commit();
     }
+
 
     /**
      * | for storing temporary transaction data in temporary transaction table
