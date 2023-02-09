@@ -555,6 +555,7 @@ class CashVerificationController extends Controller
         $trade =  $request->trade;
 
         foreach ($property as $propertyDtl) {
+            $pTempTransaction = TempTransaction::find($propertyDtl['id']);
             $tran_no =  $propertyDtl['tran_no'];
             PropTransaction::where('tran_no', $tran_no)
                 ->update(
@@ -565,10 +566,11 @@ class CashVerificationController extends Controller
                     ]
                 );
             $this->dailyCollection($propertyDtl);
-            // $propertyDtl->delete();
+            $pTempTransaction->delete();
         }
 
         foreach ($water as $waterDtl) {
+            $wTempTransaction = TempTransaction::find($waterDtl['id']);
             WaterTran::where('tran_no', $waterDtl['tran_no'])
                 ->update(
                     [
@@ -578,10 +580,11 @@ class CashVerificationController extends Controller
                     ]
                 );
             $this->dailyCollection($waterDtl);
-            // $waterDtl->delete();
+            $wTempTransaction->delete();
         }
 
         foreach ($trade as $tradeDtl) {
+            $tTempTransaction = TempTransaction::find($tradeDtl['id']);
             TradeTransaction::where('tran_no', $tradeDtl['tran_no'])
                 ->update(
                     [
@@ -591,8 +594,10 @@ class CashVerificationController extends Controller
                     ]
                 );
             $this->dailyCollection($tradeDtl);
-            // $tradeDtl->delete();
+            $tTempTransaction->delete();
         }
+
+        return responseMsgs(true, "Cash Verified", '', "010201", "1.0", "", "POST", $request->deviceId ?? "");
     }
 
 
