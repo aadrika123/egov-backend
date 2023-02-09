@@ -88,8 +88,7 @@ class PropActiveSaf extends Model
             'current_role' => $req->initiatorRoleId,
             'initiator_role_id' => $req->initiatorRoleId,
             'finisher_role_id' => $req->finisherRoleId,
-            'late_assess_penalty' => $req->lateAssessPenalty,
-            'citizen_id' => $req->citizenId ?? null,
+            'citizen_id' => $req->citizenId ?? null
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);
         return response()->json([

@@ -40,6 +40,7 @@ use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
 use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\Workflows\WfMaster;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
@@ -224,7 +225,6 @@ class ActiveSafController extends Controller
             $userType = auth()->user()->user_type;
             $demand = array();
             $metaReqs = array();
-            $assessmentTypeId = $request->assessmentType;
             if ($request->assessmentType == 1) {                                                    // New Assessment 
                 $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
                 $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.1');
@@ -249,7 +249,6 @@ class ActiveSafController extends Controller
             $safCalculation = new SafCalculation();
             $request->request->add(['road_type_mstr_id' => $roadWidthType]);
             $safTaxes = $safCalculation->calculateTax($request);
-            $mLateAssessPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
 
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
@@ -257,11 +256,7 @@ class ActiveSafController extends Controller
             $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
             $finisherRoleId = DB::select($refFinisherRoleId);
 
-            DB::beginTransaction();
             $saf = new PropActiveSaf();
-
-            $metaReqs['lateAssessPenalty'] = $mLateAssessPenalty;
-            // $metaReqs['safNo'] = $safNo;
             $metaReqs['roadWidthType'] = $roadWidthType;
             $metaReqs['workflowId'] = $ulbWorkflowId->id;
             $metaReqs['ulbId'] = $ulb_id;
@@ -275,6 +270,7 @@ class ActiveSafController extends Controller
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
 
             $request->merge($metaReqs);
+            DB::beginTransaction();
             $createSaf = $saf->store($request);                                                             // Store SAF Using Model function 
             $safId = $createSaf->original['safId'];
             $safNo = $createSaf->original['safNo'];
@@ -841,12 +837,19 @@ class ActiveSafController extends Controller
         ]);
 
         try {
+            // Variable Assigments
             $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $senderRoleId = $request->senderRoleId;
             $saf = PropActiveSaf::find($request->applicationId);
+            $mWfMstr = new WfWorkflow();
+            $track = new WorkflowTrack();
+            $reAssessWfMstrId = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
+            $samHoldingDtls = array();
 
+            // Derivative Assignments
             if ($request->action == 'forward') {
-                $this->checkPostCondition($senderRoleId, $wfLevels, $saf);          // Check Post Next level condition
+                $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
+                $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $reAssessWfMstrId);          // Check Post Next level condition
                 $saf->last_role_id = $request->receiverRoleId;                      // Update Last Role Id
             }
             // SAF Application Update Current Role Updation
@@ -860,11 +863,10 @@ class ActiveSafController extends Controller
             $metaReqs['refTableIdValue'] = $request->applicationId;
             $request->request->add($metaReqs);
 
-            $track = new WorkflowTrack();
             $track->saveTrack($request);
 
             DB::commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010109", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "", "010109", "1.0", "", "POST", $request->deviceId);
@@ -874,7 +876,7 @@ class ActiveSafController extends Controller
     /**
      * | check Post Condition for backward forward(9.1)
      */
-    public function checkPostCondition($senderRoleId, $wfLevels, $saf)
+    public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $reAssessWfMstrId)
     {
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
@@ -884,8 +886,16 @@ class ActiveSafController extends Controller
             case $wfLevels['DA']:                       // DA Condition
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
+                if ($wfMstrId != $reAssessWfMstrId) {
+                    $saf->holding_no = 'HOL-SAF-' . $saf->id;
+                }
+                $samNo = "SAM-" . $saf->id;
                 break;
         }
+        return [
+            'holdingNo' => $saf->holding_no ?? "",
+            'samNo' => $samNo ?? ""
+        ];
     }
 
     /**
@@ -921,7 +931,6 @@ class ActiveSafController extends Controller
             if ($safDetails->finisher_role_id != $req->roleId) {
                 return responseMsg(false, "Forbidden Access", "");
             }
-            $reAssessment = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
 
             $activeSaf = PropActiveSaf::query()
                 ->where('id', $req->applicationId)
@@ -936,12 +945,6 @@ class ActiveSafController extends Controller
             DB::beginTransaction();
             // Approval
             if ($req->status == 1) {
-                if ($req->assessmentType == $reAssessment)
-                    $safDetails->holding_no = $safDetails->previous_holding_id;
-                if ($req->assessmentType != $reAssessment) {
-                    $safDetails->holding_no = 'HOL-SAF-' . $req->applicationId;
-                }
-
                 $safDetails->fam_no = 'FAM/' . $req->applicationId;
                 $safDetails->saf_pending_status = 0;
                 $safDetails->save();
@@ -1407,8 +1410,9 @@ class ActiveSafController extends Controller
             $rebateAmt = $penalRebates->where('head_name', 'Rebate')->first()['amount'] ?? "";
             $specialRebateAmt = $penalRebates->where('head_name', 'Special Rebate')->first()['amount'] ?? "";
             $firstQtrRebate = $penalRebates->where('head_name', 'First Qtr Rebate')->first()['amount'] ?? "";
+            $lateAssessPenalty = $penalRebates->where('head_name', 'Late Assessment Fine(Rule 14.1)')->first()['amount'] ?? "";
 
-            $taxDetails = $this->readPenalyPmtAmts($activeSafDetails['late_assess_penalty'], $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $safTrans->amount);   // Get Holding Tax Dtls
+            $taxDetails = $this->readPenalyPmtAmts($lateAssessPenalty, $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $safTrans->amount);   // Get Holding Tax Dtls
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
