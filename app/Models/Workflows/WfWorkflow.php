@@ -92,4 +92,14 @@ class WfWorkflow extends Model
         $data->is_suspended = "true";
         $data->save();
     }
+
+    /**
+     * | Get Wf master id by Workflow id
+     */
+    public function getWfMstrByWorkflowId($workflowId)
+    {
+        return WfWorkflow::select('wf_master_id')
+            ->where('id', $workflowId)
+            ->firstOrFail();
+    }
 }
