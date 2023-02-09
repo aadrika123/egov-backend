@@ -53,6 +53,7 @@ class WaterApplicant extends Model
     public function getOwnerList($applicationId)
     {
         return WaterApplicant::select(
+            'id',
             'applicant_name',
             'guardian_name',
             'mobile_no',

@@ -78,7 +78,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         // Route::post('list-doc', 'getWaterDocDetails');                                                  //
         // Route::post('verify-doc', 'waterDocStatus');                                                    //
         // Route::post('list-message', 'getIndependentComment');                                           //
-        // Route::post('edit_water_application', 'editWaterAppliction');                                          //
+        Route::post('edit_water_application', 'editWaterAppliction');                                          //
     });
 });
 

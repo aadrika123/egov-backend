@@ -37,6 +37,7 @@ class WaterConnectionCharge extends Model
     public function getWaterchargesById($applicationId)
     {
         return WaterConnectionCharge::select(
+            'id',
             'amount',
             'charge_category',
             'penalty',
