@@ -2,6 +2,7 @@
 
 namespace App\Models\Water;
 
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -93,6 +94,11 @@ class WaterApplicant extends Model
             ->where('application_id', $request->applicationId)
             ->get();
 
+        $checkOwner = WaterConsumerOwner::where('consumer_id', $request->applicationId)->first();
+        if ($checkOwner) {
+            throw new Exception("Water Owner Already Exist!");
+        }
+
         collect($approvedWaterApplicant)->map(function ($value) {
             $approvedWaterOwners = $value->replicate();
             $approvedWaterOwners->setTable('water_approval_applicants');
@@ -101,9 +107,29 @@ class WaterApplicant extends Model
 
             $approvedWaterOwners = $value->replicate();
             $approvedWaterOwners->setTable('water_consumer_owners');
-            $approvedWaterOwners->id = $value->id;
+            $approvedWaterOwners->consumer_id = $value->id;
             $approvedWaterOwners->save();
-            // $approvedWaterOwners->delete();
         });
+        // $approvedWaterOwners->delete();
+    }
+
+
+    /**
+     * | Rejection Application 
+     * | transfer the rejected application to the rejected table
+     */
+    public function finalOwnerRejection($request)
+    {
+        $approvedWaterApplicant = WaterApplicant::query()
+            ->where('application_id', $request->applicationId)
+            ->get();
+
+        collect($approvedWaterApplicant)->map(function ($value) {
+            $approvedWaterOwners = $value->replicate();
+            $approvedWaterOwners->setTable('water_rejection_applicants');
+            $approvedWaterOwners->id = $value->id;
+            $approvedWaterOwners->save();    
+        });
+        // $approvedWaterOwners->delete();
     }
 }

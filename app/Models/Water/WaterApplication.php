@@ -5,6 +5,7 @@ namespace App\Models\Water;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -221,23 +222,46 @@ class WaterApplication extends Model
     /**
      * | Get water 
      */
-    public function finalApproval($request,$consumerNo)
+    public function finalApproval($request, $consumerNo)
     {
         $approvedWater = WaterApplication::query()
-                ->where('id', $request->applicationId)
-                ->first();
-                
-            $approvedWaterRep = $approvedWater->replicate();
-            $approvedWaterRep->setTable('water_approval_application_details');
-            $approvedWaterRep->id = $approvedWater->id;
-            $approvedWaterRep->consumer_no = $consumerNo;
-            $approvedWaterRep->save();
-        
-            $consumerWaterRep = $approvedWater->replicate();
-            $consumerWaterRep->setTable('water_consumers');
-            $consumerWaterRep->id = $approvedWater->id;
-            $consumerWaterRep->consumer_no = $consumerNo;
-            $consumerWaterRep->save();
-            // $approvedWater->delete();
+            ->where('id', $request->applicationId)
+            ->first();
+
+        $checkExist = WaterApprovalApplicationDetail::where('id', $approvedWater->id)->first();
+        if ($checkExist) {
+            throw new Exception("Access Denied ! Consumer Already Exist!");
+        }
+        $checkconsumer = WaterConsumer::where('id', $approvedWater->id)->first();
+        if ($checkconsumer) {
+            throw new Exception("Access Denied ! Consumer Already Exist!");
+        }
+
+        $approvedWaterRep = $approvedWater->replicate();
+        $approvedWaterRep->setTable('water_approval_application_details');
+        $approvedWaterRep->id = $approvedWater->id;
+        $approvedWaterRep->save();
+
+        $mWaterConsumer = new WaterConsumer();
+        $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
+        // $approvedWater->delete();
+    }
+
+
+    /**
+     * |
+     */
+    public function finalRejectionOfAppication($request)
+    {
+        $rejectedWater = WaterApplication::query()
+            ->where('id', $request->applicationId)
+            ->first();
+
+        $rejectedWaterRep = $rejectedWater->replicate();
+        $rejectedWaterRep->setTable('water_rejection_application_details');
+        $rejectedWaterRep->id = $rejectedWater->id;
+        $rejectedWaterRep->save();
+        // $rejectedWater->delete();
+
     }
 }

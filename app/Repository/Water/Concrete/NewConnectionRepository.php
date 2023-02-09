@@ -443,7 +443,7 @@ class NewConnectionRepository implements iNewConnection
      */
     public function approvalRejectionWater($request)
     {
-        $now = Carbon::now();
+
         $waterDetails = WaterApplication::find($request->applicationId);
         if ($waterDetails->finisher != $request->roleId) {
             throw new Exception("You're Not the finisher!");
@@ -451,40 +451,40 @@ class NewConnectionRepository implements iNewConnection
         if ($waterDetails->current_role != $request->roleId) {
             throw new Exception("Application has not Reached to the finisher!");
         }
+        if ($waterDetails->doc_status == false) {
+            throw new Exception("Documet is Not verified!");
+        }
+        if ($waterDetails->payment_status == false) {
+            throw new Exception("Payment Not Done!");
+        }
+        if ($waterDetails->doc_upload_status == false) {
+            throw new Exception("Full document is Not Uploaded!");
+        }
+        if ($waterDetails->is_field_verified == false) {
+            throw new Exception("Field Verification Not Done!!");
+        }
+
         DB::beginTransaction();
-        // Approval of water application 
+        # Approval of water application 
         if ($request->status == 1) {
+
+            $now = Carbon::now();
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
             $consumerNo = 'CON' . $now->getTimeStamp();
+
             $mWaterApplication->finalApproval($request, $consumerNo);
             $mWaterApplicant->finalApplicantApproval($request);
             $msg = "Application Successfully Approved !!";
         }
-        // Rejection of water application
+        # Rejection of water application
         if ($request->status == 0) {
-            $rejectedWater = WaterApplication::query()
-                ->where('id', $request->applicationId)
-                ->first();
 
-            $rejectedWaterRep = $rejectedWater->replicate();
-            $rejectedWaterRep->setTable('water_rejection_application_details');
-            $rejectedWaterRep->id = $rejectedWater->id;
-            $rejectedWaterRep->save();
-            // $rejectedWater->delete();
+            $mWaterApplication = new WaterApplication();
+            $mWaterApplicant = new WaterApplicant();
 
-            $approvedWaterApplicant = WaterApplicant::query()
-                ->where('application_id', $request->applicationId)
-                ->get();
-
-            collect($approvedWaterApplicant)->map(function ($value) {
-                $approvedWaterOwners = $value->replicate();
-                $approvedWaterOwners->setTable('water_rejection_applicants');
-                $approvedWaterOwners->id = $value->id;
-                $approvedWaterOwners->save();
-                // $approvedWaterOwners->delete();
-            });
-
+            $mWaterApplication->finalRejectionOfAppication($request);
+            $mWaterApplicant->finalOwnerRejection($request);
             $msg = "Application Successfully Rejected !!";
         }
         DB::commit();
