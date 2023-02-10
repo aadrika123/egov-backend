@@ -13,7 +13,11 @@ use Illuminate\Http\Request;
 
 interface ITradeNotice
 {
-    // public function addRecord(Request $request);
-    // public function citizenApplication(Request $request);
-    // public function readCitizenLicenceDtl($request);
+    public function addDenail(Request $request);
+    public function inbox(Request $request);
+    public function outbox(Request $request);
+    public function specialInbox(Request $request);
+    public function btcInbox(Request $request);
+    public function denialView(Request $request);
+    public function approveReject(Request $request);
 }

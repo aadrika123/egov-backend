@@ -50,9 +50,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('approveReject', 'approveReject');
         Route::post('postComment', 'addIndependentComment');
         Route::post('pay', 'PaymentCounter');
-        Route::match(["get", "post"], 'applyDenail', 'applyDenail');
-        Route::match(["get", "post"], 'denialInbox', 'denialInbox');
-        Route::match(["get", "post"], 'denialview/{id}/{mailId}', 'denialview');
+        // Route::match(["get", "post"], 'applyDenail', 'applyDenail');
+        // Route::match(["get", "post"], 'denialInbox', 'denialInbox');
+        // Route::match(["get", "post"], 'denialview/{id}/{mailId}', 'denialview');
         Route::post('approvedApplication', 'approvedApplication');
         Route::post('reports', 'reports');
         Route::post('getComment', 'readIndipendentComment');
@@ -60,8 +60,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
     Route::controller(TradeNoticeController::class)->group(function(){
         Route::post('applyDenail', 'applyDenail');
-        Route::post('denialInbox', 'denialInbox');
-        Route::post('denialview/{id}/{mailId}', 'denialview');
+        Route::post('noticeInbox', 'inbox');
+        Route::post('noticeOutbox', 'outbox');
+        Route::post('noticeBtcInbox', 'btcInbox');
+        Route::post('noticeApproveReject', 'approveReject');
+        Route::post('denialview', 'denialview');
     });
     Route::controller(TradeCitizenController::class)->group(function () {
         Route::post('citizenGetWardList', "getWardList");               #id = c1
