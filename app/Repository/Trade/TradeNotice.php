@@ -164,7 +164,7 @@ class TradeNotice implements ITradeNotice
                 ->orderBy("active_trade_notice_consumer_dtls.created_at", "DESC")
                 ->get();
             $data['denila_consumer'] = $denila_consumer;
-            return responseMsg(false, "", remove_null($data));
+            return responseMsg(false, "", remove_null($denila_consumer));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -231,7 +231,7 @@ class TradeNotice implements ITradeNotice
                 ->orderBy("active_trade_notice_consumer_dtls.created_at", "DESC")
                 ->get();
             $data['denila_consumer'] = $denila_consumer;
-            return responseMsg(true, "", $data);
+            return responseMsg(true, "", $denila_consumer);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -277,11 +277,11 @@ class TradeNotice implements ITradeNotice
                 ->where("active_trade_notice_consumer_dtls.status", 1)
                 ->orderBy("active_trade_notice_consumer_dtls.created_on", "DESC")
                 ->get();
-            $data = [
-                "wardList" => $mWardPermission,
-                "denila_consumer" => $denila_consumer,
-            ];
-            return responseMsg(true, "", $data);
+            // $data = [
+            //     "wardList" => $mWardPermission,
+            //     "denila_consumer" => $denila_consumer,
+            // ];
+            return responseMsg(true, "", $denila_consumer);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -343,11 +343,11 @@ class TradeNotice implements ITradeNotice
                 ->where("active_trade_notice_consumer_dtls.status", 1)
                 ->orderBy("active_trade_notice_consumer_dtls.created_on", "DESC")
                 ->get();
-            $data = [
-                "wardList" => $mWardPermission,
-                "denila_consumer" => $denila_consumer,
-            ];
-            return responseMsg(true, "", $data);
+            // $data = [
+            //     "wardList" => $mWardPermission,
+            //     "denila_consumer" => $denila_consumer,
+            // ];
+            return responseMsg(true, "", $denila_consumer);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }

@@ -2601,11 +2601,11 @@ class Trade implements ITrade
                 ->whereIn('active_trade_licences.ward_id', $ward_ids)
                 ->get();
             // dd(DB::getQueryLog());
-            $data = [
-                "wardList" => $ward_permission,
-                "licence" => $licence,
-            ];
-            return responseMsg(true, "", $data);
+            // $data = [
+            //     "wardList" => $ward_permission,
+            //     "licence" => $licence,
+            // ];
+            return responseMsg(true, "", $licence);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -2676,11 +2676,11 @@ class Trade implements ITrade
             }
             $licence = $licence
                 ->get();
-            $data = [
-                "wardList" => $mWardPermission,
-                "licence" => $licence,
-            ];
-            return responseMsg(true, "", $data);
+            // $data = [
+            //     "wardList" => $mWardPermission,
+            //     "licence" => $licence,
+            // ];
+            return responseMsg(true, "", $licence);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -2769,11 +2769,11 @@ class Trade implements ITrade
             $licence = $licence
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
                 ->get();
-            $data = [
-                "wardList" => $mWardPermission,
-                "licence" => $licence,
-            ];
-            return responseMsg(true, "", $data);
+            // $data = [
+            //     "wardList" => $mWardPermission,
+            //     "licence" => $licence,
+            // ];
+            return responseMsg(true, "", $licence);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
