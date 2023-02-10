@@ -73,7 +73,8 @@ class WaterNewConnection implements IWaterNewConnection
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $mWaterTran         = new WaterTran();
-            $WaterParamConnFee = new WaterParamConnFee();
+            $mWaterParamConnFee = new WaterParamConnFee();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
             // $departmnetId       = Config::get('waterConstaint.WATER_DEPAPRTMENT_ID');
             $connection         = WaterApplication::select(
                 "water_applications.id",
@@ -118,9 +119,10 @@ class WaterNewConnection implements IWaterNewConnection
                 ->orderbydesc('id')
                 ->get();
 
-            $returnValue = collect($connection)->map(function ($value) use ($mWaterTran,$WaterParamConnFee) {
+            $returnValue = collect($connection)->map(function ($value) use ($mWaterTran,$mWaterParamConnFee,$mWaterConnectionCharge) {
                 $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
-                $value['calcullation'] = $WaterParamConnFee->getCallParameter($value['property_type_id'],$value['area_sqft'])->first();
+                $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'],$value['area_sqft'])->first();
+                $value['connectionCharges'] = $mWaterConnectionCharge->getWaterchargesById($value['id'])->first();
                 return $value;
             });
             return $returnValue;
