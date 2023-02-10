@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 class PropFloor extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     /**
      * | Get Property Floors
@@ -70,5 +71,54 @@ class PropFloor extends Model
             ->where('property_id', $propertyId)
             ->orderByDesc('ref_prop_usage_types.id')
             ->get();
+    }
+
+    /**
+     * | Get Prop Floor by saf floor id and saf_id
+     */
+    public function getFloorBySafFloorIdSafId($safId, $safFloorId)
+    {
+        return PropFloor::where('saf_id', $safId)
+            ->where('id', $safFloorId)
+            ->first();
+    }
+
+    /**
+     * | Meta Floor Requests
+     */
+    public function metaFloorReqs($req)
+    {
+        return [
+            'floor_mstr_id' => $req->floor_mstr_id,
+            'usage_type_mstr_id' => $req->usage_type_mstr_id,
+            'const_type_mstr_id' => $req->const_type_mstr_id,
+            'occupancy_type_mstr_id' => $req->occupancy_type_mstr_id,
+            'builtup_area' => $req->builtup_area,
+            'date_from' => $req->date_from,
+            'date_upto' => $req->date_upto,
+            'carpet_area' => $req->carpet_area
+        ];
+    }
+
+    /**
+     * | Edit Existing Floor
+     */
+    public function editFloor($floor, $req)
+    {
+        $metaReqs = $this->metaFloorReqs($req);
+        $floor->update($metaReqs);
+    }
+
+    /**
+     * | Add new Floor
+     */
+    public function postFloor($req)
+    {
+        $metaReqs = array_merge($this->metaFloorReqs($req), [
+            'property_id' => $req->property_id,
+            'saf_id' => $req->saf_id
+        ]);
+
+        PropFloor::create($metaReqs);
     }
 }

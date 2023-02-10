@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 class PropProperty extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     // Get Property Of the Citizen
     public function getUserProperties($userId)
@@ -249,7 +250,24 @@ class PropProperty extends Model
     {
         $property = PropProperty::find($propId);
         $reqs = [
-            ''
+            'prop_type_mstr_id' => $fieldVerifiedSaf->prop_type_id,
+            'road_type_mstr_id' => $fieldVerifiedSaf->road_type_id,
+            'area_of_plot' => $fieldVerifiedSaf->area_of_plot,
+            'ward_mstr_id' => $fieldVerifiedSaf->ward_id,
+            'is_mobile_tower' => $fieldVerifiedSaf->has_mobile_tower,
+            'tower_area' => $fieldVerifiedSaf->tower_area,
+            'tower_installation_date' => $fieldVerifiedSaf->tower_installation_date,
+            'is_hoarding_board' => $fieldVerifiedSaf->has_hoarding,
+            'hoarding_area' => $fieldVerifiedSaf->hoarding_area,
+            'hoarding_installation_date' => $fieldVerifiedSaf->hoarding_installation_date,
+            'is_petrol_pump' => $fieldVerifiedSaf->is_petrol_pump,
+            'under_ground_area' => $fieldVerifiedSaf->underground_area,
+            'petrol_pump_completion_date' => $fieldVerifiedSaf->petrol_pump_completion_date,
+            'is_water_harvesting' => $fieldVerifiedSaf->has_water_harvesting,
+            'zone_mstr_id' => $fieldVerifiedSaf->zone_id,
+            'new_ward_mstr_id' => $fieldVerifiedSaf->new_ward_id,
+            'ulb_id' => $fieldVerifiedSaf->ulb_id
         ];
+        $property->update($reqs);
     }
 }
