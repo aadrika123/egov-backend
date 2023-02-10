@@ -4,6 +4,7 @@ namespace App\Http\Controllers\water;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Water\NewConnectionController;
+use App\Models\Water\WaterApplication as WaterWaterApplication;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Repository\Water\Interfaces\IWaterNewConnection;
 use Exception;
@@ -26,30 +27,15 @@ class WaterApplication extends Controller
     public function getCitizenApplication(Request $request)
     {
         try {
+            $mWaterApplication = new WaterWaterApplication();
             $returnValue = $this->Repository->getCitizenApplication($request);
-            $refReturn = collect($returnValue)->map(function ($value) {
+            $refReturn = collect($returnValue)->map(function ($value) use ($mWaterApplication) {
 
-                $refData['applicationId'] = $value['id'];
-                $metaReq = new Request($refData);
-                $documentList =  $this->_NewConnectionController->getDocToUpload($metaReq);
-                $refDoc = collect($documentList)['original']['data']['documentsList'];
-
-                $checkDocument = collect($refDoc)->map(function ($value, $key) {
-                    if ($value['isMadatory'] == 1) {
-                        $doc = collect($value['uploadDoc'])->first();
-                        if (is_null($doc)) {
-                            return false;
-                        }
-                        return true;
-                    }
-                    return true;
-                });
-                
-                if ($checkDocument->contains(false)) {
-                    $value['upload_status'] = false;
-                    return $value;
-                }
-                $value['upload_status'] = true;
+                $docStatus = $mWaterApplication->getApplicationById($value['id'])->select(
+                    'doc_upload_status'
+                )->first();
+                    
+                $value['upload_status'] = collect($docStatus)['doc_upload_status'];
                 return $value;
             });
             return responseMsg(true, "", remove_null($refReturn));
