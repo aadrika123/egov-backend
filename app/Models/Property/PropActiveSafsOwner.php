@@ -73,4 +73,50 @@ class PropActiveSafsOwner extends Model
             ->orderBy('id')
             ->first();
     }
+
+    /**
+     * | Citizen Owner Edit
+     */
+    public function ownerEdit($req, $citizenId)
+    {
+        $req = new Request($req);
+        $owner = PropActiveSafsOwner::find($req->ownerId);
+
+        $reqs = [
+            'owner_name' => $req->ownerName,
+            'guardian_name' => $req->guardianName,
+            'relation_type' => $req->relation,
+            'mobile_no' => $req->mobileNo,
+            'aadhar_no' => $req->aadhar,
+            'pan_no' => $req->pan,
+            'email' => $req->email,
+            'gender' => $req->gender,
+            'dob' => $req->dob,
+            'is_armed_force' => $req->isArmedForce,
+            'is_specially_abled' => $req->isSpeciallyAbled,
+            'user_id' => $citizenId,
+        ];
+
+        $owner->update($reqs);
+    }
+
+    public function addOwner($req, $safId, $citizenId)
+    {
+
+        $owner = new  PropActiveSafsOwner();
+        $owner->saf_id = $safId;
+        $owner->owner_name = $req['ownerName'];
+        $owner->guardian_name = $req['guardianName'] ?? null;
+        $owner->relation_type = $req['relation'] ?? null;
+        $owner->mobile_no = $req['mobileNo'] ?? null;
+        $owner->aadhar_no = $req['aadhar'] ??  null;
+        $owner->pan_no = $req['pan'] ?? null;
+        $owner->email = $req['email'] ?? null;
+        $owner->gender = $req['gender'] ?? null;
+        $owner->dob = $req['dob'] ?? null;
+        $owner->is_armed_force = $req['isArmedForce'] ?? null;
+        $owner->is_specially_abled = $req['isSpeciallyAbled'] ?? null;
+        $owner->user_id = $citizenId;
+        $owner->save();
+    }
 }

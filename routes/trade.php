@@ -51,9 +51,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('approveReject', 'approveReject');
         Route::post('postComment', 'addIndependentComment');
         Route::post('pay', 'PaymentCounter');
-        // Route::match(["get", "post"], 'applyDenail', 'applyDenail');
-        // Route::match(["get", "post"], 'denialInbox', 'denialInbox');
-        // Route::match(["get", "post"], 'denialview/{id}/{mailId}', 'denialview');
         Route::post('approvedApplication', 'approvedApplication');
         Route::post('reports', 'reports');
         Route::post('getComment', 'readIndipendentComment');
@@ -64,6 +61,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('noticeInbox', 'inbox');
         Route::post('noticeOutbox', 'outbox');
         Route::post('noticeBtcInbox', 'btcInbox');
+        Route::post('noticepostNext', 'postNextLevel');
         Route::post('noticeApproveReject', 'approveReject');
         Route::post('denialview', 'denialview');
     });

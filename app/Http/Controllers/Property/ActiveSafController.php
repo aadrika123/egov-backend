@@ -726,11 +726,16 @@ class ActiveSafController extends Controller
             'applicationId' => 'required|digits_between:1,9223372036854775807'
         ]);
         try {
+            // Variable Assignments
             $mPropActiveSaf = new PropActiveSaf();
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
+            $mPropSafMemoDtls = new PropSafMemoDtl();
+            $memoDtls = array();
             $data = array();
-            $data = $mPropActiveSaf->getActiveSafDtls()      // <------- Model function Active SAF Details
+
+            // Derivative Assignments
+            $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
                 ->first();
             if (!$data)
@@ -741,6 +746,9 @@ class ActiveSafController extends Controller
             $data['owners'] = $ownerDtls;
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
             $data['floors'] = $getFloorDtls;
+
+            $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
+            $data['memoDtls'] = $memoDtls;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return $e->getMessage();
@@ -1086,82 +1094,12 @@ class ActiveSafController extends Controller
                 $safDetails->saf_pending_status = 0;
                 $safDetails->save();
                 // SAF Application replication
-                $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());             // Replicate to Saf Table
-                $approvedSaf = $activeSaf->replicate();
-                $approvedSaf->setTable('prop_safs');
-                $approvedSaf->id = $activeSaf->id;
-                $approvedSaf->property_id = $propId;
-                $approvedSaf->save();
-                $activeSaf->delete();
-
-                // Saf Owners Replication
-                foreach ($ownerDetails as $ownerDetail) {
-                    $approvedOwner = $ownerDetail->replicate();
-                    $approvedOwner->setTable('prop_safs_owners');
-                    $approvedOwner->id = $ownerDetail->id;
-                    $approvedOwner->save();
-                    $ownerDetail->delete();
-                }
-
-                // Saf Floors Replication
-                foreach ($floorDetails as $floorDetail) {
-                    $approvedFloor = $floorDetail->replicate();
-                    $approvedFloor->setTable('prop_safs_floors');
-                    $approvedFloor->id = $floorDetail->id;
-                    $approvedFloor->save();
-                    $floorDetail->delete();
-                }
-
-                foreach ($fieldVerifiedSaf as $key) {
-                    $ifFloorExist = $mPropFloors->getFloorBySafFloorIdSafId($safId, $key->saf_floor_id);
-
-                    $floorReqs = new Request([
-                        'floor_mstr_id' => $key->floor_mstr_id,
-                        'usage_type_mstr_id' => $key->usage_type_id,
-                        'const_type_mstr_id' => $key->construction_type_id,
-                        'occupancy_type_mstr_id' => $key->occupancy_type_id,
-                        'builtup_area' => $key->builtup_area,
-                        'date_from' => $key->date_from,
-                        'date_upto' => $key->date_to,
-                        'carpet_area' => $key->carpet_area,
-                        'property_id' => $propId,
-                        'saf_id' => $safId
-
-                    ]);
-                    if ($ifFloorExist) {
-                        $mPropFloors->editFloor($ifFloorExist, $floorReqs);
-                    } else
-                        $mPropFloors->postFloor($floorReqs);
-                }
+                $this->finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $mPropFloors, $safId);
                 $msg = "Application Approved Successfully";
             }
             // Rejection
             if ($req->status == 0) {
-                // Rejected SAF Application replication
-                $rejectedSaf = $activeSaf->replicate();
-                $rejectedSaf->setTable('prop_rejected_safs');
-                $rejectedSaf->id = $activeSaf->id;
-                $rejectedSaf->push();
-                $activeSaf->delete();
-
-                // SAF Owners replication
-                foreach ($ownerDetails as $ownerDetail) {
-                    $approvedOwner = $ownerDetail->replicate();
-                    $approvedOwner->setTable('prop_rejected_safs_owners');
-                    $approvedOwner->id = $ownerDetail->id;
-                    $approvedOwner->save();
-                    $ownerDetail->delete();
-                }
-
-                // SAF Floors Replication
-                foreach ($floorDetails as $floorDetail) {
-                    $approvedFloor = $floorDetail->replicate();
-                    $approvedFloor->setTable('prop_rejected_safs_floors');
-                    $approvedFloor->id = $floorDetail->id;
-                    $approvedFloor->save();
-                    $floorDetail->delete();
-                }
-
+                $this->finalRejectionSafReplica($activeSaf, $ownerDetails, $floorDetails);
                 $msg = "Application Rejected Successfully";
             }
 
@@ -1172,6 +1110,91 @@ class ActiveSafController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Replication of Final Approval SAf(10.1)
+     */
+    public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $mPropFloors, $safId)
+    {
+        $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());             // Replicate to Saf Table
+        $approvedSaf = $activeSaf->replicate();
+        $approvedSaf->setTable('prop_safs');
+        $approvedSaf->id = $activeSaf->id;
+        $approvedSaf->property_id = $propId;
+        $approvedSaf->save();
+        $activeSaf->delete();
+
+        // Saf Owners Replication
+        foreach ($ownerDetails as $ownerDetail) {
+            $approvedOwner = $ownerDetail->replicate();
+            $approvedOwner->setTable('prop_safs_owners');
+            $approvedOwner->id = $ownerDetail->id;
+            $approvedOwner->save();
+            $ownerDetail->delete();
+        }
+
+        // Saf Floors Replication
+        foreach ($floorDetails as $floorDetail) {
+            $approvedFloor = $floorDetail->replicate();
+            $approvedFloor->setTable('prop_safs_floors');
+            $approvedFloor->id = $floorDetail->id;
+            $approvedFloor->save();
+            $floorDetail->delete();
+        }
+
+        foreach ($fieldVerifiedSaf as $key) {
+            $ifFloorExist = $mPropFloors->getFloorBySafFloorIdSafId($safId, $key->saf_floor_id);
+
+            $floorReqs = new Request([
+                'floor_mstr_id' => $key->floor_mstr_id,
+                'usage_type_mstr_id' => $key->usage_type_id,
+                'const_type_mstr_id' => $key->construction_type_id,
+                'occupancy_type_mstr_id' => $key->occupancy_type_id,
+                'builtup_area' => $key->builtup_area,
+                'date_from' => $key->date_from,
+                'date_upto' => $key->date_to,
+                'carpet_area' => $key->carpet_area,
+                'property_id' => $propId,
+                'saf_id' => $safId
+
+            ]);
+            if ($ifFloorExist) {
+                $mPropFloors->editFloor($ifFloorExist, $floorReqs);
+            } else
+                $mPropFloors->postFloor($floorReqs);
+        }
+    }
+
+    /**
+     * | Replication of Final Rejection Saf(10.2)
+     */
+    public function finalRejectionSafReplica($activeSaf, $ownerDetails, $floorDetails)
+    {
+        // Rejected SAF Application replication
+        $rejectedSaf = $activeSaf->replicate();
+        $rejectedSaf->setTable('prop_rejected_safs');
+        $rejectedSaf->id = $activeSaf->id;
+        $rejectedSaf->push();
+        $activeSaf->delete();
+
+        // SAF Owners replication
+        foreach ($ownerDetails as $ownerDetail) {
+            $approvedOwner = $ownerDetail->replicate();
+            $approvedOwner->setTable('prop_rejected_safs_owners');
+            $approvedOwner->id = $ownerDetail->id;
+            $approvedOwner->save();
+            $ownerDetail->delete();
+        }
+
+        // SAF Floors Replication
+        foreach ($floorDetails as $floorDetail) {
+            $approvedFloor = $floorDetail->replicate();
+            $approvedFloor->setTable('prop_rejected_safs_floors');
+            $approvedFloor->id = $floorDetail->id;
+            $approvedFloor->save();
+            $floorDetail->delete();
         }
     }
 
