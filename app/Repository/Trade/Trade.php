@@ -2524,25 +2524,24 @@ class Trade implements ITrade
             $workflowId = WfWorkflow::where('id', $refWorkflowId)
                 ->where('ulb_id', $ulb_id)
                 ->first();
-            if (!$workflowId) {
+            if (!$workflowId) 
+            {
                 throw new Exception("Workflow Not Available");
             }
             $mUserType = $this->_parent->userType($refWorkflowId);
             $ward_permission = $this->_parent->WardPermission($user_id);
-            $role = $this->_parent->getUserRoll($user_id, $ulb_id, $workflowId->wf_master_id);
+            $role = $this->_parent->getUserRoll($user_id, $ulb_id, $refWorkflowId);
             if (!$role) {
                 throw new Exception("You Are Not Authorized");
             }
             if ($role->is_initiator || in_array(strtoupper($mUserType), ["JSK", "SUPER ADMIN", "ADMIN", "TL", "PMU", "PM"])) {
-                $joins = "leftjoin";
+               
                 $ward_permission = $this->_modelWard->getAllWard($ulb_id)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
                 $ward_permission = objToArray($ward_permission);
-            } else {
-                $joins = "join";
-            }
+            } 
             $role_id = $role->role_id;
 
             $ward_ids = array_map(function ($val) {
@@ -2563,12 +2562,6 @@ class Trade implements ITrade
                 "owner.mobile_no",
                 "owner.email_id"
             )
-                // ->$joins("trade_level_pendings",function($join) use($role_id){
-                //     $join->on("trade_level_pendings.licence_id","active_licences.id")
-                //     ->where("trade_level_pendings.sender_user_type_id",$role_id)
-                //     ->where("trade_level_pendings.status",1)
-                //     ->where("trade_level_pendings.verification_status",0);
-                // })
                 ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
                                             STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -2604,14 +2597,6 @@ class Trade implements ITrade
                 $licence = $licence
                     ->whereBetween('active_trade_licences.application_date', [$inputs['formDate'], $inputs['formDate']]);
             }
-            // if(!$role->is_initiator)
-            // {
-            //     $licence = $licence->whereIn('active_trade_licences.pending_status',[2]);
-            // }
-            // else
-            // {
-            //     $licence = $licence->whereIn('active_trade_licences.pending_status',[2]);
-            // }
             $licence = $licence
                 ->whereIn('active_trade_licences.ward_id', $ward_ids)
                 ->get();
@@ -2714,7 +2699,7 @@ class Trade implements ITrade
                 throw new Exception("Workflow Not Available");
             }
             $mWardPermission = $this->_parent->WardPermission($refUserId);
-            $mRole = $this->_parent->getUserRoll($refUserId, $refUlbId, $refWorkflowMstrId->wf_master_id);
+            $mRole = $this->_parent->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
 
             if (!$mRole->is_initiator) {
                 throw new Exception("You Are Not Authorized For This Action");
