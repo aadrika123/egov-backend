@@ -51,7 +51,7 @@ class WaterPaymentController extends Controller
             if (!$applicationId)
                 throw new Exception("This Property has not ApplicationId!!");
 
-            $connectionTran = $mWaterTran->getTransNo($applicationId, null)->first();                        // Water Connection payment History
+            $connectionTran[] = $mWaterTran->getTransNo($applicationId, null)->first();                        // Water Connection payment History
 
             if (!$connectionTran)
                 throw new Exception("Water Application Tran Details not Found!!");
