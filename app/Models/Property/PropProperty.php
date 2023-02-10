@@ -241,4 +241,15 @@ class PropProperty extends Model
             ->where('saf_id', $safId)
             ->first();
     }
+
+    /**
+     * | Replicate Saf 
+     */
+    public function replicateVerifiedSaf($propId, $fieldVerifiedSaf)
+    {
+        $property = PropProperty::find($propId);
+        $reqs = [
+            ''
+        ];
+    }
 }
