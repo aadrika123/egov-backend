@@ -460,8 +460,8 @@ class TradeApplication extends Controller
                 }
                 $approvedLicence->save();
                 $activeLicence->delete();
-
-                $msg =  "Application Successfully Approved !!";
+                $licenseNo = $approvedLicence->license_no;
+                $msg =  "Application Successfully Approved !!. Your License No Is ".$licenseNo;
             }
 
             // Rejection

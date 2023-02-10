@@ -348,6 +348,7 @@ class Trade implements ITrade
                     $licence->payment_status         = 1;
                     $licence->update();
                 }
+                #frize Priviuse License
                 if ($mApplicationTypeId != 1 && !$this->transferExpire($mOldLicenceId)) {
                     throw new Exception("Some Error Ocures!....");
                 }
