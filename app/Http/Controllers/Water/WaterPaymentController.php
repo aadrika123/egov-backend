@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
 use App\Models\Water\WaterConsumer;
+use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterTran;
+use App\Models\Water\WaterTranDetail;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -36,6 +38,8 @@ class WaterPaymentController extends Controller
         try {
             $mWaterTran = new WaterTran();
             $mWaterConsumer = new WaterConsumer();
+            $mWaterConsumerDemand = new WaterConsumerDemand();
+            $mWaterTranDetail = new WaterTranDetail();
 
             $transactions = array();
 
@@ -44,6 +48,12 @@ class WaterPaymentController extends Controller
                 throw new Exception("Water Consumer Not Found!");
 
             $waterTrans = $mWaterTran->ConsumerTransaction($request->consumerId)->get();         // Water Consumer Payment History
+            $waterTrans = collect($waterTrans)->map(function ($value, $key) use ($mWaterConsumerDemand, $mWaterTranDetail) {
+                $demandId = $mWaterTranDetail->getDetailByTranId($value['id']);
+                $value['demand'] = $mWaterConsumerDemand->getDemandBydemandId($demandId['demand_id']);
+                return $value;
+            });
+
             if (!$waterTrans || $waterTrans->isEmpty())
                 throw new Exception("No Transaction Found!");
 

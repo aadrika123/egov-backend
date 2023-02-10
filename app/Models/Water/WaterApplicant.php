@@ -59,7 +59,8 @@ class WaterApplicant extends Model
             'mobile_no',
             'email'
         )
-            ->where('application_id', $applicationId);
+            ->where('application_id', $applicationId)
+            ->where('status',true);
     }
 
     /**
