@@ -188,7 +188,7 @@ class WaterConsumer extends Model
      * | @var 
      * | @return 
      */
-    public function getConsumerByConsumerNo($consumerNo)
+    public function getConsumerByConsumerNo($key, $parameter)
     {
         return WaterConsumer::select(
             'water_consumers.*',
@@ -209,9 +209,18 @@ class WaterConsumer extends Model
             ->leftjoin('water_param_pipeline_types', 'water_param_pipeline_types.id', '=', 'water_consumers.pipeline_type_id')
 
             ->Join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
-            ->where('water_consumers.consumer_no', $consumerNo)
+            ->where('water_consumers.' . $key, $parameter)
             ->where('water_consumers.status', true)
             ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
             ->firstOrFail();
+    }
+
+    /**
+     * | Get Consumer Details By ApplicationId ie. the ID 
+     * | @param consumerId
+     */
+    public function getConsumerDetailById($consumerId)
+    {
+        return WaterConsumer::where('id', $consumerId)->firstOrFail();
     }
 }
