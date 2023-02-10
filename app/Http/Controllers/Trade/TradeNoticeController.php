@@ -119,7 +119,7 @@ class TradeNoticeController extends Controller
 
             DB::beginTransaction();
 
-            $application->max_level_attained = ($application->max_level_attained < ($receiverRole["serial_no"]??0)) ? ($receiverRole["serial_no"]??0) : $licence->max_level_attained;
+            $application->max_level_attained = ($application->max_level_attained < ($receiverRole["serial_no"]??0)) ? ($receiverRole["serial_no"]??0) : $application->max_level_attained;
             $application->current_role = $request->receiverRoleId;
             $application->update();
 
