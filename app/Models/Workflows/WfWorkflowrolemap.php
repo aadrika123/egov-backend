@@ -105,9 +105,9 @@ class WfWorkflowrolemap extends Model
             ->leftJoin('wf_roles as r', 'wf_workflowrolemaps.forward_role_id', '=', 'r.id')
             ->leftJoin('wf_roles as rr', 'wf_workflowrolemaps.backward_role_id', '=', 'rr.id')
             ->join('wf_roles', 'wf_roles.id', 'wf_workflowrolemaps.wf_role_id')
-            ->leftjoin('ulb_masters', 'ulb_masters.id', 'wf_workflows.ulb_id')
+            ->join('ulb_masters', 'ulb_masters.id', 'wf_workflows.ulb_id')
             ->where('wf_workflowrolemaps.is_suspended', false)
-            ->orderByDesc('wf_workflowrolemaps.id')
+            ->orderBy('workflow_id')
             ->get();
         return $data;
     }

@@ -76,18 +76,10 @@ class ConcessionController extends Controller
         ]);
 
         try {
-            // $userId = auth()->user()->id;
             $ulbId = $request->ulbId;
             $userType = auth()->user()->user_type;
+            $userId = auth()->user()->id;
             $concessionNo = "";
-
-            if ($userType == 'Citizen') {
-                $citizenId = auth()->user()->id;
-            }
-
-            if ($userType != 'Citizen') {
-                $userId = auth()->user()->id;
-            }
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
@@ -114,12 +106,24 @@ class ConcessionController extends Controller
             $concession->is_specially_abled = $request->speciallyAbled;
             $concession->specially_abled_percentage = $request->speciallyAbledPercentage;
             $concession->remarks = $request->remarks;
-            $concession->user_id = $userId ?? null;
-            $concession->citizen_id = $citizenId ?? null;
+            // $concession->citizen_id = $citizenId ?? null;
+
             $concession->ulb_id = $ulbId;
             $concession->workflow_id = $ulbWorkflowId->id;
             $concession->current_role = collect($initiatorRoleId)->first()->role_id;
             $concession->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
+            $concession->last_role_id = collect($initiatorRoleId)->first()->role_id;
+            $concession->user_id = $userId;
+
+            if ($userType == 'Citizen') {
+                $concession->current_role = collect($initiatorRoleId)->first()->forward_role_id;
+                $concession->initiator_role_id = collect($initiatorRoleId)->first()->forward_role_id;      // Send to DA in Case of Citizen
+                $concession->last_role_id = collect($initiatorRoleId)->first()->forward_role_id;
+                $concession->user_id = null;
+                $concession->citizen_id = $userId;
+                $concession->doc_upload_status = 1;
+            }
+
             $concession->finisher_role_id = collect($finisherRoleId)->first()->role_id;
             $concession->created_at = Carbon::now();
             $concession->date = Carbon::now();
@@ -131,8 +135,6 @@ class ConcessionController extends Controller
 
             PropActiveConcession::where('id', $concession->id)
                 ->update(['application_no' => $concessionNo]);
-
-            // return $this->uploadDocument($request, $concession, $concessionNo);
 
             //saving document 
             if ($file = $request->file('genderDoc')) {

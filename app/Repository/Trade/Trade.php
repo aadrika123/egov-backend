@@ -174,7 +174,8 @@ class Trade implements ITrade
                 $mShortUlbName .= $mval[0];
             }
             #------------------------End Declaration-----------------------
-            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) {
+            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) 
+            {
                 $data['wardList'] = $this->_modelWard->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
@@ -347,6 +348,7 @@ class Trade implements ITrade
                     $licence->payment_status         = 1;
                     $licence->update();
                 }
+                #frize Priviuse License
                 if ($mApplicationTypeId != 1 && !$this->transferExpire($mOldLicenceId)) {
                     throw new Exception("Some Error Ocures!....");
                 }
@@ -3572,21 +3574,21 @@ class Trade implements ITrade
                 ->where('ulb_id', $ulbId)
                 ->first();
 
-            $role = $this->_parent->getUserRoll($userId, $ulbId, $workflowId->wf_master_id);
+            $role = $this->_parent->getUserRoll($userId, $ulbId, $refWorkflowId);
             $role_id = $role->role_id;
             $mForwardRoleId = $role->forward_role_id;
             if ($request->getMethod() == 'POST') {
                 DB::beginTransaction();
-                $denialConsumer = new TradeNoticeConsumerDtl;
+                $denialConsumer = new ActiveTradeNoticeConsumerDtl;
                 $denialConsumer->firm_name  = $request->firmName;
-                $denialConsumer->applicant_name = $request->ownerName;
+                $denialConsumer->owner_name = $request->ownerName;
                 $denialConsumer->ward_id    = $request->wardNo;
                 $denialConsumer->ulb_id     = $ulbId;
                 $denialConsumer->holding_no = $request->holdingNo;
                 $denialConsumer->address    = $request->address;
                 $denialConsumer->landmark   = $request->landmark;
                 $denialConsumer->city       = $request->city;
-                $denialConsumer->pincode    = $request->pinCode;
+                $denialConsumer->pin_code    = $request->pinCode;
                 $denialConsumer->license_no = $request->licenceNo ?? null;
                 $denialConsumer->ip_address = $request->ip();
                 $getloc = json_decode(file_get_contents("http://ipinfo.io/"));
@@ -3597,7 +3599,7 @@ class Trade implements ITrade
                     $denialConsumer->mobileno = $request->mobileNo;
                 }
                 $denialConsumer->remarks = $request->comment;
-                $denialConsumer->emp_details_id = $userId;
+                $denialConsumer->user_id = $userId;
                 $denialConsumer->save();
                 $denial_id = $denialConsumer->id;
 
@@ -3606,7 +3608,7 @@ class Trade implements ITrade
                     $file_ext =  $file->getClientOriginalExtension();
                     $fileName = "denial_image/$denial_id.$file_ext";
                     $filePath = $this->uplodeFile($file, $fileName);
-                    $denialConsumer->file_name = $filePath;
+                    $denialConsumer->document_path = $filePath;
                     $denialConsumer->update();
 
                     // $workflowTrack = new WorkflowTrack;

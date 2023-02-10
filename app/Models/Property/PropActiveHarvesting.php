@@ -19,7 +19,7 @@ class PropActiveHarvesting extends Model
         return PropActiveHarvesting::select(
             'prop_active_harvestings.id',
             'prop_active_harvestings.application_no',
-            'a.applicant_name',
+            DB::raw("string_agg(owner_name,',') as applicant_name"),
             'a.ward_mstr_id',
             'u.ward_name as ward_no',
             'a.holding_no',
@@ -29,10 +29,19 @@ class PropActiveHarvesting extends Model
             'prop_active_harvestings.current_role as role_id'
         )
             ->join('prop_properties as a', 'a.id', '=', 'prop_active_harvestings.property_id')
+            ->join('prop_owners', 'prop_owners.property_id', 'a.id')
             ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
             ->where('prop_active_harvestings.status', 1)
-            ->where('prop_active_harvestings.ulb_id', $ulbId);
+            ->where('prop_active_harvestings.ulb_id', $ulbId)
+            ->groupBy(
+                'prop_active_harvestings.id',
+                'a.ward_mstr_id',
+                'u.ward_name',
+                'a.holding_no',
+                'a.prop_type_mstr_id',
+                'p.property_type'
+            );
     }
 
     public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId, $citizenId)

@@ -58,6 +58,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('getComment', 'readIndipendentComment');
         #------------citizenApplication---------------------        
     });
+    Route::controller(TradeNoticeController::class)->group(function(){
+        Route::post('applyDenail', 'applyDenail');
+        Route::post('denialInbox', 'denialInbox');
+        Route::post('denialview/{id}/{mailId}', 'denialview');
+    });
     Route::controller(TradeCitizenController::class)->group(function () {
         Route::post('citizenGetWardList', "getWardList");               #id = c1
         Route::post('citizenApply', 'applyApplication');                #id = c2
