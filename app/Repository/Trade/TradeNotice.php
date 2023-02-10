@@ -81,8 +81,9 @@ class TradeNotice implements ITradeNotice
 
             $denialConsumer->workflow_id  = $refWorkflowId; 
             $denialConsumer->current_role = $refWorkflows['initiator']['id'];
-            $denialConsumer->initiator_role = $refWorkflows['finisher']['id'];
-
+            $denialConsumer->initiator_role = $refWorkflows['initiator']['id'];
+            $denialConsumer->finisher_role = $refWorkflows['finisher']['id'];
+            
             $denialConsumer->save();
             $denial_id = $denialConsumer->id;
 
@@ -151,7 +152,7 @@ class TradeNotice implements ITradeNotice
             }
             if (isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate']) {
                 $denila_consumer = $denila_consumer
-                    ->whereBetween('active_trade_notice_consumer_dtls.created_on::date', [$inputs['formDate'], $inputs['formDate']]);
+                    ->whereBetween('active_trade_notice_consumer_dtls.created_at::date', [$inputs['formDate'], $inputs['formDate']]);
             }
             $denila_consumer = $denila_consumer
                 ->whereIn("active_trade_notice_consumer_dtls.ward_id", $ward_ids)
@@ -160,7 +161,7 @@ class TradeNotice implements ITradeNotice
                 ->where("active_trade_notice_consumer_dtls.current_role", $role_id)
                 ->where("active_trade_notice_consumer_dtls.workflow_id", $workflow_id)
                 ->where("active_trade_notice_consumer_dtls.status", 1)
-                ->orderBy("active_trade_notice_consumer_dtls.created_on", "DESC")
+                ->orderBy("active_trade_notice_consumer_dtls.created_at", "DESC")
                 ->get();
             $data['denila_consumer'] = $denila_consumer;
             return responseMsg(false, "", remove_null($data));
@@ -218,7 +219,7 @@ class TradeNotice implements ITradeNotice
             }
             if (isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate']) {
                 $denila_consumer = $denila_consumer
-                    ->whereBetween('active_trade_notice_consumer_dtls.created_on::date', [$inputs['formDate'], $inputs['formDate']]);
+                    ->whereBetween('active_trade_notice_consumer_dtls.created_at::date', [$inputs['formDate'], $inputs['formDate']]);
             }
             $denila_consumer = $denila_consumer
                 ->whereIn("active_trade_notice_consumer_dtls.ward_id", $ward_ids)
@@ -227,7 +228,7 @@ class TradeNotice implements ITradeNotice
                 ->where("active_trade_notice_consumer_dtls.current_role","<>", $role_id)
                 ->where("active_trade_notice_consumer_dtls.workflow_id", $refWorkflowId)
                 ->where("active_trade_notice_consumer_dtls.status", 1)
-                ->orderBy("active_trade_notice_consumer_dtls.created_on", "DESC")
+                ->orderBy("active_trade_notice_consumer_dtls.created_at", "DESC")
                 ->get();
             $data['denila_consumer'] = $denila_consumer;
             return responseMsg(true, "", $data);
@@ -370,7 +371,7 @@ class TradeNotice implements ITradeNotice
     public function denialView(Request $request)
     {
         $request->validate([
-            "applicationId" => "required",
+            "applicationId" => "required|digits_between:1,9223372036854775807",
         ]);
         try {
             $applicationId = $request->applicationId;
@@ -382,66 +383,10 @@ class TradeNotice implements ITradeNotice
             $role_id = $this->_parent->getUserRoll($user_id, $ulb_id, $workflow_id)->role_id ?? -1;
             $mUserType = $this->_parent->userType($workflow_id);
 
-            $denial_details  = $this->getDenialDetailsByID($applicationId);
-            $denialID =  $denial_details->id;
-            if ($denial_details->status == 5) 
-            {
-                throw new Exception("Notice No Already Generated " . $denial_details->notice_no);
-            } 
-            if ($denial_details->status == 4) 
-            {
-                throw new Exception("Denial Request Rejected");
-            }
-            // $denial_details->file_name = !empty(trim($denial_details->file_name)) ? $this->readDocumentPath($denial_details->file_name) : null;
-            // if ($request->getMethod() == 'GET') 
-            {
-                $data["denial_details"] = $denial_details;
-                return responseMsg(true, "", remove_null($data));
-            } 
-            // elseif ($request->getMethod() == 'POST') 
-            // {
-            //     $denial_consumer = ActiveTradeNoticeConsumerDtl::find($denialID);
-
-            //     $nowdate = Carbon::now()->format('Y-m-d');
-            //     $timstamp = Carbon::now()->format('Y-m-d H:i:s');
-            //     $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
-            //     $rules = [];
-            //     $message = [];
-            //     $rules["btn"] = "required|in:approve,reject";
-            //     $message["btn.in"] = "btn Value In approve,reject";
-            //     $rules["comment"] = "required|min:10|regex:$regex";
-            //     $validator = Validator::make($request->all(), $rules, $message);
-            //     if ($validator->fails()) 
-            //     {
-            //         return responseMsg(false, $validator->errors(), $request->all());
-            //     }
-            //     if ($mUserType != "EO") 
-            //     {
-            //         throw new Exception("You Are Not Authorize For Approve Or Reject Denial Detail");
-            //     }
-            //     DB::beginTransaction();
-            //     # Approve Application
-            //     $res = [];
-            //     if ($request->btn == "approve") 
-            //     {
-            //         $denial_consumer->status = 5;
-            //         $denial_consumer->notice_date  = $nowdate;
-            //         $noticeNO = "NOT/" . date('dmy') . $denialID;
-            //         $denial_consumer->notice_no = $noticeNO;
-            //         $denial_consumer->update();
-            //         $res["noticeNo"] = $noticeNO;
-            //         $res["sms"] = "Notice No Successfuly Generated";
-            //     }
-            //     if ($request->btn == "reject") 
-            //     {
-            //         $denial_consumer->status = 4;
-            //         $denial_consumer->update();
-            //         $res["noticeNo"] = "";
-            //         $res["sms"] = "Denail Apply Rejected";
-            //     }
-            //     DB::commit();
-            //     return responseMsg(true, $res["sms"], remove_null($res["noticeNo"]));
-            // }
+            $denial_details  = $this->getDenialDetailsByID($applicationId);            
+            $data["denial_details"] = $denial_details;
+            return responseMsg(true, "", remove_null($data));
+            
         } 
         catch (Exception $e) 
         {
