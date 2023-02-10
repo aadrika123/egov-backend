@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
+use App\Http\Controllers\Property\ActiveSafControllerV2;
 use App\Http\Controllers\Property\ConcessionController;
 use App\Http\Controllers\Property\SafCalculatorController;
 use App\Http\Controllers\Property\CalculatorController;
@@ -335,5 +336,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('payment-holding', 'paymentHolding');                             // (04) Payment Holding
     Route::post('prop-payment-receipt', 'propPaymentReceipt');                    // (05) Generate Property Payment Receipt
     Route::post('prop-payment-history', 'propPaymentHistory');                    // (06) Property Payment History
+  });
+
+  /**
+    | Serial No : 18
+   */
+  Route::controller(ActiveSafControllerV2::class)->group(function () {
+    Route::post('saf/delete-citizen-saf', 'deleteCitizenSaf');        // 01
+    Route::post('saf/edit-citizen-saf', 'editCitizenSaf');
   });
 });
