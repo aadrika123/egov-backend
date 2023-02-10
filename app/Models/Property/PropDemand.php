@@ -61,4 +61,16 @@ class PropDemand extends Model
             ->orderByDesc('due_date')
             ->get();
     }
+
+    /**
+     * | Get First Prop Demand by propID
+     */
+    public function getEffectFromDemandByPropId($propId)
+    {
+        return PropDemand::where('property_id', $propId)
+            ->where('paid_status', 0)
+            ->where('status', 1)
+            ->orderByDesc('due_date')
+            ->first();
+    }
 }
