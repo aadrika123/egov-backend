@@ -9,8 +9,11 @@
 return [
     "MODULE-ID"     =>  "5",
     "CITIZEN"       => "Citizen",
-    "TRADE_REF_TABLE" => "active_trade_licences.id",
+    "TRADE_REF_TABLE" => "active_trade_licences",
     "TRADE_RELATIVE_PATH" => "Uploads/Trade",
+
+    "TRADE_NOTICE_REF_TABLE" => "active_trade_notice_consumer_dtls",
+    "TRADE_NOTICE_RELATIVE_PATH" => "Uploads/Trade/Notice",
 
     "APPLICATION-TYPE" =>
     [

@@ -5,6 +5,10 @@ namespace App\Traits\Trade;
 use Illuminate\Support\Facades\Config;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Masters\RefRequiredDocument;
+use App\Models\Trade\TradeLicence;
+use App\Repository\Common\CommonFunction;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -270,5 +274,86 @@ trait TradeTrait
             default :  $documentList = collect([]);
         }
         return $documentList;
+    }
+
+    public function giveValidity($refLicenc)
+    {
+        try{
+            $commonFuction = new CommonFunction();
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $role = $commonFuction->getUserRoll($user_id, $ulb_id,$refWorkflowId);
+            $init_finish = $commonFuction->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
+            $licence_for_years = $refLicenc->licence_for_years;
+            # 1	NEW LICENSE
+            if ($refLicenc->application_type_id == 1) 
+            {
+                $valid_from = $refLicenc->application_date;
+                $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime($refLicenc->application_date)));
+            }
+            # 2 RENEWAL
+            if ($refLicenc->application_type_id == 2) 
+            {
+                $prive_licence = TradeLicence::find($refLicenc->trade_id);
+                if (!empty($prive_licence)) 
+                {
+                    $prive_licence_id = $prive_licence->id;
+                    $license_no = $prive_licence->license_no;
+                    $valid_from = $prive_licence->valid_upto; 
+                    $datef = date('Y-m-d', strtotime($valid_from));
+                    $datefrom = date_create($datef);
+                    $datea = date('Y-m-d', strtotime($refLicenc->application_date));
+                    $dateapply = date_create($datea);
+                    $year_diff = date_diff($datefrom, $dateapply);
+                    $year_diff =  $year_diff->format('%y');
+
+                    $priv_m_d = date('m-d', strtotime($valid_from));
+                    $date = date('Y', strtotime($valid_from)) . '-' . $priv_m_d;
+                    $licence_for_years2 = $licence_for_years + $year_diff;
+                    $valid_upto = date('Y-m-d', strtotime($date . "+" . $licence_for_years2 . " years"));
+                    $data['valid_upto'] = $valid_upto;
+                } 
+                else 
+                {
+                    throw new Exception('licence', 'Some Error Occurred Please Contact to Admin!!!');
+                }
+            }
+
+            # 3	AMENDMENT
+            if ($refLicenc->application_type_id == 3) 
+            {
+                $prive_licence = TradeLicence::find($refLicenc->trade_id);
+                $license_no = $prive_licence->license_no;
+                $oneYear_validity = date("Y-m-d", strtotime("+1 years", strtotime('now')));
+                $previous_validity = $prive_licence->valid_upto;
+                if ($previous_validity > $oneYear_validity)
+                    $valid_upto = $previous_validity;
+                else
+                    $valid_upto = $oneYear_validity;
+                $valid_from = date('Y-m-d');
+            }
+
+            # 4 SURRENDER
+            if ($refLicenc->application_type_id == 4) 
+            {
+                // Incase of surrender valid upto is previous license validity
+                $prive_licence = TradeLicence::find($refLicenc->trade_id);
+                $license_no = $prive_licence->license_no;
+                $valid_from = $prive_licence->valid_from;
+                $valid_upto = $prive_licence->valid_upto;
+            }
+            $refLicenc->license_date = Carbon::now()->format("Y-m-d");
+            $refLicenc->valid_from = $valid_from;
+            $refLicenc->valid_upto = $valid_upto;
+            $refLicenc->license_no = $license_no;
+            $refLicenc->current_role = $role->role_id;
+           return true;
+        }
+        catch(Exception $e)
+        {
+            return false;
+        }
     }
 }
