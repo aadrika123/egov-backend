@@ -23,6 +23,7 @@ class WaterPaymentController extends Controller
 
     /**
      * | Get Consumer Payment History 
+     * | Collect All the transaction relate to the respective Consumer 
      * | @param ApplicationId
      * | @var 
      * | @return 

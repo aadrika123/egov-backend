@@ -369,9 +369,9 @@ class NewConnectionController extends Controller
     public function approvedWaterApplications(Request $request)
     {
         try {
-            if ($request->consumerNo) {
+            if ($request->id) {
                 $request->validate([
-                    "consumerNo" => "nullable",
+                    "id" => "nullable|int",
                 ]);
                 $consumerDetails = $this->newConnection->getApprovedWater($request);
                 $refApplicationId['applicationId'] = $consumerDetails['id'];
