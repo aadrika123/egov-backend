@@ -29,7 +29,7 @@ class WaterApplication extends Controller
         try {
             $mWaterApplication = new WaterWaterApplication();
             $returnValue = $this->Repository->getCitizenApplication($request);
-            return $refReturn = collect($returnValue)->map(function ($value) use ($mWaterApplication) {
+            $refReturn = collect($returnValue)->map(function ($value) use ($mWaterApplication) {
 
                 $docStatus = $mWaterApplication->getApplicationById($value['id'])->select(
                     'doc_upload_status'
