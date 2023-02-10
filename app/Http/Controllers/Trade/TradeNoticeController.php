@@ -8,6 +8,7 @@ use App\Http\Requests\Trade\ReqApplyDenail;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Trade\ITradeNotice;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 
 class TradeNoticeController extends Controller
@@ -44,13 +45,34 @@ class TradeNoticeController extends Controller
             if (!in_array(strtoupper($userType), ["TC", "UTC"])) {
                 throw new Exception("You Are Not Authorize For Apply Denial");
             }
-            if ($request->getMethod() == 'GET') {
-                $data['wardList'] = $this->_parent->WardPermission($userId);
-                return  responseMsg(true, "", $data);
-            }
             return $this->Repository->addDenail($request);
-        } catch (Exception $e) {
+        } catch (Exception $e) 
+        {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
+    }
+    public function inbox(Request $request)
+    {
+       return  $this->Repository->inbox($request);
+    }
+    public function outbox(Request $request)
+    {
+        return  $this->Repository->outbox($request);
+    }
+    public function specialInbox(Request $request)
+    {
+        return  $this->Repository->specialInbox($request);
+    }
+    public function btcInbox(Request $request)
+    {
+        return  $this->Repository->btcInbox($request);
+    }
+    public function denialView(Request $request)
+    {
+        return  $this->Repository->denialView($request);
+    }
+    public function approveReject(Request $request)
+    {
+        return  $this->Repository->approveReject($request);
     }
 }
