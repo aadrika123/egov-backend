@@ -23,7 +23,8 @@ trait Objection
                 'p.ward_mstr_id as old_ward_id',
                 'u.ward_name as old_ward_no',
                 'p.new_ward_mstr_id',
-                'owner_name as applicant_name',
+                // 'owner_name as applicant_name',
+                DB::raw("string_agg(owner_name,',') as applicant_name"),
                 'p.new_holding_no',
                 'p.holding_no',
                 'p.application_date',
@@ -37,7 +38,22 @@ trait Objection
             ->join('prop_owners', 'prop_owners.property_id', 'p.id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'p.ward_mstr_id')
             // ->leftJoin('ulb_ward_masters as u1', 'u.id', '=', 'p.new_ward_mstr_id')
-            ->where('prop_active_objections.ulb_id', $ulbId);
+            ->where('prop_active_objections.ulb_id', $ulbId)
+            ->groupBy(
+                'prop_active_objections.id',
+                'prop_active_objections.workflow_id',
+                'prop_active_objections.objection_no',
+                'p.ward_mstr_id',
+                'u.ward_name',
+                'p.new_ward_mstr_id',
+                'p.new_holding_no',
+                'p.holding_no',
+                'p.application_date',
+                'p.balance',
+                't.property_type',
+                'p.assessment_type',
+                'objection_for'
+            );
     }
 
     //insert data in Prop Active Objection
