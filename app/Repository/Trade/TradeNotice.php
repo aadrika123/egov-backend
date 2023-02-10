@@ -95,7 +95,7 @@ class TradeNotice implements ITradeNotice
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
             if ($denial_id) 
             {
-                $denialConsumer->file_name = $relativePath."/".$imageName;
+                $denialConsumer->document_path = $relativePath."/".$imageName;
                 $denialConsumer->update();
 
             }

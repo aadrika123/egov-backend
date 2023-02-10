@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Trade\TradeApplication;
 use App\Http\Controllers\Trade\TradeCitizenController;
+use App\Http\Controllers\Trade\TradeNoticeController;
 
 /**
  * | Created On-06-10-2022 

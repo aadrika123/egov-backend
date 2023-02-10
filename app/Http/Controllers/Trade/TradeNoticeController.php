@@ -46,7 +46,8 @@ class TradeNoticeController extends Controller
                 throw new Exception("You Are Not Authorize For Apply Denial");
             }
             return $this->Repository->addDenail($request);
-        } catch (Exception $e) {
+        } catch (Exception $e) 
+        {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
