@@ -25,11 +25,13 @@ class WaterTran extends Model
     public function getTransNo($applicationId,$applicationFor)
     {
         return WaterTran::where('related_id',$applicationId)
-        ->where('tran_type',"<>","Demand Collection");
+        ->where('tran_type',"<>","Demand Collection")
+        ->where('status',true);
     }
     public function ConsumerTransaction($applicationId)
     {
         return WaterTran::where('related_id',$applicationId)
-        ->where('tran_type',"=","Demand Collection");
+        ->where('tran_type',"=","Demand Collection")
+        ->where('status',true);
     }
 }

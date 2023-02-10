@@ -36,6 +36,7 @@ use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
+use App\Repository\Water\Concrete\NewConnectionRepository;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use Illuminate\Http\Request;
 use App\Repository\Water\Interfaces\iNewConnection;
@@ -368,9 +369,9 @@ class NewConnectionController extends Controller
     public function approvedWaterApplications(Request $request)
     {
         try {
-            if ($request->consumerNo) {
+            if ($request->id) {
                 $request->validate([
-                    "consumerNo" => "nullable",
+                    "id" => "nullable|int",
                 ]);
                 $consumerDetails = $this->newConnection->getApprovedWater($request);
                 $refApplicationId['applicationId'] = $consumerDetails['id'];
@@ -435,6 +436,9 @@ class NewConnectionController extends Controller
     }
 
     // Generate the payment Recipt  
+    /**
+        | Transfer to the payment Controller // Recheck 
+     */
     public function generatePaymentReceipt(Request $req)
     {
         $req->validate([
@@ -580,6 +584,7 @@ class NewConnectionController extends Controller
     // Edit the Water Application
     /**
         | Not / validate the payment status / Check the use / Not used
+        | 00 ->
      */
     public function editWaterAppliction(Request $req)
     {
@@ -593,6 +598,7 @@ class NewConnectionController extends Controller
             $mWaterApplicant = new WaterApplicant();
             $mWaterConnectionCharge = new WaterConnectionCharge();
             $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+            $repNewConnectionRepository = new NewConnectionRepository();
             $mwaterAudit = new waterAudit();
             $levelRoles = Config::get('waterConstaint.ROLE-LABEL');
             $refApplicationId =  $req->applicatonId;
@@ -608,24 +614,44 @@ class NewConnectionController extends Controller
 
             $refConnectionCharges = $mWaterConnectionCharge->getWaterchargesById($refApplicationId)->firstOrFail();
             $Waterowner = $mWaterApplicant->getOwnerList($refApplicationId)->get();
-            $refWaterowner = collect($Waterowner)->map(function($value,$key)
-            {
+            $refWaterowner = collect($Waterowner)->map(function ($value, $key) {
                 return $value['id'];
             });
             $penaltyInstallment = $mWaterPenaltyInstallment->getPenaltyByApplicationId($refApplicationId)->get();
-            $refPenaltyInstallment = collect($penaltyInstallment)->map(function($value)
-            {
-               return  $value['id'];
+            $refPenaltyInstallment = collect($penaltyInstallment)->map(function ($value) {
+                return  $value['id'];
             });
-            
-            $mwaterAudit->saveUpdatedDetailsId($refWaterApplications->id,$refWaterowner,$refConnectionCharges->id,$refPenaltyInstallment);
-            
+
+            $mwaterAudit->saveUpdatedDetailsId($refWaterApplications->id, $refWaterowner, $refConnectionCharges->id, $refPenaltyInstallment);
+            $this->deactivateAndUpdateWater($refWaterApplications->id);
+            $repNewConnectionRepository->store($req); // here<-----------------------
             DB::commit();
             return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         }
+    }
+
+    /**
+     * | Deactivate the Water Deatils
+     * | @param
+     * | @param
+     * | @param
+     * | @param
+        | 01 <-
+     */
+    public function deactivateAndUpdateWater($refWaterApplicationId)
+    {
+        $mWaterApplication = new WaterApplication();
+        $mWaterApplicant = new WaterApplicant();
+        $mWaterConnectionCharge = new WaterConnectionCharge();
+        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+
+        $mWaterApplication->deactivateApplication($refWaterApplicationId);
+        $mWaterApplicant->deactivateApplicant($refWaterApplicationId);
+        $mWaterConnectionCharge->deactivateCharges($refWaterApplicationId);
+        $mWaterPenaltyInstallment->deactivatePenalty($refWaterApplicationId);
     }
 
     // Citizen view : Get Application Details of viewind
@@ -983,6 +1009,7 @@ class NewConnectionController extends Controller
     /**
         | dont check the application payment status 
         | call the payment ineciate function
+        | Change
      */
     public function finalSubmitionApplication(Request $request)
     {

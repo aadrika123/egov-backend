@@ -3,6 +3,7 @@
 use App\Http\Controllers\Water\NewConnectionController;
 use App\Http\Controllers\water\WaterApplication;
 use App\Http\Controllers\Water\WaterConsumer;
+use App\Http\Controllers\Water\WaterPaymentController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -79,6 +80,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         // Route::post('verify-doc', 'waterDocStatus');                                                    //
         // Route::post('list-message', 'getIndependentComment');                                           //
         Route::post('edit_water_application', 'editWaterAppliction');                                          //
+    });
+
+    /**
+     * | Created on : 10-02-2023
+     * | Created By : Sam kerketta
+     * |-------------- Water transaction and Payment related ---------------|
+     */
+    Route::controller(WaterPaymentController::class)->group(function () {
+        # Consumer And Citizen Transaction Operation
+        Route::post('get-consumer-payment-history', 'getConsumerPaymentHistory');
     });
 });
 

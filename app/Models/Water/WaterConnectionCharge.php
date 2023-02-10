@@ -50,10 +50,22 @@ class WaterConnectionCharge extends Model
 
     /**
      * |-------------- Delete the Water Application Connection Charges -------------|
+        | Recheck
      */
     public function deleteWaterConnectionCharges($applicationId)
     {
-        WaterConnectionCharge::where('application_id',$applicationId)
-        ->delete();
+        WaterConnectionCharge::where('application_id', $applicationId)
+            ->delete();
+    }
+
+    /**
+     * | Deactivate the application In the process of editing
+     */
+    public function deactivateCharges($applicationId)
+    {
+        WaterConnectionCharge::where('application_id', $applicationId)
+            ->update([
+                'status' => false
+            ]);
     }
 }

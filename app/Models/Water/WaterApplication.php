@@ -241,6 +241,17 @@ class WaterApplication extends Model
      */
     public function editWaterApplication($applicationId)
     {
+    }
 
+    /**
+     * | Deactivate the Water Application In the Process of Aplication Editing
+     * | @param ApplicationId
+     */
+    public function deactivateApplication($applicationId)
+    {
+        WaterApplication::where('id', $applicationId)
+            ->update([
+                'status' => false
+            ]);
     }
 }
