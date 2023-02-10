@@ -1065,6 +1065,7 @@ class ActiveSafController extends Controller
             $mPropDemand = new PropDemand();
             $mPropProperties = new PropProperty();
             $userId = authUser()->id;
+            $safId = $req->applicationId;
             // Derivative Assignments
             $workflowId = $safDetails->workflow_id;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
@@ -1076,7 +1077,6 @@ class ActiveSafController extends Controller
 
             // if ($safDetails->finisher_role_id != $roleId)
             //     throw new Exception("Forbidden Access");
-
             $activeSaf = PropActiveSaf::query()
                 ->where('id', $req->applicationId)
                 ->first();
@@ -1091,15 +1091,16 @@ class ActiveSafController extends Controller
             $propId = $propDtls->id;
 
             $propDemands = $mPropDemand->getEffectFromDemandByPropId($propId);
-            return $propDemands;
+            $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
 
+            return $fieldVerifiedSaf;
             DB::beginTransaction();
             // Approval
             if ($req->status == 1) {
                 $safDetails->saf_pending_status = 0;
                 $safDetails->save();
                 // SAF Application replication
-
+                $mPropProperties->replicateVerifiedSaf($propId, $fieldVerifiedSaf);
             }
             // Rejection
             if ($req->status == 0) {
@@ -1720,7 +1721,7 @@ class ActiveSafController extends Controller
                 default:
                     return responseMsg(false, "Forbidden Access", "");
             }
-            $req->merge(['roadType' => $roadWidthType]);
+            $req->merge(['roadType' => $roadWidthType, 'userId' => $userId]);
             // Verification Store
             $verificationId = $verification->store($req);                           // Model function to store verification and get the id
             // Verification Dtl Table Update                                         // For Tax Collector
