@@ -5,6 +5,13 @@ namespace App\Traits\Trade;
 use Illuminate\Support\Facades\Config;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Masters\RefRequiredDocument;
+use App\Models\Trade\TradeLicence;
+use App\Models\Trade\TradeTransaction;
+use App\Models\UlbMaster;
+use App\Models\UlbWardMaster;
+use App\Repository\Common\CommonFunction;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -270,5 +277,124 @@ trait TradeTrait
             default :  $documentList = collect([]);
         }
         return $documentList;
+    }
+
+    public function giveValidity($refLicenc)
+    {
+        try{
+            $commonFuction = new CommonFunction();
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $role = $commonFuction->getUserRoll($user_id, $ulb_id,$refWorkflowId);
+            $init_finish = $commonFuction->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
+            $licence_for_years = $refLicenc->licence_for_years;
+            # 1	NEW LICENSE
+            if ($refLicenc->application_type_id == 1) 
+            {
+                $ulbDtl = UlbMaster::find($refLicenc->ulb_id);
+                $ulb_name = explode(' ', $ulbDtl->ulb_name);
+                $short_ulb_name = "";
+                foreach ($ulb_name as $val) {
+                    $short_ulb_name .= $val[0];
+                }
+                $ward_no = UlbWardMaster::select("ward_name")
+                    ->where("id", $refLicenc->ward_id)
+                    ->first();
+                $ward_no = $ward_no['ward_name'];
+                $license_no = $short_ulb_name . $ward_no . date("mdY") . $refLicenc->id;
+                $valid_from = $refLicenc->application_date;
+                $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime($refLicenc->application_date)));
+            }
+            # 2 RENEWAL
+            if ($refLicenc->application_type_id == 2) 
+            {
+                $prive_licence = TradeLicence::find($refLicenc->trade_id);
+                if (!empty($prive_licence)) 
+                {
+                    $prive_licence_id = $prive_licence->id;
+                    $license_no = $prive_licence->license_no;
+                    $valid_from = $prive_licence->valid_upto; 
+                    $datef = date('Y-m-d', strtotime($valid_from));
+                    $datefrom = date_create($datef);
+                    $datea = date('Y-m-d', strtotime($refLicenc->application_date));
+                    $dateapply = date_create($datea);
+                    $year_diff = date_diff($datefrom, $dateapply);
+                    $year_diff =  $year_diff->format('%y');
+
+                    $priv_m_d = date('m-d', strtotime($valid_from));
+                    $date = date('Y', strtotime($valid_from)) . '-' . $priv_m_d;
+                    $licence_for_years2 = $licence_for_years + $year_diff;
+                    $valid_upto = date('Y-m-d', strtotime($date . "+" . $licence_for_years2 . " years"));
+                    $data['valid_upto'] = $valid_upto;
+                    $this->addReniwalLicense($prive_licence);
+                } 
+                else 
+                {
+                    throw new Exception('licence', 'Some Error Occurred Please Contact to Admin!!!');
+                }
+            }
+
+            # 3	AMENDMENT
+            if ($refLicenc->application_type_id == 3) 
+            {
+                $prive_licence = TradeLicence::find($refLicenc->trade_id);
+                $license_no = $prive_licence->license_no;
+                $oneYear_validity = date("Y-m-d", strtotime("+1 years", strtotime('now')));
+                $previous_validity = $prive_licence->valid_upto;
+                if ($previous_validity > $oneYear_validity)
+                    $valid_upto = $previous_validity;
+                else
+                    $valid_upto = $oneYear_validity;
+                $valid_from = date('Y-m-d');
+                $this->addReniwalLicense($prive_licence);
+            }
+
+            # 4 SURRENDER
+            if ($refLicenc->application_type_id == 4) 
+            {
+                // Incase of surrender valid upto is previous license validity
+                $prive_licence = TradeLicence::find($refLicenc->trade_id);
+                $license_no = $prive_licence->license_no;
+                $valid_from = $prive_licence->valid_from;
+                $valid_upto = $prive_licence->valid_upto;
+                $this->addReniwalLicense($prive_licence);
+            }
+            $refLicenc->license_date = Carbon::now()->format("Y-m-d");
+            $refLicenc->valid_from = $valid_from;
+            $refLicenc->valid_upto = $valid_upto;
+            $refLicenc->license_no = $license_no;
+            $refLicenc->current_role = $role->role_id;
+           return true;
+        }
+        catch(Exception $e)
+        {
+            return false;
+        }
+    }
+    public function addReniwalLicense(TradeLicence $refTradeLicense)
+    {
+        $ReniwalLicence = $refTradeLicense->replicate();
+        $ReniwalLicence->setTable('trade_renewals');
+        $ReniwalLicence->id = $refTradeLicense->id;
+        $transection = TradeTransaction::select("*")
+                    ->where("temp_id",$refTradeLicense->id)
+                    ->orderBy("tran_date","DESC")
+                    ->first();
+        $ReniwalLicence->is_active      = true;
+        $ReniwalLicence->tran_id        = $transection->id;
+        $ReniwalLicence->rate_id        = $transection->rate_id;
+        $ReniwalLicence->demand_amount  = $transection->paid_amount;
+        $ReniwalLicence->fine_amount    = $transection->penalty;
+        $ReniwalLicence->penalty_amount = $transection->penalty;
+        $ReniwalLicence->rebate_amount  = $transection->rebate??null;
+        $ReniwalLicence->tax_percent    = $transection->tax_percent??null;
+        $ReniwalLicence->tax_amount	    = ($transection->paid_amount - $transection->penalty);
+        $ReniwalLicence->total_taxable_amount = null;
+        $ReniwalLicence->payable_amount = null;
+        $ReniwalLicence->pmt_amount     = null;
+        $refTradeLicense->forceDelete();
+
     }
 }

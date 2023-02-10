@@ -783,10 +783,15 @@ class NewConnectionRepository implements iNewConnection
         $mWaterConsumerOwner = new WaterConsumerOwner();
         $mWaterParamConnFee = new WaterParamConnFee();
 
-        $approvedWater = $mWaterConsumer->getConsumerByConsumerNo($request->consumerNo);
+        $key = collect($request)->map(function ($value, $key) {
+            return $key;
+        })->first();
+        $string = preg_replace("/([A-Z])/", "_$1", $key);
+        $refstring = strtolower($string);
+        $approvedWater = $mWaterConsumer->getConsumerByConsumerNo($refstring, $request->id);
         $connectionCharge = $mWaterConnectionCharge->getWaterchargesById($approvedWater['id'])->firstOrFail();
         $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['id']);
-        $water['calcullation'] = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'],$approvedWater['area_sqft'])->first();
+        $water['calcullation'] = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
 
         $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
         return remove_null($consumerDetails);

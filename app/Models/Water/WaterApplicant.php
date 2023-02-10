@@ -59,7 +59,8 @@ class WaterApplicant extends Model
             'mobile_no',
             'email'
         )
-            ->where('application_id', $applicationId);
+            ->where('application_id', $applicationId)
+            ->where('status',true);
     }
 
     /**
@@ -129,8 +130,20 @@ class WaterApplicant extends Model
             $approvedWaterOwners = $value->replicate();
             $approvedWaterOwners->setTable('water_rejection_applicants');
             $approvedWaterOwners->id = $value->id;
-            $approvedWaterOwners->save();    
+            $approvedWaterOwners->save();
         });
         // $approvedWaterOwners->delete();
+    }
+
+    /**
+     * | Deactive the Applicant In the Process of Application Edit
+     * | @param applicationId
+     */
+    public function deactivateApplicant($applicationId)
+    {
+        WaterApplicant::where('application_id', $applicationId)
+            ->update([
+                'status' => false
+            ]);
     }
 }

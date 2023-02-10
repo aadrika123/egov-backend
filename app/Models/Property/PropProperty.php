@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 class PropProperty extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     // Get Property Of the Citizen
     public function getUserProperties($userId)
@@ -190,8 +191,8 @@ class PropProperty extends Model
                 DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobileNo"),
                 'prop_properties.holding_no as holdingNo'
             )
-            ->where('prop_properties.holding_no', 'LIKE', '%'.$holdingNo)
-            ->orWhere('prop_properties.new_holding_no', 'LIKE', '%'.$holdingNo)
+            ->where('prop_properties.holding_no', 'LIKE', '%' . $holdingNo)
+            ->orWhere('prop_properties.new_holding_no', 'LIKE', '%' . $holdingNo)
             ->where('prop_properties.status', 1)
             ->where('ulb_id', auth()->user()->ulb_id)
             ->groupBy('prop_properties.id', 'ref_prop_types.property_type')
@@ -203,8 +204,8 @@ class PropProperty extends Model
      */
     public function searchPropByCluster($clusterId)
     {
-        return  PropProperty::leftjoin('prop_owners','prop_owners.property_id','=','prop_properties.id')
-        ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
+        return  PropProperty::leftjoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+            ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
             ->select(
                 'prop_properties.id',
                 'prop_properties.new_ward_mstr_id AS wardId',
@@ -228,7 +229,45 @@ class PropProperty extends Model
     public function searchCollectiveHolding($holdingArray)
     {
         return PropProperty::whereIn('new_holding_no', $holdingArray)
-            ->where('status',1)
+            ->where('status', 1)
             ->get();
+    }
+
+    /**
+     * | Get Property id by saf id
+     */
+    public function getPropIdBySafId($safId)
+    {
+        return PropProperty::select('id')
+            ->where('saf_id', $safId)
+            ->first();
+    }
+
+    /**
+     * | Replicate Saf 
+     */
+    public function replicateVerifiedSaf($propId, $fieldVerifiedSaf)
+    {
+        $property = PropProperty::find($propId);
+        $reqs = [
+            'prop_type_mstr_id' => $fieldVerifiedSaf->prop_type_id,
+            'road_type_mstr_id' => $fieldVerifiedSaf->road_type_id,
+            'area_of_plot' => $fieldVerifiedSaf->area_of_plot,
+            'ward_mstr_id' => $fieldVerifiedSaf->ward_id,
+            'is_mobile_tower' => $fieldVerifiedSaf->has_mobile_tower,
+            'tower_area' => $fieldVerifiedSaf->tower_area,
+            'tower_installation_date' => $fieldVerifiedSaf->tower_installation_date,
+            'is_hoarding_board' => $fieldVerifiedSaf->has_hoarding,
+            'hoarding_area' => $fieldVerifiedSaf->hoarding_area,
+            'hoarding_installation_date' => $fieldVerifiedSaf->hoarding_installation_date,
+            'is_petrol_pump' => $fieldVerifiedSaf->is_petrol_pump,
+            'under_ground_area' => $fieldVerifiedSaf->underground_area,
+            'petrol_pump_completion_date' => $fieldVerifiedSaf->petrol_pump_completion_date,
+            'is_water_harvesting' => $fieldVerifiedSaf->has_water_harvesting,
+            'zone_mstr_id' => $fieldVerifiedSaf->zone_id,
+            'new_ward_mstr_id' => $fieldVerifiedSaf->new_ward_id,
+            'ulb_id' => $fieldVerifiedSaf->ulb_id
+        ];
+        $property->update($reqs);
     }
 }

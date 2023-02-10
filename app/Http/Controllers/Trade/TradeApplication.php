@@ -33,9 +33,11 @@ use App\Models\Trade\TradeParamCategoryType;
 use App\Http\Requests\Trade\ReqPostNextLevel;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
+use App\Traits\Trade\TradeTrait;
 
 class TradeApplication extends Controller
 {
+    use TradeTrait;
 
     /**
      * | Created On-01-10-2022 
@@ -66,30 +68,25 @@ class TradeApplication extends Controller
             $mnaturOfBusiness   = null;
             $data               = array();
             $rules["applicationType"] = "required|string|in:NEWLICENSE,RENEWAL,AMENDMENT,SURRENDER";
-            if (!in_array($mApplicationTypeId, [1])) {
+            if (!in_array($mApplicationTypeId, [1])) 
+            {
                 $rules["licenseId"] = "required|digits_between:1,9223372036854775807";
             }
+            
             $validator = Validator::make($request->all(), $rules,);
-            if ($validator->fails()) {
+            if ($validator->fails()) 
+            {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
             #------------------------End Declaration-----------------------
-            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) {
-                $data['wardList'] = $this->_modelWard->getAllWard($refUlbId)->map(function ($val) {
-                    $val->ward_no = $val->ward_name;
-                    return $val;
-                });
-                $data['wardList'] = objToArray($data['wardList']);
-            } else {
-                $data['wardList'] = $this->_parent->WardPermission($refUserId);
-            }
 
             $data['userType']           = $mUserType;
             $data["firmTypeList"]       = TradeParamFirmType::List();
             $data["ownershipTypeList"]  = TradeParamOwnershipType::List();
             $data["categoryTypeList"]   = TradeParamCategoryType::List();
             $data["natureOfBusiness"]   = TradeParamItemType::List(true);
-            if (isset($request->licenseId) && $request->licenseId  && $mApplicationTypeId != 1) {
+            if (isset($request->licenseId) && $request->licenseId  && $mApplicationTypeId != 1) 
+            {
                 $mOldLicenceId = $request->licenseId;
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
                 $refOldLicece = $this->Repository->getLicenceById($mOldLicenceId); //TradeLicence::find($mOldLicenceId)
@@ -120,6 +117,20 @@ class TradeApplication extends Controller
                 $refOldLicece->nature_of_bussiness = $natur;
                 $data["licenceDtl"]     =  $refOldLicece;
                 $data["ownerDtl"]       = $refOldOwneres;
+                $refUlbId = $refOldLicece->ulb_id;
+            }
+            
+            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) 
+            {
+                $data['wardList'] = $this->_modelWard->getAllWard($refUlbId)->map(function ($val) {
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $data['wardList'] = objToArray($data['wardList']);
+            } 
+            else 
+            {
+                $data['wardList'] = $this->_parent->WardPermission($refUserId);
             }
             return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
@@ -132,7 +143,8 @@ class TradeApplication extends Controller
         $refUser            = Auth()->user();
         $refUserId          = $refUser->id;
         $refUlbId           = $refUser->ulb_id;
-        if ($refUser->user_type == Config::get("TradeConstant.CITIZEN")) {
+        if ($refUser->user_type == Config::get("TradeConstant.CITIZEN")) 
+        {
             $refUlbId = $request->ulbId ?? 0;
         }
         $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
@@ -158,7 +170,7 @@ class TradeApplication extends Controller
             // return $request->applicationType;
             if (in_array($mApplicationTypeId, ["2", "3", "4"]) && (!$request->licenseId || !is_numeric($request->licenseId))) {
                 throw new Exception("Old licence Id Requird");
-            }
+            }            
             return $this->Repository->addRecord($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
@@ -435,19 +447,26 @@ class TradeApplication extends Controller
             DB::beginTransaction();
 
             // Approval
-            if ($req->status == 1) {
+            if ($req->status == 1) 
+            {
                 // Objection Application replication
                 $approvedLicence = $activeLicence->replicate();
                 $approvedLicence->setTable('trade_licences');
                 $approvedLicence->id = $activeLicence->id;
+                $status = $this->giveValidity($approvedLicence);
+                if(!$status)
+                {
+                    throw new Exception("Some Error Occurs");
+                }
                 $approvedLicence->save();
                 $activeLicence->delete();
-
-                $msg =  "Application Successfully Approved !!";
+                $licenseNo = $approvedLicence->license_no;
+                $msg =  "Application Successfully Approved !!. Your License No Is ".$licenseNo;
             }
 
             // Rejection
-            if ($req->status == 0) {
+            if ($req->status == 0) 
+            {
                 // Objection Application replication
                 $approvedLicence = $activeLicence->replicate();
                 $approvedLicence->setTable('rejected_trade_licences');
@@ -484,13 +503,7 @@ class TradeApplication extends Controller
             $userId = $user->id;
             $ulbId = $user->ulb_id;
             $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
-            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
-                ->where('ulb_id', $ulbId)
-                ->first();
-            if (!$workflowId) {
-                throw new Exception("Workflow Not Available");
-            }
-            $role = $this->_parent->getUserRoll($userId, $ulbId, $workflowId->wf_master_id);
+            $role = $this->_parent->getUserRoll($userId, $ulbId, $refWorkflowId);
             if (!$role) {
                 throw new Exception("You Are Not Authorized");
             }
