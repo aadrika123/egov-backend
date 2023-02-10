@@ -37,6 +37,8 @@ class TempTransaction extends Model
             'temp_transactions.id',
             'transaction_no as tran_no',
             'payment_mode',
+            'cheque_dd_no',
+            'bank_name',
             'amount',
             'module_id',
             'ward_no as ward_name',

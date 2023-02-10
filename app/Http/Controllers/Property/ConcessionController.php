@@ -13,6 +13,7 @@ use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\RefPropDocsRequired;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
@@ -75,18 +76,10 @@ class ConcessionController extends Controller
         ]);
 
         try {
-            // $userId = auth()->user()->id;
             $ulbId = $request->ulbId;
             $userType = auth()->user()->user_type;
+            $userId = auth()->user()->id;
             $concessionNo = "";
-
-            if ($userType == 'Citizen') {
-                $citizenId = auth()->user()->id;
-            }
-
-            if ($userType != 'Citizen') {
-                $userId = auth()->user()->id;
-            }
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
@@ -113,12 +106,24 @@ class ConcessionController extends Controller
             $concession->is_specially_abled = $request->speciallyAbled;
             $concession->specially_abled_percentage = $request->speciallyAbledPercentage;
             $concession->remarks = $request->remarks;
-            $concession->user_id = $userId ?? null;
-            $concession->citizen_id = $citizenId ?? null;
+            // $concession->citizen_id = $citizenId ?? null;
+
             $concession->ulb_id = $ulbId;
             $concession->workflow_id = $ulbWorkflowId->id;
             $concession->current_role = collect($initiatorRoleId)->first()->role_id;
             $concession->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
+            $concession->last_role_id = collect($initiatorRoleId)->first()->role_id;
+            $concession->user_id = $userId;
+
+            if ($userType == 'Citizen') {
+                $concession->current_role = collect($initiatorRoleId)->first()->forward_role_id;
+                $concession->initiator_role_id = collect($initiatorRoleId)->first()->forward_role_id;      // Send to DA in Case of Citizen
+                $concession->last_role_id = collect($initiatorRoleId)->first()->forward_role_id;
+                $concession->user_id = null;
+                $concession->citizen_id = $userId;
+                $concession->doc_upload_status = 1;
+            }
+
             $concession->finisher_role_id = collect($finisherRoleId)->first()->role_id;
             $concession->created_at = Carbon::now();
             $concession->date = Carbon::now();
@@ -130,8 +135,6 @@ class ConcessionController extends Controller
 
             PropActiveConcession::where('id', $concession->id)
                 ->update(['application_no' => $concessionNo]);
-
-            // return $this->uploadDocument($request, $concession, $concessionNo);
 
             //saving document 
             if ($file = $request->file('genderDoc')) {
@@ -517,13 +520,21 @@ class ConcessionController extends Controller
             'applicationId' => 'required|integer',
             'senderRoleId' => 'required|integer',
             'receiverRoleId' => 'required|integer',
-            'comment' => 'required'
+            'comment' => 'required',
+            'action' => 'required|In:forward,backward'
         ]);
         try {
-            DB::beginTransaction();
+            $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
+            $senderRoleId = $req->senderRoleId;
+            $concession = PropActiveConcession::find($req->applicationId);
+
+            if ($req->action == 'forward') {
+                $this->checkPostCondition($senderRoleId, $wfLevels, $concession);          // Check Post Next level condition
+                $concession->last_role_id = $req->receiverRoleId;                      // Update Last Role Id
+            }
 
             // Concession Application Update Current Role Updation
-            $concession = PropActiveConcession::find($req->applicationId);
+            DB::beginTransaction();
             $concession->current_role = $req->receiverRoleId;
             $concession->save();
 
@@ -533,6 +544,7 @@ class ConcessionController extends Controller
             $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['verificationStatus'] = $req->verificationStatus;
             $req->request->add($metaReqs);
+
             $track = new WorkflowTrack();
             $track->saveTrack($req);
 
@@ -541,6 +553,23 @@ class ConcessionController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | check Post Condition for backward forward
+     */
+    public function checkPostCondition($senderRoleId, $wfLevels, $concession)
+    {
+        switch ($senderRoleId) {
+            case $wfLevels['BO']:                        // Back Office Condition
+                if ($concession->doc_upload_status == 0)
+                    throw new Exception("Document Not Fully Uploaded");
+                break;
+            case $wfLevels['DA']:                       // DA Condition
+                if ($concession->doc_verify_status == 0)
+                    throw new Exception("Document Not Fully Verified");
+                break;
         }
     }
 
@@ -949,5 +978,105 @@ class ConcessionController extends Controller
             return $reqDoc;
         });
         return $filteredDocs;
+    }
+
+    /**
+     * | Document Verify Reject
+     */
+    public function docVerifyReject(Request $req)
+    {
+        $req->validate([
+            'id' => 'required|digits_between:1,9223372036854775807',
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+            'docRemarks' =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
+            'docStatus' => 'required|in:Verified,Rejected'
+        ]);
+
+        try {
+            // Variable Assignments
+            $mWfDocument = new WfActiveDocument();
+            $mPropActiveConcession = new PropActiveConcession();
+            $mWfRoleusermap = new WfRoleusermap();
+            $wfDocId = $req->id;
+            $userId = authUser()->id;
+            $applicationId = $req->applicationId;
+            $wfLevel = Config::get('PropertyConstaint.SAF-LABEL');
+            // Derivative Assigments
+            $concessionDtl = $mPropActiveConcession->getConcessionNo($applicationId);
+            $safReq = new Request([
+                'userId' => $userId,
+                'workflowId' => $concessionDtl->workflow_id
+            ]);
+            $senderRoleDtls = $mWfRoleusermap->getRoleByUserWfId($safReq);
+            if (!$senderRoleDtls || collect($senderRoleDtls)->isEmpty())
+                throw new Exception("Role Not Available");
+
+            $senderRoleId = $senderRoleDtls->wf_role_id;
+
+            if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
+                throw new Exception("You are not Authorized");
+
+            if (!$concessionDtl || collect($concessionDtl)->isEmpty())
+                throw new Exception("Application Details Not Found");
+
+            $ifFullDocVerified = $this->ifFullDocVerified($applicationId);       // (Current Object Derivative Function 4.1)
+
+            if ($ifFullDocVerified == 1)
+                throw new Exception("Document Fully Verified");
+
+            DB::beginTransaction();
+            if ($req->docStatus == "Verified") {
+                $status = 1;
+            }
+            if ($req->docStatus == "Rejected") {
+                $status = 2;
+                // For Rejection Doc Upload Status and Verify Status will disabled
+                $concessionDtl->doc_upload_status = 0;
+                $concessionDtl->doc_verify_status = 0;
+                $concessionDtl->save();
+            }
+
+            $reqs = [
+                'remarks' => $req->docRemarks,
+                'verify_status' => $status,
+                'action_taken_by' => $userId
+            ];
+            $mWfDocument->docVerifyReject($wfDocId, $reqs);
+            $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
+
+            if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
+                $concessionDtl->doc_verify_status = 1;
+                $concessionDtl->save();
+            }
+
+            DB::commit();
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Check if the Document is Fully Verified or Not (4.1)
+     */
+    public function ifFullDocVerified($applicationId)
+    {
+        $mPropActiveConcession = new PropActiveConcession();
+        $mWfActiveDocument = new WfActiveDocument();
+        $refSafs = $mPropActiveConcession->getConcessionNo($applicationId);                      // Get Saf Details
+        $refReq = [
+            'activeId' => $applicationId,
+            'workflowId' => $refSafs->workflow_id,
+            'moduleId' => Config::get('module-constants.PROPERTY_MODULE_ID')
+        ];
+        $req = new Request($refReq);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
+        // Property List Documents
+        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
+        if ($ifPropDocUnverified == 1)
+            return 0;
+        else
+            return 1;
     }
 }

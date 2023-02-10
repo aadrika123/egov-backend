@@ -24,4 +24,5 @@ interface iNewConnection
    public function commentIndependent($request);                        // Indipendent Commenting on the Application
    public function getApprovedWater($request);                          // Get the details of the Approved water Appication
    public function fieldVerifiedInbox($request);                        // Get the data of feild Verification Done
+
 }

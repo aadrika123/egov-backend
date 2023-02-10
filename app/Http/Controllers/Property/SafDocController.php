@@ -151,7 +151,7 @@ class SafDocController extends Controller
     }
 
     /**
-     * | Created for Document Upload for SAFs
+     * | Created for Document Upload for SAFs(2)
      */
     public function docUpload(Request $req)
     {
@@ -163,6 +163,7 @@ class SafDocController extends Controller
         ]);
 
         try {
+            // Variable Assignments
             $preCondition = $this->checkFullDocUpload($req->applicationId);                         // Pre Condition to Upload Document
             if ($preCondition == 1)
                 throw new Exception("Document Has Fully Uploaded");
@@ -171,14 +172,16 @@ class SafDocController extends Controller
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveSafs = new PropActiveSaf();
             $relativePath = FacadesConfig::get('PropertyConstaint.SAF_RELATIVE_PATH');
-            $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
+            $propModuleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
 
+            // Derivative Assignments
+            $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
             $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
-            $metaReqs['moduleId'] = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['moduleId'] = $propModuleId;
             $metaReqs['activeId'] = $getSafDtls->id;
             $metaReqs['workflowId'] = $getSafDtls->workflow_id;
             $metaReqs['ulbId'] = $getSafDtls->ulb_id;
@@ -186,9 +189,13 @@ class SafDocController extends Controller
             $metaReqs['document'] = $imageName;
             $metaReqs['docCode'] = $req->docCode;
             $metaReqs['ownerDtlId'] = $req->ownerId;
+            $ifDocExist = $mWfActiveDocument->ifDocExists($getSafDtls->id, $getSafDtls->workflow_id, $propModuleId, $req->docCode, $req->ownerId);   // Checking if the document is already existing or not
 
             $metaReqs = new Request($metaReqs);
-            $mWfActiveDocument->postDocuments($metaReqs);
+            if (collect($ifDocExist)->isEmpty())
+                $mWfActiveDocument->postDocuments($metaReqs);
+            else
+                $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
 
             $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
             if ($docUploadStatus == 1) {
@@ -270,7 +277,6 @@ class SafDocController extends Controller
             foreach ($explodeDocs as $explodeDoc) {
                 $changeStatus = 0;
                 if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
-                    $flag = 1;
                     $changeStatus = 1;
                     break;
                 }
@@ -299,7 +305,6 @@ class SafDocController extends Controller
                 foreach ($explodeDocs as $explodeDoc) {
                     $changeStatusV1 = 0;
                     if (in_array($explodeDoc, $arrayOwners)) {
-                        $ownerFlags = 1;
                         $changeStatusV1 = 1;
                         break;
                     }

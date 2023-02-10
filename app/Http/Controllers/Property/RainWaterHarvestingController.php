@@ -11,6 +11,8 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\RefPropDocsRequired;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
@@ -107,7 +109,6 @@ class RainWaterHarvestingController extends Controller
                 ->where('ulb_id', $ulbId)
                 ->first();
 
-            // $applicationNo = $this->generateApplicationNo($ulbId, $userId);
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                // Get Current Initiator ID
             $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
             $finisherRoleId = DB::select($refFinisherRoleId);
@@ -160,19 +161,6 @@ class RainWaterHarvestingController extends Controller
     }
 
     /**
-     * |----------------------- function for generating application no 1.1.1 --------------------------
-     * |@param ulbId
-     * |@param userId
-     * |@var applicationId
-     * | Rating : 0.1
-     */
-    public function generateApplicationNo($ulbId, $userId)
-    {
-        $applicationId = "RWH-" . $ulbId . "-" . $userId . "-" . rand(0, 99999999999999);
-        return $applicationId;
-    }
-
-    /**
      * |----------------------- function for the Inbox  --------------------------
      * |@param ulbId
      * |@param userId
@@ -211,6 +199,74 @@ class RainWaterHarvestingController extends Controller
         }
     }
 
+    /**
+     * |----------------------- function for the Special Inbox (Escalated Applications) for harvesting --------------------------
+     * |@param ulbId
+     * | Rating : 2
+     */
+    public function specialInbox()
+    {
+        try {
+            $harvestingList = new PropActiveHarvesting();
+            $auth = auth()->user();
+            $userId = $auth->id;
+            $ulbId = $auth->ulb_id;
+            $wardId = $this->getWardByUserId($userId);
+
+            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
+                return $ward->ward_id;
+            });
+
+            $harvesting = $harvestingList->getHarvestingList($ulbId)                                         // Get harvesting
+                ->where('prop_active_harvestings.is_escalated', true)
+                ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->orderByDesc('prop_active_harvestings.id')
+                ->get();
+
+            return responseMsg(true, "Inbox List", remove_null($harvesting));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Fields Verified Inbox
+     */
+    public function fieldVerifiedInbox(Request $req)
+    {
+        try {
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWardUser = new WfWardUser();
+
+            $mUserId = authUser()->id;
+            $mUlbId = authUser()->ulb_id;
+            $mDeviceId = $req->deviceId ?? "";
+
+            $readWards = $mWfWardUser->getWardsByUserId($mUserId);                  // Model function to get ward list
+            $occupiedWardsId = collect($readWards)->map(function ($ward) {          // Collection filteration
+                return $ward->ward_id;
+            });
+
+            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);                 // Model function to get Role By User Id
+            $roleIds = $readRoles->map(function ($role, $key) {
+                return $role->wf_role_id;
+            });
+
+            $data = $this->Repository->getSaf($this->_workflowIds)                 // Repository function getSAF
+                ->where('is_field_verified', true)
+                ->where('prop_active_safs.ulb_id', $mUlbId)
+                ->where('prop_active_safs.status', 1)
+                ->whereIn('current_role', $roleIds)
+                ->orderByDesc('id')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->get();
+
+            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWardsId);
+            return responseMsgs(true, "field Verified Inbox!", remove_null($safInbox), 010125, 1.0, "", "POST", $mDeviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $mDeviceId);
+        }
+    }
 
     /**
      * |----------------------- function for the Outbox --------------------------
@@ -279,37 +335,6 @@ class RainWaterHarvestingController extends Controller
                 $harvesting->save();
                 return responseMsg(true, "Successfully De-Escalated the application", "");
             }
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-
-    /**
-     * |----------------------- function for the Special Inbox (Escalated Applications) for harvesting --------------------------
-     * |@param ulbId
-     * | Rating : 2
-     */
-    public function specialInbox()
-    {
-        try {
-            $harvestingList = new PropActiveHarvesting();
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-            $wardId = $this->getWardByUserId($userId);
-
-            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
-                return $ward->ward_id;
-            });
-
-            $harvesting = $harvestingList->getHarvestingList($ulbId)                                         // Get harvesting
-                ->where('prop_active_harvestings.is_escalated', true)
-                ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_harvestings.id')
-                ->get();
-
-            return responseMsg(true, "Inbox List", remove_null($harvesting));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -688,28 +713,6 @@ class RainWaterHarvestingController extends Controller
     //     }
     // }
 
-    //doc status
-    // public function docStatus(Request $req)
-    // {
-    //     try {
-    //         $status = new PropHarvestingDoc();
-    //         $status->docStatus($req);
-
-    //         return responseMsgs(true, "Successfully Verified", '', '011107', 01, '290ms - 342ms', 'Post', $req->deviceId);
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
-
-    //moving function to location
-    // public function moveFile($docName, $file)
-    // {
-    //     $name = time() . $docName . '.' . $file->getClientOriginalExtension();
-    //     $path = storage_path('app/public/harvesting/' . $docName . '/');
-    //     $file->move($path, $name);
-    //     return $name;
-    // }
-
     /**
      * | Independent Comments
      */
@@ -921,7 +924,6 @@ class RainWaterHarvestingController extends Controller
         $applicationId = $refApplication->id;
         $workflowId = $refApplication->workflow_id;
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-
         $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_RAIN_WATER_HARVESTING")->requirements;
 
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
@@ -930,7 +932,7 @@ class RainWaterHarvestingController extends Controller
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
-
+            $label = array_shift($document);
             $documents = collect();
 
             collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
@@ -995,5 +997,105 @@ class RainWaterHarvestingController extends Controller
         });
 
         return responseMsgs(true, "Citizen Doc List", remove_null($reqDoc), 010717, 1.0, "413ms", "POST", "", "");
+    }
+
+    /**
+     * | Document Verify Reject
+     */
+    public function docVerifyReject(Request $req)
+    {
+        $req->validate([
+            'id' => 'required|digits_between:1,9223372036854775807',
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+            'docRemarks' =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
+            'docStatus' => 'required|in:Verified,Rejected'
+        ]);
+
+        try {
+            // Variable Assignments
+            $mWfDocument = new WfActiveDocument();
+            $mPropActiveHarvesting = new PropActiveHarvesting();
+            $mWfRoleusermap = new WfRoleusermap();
+            $wfDocId = $req->id;
+            $userId = authUser()->id;
+            $applicationId = $req->applicationId;
+            $wfLevel = Config::get('PropertyConstaint.SAF-LABEL');
+            // Derivative Assigments
+            $harvestingDtl = $mPropActiveHarvesting->getHarvestingNo($applicationId);
+            $safReq = new Request([
+                'userId' => $userId,
+                'workflowId' => $harvestingDtl->workflow_id
+            ]);
+            $senderRoleDtls = $mWfRoleusermap->getRoleByUserWfId($safReq);
+            if (!$senderRoleDtls || collect($senderRoleDtls)->isEmpty())
+                throw new Exception("Role Not Available");
+
+            $senderRoleId = $senderRoleDtls->wf_role_id;
+
+            if ($senderRoleId != $wfLevel['UTC'])                                // Authorization for Dealing Assistant Only
+                throw new Exception("You are not Authorized");
+
+            if (!$harvestingDtl || collect($harvestingDtl)->isEmpty())
+                throw new Exception("Application Details Not Found");
+
+            $ifFullDocVerified = $this->ifFullDocVerified($applicationId);       // (Current Object Derivative Function 4.1)
+
+            if ($ifFullDocVerified == 1)
+                throw new Exception("Document Fully Verified");
+
+            DB::beginTransaction();
+            if ($req->docStatus == "Verified") {
+                $status = 1;
+            }
+            if ($req->docStatus == "Rejected") {
+                $status = 2;
+                // For Rejection Doc Upload Status and Verify Status will disabled
+                $harvestingDtl->doc_upload_status = 0;
+                $harvestingDtl->doc_verify_status = 0;
+                $harvestingDtl->save();
+            }
+
+            $reqs = [
+                'remarks' => $req->docRemarks,
+                'verify_status' => $status,
+                'action_taken_by' => $userId
+            ];
+            $mWfDocument->docVerifyReject($wfDocId, $reqs);
+            $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
+
+            if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
+                $harvestingDtl->doc_verify_status = 1;
+                $harvestingDtl->save();
+            }
+
+            DB::commit();
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Check if the Document is Fully Verified or Not (4.1)
+     */
+    public function ifFullDocVerified($applicationId)
+    {
+        $mPropActiveHarvesting = new PropActiveHarvesting();
+        $mWfActiveDocument = new WfActiveDocument();
+        $refSafs = $mPropActiveHarvesting->getHarvestingNo($applicationId);                      // Get Saf Details
+        $refReq = [
+            'activeId' => $applicationId,
+            'workflowId' => $refSafs->workflow_id,
+            'moduleId' => Config::get('module-constants.PROPERTY_MODULE_ID')
+        ];
+        $req = new Request($refReq);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
+        // Property List Documents
+        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
+        if ($ifPropDocUnverified == 1)
+            return 0;
+        else
+            return 1;
     }
 }

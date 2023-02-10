@@ -7,9 +7,11 @@
  */
 
 return [
+    // SAF Workflow Masters
     "SAF_WORKFLOW_ID"           => "4",
     "SAF_REASSESSMENT_ID"       => "5",
     "SAF_MUTATION_ID"           => "9",
+
     "PROPERTY_CONCESSION_ID"    => "35",
     "TRADE_WORKFLOW_ID"         => "10",
     "PROPERTY_DEACTIVATION_WORKFLOW_ID" => "167",

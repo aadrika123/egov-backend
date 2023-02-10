@@ -11,6 +11,7 @@ use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerOwner;
+use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
@@ -443,7 +444,7 @@ class NewConnectionRepository implements iNewConnection
      */
     public function approvalRejectionWater($request)
     {
-        $now = Carbon::now();
+
         $waterDetails = WaterApplication::find($request->applicationId);
         if ($waterDetails->finisher != $request->roleId) {
             throw new Exception("You're Not the finisher!");
@@ -451,40 +452,40 @@ class NewConnectionRepository implements iNewConnection
         if ($waterDetails->current_role != $request->roleId) {
             throw new Exception("Application has not Reached to the finisher!");
         }
+        if ($waterDetails->doc_status == false) {
+            throw new Exception("Documet is Not verified!");
+        }
+        if ($waterDetails->payment_status == false) {
+            throw new Exception("Payment Not Done!");
+        }
+        if ($waterDetails->doc_upload_status == false) {
+            throw new Exception("Full document is Not Uploaded!");
+        }
+        if ($waterDetails->is_field_verified == false) {
+            throw new Exception("Field Verification Not Done!!");
+        }
+
         DB::beginTransaction();
-        // Approval of water application 
+        # Approval of water application 
         if ($request->status == 1) {
+
+            $now = Carbon::now();
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
             $consumerNo = 'CON' . $now->getTimeStamp();
+
             $mWaterApplication->finalApproval($request, $consumerNo);
             $mWaterApplicant->finalApplicantApproval($request);
             $msg = "Application Successfully Approved !!";
         }
-        // Rejection of water application
+        # Rejection of water application
         if ($request->status == 0) {
-            $rejectedWater = WaterApplication::query()
-                ->where('id', $request->applicationId)
-                ->first();
 
-            $rejectedWaterRep = $rejectedWater->replicate();
-            $rejectedWaterRep->setTable('water_rejection_application_details');
-            $rejectedWaterRep->id = $rejectedWater->id;
-            $rejectedWaterRep->save();
-            // $rejectedWater->delete();
+            $mWaterApplication = new WaterApplication();
+            $mWaterApplicant = new WaterApplicant();
 
-            $approvedWaterApplicant = WaterApplicant::query()
-                ->where('application_id', $request->applicationId)
-                ->get();
-
-            collect($approvedWaterApplicant)->map(function ($value) {
-                $approvedWaterOwners = $value->replicate();
-                $approvedWaterOwners->setTable('water_rejection_applicants');
-                $approvedWaterOwners->id = $value->id;
-                $approvedWaterOwners->save();
-                // $approvedWaterOwners->delete();
-            });
-
+            $mWaterApplication->finalRejectionOfAppication($request);
+            $mWaterApplicant->finalOwnerRejection($request);
             $msg = "Application Successfully Rejected !!";
         }
         DB::commit();
@@ -780,12 +781,14 @@ class NewConnectionRepository implements iNewConnection
         $mWaterConsumer = new WaterConsumer();
         $mWaterConnectionCharge = new WaterConnectionCharge();
         $mWaterConsumerOwner = new WaterConsumerOwner();
+        $mWaterParamConnFee = new WaterParamConnFee();
 
         $approvedWater = $mWaterConsumer->getConsumerByConsumerNo($request->consumerNo);
         $connectionCharge = $mWaterConnectionCharge->getWaterchargesById($approvedWater['id'])->firstOrFail();
         $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['id']);
+        $water['calcullation'] = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'],$approvedWater['area_sqft'])->first();
 
-        $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner);
+        $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
         return remove_null($consumerDetails);
     }
 

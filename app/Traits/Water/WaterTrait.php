@@ -40,6 +40,7 @@ trait WaterTrait
             ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
             ->where('water_applications.status', 1)
+            ->where('water_applications.payment_status', true)
             // ->where('ulb_ward_masters.deleted_at', 0)
             ->where('water_applications.ulb_id', $ulbId);
     }
