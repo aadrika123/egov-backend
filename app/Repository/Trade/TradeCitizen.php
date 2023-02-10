@@ -305,12 +305,15 @@ class TradeCitizen implements ITradeCitizen
             "active_trade_licences.application_date",
             "active_trade_licences.apply_from",
             "active_trade_licences.application_type_id",
+            "active_trade_licences.ulb_id",
             "owner.owner_name",
             "owner.guardian_name",
             "owner.mobile_no",
             "owner.email_id",
+            "ulb_masters.ulb_name",
             DB::raw("'active' as license_type"),
         )
+            ->join("ulb_masters","ulb_masters.id","active_trade_licences.ulb_id")
             ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                  STRING_AGG(guardian_name,',') AS guardian_name,
                                  STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -342,12 +345,15 @@ class TradeCitizen implements ITradeCitizen
             "rejected_trade_licences.application_date",
             "rejected_trade_licences.apply_from",
             "rejected_trade_licences.application_type_id",
+            "rejected_trade_licences.ulb_id",
             "owner.owner_name",
             "owner.guardian_name",
             "owner.mobile_no",
             "owner.email_id",
+            "ulb_masters.ulb_name",
             DB::raw("'rejected' as license_type"),
         )
+            ->join("ulb_masters","ulb_masters.id","rejected_trade_licences.ulb_id")
             ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                  STRING_AGG(guardian_name,',') AS guardian_name,
                                  STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -380,12 +386,15 @@ class TradeCitizen implements ITradeCitizen
             "trade_licences.application_date",
             "trade_licences.apply_from",
             "trade_licences.application_type_id",
+            "trade_licences.ulb_id",
             "owner.owner_name",
             "owner.guardian_name",
             "owner.mobile_no",
             "owner.email_id",
+            "ulb_masters.ulb_name",
             DB::raw("'approved' as license_type"),
         )
+            ->join("ulb_masters","ulb_masters.id","trade_licences.ulb_id")
             ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                     STRING_AGG(guardian_name,',') AS guardian_name,
                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -417,12 +426,15 @@ class TradeCitizen implements ITradeCitizen
             "trade_renewals.application_date",
             "trade_renewals.apply_from",
             "trade_renewals.application_type_id",
+            "trade_renewals.ulb_id",
             "owner.owner_name",
             "owner.guardian_name",
             "owner.mobile_no",
             "owner.email_id",
+            "ulb_masters.ulb_name",
             DB::raw("'old' as license_type"),
         )
+            ->join("ulb_masters","ulb_masters.id","trade_renewals.ulb_id")
             ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                     STRING_AGG(guardian_name,',') AS guardian_name,
                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
