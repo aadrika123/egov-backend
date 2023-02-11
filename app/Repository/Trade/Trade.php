@@ -793,7 +793,7 @@ class Trade implements ITrade
                 throw new Exception("No Licence Found");
             }
             $refOldOwneres = ActiveTradeOwner::owneresByLId($mLicenceId);
-            $mnaturOfBusiness = TradeParamItemType::itemsById($refOldLicece->nature_of_bussiness);
+            $mnaturOfBusiness = !empty(trim($refOldLicece->nature_of_bussiness))?TradeParamItemType::itemsById($refOldLicece->nature_of_bussiness):[];
             $natur = array();
             foreach ($mnaturOfBusiness as $val) {
                 $natur[] = [
@@ -833,14 +833,18 @@ class Trade implements ITrade
         $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
         $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.&\s]+$/';
         try {
-            if ($rollId == -1 || (!in_array($mUserType, ['BO', 'SUPER ADMIN']))) {
+            if ($rollId == -1 || (!in_array($mUserType, ['BO', 'SUPER ADMIN']))) 
+            {
                 throw new Exception("You Are Not Authorized");
             }
             $mLicenceId         = $request->initialBusinessDetails['id'];
             $refOldLicece       = ActiveTradeLicence::find($mLicenceId);
-            if (!$refOldLicece) {
+            if (!$refOldLicece) 
+            {
                 throw new Exception("No Licence Found");
-            } elseif ($refOldLicece->payment_status == 0) {
+            } 
+            if ($refOldLicece->payment_status == 0) 
+            {
                 $rules["firmDetails.areaSqft"] = "required|numeric";
                 $rules["firmDetails.firmEstdDate"] = "required|date";
                 $rules["firmDetails.natureOfBusiness"] = "required|array";
@@ -883,7 +887,8 @@ class Trade implements ITrade
                 return $val['id'];
             }, $request->firmDetails['natureOfBusiness']);
             $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
-            if ($request->firmDetails['holdingNo']) {
+            if ($request->firmDetails['holdingNo']) 
+            {
                 $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'], $refUlbId);
                 if ($property['status'])
                     $mProprtyId = $property['property']['id'];
@@ -893,12 +898,14 @@ class Trade implements ITrade
 
             DB::beginTransaction();
 
-            if ($refOldLicece->payment_status == 0) {
+            if ($refOldLicece->payment_status == 0) 
+            {
                 $refOldLicece->area_in_sqft        = $request->firmDetails['areaSqft'];
                 $refOldLicece->establishment_date  = $request->firmDetails['firmEstdDate'];
                 $refOldLicece->nature_of_bussiness = $mnaturOfBusiness;
                 $refOldLicece->is_tobacco      = $request->firmDetails['tocStatus'];
-                if ($refOldLicece->is_tobacco) {
+                if ($refOldLicece->is_tobacco) 
+                {
                     $refOldLicece->licence_for_years   = 1;
                     $refOldLicece->nature_of_bussiness = 187;
                 }
@@ -2502,11 +2509,7 @@ class Trade implements ITrade
             $licence = $licence
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
                 ->get();
-            // dd(DB::getQueryLog());
-            $data = [
-                // "wardList" => $mWardPermission,
-                // "licence" => $licence,
-            ];
+            // dd(DB::getQueryLog());            
             return responseMsg(true, "", $licence);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
@@ -2600,11 +2603,6 @@ class Trade implements ITrade
             $licence = $licence
                 ->whereIn('active_trade_licences.ward_id', $ward_ids)
                 ->get();
-            // dd(DB::getQueryLog());
-            // $data = [
-            //     "wardList" => $ward_permission,
-            //     "licence" => $licence,
-            // ];
             return responseMsg(true, "", $licence);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
@@ -2676,10 +2674,6 @@ class Trade implements ITrade
             }
             $licence = $licence
                 ->get();
-            // $data = [
-            //     "wardList" => $mWardPermission,
-            //     "licence" => $licence,
-            // ];
             return responseMsg(true, "", $licence);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
@@ -2769,10 +2763,6 @@ class Trade implements ITrade
             $licence = $licence
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
                 ->get();
-            // $data = [
-            //     "wardList" => $mWardPermission,
-            //     "licence" => $licence,
-            // ];
             return responseMsg(true, "", $licence);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
