@@ -7,6 +7,7 @@ use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSafMemoDtl;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -113,6 +114,26 @@ class ActiveSafControllerV2 extends Controller
             return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         }
     }
+
+
+    /**
+     * | Generate memo receipt
+     */
+    public function memoReceipt(Request $req)
+    {
+        $req->validate([
+            'memoId' => 'required|numeric'
+        ]);
+        try {
+            $mPropSafMemoDtl = new PropSafMemoDtl();
+            $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
+            $details = collect($details)->first();
+            return responseMsgs(true, "", remove_null($details), "011803", 1.0, "", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, "", "POST", $req->deviceId);
+        }
+    }
+
 
     /**
      * | Search Holding of user not logged in
