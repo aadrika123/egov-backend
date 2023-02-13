@@ -190,7 +190,7 @@ class ActiveSafControllerV2 extends Controller
                     ->get();
             }
 
-            if (!$data) {
+            if ($data->isEmpty()) {
                 throw new Exception("Enter Valid Holding No.");
             }
 
