@@ -82,7 +82,7 @@ class TradeNotice implements ITradeNotice
             $denialConsumer->workflow_id  = $refWorkflowId; 
             $denialConsumer->current_role = $refWorkflows['initiator']['id'];
             $denialConsumer->initiator_role = $refWorkflows['initiator']['id'];
-            $denialConsumer->finisher_role = $refWorkflows['finisher']['id'];
+            $denialConsumer->finisher_role = $refWorkflows['initiator']['id'];
             
             $denialConsumer->save();
             $denial_id = $denialConsumer->id;
@@ -100,9 +100,18 @@ class TradeNotice implements ITradeNotice
                 $denialConsumer->update();
 
             }
+            $metaReqs["applicationId"] = $denial_id;
+            $metaReqs["status"] = 1;
+            $metaReqs = new Request($metaReqs);
+            $response = $this->approveReject($metaReqs);
+            $message = $response->original["message"];
+            if(!$response->original["status"])
+            {
+                throw new Exception($message);
+            }
             DB::commit();
 
-            return  responseMsg(true, "Denail Form Submitted Succesfully!", $data);
+            return  responseMsg(true, $message, $data);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -164,7 +173,7 @@ class TradeNotice implements ITradeNotice
                 ->orderBy("active_trade_notice_consumer_dtls.created_at", "DESC")
                 ->get();
             $data['denila_consumer'] = $denila_consumer;
-            return responseMsg(false, "", remove_null($data));
+            return responseMsg(false, "", remove_null($denila_consumer));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -231,7 +240,7 @@ class TradeNotice implements ITradeNotice
                 ->orderBy("active_trade_notice_consumer_dtls.created_at", "DESC")
                 ->get();
             $data['denila_consumer'] = $denila_consumer;
-            return responseMsg(true, "", $data);
+            return responseMsg(true, "", $denila_consumer);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -277,11 +286,11 @@ class TradeNotice implements ITradeNotice
                 ->where("active_trade_notice_consumer_dtls.status", 1)
                 ->orderBy("active_trade_notice_consumer_dtls.created_on", "DESC")
                 ->get();
-            $data = [
-                "wardList" => $mWardPermission,
-                "denila_consumer" => $denila_consumer,
-            ];
-            return responseMsg(true, "", $data);
+            // $data = [
+            //     "wardList" => $mWardPermission,
+            //     "denila_consumer" => $denila_consumer,
+            // ];
+            return responseMsg(true, "", $denila_consumer);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -343,11 +352,11 @@ class TradeNotice implements ITradeNotice
                 ->where("active_trade_notice_consumer_dtls.status", 1)
                 ->orderBy("active_trade_notice_consumer_dtls.created_on", "DESC")
                 ->get();
-            $data = [
-                "wardList" => $mWardPermission,
-                "denila_consumer" => $denila_consumer,
-            ];
-            return responseMsg(true, "", $data);
+            // $data = [
+            //     "wardList" => $mWardPermission,
+            //     "denila_consumer" => $denila_consumer,
+            // ];
+            return responseMsg(true, "", $denila_consumer);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -397,17 +406,21 @@ class TradeNotice implements ITradeNotice
     public function approveReject(Request $req)
     {
         try {
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
             $req->validate([
                 "applicationId" => "required",
                 "status" => "required"
             ]);
             $application = ActiveTradeNoticeConsumerDtl::find($req->applicationId);
-
+            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
             if(!$application)
             {
                 throw new Exception("Data Not Found");
             }
-            if ($application->finisher_role != $req->roleId) 
+            if ($application->finisher_role != $role->role_id) 
             {
                 return responseMsg(false, "Forbidden Access", "");
             }
@@ -425,7 +438,7 @@ class TradeNotice implements ITradeNotice
                 $approvedApplication->save();
                 $application->forceDelete();
 
-                $msg =  "Application Successfully Approved !!";
+                $msg =  "Notice Successfully Generated !!";
             }
 
             // Rejection

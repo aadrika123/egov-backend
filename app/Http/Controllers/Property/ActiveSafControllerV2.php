@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropSafMemoDtl;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,14 +22,11 @@ class ActiveSafControllerV2 extends Controller
     {
         $req->validate([
             'id' => 'required|numeric',
-            // 'owner' => 'array',
-            // 'owner.*.ownerId' => 'required|numeric',
-            // 'owner.*.ownerName' => 'required',
-            // 'owner.*.guardianName' => 'required',
-            // 'owner.*.relation' => 'required',
-            // 'owner.*.mobileNo' => 'numeric|string|digits:10',
-            // 'owner.*.aadhar' => 'numeric|string|digits:12|nullable',
-            // 'owner.*.email' => 'email|nullable',
+            'owner' => 'array',
+            'owner.*.ownerId' => 'numeric',
+            'owner.*.mobileNo' => 'numeric|string|digits:10',
+            'owner.*.aadhar' => 'numeric|string|digits:12|nullable',
+            'owner.*.email' => 'email|nullable',
         ]);
 
         try {
@@ -103,6 +101,24 @@ class ActiveSafControllerV2 extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Generate memo receipt
+     */
+    public function memoReceipt(Request $req)
+    {
+        $req->validate([
+            'memoId' => 'required|numeric'
+        ]);
+        try {
+            $mPropSafMemoDtl = new PropSafMemoDtl();
+            $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
+            $details = collect($details)->first();
+            return responseMsgs(true, "", remove_null($details), "011803", 1.0, "", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, "", "POST", $req->deviceId);
         }
     }
 }
