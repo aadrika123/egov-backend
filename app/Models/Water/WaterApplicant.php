@@ -112,7 +112,7 @@ class WaterApplicant extends Model
             $approvedWaterOwners->consumer_id = $value->id;
             $approvedWaterOwners->save();
         });
-        // $approvedWaterOwners->delete();
+        // $approvedWaterApplicant->delete();
     }
 
 
@@ -132,7 +132,7 @@ class WaterApplicant extends Model
             $approvedWaterOwners->id = $value->id;
             $approvedWaterOwners->save();
         });
-        // $approvedWaterOwners->delete();
+        // $approvedWaterApplicant->delete();
     }
 
     /**

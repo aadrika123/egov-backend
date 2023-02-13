@@ -384,7 +384,7 @@ class NewConnectionController extends Controller
 
             $mWaterConsumer = new WaterConsumer();
             $approvedWater = $mWaterConsumer->getConsumerDetails();
-            $checkExist = $approvedWater->first()->id;
+            $checkExist = $approvedWater->first();
             if ($checkExist) {
                 return responseMsgs(true, "Approved Application Details!", $approvedWater, "", "03", "ms", "POST", "");
             }
