@@ -115,7 +115,6 @@ class ActiveSafControllerV2 extends Controller
         }
     }
 
-
     /**
      * | Generate memo receipt
      */
