@@ -343,6 +343,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    */
   Route::controller(ActiveSafControllerV2::class)->group(function () {
     Route::post('saf/delete-citizen-saf', 'deleteCitizenSaf');        // 01
-    Route::post('saf/edit-citizen-saf', 'editCitizenSaf');
+    Route::post('saf/edit-citizen-saf', 'editCitizenSaf');            // 02
+    Route::post('saf/memo-receipt', 'memoReceipt');                   // 03
   });
 });

@@ -58,4 +58,22 @@ class PropSafMemoDtl extends Model
             ->where('status', 1)
             ->get();
     }
+
+    /**
+     * | Memo Details by memo id
+     */
+    public function getMemoDtlsByMemoId($memoId)
+    {
+        $query = "SELECT d.*,
+                        pd.holding_tax,
+                        pd.water_tax,
+                        pd.education_cess,
+                        pd.health_cess,
+                        pd.additional_tax
+                    
+                    FROM prop_saf_memo_dtls d
+                    JOIN prop_safs_demands pd ON pd.fyear=d.from_fyear AND pd.qtr=d.from_qtr AND pd.saf_id=d.saf_id AND pd.status=1
+                    WHERE d.id=$memoId";
+        return DB::select($query);
+    }
 }

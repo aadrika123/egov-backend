@@ -85,6 +85,12 @@ class ActiveSafController extends Controller
      * |                                 # SAF Mutation
      * | wf_mstr_id=9
      * | wf_workflow_id=5
+     * |                                 # SAF Bifurcation
+     * | wf_mstr_id=182
+     * | wf_workflow_id=5
+     * |                                 # SAF Amalgamation
+     * | wf_mstr_id=373
+     * | wf_workflow_id=381
      */
 
     protected $user_id;
