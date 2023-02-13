@@ -361,15 +361,15 @@ class NewConnectionRepository implements iNewConnection
         | Serial No : 04.01
         | working 
      */
-    public function checkPostCondition($senderRoleId, $wfLevels, $saf)
+    public function checkPostCondition($senderRoleId, $wfLevels, $application)
     {
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
-                if ($saf->doc_upload_status == 0)
+                if ($application->doc_upload_status == 0)
                     throw new Exception("Document Not Fully Uploaded");
                 break;
             case $wfLevels['DA']:                       // DA Condition
-                if ($saf->doc_verify_status == 0)
+                if ($application->doc_status == 0)
                     throw new Exception("Document Not Fully Verified");
                 break;
         }
