@@ -32,11 +32,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('upload-document', 'uploadDocument');
         Route::post('get-upload-documents', 'getUploadDocuments');
 
-        // Route::match(["get", "post"], 'documentUpload/{id}', 'documentUpload');
-
-        // Route::post('upload-document', 'documentUpload');        //old
         Route::post('getUploadDocuments', 'getUploadDocuments');
-        Route::match(["get", "post"], 'documentVerify/{licenceId}', 'documentVirify');
+        // Route::match(["get", "post"], 'documentVerify/{licenceId}', 'documentVirify');
         Route::post('getLicenceDtl', 'getLicenceDtl');
         Route::post('getDenialDetails', "getDenialDetails");
         Route::post('searchLicense', 'searchLicence');
@@ -73,7 +70,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('conformRazorPayTran', 'conformRazorPayTran');      #id = c5 
         Route::post('citizenApplication', 'citizenApplication');        #id = c6
         Route::post('citizenApplicationById', 'readCitizenLicenceDtl'); #id = c7
-        // Route::post('expired-licence', 'expiredLicence');
         Route::post('list-renewal', 'renewalList');
         Route::post('list-amendment', 'amendmentList');
         Route::post('list-surrender', 'surrenderList');

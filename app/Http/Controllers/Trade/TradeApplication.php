@@ -210,11 +210,7 @@ class TradeApplication extends Controller
     {
         return $this->Repository->documentUpload($request);
     }
-    # Serial No : 06
-    // public function getUploadDocuments(Request $request)
-    // {
-    //     return $this->Repository->getUploadDocuments($request);
-    // }
+    
     # Serial No : 07
     public function documentVirify(Request $request)
     {
