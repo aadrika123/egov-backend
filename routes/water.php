@@ -28,12 +28,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::resource('crud/new-connection', NewConnectionController::class);                             //01
 
-    Route::controller(NewConnectionController::class)->group(function () {
-        Route::post('user-water-connection-charges', 'getUserWaterConnectionCharges');                  //02                           // Get Water Connection Charges of Logged In User
-        Route::post('applicant-document-upload', 'applicantDocumentUpload');                            //03        // User Document Upload
-        Route::post('water-payment', 'waterPayment');                                                   //04         // Water Payment
-    });
-
     /**
      * | Created On:08-11-2022 
      * | Created by:Sam Kerketta
@@ -58,12 +52,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('post-message', 'commentIndependent');                                              //
         Route::post('get-approved-water-application-details', 'approvedWaterApplications');                        //       
         Route::post('list-field-verified-inbox', 'fieldVerifiedInbox');                                 //
-        Route::post('verification-field', 'fieldVerification');                                         //
-        Route::post('generate_payment_receipt', 'generatePaymentReceipt');                              //
-        Route::post('back_to_citizen', 'backToCitizen');                                                //
+        Route::post('verification-field', 'fieldVerification');                                         // Route::post('back_to_citizen', 'backToCitizen');                                                //
         Route::post('list_btc_inbox', 'btcInbox');                                                      //
         Route::Post('delete_application', 'deleteWaterApplication');                                    //       
-        Route::post('get_application_details', 'getApplicationDetails');                                //
+        Route::post('get-application-details', 'getApplicationDetails');                                //
         Route::post('upload_document', 'uploadWaterDoc');                                               //
         Route::post('get_upload_documents', 'getUploadDocuments');                                      //
         Route::post('list_doc_to_upload', 'getDocToUpload');                                            //
@@ -74,10 +66,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('search-active-applictaions', 'getActiveApplictaions');
 
         Route::post('get-doc-list', 'getDocList');
-        Route::post('try', 'try');
 
         // Route::post('list-doc', 'getWaterDocDetails');                                                  //
-        // Route::post('verify-doc', 'waterDocStatus');                                                    //
+        // Route::post('verify-doc', 'waterDocStatus');                                                    // 
+        // Route::post('generate_payment_receipt', 'generatePaymentReceipt');                              //
         // Route::post('list-message', 'getIndependentComment');                                           //
         Route::post('edit_water_application', 'editWaterAppliction');                                          //
     });
@@ -90,6 +82,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(WaterPaymentController::class)->group(function () {
         # Consumer And Citizen Transaction Operation
         Route::post('get-consumer-payment-history', 'getConsumerPaymentHistory');
+        Route::post('generate_payment_receipt', 'generatePaymentReceipt');
     });
 });
 
@@ -104,12 +97,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('citizenApplications', 'getCitizenApplication');                                     //10
         Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
-        // Route::post('get_doc_to_upload', 'documentUpload');                                             //13
-        // Route::post('getUploadedDoc', 'getUploadDocuments');                                            //14
     });
 });
 Route::controller(WaterApplication::class)->group(function () {
-    Route::post('payment_recipt', 'paymentRecipt');                                  //15
+    Route::post('payment_recipt', 'paymentRecipt');                                                     //15
     Route::post('cargeCal', 'calWaterConCharge');                                                       //16
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //17
 });
