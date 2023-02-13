@@ -384,7 +384,7 @@ class NewConnectionController extends Controller
 
             $mWaterConsumer = new WaterConsumer();
             $approvedWater = $mWaterConsumer->getConsumerDetails();
-            $checkExist = $approvedWater->first()->id;
+            $checkExist = $approvedWater->first();
             if ($checkExist) {
                 return responseMsgs(true, "Approved Application Details!", $approvedWater, "", "03", "ms", "POST", "");
             }
@@ -433,75 +433,6 @@ class NewConnectionController extends Controller
             return responseMsgs(true, $msg, "", "010118", "1.0", "310ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    // Generate the payment Recipt  
-    /**
-        | Transfer to the payment Controller // Recheck 
-     */
-    public function generatePaymentReceipt(Request $req)
-    {
-        $req->validate([
-            'transactionNo' => 'required'
-        ]);
-
-        try {
-            $mPaymentData = new WebhookPaymentData();
-            $mWaterApplication = new WaterApplication();
-            $mWaterTransaction = new WaterTran();
-
-            $mTowards = Config::get('waterConstaint.TOWARDS');
-            $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
-            $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
-
-            $applicationDtls = $mPaymentData->getApplicationId($req->transactionNo);
-            $applicationId = json_decode($applicationDtls)->applicationId;
-
-            $applicationDetails = $mWaterApplication->getWaterApplicationsDetails($applicationId);
-            $webhookData = $mPaymentData->getPaymentDetailsByPId($req->transactionNo);
-            $webhookDetails = collect($webhookData)->last();
-
-            $transactionDetails = $mWaterTransaction->getTransactionDetailsById($applicationId);
-            $waterTrans = collect($transactionDetails)->last();
-
-            $epoch = $webhookDetails->payment_created_at;
-            $dateTime = new DateTime("@$epoch");
-            $transactionTime = $dateTime->format('H:i:s');
-
-            $responseData = [
-                "departmentSection" => $mDepartmentSection,
-                "accountDescription" => $mAccDescription,
-                "transactionDate" => $waterTrans->tran_date,
-                "transactionNo" => $waterTrans->tran_no,
-                "transactionTime" => $transactionTime,
-                "applicationNo" => $applicationDetails->application_no,
-                "customerName" => $applicationDetails->applicant_name,
-                "customerMobile" => $applicationDetails->mobile_no,
-                "address" => $applicationDetails->address,
-                "paidFrom" => "",
-                "paidFromQtr" => "",
-                "paidUpto" => "",
-                "paidUptoQtr" => "",
-                "paymentMode" => $waterTrans->payment_mode,
-                "bankName" => $webhookDetails->payment_bank ?? null,
-                "branchName" => "",
-                "chequeNo" => "",
-                "chequeDate" => "",
-                "noOfFlats" => "",
-                "monthlyRate" => "",
-                "demandAmount" => "",  // if the trans is diff
-                "taxDetails" => "",
-                "ulbId" => $webhookDetails->ulb_id,
-                "WardNo" => $applicationDetails->ward_id,
-                "towards" => $mTowards,
-                "description" => $waterTrans->tran_type,
-                "totalPaidAmount" => $webhookDetails->payment_amount,
-                "paidAmtInWords" => getIndianCurrency($webhookDetails->payment_amount),
-            ];
-            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -663,15 +594,12 @@ class NewConnectionController extends Controller
         ]);
         try {
             $mWaterConnectionCharge  = new WaterConnectionCharge();
-            $mWaterParamConnFee = new WaterParamConnFee();
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
             $mWaterTran = new WaterTran();
 
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
-            $propertyId = $applicationDetails['applicationDetails']['property_type_id'];
-            $refAreaInSqFt = $applicationDetails['applicationDetails']['area_sqft'];
 
             # Document Details
             $metaReqs = [
@@ -692,16 +620,14 @@ class NewConnectionController extends Controller
 
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])->first();
-            $processCall = $mWaterParamConnFee->getCallParameter($propertyId, $refAreaInSqFt)->first();  // <---------- here
             $calculation['calculation'] =
                 [
                     'connectionFee' => $charges['conn_fee'],
                     'penalty' => $charges['penalty'],
                     'totalAmount' => $charges['amount']
                 ];
-            $callParamenter['callParamenter'] = $processCall;
 
-            $returnData = array_merge($applicationDetails, $ownerDetails, $documentDetails, $waterTransDetail, $calculation, $callParamenter);
+            $returnData = array_merge($applicationDetails, $ownerDetails, $documentDetails, $waterTransDetail, $calculation);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -754,6 +680,7 @@ class NewConnectionController extends Controller
             else
                 $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
 
+            # Check the Document upload Status
             $documentList = $this->getDocToUpload($req);
             $refDoc = collect($documentList)['original']['data']['documentsList'];
             $checkDocument = collect($refDoc)->map(function ($value, $key) {
@@ -767,6 +694,7 @@ class NewConnectionController extends Controller
                 return true;
             });
 
+            # Update the Doc Upload Satus in Application Table
             if ($checkDocument->contains(false)) {
             } else {
                 WaterApplication::where('id', $req->applicationId)
@@ -1038,7 +966,7 @@ class NewConnectionController extends Controller
     /**
         | dont check the application payment status 
         | call the payment ineciate function
-        | Change
+        | Change / not used 
      */
     public function finalSubmitionApplication(Request $request)
     {

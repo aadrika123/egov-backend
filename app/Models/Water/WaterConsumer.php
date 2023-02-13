@@ -42,20 +42,11 @@ class WaterConsumer extends Model
         $mWaterConsumer->owner_type_id               = $consumerDetails->owner_type;
         $mWaterConsumer->application_apply_date      = $consumerDetails->apply_date;
         $mWaterConsumer->user_id                     = $consumerDetails->user_id;
-        //    $mWaterConsumer->flat_count                  = $consumerDetails->  ; 
-        //    $mWaterConsumer->entry_type                  = $consumerDetails->  ; 
-        //    $mWaterConsumer->emp_details_id              = $consumerDetails->  ; 
-        //    $mWaterConsumer->is_meter_working            = $consumerDetails->  ; 
-        //    $mWaterConsumer->old_consumer_no             = $consumerDetails->  ; 
-        //    $mWaterConsumer->juidco_consumer             = $consumerDetails->  ; 
-        //    $mWaterConsumer->status                      = $consumerDetails->  ; 
-        //    $mWaterConsumer->area_sqmt                   = $consumerDetails->  ; 
+        $mWaterConsumer->pin                         = $consumerDetails->pin;
+        $mWaterConsumer->user_type                   = $consumerDetails->user_type;
+        $mWaterConsumer->area_sqmt                   = $consumerDetails->area_sqmt;
         $mWaterConsumer->save();
     }
-
-
-
-
 
 
     /**
@@ -158,6 +149,7 @@ class WaterConsumer extends Model
             ->leftjoin('water_connection_charges', 'water_connection_charges.application_id', '=', 'water_consumers.id')
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->where('water_consumers.user_id', auth()->user()->id)
+            ->where('water_consumers.user_type', auth()->user()->user_type)
             ->where('water_consumers.status', true)
             ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
             ->groupBy(

@@ -210,11 +210,7 @@ class TradeApplication extends Controller
     {
         return $this->Repository->documentUpload($request);
     }
-    # Serial No : 06
-    // public function getUploadDocuments(Request $request)
-    // {
-    //     return $this->Repository->getUploadDocuments($request);
-    // }
+    
     # Serial No : 07
     public function documentVirify(Request $request)
     {
@@ -439,9 +435,14 @@ class TradeApplication extends Controller
                 "applicationId" => "required",
                 "status" => "required"
             ]);
-            $activeLicence = ActiveTradeLicence::find($req->applicationId);
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
 
-            if ($activeLicence->finisher_role != $req->roleId) {
+            $activeLicence = ActiveTradeLicence::find($req->applicationId);
+            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            if ($activeLicence->finisher_role != $role->role_id) {
                 return responseMsg(false, "Forbidden Access", "");
             }
             DB::beginTransaction();

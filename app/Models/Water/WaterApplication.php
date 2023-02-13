@@ -138,7 +138,7 @@ class WaterApplication extends Model
         )
             ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
             ->where('water_applications.id', $applicationId)
-            ->first();
+            ->firstOrFail();
     }
 
     /**

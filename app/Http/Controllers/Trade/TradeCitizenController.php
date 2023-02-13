@@ -627,7 +627,7 @@ class TradeCitizenController extends Controller
                 // ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                 ->where('trade_licences.is_active', TRUE)
                 ->where('trade_licences.citizen_id', $citizenId)
-                ->where('trade_licences.valid_upto', '>=', Carbon::now())
+                ->where('trade_licences.valid_upto', '<', $mNextMonth)
                 ->get();
 
             // return (DB::getQueryLog());

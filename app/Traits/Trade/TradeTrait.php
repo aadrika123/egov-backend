@@ -244,6 +244,8 @@ trait TradeTrait
     }
     public function getOwnerDocLists($refOwners, $refApplication)
     {
+        $WfActiveDocument = new WfActiveDocument();
+        $moduleId = Config::get('module-constants.TRADE_MODULE_ID');
         $documentList = $this->getOwnerDocs($refApplication);
         if (!empty($documentList)) 
         {
@@ -255,6 +257,10 @@ trait TradeTrait
             ];
             $filteredDocs['documents']= $this->filterDocument($documentList, $refApplication, $refOwners['id']); 
                                                // function(1.2)
+            $OwnerImage = ((($filteredDocs['documents']->where("docName","Owner Image")->first())["uploadedDoc"])??[]);
+            $filteredDocs['ownerDetails']["uploadedDoc"]= $OwnerImage["docPath"]??null;
+            $filteredDocs['ownerDetails']["verifyStatus"]= $OwnerImage["verifyStatus"]??null;
+
         } 
         else
         {
