@@ -444,13 +444,13 @@ class NewConnectionRepository implements iNewConnection
      */
     public function approvalRejectionWater($request)
     {
-
+        # Condition while the final Check
         $waterDetails = WaterApplication::find($request->applicationId);
         if ($waterDetails->finisher != $request->roleId) {
-            throw new Exception("You're Not the finisher!");
+            throw new Exception("You're Not the finisher ie. EO!");
         }
         if ($waterDetails->current_role != $request->roleId) {
-            throw new Exception("Application has not Reached to the finisher!");
+            throw new Exception("Application has not Reached to the finisher ie. EO!");
         }
         if ($waterDetails->doc_status == false) {
             throw new Exception("Documet is Not verified!");

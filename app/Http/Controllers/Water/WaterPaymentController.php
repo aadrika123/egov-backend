@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Models\Payment\WebhookPaymentData;
+use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
+use DateTime;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -26,9 +30,18 @@ class WaterPaymentController extends Controller
     /**
      * | Get Consumer Payment History 
      * | Collect All the transaction relate to the respective Consumer 
-     * | @param ApplicationId
-     * | @var 
-     * | @return 
+     * | @param request
+     * | @var mWaterTran
+     * | @var mWaterConsumer
+     * | @var mWaterConsumerDemand
+     * | @var mWaterTranDetail
+     * | @var transactions
+     * | @var waterDtls
+     * | @var waterTrans
+     * | @var applicationId
+     * | @var connectionTran
+     * | @return transactions  Consumer / Connection Data 
+        | Serial No : 01
      */
     public function getConsumerPaymentHistory(Request $request)
     {
@@ -72,6 +85,97 @@ class WaterPaymentController extends Controller
             return responseMsgs(true, "", remove_null($transactions), "", "01", "ms", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+        }
+    }
+
+
+    /**
+     * | Generate the payment Recipt Using transactionId
+     * | @param req  transactionId
+     * | @var mPaymentData 
+     * | @var mWaterApplication
+     * | @var mWaterTransaction
+     * | @var mTowards
+     * | @var mAccDescription
+     * | @var mDepartmentSection
+     * | @var applicationDtls
+     * | @var applicationId
+     * | @var applicationDetails
+     * | @var webhookData
+     * | @var webhookDetails
+     * | @var transactionDetails
+     * | @var waterTrans
+     * | @var epoch
+     * | @var dateTime
+     * | @var transactionTime
+     * | @var responseData
+     * | @return responseData  Data for the payment Recipt
+        | Serial No : 02
+        | Recheck 
+        | Search From Water trans table Not in webhook table 
+     */
+    public function generatePaymentReceipt(Request $req)
+    {
+        $req->validate([
+            'transactionNo' => 'required'
+        ]);
+
+        try {
+            $mPaymentData = new WebhookPaymentData();
+            $mWaterApplication = new WaterApplication();
+            $mWaterTransaction = new WaterTran();
+
+            $mTowards = Config::get('waterConstaint.TOWARDS');
+            $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
+            $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
+
+            $applicationDtls = $mPaymentData->getApplicationId($req->transactionNo);
+            $applicationId = json_decode($applicationDtls)->applicationId;
+
+            $applicationDetails = $mWaterApplication->getWaterApplicationsDetails($applicationId);
+            $webhookData = $mPaymentData->getPaymentDetailsByPId($req->transactionNo);
+            $webhookDetails = collect($webhookData)->last();
+
+            $transactionDetails = $mWaterTransaction->getTransactionDetailsById($applicationId);
+            $waterTrans = collect($transactionDetails)->last();
+
+            $epoch = $webhookDetails->payment_created_at;
+            $dateTime = new DateTime("@$epoch");
+            $transactionTime = $dateTime->format('H:i:s');
+
+            $responseData = [
+                "departmentSection" => $mDepartmentSection,
+                "accountDescription" => $mAccDescription,
+                "transactionDate" => $waterTrans->tran_date,
+                "transactionNo" => $waterTrans->tran_no,
+                "transactionTime" => $transactionTime,
+                "applicationNo" => $applicationDetails->application_no,
+                "customerName" => $applicationDetails->applicant_name,
+                "customerMobile" => $applicationDetails->mobile_no,
+                "address" => $applicationDetails->address,
+                "paidFrom" => "",
+                "paidFromQtr" => "",
+                "paidUpto" => "",
+                "paidUptoQtr" => "",
+                "paymentMode" => $waterTrans->payment_mode,
+                "bankName" => $webhookDetails->payment_bank ?? null,
+                "branchName" => "",
+                "chequeNo" => "",
+                "chequeDate" => "",
+                "noOfFlats" => "",
+                "monthlyRate" => "",
+                "demandAmount" => "",  // if the trans is diff
+                "taxDetails" => "",
+                "ulbId" => $webhookDetails->ulb_id,
+                "WardNo" => $applicationDetails->ward_id,
+                "towards" => $mTowards,
+                "description" => $waterTrans->tran_type,
+                "totalPaidAmount" => $webhookDetails->payment_amount,
+                "paidAmtInWords" => getIndianCurrency($webhookDetails->payment_amount),
+            ];
+            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }
