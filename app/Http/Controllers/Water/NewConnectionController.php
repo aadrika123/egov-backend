@@ -683,6 +683,7 @@ class NewConnectionController extends Controller
             # Check the Document upload Status
             $documentList = $this->getDocToUpload($req);
             $refDoc = collect($documentList)['original']['data']['documentsList'];
+            $refOwnerDoc = collect($documentList)['original']['data']['ownersDocList'];
             $checkDocument = collect($refDoc)->map(function ($value, $key) {
                 if ($value['isMadatory'] == 1) {
                     $doc = collect($value['uploadDoc'])->first();
@@ -693,9 +694,24 @@ class NewConnectionController extends Controller
                 }
                 return true;
             });
+            $checkOwnerDocument = collect($refOwnerDoc)->map(function ($value, $key) {
+                if ($value['isMadatory'] == 1) {
+                    $doc = collect($value['uploadDoc'])->first();
+                    if (is_null($doc)) {
+                        return false;
+                    }
+                    return true;
+                }
+                return true;
+            });
+            $refCheckDocument = $checkDocument->merge($checkOwnerDocument);
 
             # Update the Doc Upload Satus in Application Table
-            if ($checkDocument->contains(false)) {
+            if ($refCheckDocument->contains(false)) {
+                WaterApplication::where('id', $req->applicationId)
+                    ->update([
+                        'doc_upload_status' => false
+                    ]);
             } else {
                 WaterApplication::where('id', $req->applicationId)
                     ->update([
