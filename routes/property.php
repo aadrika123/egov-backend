@@ -15,7 +15,6 @@ use App\Http\Controllers\Property\PropertyBifurcationController;
 use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\property\ClusterController;
-use App\Http\Controllers\Property\ObjectionDocController;
 use App\Http\Controllers\Property\ConcessionDocController;
 use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Property\SafDocController;
@@ -205,8 +204,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     Route::get('objection/list', 'objectionList');                          //13
     Route::post('objection/list-id', 'objectionByid');                      //14
-    Route::post('objection/doc-upload', 'objectionDocUpload');              //16
-    Route::post('objection/doc-status', 'objectionDocStatus');              //17
+
     Route::post('objection/comment-independent', 'commentIndependent');     //18
     Route::post('objection/doc-list', 'objectionDocList');                  //14
     Route::post('objection/upload-document', 'uploadDocument');             //19
@@ -346,4 +344,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/edit-citizen-saf', 'editCitizenSaf');            // 02
     Route::post('saf/memo-receipt', 'memoReceipt');                   // 03
   });
+});
+
+/**
+ * | Route Outside the Middleware
+ */
+Route::controller(ActiveSafControllerV2::class)->group(function () {
+  Route::post('search-holding', 'searchHolding');
 });
