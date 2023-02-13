@@ -166,7 +166,7 @@ class ActiveSafControllerV2 extends Controller
                 ->where('prop_properties.ulb_id', $ulbId)
                 ->where('prop_properties.status', 1)
                 ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'ulb_name')
-                ->first();
+                ->get();
 
             if (!$data) {
                 $data = PropProperty::select(
@@ -187,7 +187,7 @@ class ActiveSafControllerV2 extends Controller
                     ->where('prop_properties.ulb_id', $ulbId)
                     ->where('prop_properties.status', 1)
                     ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'ulb_name')
-                    ->first();
+                    ->get();
             }
 
             if (!$data) {
