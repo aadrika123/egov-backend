@@ -4281,13 +4281,51 @@ class Trade implements ITrade
             $DocsType['listDocs'] = $this->getApplTypeDocList($refApplication); 
             $DocsType['ownerDocs'] = collect($refOwners)->map(function ($owner) use ($refApplication) {
                 return $this->getOwnerDocLists($owner, $refApplication);
-            });     
+            }); 
+            $status =  $this->check($DocsType);
+            $DocsType['docUploadStatus'] = ($status["docUploadStatus"]??false)?1:0;
+            $DocsType['docVerifyStatus'] = ($status["docVerifyStatus"] ??false)?1:0;
             return responseMsgs(true, "Documents Fetched", $DocsType, "010203", "1.0", "", 'POST', "");
         }
         catch(Exception $e)
         {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
+    }
+
+    public function check($documentsList)
+    {
+            $applicationDoc = $documentsList["listDocs"];
+            $ownerDoc = $documentsList["ownerDocs"];
+            $appMandetoryDoc = $applicationDoc->whereIn("docType",["R","OR"]);
+            $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
+            $appUploadedDocVerified = collect();
+            $appUploadedDoc->map(function($val) use($appUploadedDocVerified){   
+                $appUploadedDocVerified->push(["is_docVerify"=>(!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] !=0 ) ? true : false ) :true)]);             
+                
+            });
+            $is_appUploadedDocVerified = $appUploadedDocVerified->where("is_docVerify",false);            
+            $is_appMandUploadedDoc  = $appMandetoryDoc->whereNull("uploadedDoc");
+            $Wdocuments = collect();
+            $ownerDoc->map(function($val) use($Wdocuments){                
+                $ownerId = $val["ownerDetails"]["ownerId"]??"";           
+                $val["documents"]->map(function($val1)use($Wdocuments,$ownerId){
+                    $val1["ownerId"] = $ownerId;
+                    $val1["is_uploded"] = (in_array($val1["docType"],["R","OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false ) :true;
+                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] !=0 ) ? true : false ) :true;
+                    $Wdocuments->push($val1);
+                });
+            });
+            $ownerMandetoryDoc = $Wdocuments->whereIn("docType",["R","OR"]);            
+            $is_ownerUploadedDoc = $Wdocuments->where("is_uploded",false);
+            $is_ownerDocVerify = $Wdocuments->where("is_docVerify",false);
+            $data =[
+                "docUploadStatus"=>0,
+                "docVerifyStatus"=>0,
+            ];
+            $data["docUploadStatus"] = (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()));
+            $data["docVerifyStatus"] =  (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()));
+            return($data);
     }
 
 }
