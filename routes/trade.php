@@ -70,7 +70,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('conformRazorPayTran', 'conformRazorPayTran');      #id = c5 
         Route::post('citizenApplication', 'citizenApplication');        #id = c6
         Route::post('citizenApplicationById', 'readCitizenLicenceDtl'); #id = c7
-        // Route::post('expired-licence', 'expiredLicence');
         Route::post('list-renewal', 'renewalList');
         Route::post('list-amendment', 'amendmentList');
         Route::post('list-surrender', 'surrenderList');
