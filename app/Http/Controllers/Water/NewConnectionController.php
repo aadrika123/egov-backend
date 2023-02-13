@@ -374,7 +374,7 @@ class NewConnectionController extends Controller
                     "id" => "nullable|int",
                 ]);
                 $consumerDetails = $this->newConnection->getApprovedWater($request);
-                $refApplicationId['applicationId'] = $consumerDetails['id'];
+                $refApplicationId['applicationId'] = $consumerDetails['consumer_id'];
                 $metaRequest = new Request($refApplicationId);
                 $refDocumentDetails = $this->getUploadDocuments($metaRequest);
                 $documentDetails['documentDetails'] = collect($refDocumentDetails)['original']['data'];
