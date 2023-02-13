@@ -6,9 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropProperty;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
+use function PHPUnit\Framework\isEmpty;
+
+/**
+ * | Created On-10-02-2023 
+ * | Created By-Mrinal Kumar
+ * */
 
 class ActiveSafControllerV2 extends Controller
 {
@@ -100,6 +108,73 @@ class ActiveSafControllerV2 extends Controller
                 }
             }
             return responseMsgs(true, "Saf Deleted", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Search Holding of user not logged in
+     */
+    public function searchHolding(Request $req)
+    {
+        $req->validate([
+            "holdingNo" => "required",
+            "ulbId" => "required"
+
+        ]);
+        try {
+            $holdingNo = $req->holdingNo;
+            $ulbId = $req->ulbId;
+
+            $data = PropProperty::select(
+                'prop_properties.id',
+                'ulb_name as ulb',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                'ward_name',
+                'prop_address',
+                'prop_properties.status',
+                DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
+            )
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+                ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
+                ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+                ->where('prop_properties.holding_no', $holdingNo)
+                ->where('prop_properties.ulb_id', $ulbId)
+                ->where('prop_properties.status', 1)
+                ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'ulb_name')
+                ->first();
+
+            if (!$data) {
+                $data = PropProperty::select(
+                    'prop_properties.id',
+                    'ulb_name as ulb',
+                    'prop_properties.holding_no',
+                    'prop_properties.new_holding_no',
+                    'ward_name',
+                    'prop_address',
+                    'prop_properties.status',
+                    DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                    DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
+                )
+                    ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+                    ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
+                    ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+                    ->where('prop_properties.new_holding_no', $holdingNo)
+                    ->where('prop_properties.ulb_id', $ulbId)
+                    ->where('prop_properties.status', 1)
+                    ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'ulb_name')
+                    ->first();
+            }
+
+            if (!$data) {
+                throw new Exception("Enter Valid Holding No.");
+            }
+
+            return responseMsgs(true, "Holding Details", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
