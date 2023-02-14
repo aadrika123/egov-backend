@@ -183,27 +183,28 @@ class WorkflowRoleMapController extends Controller
                 case (167):
                     $inbox = new PropertyDeactivate();
                     $ab = $inbox->inbox($req);
-                    collect($ab)['original']['data']['property'];
-                    $a['inbox'] = collect($ab)['original']['data']['property'];
-                    break;
-
-                    //bifurcation
-                case (182):
-                    $inbox = new PropertyBifurcation();
-                    $ab = $inbox->inbox($req);
                     collect($ab)['original']['data'];
-                    $a['inbox'] = collect($ab)['original']['data']['applications'];
+                    $a['inbox'] = collect($ab)['original']['data'];
                     break;
 
-                case (245):
+                    // bifurcation
+                    // case (182):
+                    // $inbox = new PropertyBifurcation();
+                    // $ab = $inbox->inbox($req);
+                    // collect($ab)['original']['data'];
+                    // $a['inbox'] = collect($ab)['original']['data'];
+                    // break;
+
+                    //amalgamation
+                    // case (381):
                     // $inbox = new Trade();
                     // $ab = $inbox->inbox($req);
                     // collect($ab)['original']['data'];
                     // $a['inbox'] = collect($ab)['original']['data'];
-                    break;
+                    // break;
 
                     //SAF
-                case (3 || 4 || 5):
+                case (3 || 4 || 5 || 182 || 381):
                     $inbox = $this->saf_repository;
                     $ab = $inbox->inbox();
                     collect($ab)['original']['data'];

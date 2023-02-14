@@ -71,47 +71,6 @@ class CitizenRepository implements iCitizenRepository
         return $citizen;
     }
 
-    /**
-     * | Approve Or Reject Citizen by ID
-     * | Validation first if the Status has been Selected or Not
-     * | If is_approved is true then it will export on users table
-     * | If is_approved is false then is_approved field get false
-     */
-    public function editCitizenByID(Request $request, $id)
-    {
-        $validator = Validator::make(request()->all(), [
-            'isApproved'     => 'required'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(
-                $validator->errors(),
-                Response::HTTP_BAD_REQUEST
-            );
-        }
-
-        try {
-            $citizen = ActiveCitizen::find($id);
-            $citizen->is_approved = $request->isApproved;
-            $citizen->created_by = auth()->user()->id;
-            $citizen->save();
-            if ($request->isApproved == '1') {
-                $user = new User;
-                $user->user_name = $citizen->user_name;
-                $user->mobile = $citizen->mobile;
-                $user->email = $citizen->email;
-                $user->password = $citizen->password;
-                $user->user_type = 'Citizen';
-                $user->ulb_id = $citizen->ulb_id;
-                $token = Str::random(80);                       //Generating Random Token for Initial
-                $user->remember_token = $token;
-                $user->save();
-            }
-            return responseMsg(true, 'Successful', "");
-        } catch (Exception $e) {
-            return response()->json('Something Went Wrong', 400);
-        }
-    }
 
     /**
      * | Get All Applied Applications of All Modules

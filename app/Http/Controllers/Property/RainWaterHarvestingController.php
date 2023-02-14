@@ -9,6 +9,7 @@ use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
+use App\Models\Property\PropRwhVerification;
 use App\Models\Property\RefPropDocsRequired;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
@@ -1097,5 +1098,85 @@ class RainWaterHarvestingController extends Controller
             return 0;
         else
             return 1;
+    }
+
+
+    /**
+     * | Site Verification
+     * | @param req requested parameter
+     */
+    public function siteVerification(Request $req)
+    {
+        try {
+            $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
+            $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
+            $verificationStatus = $req->verificationStatus;                                             // Verification Status true or false
+            $propActiveHarvesting = new PropActiveHarvesting();
+            $verification = new PropRwhVerification();
+            $mWfRoleUsermap = new WfRoleusermap();
+            $userId = authUser()->id;
+
+            $applicationDtls = $propActiveHarvesting->getHarvestingNo($req->applicationId);
+            $workflowId = $applicationDtls->workflow_id;
+            $getRoleReq = new Request([                                                 // make request to get role id of the user
+                'userId' => $userId,
+                'workflowId' => $workflowId
+            ]);
+
+            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            $roleId = $readRoleDtls->wf_role_id;
+
+            switch ($roleId) {
+                case $taxCollectorRole;                                                                  // In Case of Agency TAX Collector
+                    if ($verificationStatus == 1) {
+                        $req->agencyVerification = true;
+                        $msg = "Site Successfully Verified";
+                    }
+                    if ($verificationStatus == 0) {
+                        $req->agencyVerification = false;
+                        $msg = "Site Successfully rebuted";
+                    }
+                    break;
+                    DB::beginTransaction();
+                case $ulbTaxCollectorRole;                                                                // In Case of Ulb Tax Collector
+                    if ($verificationStatus == 1) {
+                        $req->ulbVerification = true;
+                        $msg = "Site Successfully Verified";
+                    }
+                    if ($verificationStatus == 0) {
+                        $req->ulbVerification = false;
+                        $msg = "Site Successfully rebuted";
+                    }
+                    $propActiveHarvesting->verifyFieldStatus($req->applicationId);                                         // Enable Fields Verify Status
+                    break;
+
+                default:
+                    return responseMsg(false, "Forbidden Access", "");
+            }
+
+            DB::commit();
+            return responseMsgs(true, $msg, "", "010118", "1.0", "310ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    // Get TC Verifications
+    public function getTcVerifications(Request $req)
+    {
+        try {
+            $data = array();
+            $mPropRwhVerification = new PropRwhVerification();
+
+            $data = $mPropRwhVerification->getVerificationsData($req->applicationId);           // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
+
+            $data = json_decode(json_encode($data), true);
+
+            return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }
