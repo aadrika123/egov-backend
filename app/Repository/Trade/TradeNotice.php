@@ -435,6 +435,7 @@ class TradeNotice implements ITradeNotice
                 $approvedApplication->id = $application->id;
                 $approvedApplication->status=5;
                 $approvedApplication->notice_no = $this->generateNoticNo($approvedApplication->id);
+                $approvedApplication->notice_date = Carbon::now()->format("Y-m-d");
                 $approvedApplication->save();
                 $application->forceDelete();
 

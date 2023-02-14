@@ -56,6 +56,50 @@ class TradeApplication extends Controller
         $this->_modelWard = new ModelWard();
         $this->_parent = new CommonFunction();
     }
+    public function getMstrForNewLicense(Request $request)
+    {
+        try{
+            $request->request->add(["applicationType"=>"NEWLICENSE"]);
+            return $this->getApplyData($request);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    public function getMstrForRenewal(Request $request)
+    {
+        try{
+            $request->request->add(["applicationType"=>"RENEWAL"]);
+            return $this->getApplyData($request);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    public function getMstrForAmendment(Request $request)
+    {
+        try{
+            $request->request->add(["applicationType"=>"AMENDMENT"]);
+            return $this->getApplyData($request);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    public function getMstrForSurender(Request $request)
+    {
+        try{
+            $request->request->add(["applicationType"=>"SURRENDER"]);
+            return $this->getApplyData($request);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
     public function getApplyData(Request $request)
     {
         try {

@@ -13,8 +13,19 @@ class WaterConsumer extends Controller
     {
         $this->Repository = $Repository ;
     }
+
+
+    /**
+     * | Calcullate the Consumer demand 
+     * | @param request
+     * | @return Repository
+        | Serial No : 00
+        | Working
+     */
     public function calConsumerDemand(Request $request)
     { 
         return $this->Repository->calConsumerDemand($request);
     }
+
+    
 }

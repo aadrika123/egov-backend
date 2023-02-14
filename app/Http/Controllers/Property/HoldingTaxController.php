@@ -112,12 +112,16 @@ class HoldingTaxController extends Controller
         ]);
 
         try {
+            $todayDate = Carbon::now()->format('Y-m-d');
             $mPropDemand = new PropDemand();
             $mPropProperty = new PropProperty();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
             $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
-            $loggedInUserType = authUser()->user_type;
+            $loggedInUserType = authUser()->user_type ?? "Citizen";
             $mPropOwners = new PropOwner();
+            $pendingFYears = collect();
+            $qtrs = collect();
+
             $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
             $demand = array();
             $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
@@ -135,6 +139,15 @@ class HoldingTaxController extends Controller
             $dues = roundFigure($demandList->sum('balance'));
             $onePercTax = roundFigure($demandList->sum('onePercPenaltyTax'));
             $mLastQuarterDemand = $demandList->last()->balance;
+
+            collect($demandList)->map(function ($value) use ($pendingFYears, $qtrs) {
+                $fYear = $value->fyear;
+                $qtr = $value->qtr;
+                $pendingFYears->push($fYear);
+                $qtrs->push($qtr);
+            });
+
+            $paymentUptoYrs = $pendingFYears->unique();
             $totalDuesList = [
                 'totalDues' => $dues,
                 'duesFrom' => "Quarter " . $demandList->last()->qtr . "/ Year " . $demandList->last()->fyear,
@@ -143,15 +156,34 @@ class HoldingTaxController extends Controller
                 'totalQuarters' => $demandList->count(),
                 'arrear' => $balance
             ];
+            $currentQtr = calculateQtr($todayDate);
+
+            $pendingQtrs = $qtrs->filter(function ($value) use ($currentQtr) {
+                return $value >= $currentQtr;
+            });
 
             $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
 
             $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
             $totalDuesList['payableAmount'] = round($finalPayableAmt);
+            $totalDuesList['paymentUptoYrs'] = $paymentUptoYrs;
+            $totalDuesList['paymentUptoQtrs'] = $pendingQtrs;
 
             $demand['duesList'] = $totalDuesList;
             $demand['demandList'] = $demandList;
 
+            $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
+            $demand['basicDetails'] = collect($propBasicDtls)->only([
+                'holding_no',
+                'old_ward_no',
+                'new_ward_no',
+                'property_type',
+                'zone_mstr_id',
+                'is_mobile_tower',
+                'is_hoarding_board',
+                'is_petrol_pump',
+                'is_water_harvesting'
+            ]);
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011602", "1.0", "", "POST", $req->deviceId ?? "");
@@ -181,15 +213,17 @@ class HoldingTaxController extends Controller
             'amount' => 'required|numeric'
         ]);
         try {
+            $departmentId = 1;
+            $propProperties = new PropProperty();
+
             $demand = $this->getHoldingDues($req);
             $demandData = $demand->original['data'];
             if (!$demandData)
                 throw new Exception("Demand Not Available");
+
             $dueList = $demandData['duesList'];
-            $departmentId = 1;
-            $propProperties = new PropProperty();
             $propDtls = $propProperties->getPropById($req->propId);
-            $req->request->add(['workflowId' => '0', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId]);
+            $req->request->add(['workflowId' => '0', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId, 'ghostUserId' => 0]);
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
             $this->postPaymentPenaltyRebate($dueList, $req);
             return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011603", "1.0", "", "POST", $req->deviceId ?? "");
