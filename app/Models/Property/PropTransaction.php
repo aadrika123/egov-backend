@@ -96,7 +96,7 @@ class PropTransaction extends Model
         $propTrans->property_id = $req['id'];
         $propTrans->amount = $req['amount'];
         $propTrans->tran_date = $req['todayDate'];
-        $propTrans->tran_no = $req['transactionNo'];
+        $propTrans->tran_no = $req['tranNo'];
         $propTrans->payment_mode = $req['paymentMode'];
         $propTrans->user_id = $req['userId'];
         $propTrans->ulb_id = $req['ulbId'];

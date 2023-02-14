@@ -6,6 +6,7 @@ use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqPayment;
+use App\MicroServices\IdGeneration;
 use App\Models\Payment\TempTransaction;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenaltyrebate;
@@ -289,14 +290,18 @@ class HoldingTaxController extends Controller
             $todayDate = Carbon::now();
             $userId = $req['userId'];
             $propDemand = new PropDemand();
+            $idGeneration = new IdGeneration;
+            $mPropTrans = new PropTransaction();
+
+            $tranNo = $idGeneration->generateTransactionNo();
             $demands = $propDemand->getDemandByPropId($req['id']);
             if ($demands->isEmpty())
                 throw new Exception("No Dues For this Property");
-            $mPropTrans = new PropTransaction();
             // Property Transactions
             $req->merge([
                 'userId' => $userId,
-                'todayDate' => $todayDate->format('Y-m-d')
+                'todayDate' => $todayDate->format('Y-m-d'),
+                'tranNo' => $req['transactionNo'] ?? $tranNo
             ]);
             DB::beginTransaction();
             $propTrans = $mPropTrans->postPropTransactions($req, $demands);
@@ -369,7 +374,7 @@ class HoldingTaxController extends Controller
             'application_id' => $req['id'],
             'module_id' => 1,
             'workflow_id' => 0,
-            'transaction_no' => $req['transactionNo'],
+            'transaction_no' => $req['tranNo'],
             'application_no' => $req->applicationNo,
             'amount' => $req['amount'],
             'payment_mode' => $req['paymentMode'],
