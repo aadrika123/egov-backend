@@ -6,6 +6,7 @@ use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqPayment;
+use App\Models\Payment\TempTransaction;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenaltyrebate;
 use App\Models\Property\PropChequeDtl;
@@ -348,6 +349,7 @@ class HoldingTaxController extends Controller
     public function postOtherPaymentModes($req)
     {
         $cash = Config::get('payment-constants.PAYMENT_MODE.3');
+        $mTempTransaction = new TempTransaction();
         if ($req['paymentMode'] != $cash) {
             $mPropChequeDtl = new PropChequeDtl();
             $chequeReqs = [
@@ -361,6 +363,23 @@ class HoldingTaxController extends Controller
 
             $mPropChequeDtl->postChequeDtl($chequeReqs);
         }
+
+        $tranReqs = [
+            'transaction_id' => $req['tranId'],
+            'application_id' => $req['id'],
+            'module_id' => 1,
+            'workflow_id' => 0,
+            'transaction_no' => $req['transactionNo'],
+            'application_no' => $req->applicationNo,
+            'amount' => $req['amount'],
+            'payment_mode' => $req['paymentMode'],
+            'cheque_dd_no' => $req['chequeNo'],
+            'bank_name' => $req['bankName'],
+            'tran_date' => $req['todayDate'],
+            'user_id' => $req['userId'],
+            'ulb_id' => $req['ulbId']
+        ];
+        $mTempTransaction->tempTransaction($tranReqs);
     }
 
     /**
