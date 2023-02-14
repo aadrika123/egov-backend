@@ -1850,7 +1850,7 @@ class Trade implements ITrade
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $mRefTable = Config::get('TradeConstaint.TRADE_REF_TABLE');
+            $mRefTable = Config::get('TradeConstant.TRADE_REF_TABLE');
             $refWorkflowMstrId     = WfWorkflow::where('id', $refWorkflowId)
                 ->where('ulb_id', $refUlbId)
                 ->first();
@@ -1955,7 +1955,7 @@ class Trade implements ITrade
             $metaReqs['wfRoleId'] = $licenseDetail->current_role;
             $metaReqs['workflowId'] = $licenseDetail->workflow_id;
             $metaReqs['lastRoleId'] = $licenseDetail->last_role_id;
-
+            // dd($mRefTable);
             $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $licenseDetail->id);
             $fullDetailsData['levelComment'] = $levelComment;
 

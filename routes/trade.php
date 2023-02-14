@@ -21,11 +21,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      *  
      */
     Route::controller(TradeApplication::class)->group(function () {
-        // Route::post("getApplyData", "getApplyData");
-        Route::post("application/new-license", "getMstrForNewLicense");
-        Route::post("application/renewal", "getMstrForRenewal");
-        Route::post("application/amendment", "getMstrForAmendment");
-        Route::post("application/surrender", "getMstrForSurender");
+        Route::post("getApplyData", "getApplyData");
+        // Route::post("application/new-license", "getMstrForNewLicense");
+        // Route::post("application/renewal", "getMstrForRenewal");
+        // Route::post("application/amendment", "getMstrForAmendment");
+        // Route::post("application/surrender", "getMstrForSurender");
 
         // Route::post('apply', 'applyApplication');
         Route::post('application/add', 'applyApplication');
