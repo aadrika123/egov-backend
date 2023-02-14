@@ -184,6 +184,7 @@ class WaterConsumer extends Model
     {
         return WaterConsumer::select(
             'water_consumers.*',
+            'water_consumers.id as consumer_id',
             'ulb_ward_masters.ward_name',
             'water_consumers.connection_through_id',
             'ulb_masters.ulb_name',
@@ -203,7 +204,7 @@ class WaterConsumer extends Model
             ->Join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->where('water_consumers.' . $key, $parameter)
             ->where('water_consumers.status', true)
-            ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
+            // ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
             ->firstOrFail();
     }
 

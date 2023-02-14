@@ -294,6 +294,13 @@ class WaterNewConnection implements IWaterNewConnection
 
             $application->payment_status = true;
             $application->update();
+            ////////////////////////////////////////
+            # Check 
+            WaterApplication::where('id', $applicationId)
+            ->update([
+                'current_role' => $this->_dealingAssistent
+            ]);
+            /////////////////////////////////////////
             DB::commit();
             #----------End transaction------------------------
             #----------Response------------------------------

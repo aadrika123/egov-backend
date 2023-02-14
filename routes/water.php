@@ -26,7 +26,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | Updated by-Sam kerketta
      * | ------------------- Apply New Water Connection ------------------------ |
      */
-    Route::resource('crud/new-connection', NewConnectionController::class);                             //01
+    Route::resource('application/apply-new-connection', NewConnectionController::class);                             //01
 
     /**
      * | Created On:08-11-2022 
@@ -42,36 +42,33 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('list-ward-no', 'getWardNo');                                                        //09        // Get Ward No According to Saf or Holding Details mstr
 
         # water Workflow
-        Route::post('list-inbox', 'waterInbox');                                                        // 
-        Route::post('list-outbox', 'waterOutbox');                                                      //
+        Route::post('inbox', 'waterInbox');                                                             // 
+        Route::post('outbox', 'waterOutbox');                                                           //
         Route::post('post-next-level', 'postNextLevel');                                                //
-        Route::post('get-pending-application-by-id', 'getApplicationsDetails');                         //
-        Route::post('list-special-inbox', 'waterSpecialInbox');                                         //
-        Route::post('escalate', 'postEscalate');                                                        //       
-        Route::post('approval-rejection-application', 'approvalRejectionWater');                        //
-        Route::post('post-message', 'commentIndependent');                                              //
-        Route::post('get-approved-water-application-details', 'approvedWaterApplications');                        //       
-        Route::post('list-field-verified-inbox', 'fieldVerifiedInbox');                                 //
-        Route::post('verification-field', 'fieldVerification');                                         // Route::post('back_to_citizen', 'backToCitizen');                                                //
-        Route::post('list_btc_inbox', 'btcInbox');                                                      //
-        Route::Post('delete_application', 'deleteWaterApplication');                                    //       
-        Route::post('get-application-details', 'getApplicationDetails');                                //
-        Route::post('upload_document', 'uploadWaterDoc');                                               //
-        Route::post('get_upload_documents', 'getUploadDocuments');                                      //
-        Route::post('list_doc_to_upload', 'getDocToUpload');                                            //
+        Route::post('workflow/application/get-by-id', 'getApplicationsDetails');                        //
+        Route::post('special-inbox', 'waterSpecialInbox');                                              //
+        Route::post('escalate', 'postEscalate');                                                        //                        
+        Route::post('application/approval-rejection', 'approvalRejectionWater');                        //
+        Route::post('comment-independent', 'commentIndependent');                                       //       
+        Route::post('consumer/get-listed-details', 'approvedWaterApplications');                        //
+        Route::post('field-verified-inbox', 'fieldVerifiedInbox');                                      //
+        Route::post('site-verification', 'fieldVerification');                                          // 
+        Route::post('back-to-citizen', 'backToCitizen');                                                //
+        Route::post('btc-inbox', 'btcInbox');                                                           //    
+        Route::Post('application/delete', 'deleteWaterApplication');                                    //       
+        Route::post('application/get-by-id', 'getApplicationDetails');                                  //
+        Route::post('upload-document', 'uploadWaterDoc');                                               //
+        Route::post('get-upload-documents', 'getUploadDocuments');                                      //
+        Route::post('citizen/get-doc-list', 'getDocToUpload');                                          //
+        Route::post('search-holding-saf', 'getSafHoldingDetails');                                      //
+        Route::post('search-consumer', 'searchWaterConsumer');                                          //
+        Route::post('application/search', 'getActiveApplictaions');                                     //
+        Route::post('workflow/get-doc-list', 'getDocList');                                             //
+        Route::post('doc-verify-reject', 'docVerifyReject');                                            //
+        Route::post('application/edit', 'editWaterAppliction');                                         //
+        Route::post('admin/application/get-details-by-id','getApplicationDetailById');                  //
 
-        Route::post('get-related-saf-holding', 'getSafHoldingDetails');
-        Route::post('final-submit-application', 'finalSubmitionApplication');
-        Route::post('search-water-consumer', 'searchWaterConsumer');
-        Route::post('search-active-applictaions', 'getActiveApplictaions');
-
-        Route::post('get-doc-list', 'getDocList');
-
-        // Route::post('list-doc', 'getWaterDocDetails');                                                  //
-        // Route::post('verify-doc', 'waterDocStatus');                                                    // 
-        // Route::post('generate_payment_receipt', 'generatePaymentReceipt');                              //
-        // Route::post('list-message', 'getIndependentComment');                                           //
-        Route::post('edit_water_application', 'editWaterAppliction');                                          //
+        Route::post('final-submit-application', 'finalSubmitionApplication');                           // Not Used
     });
 
     /**
@@ -81,8 +78,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(WaterPaymentController::class)->group(function () {
         # Consumer And Citizen Transaction Operation
-        Route::post('get-consumer-payment-history', 'getConsumerPaymentHistory');
-        Route::post('generate_payment_receipt', 'generatePaymentReceipt');
+        Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');
+        Route::post('generate-payment-receipt', 'generatePaymentReceipt');
+    });
+
+    /**
+     * | Created On : 11-02-2023
+     * | Created By : Sam kerketta
+     * |------------- Water Consumer and Related -------------|
+     */
+    Route::controller(WaterConsumer::class)->group(function () {
     });
 });
 
@@ -93,14 +98,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
  */
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     Route::controller(WaterApplication::class)->group(function () {
-        // Route::match(["get", "post"], 'apply', 'applyApplication');
         Route::get('citizenApplications', 'getCitizenApplication');                                     //10
         Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
     });
 });
 Route::controller(WaterApplication::class)->group(function () {
-    Route::post('payment_recipt', 'paymentRecipt');                                                     //15
+    Route::post('payment-recipt', 'paymentRecipt');                                                     //15
     Route::post('cargeCal', 'calWaterConCharge');                                                       //16
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //17
 });

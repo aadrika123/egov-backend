@@ -8,6 +8,7 @@ use App\Http\Requests\Water\reqSiteVerification;
 use App\MicroServices\DocUpload;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Payment\WebhookPaymentData;
+use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
@@ -374,7 +375,7 @@ class NewConnectionController extends Controller
                     "id" => "nullable|int",
                 ]);
                 $consumerDetails = $this->newConnection->getApprovedWater($request);
-                $refApplicationId['applicationId'] = $consumerDetails['id'];
+                $refApplicationId['applicationId'] = $consumerDetails['consumer_id'];
                 $metaRequest = new Request($refApplicationId);
                 $refDocumentDetails = $this->getUploadDocuments($metaRequest);
                 $documentDetails['documentDetails'] = collect($refDocumentDetails)['original']['data'];
@@ -607,7 +608,7 @@ class NewConnectionController extends Controller
                 'ulbId' => auth()->user()->ulb_id,
             ];
             $request->request->add($metaReqs);
-            $document = $this->getDocToUpload($request);
+            $document = $this->getDocToUpload($request);                                                    // get the doc details
             $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
             # owner details
@@ -683,6 +684,7 @@ class NewConnectionController extends Controller
             # Check the Document upload Status
             $documentList = $this->getDocToUpload($req);
             $refDoc = collect($documentList)['original']['data']['documentsList'];
+            $refOwnerDoc = collect($documentList)['original']['data']['ownersDocList'];
             $checkDocument = collect($refDoc)->map(function ($value, $key) {
                 if ($value['isMadatory'] == 1) {
                     $doc = collect($value['uploadDoc'])->first();
@@ -693,9 +695,24 @@ class NewConnectionController extends Controller
                 }
                 return true;
             });
+            $checkOwnerDocument = collect($refOwnerDoc)->map(function ($value, $key) {
+                if ($value['isMadatory'] == 1) {
+                    $doc = collect($value['uploadDoc'])->first();
+                    if (is_null($doc)) {
+                        return false;
+                    }
+                    return true;
+                }
+                return true;
+            });
+            $refCheckDocument = $checkDocument->merge($checkOwnerDocument);
 
             # Update the Doc Upload Satus in Application Table
-            if ($checkDocument->contains(false)) {
+            if ($refCheckDocument->contains(false)) {
+                WaterApplication::where('id', $req->applicationId)
+                    ->update([
+                        'doc_upload_status' => false
+                    ]);
             } else {
                 WaterApplication::where('id', $req->applicationId)
                     ->update([
@@ -1305,6 +1322,166 @@ class NewConnectionController extends Controller
                     break;
             }
             return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    /**
+     * | Document Verify Reject
+     * | @param 
+     * | @var 
+     * | @return 
+     */
+    public function docVerifyReject(Request $req)
+    {
+        $req->validate([
+            'id' => 'required|digits_between:1,9223372036854775807',
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+            'docRemarks' =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
+            'docStatus' => 'required|in:Verified,Rejected'
+        ]);
+
+        try {
+            // Variable Assignments
+            $mWfDocument = new WfActiveDocument();
+            $mWaterApplication = new WaterApplication();
+            $mWfRoleusermap = new WfRoleusermap();
+            $wfDocId = $req->id;
+            $userId = authUser()->id;
+            $applicationId = $req->applicationId;
+            $wfLevel = Config::get('waterConstaint.ROLE-LABEL');
+            // Derivative Assigments
+            $waterApplicationDtl = $mWaterApplication->getApplicationById($applicationId)
+                ->firstOrFail();
+
+            if (!$waterApplicationDtl || collect($waterApplicationDtl)->isEmpty())
+                throw new Exception("Application Details Not Found");
+
+            $waterReq = new Request([
+                'userId' => $userId,
+                'workflowId' => $waterApplicationDtl['workflow_id']
+            ]);
+            $senderRoleDtls = $mWfRoleusermap->getRoleByUserWfId($waterReq);
+            if (!$senderRoleDtls || collect($senderRoleDtls)->isEmpty())
+                throw new Exception("Role Not Available");
+
+            $senderRoleId = $senderRoleDtls->wf_role_id;
+
+            if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
+                throw new Exception("You are not Authorized");
+
+            $ifFullDocVerified = $this->ifFullDocVerified($applicationId);       // (Current Object Derivative Function 0.1)
+
+            if ($ifFullDocVerified == 1)
+                throw new Exception("Document Fully Verified");
+
+            DB::beginTransaction();
+            if ($req->docStatus == "Verified") {
+                $status = 1;
+            }
+            if ($req->docStatus == "Rejected") {
+                $status = 2;
+                // For Rejection Doc Upload Status and Verify Status will disabled
+                $waterApplicationDtl->doc_upload_status = 0;
+                $waterApplicationDtl->doc_status = 0;
+                $waterApplicationDtl->save();
+            }
+
+            $reqs = [
+                'remarks' => $req->docRemarks,
+                'verify_status' => $status,
+                'action_taken_by' => $userId
+            ];
+            $mWfDocument->docVerifyReject($wfDocId, $reqs);
+            $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
+
+            if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
+                $waterApplicationDtl->doc_status = 1;
+                $waterApplicationDtl->save();
+            }
+
+            DB::commit();
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Check if the Document is Fully Verified or Not (0.1) | up
+     * | @param
+     * | @var 
+     * | @return
+        | Use
+     */
+    public function ifFullDocVerified($applicationId)
+    {
+        $mWaterApplication = new WaterApplication();
+        $mWfActiveDocument = new WfActiveDocument();
+        $refapplication = $mWaterApplication->getApplicationById($applicationId)
+            ->firstOrFail();
+
+        $refReq = [
+            'activeId' => $applicationId,
+            'workflowId' => $refapplication['workflow_id'],
+            'moduleId' => Config::get('module-constants.WATER_MODULE_ID')
+        ];
+
+        $req = new Request($refReq);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
+        // Water List Documents
+        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
+        if ($ifPropDocUnverified == 1)
+            return 0;
+        else
+            return 1;
+    }
+
+
+    /**
+     * | Admin view : Get Application Details of viewind
+     * | @param 
+     * | @var 
+     * | @return 
+        | Serial No : 
+        | Used 
+     */
+    public function getApplicationDetailById(Request $request)
+    {
+        $request->validate([
+            'applicationId' => 'required|integer',
+        ]);
+        try {
+            $mWaterConnectionCharge  = new WaterConnectionCharge();
+            $mWaterApplication = new WaterApplication();
+            $mWaterApplicant = new WaterApplicant();
+            $mWaterTran = new WaterTran();
+
+            # Application Details
+            $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
+
+            # owner details
+            $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
+
+            # Payment Details 
+            $refAppDetails = collect($applicationDetails)->first();
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
+            $waterTransDetail['waterTransDetail'] = $waterTransaction;
+
+            # calculation details
+            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])->first();
+            $calculation['calculation'] =
+                [
+                    'connectionFee' => $charges['conn_fee'],
+                    'penalty' => $charges['penalty'],
+                    'totalAmount' => $charges['amount']
+                ];
+
+            $returnData = array_merge($applicationDetails, $ownerDetails, $waterTransDetail, $calculation);
+            return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
