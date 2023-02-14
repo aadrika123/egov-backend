@@ -222,8 +222,47 @@ class CitizenController extends Controller
         }
     }
 
-
-
+    /** 
+     * 
+     */
+    public function profileDetails()
+    {
+        $userId = auth()->user()->id;
+        $redis = Redis::get('active_citizen:' . $userId);
+        if ($redis) {
+            $data = json_decode($redis);
+            $collection = [
+                'id' => $data->id,
+                'name' => $data->user_name,
+                'mobile' => $data->mobile,
+                'email' => $data->email,
+                'gender' => $data->gender,
+                'dob' => $data->dob,
+                'aadhar' => $data->aadhar,
+                'user_type' => $data->user_type,
+            ];
+            $filtered = collect($collection);
+            $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($filtered)];
+            return $message;                                    // Filteration using Collection
+        }
+        if (!$redis) {
+            // $details = DB::select($this->query($user_id));
+            $details = ActiveCitizen::select(
+                'id',
+                'user_name as name',
+                'mobile',
+                'email',
+                'gender',
+                'dob',
+                'aadhar',
+                'user_type'
+            )
+                ->where('id', $userId)
+                ->first();
+            $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($details)];
+            return $message;
+        }
+    }
 
 
 

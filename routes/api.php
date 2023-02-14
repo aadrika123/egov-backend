@@ -204,6 +204,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('citizens/independent-comment', 'commentIndependent');                                     // Independent Comment for the Citizen to be Tracked
         Route::get('citizens/get-transactions', 'getTransactionHistory');                                      // Get User Transaction History
         Route::post('change-citizen-pass', 'changeCitizenPass');                                               // Change the Password of The Citizen Using its Old Password 
+        Route::post('citizen-profile-details', 'profileDetails');
     });
 
     /**
