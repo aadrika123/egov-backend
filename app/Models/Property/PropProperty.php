@@ -68,6 +68,16 @@ class PropProperty extends Model
     }
 
     /**
+     * | Get Property Basic Dtls
+     */
+    public function getPropBasicDtls($propId)
+    {
+        return $this->getPropDtls()
+            ->where('prop_properties.id', $propId)
+            ->first();
+    }
+
+    /**
      * | Get Property Full Details
      * | Used for Calculation Parameter
      * | @param propId Property Id
