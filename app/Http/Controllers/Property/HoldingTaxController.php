@@ -112,6 +112,7 @@ class HoldingTaxController extends Controller
         ]);
 
         try {
+            $todayDate = Carbon::now()->format('Y-m-d');
             $mPropDemand = new PropDemand();
             $mPropProperty = new PropProperty();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
@@ -119,7 +120,7 @@ class HoldingTaxController extends Controller
             $loggedInUserType = authUser()->user_type ?? "Citizen";
             $mPropOwners = new PropOwner();
             $pendingFYears = collect();
-            $pendingQtrs = collect();
+            $qtrs = collect();
 
             $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
             $demand = array();
@@ -139,11 +140,11 @@ class HoldingTaxController extends Controller
             $onePercTax = roundFigure($demandList->sum('onePercPenaltyTax'));
             $mLastQuarterDemand = $demandList->last()->balance;
 
-            collect($demandList)->map(function ($value) use ($pendingFYears, $pendingQtrs) {
+            collect($demandList)->map(function ($value) use ($pendingFYears, $qtrs) {
                 $fYear = $value->fyear;
                 $qtr = $value->qtr;
                 $pendingFYears->push($fYear);
-                $pendingQtrs->push($qtr);
+                $qtrs->push($qtr);
             });
 
             $paymentUptoYrs = $pendingFYears->unique();
@@ -155,6 +156,11 @@ class HoldingTaxController extends Controller
                 'totalQuarters' => $demandList->count(),
                 'arrear' => $balance
             ];
+            $currentQtr = calculateQtr($todayDate);
+
+            $pendingQtrs = $qtrs->filter(function ($value) use ($currentQtr) {
+                return $value >= $currentQtr;
+            });
 
             $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
 
