@@ -131,6 +131,18 @@ class HoldingTaxController extends Controller
             $propDtls = $mPropProperty->getPropById($req->propId);
             $balance = $propDtls->balance ?? 0;
 
+            $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
+            $basicDtls = collect($propBasicDtls)->only([
+                'holding_no',
+                'old_ward_no',
+                'new_ward_no',
+                'property_type',
+                'zone_mstr_id',
+                'is_mobile_tower',
+                'is_hoarding_board',
+                'is_petrol_pump',
+                'is_water_harvesting'
+            ]);
             if ($demandList->isEmpty())
                 throw new Exception("Dues Not Available for this Property");
 
@@ -174,21 +186,10 @@ class HoldingTaxController extends Controller
             $demand['duesList'] = $totalDuesList;
             $demand['demandList'] = $demandList;
 
-            $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
-            $demand['basicDetails'] = collect($propBasicDtls)->only([
-                'holding_no',
-                'old_ward_no',
-                'new_ward_no',
-                'property_type',
-                'zone_mstr_id',
-                'is_mobile_tower',
-                'is_hoarding_board',
-                'is_petrol_pump',
-                'is_water_harvesting'
-            ]);
+            $demand['basicDetails'] = $basicDtls;
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011602", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), $basicDtls, "011602", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
