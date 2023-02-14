@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Auth\ChangePassRequest;
+use App\MicroServices\DocUpload;
 use App\Models\ActiveCitizen;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
@@ -47,16 +48,79 @@ class CitizenController extends Controller
         ]);
 
         try {
+
             $mCitizen = new ActiveCitizen();
             $citizens = $mCitizen->getCitizenByMobile($request->mobile);
             if (isset($citizens))
                 return responseMsgs(false, "This Mobile No is Already Existing", "");
-            $mCitizen->citizenRegister($request);
+
+            $id = $mCitizen->citizenRegister($mCitizen, $request);        //Citizen save in model
+
+            $this->docUpload($request, $id);
+
             return responseMsg(true, "Succesfully Registered", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | Doc upload
+     */
+    public function docUpload($request, $id)
+    {
+        $docUpload = new DocUpload;
+        $imageRelativePath = 'Uploads/Citizen/';
+        ActiveCitizen::where('id', $id)
+            ->update([
+                'relative_path' => $imageRelativePath . $id . '/',
+            ]);
+
+        if ($request->photo) {
+            $filename = explode('.', $request->photo->getClientOriginalName());
+            $document = $request->photo;
+            $imageName = $docUpload->upload($filename[0], $document, $imageRelativePath);
+
+            ActiveCitizen::where('id', $id)
+                ->update([
+                    'profile_photo' => $imageName,
+                ]);
+        }
+
+        if ($request->aadharDoc) {
+            $filename = explode('.', $request->aadharDoc->getClientOriginalName());
+            $document = $request->aadharDoc;
+            $imageName = $docUpload->upload($filename[0], $document, $imageRelativePath);
+
+            ActiveCitizen::where('id', $id)
+                ->update([
+                    'aadhar_doc' => $imageName,
+                ]);
+        }
+
+        if ($request->speciallyAbledDoc) {
+            $filename = explode('.', $request->speciallyAbledDoc->getClientOriginalName());
+            $document = $request->speciallyAbledDoc;
+            $imageName = $docUpload->upload($filename[0], $document, $imageRelativePath);
+
+            ActiveCitizen::where('id', $id)
+                ->update([
+                    'specially_abled_doc' => $imageName,
+                ]);
+        }
+
+        if ($request->armedForceDoc) {
+            $filename = explode('.', $request->armedForceDoc->getClientOriginalName());
+            $document = $request->armedForceDoc;
+            $imageName = $docUpload->upload($filename[0], $document, $imageRelativePath);
+
+            ActiveCitizen::where('id', $id)
+                ->update([
+                    'armed_force_doc' => $imageName,
+                ]);
+        }
+    }
+
 
     /**
      *  Citizen Login
@@ -125,6 +189,80 @@ class CitizenController extends Controller
         ]);
     }
 
+    public function citizenEditProfile(Request $request)
+    {
+        $validator = Validator::make(request()->all(), [
+            'id'     => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(
+                $validator->errors(),
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        try {
+            $citizen = ActiveCitizen::find($request->id);
+            $citizen->user_name = $request->name;
+            $citizen->email = $request->email;
+            $citizen->mobile = $request->mobile;
+            $citizen->gender = $request->gender;
+            $citizen->dob    = $request->dob;
+            $citizen->aadhar = $request->aadhar;
+            $citizen->is_specially_abled = $request->isSpeciallyAbled;
+            $citizen->is_armed_force = $request->isArmedForce;
+            $citizen->save();
+
+            $this->docUpload($request, $citizen->id);
+
+            return responseMsg(true, 'Successful Updated', "");
+        } catch (Exception $e) {
+            return response()->json('Something Went Wrong', 400);
+        }
+    }
+
+    /** 
+     * 
+     */
+    public function profileDetails()
+    {
+        $userId = auth()->user()->id;
+        $redis = Redis::get('active_citizen:' . $userId);
+        if ($redis) {
+            $data = json_decode($redis);
+            $collection = [
+                'id' => $data->id,
+                'name' => $data->user_name,
+                'mobile' => $data->mobile,
+                'email' => $data->email,
+                'gender' => $data->gender,
+                'dob' => $data->dob,
+                'aadhar' => $data->aadhar,
+                'user_type' => $data->user_type,
+            ];
+            $filtered = collect($collection);
+            $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($filtered)];
+            return $message;                                    // Filteration using Collection
+        }
+        if (!$redis) {
+            // $details = DB::select($this->query($user_id));
+            $details = ActiveCitizen::select(
+                'id',
+                'user_name as name',
+                'mobile',
+                'email',
+                'gender',
+                'dob',
+                'aadhar',
+                'user_type'
+            )
+                ->where('id', $userId)
+                ->first();
+            $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($details)];
+            return $message;
+        }
+    }
 
 
 
@@ -138,12 +276,6 @@ class CitizenController extends Controller
     public function getAllCitizens()
     {
         return $this->Repository->getAllCitizens();
-    }
-
-    // Update or Reject Citizen By id
-    public function editCitizenByID(Request $request, $id)
-    {
-        return $this->Repository->editCitizenByID($request, $id);
     }
 
     // Get all applications

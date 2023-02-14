@@ -15,26 +15,24 @@ class ActiveCitizen extends Authenticatable
 
     protected $guarded = [];
     // Citizen Registration
-    public function citizenRegister($request)
+    public function citizenRegister($mCitizen, $request)
     {
-        $reqs = [
-            'user_name' => $request->name,
-            'email' => $request->email,
-            'mobile' => $request->mobile,
-            'password' => Hash::make($request->password),
-            'gender' => $request->gender,
-            'dob'    => $request->dob,
-            'aadhar' => $request->aadhar,
-            'aadhar_doc' => $request->aadharDoc,
-            'is_specially_abled' => $request->isSpeciallyAbled,
-            'specially_abled_doc' => $request->speciallAbledDoc,
-            'is_armed_force' => $request->isArmedForce,
-            'armed_force_doc' => $request->armedForceDoc,
-            'ip_address' => getClientIpAddress()
+        $mCitizen->user_name = $request->name;
+        $mCitizen->email = $request->email;
+        $mCitizen->mobile = $request->mobile;
+        $mCitizen->password = Hash::make($request->password);
+        $mCitizen->gender = $request->gender;
+        $mCitizen->dob    = $request->dob;
+        $mCitizen->aadhar = $request->aadhar;
+        $mCitizen->is_specially_abled = $request->isSpeciallyAbled;
+        $mCitizen->is_armed_force = $request->isArmedForce;
+        // $mCitizen->aadhar_doc = $request->aadharDoc;
+        // $mCitizen->specially_abled_doc = $request->speciallAbledDoc;
+        // $mCitizen->armed_force_doc = $request->armedForceDoc;
+        $mCitizen->ip_address = getClientIpAddress();
+        $mCitizen->save();
 
-        ];
-
-        ActiveCitizen::create($reqs);
+        return $mCitizen->id;
     }
 
     /**

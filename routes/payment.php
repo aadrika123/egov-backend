@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Payment\BankReconcillationController;
 use App\Http\Controllers\Payment\CashVerificationController;
 use App\Http\Controllers\Payment\RazorpayPaymentController;
 use Illuminate\Support\Facades\Route;
@@ -55,6 +56,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('verified-tc-collections', 'verifiedTcCollectionDtl');
         Route::post('verify-cash', 'cashVerify');
         Route::post('temp-transaction', 'tempTransaction');
+    });
+
+    Route::controller(BankReconcillationController::class)->group(function () {
+        Route::post('search-transaction', 'searchTransaction');
+        Route::post('get-tran-dtl-by-id', 'transactionDtl');
     });
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {

@@ -2,6 +2,7 @@
 
 namespace App\Models\Property;
 
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -142,5 +143,17 @@ class PropActiveHarvesting extends Model
         $harvestingNo = 'HAR' . "/" . str_pad($count['0']->id, 5, '0', STR_PAD_LEFT);
 
         return $harvestingNo;
+    }
+
+    /**
+     * | Enable Field Verification Status
+     */
+    public function verifyFieldStatus($applicationId)
+    {
+        $activeApplication = PropActiveHarvesting::find($applicationId);
+        if (!$activeApplication)
+            throw new Exception("Application Not Found");
+        $activeApplication->is_field_verified = true;
+        $activeApplication->save();
     }
 }

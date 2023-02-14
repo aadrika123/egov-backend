@@ -13,22 +13,7 @@ class TempTransaction extends Model
     public function tempTransaction($req)
     {
         $mTempTransaction = new TempTransaction();
-        $mTempTransaction->transaction_id = $req->transactionId;
-        $mTempTransaction->application_id = $req->applicationId;
-        $mTempTransaction->module_id = $req->moduleId;
-        $mTempTransaction->workflow_id = $req->workflowId;
-        $mTempTransaction->transaction_no = $req->transactionNo;
-        $mTempTransaction->application_no = $req->applicationNo;
-        $mTempTransaction->amount = $req->amount;
-        $mTempTransaction->payment_mode = $req->paymentNo;
-        $mTempTransaction->cheque_dd_no = $req->chequeddNo;
-        $mTempTransaction->bank_name = $req->bankName;
-        $mTempTransaction->tran_date = $req->tranDate;
-        $mTempTransaction->user_id = $req->userId;
-        $mTempTransaction->ulb_id = $req->ulbId;
-        $mTempTransaction->ward_no = $req->wardNo;
-        $mTempTransaction->created_at = Carbon::now();
-        $mTempTransaction->save();
+        $mTempTransaction->create($req);
     }
 
     public function transactionList($date, $userId, $ulbId)

@@ -91,10 +91,10 @@ class ConcessionController extends Controller
             $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
             $finisherRoleId = DB::select($refFinisherRoleId);
 
-            if ($userType == "JSK") {
-                // $obj  = new SafRepository();
-                // $data = $obj->getPropByHoldingNo($request);
-            }
+            // if ($userType == "JSK") {
+            // $obj  = new SafRepository();
+            // $data = $obj->getPropByHoldingNo($request);
+            // }
 
             DB::beginTransaction();
             $concession = new PropActiveConcession;
@@ -106,8 +106,7 @@ class ConcessionController extends Controller
             $concession->is_specially_abled = $request->speciallyAbled;
             $concession->specially_abled_percentage = $request->speciallyAbledPercentage;
             $concession->remarks = $request->remarks;
-            // $concession->citizen_id = $citizenId ?? null;
-
+            $concession->applied_for = $request->appliedFor;
             $concession->ulb_id = $ulbId;
             $concession->workflow_id = $ulbWorkflowId->id;
             $concession->current_role = collect($initiatorRoleId)->first()->role_id;
