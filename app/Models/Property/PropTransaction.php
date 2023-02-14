@@ -82,11 +82,4 @@ class PropTransaction extends Model
         ];
         return PropTransaction::insertGetId($metaReqs);
     }
-
-    public function getAllData()
-    {
-        return PropTransaction::select('*')
-            ->where('payment_mode', '!=', 'ONLINE')
-            ->get();
-    }
 }
