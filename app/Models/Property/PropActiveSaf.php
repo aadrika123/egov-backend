@@ -247,11 +247,17 @@ class PropActiveSaf extends Model
                 's.corr_address',
                 's.prop_pin_code',
                 's.corr_pin_code',
-                's.area_of_plot as total_area_in_desimal',
+                's.assessment_type',
+                's.applicant_name',
+                's.application_date',
+                's.area_of_plot as total_area_in_decimal',
+                's.prop_type_mstr_id',
                 'u.ward_name as old_ward_no',
                 'u1.ward_name as new_ward_no',
+                'p.property_type'
             )
             ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
+            ->join('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
             ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
             ->first();
     }
