@@ -191,7 +191,7 @@ class HoldingTaxController extends Controller
             $demand['basicDetails'] = $basicDtls;
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $basicDtls, "011602", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls], "011602", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
