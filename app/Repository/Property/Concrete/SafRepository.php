@@ -28,10 +28,13 @@ class SafRepository implements iSafRepository
                 'prop_active_safs.appartment_name',
                 DB::raw("string_agg(o.id::VARCHAR,',') as owner_id"),
                 DB::raw("string_agg(o.owner_name,',') as owner_name"),
+                DB::raw("string_agg(o.mobile_no,',') as mobile_no"),
                 'p.property_type',
                 'prop_active_safs.assessment_type as assessment',
                 'prop_active_safs.application_date as apply_date',
-                'prop_active_safs.parked'
+                'prop_active_safs.parked',
+                'prop_active_safs.prop_address',
+                'prop_active_safs.applicant_name',
             )
             ->whereIn('workflow_id', $workflowIds)
             ->where('payment_status', 1);
