@@ -3,6 +3,7 @@
 namespace App\MicroServices;
 
 use App\Models\Masters\IdGenerationParam;
+use Carbon\Carbon;
 
 /**
  * | Created On-16-01-2023 
@@ -35,5 +36,13 @@ class IdGeneration
             $id = $stringVal . '/' . str_pad($intVal, 6, "0", STR_PAD_LEFT);
         }
         return $id;
+    }
+
+    /**
+     * | Generate Transaction ID
+     */
+    public function generateTransactionNo()
+    {
+        return Carbon::createFromDate()->milli . carbon::now()->diffInMicroseconds();
     }
 }

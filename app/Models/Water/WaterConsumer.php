@@ -146,7 +146,7 @@ class WaterConsumer extends Model
             'water_connection_charges.rule_set'
 
         )
-            ->leftjoin('water_connection_charges', 'water_connection_charges.application_id', '=', 'water_consumers.id')
+            ->leftjoin('water_connection_charges', 'water_connection_charges.application_id', '=', 'water_consumers.apply_connection_id')
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->where('water_consumers.user_id', auth()->user()->id)
             ->where('water_consumers.user_type', auth()->user()->user_type)
@@ -212,8 +212,51 @@ class WaterConsumer extends Model
      * | Get Consumer Details By ApplicationId ie. the ID 
      * | @param consumerId
      */
-    public function getConsumerDetailById($consumerId)
+    public function getConsumerDetailById($consumerId, $demandId)
     {
-        return WaterConsumer::where('id', $consumerId)->firstOrFail();
+        return WaterConsumer::select(
+            'water_consumers.id as consumerId',
+            'water_consumers.consumer_no',
+            'water_consumers.apply_connection_id',
+            'water_consumers.application_apply_date',
+            'water_consumers.address',
+            'water_consumers.ulb_id',
+            'water_consumers.holding_no',
+            'water_consumers.saf_no',
+            'water_consumer_demands.*',
+            'ulb_masters.ulb_name',
+            'ulb_ward_masters.old_ward_name',
+            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as consumer_name"),
+            DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
+
+        )
+            ->Join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_consumers.ulb_id')
+            ->leftjoin('water_consumer_demands', 'water_consumer_demands.consumer_id', '=', 'water_consumers.id')
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+            ->where('water_consumers.id', $consumerId)
+            ->where('water_consumer_demands.id', $demandId)
+            ->where('water_consumers.status', true)
+            ->where('water_consumer_demands.status', true)
+            ->where('water_consumer_owners.status', true)
+            ->groupBy(
+                'water_consumers.id',
+                'water_consumer_owners.consumer_id',
+                'water_consumers.consumer_no',
+                'water_consumers.apply_connection_id',
+                'water_consumers.application_apply_date',
+                'water_consumers.address',
+                'water_consumers.ulb_id',
+                'water_consumers.holding_no',
+                'water_consumers.saf_no',
+                'water_consumer_demands.consumer_id',
+                'water_consumer_demands.id',
+                'ulb_masters.id',
+                'ulb_masters.ulb_name',
+                'ulb_ward_masters.id',
+                'ulb_ward_masters.old_ward_name'
+            )
+            ->firstOrFail();
     }
 }
