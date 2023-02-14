@@ -116,7 +116,7 @@ class HoldingTaxController extends Controller
             $mPropProperty = new PropProperty();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
             $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
-            $loggedInUserType = authUser()->user_type;
+            $loggedInUserType = authUser()->user_type ?? "Citizen";
             $mPropOwners = new PropOwner();
             $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
             $demand = array();

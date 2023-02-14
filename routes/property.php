@@ -329,7 +329,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    */
   Route::controller(HoldingTaxController::class)->group(function () {
     Route::post('generate-holding-demand', 'generateHoldingDemand');              // (01) Property/Holding Yearly Holding Tax Generation
-    Route::post('get-holding-dues', 'getHoldingDues');                            // (02) Property/ Holding Dues
     Route::post('generate-prop-orderid', 'generateOrderId');                      // (03) Generate Property Order ID
     Route::post('payment-holding', 'paymentHolding');                             // (04) Payment Holding
     Route::post('prop-payment-receipt', 'propPaymentReceipt');                    // (05) Generate Property Payment Receipt
@@ -347,8 +346,17 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 });
 
 /**
- * | Route Outside the Middleware
+ * | Route Outside the Authenticated Middleware 
+    Serial No : 18
  */
 Route::controller(ActiveSafControllerV2::class)->group(function () {
   Route::post('search-holding', 'searchHolding');
+});
+
+/**
+ * | Holding Tax Controller(Created By-Anshu Kumar)
+   | Serial No-16
+ */
+Route::controller(HoldingTaxController::class)->group(function () {
+  Route::post('get-holding-dues', 'getHoldingDues');                            // (02) Property/ Holding Dues
 });
