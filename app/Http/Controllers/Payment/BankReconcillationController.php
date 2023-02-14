@@ -31,11 +31,14 @@ class BankReconcillationController extends Controller
     public function transactionDtl(Request $request)
     {
         try {
-
-            $mPaymentReconciliation = new PaymentReconciliation();
-            $mTradeTransaction = new TradeTransaction();
             $mPropTransaction = new PropTransaction();
+            $mTradeTransaction = new TradeTransaction();
             $mWaterTran = new WaterTran();
+
+            return $a =  PropTransaction::where('payment_mode', '!=', 'ONLINE')
+                ->get();
+
+
 
 
 
