@@ -148,7 +148,7 @@ trait TradeTrait
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "Amendment_Licences")->requirements;
                 break;
             case $flip['SURRENDER']:
-                $documentList = $this->vacantDocLists($mRefReqDocs, $moduleId, "Surenderd_Licences");     // Function (1.1)
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "Surenderd_Licences")->requirements;    // Function (1.1)
                 break;
         }
         switch ($ownershipTypeId) {
