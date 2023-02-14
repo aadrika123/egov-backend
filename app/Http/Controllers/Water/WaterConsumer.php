@@ -19,7 +19,8 @@ class WaterConsumer extends Controller
      * | Calcullate the Consumer demand 
      * | @param request
      * | @return Repository
-        | Serial No :
+        | Serial No : 00
+        | Working
      */
     public function calConsumerDemand(Request $request)
     { 

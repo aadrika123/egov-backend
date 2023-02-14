@@ -42,6 +42,7 @@ class WaterPaymentController extends Controller
      * | @var connectionTran
      * | @return transactions  Consumer / Connection Data 
         | Serial No : 01
+        | Working
      */
     public function getConsumerPaymentHistory(Request $request)
     {

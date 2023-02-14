@@ -44,6 +44,7 @@ use App\Repository\Water\Interfaces\iNewConnection;
 use App\Traits\Ward;
 use App\Traits\Water\WaterTrait;
 use App\Traits\Workflow\Workflow;
+use Carbon\Carbon;
 use DateTime;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -1463,9 +1464,6 @@ class NewConnectionController extends Controller
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
 
-            # owner details
-            $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
-
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
             $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
@@ -1480,10 +1478,51 @@ class NewConnectionController extends Controller
                     'totalAmount' => $charges['amount']
                 ];
 
-            $returnData = array_merge($applicationDetails, $ownerDetails, $waterTransDetail, $calculation);
+            $returnData = array_merge($applicationDetails, $waterTransDetail, $calculation);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    /**
+     * | List application applied according to its user type
+     * | @param request
+     * | @var 
+     * | @return 
+        | Serial No:
+     */
+    public function listApplicationBydate(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date_format:d-m-Y',
+        ]);
+        try {
+            $mWaterConnectionCharge  = new WaterConnectionCharge();
+            $mWaterApplication = new WaterApplication();
+            $reqDate = Carbon::parse($request->date)->format('Y-m-d');
+            $refTimeDate = [
+                "refStartTime" => date($reqDate),
+                "refEndTime" => date($reqDate)
+            ];
+            #application Details according to date
+            $refApplications = $mWaterApplication->getapplicationByDate($refTimeDate);
+            # Final Data to return
+            $returnValue['Date: ' . $request->date] = collect($refApplications)->map(function ($value, $key) use ($mWaterConnectionCharge) {
+                # calculation details
+                $charges = $mWaterConnectionCharge->getWaterchargesById($value['id'])->first();
+                $value['calculation'] =
+                    [
+                        'connectionFee' => $charges['conn_fee'],
+                        'penalty' => $charges['penalty'],
+                        'totalAmount' => $charges['amount']
+                    ];
+                return $value;
+            });
+            return responseMsgs(true, "listed Application!", remove_null($returnValue), "", "01", "ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
 }

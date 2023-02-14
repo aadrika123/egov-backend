@@ -17,9 +17,9 @@ class WaterApplication extends Model
 
     /**
      * |------------------------------------------ Save new water applications -----------------------------------------|
-     * | @param
+     * | @param req
+     * | @return 
      * | 
-        |
      */
     public function saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId)
     {
@@ -79,7 +79,8 @@ class WaterApplication extends Model
 
     /**
      * |----------------------- Get Water Application detals With all Relation ------------------|
-     * | @param 
+     * | @param request
+     * | @return 
      */
     public function fullWaterDetails($request)
     {
@@ -110,7 +111,7 @@ class WaterApplication extends Model
 
     /**
      * |----------------- is site is verified -------------------------|
-     * | @param $req
+     * | @param id
      */
     public function markSiteVerification($id)
     {
@@ -121,6 +122,7 @@ class WaterApplication extends Model
 
     /**
      * |------------------ Get Application details By Id ---------------|
+     * | @param applicationId
      */
     public function getWaterApplicationsDetails($applicationId)
     {
@@ -143,6 +145,7 @@ class WaterApplication extends Model
 
     /**
      * |------------------- Delete the Application Prmanentaly ----------------------|
+     * | @param req
      */
     public function deleteWaterApplication($req)
     {
@@ -151,7 +154,8 @@ class WaterApplication extends Model
     }
 
     /**
-     * | Get Water Application By Id
+     * |------------------- Get Water Application By Id -------------------|
+     * | @param applicationId
      */
     public function getApplicationById($applicationId)
     {
@@ -161,9 +165,9 @@ class WaterApplication extends Model
 
 
     /**
-     * | Get the Application details by applicationNo 
+     * |------------------- Get the Application details by applicationNo -------------------|
      * | @param applicationNo
-     * | @var 
+     * | @param connectionTypes 
      * | @return 
      */
     public function getDetailsByApplicationNo($connectionTypes, $applicationNo)
@@ -191,7 +195,9 @@ class WaterApplication extends Model
     }
 
     /**
-     * | Get water 
+     * |------------------- Final Approval of the water application -------------------|
+     * | @param request
+     * | @param consumerNo
      */
     public function finalApproval($request, $consumerNo)
     {
@@ -219,7 +225,7 @@ class WaterApplication extends Model
     }
 
     /**
-     * | Final rejection of the Application 
+     * |------------------- Final rejection of the Application -------------------|
      * | Transfer the data to new table
      */
     public function finalRejectionOfAppication($request)
@@ -237,7 +243,7 @@ class WaterApplication extends Model
     }
 
     /**
-     * | Edit the details of the application 
+     * |------------------- Edit the details of the application -------------------|
      * | Send the details of the apllication in the audit table
      */
     public function editWaterApplication($applicationId)
@@ -245,7 +251,7 @@ class WaterApplication extends Model
     }
 
     /**
-     * | Deactivate the Water Application In the Process of Aplication Editing
+     * |------------------- Deactivate the Water Application In the Process of Aplication Editing -------------------|
      * | @param ApplicationId
      */
     public function deactivateApplication($applicationId)
@@ -254,5 +260,24 @@ class WaterApplication extends Model
             ->update([
                 'status' => false
             ]);
+    }
+
+    /**
+     * |------------------- Get Water Application Details According to the UserType and Date -------------------|
+     * | @param request
+     */
+    public function getapplicationByDate($req)
+    {
+        return WaterApplication::select(
+            'water_applications.id',
+            'water_applications.*',
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name',
+        )
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
+            ->where('water_applications.status', true)
+            ->whereBetween('water_applications.apply_date', [$req['refStartTime'], $req['refEndTime']])
+            ->get();
     }
 }
