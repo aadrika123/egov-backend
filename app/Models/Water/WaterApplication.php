@@ -155,7 +155,8 @@ class WaterApplication extends Model
      */
     public function getApplicationById($applicationId)
     {
-        return  WaterApplication::where('id', $applicationId);
+        return  WaterApplication::where('id', $applicationId)
+            ->where('status', true);
     }
 
 
