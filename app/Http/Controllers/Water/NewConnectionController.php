@@ -1345,7 +1345,7 @@ class NewConnectionController extends Controller
         ]);
 
         try {
-            // Variable Assignments
+            # Variable Assignments
             $mWfDocument = new WfActiveDocument();
             $mWaterApplication = new WaterApplication();
             $mWfRoleusermap = new WfRoleusermap();
@@ -1353,7 +1353,7 @@ class NewConnectionController extends Controller
             $userId = authUser()->id;
             $applicationId = $req->applicationId;
             $wfLevel = Config::get('waterConstaint.ROLE-LABEL');
-            // Derivative Assigments
+            # Derivative Assigments
             $waterApplicationDtl = $mWaterApplication->getApplicationById($applicationId)
                 ->firstOrFail();
 
@@ -1384,7 +1384,7 @@ class NewConnectionController extends Controller
             }
             if ($req->docStatus == "Rejected") {
                 $status = 2;
-                // For Rejection Doc Upload Status and Verify Status will disabled
+                # For Rejection Doc Upload Status and Verify Status will disabled
                 $waterApplicationDtl->doc_upload_status = 0;
                 $waterApplicationDtl->doc_status = 0;
                 $waterApplicationDtl->save();
@@ -1509,7 +1509,7 @@ class NewConnectionController extends Controller
             #application Details according to date
             $refApplications = $mWaterApplication->getapplicationByDate($refTimeDate);
             # Final Data to return
-            $returnValue['Date: ' . $request->date] = collect($refApplications)->map(function ($value, $key) use ($mWaterConnectionCharge) {
+            $returnValue = collect($refApplications)->map(function ($value, $key) use ($mWaterConnectionCharge) {
                 # calculation details
                 $charges = $mWaterConnectionCharge->getWaterchargesById($value['id'])->first();
                 $value['calculation'] =

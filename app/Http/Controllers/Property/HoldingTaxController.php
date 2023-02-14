@@ -118,6 +118,9 @@ class HoldingTaxController extends Controller
             $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
             $loggedInUserType = authUser()->user_type ?? "Citizen";
             $mPropOwners = new PropOwner();
+            $pendingFYears = collect();
+            $pendingQtrs = collect();
+
             $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
             $demand = array();
             $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
@@ -135,6 +138,15 @@ class HoldingTaxController extends Controller
             $dues = roundFigure($demandList->sum('balance'));
             $onePercTax = roundFigure($demandList->sum('onePercPenaltyTax'));
             $mLastQuarterDemand = $demandList->last()->balance;
+
+            collect($demandList)->map(function ($value) use ($pendingFYears, $pendingQtrs) {
+                $fYear = $value->fyear;
+                $qtr = $value->qtr;
+                $pendingFYears->push($fYear);
+                $pendingQtrs->push($qtr);
+            });
+
+            $paymentUptoYrs = $pendingFYears->unique();
             $totalDuesList = [
                 'totalDues' => $dues,
                 'duesFrom' => "Quarter " . $demandList->last()->qtr . "/ Year " . $demandList->last()->fyear,
@@ -148,6 +160,8 @@ class HoldingTaxController extends Controller
 
             $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
             $totalDuesList['payableAmount'] = round($finalPayableAmt);
+            $totalDuesList['paymentUptoYrs'] = $paymentUptoYrs;
+            $totalDuesList['paymentUptoQtrs'] = $pendingQtrs;
 
             $demand['duesList'] = $totalDuesList;
             $demand['demandList'] = $demandList;
