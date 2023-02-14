@@ -22,6 +22,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(TradeApplication::class)->group(function () {
         Route::post("getApplyData", "getApplyData");
+
+        Route::post("apply/new-license", "getMstrForNewLicense");
+        Route::post("apply/renewal", "getMstrForRenewal");
+        Route::post("apply/amendment", "getMstrForAmendment");
+        Route::post("apply/surrender", "getMstrForSurender");
+        
         Route::post('apply', 'applyApplication');
         Route::post('getCharge', 'paybleAmount');
         Route::post('getPropertyByHolding', 'validateHoldingNo');
