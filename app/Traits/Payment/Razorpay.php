@@ -51,7 +51,7 @@ trait Razorpay
     public function saveGenerateOrderid($request)
     {
         try {
-            $mUserID = auth()->user()->id;
+            $mUserID = auth()->user()->id ?? $request->ghostUserId;
             $mUlbID = $request["ulbId"] ?? "2";                                            // user Id
             $refRazorpayId = Config::get('razorpay.RAZORPAY_ID');
             $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');

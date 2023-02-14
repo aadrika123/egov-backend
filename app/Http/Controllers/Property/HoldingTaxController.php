@@ -116,7 +116,7 @@ class HoldingTaxController extends Controller
             $mPropProperty = new PropProperty();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
             $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
-            $loggedInUserType = authUser()->user_type;
+            $loggedInUserType = authUser()->user_type ?? "Citizen";
             $mPropOwners = new PropOwner();
             $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
             $demand = array();
@@ -181,15 +181,17 @@ class HoldingTaxController extends Controller
             'amount' => 'required|numeric'
         ]);
         try {
+            $departmentId = 1;
+            $propProperties = new PropProperty();
+
             $demand = $this->getHoldingDues($req);
             $demandData = $demand->original['data'];
             if (!$demandData)
                 throw new Exception("Demand Not Available");
+
             $dueList = $demandData['duesList'];
-            $departmentId = 1;
-            $propProperties = new PropProperty();
             $propDtls = $propProperties->getPropById($req->propId);
-            $req->request->add(['workflowId' => '0', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId]);
+            $req->request->add(['workflowId' => '0', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId, 'ghostUserId' => 0]);
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
             $this->postPaymentPenaltyRebate($dueList, $req);
             return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011603", "1.0", "", "POST", $req->deviceId ?? "");

@@ -142,7 +142,6 @@ class ActiveSafControllerV2 extends Controller
         $req->validate([
             "holdingNo" => "required",
             "ulbId" => "required"
-
         ]);
         try {
             $holdingNo = $req->holdingNo;

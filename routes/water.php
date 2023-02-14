@@ -42,31 +42,32 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('list-ward-no', 'getWardNo');                                                        //09        // Get Ward No According to Saf or Holding Details mstr
 
         # water Workflow
-        Route::post('inbox', 'waterInbox');                                                             // 
-        Route::post('outbox', 'waterOutbox');                                                           //
-        Route::post('post-next-level', 'postNextLevel');                                                //
-        Route::post('workflow/application/get-by-id', 'getApplicationsDetails');                        //
-        Route::post('special-inbox', 'waterSpecialInbox');                                              //
-        Route::post('escalate', 'postEscalate');                                                        //                        
-        Route::post('application/approval-rejection', 'approvalRejectionWater');                        //
-        Route::post('comment-independent', 'commentIndependent');                                       //       
-        Route::post('consumer/get-listed-details', 'approvedWaterApplications');                        //
-        Route::post('field-verified-inbox', 'fieldVerifiedInbox');                                      //
-        Route::post('site-verification', 'fieldVerification');                                          // 
-        Route::post('back-to-citizen', 'backToCitizen');                                                //
-        Route::post('btc-inbox', 'btcInbox');                                                           //    
-        Route::Post('application/delete', 'deleteWaterApplication');                                    //       
-        Route::post('application/get-by-id', 'getApplicationDetails');                                  //
-        Route::post('upload-document', 'uploadWaterDoc');                                               //
-        Route::post('get-upload-documents', 'getUploadDocuments');                                      //
-        Route::post('citizen/get-doc-list', 'getDocToUpload');                                          //
-        Route::post('search-holding-saf', 'getSafHoldingDetails');                                      //
-        Route::post('search-consumer', 'searchWaterConsumer');                                          //
-        Route::post('application/search', 'getActiveApplictaions');                                     //
-        Route::post('workflow/get-doc-list', 'getDocList');                                             //
-        Route::post('doc-verify-reject', 'docVerifyReject');                                            //
-        Route::post('application/edit', 'editWaterAppliction');                                         //
-        Route::post('admin/application/get-details-by-id','getApplicationDetailById');                  //
+        Route::post('inbox', 'waterInbox');                                                             // Workflow
+        Route::post('outbox', 'waterOutbox');                                                           // Workflow
+        Route::post('post-next-level', 'postNextLevel');                                                // Workflow
+        Route::post('workflow/application/get-by-id', 'getApplicationsDetails');                        // Workflow
+        Route::post('special-inbox', 'waterSpecialInbox');                                              // Workflow
+        Route::post('escalate', 'postEscalate');                                                        // Workflow                     
+        Route::post('application/approval-rejection', 'approvalRejectionWater');                        // Workflow
+        Route::post('comment-independent', 'commentIndependent');                                       // Workflow
+        Route::post('field-verified-inbox', 'fieldVerifiedInbox');                                      // Workflow
+        Route::post('site-verification', 'fieldVerification');                                          // Workflow
+        Route::post('back-to-citizen', 'backToCitizen');                                                // Workflow
+        Route::post('btc-inbox', 'btcInbox');                                                           // Workflow
+        Route::post('workflow/get-doc-list', 'getDocList');                                             // Workflow
+        Route::post('doc-verify-reject', 'docVerifyReject');                                            // Workflow
+        Route::post('upload-document', 'uploadWaterDoc');                                               // Workflow/Citizen
+        Route::post('get-upload-documents', 'getUploadDocuments');                                      // Workflow/Citizen  
+        Route::Post('application/delete', 'deleteWaterApplication');                                    // Citizen     
+        Route::post('application/get-by-id', 'getApplicationDetails');                                  // Citizen
+        Route::post('citizen/get-doc-list', 'getDocToUpload');                                          // Citizen  
+        Route::post('application/edit', 'editWaterAppliction');                                         // Citizen/Admin
+        Route::post('search-holding-saf', 'getSafHoldingDetails');                                      // Admin
+        Route::post('application/search', 'getActiveApplictaions');                                     // Admin
+        Route::post('admin/application/get-details-by-id', 'getApplicationDetailById');                 // Admin
+        Route::post('admin/application/list-details-by-date', 'listApplicationBydate');                 // Admin
+        Route::post('search-consumer', 'searchWaterConsumer');                                          // Admin/Consumer   
+        Route::post('consumer/get-listed-details', 'approvedWaterApplications');                        // Consumer
 
         Route::post('final-submit-application', 'finalSubmitionApplication');                           // Not Used
     });
