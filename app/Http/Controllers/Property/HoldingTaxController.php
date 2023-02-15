@@ -5,8 +5,12 @@ namespace App\Http\Controllers\Property;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Property\ReqPayment;
+use App\MicroServices\IdGeneration;
+use App\Models\Payment\TempTransaction;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenaltyrebate;
+use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropPenaltyrebate;
@@ -112,6 +116,7 @@ class HoldingTaxController extends Controller
         ]);
 
         try {
+            $todayDate = Carbon::now()->format('Y-m-d');
             $mPropDemand = new PropDemand();
             $mPropProperty = new PropProperty();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
@@ -119,7 +124,7 @@ class HoldingTaxController extends Controller
             $loggedInUserType = authUser()->user_type ?? "Citizen";
             $mPropOwners = new PropOwner();
             $pendingFYears = collect();
-            $pendingQtrs = collect();
+            $qtrs = collect();
 
             $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
             $demand = array();
@@ -128,6 +133,19 @@ class HoldingTaxController extends Controller
             $propDtls = $mPropProperty->getPropById($req->propId);
             $balance = $propDtls->balance ?? 0;
 
+            $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
+            $basicDtls = collect($propBasicDtls)->only([
+                'holding_no',
+                'old_ward_no',
+                'new_ward_no',
+                'property_type',
+                'zone_mstr_id',
+                'is_mobile_tower',
+                'is_hoarding_board',
+                'is_petrol_pump',
+                'is_water_harvesting',
+                'ulb_id'
+            ]);
             if ($demandList->isEmpty())
                 throw new Exception("Dues Not Available for this Property");
 
@@ -139,11 +157,11 @@ class HoldingTaxController extends Controller
             $onePercTax = roundFigure($demandList->sum('onePercPenaltyTax'));
             $mLastQuarterDemand = $demandList->last()->balance;
 
-            collect($demandList)->map(function ($value) use ($pendingFYears, $pendingQtrs) {
+            collect($demandList)->map(function ($value) use ($pendingFYears, $qtrs) {
                 $fYear = $value->fyear;
                 $qtr = $value->qtr;
                 $pendingFYears->push($fYear);
-                $pendingQtrs->push($qtr);
+                $qtrs->push($qtr);
             });
 
             $paymentUptoYrs = $pendingFYears->unique();
@@ -155,6 +173,11 @@ class HoldingTaxController extends Controller
                 'totalQuarters' => $demandList->count(),
                 'arrear' => $balance
             ];
+            $currentQtr = calculateQtr($todayDate);
+
+            $pendingQtrs = $qtrs->filter(function ($value) use ($currentQtr) {
+                return $value >= $currentQtr;
+            });
 
             $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
 
@@ -166,9 +189,10 @@ class HoldingTaxController extends Controller
             $demand['duesList'] = $totalDuesList;
             $demand['demandList'] = $demandList;
 
+            $demand['basicDetails'] = $basicDtls;
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011602", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls], "011602", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -260,29 +284,36 @@ class HoldingTaxController extends Controller
     /**
      * | Payment Holding
      */
-    public function paymentHolding(Request $req)
+    public function paymentHolding(ReqPayment $req)
     {
         try {
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $todayDate = Carbon::now();
             $userId = $req['userId'];
             $propDemand = new PropDemand();
+            $idGeneration = new IdGeneration;
+            $mPropTrans = new PropTransaction();
+
+            $tranNo = $idGeneration->generateTransactionNo();
             $demands = $propDemand->getDemandByPropId($req['id']);
-            DB::beginTransaction();
+            if ($demands->isEmpty())
+                throw new Exception("No Dues For this Property");
             // Property Transactions
-            $propTrans = new PropTransaction();
-            $propTrans->property_id = $req['id'];
-            $propTrans->amount = $req['amount'];
-            $propTrans->tran_date = $todayDate->format('Y-m-d');
-            $propTrans->tran_no = $req['transactionNo'];
-            $propTrans->payment_mode = $req['paymentMode'];
-            $propTrans->user_id = $userId;
-            $propTrans->ulb_id = $req['ulbId'];
-            $propTrans->from_fyear = collect($demands)->last()['fyear'];
-            $propTrans->to_fyear = collect($demands)->first()['fyear'];
-            $propTrans->from_qtr = collect($demands)->last()['qtr'];
-            $propTrans->to_qtr = collect($demands)->first()['qtr'];
-            $propTrans->demand_amt = collect($demands)->sum('balance');
-            $propTrans->save();
+            $req->merge([
+                'userId' => $userId,
+                'todayDate' => $todayDate->format('Y-m-d'),
+                'tranNo' => $req['transactionNo'] ?? $tranNo
+            ]);
+            DB::beginTransaction();
+            $propTrans = $mPropTrans->postPropTransactions($req, $demands);
+
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $req->merge([
+                    'chequeDate' => $req['chequeDate'],
+                    'tranId' => $propTrans['id']
+                ]);
+                $this->postOtherPaymentModes($req);
+            }
 
             // Reflect on Prop Tran Details
             foreach ($demands as $demand) {
@@ -291,7 +322,7 @@ class HoldingTaxController extends Controller
                 $demand->save();
 
                 $propTranDtl = new PropTranDtl();
-                $propTranDtl->tran_id = $propTrans->id;
+                $propTranDtl->tran_id = $propTrans['id'];
                 $propTranDtl->prop_demand_id = $demand['id'];
                 $propTranDtl->total_demand = $demand['amount'];
                 $propTranDtl->ulb_id = $req['ulbId'];
@@ -305,7 +336,7 @@ class HoldingTaxController extends Controller
             collect($rebatePenalties)->map(function ($rebatePenalty) use ($propTrans, $todayDate) {
                 $replicate = $rebatePenalty->replicate();
                 $replicate->setTable('prop_penaltyrebates');
-                $replicate->tran_id = $propTrans->id;
+                $replicate->tran_id = $propTrans['id'];
                 $replicate->tran_date = $todayDate->format('Y-m-d');
                 $replicate->save();
             });
@@ -316,6 +347,45 @@ class HoldingTaxController extends Controller
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $req->deviceId ?? "");
         }
+    }
+
+    /**
+     * | Post Other Payment Modes for Cheque,DD,Neft
+     */
+    public function postOtherPaymentModes($req)
+    {
+        $cash = Config::get('payment-constants.PAYMENT_MODE.3');
+        $mTempTransaction = new TempTransaction();
+        if ($req['paymentMode'] != $cash) {
+            $mPropChequeDtl = new PropChequeDtl();
+            $chequeReqs = [
+                'prop_id' => $req['id'],
+                'transaction_id' => $req['tranId'],
+                'cheque_date' => $req['chequeDate'],
+                'bank_name' => $req['bankName'],
+                'branch_name' => $req['branchName'],
+                'cheque_no' => $req['chequeNo']
+            ];
+
+            $mPropChequeDtl->postChequeDtl($chequeReqs);
+        }
+
+        $tranReqs = [
+            'transaction_id' => $req['tranId'],
+            'application_id' => $req['id'],
+            'module_id' => 1,
+            'workflow_id' => 0,
+            'transaction_no' => $req['tranNo'],
+            'application_no' => $req->applicationNo,
+            'amount' => $req['amount'],
+            'payment_mode' => $req['paymentMode'],
+            'cheque_dd_no' => $req['chequeNo'],
+            'bank_name' => $req['bankName'],
+            'tran_date' => $req['todayDate'],
+            'user_id' => $req['userId'],
+            'ulb_id' => $req['ulbId']
+        ];
+        $mTempTransaction->tempTransaction($tranReqs);
     }
 
     /**

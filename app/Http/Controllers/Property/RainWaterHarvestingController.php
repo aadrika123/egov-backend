@@ -9,6 +9,7 @@ use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
+use App\Models\Property\PropRwhVerification;
 use App\Models\Property\RefPropDocsRequired;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
@@ -237,6 +238,7 @@ class RainWaterHarvestingController extends Controller
         try {
             $mWfRoleUser = new WfRoleusermap();
             $mWfWardUser = new WfWardUser();
+            $mharvestingList = new PropActiveHarvesting();
 
             $mUserId = authUser()->id;
             $mUlbId = authUser()->ulb_id;
@@ -252,17 +254,14 @@ class RainWaterHarvestingController extends Controller
                 return $role->wf_role_id;
             });
 
-            $data = $this->Repository->getSaf($this->_workflowIds)                 // Repository function getSAF
+            $harvesting = $mharvestingList->getHarvestingList($mUlbId)                 // Repository function getSAF
                 ->where('is_field_verified', true)
-                ->where('prop_active_safs.ulb_id', $mUlbId)
-                ->where('prop_active_safs.status', 1)
-                ->whereIn('current_role', $roleIds)
-                ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->whereIn('prop_active_harvestings.current_role', $roleIds)
+                ->whereIn('a.ward_mstr_id', $occupiedWardsId)
+                ->orderByDesc('prop_active_harvestings.id')
                 ->get();
 
-            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWardsId);
-            return responseMsgs(true, "field Verified Inbox!", remove_null($safInbox), 010125, 1.0, "", "POST", $mDeviceId);
+            return responseMsgs(true, "field Verified Inbox!", remove_null($harvesting), 010125, 1.0, "", "POST", $mDeviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $mDeviceId);
         }
@@ -577,61 +576,6 @@ class RainWaterHarvestingController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-
-    //applied harvestig list
-    // public function waterHarvestingList()
-    // {
-    //     try {
-    //         $list = PropActiveHarvesting::select(
-    //             'prop_active_harvestings.id',
-    //             'a.applicant_name as owner_name',
-    //             'a.ward_mstr_id',
-    //             'u.ward_name as ward_no',
-    //             'a.holding_no',
-    //             'a.prop_type_mstr_id',
-    //             'p.property_type',
-    //         )
-    //             ->join('prop_properties as a', 'a.id', 'prop_active_harvestings.property_id')
-    //             ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
-    //             ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
-    //             ->where('prop_active_harvestings.status', 1)
-    //             ->orderByDesc('prop_active_harvestings.id')
-    //             ->get();
-
-    //         return responseMsgs(true, "Success", $list, '011103', 01, '300ms - 359ms', 'Post', '');
-    //     } catch (Exception $e) {
-    //         return responseMsg(false, $e->getMessage(), "");
-    //     }
-    // }
-
-    // //applied harvesting list by id
-    // public function harvestingListById(Request $req)
-    // {
-    //     try {
-    //         $list = PropActiveHarvesting::select(
-    //             'prop_active_harvestings.*',
-    //             'a.applicant_name as owner_name',
-    //             'a.ward_mstr_id',
-    //             'u.ward_name as ward_no',
-    //             'a.holding_no',
-    //             'a.prop_type_mstr_id',
-    //             'p.property_type',
-    //         )
-    //             ->join('prop_properties as a', 'a.id', 'prop_active_harvestings.property_id')
-    //             ->join('ref_prop_types as p', 'p.id', 'a.prop_type_mstr_id')
-    //             ->join('ulb_ward_masters as u', 'u.id', 'a.ward_mstr_id')
-    //             ->where('prop_active_harvestings.status', 1)
-    //             ->where('prop_active_harvestings.id', $req->id)
-    //             ->first();
-
-    //         if (is_null($list)) {
-    //             return responseMsg(false, "No Data Found", '');
-    //         } else
-    //             return responseMsgs(true, "Success", $list, '011104', 01, '315ms - 342ms', 'Post', $req->deviceId);
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
 
     // //harvesting doc by id
     // public function harvestingDocList(Request $req)
@@ -1097,5 +1041,96 @@ class RainWaterHarvestingController extends Controller
             return 0;
         else
             return 1;
+    }
+
+
+    /**
+     * | Site Verification
+     * | @param req requested parameter
+     */
+    public function siteVerification(Request $req)
+    {
+        try {
+            $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
+            $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
+            $verificationStatus = $req->verificationStatus;                                             // Verification Status true or false
+            $propActiveHarvesting = new PropActiveHarvesting();
+            $verification = new PropRwhVerification();
+            $mWfRoleUsermap = new WfRoleusermap();
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+
+
+            $applicationDtls = $propActiveHarvesting->getHarvestingNo($req->applicationId);
+            $workflowId = $applicationDtls->workflow_id;
+            $getRoleReq = new Request([                                                 // make request to get role id of the user
+                'userId' => $userId,
+                'workflowId' => $workflowId
+            ]);
+
+            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            $roleId = $readRoleDtls->wf_role_id;
+
+            switch ($roleId) {
+                case $taxCollectorRole;                                                                  // In Case of Agency TAX Collector
+                    if ($verificationStatus == 1) {
+                        $req->agencyVerification = true;
+                        $msg = "Site Successfully Verified";
+                    }
+                    if ($verificationStatus == 0) {
+                        $req->agencyVerification = false;
+                        $msg = "Site Successfully rebuted";
+                    }
+                    break;
+                    DB::beginTransaction();
+                case $ulbTaxCollectorRole;                                                                // In Case of Ulb Tax Collector
+                    if ($verificationStatus == 1) {
+                        $req->ulbVerification = true;
+                        $msg = "Site Successfully Verified";
+                    }
+                    if ($verificationStatus == 0) {
+                        $req->ulbVerification = false;
+                        $msg = "Site Successfully rebuted";
+                    }
+                    $propActiveHarvesting->verifyFieldStatus($req->applicationId);                                         // Enable Fields Verify Status
+                    break;
+
+                default:
+                    return responseMsg(false, "Forbidden Access", "");
+            }
+
+            // return $applicationDtls;
+
+            $req->merge([
+                'propertyId' => $applicationDtls->property_id,
+                'harvestingId' => $applicationDtls->id,
+                'harvestingStatus' => $applicationDtls->harvesting_status,
+                'userId' => $userId,
+                'ulbId' => $ulbId,
+            ]);
+            $verificationId = $verification->store($req);
+
+            DB::commit();
+            return responseMsgs(true, $msg, "", "010118", "1.0", "310ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    // Get TC Verifications
+    public function getTcVerifications(Request $req)
+    {
+        try {
+            $data = array();
+            $mPropRwhVerification = new PropRwhVerification();
+
+            $data = $mPropRwhVerification->getVerificationsData($req->applicationId);           // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
+
+            return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }

@@ -146,16 +146,17 @@ class PropActiveSaf extends Model
                 'o.ownership_type',
                 'p.property_type',
                 'r.road_type as road_type_master',
-                'wr.role_name as current_role_name'
+                'wr.role_name as current_role_name',
+                't.transfer_mode'
             )
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
             ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
             ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
             ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
-            ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id');
+            ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id')
+            ->leftJoin('ref_prop_transfer_modes as t', 't.id', '=', 'prop_active_safs.transfer_mode_mstr_id');
     }
-
 
     /**
      * |-------------------------- safs list whose Holding are not craeted -----------------------------------------------|
@@ -247,11 +248,17 @@ class PropActiveSaf extends Model
                 's.corr_address',
                 's.prop_pin_code',
                 's.corr_pin_code',
-                's.area_of_plot as total_area_in_desimal',
+                's.assessment_type',
+                's.applicant_name',
+                's.application_date',
+                's.area_of_plot as total_area_in_decimal',
+                's.prop_type_mstr_id',
                 'u.ward_name as old_ward_no',
                 'u1.ward_name as new_ward_no',
+                'p.property_type'
             )
             ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
+            ->join('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
             ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
             ->first();
     }

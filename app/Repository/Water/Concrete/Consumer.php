@@ -890,7 +890,7 @@ class Consumer implements IConsumer
             $demand = WaterConsumerDemand::select("*")
                       ->where("status",1)
                       ->where("consumer_id",$consumer_id)
-                      ->orderBy("id","DESC")
+                      ->orderBy("demand_upto","DESC")
                       ->first();
             return $demand;
         }

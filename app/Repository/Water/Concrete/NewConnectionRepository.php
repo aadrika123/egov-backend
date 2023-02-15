@@ -121,21 +121,22 @@ class NewConnectionRepository implements iNewConnection
         $applicationNo = 'APP' . $now->getTimeStamp();
 
         DB::beginTransaction();
+        # water application
         $objNewApplication = new WaterApplication();
-        $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId);
-
+        $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId, $newConnectionCharges);
+        # water applicant
         foreach ($owner as $owners) {
             $objApplicant = new WaterApplicant();
             $objApplicant->saveWaterApplicant($applicationId, $owners);
         }
-
+        # water penalty
         if (!is_null($installment)) {
             foreach ($installment as $installments) {
                 $objQuaters = new WaterPenaltyInstallment();
                 $objQuaters->saveWaterPenelty($applicationId, $installments);
             }
         }
-
+        # connection charges
         $charges = new WaterConnectionCharge();
         $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
         DB::commit();
@@ -442,14 +443,14 @@ class NewConnectionRepository implements iNewConnection
         | Serial No : 07 
         | Working / Check it / remove the comment ?? for delete
      */
-    public function approvalRejectionWater($request)
+    public function approvalRejectionWater($request,$roleId)
     {
         # Condition while the final Check
         $waterDetails = WaterApplication::find($request->applicationId);
-        if ($waterDetails->finisher != $request->roleId) {
+        if ($waterDetails->finisher != $roleId) {
             throw new Exception("You're Not the finisher ie. EO!");
         }
-        if ($waterDetails->current_role != $request->roleId) {
+        if ($waterDetails->current_role != $roleId) {
             throw new Exception("Application has not Reached to the finisher ie. EO!");
         }
         if ($waterDetails->doc_status == false) {
@@ -474,8 +475,8 @@ class NewConnectionRepository implements iNewConnection
             $mWaterApplicant = new WaterApplicant();
             $consumerNo = 'CON' . $now->getTimeStamp();
 
-            $mWaterApplication->finalApproval($request, $consumerNo);
-            $mWaterApplicant->finalApplicantApproval($request);
+            $consumerId = $mWaterApplication->finalApproval($request, $consumerNo);
+            $mWaterApplicant->finalApplicantApproval($request, $consumerId);
             $msg = "Application Successfully Approved !!";
         }
         # Rejection of water application

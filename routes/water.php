@@ -81,6 +81,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         # Consumer And Citizen Transaction Operation
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');
         Route::post('generate-payment-receipt', 'generatePaymentReceipt');
+        Route::post('consumer/generate-demand-receiep','generateDemandPaymentReceipt');
     });
 
     /**
