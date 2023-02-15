@@ -477,15 +477,19 @@ class TradeCitizenController extends Controller
 
                 $tem =  $this->_counter->insertWorkflowTrack($args);
             }
-
-            $provNo = $this->_counter->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
-            $refLecenceData->provisional_license_no = $provNo;
+            if(!$refLecenceData->provisional_license_no)
+            {
+                $provNo = $this->_counter->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
+                $refLecenceData->provisional_license_no = $provNo;
+            }
             $refLecenceData->payment_status         = $mPaymentStatus;
             $refLecenceData->save();
 
             if ($refNoticeDetails) {
                 $this->_counter->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId, 1); //update status and fineAmount                     
             }
+            $counter = new Trade;
+            $counter->postTempTransection($Tradetransaction,$refLecenceData,$mWardNo);
             DB::commit();
             #----------End transaction------------------------
             #----------Response------------------------------
@@ -565,6 +569,8 @@ class TradeCitizenController extends Controller
         $request->validate([
         'id' => 'required|digits_between:1,9223372036854775807'
         ]);
+        
+        dd(send_sms("","",""));
         return $this->Repository->readCitizenLicenceDtl($request);
     }
 
