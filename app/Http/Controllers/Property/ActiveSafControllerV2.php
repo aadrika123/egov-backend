@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafMemoDtl;
 use Exception;
@@ -125,8 +126,20 @@ class ActiveSafControllerV2 extends Controller
         ]);
         try {
             $mPropSafMemoDtl = new PropSafMemoDtl();
+            $mPropDemands = new PropDemand();
             $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
             $details = collect($details)->first();
+
+            // Fam Receipt
+            if ($details->memo_type == 'FAM') {
+                $memoFyear = $details->from_fyear;
+                $propId = $details->prop_id;
+                $holdingTax2Perc = $mPropDemands->getDemandByFyear($memoFyear, $propId);
+                $details->fam_receipt = [
+                    'particulars' => 'Holding Tax @ 2%',
+                    'Quarter/Financial Year' => 'Quarter: 1/ Year: 2016-2017'
+                ];
+            }
             return responseMsgs(true, "", remove_null($details), "011803", 1.0, "", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, "", "POST", $req->deviceId);
