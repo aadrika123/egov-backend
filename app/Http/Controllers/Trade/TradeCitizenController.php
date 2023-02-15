@@ -650,7 +650,7 @@ class TradeCitizenController extends Controller
 
     # Serial No
     public function surrenderList()
-    {
+    { 
         try {
             $citizenId = authUser()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
