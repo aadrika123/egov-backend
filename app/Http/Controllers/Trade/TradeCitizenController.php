@@ -569,8 +569,6 @@ class TradeCitizenController extends Controller
         $request->validate([
         'id' => 'required|digits_between:1,9223372036854775807'
         ]);
-        
-        dd(send_sms("","",""));
         return $this->Repository->readCitizenLicenceDtl($request);
     }
 
