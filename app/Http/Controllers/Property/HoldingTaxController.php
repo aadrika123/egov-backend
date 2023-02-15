@@ -33,6 +33,7 @@ class HoldingTaxController extends Controller
     use Razorpay;
     protected $_propertyDetails;
     protected $_safRepo;
+    protected $_holdingTaxInterest = 0;
     /**
      * | Created On-19/01/2023 
      * | Created By-Anshu Kumar
@@ -389,7 +390,7 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Generate Payment Receipt
+     * | Generate Payment Receipt(9.1)
      */
     public function propPaymentReceipt(Request $req)
     {
@@ -415,7 +416,8 @@ class HoldingTaxController extends Controller
             // Get Property Penalty and Rebates
             $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
 
-            $onePercPenalty = collect($penalRebates)->where('head_name', '1% Monthly Penalty')->first()->amount ?? "";
+            $onePercPenalty = collect($penalRebates)->where('head_name', '1% Monthly Penalty')->first()->amount ?? 0;
+            $this->_holdingTaxInterest = $onePercPenalty;
             $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
             $specialRebate = collect($penalRebates)->where('head_name', 'Special Rebate')->first()->amount ?? 0;
             $firstQtrRebate = collect($penalRebates)->where('head_name', 'First Qtr Rebate')->first()->amount ?? 0;
@@ -502,5 +504,120 @@ class HoldingTaxController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");
         }
+    }
+
+    /**
+     * | Generate Ulb Payment Receipt
+     */
+    public function proUlbReceipt(Request $req)
+    {
+        $req->validate([
+            'tranNo' => 'required'
+        ]);
+
+        try {
+            $mTransaction = new PropTransaction();
+            $propTrans = $mTransaction->getPropTransFullDtlsByTranNo($req->tranNo);
+
+            $responseData = $this->propPaymentReceipt($req);
+            $responseData = $responseData->original['data'];                                              // Function propPaymentReceipt(9.1)
+            $responseData['holdingTaxDetails'] = $this->holdingTaxDetails($propTrans);                    // (9.2)
+            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "011609", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011609", "1.0", "", "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Get Holding Tax Details On RMC Receipt (9.2)
+     */
+    public function holdingTaxDetails($propTrans)
+    {
+        $transactions = collect($propTrans);
+        $tranDate = $transactions->first()->tran_date;
+        $paidFinYear = calculateFYear($tranDate);
+        $currentTaxes = $transactions->where('fyear', $paidFinYear)->values();
+        $arrearTaxes = $transactions->where('fyear', '!=', $paidFinYear)->values();
+
+        $arrearFromQtr = $arrearTaxes->first()->qtr ?? "";
+        $arrearFromFyear = $arrearTaxes->first()->fyear ?? "";
+        $arrearToQtr = $arrearTaxes->last()->qtr ?? "";
+        $arrearToFyear = $arrearTaxes->last()->fyear ?? "";
+
+        $currentFromQtr = $currentTaxes->first()->qtr;
+        $currentFromFyear = $currentTaxes->first()->fyear;
+        $currentToQtr = $currentTaxes->last()->qtr;
+        $currentToFyear = $currentTaxes->last()->fyear;
+
+        $arrearPeriod = $arrearFromQtr . '/' . $arrearFromFyear . '-' . $arrearToQtr . '/' . $arrearToFyear;
+        $currentPeriod = $currentFromQtr . '/' . $currentFromFyear . '-' . $currentToQtr . '/' . $currentToFyear;
+        return [
+            [
+                'codeOfAmount' => '1100100A',
+                'description' => 'Holding Tax Arrear',
+                'period' =>  $arrearPeriod,
+                'amount' => $arrearTaxes->sum('holding_tax'),
+            ],
+            [
+                'codeOfAmount' => '1100100C',
+                'description' => 'Holding Tax Current',
+                'period' => $currentPeriod,
+                'amount' => $currentTaxes->sum('holding_tax'),
+            ],
+            [
+                'codeOfAmount' => '1100200A',
+                'description' => 'Water Tax Arrear',
+                'period' =>  $arrearPeriod,
+                'amount' =>  $arrearTaxes->sum('water_tax'),
+            ],
+            [
+                'codeOfAmount' => '1100200C',
+                'description' => 'Water Tax Current',
+                'period' => $currentPeriod,
+                'amount' => $currentTaxes->sum('water_tax'),
+            ],
+            [
+                'codeOfAmount' => '1100400A',
+                'description' => 'Conservancy Tax Arrear',
+                'period' =>  $arrearPeriod,
+                'amount' =>  $arrearTaxes->sum('latrine_tax'),
+            ],
+            [
+                'codeOfAmount' => '1100400C',
+                'description' => 'Conservancy Tax Current',
+                'period' => $currentPeriod,
+                'amount' => $currentTaxes->sum('latrine_tax'),
+            ],
+            [
+                'codeOfAmount' => '1105201A',
+                'description' => 'Education Cess Arrear',
+                'period' =>  $arrearPeriod,
+                'amount' =>  $arrearTaxes->sum('education_cess'),
+            ],
+            [
+                'codeOfAmount' => '1105201A',
+                'description' => 'Education Cess Current',
+                'period' => $currentPeriod,
+                'amount' => $currentTaxes->sum('education_cess'),
+            ],
+            [
+                'codeOfAmount' => '1105203A',
+                'description' => 'Health Cess Arrear',
+                'period' =>   $arrearPeriod,
+                'amount' => $arrearTaxes->sum('health_cess'),
+            ],
+            [
+                'codeOfAmount' => '1105203C',
+                'description' => 'Health Cess Current',
+                'period' => $currentPeriod,
+                'amount' => $currentTaxes->sum('health_cess'),
+            ],
+            [
+                'codeOfAmount' => '1718002',
+                'description' => 'Interest on Holding Tax',
+                'period' => '',
+                'amount' => $this->_holdingTaxInterest,
+            ]
+        ];
     }
 }
