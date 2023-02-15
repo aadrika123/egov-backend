@@ -196,7 +196,6 @@ class WaterPaymentController extends Controller
         ]);
         try {
             $refTransactionNo = $req->transactionNo;
-            $mWaterConsumerDemand  = new WaterConsumerDemand();
             $mWaterConsumer = new WaterConsumer();
             $mWaterTran = new WaterTran();
 
@@ -205,35 +204,33 @@ class WaterPaymentController extends Controller
             $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
 
             $responseData = collect($refTransactionNo)->map(function ($value, $key) use (
-                $mWaterConsumerDemand,
                 $mWaterConsumer,
                 $mWaterTran,
                 $mTowards,
                 $mAccDescription,
                 $mDepartmentSection,
-                $req,
             ) {
                 # Transaction Details according to transaction no
-                return $transactionDetails = $mWaterTran->getTransactionByTransactionNo($value);
+                $transactionDetails = $mWaterTran->getTransactionByTransactionNo($value);
 
-                # Consumer Deails
-                return  $consumerDetails = $mWaterConsumer->getConsumerDetailById($transactionDetails->related_id, $transactionDetails->demand_id);
+                # Consumer Deails and demand details
+                $consumerDetails = $mWaterConsumer->getConsumerListById($transactionDetails->related_id, $transactionDetails->demand_id);
 
                 # Transaction Date
                 $refDate = $transactionDetails->tran_date;
                 $transactionDate = Carbon::parse($refDate)->format('Y-m-d');
 
                 # transaction time
-                $epoch = $webhookDetails->payment_created_at;
-                $dateTime = new DateTime("@$epoch");
-                $transactionTime = $dateTime->format('H:i:s');
+                // $epoch = $webhookDetails->payment_created_at;
+                // $dateTime = new DateTime("@$epoch");
+                // $transactionTime = $dateTime->format('H:i:s');
 
-                $responseData = [
+                return [
                     "departmentSection" => $mDepartmentSection,
                     "accountDescription" => $mAccDescription,
                     "transactionDate" => $transactionDate,
                     "transactionNo" => $value,
-                    "transactionTime" => $transactionTime,
+                    // "transactionTime" => $transactionTime,
                     "applicationNo" => "",
                     "customerName" => $consumerDetails->consumer_name,
                     "customerMobile" => $consumerDetails->mobile_no,
@@ -243,10 +240,10 @@ class WaterPaymentController extends Controller
                     "paidUpto" => $consumerDetails->demand_upto,
                     "paidUptoQtr" => $consumerDetails->demand_upto,
                     "paymentMode" => $transactionDetails->payment_mode,
-                    "bankName" => "", // in case of cheque,dd,nfts
-                    "branchName" => "", // in case of chque,dd,nfts
-                    "chequeNo" => "",  // in case of chque,dd,nfts
-                    "chequeDate" => "",  // in case of chque,dd,nfts
+                    "bankName" => "",                                   // in case of cheque,dd,nfts
+                    "branchName" => "",                                 // in case of chque,dd,nfts
+                    "chequeNo" => "",                                   // in case of chque,dd,nfts
+                    "chequeDate" => "",                                 // in case of chque,dd,nfts
                     "monthlyRate" => "",
                     "demandAmount" => $consumerDetails->amount,
                     "taxDetails" => "",
@@ -256,7 +253,7 @@ class WaterPaymentController extends Controller
                     "towards" => $mTowards,
                     "description" => $mAccDescription,
                     "totalPaidAmount" => $transactionDetails->amount,
-                    "paidAmtInWords" => getIndianCurrency(),
+                    "paidAmtInWords" => getIndianCurrency($transactionDetails->amount),
                 ];
             });
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "", "1.0", "", "POST", $req->deviceId ?? "");

@@ -36,7 +36,6 @@ class WaterConsumer extends Model
         $mWaterConsumer->bind_book_no                = $consumerDetails->elec_bind_book_no;
         $mWaterConsumer->account_no                  = $consumerDetails->elec_account_no;
         $mWaterConsumer->electric_category_type      = $consumerDetails->elec_category;
-        $mWaterConsumer->id                          = $consumerDetails->id;
         $mWaterConsumer->ulb_id                      = $consumerDetails->ulb_id;
         $mWaterConsumer->area_sqft                   = $consumerDetails->area_sqft;
         $mWaterConsumer->owner_type_id               = $consumerDetails->owner_type;
@@ -46,6 +45,7 @@ class WaterConsumer extends Model
         $mWaterConsumer->user_type                   = $consumerDetails->user_type;
         $mWaterConsumer->area_sqmt                   = $consumerDetails->area_sqmt;
         $mWaterConsumer->save();
+        return $mWaterConsumer->id;
     }
 
 
@@ -212,7 +212,7 @@ class WaterConsumer extends Model
      * | Get Consumer Details By ApplicationId ie. the ID 
      * | @param consumerId
      */
-    public function getConsumerDetailById($consumerId, $demandId)
+    public function getConsumerListById($consumerId, $demandId)
     {
         return WaterConsumer::select(
             'water_consumers.id as consumerId',
@@ -257,6 +257,17 @@ class WaterConsumer extends Model
                 'ulb_ward_masters.id',
                 'ulb_ward_masters.old_ward_name'
             )
+            ->firstOrFail();
+    }
+
+    /**
+     * | Get consumer Details By ConsumerId
+     * | @param conasumerId
+     */
+    public function getConsumerDetailById($consumerId)
+    {
+        return WaterConsumer::where('id', $consumerId)
+            ->where('status', true)
             ->firstOrFail();
     }
 }

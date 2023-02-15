@@ -63,10 +63,12 @@ class NewConnectionController extends Controller
 
     private iNewConnection $newConnection;
     private $_dealingAssistent;
+    private $_waterRoles;
     public function __construct(iNewConnection $newConnection)
     {
         $this->newConnection = $newConnection;
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
+        $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
     }
     /**
      * Display a listing of the resource.
@@ -330,17 +332,34 @@ class NewConnectionController extends Controller
 
 
     // final Approval or Rejection of the Application
+    /**
+        | Recheck
+     */
     public function approvalRejectionWater(Request $request)
     {
         try {
             $request->validate([
                 "applicationId" => "required",
-                "roleId" => "required",
                 "status" => "required"
             ]);
             $waterDetails = WaterApplication::find($request->applicationId);
+            $mWfRoleUsermap = new WfRoleusermap();
+            $waterRoles = $this->_waterRoles;
+
+            # check the login user is Eo or not
+            $userId = authUser()->id;
+            $workflowId = $waterDetails->workflow_id;
+            $getRoleReq = new Request([                                                 // make request to get role id of the user
+                'userId' => $userId,
+                'workflowId' => $workflowId
+            ]);
+            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            $roleId = $readRoleDtls->wf_role_id;
+            if ($roleId != $waterRoles['EO']) {
+                throw new Exception("You are not Executive Officer!");
+            }
             if ($waterDetails) {
-                return $this->newConnection->approvalRejectionWater($request);
+                return $this->newConnection->approvalRejectionWater($request,$roleId);
             }
             throw new Exception("Application dont exist!");
         } catch (Exception $e) {
@@ -407,6 +426,9 @@ class NewConnectionController extends Controller
     }
 
     // Field Verification of water Applications // Recheck
+    /**
+        | Recheck
+     */
     public function fieldVerification(reqSiteVerification $request)
     {
         try {
@@ -638,7 +660,7 @@ class NewConnectionController extends Controller
 
     // Application details
     /**
-        | Working
+        | Working 
      */
     public function uploadWaterDoc(Request $req)
     {
@@ -682,31 +704,8 @@ class NewConnectionController extends Controller
             else
                 $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
 
-            # Check the Document upload Status
-            $documentList = $this->getDocToUpload($req);
-            $refDoc = collect($documentList)['original']['data']['documentsList'];
-            $refOwnerDoc = collect($documentList)['original']['data']['ownersDocList'];
-            $checkDocument = collect($refDoc)->map(function ($value, $key) {
-                if ($value['isMadatory'] == 1) {
-                    $doc = collect($value['uploadDoc'])->first();
-                    if (is_null($doc)) {
-                        return false;
-                    }
-                    return true;
-                }
-                return true;
-            });
-            $checkOwnerDocument = collect($refOwnerDoc)->map(function ($value, $key) {
-                if ($value['isMadatory'] == 1) {
-                    $doc = collect($value['uploadDoc'])->first();
-                    if (is_null($doc)) {
-                        return false;
-                    }
-                    return true;
-                }
-                return true;
-            });
-            $refCheckDocument = $checkDocument->merge($checkOwnerDocument);
+            #check full doc upload
+            $refCheckDocument = $this->checkFullDocUpload($req);
 
             # Update the Doc Upload Satus in Application Table
             if ($refCheckDocument->contains(false)) {
@@ -715,10 +714,7 @@ class NewConnectionController extends Controller
                         'doc_upload_status' => false
                     ]);
             } else {
-                WaterApplication::where('id', $req->applicationId)
-                    ->update([
-                        'doc_upload_status' => true
-                    ]);
+                $this->updateWaterStatus($req, $getWaterDetails);
             }
 
             return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
@@ -726,6 +722,64 @@ class NewConnectionController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
+
+
+    /**
+     * | Caheck the Document if Fully Upload or not
+     * | @param req
+    | Up
+     */
+    public function checkFullDocUpload($req)
+    {
+        # Check the Document upload Status
+        $documentList = $this->getDocToUpload($req);
+        $refDoc = collect($documentList)['original']['data']['documentsList'];
+        $refOwnerDoc = collect($documentList)['original']['data']['ownersDocList'];
+        $checkDocument = collect($refDoc)->map(function ($value, $key) {
+            if ($value['isMadatory'] == 1) {
+                $doc = collect($value['uploadDoc'])->first();
+                if (is_null($doc)) {
+                    return false;
+                }
+                return true;
+            }
+            return true;
+        });
+        $checkOwnerDocument = collect($refOwnerDoc)->map(function ($value, $key) {
+            if ($value['isMadatory'] == 1) {
+                $doc = collect($value['uploadDoc'])->first();
+                if (is_null($doc)) {
+                    return false;
+                }
+                return true;
+            }
+            return true;
+        });
+        return $checkDocument->merge($checkOwnerDocument);
+    }
+
+
+    /**
+     * | Updating the water Application Status
+     * | @param req
+     * | @param application
+        | Up 
+     */
+    public function updateWaterStatus($req, $application)
+    {
+        $waterRoles = $this->_waterRoles;
+        WaterApplication::where('id', $req->applicationId)
+            ->update([
+                'doc_upload_status' => true
+            ]);
+        if ($application->payment_status == true) {
+            WaterApplication::where('id', $req->applicationId)
+                ->update([
+                    'current_role' => $waterRoles['DA']
+                ]);
+        }
+    }
+
 
     // Get the upoaded docunment
     /**
