@@ -40,7 +40,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-reconcillation-details', 'getReconcillationDetails');                       // 11 
         Route::post('search-reconciliation-details', 'searchReconciliationDetails');                // 12
         Route::post('update-reconciliation-details', 'updateReconciliationDetails');                // 13
-        Route::post('get-tran-by-orderid', 'getTranByOrderId');                                     // 15 Get Transaction by Order ID and payment ID
     });
 
 
@@ -65,4 +64,5 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {
     Route::post('razerpay-webhook', 'gettingWebhookDetails');                                       // 14 collecting the all data provided by the webhook and updating the related database
+    Route::post('get-tran-by-orderid', 'getTranByOrderId');                                     // 15 Get Transaction by Order ID and payment ID
 });
