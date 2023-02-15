@@ -5,6 +5,7 @@ namespace App\Repository\Trade;
 use Illuminate\Support\Facades\Storage;
 use App\EloquentModels\Common\ModelWard;
 use App\Models\CustomDetail;
+use App\Models\Payment\TempTransaction;
 use App\Models\Property\ActiveSafsOwnerDtl;
 use App\Models\Property\ActiveSaf;
 use App\Models\Property\PropActiveSaf;
@@ -692,7 +693,8 @@ class Trade implements ITrade
             $Tradetransaction->rate_id          = $rate_id;
             $Tradetransaction->paid_amount      = $totalCharge;
             $Tradetransaction->penalty          = $chargeData['penalty'] + $mDenialAmount + $chargeData['arear_amount'];
-            if ($request->paymentMode != 'CASH') {
+            if ($request->paymentMode != 'CASH') 
+            {
                 $Tradetransaction->status = 2;
             }
             $Tradetransaction->emp_dtl_id       = $refUserId;
@@ -747,8 +749,11 @@ class Trade implements ITrade
                 $tem =  $this->insertWorkflowTrack($args);
             }
 
-            $provNo = $this->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
-            $refLecenceData->provisional_license_no = $provNo;
+            if(!$refLecenceData->provisional_license_no)
+            {
+                $provNo = $this->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
+                $refLecenceData->provisional_license_no = $provNo;
+            }
             $refLecenceData->payment_status         = $mPaymentStatus;
             $refLecenceData->save();
 
@@ -757,7 +762,7 @@ class Trade implements ITrade
                 $refLecenceData->update();
                 $this->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId, 1); //update status and fineAmount                     
             }
-
+            $this->postTempTransection($Tradetransaction,$refLecenceData,$mWardNo);            
             DB::commit();
             #----------End transaction------------------------
             #----------Response------------------------------
@@ -768,6 +773,51 @@ class Trade implements ITrade
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
+    }
+    public function postTempTransection(TradeTransaction $refTransection,ActiveTradeLicence $refApplication,$mWardNo=null)
+    {
+        $module_id = Config::get('module-constants.TRADE_MODULE_ID');
+        $mTempTransaction = new TempTransaction();
+        $tranReqs = [
+            'transaction_id' => $refTransection->id,
+            'application_id' => $refTransection->temp_id,
+            'module_id' => $module_id,
+            'workflow_id' => $refApplication->workflow_id,
+            'transaction_no' => $refTransection->tran_no,
+            'application_no' => $refApplication->application_no,
+            'amount' => $refTransection->paid_amount,
+            'payment_mode' => $refTransection->payment_mode,            
+            'tran_date' => $refTransection->tran_date,
+            'user_id' => $refTransection->emp_dtl_id,
+            'ulb_id' => $refTransection->ulb_id,
+            'cheque_dd_no' => null,
+            'bank_name' => null,
+            "ward_no"=>$mWardNo,
+        ];
+        if ($refTransection->payment_mode != 'CASH') 
+        {
+            $mChequeDtl = TradeChequeDtl::select("*")
+                        ->where("tran_id",$refTransection->id)
+                        ->orderBy("id","DESC")
+                        ->first();
+
+            $tranReqs ['cheque_dd_no'] = $mChequeDtl->cheque_no??null;
+            $tranReqs ['bank_name'] = $mChequeDtl->bank_name??null;
+           
+        }
+        $mTempTransaction->tempTransaction($tranReqs);
+        $sms = trade(["ammount"=>$refTransection->paid_amount,"application_no"=>$refApplication->application_no,"ref_no"=>$refTransection->tran_no],"Payment done");
+        
+        if($sms["status"])
+        {
+            $owners = $this->getAllOwnereDtlByLId($refApplication->id);
+            foreach($owners as $val)
+            {
+                $respons=send_sms($val["mobile_no"],$sms["sms"],$sms["temp_id"]);
+            }
+
+        }
+
     }
     # Serial No : 02
     public function updateLicenseBo(Request $request)
@@ -1999,7 +2049,7 @@ class Trade implements ITrade
             $mNoticeNo = $request->noticeNo;
 
             $refDenialDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($mNoticeNo)));
-            if ($refDenialDetails) {
+            if ($refDenialDetails && $refDenialDetails->is_active) {
                 $notice_date = Carbon::parse($refDenialDetails->noticedate)->format('Y-m-d'); //notice date
                 $denialAmount = $this->getDenialAmountTrade($notice_date, $mNowDate);
                 $data['denialDetails'] = $refDenialDetails;
@@ -3776,6 +3826,10 @@ class Trade implements ITrade
             ->first();
         $tradeNotice->fine_amount  =  $denialAmount;
         $tradeNotice->status =  $status;
+        if($applyid)
+        {
+            // $tradeNotice->is_active =  false;
+        }
         $tradeNotice->update();
     }
     public function getLicenceById($id)

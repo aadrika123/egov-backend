@@ -111,4 +111,36 @@ class PropTransaction extends Model
             'id' => $propTrans->id
         ];
     }
+
+
+    /**
+     * | public function Get Transaction Full Details by TranNo
+     */
+    public function getPropTransFullDtlsByTranNo($tranNo)
+    {
+        return DB::table('prop_transactions as t')
+            ->select(
+                't.*',
+                'd.prop_demand_id',
+                'd.total_demand',
+                'pd.arv',
+                'pd.qtr',
+                'pd.holding_tax',
+                'pd.water_tax',
+                'pd.education_cess',
+                'pd.health_cess',
+                'pd.latrine_tax',
+                'pd.additional_tax',
+                'pd.amount',
+                'pd.balance',
+                'pd.fyear',
+                'pd.due_date'
+            )
+            ->join('prop_tran_dtls as d', 'd.tran_id', '=', 't.id')
+            ->join('prop_demands as pd', 'pd.id', '=', 'd.prop_demand_id')
+            ->where('t.tran_no', $tranNo)
+            ->where('pd.status', 1)
+            ->orderBy('pd.due_date')
+            ->get();
+    }
 }

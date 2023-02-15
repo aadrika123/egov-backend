@@ -21,7 +21,7 @@ class WaterApplication extends Model
      * | @return 
      * | 
      */
-    public function saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId)
+    public function saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId, $newConnectionCharges)
     {
         $saveNewApplication = new WaterApplication();
         $saveNewApplication->connection_type_id     = $req->connectionTypeId;
@@ -63,9 +63,11 @@ class WaterApplication extends Model
         switch ($saveNewApplication->user_type) {
             case ('Citizen'):
                 $saveNewApplication->apply_from = "Online";
-                $saveNewApplication->current_role = Config::get('waterConstaint.ROLE-LABEL.DA');
+                if ($newConnectionCharges['conn_fee_charge']['amount'] == 0) {
+                    $saveNewApplication->payment_status = true;
+                }
                 break;
-            default:
+            default: # Check
                 $saveNewApplication->apply_from = auth()->user()->user_type;
                 $saveNewApplication->current_role = Config::get('waterConstaint.ROLE-LABEL.BO');
                 break;
@@ -220,8 +222,9 @@ class WaterApplication extends Model
         $approvedWaterRep->save();
 
         $mWaterConsumer = new WaterConsumer();
-        $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
+        $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
         // $approvedWater->delete();
+        return $consumerId;
     }
 
     /**

@@ -18,4 +18,16 @@ class WaterConsumerDemand extends Model
             ->where('paid_status', true)
             ->first();
     }
+
+
+    /**
+     * | Get Demand According to consumerId and payment status false 
+     */
+    public function getConsumerDemand($consumerId)
+    {
+        return WaterConsumerDemand::where('consumer_id', $consumerId)
+            ->where('paid_status', false)
+            ->where('status', true)
+            ->get();
+    }
 }

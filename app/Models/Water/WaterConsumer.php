@@ -36,7 +36,6 @@ class WaterConsumer extends Model
         $mWaterConsumer->bind_book_no                = $consumerDetails->elec_bind_book_no;
         $mWaterConsumer->account_no                  = $consumerDetails->elec_account_no;
         $mWaterConsumer->electric_category_type      = $consumerDetails->elec_category;
-        $mWaterConsumer->id                          = $consumerDetails->id;
         $mWaterConsumer->ulb_id                      = $consumerDetails->ulb_id;
         $mWaterConsumer->area_sqft                   = $consumerDetails->area_sqft;
         $mWaterConsumer->owner_type_id               = $consumerDetails->owner_type;
@@ -46,6 +45,7 @@ class WaterConsumer extends Model
         $mWaterConsumer->user_type                   = $consumerDetails->user_type;
         $mWaterConsumer->area_sqmt                   = $consumerDetails->area_sqmt;
         $mWaterConsumer->save();
+        return $mWaterConsumer->id;
     }
 
 
@@ -151,7 +151,7 @@ class WaterConsumer extends Model
             ->where('water_consumers.user_id', auth()->user()->id)
             ->where('water_consumers.user_type', auth()->user()->user_type)
             ->where('water_consumers.status', true)
-            ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
+            // ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
             ->groupBy(
                 'water_consumers.id',
                 'water_consumer_owners.consumer_id',
@@ -212,7 +212,7 @@ class WaterConsumer extends Model
      * | Get Consumer Details By ApplicationId ie. the ID 
      * | @param consumerId
      */
-    public function getConsumerDetailById($consumerId, $demandId)
+    public function getConsumerListById($consumerId, $demandId)
     {
         return WaterConsumer::select(
             'water_consumers.id as consumerId',
@@ -259,4 +259,16 @@ class WaterConsumer extends Model
             )
             ->firstOrFail();
     }
+
+    /**
+     * | Get consumer Details By ConsumerId
+     * | @param conasumerId
+     */
+    public function getConsumerDetailById($consumerId)
+    {
+        return WaterConsumer::where('id', $consumerId)
+            ->where('status', true)
+            ->firstOrFail();
+    }
+
 }

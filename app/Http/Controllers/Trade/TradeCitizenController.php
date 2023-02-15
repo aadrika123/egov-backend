@@ -477,15 +477,19 @@ class TradeCitizenController extends Controller
 
                 $tem =  $this->_counter->insertWorkflowTrack($args);
             }
-
-            $provNo = $this->_counter->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
-            $refLecenceData->provisional_license_no = $provNo;
+            if(!$refLecenceData->provisional_license_no)
+            {
+                $provNo = $this->_counter->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
+                $refLecenceData->provisional_license_no = $provNo;
+            }
             $refLecenceData->payment_status         = $mPaymentStatus;
             $refLecenceData->save();
 
             if ($refNoticeDetails) {
                 $this->_counter->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId, 1); //update status and fineAmount                     
             }
+            $counter = new Trade;
+            $counter->postTempTransection($Tradetransaction,$refLecenceData,$mWardNo);
             DB::commit();
             #----------End transaction------------------------
             #----------Response------------------------------
@@ -562,6 +566,9 @@ class TradeCitizenController extends Controller
     # Serial No : 28
     public function readCitizenLicenceDtl(Request $request)
     {
+        $request->validate([
+        'id' => 'required|digits_between:1,9223372036854775807'
+        ]);
         return $this->Repository->readCitizenLicenceDtl($request);
     }
 
@@ -643,7 +650,7 @@ class TradeCitizenController extends Controller
 
     # Serial No
     public function surrenderList()
-    {
+    { 
         try {
             $citizenId = authUser()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');

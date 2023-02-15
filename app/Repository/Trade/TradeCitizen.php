@@ -33,6 +33,7 @@ use App\Models\Trade\RejectedTradeLicence;
 use App\Models\Trade\TradeFineRebete;
 use App\Models\Trade\TradeLicence;
 use App\Models\Trade\TradeRenewal;
+use App\Models\Workflows\WfActiveDocument;
 
 class TradeCitizen implements ITradeCitizen
 {
@@ -476,19 +477,17 @@ class TradeCitizen implements ITradeCitizen
     }
 
     # Serial No : 28
-    public function readCitizenLicenceDtl($request)
+    public function readCitizenLicenceDtl(Request $request)
     {
+       
         try {
             $id = $request->id;
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id ?? 0;
             $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $tbl = "expire";
-            $application = ActiveTradeLicence::select("id")->find($id);
-            if ($application) {
-                $tbl = "active";
-            }
+            $modul_id = Config::get('module-constants.TRADE_MODULE_ID');
+            
             $init_finish = $this->_parent->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $finisher = $init_finish['finisher'];
             $finisher['short_user_name'] = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.' . strtoupper($init_finish['finisher']['role_name']));
@@ -497,7 +496,8 @@ class TradeCitizen implements ITradeCitizen
             $mStatus = $this->_counter->applicationStatus($id);
             $mItemName      = "";
             $mCods          = "";
-            if ($refApplication->nature_of_bussiness) {
+            if ($refApplication->nature_of_bussiness) 
+            {
                 $items = TradeParamItemType::itemsById($refApplication->nature_of_bussiness);
                 foreach ($items as $val) {
                     $mItemName  .= $val->trade_item . ",";
@@ -511,10 +511,9 @@ class TradeCitizen implements ITradeCitizen
             $refOwnerDtl                = $this->_counter->getAllOwnereDtlByLId($id);
             $refTransactionDtl          = TradeTransaction::listByLicId($id);
             $refTimeLine                = $this->_counter->getTimelin($id);
-            $refUploadDocuments         = $this->_counter->getLicenceDocuments($id, $tbl)->map(function ($val) {
-                $val->document_path = !empty(trim($val->document_path)) ? $this->_counter->readDocumentPath($val->document_path) : "";
-                return $val;
-            });
+            $mWfActiveDocument = new WfActiveDocument();
+            $refUploadDocuments         = $mWfActiveDocument->getTradeDocByAppNo($refApplication->id,$refApplication->workflow_id,$modul_id);
+            
             $pendingAt  = $init_finish['initiator']['id'];
             $mlevelData = $this->_counter->getWorkflowTrack($id);
             if ($mlevelData) {

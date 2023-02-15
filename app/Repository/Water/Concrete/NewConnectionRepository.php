@@ -13,6 +13,8 @@ use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerOwner;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
+use App\Models\Water\WaterTran;
+use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
@@ -115,29 +117,37 @@ class NewConnectionRepository implements iNewConnection
         }
         $installment = $newConnectionCharges['installment_amount'];
         $waterFeeId = $newConnectionCharges['water_fee_mstr_id'];
+        $totalConnectionCharges = $newConnectionCharges['conn_fee_charge']['amount'];
 
         # Generating Application No
         $now = Carbon::now();
         $applicationNo = 'APP' . $now->getTimeStamp();
 
         DB::beginTransaction();
+        # water application
         $objNewApplication = new WaterApplication();
-        $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId);
-
+        $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId, $newConnectionCharges);
+        # water applicant
         foreach ($owner as $owners) {
             $objApplicant = new WaterApplicant();
             $objApplicant->saveWaterApplicant($applicationId, $owners);
         }
-
+        # water penalty
         if (!is_null($installment)) {
             foreach ($installment as $installments) {
                 $objQuaters = new WaterPenaltyInstallment();
                 $objQuaters->saveWaterPenelty($applicationId, $installments);
             }
         }
-
+        # connection charges
         $charges = new WaterConnectionCharge();
-        $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
+        $connectionId=$charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
+
+        # in case of connection charge is 0
+        if ($totalConnectionCharges == 0) {
+            $mWaterTran = new WaterTran();
+            $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges,$ulbId,$req,$applicationId,$connectionId);
+        }
         DB::commit();
 
         $returnResponse = [
@@ -442,14 +452,14 @@ class NewConnectionRepository implements iNewConnection
         | Serial No : 07 
         | Working / Check it / remove the comment ?? for delete
      */
-    public function approvalRejectionWater($request)
+    public function approvalRejectionWater($request, $roleId)
     {
         # Condition while the final Check
         $waterDetails = WaterApplication::find($request->applicationId);
-        if ($waterDetails->finisher != $request->roleId) {
+        if ($waterDetails->finisher != $roleId) {
             throw new Exception("You're Not the finisher ie. EO!");
         }
-        if ($waterDetails->current_role != $request->roleId) {
+        if ($waterDetails->current_role != $roleId) {
             throw new Exception("Application has not Reached to the finisher ie. EO!");
         }
         if ($waterDetails->doc_status == false) {
@@ -474,8 +484,8 @@ class NewConnectionRepository implements iNewConnection
             $mWaterApplicant = new WaterApplicant();
             $consumerNo = 'CON' . $now->getTimeStamp();
 
-            $mWaterApplication->finalApproval($request, $consumerNo);
-            $mWaterApplicant->finalApplicantApproval($request);
+            $consumerId = $mWaterApplication->finalApproval($request, $consumerNo);
+            $mWaterApplicant->finalApplicantApproval($request, $consumerId);
             $msg = "Application Successfully Approved !!";
         }
         # Rejection of water application
@@ -789,7 +799,7 @@ class NewConnectionRepository implements iNewConnection
         $string = preg_replace("/([A-Z])/", "_$1", $key);
         $refstring = strtolower($string);
         $approvedWater = $mWaterConsumer->getConsumerByConsumerNo($refstring, $request->id);
-        $connectionCharge = $mWaterConnectionCharge->getWaterchargesById($approvedWater['id'])->firstOrFail();
+        $connectionCharge = $mWaterConnectionCharge->getWaterchargesById($approvedWater['apply_connection_id'])->firstOrFail();
         $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['id']);
         $water['calcullation'] = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
 

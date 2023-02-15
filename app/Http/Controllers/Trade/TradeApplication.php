@@ -247,6 +247,17 @@ class TradeApplication extends Controller
     {
         $id = $request->id;
         $transectionId =  $request->transectionId;
+        $request->setMethod('POST');
+        $request->request->add(["id"=>$id,"transectionId"=>$transectionId]);       
+        $rules =[
+            "id" => "required|digits_between:1,9223372036854775807",
+            "transectionId" => "required|digits_between:1,9223372036854775807",
+        ];
+        $validator = Validator::make($request->all(), $rules,);
+        if ($validator->fails()) 
+        {
+            return responseMsg(false, $validator->errors(), $request->all());
+        }
         return $this->Repository->readPaymentReceipt($id, $transectionId);
     }
     # Serial No : 05
@@ -494,6 +505,7 @@ class TradeApplication extends Controller
             // Approval
             if ($req->status == 1) 
             {
+                $refUlbDtl          = UlbMaster::find($activeLicence->ulb_id);
                 // Objection Application replication
                 $approvedLicence = $activeLicence->replicate();
                 $approvedLicence->setTable('trade_licences');
@@ -507,6 +519,7 @@ class TradeApplication extends Controller
                 $activeLicence->delete();
                 $licenseNo = $approvedLicence->license_no;
                 $msg =  "Application Successfully Approved !!. Your License No Is ".$licenseNo;
+                $sms = trade(["application_no"=>$approvedLicence->application_no,"licence_no"=>$approvedLicence->license_no,"ulb_name"=>$refUlbDtl->ulb_name??""],"Application Approved");
             }
 
             // Rejection
@@ -519,6 +532,16 @@ class TradeApplication extends Controller
                 $approvedLicence->save();
                 $activeLicence->delete();
                 $msg = "Application Successfully Rejected !!";
+                // $sms = trade(["application_no"=>$approvedLicence->application_no,"licence_no"=>$approvedLicence->license_no,"ulb_name"=>$refUlbDtl->ulb_name??""],"Application Approved");
+            }
+            if(($sms["status"]??false))
+            {
+                $owners = $this->getAllOwnereDtlByLId($req->applicationId);
+                foreach($owners as $val)
+                {
+                    $respons=send_sms($val["mobile_no"],$sms["sms"],$sms["temp_id"]);
+                }
+
             }
             DB::commit();
 
@@ -533,11 +556,33 @@ class TradeApplication extends Controller
     # Serial No : 19
     public function provisionalCertificate(Request $request)
     {
+        $id=$request->id;
+        $request->setMethod('POST');
+        $request->request->add(["id"=>$id]);       
+        $rules =[
+            "id" => "required|digits_between:1,9223372036854775807",
+        ];
+        $validator = Validator::make($request->all(), $rules,);
+        if ($validator->fails()) 
+        {
+            return responseMsg(false, $validator->errors(), $request->all());
+        }
         return $this->Repository->provisionalCertificate($request->id);
     }
     # Serial No : 20
     public function licenceCertificate(Request $request)
-    {
+    { 
+        $id=$request->id;
+        $request->setMethod('POST');
+        $request->request->add(["id"=>$id]);       
+        $rules =[
+            "id" => "required|digits_between:1,9223372036854775807",
+        ];
+        $validator = Validator::make($request->all(), $rules,);
+        if ($validator->fails()) 
+        {
+            return responseMsg(false, $validator->errors(), $request->all());
+        }
         return $this->Repository->licenceCertificate($request->id);
     }
     # Serial No : 21
@@ -618,7 +663,7 @@ class TradeApplication extends Controller
     public function getUploadDocuments(Request $req)
     {
         $req->validate([
-            'applicationId' => 'required|numeric'
+            'applicationId' => 'required|digits_between:1,9223372036854775807'
         ]);
         try {
             $mWfActiveDocument = new WfActiveDocument();
