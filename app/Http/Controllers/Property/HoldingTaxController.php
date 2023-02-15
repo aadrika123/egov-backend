@@ -143,7 +143,8 @@ class HoldingTaxController extends Controller
                 'is_mobile_tower',
                 'is_hoarding_board',
                 'is_petrol_pump',
-                'is_water_harvesting'
+                'is_water_harvesting',
+                'ulb_id'
             ]);
             if ($demandList->isEmpty())
                 throw new Exception("Dues Not Available for this Property");
