@@ -559,7 +559,7 @@ class TradeApplication extends Controller
     }
     # Serial No : 20
     public function licenceCertificate(Request $request)
-    {
+    { 
         $id=$request->id;
         $request->setMethod('POST');
         $request->request->add(["id"=>$id]);       
