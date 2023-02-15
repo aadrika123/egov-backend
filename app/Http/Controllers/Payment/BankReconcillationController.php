@@ -56,7 +56,8 @@ class BankReconcillationController extends Controller
             $mWaterTran = new WaterTran();
 
             if ($moduleId == $propertyModuleId) {
-                $data =  PropTransaction::select('*')
+                $data =  PropTransaction::select('prop_transactions.*', 'prop_cheque_dtls.*')
+                    ->leftjoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 'prop_transactions.id')
                     ->where('payment_mode', 'DD')
                     ->orWhere('payment_mode', 'CHEQUE')
                     ->whereBetween('tran_date', [$fromDate, $toDate])
@@ -83,7 +84,7 @@ class BankReconcillationController extends Controller
             }
 
             if ($request->chequeNo) {
-                collect($data)->where('');
+                collect($data)->where('cheque_no', $request->chequeNo);
             }
 
             if (!empty(collect($data))) {
