@@ -239,7 +239,14 @@ class CitizenController extends Controller
                 'gender' => $data->gender,
                 'dob' => $data->dob,
                 'aadhar' => $data->aadhar,
+                'aadhar_doc' => $data->aadhar_doc,
+                'is_specially_abled' => $data->is_specially_abled,
+                'specially_abled_doc' => $data->specially_abled_doc,
+                'is_armed_force' => $data->is_armed_force,
+                'armed_force_doc' => $data->armed_force_doc,
+                'relative_path' => $data->relative_path,
                 'user_type' => $data->user_type,
+                'profile_photo' => $data->profile_photo,
             ];
             $filtered = collect($collection);
             $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($filtered)];
@@ -255,7 +262,14 @@ class CitizenController extends Controller
                 'gender',
                 'dob',
                 'aadhar',
-                'user_type'
+                'aadhar_doc',
+                'is_specially_abled',
+                'specially_abled_doc',
+                'is_armed_force',
+                'armed_force_doc',
+                'relative_path',
+                'user_type',
+                'profile_photo',
             )
                 ->where('id', $userId)
                 ->first();
