@@ -247,6 +247,17 @@ class TradeApplication extends Controller
     {
         $id = $request->id;
         $transectionId =  $request->transectionId;
+        $request->setMethod('POST');
+        $request->request->add(["id"=>$id,"transectionId"=>$transectionId]);       
+        $rules =[
+            "id" => "required|digits_between:1,9223372036854775807",
+            "transectionId" => "required|digits_between:1,9223372036854775807",
+        ];
+        $validator = Validator::make($request->all(), $rules,);
+        if ($validator->fails()) 
+        {
+            return responseMsg(false, $validator->errors(), $request->all());
+        }
         return $this->Repository->readPaymentReceipt($id, $transectionId);
     }
     # Serial No : 05
@@ -533,11 +544,33 @@ class TradeApplication extends Controller
     # Serial No : 19
     public function provisionalCertificate(Request $request)
     {
+        $id=$request->id;
+        $request->setMethod('POST');
+        $request->request->add(["id"=>$id]);       
+        $rules =[
+            "id" => "required|digits_between:1,9223372036854775807",
+        ];
+        $validator = Validator::make($request->all(), $rules,);
+        if ($validator->fails()) 
+        {
+            return responseMsg(false, $validator->errors(), $request->all());
+        }
         return $this->Repository->provisionalCertificate($request->id);
     }
     # Serial No : 20
     public function licenceCertificate(Request $request)
     {
+        $id=$request->id;
+        $request->setMethod('POST');
+        $request->request->add(["id"=>$id]);       
+        $rules =[
+            "id" => "required|digits_between:1,9223372036854775807",
+        ];
+        $validator = Validator::make($request->all(), $rules,);
+        if ($validator->fails()) 
+        {
+            return responseMsg(false, $validator->errors(), $request->all());
+        }
         return $this->Repository->licenceCertificate($request->id);
     }
     # Serial No : 21
