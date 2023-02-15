@@ -159,6 +159,7 @@ class HoldingTaxController extends Controller
             $dues = roundFigure($demandList->sum('balance'));
             $onePercTax = roundFigure($demandList->sum('onePercPenaltyTax'));
             $rwhPenaltyTax = roundFigure($demandList->sum('additional_tax'));
+            $adjustAmt = roundFigure($demandList->sum('adjust_amt'));
             $mLastQuarterDemand = $demandList->last()->balance;
 
             collect($demandList)->map(function ($value) use ($pendingFYears, $qtrs) {
@@ -197,7 +198,9 @@ class HoldingTaxController extends Controller
 
             $demand['basicDetails'] = $basicDtls;
 
-            $totalPayable = round($dues + $onePercTax);
+            $total = roundFigure($dues - $adjustAmt);
+            $totalPayable = round($total + $onePercTax);
+
             $demand['dueReceipt'] = [
                 'holdingNo' => $basicDtls['holding_no'],
                 'new_holding_no' => $basicDtls['new_holding_no'],
@@ -211,8 +214,8 @@ class HoldingTaxController extends Controller
                 'duesTo' => $dueTo,
                 'rwhPenalty' => $rwhPenaltyTax,
                 'demand' => $dues,
-                'alreadyPaid' => 0,
-                'total' => $dues,
+                'alreadyPaid' => $adjustAmt,
+                'total' => $total,
                 'onePercPenalty' => $onePercTax,
                 'totalPayable' => $totalPayable,
                 'totalPayableInWords' => getIndianCurrency($totalPayable)
