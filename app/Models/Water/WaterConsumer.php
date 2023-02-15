@@ -151,7 +151,7 @@ class WaterConsumer extends Model
             ->where('water_consumers.user_id', auth()->user()->id)
             ->where('water_consumers.user_type', auth()->user()->user_type)
             ->where('water_consumers.status', true)
-            ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
+            // ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
             ->groupBy(
                 'water_consumers.id',
                 'water_consumer_owners.consumer_id',
