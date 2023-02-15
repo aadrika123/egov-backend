@@ -137,6 +137,7 @@ class HoldingTaxController extends Controller
             $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
             $basicDtls = collect($propBasicDtls)->only([
                 'holding_no',
+                'new_holding_no',
                 'old_ward_no',
                 'new_ward_no',
                 'property_type',
@@ -145,7 +146,8 @@ class HoldingTaxController extends Controller
                 'is_hoarding_board',
                 'is_petrol_pump',
                 'is_water_harvesting',
-                'ulb_id'
+                'ulb_id',
+                'prop_address'
             ]);
             if ($demandList->isEmpty())
                 throw new Exception("Dues Not Available for this Property");
@@ -156,6 +158,8 @@ class HoldingTaxController extends Controller
 
             $dues = roundFigure($demandList->sum('balance'));
             $onePercTax = roundFigure($demandList->sum('onePercPenaltyTax'));
+            $rwhPenaltyTax = roundFigure($demandList->sum('additional_tax'));
+            $adjustAmt = roundFigure($demandList->sum('adjust_amt'));
             $mLastQuarterDemand = $demandList->last()->balance;
 
             collect($demandList)->map(function ($value) use ($pendingFYears, $qtrs) {
@@ -166,10 +170,12 @@ class HoldingTaxController extends Controller
             });
 
             $paymentUptoYrs = $pendingFYears->unique();
+            $dueFrom = "Quarter " . $demandList->last()->qtr . "/ Year " . $demandList->last()->fyear;
+            $dueTo = "Quarter " . $demandList->first()->qtr . "/ Year " . $demandList->first()->fyear;
             $totalDuesList = [
                 'totalDues' => $dues,
-                'duesFrom' => "Quarter " . $demandList->last()->qtr . "/ Year " . $demandList->last()->fyear,
-                'duesTo' => "Quarter " . $demandList->first()->qtr . "/ Year " . $demandList->first()->fyear,
+                'duesFrom' => $dueFrom,
+                'duesTo' => $dueTo,
                 'onePercPenalty' => $onePercTax,
                 'totalQuarters' => $demandList->count(),
                 'arrear' => $balance
@@ -191,6 +197,29 @@ class HoldingTaxController extends Controller
             $demand['demandList'] = $demandList;
 
             $demand['basicDetails'] = $basicDtls;
+
+            $total = roundFigure($dues - $adjustAmt);
+            $totalPayable = round($total + $onePercTax);
+
+            $demand['dueReceipt'] = [
+                'holdingNo' => $basicDtls['holding_no'],
+                'new_holding_no' => $basicDtls['new_holding_no'],
+                'date' => $todayDate,
+                'wardNo' => $basicDtls['old_ward_no'],
+                'newWardNo' => $basicDtls['new_ward_no'],
+                'ownerName' => $ownerDetails->ownerName,
+                'ownerMobile' => $ownerDetails->mobileNo,
+                'address' => $basicDtls['prop_address'],
+                'duesFrom' => $dueFrom,
+                'duesTo' => $dueTo,
+                'rwhPenalty' => $rwhPenaltyTax,
+                'demand' => $dues,
+                'alreadyPaid' => $adjustAmt,
+                'total' => $total,
+                'onePercPenalty' => $onePercTax,
+                'totalPayable' => $totalPayable,
+                'totalPayableInWords' => getIndianCurrency($totalPayable)
+            ];
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls], "011602", "1.0", "", "POST", $req->deviceId ?? "");
