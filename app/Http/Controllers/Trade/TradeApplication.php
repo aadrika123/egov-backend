@@ -505,6 +505,7 @@ class TradeApplication extends Controller
             // Approval
             if ($req->status == 1) 
             {
+                $refUlbDtl          = UlbMaster::find($activeLicence->ulb_id);
                 // Objection Application replication
                 $approvedLicence = $activeLicence->replicate();
                 $approvedLicence->setTable('trade_licences');
@@ -518,6 +519,7 @@ class TradeApplication extends Controller
                 $activeLicence->delete();
                 $licenseNo = $approvedLicence->license_no;
                 $msg =  "Application Successfully Approved !!. Your License No Is ".$licenseNo;
+                $sms = trade(["application_no"=>$approvedLicence->application_no,"licence_no"=>$approvedLicence->license_no,"ulb_name"=>$refUlbDtl->ulb_name??""],"Application Approved");
             }
 
             // Rejection
@@ -530,6 +532,16 @@ class TradeApplication extends Controller
                 $approvedLicence->save();
                 $activeLicence->delete();
                 $msg = "Application Successfully Rejected !!";
+                // $sms = trade(["application_no"=>$approvedLicence->application_no,"licence_no"=>$approvedLicence->license_no,"ulb_name"=>$refUlbDtl->ulb_name??""],"Application Approved");
+            }
+            if(($sms["status"]??false))
+            {
+                $owners = $this->getAllOwnereDtlByLId($req->applicationId);
+                foreach($owners as $val)
+                {
+                    $respons=send_sms($val["mobile_no"],$sms["sms"],$sms["temp_id"]);
+                }
+
             }
             DB::commit();
 
