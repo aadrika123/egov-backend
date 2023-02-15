@@ -15,5 +15,5 @@ interface ITradeCitizen
 {
     public function addRecord(Request $request);
     public function citizenApplication(Request $request);
-    public function readCitizenLicenceDtl($request);
+    public function readCitizenLicenceDtl(Request $request);
 }
