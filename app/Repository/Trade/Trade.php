@@ -1999,7 +1999,7 @@ class Trade implements ITrade
             $mNoticeNo = $request->noticeNo;
 
             $refDenialDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($mNoticeNo)));
-            if ($refDenialDetails) {
+            if ($refDenialDetails && $refDenialDetails->is_active) {
                 $notice_date = Carbon::parse($refDenialDetails->noticedate)->format('Y-m-d'); //notice date
                 $denialAmount = $this->getDenialAmountTrade($notice_date, $mNowDate);
                 $data['denialDetails'] = $refDenialDetails;
@@ -3776,6 +3776,10 @@ class Trade implements ITrade
             ->first();
         $tradeNotice->fine_amount  =  $denialAmount;
         $tradeNotice->status =  $status;
+        if($applyid)
+        {
+            // $tradeNotice->is_active =  false;
+        }
         $tradeNotice->update();
     }
     public function getLicenceById($id)
