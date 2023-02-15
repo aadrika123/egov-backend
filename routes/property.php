@@ -333,7 +333,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('generate-holding-demand', 'generateHoldingDemand');              // (01) Property/Holding Yearly Holding Tax Generation
     Route::post('get-holding-dues', 'getHoldingDues');                            // (02) Property/ Holding Dues
     Route::post('generate-prop-orderid', 'generateOrderId');                      // (03) Generate Property Order ID
-    Route::post('prop-payment-receipt', 'propPaymentReceipt');                    // (05) Generate Property Payment Receipt
   });
 
   /**
@@ -360,7 +359,9 @@ Route::controller(ActiveSafControllerV2::class)->group(function () {
  */
 Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('payment-holding', 'paymentHolding');                                         // (04) Payment Holding
+  Route::post('prop-payment-receipt', 'propPaymentReceipt');                                // (05) Generate Property Payment Receipt
   Route::post('independent/get-holding-dues', 'getHoldingDues');                            // (07) Property/ Holding Dues
   Route::post('independent/generate-prop-orderid', 'generateOrderId');                      // (08) Generate Property Order ID
   Route::post('prop-payment-history', 'propPaymentHistory');                                // (06) Property Payment History
+  Route::post('prop-ulb-receipt', 'proUlbReceipt');                                         // (09) Property Ulb Payment Receipt
 });

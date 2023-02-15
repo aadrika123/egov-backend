@@ -13,6 +13,8 @@ use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerOwner;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
+use App\Models\Water\WaterTran;
+use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
@@ -115,6 +117,7 @@ class NewConnectionRepository implements iNewConnection
         }
         $installment = $newConnectionCharges['installment_amount'];
         $waterFeeId = $newConnectionCharges['water_fee_mstr_id'];
+        $totalConnectionCharges = $newConnectionCharges['conn_fee_charge']['amount'];
 
         # Generating Application No
         $now = Carbon::now();
@@ -138,7 +141,13 @@ class NewConnectionRepository implements iNewConnection
         }
         # connection charges
         $charges = new WaterConnectionCharge();
-        $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
+        $connectionId=$charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
+
+        # in case of connection charge is 0
+        if ($totalConnectionCharges == 0) {
+            $mWaterTran = new WaterTran();
+            $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges,$ulbId,$req,$applicationId,$connectionId);
+        }
         DB::commit();
 
         $returnResponse = [
@@ -443,7 +452,7 @@ class NewConnectionRepository implements iNewConnection
         | Serial No : 07 
         | Working / Check it / remove the comment ?? for delete
      */
-    public function approvalRejectionWater($request,$roleId)
+    public function approvalRejectionWater($request, $roleId)
     {
         # Condition while the final Check
         $waterDetails = WaterApplication::find($request->applicationId);

@@ -2,6 +2,8 @@
 
 namespace App\Models\Water;
 
+use App\MicroServices\IdGeneration;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -50,5 +52,34 @@ class WaterTran extends Model
             ->where('water_trans.status', true)
             ->where('water_tran_details.status', true)
             ->firstOrFail();
+    }
+
+    /**
+     * | Enter the default details of the transacton which have 0 Connection charges
+     * | @param
+     * | @var 
+     */
+    public function saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId)
+    {
+        $refIdGeneration = new IdGeneration();
+        $transactionNo = $refIdGeneration->generateTransactionNo();
+
+        $Tradetransaction = new WaterTran;
+        $Tradetransaction->related_id       = $applicationId;
+        $Tradetransaction->ward_id          = $req->ward_id;
+        $Tradetransaction->tran_type        = "Default";
+        $Tradetransaction->tran_date        = Carbon::now('Y-m-d');
+        $Tradetransaction->payment_mode     = "Default";
+        $Tradetransaction->amount           = $totalConnectionCharges;
+        $Tradetransaction->emp_dtl_id       = authUser()->id;
+        $Tradetransaction->created_at       = Carbon::now();
+        $Tradetransaction->ip_address       = '';
+        $Tradetransaction->ulb_id           = $ulbId;
+        $Tradetransaction->tran_no          = $transactionNo;
+        $Tradetransaction->save();
+        $transactionId = $Tradetransaction->id;
+
+        $mWaterTranDetail = new WaterTranDetail();
+        $mWaterTranDetail->saveDefaultTrans($totalConnectionCharges, $applicationId, $transactionId, $connectionId);
     }
 }

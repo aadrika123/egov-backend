@@ -28,6 +28,7 @@ class WaterConnectionCharge extends Model
         $saveCharges->amount = $newConnectionCharges['conn_fee_charge']['amount'];
         $saveCharges->rule_set = $newConnectionCharges['ruleSete'];
         $saveCharges->save();
+        return $saveCharges->id;
     }
 
     /**
