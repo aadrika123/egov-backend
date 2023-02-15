@@ -190,8 +190,8 @@ class HoldingTaxController extends Controller
 
             $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
             $totalDuesList['payableAmount'] = round($finalPayableAmt);
-            $totalDuesList['paymentUptoYrs'] = $paymentUptoYrs;
-            $totalDuesList['paymentUptoQtrs'] = $pendingQtrs->values();
+            $totalDuesList['paymentUptoYrs'] = [$paymentUptoYrs->first()];
+            $totalDuesList['paymentUptoQtrs'] = $pendingQtrs->unique()->values();
 
             $demand['duesList'] = $totalDuesList;
             $demand['demandList'] = $demandList;
