@@ -618,7 +618,7 @@ class TradeApplication extends Controller
     public function getUploadDocuments(Request $req)
     {
         $req->validate([
-            'applicationId' => 'required|numeric'
+            'applicationId' => 'required|digits_between:1,9223372036854775807'
         ]);
         try {
             $mWfActiveDocument = new WfActiveDocument();

@@ -477,20 +477,17 @@ class TradeCitizen implements ITradeCitizen
     }
 
     # Serial No : 28
-    public function readCitizenLicenceDtl($request)
+    public function readCitizenLicenceDtl(Request $request)
     {
+       
         try {
             $id = $request->id;
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id ?? 0;
             $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $tbl = "expire";
             $modul_id = Config::get('module-constants.TRADE_MODULE_ID');
-            $application = ActiveTradeLicence::select("id")->find($id);
-            if ($application) {
-                $tbl = "active";
-            }
+            
             $init_finish = $this->_parent->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $finisher = $init_finish['finisher'];
             $finisher['short_user_name'] = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.' . strtoupper($init_finish['finisher']['role_name']));

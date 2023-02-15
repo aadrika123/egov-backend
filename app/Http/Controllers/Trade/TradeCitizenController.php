@@ -562,6 +562,9 @@ class TradeCitizenController extends Controller
     # Serial No : 28
     public function readCitizenLicenceDtl(Request $request)
     {
+        $request->validate([
+        'id' => 'required|digits_between:1,9223372036854775807'
+        ]);
         return $this->Repository->readCitizenLicenceDtl($request);
     }
 
