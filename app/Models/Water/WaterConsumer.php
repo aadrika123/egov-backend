@@ -270,4 +270,5 @@ class WaterConsumer extends Model
             ->where('status', true)
             ->firstOrFail();
     }
+
 }
