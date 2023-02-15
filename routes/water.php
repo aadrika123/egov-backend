@@ -35,7 +35,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(NewConnectionController::class)->group(function () {
         # Citizen View Water Screen For Mobile 
-        Route::post('list-connection-type', 'getConnectionType');                                        //05         // Get Water Connection Type Details mstr
+        Route::post('list-connection-type', 'getConnectionType');                                        //05        // Get Water Connection Type Details mstr
         Route::post('list-connection-through', 'getConnectionThrough');                                  //06        // Get Water Connection Through Details mstr
         Route::post('list-property-type', 'getPropertyType');                                            //07        // Get Property Type Details mstr
         Route::post('list-owner-type', 'getOwnerType');                                                  //08        // Get Owner Type Details mstr
@@ -79,9 +79,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(WaterPaymentController::class)->group(function () {
         # Consumer And Citizen Transaction Operation
-        Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');
-        Route::post('generate-payment-receipt', 'generatePaymentReceipt');
-        Route::post('consumer/generate-demand-receiep', 'generateDemandPaymentReceipt');
+        Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
+        Route::post('generate-payment-receipt', 'generatePaymentReceipt');                              // Citizen
+        Route::post('consumer/generate-demand-receiep', 'generateDemandPaymentReceipt');                // Consumer
     });
 
     /**
@@ -90,7 +90,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * |------------- Water Consumer and Related -------------|
      */
     Route::controller(WaterConsumer::class)->group(function () {
-        Route::post('consumer/list-demand', 'listConsumerDemand');
+        Route::post('consumer/list-demand', 'listConsumerDemand');                                      // Consumer
     });
 });
 

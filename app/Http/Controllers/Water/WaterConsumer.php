@@ -34,6 +34,12 @@ class WaterConsumer extends Controller
     /**
      * | List Consumer Active Demand
      * | Show the Demand With payed-status false
+     * | @param request consumerId
+     * | @var WaterConsumerDemand  model
+     * | @var consumerDemand  
+     * | @return consumerDemand  Consumer Demand List
+        | Serial no : 02
+        | Working
      */
     public function listConsumerDemand(Request $request)
     {
@@ -42,14 +48,14 @@ class WaterConsumer extends Controller
         ]);
         try {
             $WaterConsumerDemand = new WaterConsumerDemand();
-            $consumerDemand = $WaterConsumerDemand->getConsumerDemand($request->ConsumerId);
-            $consumerDemand['totalSumDemand'] = collect($consumerDemand)->map(function ($value, $key) {
+            $consumerDemand['consumerDemands'] = $WaterConsumerDemand->getConsumerDemand($request->ConsumerId);
+            $consumerDemand['totalSumDemand'] = collect($consumerDemand['consumerDemands'])->map(function ($value, $key) {
                 return $value['amount'];
             })->sum();
-            return $consumerDemand['sumDemand'] = collect($consumerDemand)->map(function ($value, $key) {
-                return $value;
-            });
-            // return $consumerDemand;
+            $consumerDemand['totalPenalty'] = collect($consumerDemand['consumerDemands'])->map(function ($value, $key) {
+                return $value['penalty'];
+            })->sum();
+
             return responseMsgs(true, "List of Consumer Demand!", $consumerDemand, "", "01", "ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
