@@ -148,9 +148,10 @@ class PropActiveSaf extends Model
                 'r.road_type as road_type_master',
                 'wr.role_name as current_role_name',
                 't.transfer_mode',
-                'a.apt_code',
+                'a.apt_code as apartment_code',
                 'a.apartment_address',
-                'a.no_of_block'
+                'a.no_of_block',
+                'a.apartment_name'
             )
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
             ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
