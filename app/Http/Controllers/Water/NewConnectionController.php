@@ -1602,9 +1602,7 @@ class NewConnectionController extends Controller
         try {
             # Site inspection Details
             $mWaterSiteInspection = new WaterSiteInspection();
-            $applicationId = $request->applicationId;
-
-            $siteInspectiondetails = $mWaterSiteInspection->getInspectionById($applicationId);
+            $siteInspectiondetails = $mWaterSiteInspection->getInspectionById($request->applicationId)->get();
             return responseMsgs(true, "Comparative data!", remove_null($siteInspectiondetails), "", "01", "ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");

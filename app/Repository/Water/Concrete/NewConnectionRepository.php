@@ -88,8 +88,17 @@ class NewConnectionRepository implements iNewConnection
         $vacantLand = $this->_vacantLand;
         $workflowID = $this->_waterWorkflowId;
         $owner = $req['owners'];
+        $tenant = $req['tenant'];
         $ulbId = $req->ulbId;
-        $ta=$req['tenant'];
+        $reftenant = true;
+
+        $ulbWorkflowObj = new WfWorkflow();
+        $mWaterNewConnection = new WaterNewConnection();
+        $objNewApplication = new WaterApplication();
+        $mWaterApplicant = new WaterApplicant();
+        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+        $mWaterConnectionCharge = new WaterConnectionCharge();
+        $mWaterTran = new WaterTran();
 
         # check the property type on vacant land
         $checkResponse = $this->checkVacantLand($req, $vacantLand);
@@ -98,7 +107,6 @@ class NewConnectionRepository implements iNewConnection
         }
 
         # get initiater and finisher
-        $ulbWorkflowObj = new WfWorkflow();
         $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $ulbId);
         if (!$ulbWorkflowId) {
             throw new Exception("The respective Ulb is not maped to Water Workflow!");
@@ -109,8 +117,7 @@ class NewConnectionRepository implements iNewConnection
         $initiatorRoleId = DB::select($refInitiatorRoleId);
 
         # Generating Demand 
-        $objCall = new WaterNewConnection();
-        $newConnectionCharges = objToArray($objCall->calWaterConCharge($req));
+        $newConnectionCharges = objToArray($mWaterNewConnection->calWaterConCharge($req));
         if (!$newConnectionCharges['status']) {
             throw new Exception(
                 $newConnectionCharges['errors']
@@ -126,32 +133,25 @@ class NewConnectionRepository implements iNewConnection
 
         DB::beginTransaction();
         # water application
-        $objNewApplication = new WaterApplication();
         $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId, $newConnectionCharges);
         # water applicant
         foreach ($owner as $owners) {
-            $objApplicant = new WaterApplicant();
-            $objApplicant->saveWaterApplicant($applicationId, $owners);
+            $mWaterApplicant->saveWaterApplicant($applicationId, $owners, null);
         }
         # water applicant in case of tenant
         foreach ($tenant as $tenants) {
-            $objApplicant = new WaterApplicant();
-            $objApplicant->saveWaterApplicant($applicationId, $owners);
+            $mWaterApplicant->saveWaterApplicant($applicationId, $tenants, $reftenant);
         }
         # water penalty
         if (!is_null($installment)) {
             foreach ($installment as $installments) {
-                $objQuaters = new WaterPenaltyInstallment();
-                $objQuaters->saveWaterPenelty($applicationId, $installments);
+                $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $installments);
             }
         }
         # connection charges
-        $charges = new WaterConnectionCharge();
-        $connectionId = $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
-
+        $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $req, $newConnectionCharges);
         # in case of connection charge is 0
         if ($totalConnectionCharges == 0) {
-            $mWaterTran = new WaterTran();
             $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId);
         }
         DB::commit();
