@@ -56,11 +56,13 @@ use App\Repository\Property\Concrete\CalculatorRepository;
 use App\Repository\Property\Concrete\DocumentOperationRepo;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use App\Repository\Property\Concrete\PropertyDetailsRepo;
+use App\Repository\Property\Concrete\Report;
 use App\Repository\Property\Concrete\SafDemandRepo;
 use App\Repository\Property\Interfaces\iCalculatorRepository;
 use App\Repository\Property\Interfaces\iDocumentOperationRepo;
 use App\Repository\Property\Interfaces\IPropertyBifurcation;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
+use App\Repository\Property\Interfaces\IReport;
 use App\Repository\Property\Interfaces\iSafDemandRepo;
 
 use App\Repository\Trade\ITradeCitizen;
@@ -107,6 +109,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(iPropertyDetailsRepo::class, PropertyDetailsRepo::class);
         $this->app->bind(iDocumentOperationRepo::class, DocumentOperationRepo::class);
         $this->app->bind(iSafDemandRepo::class, SafDemandRepo::class);
+        $this->app->bind(IReport::class, Report::class);
 
         //menu permission
 

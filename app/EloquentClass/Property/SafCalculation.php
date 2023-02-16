@@ -120,7 +120,7 @@ class SafCalculation
 
         $todayDate = Carbon::now();
         $this->_virtualDate = $todayDate->subYears(12)->format('Y-m-d');
-        $this->_floors = $propertyDetails['floor'];
+        $this->_floors = $propertyDetails['floor'] ?? [];
         $this->_ulbId = ($propertyDetails['ulbId']) ?? auth()->user()->ulb_id;
 
         $this->_vacantPropertyTypeId = Config::get("PropertyConstaint.VACANT_PROPERTY_TYPE");               // Vacant Property Type Id
@@ -1010,7 +1010,7 @@ class SafCalculation
         // Check Late Assessment Penalty for Vacant Land
         if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
             $currentDate = Carbon::now()->floorMonth();
-            $dateFrom = Carbon::createFromFormat('Y-m-d', $this->_propertyDetails['dateOfPurchase'])->floorMonth();
+            $dateFrom = Carbon::createFromFormat('Y-m-d', $this->_propertyDetails['landOccupationDate'])->floorMonth();
             $diffInMonths = $currentDate->diffInMonths($dateFrom);
             $lateAssessmentStatus = $diffInMonths > 3 ? true : false;
             if ($lateAssessmentStatus == true) {

@@ -25,10 +25,13 @@ class reqApplySaf extends FormRequest
      */
     public function rules()
     {
+        $userType = auth()->user()->user_type;
         $mNowDate     = Carbon::now()->format("Y-m-d");
         $mNowDateYm   = Carbon::now()->format("Y-m");
 
-        $rules['ulbId'] = "required|int";
+        if ($userType == 'Citizen')
+            $rules['ulbId'] = "required|int";
+
         $rules['assessmentType'] = "required|int|in:1,2,3";
         if (isset($this->assessmentType) && $this->assessmentType == 3) {
             $rules['transferModeId'] = "required";
