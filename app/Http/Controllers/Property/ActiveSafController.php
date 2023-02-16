@@ -1810,7 +1810,7 @@ class ActiveSafController extends Controller
             // Verification Store
             $verificationId = $verification->store($req);                            // Model function to store verification and get the id
             // Verification Dtl Table Update                                         // For Tax Collector
-            foreach ($req->floorDetails as $floorDetail) {
+            foreach ($req->floor as $floorDetail) {
                 $verificationDtl = new PropSafVerificationDtl();
                 $verificationDtl->verification_id = $verificationId;
                 $verificationDtl->saf_id = $req->safId;
