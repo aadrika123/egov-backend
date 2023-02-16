@@ -88,7 +88,10 @@ class PropActiveObjection extends Model
                 'w.ward_name as old_ward_no',
                 'nw.ward_name as new_ward_no',
                 'o.ownership_type',
-                'pt.property_type'
+                'pt.property_type',
+                'a.apt_code',
+                'a.apartment_address',
+                'a.no_of_block'
             )
 
             ->join('prop_properties as p', 'p.id', '=', 'prop_active_objections.property_id')
@@ -96,6 +99,7 @@ class PropActiveObjection extends Model
             ->join('ulb_ward_masters as nw', 'nw.id', '=', 'p.new_ward_mstr_id')
             ->join('ref_prop_ownership_types as o', 'o.id', '=', 'p.ownership_type_mstr_id')
             ->join('ref_prop_types as pt', 'pt.id', '=', 'p.prop_type_mstr_id')
+            ->leftJoin('prop_apartment_dtls as a', 'a.id', '=', 'p.apartment_details_id')
             ->where('p.status', 1)
             ->where('prop_active_objections.id', $objId)
             ->first();

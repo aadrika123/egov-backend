@@ -132,7 +132,7 @@ class WorkflowRoleMapController extends Controller
             $roleId  = collect($role)['wf_role_id'];
 
             //members permission
-            $a['permissions'] = $this->permission($req, $roleId);
+            return $a['permissions'] = $this->permission($req, $roleId);
 
             // pseudo users
             $a['pseudoUsers'] = $this->pseudoUser();
@@ -263,6 +263,11 @@ class WorkflowRoleMapController extends Controller
             'can_reject' => $permission->is_finisher,
             'is_pseudo' => $permission->is_pseudo,
             'show_field_verification' => $permission->show_field_verification,
+            'can_view_form' => $permission->can_view_form,
+            'can_see_tc_verification' => $permission->can_see_tc_verification,
+            'can_edit' => $permission->can_edit,
+            'can_send_sms' => $permission->can_send_sms,
+            'can_comment' => $permission->can_comment,
         ];
 
         return $data;

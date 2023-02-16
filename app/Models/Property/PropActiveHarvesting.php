@@ -86,7 +86,10 @@ class PropActiveHarvesting extends Model
                 'o.ownership_type',
                 'p.property_type',
                 'r.road_type as road_type_master',
-                'wr.role_name as current_role_name'
+                'wr.role_name as current_role_name',
+                'a.apt_code',
+                'a.apartment_address',
+                'a.no_of_block'
             )
             ->leftJoin('prop_properties as pp', 'pp.id', '=', 'h.property_id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'pp.ward_mstr_id')
@@ -95,6 +98,7 @@ class PropActiveHarvesting extends Model
             ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'pp.ownership_type_mstr_id')
             ->leftJoin('ref_prop_types as p', 'p.id', '=', 'pp.prop_type_mstr_id')
             ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'pp.road_type_mstr_id')
+            ->leftJoin('prop_apartment_dtls as a', 'a.id', '=', 'pp.apartment_details_id')
             ->where('h.id', $id)
             ->first();
     }

@@ -50,7 +50,7 @@ class WaterConsumer extends Controller
             $WaterConsumerDemand = new WaterConsumerDemand();
             $consumerDemand['consumerDemands'] = $WaterConsumerDemand->getConsumerDemand($request->ConsumerId);
             $consumerDemand['totalSumDemand'] = collect($consumerDemand['consumerDemands'])->map(function ($value, $key) {
-                return $value['amount'];
+                return $value['balance_amount'];
             })->sum();
             $consumerDemand['totalPenalty'] = collect($consumerDemand['consumerDemands'])->map(function ($value, $key) {
                 return $value['penalty'];
@@ -61,4 +61,5 @@ class WaterConsumer extends Controller
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
+
 }

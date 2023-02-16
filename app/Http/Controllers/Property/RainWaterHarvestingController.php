@@ -447,18 +447,27 @@ class RainWaterHarvestingController extends Controller
      */
     public function postNextLevel(Request $req)
     {
+        $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
         try {
             $req->validate([
                 'applicationId' => 'required|integer',
                 'senderRoleId' => 'required|integer',
                 'receiverRoleId' => 'required|integer',
-                'comment' => 'required'
+                'comment' => $req->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+                'action' => 'required|In:forward,backward'
             ]);
 
             DB::beginTransaction();
 
             $track = new WorkflowTrack();
             $harvesting = PropActiveHarvesting::find($req->applicationId);
+            $senderRoleId = $req->senderRoleId;
+
+            if ($req->action == 'forward') {
+                $this->checkPostCondition($senderRoleId, $wfLevels, $harvesting);          // Check Post Next level condition
+                $harvesting->last_role_id = $req->receiverRoleId;                      // Update Last Role Id
+            }
+
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $harvesting->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
