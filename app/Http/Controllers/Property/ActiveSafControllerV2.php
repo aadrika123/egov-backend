@@ -173,7 +173,7 @@ class ActiveSafControllerV2 extends Controller
                     'basedOnUlbCalc' => roundFigure($holdingTaxes->sum('basedOnUlbCalc')),
                     'diffAmt' => roundFigure($holdingTaxes->sum('diffAmt')),
                 ]);
-                $details->holdingTable = $holdingTaxes->merge([$total])->values();
+                $details->taxTable = $holdingTaxes->merge([$total])->values();
             }
             return responseMsgs(true, "", remove_null($details), "011803", 1.0, "", "POST", $req->deviceId);
         } catch (Exception $e) {
