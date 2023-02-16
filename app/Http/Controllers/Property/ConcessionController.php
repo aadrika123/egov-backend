@@ -516,15 +516,15 @@ class ConcessionController extends Controller
     // Post Next Level Application
     public function postNextLevel(Request $req)
     {
+        $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
         $req->validate([
             'applicationId' => 'required|integer',
             'senderRoleId' => 'required|integer',
             'receiverRoleId' => 'required|integer',
-            'comment' => 'required',
+            'comment' => $req->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
             'action' => 'required|In:forward,backward'
         ]);
         try {
-            $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $senderRoleId = $req->senderRoleId;
             $concession = PropActiveConcession::find($req->applicationId);
 

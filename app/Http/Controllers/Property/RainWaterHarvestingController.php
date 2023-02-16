@@ -447,12 +447,14 @@ class RainWaterHarvestingController extends Controller
      */
     public function postNextLevel(Request $req)
     {
+        $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
         try {
             $req->validate([
                 'applicationId' => 'required|integer',
                 'senderRoleId' => 'required|integer',
                 'receiverRoleId' => 'required|integer',
-                'comment' => 'required'
+                'comment' => $req->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+                'action' => 'required|In:forward,backward'
             ]);
 
             DB::beginTransaction();
