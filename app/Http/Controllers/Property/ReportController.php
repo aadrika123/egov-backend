@@ -25,7 +25,7 @@ class ReportController extends Controller
                 "uptoDate" => "required|date|date_format:Y-m-d",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "userId" => "nullable|digits_between:1,9223372036854775807",
-                "paymentMode" => "nullable|in"
+                "paymentMode" => "nullable"
             ]
         );
         $request->request->add(["metaData"=>["pr1.1",1.1,null,$request->getMethod(),null,]]);
