@@ -70,4 +70,29 @@ class PropSafsDemand extends Model
             ->first();
         return $safDemand;
     }
+
+    /**
+     * | Get Demands by Financial year
+     */
+    public function getDemandByFyear($fYear, $safId)
+    {
+        $propDemand = PropSafsDemand::where('fyear', $fYear)
+            ->where('saf_id', $safId)
+            ->where('status', 1)
+            ->orderBy('due_date')
+            ->get();
+        return $propDemand;
+    }
+
+    /**
+     * | Get Full Demands By Property ID
+     */
+    public function getFullDemandsBySafId($safId)
+    {
+        $safDemand = PropSafsDemand::where('saf_id', $safId)
+            ->where('status', 1)
+            ->orderBy('due_date')
+            ->get();
+        return $safDemand;
+    }
 }
