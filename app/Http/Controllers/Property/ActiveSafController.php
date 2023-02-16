@@ -844,17 +844,17 @@ class ActiveSafController extends Controller
      */
     public function postNextLevel(Request $request)
     {
+        $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
         $request->validate([
             'applicationId' => 'required|integer',
             'senderRoleId' => 'required|integer',
             'receiverRoleId' => 'required|integer',
-            'comment' => 'required',
+            'comment' => $request->senderRoleId == $wfLevels['BO'] ? 'required' : 'nullable',
             'action' => 'required|In:forward,backward'
         ]);
 
         try {
             // Variable Assigments
-            $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $senderRoleId = $request->senderRoleId;
             $saf = PropActiveSaf::find($request->applicationId);
             $mWfMstr = new WfWorkflow();
