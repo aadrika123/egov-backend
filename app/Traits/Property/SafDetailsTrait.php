@@ -42,6 +42,9 @@ trait SafDetailsTrait
             ['displayString' => 'State', 'key' => 'state', 'value' => $data->prop_state, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Pin', 'key' => 'pin', 'value' => $data->prop_pin_code, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Locality', 'key' => 'locality', 'value' => $data->prop_address, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Apartment Code', 'key' => 'apartmentCode', 'value' => $data->apt_code, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Apartment Address', 'key' => 'apartmentCode', 'value' => $data->apartment_address, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'No Of Blocks', 'key' => 'apartmentCode', 'value' => $data->no_of_block, 'canBtc' => 'true', 'canEdit' => 'true'],
         ]);
     }
 
