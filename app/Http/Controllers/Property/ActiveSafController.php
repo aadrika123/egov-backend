@@ -88,8 +88,8 @@ class ActiveSafController extends Controller
      * | wf_mstr_id=9
      * | wf_workflow_id=5
      * |                                 # SAF Bifurcation
-     * | wf_mstr_id=182
-     * | wf_workflow_id=5
+     * | wf_mstr_id=25
+     * | wf_workflow_id=182
      * |                                 # SAF Amalgamation
      * | wf_mstr_id=373
      * | wf_workflow_id=381
@@ -248,6 +248,16 @@ class ActiveSafController extends Controller
             if ($request->assessmentType == 3) {                                                    // Mutation
                 $workflow_id = Config::get('workflow-constants.SAF_MUTATION_ID');
                 $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.3');
+            }
+
+            if ($request->assessmentType == 4) {                                                    // Bifurcation
+                $workflow_id = Config::get('workflow-constants.SAF_BIFURCATION_ID');
+                $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.4');
+            }
+
+            if ($request->assessmentType == 5) {                                                    // Amalgamation
+                $workflow_id = Config::get('workflow-constants.SAF_AMALGAMATION_ID');
+                $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.5');
             }
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
@@ -1762,7 +1772,6 @@ class ActiveSafController extends Controller
         try {
             $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
             $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
-            $verificationStatus = $req->verificationStatus;                                             // Verification Status true or false
             $propActiveSaf = new PropActiveSaf();
             $verification = new PropSafVerification();
             $mWfRoleUsermap = new WfRoleusermap();
@@ -1777,29 +1786,20 @@ class ActiveSafController extends Controller
             ]);
 
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
-            $roleId = $readRoleDtls->wf_role_id;
+            // $roleId = $readRoleDtls->wf_role_id;
+            $roleId = 7; //(Test Role ID)
 
             switch ($roleId) {
-                case $taxCollectorRole;                                                                  // In Case of Agency TAX Collector
-                    if ($verificationStatus == 1) {
-                        $req->agencyVerification = true;
-                        $msg = "Site Successfully Verified";
-                    }
-                    if ($verificationStatus == 0) {
-                        $req->agencyVerification = false;
-                        $msg = "Site Successfully rebuted";
-                    }
+                case $taxCollectorRole:                                                                  // In Case of Agency TAX Collector
+                    $req->agencyVerification = true;
+                    $req->ulbVerification = false;
+                    $msg = "Site Successfully Verified";
                     break;
+                case $ulbTaxCollectorRole:                                                                // In Case of Ulb Tax Collector
+                    $req->agencyVerification = false;
+                    $req->ulbVerification = true;
+                    $msg = "Site Successfully Verified";
                     DB::beginTransaction();
-                case $ulbTaxCollectorRole;                                                                // In Case of Ulb Tax Collector
-                    if ($verificationStatus == 1) {
-                        $req->ulbVerification = true;
-                        $msg = "Site Successfully Verified";
-                    }
-                    if ($verificationStatus == 0) {
-                        $req->ulbVerification = false;
-                        $msg = "Site Successfully rebuted";
-                    }
                     $propActiveSaf->verifyFieldStatus($req->safId);                                         // Enable Fields Verify Status
                     break;
 
@@ -1808,20 +1808,20 @@ class ActiveSafController extends Controller
             }
             $req->merge(['roadType' => $roadWidthType, 'userId' => $userId]);
             // Verification Store
-            $verificationId = $verification->store($req);                           // Model function to store verification and get the id
+            $verificationId = $verification->store($req);                            // Model function to store verification and get the id
             // Verification Dtl Table Update                                         // For Tax Collector
             foreach ($req->floorDetails as $floorDetail) {
                 $verificationDtl = new PropSafVerificationDtl();
                 $verificationDtl->verification_id = $verificationId;
                 $verificationDtl->saf_id = $req->safId;
                 $verificationDtl->saf_floor_id = $floorDetail['floorId'] ?? null;
-                $verificationDtl->floor_mstr_id = $floorDetail['floorMstrId'];
-                $verificationDtl->usage_type_id = $floorDetail['usageType'];
+                $verificationDtl->floor_mstr_id = $floorDetail['floorNo'];
+                $verificationDtl->usage_type_id = $floorDetail['useType'];
                 $verificationDtl->construction_type_id = $floorDetail['constructionType'];
                 $verificationDtl->occupancy_type_id = $floorDetail['occupancyType'];
-                $verificationDtl->builtup_area = $floorDetail['builtupArea'];
-                $verificationDtl->date_from = $floorDetail['fromDate'];
-                $verificationDtl->date_to = $floorDetail['toDate'];
+                $verificationDtl->builtup_area = $floorDetail['buildupArea'];
+                $verificationDtl->date_from = $floorDetail['dateFrom'];
+                $verificationDtl->date_to = $floorDetail['dateUpto'];
                 $verificationDtl->save();
             }
 
