@@ -138,16 +138,14 @@ class PropertyDeactivate implements IPropertyDeactivate
             $refUser    = Auth()->user();
             $refUserId  = $refUser->id;
             $refUlbId   = $refUser->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');            
+            $refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID'); 
+                      
             $mUserType  = $this->_common->userType($refWorkflowId);
-            $workflowId = WfWorkflow::where('id', $refWorkflowId)
-                            ->where('ulb_id', $refUlbId)
-                            ->first();
-            if(!in_array($mUserType,['BO',"SUPER ADMIN","ONLINE"]))
+            if(!in_array(strtoupper($mUserType),['BO',"SUPER ADMIN","ONLINE"]))
             {
                 throw new Exception("You Are Not Authorized For Deactivate Property!");
             }
-            if (!$workflowId) 
+            if (!$refWorkflowId) 
             {
                 throw new Exception("Workflow Not Available");
             } 
