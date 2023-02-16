@@ -726,6 +726,7 @@ class Trade implements ITrade
             if ($request->paymentMode != 'CASH') {
                 $tradeChq = new TradeChequeDtl;
                 $tradeChq->tran_id = $transaction_id;
+                $tradeChq->temp_id = $licenceId;
                 $tradeChq->cheque_no      = $request->chequeNo;
                 $tradeChq->cheque_date    = $request->chequeDate;
                 $tradeChq->bank_name      = $request->bankName;
