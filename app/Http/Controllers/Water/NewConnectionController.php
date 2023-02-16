@@ -1609,6 +1609,7 @@ class NewConnectionController extends Controller
     public function searchApplicationByParameter(Request $request)
     {
         $filterBy = Config::get('waterConstaint.FILTER_BY');
+        $roleId = Config::get('waterConstaint.ROLE-LABEL.JE');
         $request->validate([
             'filterBy'  => 'required',
             'parameter' => $request->filterBy == $filterBy['APPLICATION'] ? 'required' : 'nullable',
@@ -1620,7 +1621,7 @@ class NewConnectionController extends Controller
             switch ($key) {
                 case ("byApplication"):
                     $mWaterApplicant = new WaterApplication();
-                    $returnData = $mWaterApplicant->getApplicationByNo($request->paramenter)->firstOrFail();
+                    $returnData = $mWaterApplicant->getApplicationByNo($request->paramenter, $roleId)->firstOrFail();
                     break;
                 case ("byDate"):
                     $mWaterApplicant = new WaterApplication();
@@ -1628,7 +1629,12 @@ class NewConnectionController extends Controller
                         "refStartTime" => Carbon::parse($request->fromDate)->format('Y-m-d'),
                         "refEndTime" => Carbon::parse($request->toDate)->format('Y-m-d')
                     ];
-                    $returnData = $mWaterApplicant->getapplicationByDate($refTimeDate);
+                    $refData = $mWaterApplicant->getapplicationByDate($refTimeDate);
+                    $returnData = collect($refData)->map(function ($value) use ($roleId) {
+                        if ($value['current_role'] == $roleId) {
+                            return $value;
+                        }
+                    })->filter()->values();
                     break;
             }
             return responseMsgs(true, "Searched Data!", remove_null($returnData), "", "01", "ms", "");

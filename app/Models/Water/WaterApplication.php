@@ -295,7 +295,7 @@ class WaterApplication extends Model
      * | Search Application Using the application NO
      * | @param applicationNo
      */
-    public function getApplicationByNo($applicationNo)
+    public function getApplicationByNo($applicationNo,$roleId)
     {
         return  WaterApplication::select(
             'water_applications.*',
@@ -316,6 +316,7 @@ class WaterApplication extends Model
             ->join('water_owner_type_mstrs', 'water_owner_type_mstrs.id', '=', 'water_applications.owner_type')
             ->leftjoin('water_param_pipeline_types', 'water_param_pipeline_types.id', '=', 'water_applications.pipeline_type_id')
             ->where('water_applications.application_no', 'LIKE', '%' . $applicationNo . '%')
+            ->where('water_applications.current_role',$roleId)
             ->where('water_applications.status', 1);
     }
 }
