@@ -81,6 +81,19 @@ class PropDemand extends Model
     {
         $propDemand = PropDemand::where('fyear', $fYear)
             ->where('property_id', $propId)
+            ->where('status', 1)
+            ->orderBy('due_date')
+            ->get();
+        return $propDemand;
+    }
+
+    /**
+     * | Get Full Demands By Property ID
+     */
+    public function getFullDemandsByPropId($propId)
+    {
+        $propDemand = PropDemand::where('property_id', $propId)
+            ->where('status', 1)
             ->orderBy('due_date')
             ->get();
         return $propDemand;

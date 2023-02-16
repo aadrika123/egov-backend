@@ -9,6 +9,7 @@ use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafMemoDtl;
+use App\Models\Property\PropSafsDemand;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -127,6 +128,7 @@ class ActiveSafControllerV2 extends Controller
         try {
             $mPropSafMemoDtl = new PropSafMemoDtl();
             $mPropDemands = new PropDemand();
+            $mPropSafDemands = new PropSafsDemand();
             $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
             $details = collect($details)->first();
 
@@ -134,18 +136,50 @@ class ActiveSafControllerV2 extends Controller
             if ($details->memo_type == 'FAM') {
                 $memoFyear = $details->from_fyear;
                 $propId = $details->prop_id;
-                $holdingTax2Perc = $mPropDemands->getDemandByFyear($memoFyear, $propId);
-                $details->fam_receipt = [
-                    'particulars' => 'Holding Tax @ 2%',
-                    'Quarter/Financial Year' => 'Quarter: 1/ Year: 2016-2017'
-                ];
+                $safId = $details->saf_id;
+                $propDemands = $mPropDemands->getFullDemandsByPropId($propId);
+                $safDemands = $mPropSafDemands->getFullDemandsBySafId($safId);
+
+                $holdingTax2Perc = $propDemands->where('fyear', $memoFyear);
+                if (collect($holdingTax2Perc)->isEmpty())
+                    $holdingTax2Perc = $safDemands->where('fyear', $memoFyear);
+
+                if (collect($holdingTax2Perc)->isEmpty())
+                    throw new Exception("Demand Not Available");
+
+                $groupedPropTaxDiff = $propDemands->where('due_date', '>=', $holdingTax2Perc->first()->due_date)->values();
+                $groupedSafTaxDiff = $safDemands->where('due_date', '>=', $holdingTax2Perc->first()->due_date)->values();
+                $merged = $groupedSafTaxDiff->merge($groupedPropTaxDiff);
+                $taxDiffs = $merged->groupBy('arv');
+
+                $holdingTaxes = collect($taxDiffs)->map(function ($taxDiff) {
+                    $selfAssessAmt = ($taxDiff->first()->amount - $taxDiff->first()->additional_tax) * 4;               // Holding Tax Amount without penalty
+                    $ulbAssessAmt = ($taxDiff->first()->amount - $taxDiff->first()->additional_tax) * 4;                // Holding Tax Amount Without Panalty
+                    $diffAmt = $ulbAssessAmt - $selfAssessAmt;
+                    return [
+                        'Particulars' => $taxDiff->first()->fyear == '2016-2017' ? "Holding Tax @ 2%" : "Holding Tax @ 0.075% or 0.15% or 0.2%",
+                        'Quarter/Financial Year' => 'Quarter' . $taxDiff->first()->qtr . '/' . $taxDiff->first()->fyear,
+                        'basedOnSelfAssess' => roundFigure($selfAssessAmt),
+                        'basedOnUlbCalc' => roundFigure($ulbAssessAmt),
+                        'diffAmt' => roundFigure($diffAmt)
+                    ];
+                });
+                $holdingTaxes = $holdingTaxes->values();
+
+                $total = collect([
+                    'Particulars' => 'Total Amount',
+                    'Quarter/Financial Year' => "",
+                    'basedOnSelfAssess' => roundFigure($holdingTaxes->sum('basedOnSelfAssess')),
+                    'basedOnUlbCalc' => roundFigure($holdingTaxes->sum('basedOnUlbCalc')),
+                    'diffAmt' => roundFigure($holdingTaxes->sum('diffAmt')),
+                ]);
+                $details->taxTable = $holdingTaxes->merge([$total])->values();
             }
             return responseMsgs(true, "", remove_null($details), "011803", 1.0, "", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, "", "POST", $req->deviceId);
         }
     }
-
 
     /**
      * | Search Holding of user not logged in
