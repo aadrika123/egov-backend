@@ -98,4 +98,13 @@ class PropDemand extends Model
             ->get();
         return $propDemand;
     }
+
+    // Get Saf First Demand
+    public function getFirstDemandByFyearPropId($propId, $fyear)
+    {
+        return PropDemand::where('property_id', $propId)
+            ->where('fyear', $fyear)
+            ->orderBy('id')
+            ->first();
+    }
 }

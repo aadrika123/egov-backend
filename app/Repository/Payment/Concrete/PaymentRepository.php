@@ -5,6 +5,7 @@ namespace App\Repository\Payment\Concrete;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Trade\TradeCitizenController;
+use App\Http\Requests\Property\ReqPayment;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\DepartmentMaster;
 use App\Models\Payment\PaymentGatewayDetail;
@@ -305,7 +306,7 @@ class PaymentRepository implements iPayment
                         $refpropertyType = $webhookEntity['notes']['workflowId'];
                         if ($refpropertyType == 0) {
                             $objHoldingTaxController = new HoldingTaxController($this->_safRepo);
-                            $transfer = new Request($transfer);
+                            $transfer = new ReqPayment($transfer);
                             $objHoldingTaxController->paymentHolding($transfer);
                         } else {                                     //<------------------ (SAF PAYMENT)
                             $obj = new ActiveSafController($this->_safRepo);
@@ -323,7 +324,7 @@ class PaymentRepository implements iPayment
                         break;
                     case ('5'):
                         Http::withHeaders([])
-                            ->post("http://192.168.0.140:8000/api/advertisements/payment-success-failure", $transfer);
+                            ->post("http://192.168.0.127:8000/api/advertisements/payment-success-failure", $transfer);
                         break;
                 }
             }

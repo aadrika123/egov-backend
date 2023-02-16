@@ -7,4 +7,5 @@ use Illuminate\Http\Request;
 interface IReport
 {
     public function collectionReport(Request $request);
+    public function safCollection(Request $request);
 }

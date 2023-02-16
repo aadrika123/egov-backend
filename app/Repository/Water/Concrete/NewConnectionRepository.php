@@ -89,6 +89,7 @@ class NewConnectionRepository implements iNewConnection
         $workflowID = $this->_waterWorkflowId;
         $owner = $req['owners'];
         $ulbId = $req->ulbId;
+        $ta=$req['tenant'];
 
         # check the property type on vacant land
         $checkResponse = $this->checkVacantLand($req, $vacantLand);
@@ -132,6 +133,11 @@ class NewConnectionRepository implements iNewConnection
             $objApplicant = new WaterApplicant();
             $objApplicant->saveWaterApplicant($applicationId, $owners);
         }
+        # water applicant in case of tenant
+        foreach ($tenant as $tenants) {
+            $objApplicant = new WaterApplicant();
+            $objApplicant->saveWaterApplicant($applicationId, $owners);
+        }
         # water penalty
         if (!is_null($installment)) {
             foreach ($installment as $installments) {
@@ -141,12 +147,12 @@ class NewConnectionRepository implements iNewConnection
         }
         # connection charges
         $charges = new WaterConnectionCharge();
-        $connectionId=$charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
+        $connectionId = $charges->saveWaterCharge($applicationId, $req, $newConnectionCharges);
 
         # in case of connection charge is 0
         if ($totalConnectionCharges == 0) {
             $mWaterTran = new WaterTran();
-            $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges,$ulbId,$req,$applicationId,$connectionId);
+            $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId);
         }
         DB::commit();
 
@@ -381,6 +387,10 @@ class NewConnectionRepository implements iNewConnection
             case $wfLevels['DA']:                       // DA Condition
                 if ($application->doc_status == 0)
                     throw new Exception("Document Not Fully Verified");
+                break;
+            case $wfLevels['JE']:                       // JE Coditon in case of site adjustment
+                if ($application->doc_status == 0 || $application->payment_status == 0)
+                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 break;
         }
     }

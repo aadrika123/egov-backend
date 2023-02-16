@@ -359,7 +359,7 @@ class NewConnectionController extends Controller
                 throw new Exception("You are not Executive Officer!");
             }
             if ($waterDetails) {
-                return $this->newConnection->approvalRejectionWater($request,$roleId);
+                return $this->newConnection->approvalRejectionWater($request, $roleId);
             }
             throw new Exception("Application dont exist!");
         } catch (Exception $e) {
@@ -1575,6 +1575,69 @@ class NewConnectionController extends Controller
                 return $value;
             });
             return responseMsgs(true, "listed Application!", remove_null($returnValue), "", "01", "ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Site Comparision Screen 
+     * | Je comparision data
+     * | @param request
+     */
+    public function listComparision(Request $request)
+    {
+        $request->validate([
+            'applicationId' => 'required'
+        ]);
+        try {
+            # Site inspection Details
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $applicationId = $request->applicationId;
+
+            $siteInspectiondetails = $mWaterSiteInspection->getInspectionById($applicationId);
+            return responseMsgs(true, "Comparative data!", remove_null($siteInspectiondetails), "", "01", "ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Search Application for Site Inspection
+     * | @param 
+     */
+    public function searchApplicationByParameter(Request $request)
+    {
+        $filterBy = Config::get('waterConstaint.FILTER_BY');
+        $roleId = Config::get('waterConstaint.ROLE-LABEL.JE');
+        $request->validate([
+            'filterBy'  => 'required',
+            'parameter' => $request->filterBy == $filterBy['APPLICATION'] ? 'required' : 'nullable',
+            'fromDate'  => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:d-m-Y' : 'nullable',
+            'toDate'    => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:d-m-Y' : 'nullable',
+        ]);
+        try {
+            $key = $request->filterBy;
+            switch ($key) {
+                case ("byApplication"):
+                    $mWaterApplicant = new WaterApplication();
+                    $returnData = $mWaterApplicant->getApplicationByNo($request->paramenter, $roleId)->firstOrFail();
+                    break;
+                case ("byDate"):
+                    $mWaterApplicant = new WaterApplication();
+                    $refTimeDate = [
+                        "refStartTime" => Carbon::parse($request->fromDate)->format('Y-m-d'),
+                        "refEndTime" => Carbon::parse($request->toDate)->format('Y-m-d')
+                    ];
+                    $refData = $mWaterApplicant->getapplicationByDate($refTimeDate);
+                    $returnData = collect($refData)->map(function ($value) use ($roleId) {
+                        if ($value['current_role'] == $roleId) {
+                            return $value;
+                        }
+                    })->filter()->values();
+                    break;
+            }
+            return responseMsgs(true, "Searched Data!", remove_null($returnData), "", "01", "ms", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
