@@ -2161,7 +2161,8 @@ class ActiveSafController extends Controller
                     // $safTaxes2 = json_decode(json_encode($safTaxes2), true);
 
                     $safTaxes3 = $this->reviewTaxCalculation($safTaxes);
-                    dd($safTaxes);
+                    
+                    // dd($safTaxes2);
                     $safTaxes4 = $this->reviewTaxCalculation($safTaxes2);
                     // dd(json_decode(json_encode($safTaxes), true));
                     $compairTax = $this->reviewTaxCalculationCom($safTaxes, $safTaxes2);
@@ -2185,7 +2186,7 @@ class ActiveSafController extends Controller
             $data["floor_comparison"] = $floors_compais;
             return responseMsgs(true, $message, remove_null($data), "010121", "1.0", "258ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            dd($e->getMessage(),$e->getFile(),$e->getLine());
+            // dd($e->getMessage(),$e->getFile(),$e->getLine());
             return responseMsg(false, $e->getMessage(), "");
         }
     }

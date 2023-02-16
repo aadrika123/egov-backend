@@ -494,7 +494,7 @@ class TradeCitizenController extends Controller
             #----------End transaction------------------------
             #----------Response------------------------------
             $res['transactionId'] = $transaction_id;
-            $res['paymentReceipt'] = config('app.url') . "/api/trade/paymentReceipt/" . $licenceId . "/" . $transaction_id;
+            $res['paymentReceipt'] = config('app.url') . "/api/trade/application/payment-receipt/" . $licenceId . "/" . $transaction_id;
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
             DB::rollBack();
