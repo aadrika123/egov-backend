@@ -461,6 +461,13 @@ class RainWaterHarvestingController extends Controller
 
             $track = new WorkflowTrack();
             $harvesting = PropActiveHarvesting::find($req->applicationId);
+            $senderRoleId = $req->senderRoleId;
+
+            if ($req->action == 'forward') {
+                $this->checkPostCondition($senderRoleId, $wfLevels, $harvesting);          // Check Post Next level condition
+                $harvesting->last_role_id = $req->receiverRoleId;                      // Update Last Role Id
+            }
+
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $harvesting->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
