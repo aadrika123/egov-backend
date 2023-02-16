@@ -143,4 +143,30 @@ class PropTransaction extends Model
             ->orderBy('pd.due_date')
             ->get();
     }
+
+    /**
+     * | Cheque Dtl And Transaction Dtl
+     */
+    public function chequeTranDtl($ulbId)
+    {
+        return PropTransaction::select(
+            'prop_cheque_dtls.*',
+            'tran_date',
+            'tran_no',
+            'payment_mode',
+            'amount',
+            "cheque_date",
+            "bank_name",
+            "branch_name",
+            "bounce_status",
+            "cheque_no",
+            "clear_bounce_date",
+            // "user_name"
+        )
+            ->leftjoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 'prop_transactions.id')
+            // ->join('users', 'users.id', 'prop_cheque_dtls.user_id')
+            ->where('payment_mode', 'DD')
+            ->orWhere('payment_mode', 'CHEQUE')
+            ->where('prop_transactions.ulb_id', $ulbId);
+    }
 }
