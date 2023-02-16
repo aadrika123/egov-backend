@@ -867,6 +867,7 @@ class ActiveSafController extends Controller
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId);          // Check Post Next level condition
                 $saf->last_role_id = $request->receiverRoleId;                      // Update Last Role Id
+                $metaReqs['verificationStatus'] = 1;
             }
             // SAF Application Update Current Role Updation
             DB::beginTransaction();

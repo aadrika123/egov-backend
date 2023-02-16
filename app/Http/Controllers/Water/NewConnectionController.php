@@ -639,18 +639,21 @@ class NewConnectionController extends Controller
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
-            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->firstOrFail();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
             # calculation details
-            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])->first();
-            $calculation['calculation'] =
-                [
-                    'connectionFee' => $charges['conn_fee'],
-                    'penalty' => $charges['penalty'],
-                    'totalAmount' => $charges['amount']
+            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
+                ->get();
+            $calculation['calculation'] = collect($charges)->map(function ($value) {
+                return [
+                    'connectionFee' => $value['conn_fee'],
+                    'penalty' => $value['penalty'],
+                    'totalAmount' => $value['amount'],
+                    'chargeCatagory' => $value['charge_category'],
+                    'paidStatus' => $value['paid_status']
                 ];
-
+            });
             $returnData = array_merge($applicationDetails, $ownerDetails, $documentDetails, $waterTransDetail, $calculation);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
@@ -1524,13 +1527,16 @@ class NewConnectionController extends Controller
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
             # calculation details
-            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])->first();
-            $calculation['calculation'] =
-                [
-                    'connectionFee' => $charges['conn_fee'],
-                    'penalty' => $charges['penalty'],
-                    'totalAmount' => $charges['amount']
+            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])->get();
+            $calculation['calculation'] = collect($charges)->map(function ($value) {
+                return [
+                    'connectionFee' => $value['conn_fee'],
+                    'penalty' => $value['penalty'],
+                    'totalAmount' => $value['amount'],
+                    'chargeCatagory' => $value['charge_category'],
+                    'paidStatus' => $value['paid_status']
                 ];
+            });
 
             $returnData = array_merge($applicationDetails, $waterTransDetail, $calculation);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
@@ -1565,13 +1571,16 @@ class NewConnectionController extends Controller
             # Final Data to return
             $returnValue = collect($refApplications)->map(function ($value, $key) use ($mWaterConnectionCharge) {
                 # calculation details
-                $charges = $mWaterConnectionCharge->getWaterchargesById($value['id'])->first();
-                $value['calculation'] =
-                    [
-                        'connectionFee' => $charges['conn_fee'],
-                        'penalty' => $charges['penalty'],
-                        'totalAmount' => $charges['amount']
+                $charges = $mWaterConnectionCharge->getWaterchargesById($value['id'])->get();
+                $value['calculation'] = collect($charges)->map(function ($values) {
+                    return  [
+                        'connectionFee' => $values['conn_fee'],
+                        'penalty' => $values['penalty'],
+                        'totalAmount' => $values['amount'],
+                        'chargeCatagory' => $values['charge_category'],
+                        'paidStatus' => $values['paid_status']
                     ];
+                });
                 return $value;
             });
             return responseMsgs(true, "listed Application!", remove_null($returnValue), "", "01", "ms", "POST", "");

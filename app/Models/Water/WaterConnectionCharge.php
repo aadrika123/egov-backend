@@ -56,8 +56,7 @@ class WaterConnectionCharge extends Model
             'paid_status'
         )
             ->where('application_id', $applicationId)
-            ->where('water_connection_charges.status', 1)
-            ->where('paid_status', false);
+            ->where('water_connection_charges.status', 1);
     }
 
     /**

@@ -126,7 +126,9 @@ class WaterNewConnection implements IWaterNewConnection
             $returnValue = collect($connection)->map(function ($value) use ($mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection) {
                 $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
                 $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
-                $value['connectionCharges'] = $mWaterConnectionCharge->getWaterchargesById($value['id'])->first();
+                $value['connectionCharges'] = $mWaterConnectionCharge->getWaterchargesById($value['id'])
+                    ->where('paid_status', 0)
+                    ->first();
                 $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])->first();
                 if (!empty($siteDetails)) {
                     $value['siteInspectionCall'] = $mWaterParamConnFee->getCallParameter($siteDetails['site_inspection_property_type_id'], $siteDetails['site_inspection_area_sqft'])->first();

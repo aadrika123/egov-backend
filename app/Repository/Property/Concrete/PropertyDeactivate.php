@@ -143,7 +143,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             $workflowId = WfWorkflow::where('id', $refWorkflowId)
                             ->where('ulb_id', $refUlbId)
                             ->first();
-            if(!in_array($mUserType,['BO',"SUPER ADMIN"]))
+            if(!in_array($mUserType,['BO',"SUPER ADMIN","ONLINE"]))
             {
                 throw new Exception("You Are Not Authorized For Deactivate Property!");
             }
@@ -151,6 +151,16 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                 throw new Exception("Workflow Not Available");
             } 
+            
+            $mProperty  = PropProperty::where("status",1)->find($propId);
+            if(!$mProperty)
+            {
+                throw New Exception("Property Not Found");
+            }
+            if(!$refUlbId)
+            {
+                $refUlbId = $mProperty->ulb_id;
+            }
             $init_finish = $this->_common->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
             if(!$init_finish)
             {
@@ -159,11 +169,6 @@ class PropertyDeactivate implements IPropertyDeactivate
             elseif(!$init_finish["initiator"])
             {
                 throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
-            }
-            $mProperty  = PropProperty::where("status",1)->find($propId);
-            if(!$mProperty)
-            {
-                throw New Exception("Property Not Found");
             }
             $PropDeactivationRequest    = PropActiveDeactivationRequest::select("*")
                                           ->where("property_id",$propId)
