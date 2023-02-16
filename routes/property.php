@@ -377,6 +377,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    | Serial No : 
    */
   Route::controller(ReportController::class)->group(function () {
-    Route::post('reports/collection', 'collectionReport');
+    Route::post('reports/property/collection', 'collectionReport');
+    Route::post('reports/saf/collection', 'safCollection');
   });
 });
