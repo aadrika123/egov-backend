@@ -850,7 +850,7 @@ class ActiveSafController extends Controller
             'applicationId' => 'required|integer',
             'senderRoleId' => 'required|integer',
             'receiverRoleId' => 'required|integer',
-            'comment' => $request->senderRoleId == $wfLevels['BO'] ? 'required' : 'nullable',
+            'comment' => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
             'action' => 'required|In:forward,backward'
         ]);
 
