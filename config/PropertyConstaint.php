@@ -19,8 +19,8 @@ return [
     "SAF_OBJECTION_REF_TABLE" => "prop_active_objections.id",
     "SAF_HARVESTING_REF_TABLE" => "prop_active_harvestings.id",
 
-    // Mutation Reassessment and New Assessment Workflows
-    "SAF_WORKFLOWS" => [3, 4, 5],
+    // Mutation Reassessment, New Assessment,Bifurcation,Amalgamation Workflows
+    "SAF_WORKFLOWS" => [3, 4, 5, 182, 381],
 
     "OBJECTION" => [
         "2"     => "RainHarvesting",
@@ -290,7 +290,9 @@ return [
     [
         "1" => "New Assessment",
         "2" => "Re Assessment",
-        "3" => "Mutation"
+        "3" => "Mutation",
+        "4" => "Bifurcation",
+        "5" => "Amalgamation"
     ],
 
     "ULB-TYPE-ID" => [

@@ -32,7 +32,7 @@ class reqApplySaf extends FormRequest
         if ($userType == 'Citizen')
             $rules['ulbId'] = "required|int";
 
-        $rules['assessmentType'] = "required|int|in:1,2,3";
+        $rules['assessmentType'] = "required|int|in:1,2,3,4,5";
         if (isset($this->assessmentType) && $this->assessmentType == 3) {
             $rules['transferModeId'] = "required";
             $rules['dateOfPurchase'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
@@ -82,7 +82,7 @@ class reqApplySaf extends FormRequest
             }
         }
         $rules['isWaterHarvesting'] = "required|bool";
-        if (isset($this->assessmentType) && $this->assessmentType != 1) {
+        if (isset($this->assessmentType) && $this->assessmentType != 1) {           // Holding No Required for Reassess,Mutation,Bifurcation,Amalgamation
             $rules['holdingNo']         = "required|string";
         }
         $rules['zone']           = "required|int|in:1,2";

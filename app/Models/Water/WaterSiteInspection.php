@@ -54,6 +54,8 @@ class WaterSiteInspection extends Model
     public function getInspectionById($applicationId)
     {
         return WaterSiteInspection::select(
+            'water_site_inspections.*',
+
             'id as site_inspection_id',
             'property_type_id as site_inspection_property_type_id',
             'area_sqft as site_inspection_area_sqft'

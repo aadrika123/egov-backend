@@ -347,6 +347,11 @@ class ConcessionController extends Controller
             $mRefTable = Config::get('PropertyConstaint.SAF_CONCESSION_REF_TABLE');
             $details = $mPropActiveConcession->getDetailsById($req->applicationId);
 
+            // WorkflowTrack::where('ref_table_id_value', $req->applicationId)
+            //     ->where('ref_table_dot_id', 'prop_active_concessions.id')
+            //     ->get();
+
+
             if (!$details)
                 throw new Exception("Application Not Found for this id");
 

@@ -188,6 +188,11 @@ class SafDocController extends Controller
             $metaReqs['relativePath'] = $relativePath;
             $metaReqs['document'] = $imageName;
             $metaReqs['docCode'] = $req->docCode;
+
+            if ($req->docCode == 'PHOTOGRAPH') {
+                $metaReqs['verifyStatus'] = 1;
+            }
+
             $metaReqs['ownerDtlId'] = $req->ownerId;
             $ifDocExist = $mWfActiveDocument->ifDocExists($getSafDtls->id, $getSafDtls->workflow_id, $propModuleId, $req->docCode, $req->ownerId);   // Checking if the document is already existing or not
 
