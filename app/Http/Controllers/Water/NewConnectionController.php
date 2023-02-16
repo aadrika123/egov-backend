@@ -639,7 +639,7 @@ class NewConnectionController extends Controller
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
-            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->firstOrFail();
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
             # calculation details
