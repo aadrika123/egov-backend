@@ -132,7 +132,7 @@ class WorkflowRoleMapController extends Controller
             $roleId  = collect($role)['wf_role_id'];
 
             //members permission
-            return $a['permissions'] = $this->permission($req, $roleId);
+            $a['permissions'] = $this->permission($req, $roleId);
 
             // pseudo users
             $a['pseudoUsers'] = $this->pseudoUser();
