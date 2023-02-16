@@ -159,7 +159,8 @@ class PropActiveSaf extends Model
             ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
             ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id')
             ->leftJoin('ref_prop_transfer_modes as t', 't.id', '=', 'prop_active_safs.transfer_mode_mstr_id')
-            ->leftJoin('prop_apartment_dtls as a', 't.id', '=', 'prop_active_safs.apartment_details_id');
+            ->leftJoin('prop_apartment_dtls as a', 't.id', '=', 'prop_active_safs.apartment_details_id')
+            ->where('prop_active_safs.status', 1);
     }
 
     /**

@@ -619,7 +619,6 @@ class ActiveSafController extends Controller
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mWorkflowTracks = new WorkflowTrack();
             $mCustomDetails = new CustomDetail();
-            $getDocuments = new PropertyBifurcation();
             $forwardBackward = new WorkflowMap;
             $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
             // Saf Details
