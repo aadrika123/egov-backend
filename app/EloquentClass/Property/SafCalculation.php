@@ -1010,7 +1010,7 @@ class SafCalculation
         // Check Late Assessment Penalty for Vacant Land
         if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
             $currentDate = Carbon::now()->floorMonth();
-            $dateFrom = Carbon::createFromFormat('Y-m-d', $this->_propertyDetails['dateOfPurchase'])->floorMonth();
+            $dateFrom = Carbon::createFromFormat('Y-m-d', $this->_propertyDetails['landOccupationDate'])->floorMonth();
             $diffInMonths = $currentDate->diffInMonths($dateFrom);
             $lateAssessmentStatus = $diffInMonths > 3 ? true : false;
             if ($lateAssessmentStatus == true) {
