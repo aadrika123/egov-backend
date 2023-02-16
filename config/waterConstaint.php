@@ -32,5 +32,11 @@ return [
         "REGULAIZATION" => 2
     ],
 
-    "JSK" => "JSK"
+    "JSK" => "JSK",
+    
+    "CHARGE_CATAGORY" => [
+        "SITE_INSPECTON" => "Site Inspection",
+        "NEW_CONNECTION" => "New Connection",
+        "REGULAIZATION" => "Regulaization"
+    ],
 ];

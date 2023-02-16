@@ -15,6 +15,7 @@ use App\Models\Water\WaterParamConnFeeOld;
 use App\Models\Water\WaterParamDocumentType;
 use App\Models\Water\WaterRazorPayRequest;
 use App\Models\Water\WaterRazorPayResponse;
+use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfActiveDocument;
@@ -60,6 +61,7 @@ class WaterNewConnection implements IWaterNewConnection
     /**
      * | Search the Citizen Related Water Application
        query cost (2.30)
+       Site Inspection Condition Hamper
      * ---------------------------------------------------------------------
      * | @var refUser            = Auth()->user()
      * | @var refUserId          = refUser->id      | loging user Id
@@ -75,6 +77,7 @@ class WaterNewConnection implements IWaterNewConnection
             $mWaterTran         = new WaterTran();
             $mWaterParamConnFee = new WaterParamConnFee();
             $mWaterConnectionCharge = new WaterConnectionCharge();
+            $mWaterSiteInspection = new WaterSiteInspection();
             // $departmnetId       = Config::get('waterConstaint.WATER_DEPAPRTMENT_ID');
             $connection         = WaterApplication::select(
                 "water_applications.id",
@@ -86,6 +89,7 @@ class WaterNewConnection implements IWaterNewConnection
                 "water_applications.doc_status",
                 "water_applications.ward_id",
                 "water_applications.workflow_id",
+                "water_applications.doc_upload_status",
                 "ulb_ward_masters.ward_name",
                 "charges.amount",
                 DB::raw("'connection' AS type,
@@ -116,13 +120,17 @@ class WaterNewConnection implements IWaterNewConnection
                 // ->whereNotIn("status",[0,6,7])
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
                 ->where("water_applications.user_id", $refUserId)
-                ->orderbydesc('id')
+                ->orderbydesc('water_applications.id')
                 ->get();
 
-            $returnValue = collect($connection)->map(function ($value) use ($mWaterTran,$mWaterParamConnFee,$mWaterConnectionCharge) {
+            $returnValue = collect($connection)->map(function ($value) use ($mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection) {
                 $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
-                $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'],$value['area_sqft'])->first();
+                $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
                 $value['connectionCharges'] = $mWaterConnectionCharge->getWaterchargesById($value['id'])->first();
+                $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])->first();
+                if (!empty($siteDetails)) {
+                    $value['siteInspectionCall'] = $mWaterParamConnFee->getCallParameter($siteDetails['site_inspection_property_type_id'], $siteDetails['site_inspection_area_sqft'])->first();
+                }
                 return $value;
             });
             return $returnValue;
@@ -297,9 +305,9 @@ class WaterNewConnection implements IWaterNewConnection
             ////////////////////////////////////////
             # Check 
             WaterApplication::where('id', $applicationId)
-            ->update([
-                'current_role' => $this->_dealingAssistent
-            ]);
+                ->update([
+                    'current_role' => $this->_dealingAssistent
+                ]);
             /////////////////////////////////////////
             DB::commit();
             #----------End transaction------------------------

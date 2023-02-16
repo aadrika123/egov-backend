@@ -359,7 +359,7 @@ class NewConnectionController extends Controller
                 throw new Exception("You are not Executive Officer!");
             }
             if ($waterDetails) {
-                return $this->newConnection->approvalRejectionWater($request,$roleId);
+                return $this->newConnection->approvalRejectionWater($request, $roleId);
             }
             throw new Exception("Application dont exist!");
         } catch (Exception $e) {
@@ -1575,6 +1575,28 @@ class NewConnectionController extends Controller
                 return $value;
             });
             return responseMsgs(true, "listed Application!", remove_null($returnValue), "", "01", "ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Site Comparision Screen 
+     * | Je comparision data
+     * | @param request
+     */
+    public function listComparision(Request $request)
+    {
+        $request->validate([
+            'applicationId' => 'required'
+        ]);
+        try {
+            # Site inspection Details
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $applicationId = $request->applicationId;
+
+            $siteInspectiondetails = $mWaterSiteInspection->getInspectionById($applicationId);
+            return responseMsgs(true, "Comparative data!", remove_null($siteInspectiondetails), "", "01", "ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }

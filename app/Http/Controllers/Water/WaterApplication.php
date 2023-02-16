@@ -27,18 +27,8 @@ class WaterApplication extends Controller
     public function getCitizenApplication(Request $request)
     {
         try {
-            $mWaterApplication = new WaterWaterApplication();
             $returnValue = $this->Repository->getCitizenApplication($request);
-            $refReturn = collect($returnValue)->map(function ($value) use ($mWaterApplication) {
-
-                $docStatus = $mWaterApplication->getApplicationById($value['id'])->select(
-                    'doc_upload_status'
-                )->first();
-                    
-                $value['upload_status'] = collect($docStatus)['doc_upload_status'];
-                return $value;
-            });
-            return responseMsg(true, "", remove_null($refReturn));
+            return responseMsg(true, "", remove_null($returnValue));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

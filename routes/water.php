@@ -69,6 +69,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('search-consumer', 'searchWaterConsumer');                                          // Admin/Consumer   
         Route::post('consumer/get-listed-details', 'approvedWaterApplications');                        // Consumer
 
+        Route::post('site-verification/comparision', 'listComparision');
         Route::post('final-submit-application', 'finalSubmitionApplication');                           // Not Used
     });
 
