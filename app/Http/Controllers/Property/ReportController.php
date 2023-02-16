@@ -46,4 +46,16 @@ class ReportController extends Controller
         $request->request->add(["metaData"=>["pr2.1",1.1,null,$request->getMethod(),null,]]);
         return $this->Repository->safCollection($request);
     }
+    public function safPropIndividualDemandAndCollecton(Request $request)
+    {
+        $request->validate(
+            [
+                "fiYear"=>"nullable|regex:/^\d{4}-\d{4}$/",
+                "key"=>"nullable|regex:/^[^<>{};:.,~!?@#$%^=&*\"]*$/i",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData"=>["pr3.1",1.1,null,$request->getMethod(),null,]]);
+        return $this->Repository->safPropIndividualDemandAndCollecton($request);
+    }
 }

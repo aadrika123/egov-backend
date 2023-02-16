@@ -3,6 +3,7 @@
 namespace App\Repository\Property\Concrete;
 
 use App\EloquentModels\Common\ModelWard;
+use App\Models\Property\PropProperty;
 use App\Models\Property\PropTransaction;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IReport;
@@ -12,6 +13,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Mockery\CountValidator\Exact;
 
 class Report implements IReport
 {
@@ -155,8 +157,7 @@ class Report implements IReport
     }
     public function safCollection(Request $request)
     {
-        $metaData= collect($request->metaData)->all();
-        
+        $metaData= collect($request->metaData)->all();        
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
             $refUser        = Auth()->user();
@@ -414,6 +415,220 @@ class Report implements IReport
                         ->limit(200)
                         ->get();
                 // dd(DB::getQueryLog());
+                return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function safPropIndividualDemandAndCollecton(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $wardId = null;
+            $key = null;
+            $fiYear = getFY();
+            if($request->fiYear)
+            {
+                $fiYear = $request->fiYear;
+                
+            }
+            list($fromYear,$toYear)=explode("-",$fiYear);
+            if($toYear-$fromYear !=1)
+            {
+                throw new Exception("Enter Valide Financial Year");
+            }
+            if($request->key)
+            {
+                $key = $request->key;
+            }
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+
+            // DB::enableQueryLog();
+            $data = PropProperty::select(
+                DB::raw("ulb_ward_masters.ward_name as ward_no,
+                        prop_properties.holding_no,
+                        (
+                            CASE WHEN prop_properties.new_holding_no IS NULL OR prop_properties.new_holding_no='' THEN 'N/A' 
+                            ELSE prop_properties.new_holding_no END
+                        ) AS new_holding_no,
+                        (
+                            CASE WHEN prop_safs.saf_no IS NULL  THEN 'N/A' 
+                            ELSE prop_safs.saf_no END
+                        ) AS saf_no,
+                        owner_detail.owner_name,
+                        owner_detail.mobile_no,
+                        prop_properties.prop_address,
+                        (
+                            CASE WHEN prop_safs.assessment_type IS NULL  THEN 'N/A' 
+                            ELSE prop_safs.assessment_type END
+                        ) AS assessment_type,
+                        (
+                            CASE WHEN floor_details.usage_type IS NULL THEN 'N/A' 
+                            ELSE floor_details.usage_type END
+                        ) AS usage_type,
+                        (
+                            CASE WHEN floor_details.construction_type IS NULL 
+                            THEN 'N/A' ELSE floor_details.construction_type END
+                        ) AS construction_type,
+                        (
+                            CASE WHEN demands.arrear_demand IS NULL THEN '0.00'
+                            ELSE demands.arrear_demand END
+                        ) AS arrear_demand,
+                        (
+                            CASE WHEN demands.current_demand IS NULL THEN '0.00' 
+                            ELSE demands.current_demand END
+                        ) AS current_demand,
+                        COALESCE(demands.arrear_demand, 0)
+                            +COALESCE(demands.current_demand, 0)
+                            AS total_demand,                        
+                        (
+                            CASE WHEN collection.arrear_collection IS NULL THEN '0.00' 
+                            ELSE collection.arrear_collection END
+                        ) AS arrear_collection,
+                        (
+                            CASE WHEN collection.current_collection IS NULL THEN '0.00' 
+                            ELSE collection.current_collection END
+                        ) AS current_collection,
+                        COALESCE(collection.arrear_collection, 0)
+                            +COALESCE(collection.current_collection, 0) 
+                            AS total_collection,
+                        (
+                            CASE WHEN tbl_penalty.penalty IS NULL THEN '0.00'
+                            ELSE tbl_penalty.penalty END
+                        ) AS penalty,
+                        (
+                            CASE WHEN tbl_rebate.rebate IS NULL THEN '0.00' 
+                            ELSE tbl_rebate.rebate END
+                        ) AS rebate,
+                        '0.00' AS advance,
+                        '0.00' AS adjust,
+                        (
+                            COALESCE(demands.arrear_demand, 0)+COALESCE(demands.current_demand, 0)
+                        )
+                        -
+                        (
+                           COALESCE(collection.arrear_collection, 0)+COALESCE(collection.current_collection, 0)
+                        ) AS total_due
+                "),
+                )
+                ->JOIN("ulb_ward_masters","ulb_ward_masters.id","prop_properties.ward_mstr_id")
+                ->LEFTJOIN("prop_safs","prop_safs.id","prop_properties.saf_id")
+                ->JOIN(DB::RAW("(
+                        SELECT 
+                            prop_owners.property_id, 
+                            STRING_AGG(prop_owners.owner_name, ',') AS owner_name, 
+                            STRING_AGG(prop_owners.mobile_no::TEXT, ',') AS mobile_no 
+                        FROM prop_owners
+                        WHERE prop_owners.status=1
+                        GROUP BY prop_owners.property_id
+                        ) AS owner_detail
+                        "),function($join){
+                            $join->on("owner_detail.property_id","=","prop_properties.id");
+                        }
+                )
+                ->LEFTJOIN(DB::RAW("(
+                        SELECT 
+                            prop_floors.property_id, 
+                            STRING_AGG(ref_prop_usage_types.usage_type, ',') AS usage_type, 
+                            STRING_AGG(ref_prop_construction_types.construction_type, ',') AS construction_type 
+                        FROM prop_floors
+                        INNER JOIN ref_prop_usage_types ON ref_prop_usage_types.id=prop_floors.usage_type_mstr_id
+                        INNER JOIN ref_prop_construction_types ON ref_prop_construction_types.id=prop_floors.const_type_mstr_id
+                        WHERE prop_floors.status=1 
+                        GROUP BY prop_floors.property_id
+                        )AS floor_details
+                        "),function($join){
+                            $join->on("floor_details.property_id","=","prop_properties.id");
+                        }
+                )
+                ->LEFTJOIN(DB::RAW("(
+                    SELECT 
+                        property_id, 
+                        SUM(CASE WHEN fyear < '$fiYear' THEN amount ELSE 0 END) AS arrear_demand,
+                        SUM(CASE WHEN fyear = '$fiYear' THEN amount ELSE 0 END) AS current_demand
+                    FROM prop_demands 
+                    WHERE status=1 AND paid_status IN (0,1)  
+                    GROUP BY property_id
+                    )AS demands
+                    "),function($join){
+                        $join->on("demands.property_id","=","prop_properties.id");
+                    }
+                )
+                ->LEFTJOIN(DB::RAW("(
+                    SELECT 
+                        property_id, 
+                        SUM(CASE WHEN fyear < '$fiYear' THEN amount ELSE 0 END) AS arrear_collection,
+                        SUM(CASE WHEN fyear = '$fiYear' THEN amount ELSE 0 END) AS current_collection
+                    FROM prop_demands 
+                    WHERE status=1 AND paid_status=1 
+                    GROUP BY property_id
+                    )AS collection
+                    "),function($join){
+                        $join->on("collection.property_id","=","prop_properties.id");
+                    }
+                )
+                ->LEFTJOIN(DB::RAW("(
+                    SELECT
+                        prop_transactions.property_id AS property_id,
+                        SUM(prop_penaltyrebates.amount) AS penalty
+                    FROM prop_penaltyrebates
+                    INNER JOIN prop_transactions ON prop_transactions.id=prop_penaltyrebates.tran_id
+                    WHERE prop_transactions.property_id is not null 
+                            AND prop_penaltyrebates.status=1 
+                            AND prop_penaltyrebates.is_rebate = FALSE
+                    GROUP BY prop_transactions.property_id
+                    )AS tbl_penalty
+                    "),function($join){
+                        $join->on("tbl_penalty.property_id","=","prop_properties.id");
+                    }
+                )
+                ->LEFTJOIN(DB::RAW("(
+                    SELECT
+                        prop_transactions.property_id AS property_id,
+                        SUM(prop_penaltyrebates.amount) AS rebate
+                    FROM prop_penaltyrebates
+                    INNER JOIN prop_transactions ON prop_transactions.id=prop_penaltyrebates.tran_id
+                    WHERE prop_transactions.property_id is not null 
+                            AND prop_penaltyrebates.status=1 
+                            AND prop_penaltyrebates.is_rebate=true
+                    GROUP BY prop_transactions.property_id
+                    )AS tbl_rebate
+                    "),function($join){
+                        $join->on("tbl_rebate.property_id","=","prop_properties.id");
+                    }
+                )
+                ->WHERE("prop_properties.status",1)
+                ->WHERE(function($where)use ($key){
+                    $where->ORWHERE('prop_properties.holding_no', 'ILIKE', '%' . $key . '%')
+                    ->ORWHERE('prop_properties.new_holding_no', 'ILIKE', '%' . $key . '%')
+                    ->ORWHERE('prop_safs.saf_no', 'ILIKE', '%' . $key . '%')
+                    ->ORWHERE('owner_detail.owner_name', 'ILIKE', '%' . $key . '%')
+                    ->ORWHERE('owner_detail.mobile_no', 'ILIKE', '%' . $key . '%')
+                    ->ORWHERE('prop_properties.prop_address', 'ILIKE', '%' . $key . '%');
+                });
+                if($wardId)
+                {
+                    $data=$data->where("ulb_ward_masters.id",$wardId);
+                }                
+                if($ulbId)
+                {
+                    $data=$data->where("prop_properties.ulb_id",$ulbId);
+                }
+                $data = $data->limit(200)->get();
                 return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
