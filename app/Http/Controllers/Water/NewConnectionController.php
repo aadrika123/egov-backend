@@ -1601,4 +1601,39 @@ class NewConnectionController extends Controller
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
+
+    /**
+     * | Search Application for Site Inspection
+     * | @param 
+     */
+    public function searchApplicationByParameter(Request $request)
+    {
+        $filterBy = Config::get('waterConstaint.FILTER_BY');
+        $request->validate([
+            'filterBy'  => 'required',
+            'parameter' => $request->filterBy == $filterBy['APPLICATION'] ? 'required' : 'nullable',
+            'fromDate'  => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:d-m-Y' : 'nullable|date_format:d-m-Y',
+            'toDate'    => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:d-m-Y' : 'nullable|date_format:d-m-Y',
+        ]);
+        try {
+            $key = $request->filterBy;
+            switch ($key) {
+                case ("byApplication"):
+                    $mWaterApplicant = new WaterApplication();
+                    $returnData = $mWaterApplicant->getApplicationByNo($request->paramenter)->firstOrFail();
+                    break;
+                case ("byDate"):
+                    $mWaterApplicant = new WaterApplication();
+                    $refTimeDate = [
+                        "refStartTime" => Carbon::parse($request->fromDate)->format('Y-m-d'),
+                        "refEndTime" => Carbon::parse($request->toDate)->format('Y-m-d')
+                    ];
+                    $returnData = $mWaterApplicant->getapplicationByDate($refTimeDate);
+                    break;
+            }
+            return responseMsgs(true, "Searched Data!", remove_null($returnData), "", "01", "ms", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+        }
+    }
 }

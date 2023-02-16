@@ -33,10 +33,16 @@ return [
     ],
 
     "JSK" => "JSK",
-    
+
     "CHARGE_CATAGORY" => [
         "SITE_INSPECTON" => "Site Inspection",
         "NEW_CONNECTION" => "New Connection",
         "REGULAIZATION" => "Regulaization"
+    ],
+
+    "FILTER_BY" => [
+        "APPLICATION" => "byApplication",
+        "DATE" => "byDate",
+        "APPLICATION_ID" => "byApplicationId"
     ],
 ];
