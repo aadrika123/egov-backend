@@ -151,10 +151,11 @@ class ActiveSafControllerV2 extends Controller
                 $groupedSafTaxDiff = $safDemands->where('due_date', '>=', $holdingTax2Perc->first()->due_date)->values();
                 $merged = $groupedSafTaxDiff->merge($groupedPropTaxDiff);
                 $taxDiffs = $merged->groupBy('arv');
-
-                $holdingTaxes = collect($taxDiffs)->map(function ($taxDiff) {
-                    $selfAssessAmt = ($taxDiff->first()->amount - $taxDiff->first()->additional_tax) * 4;               // Holding Tax Amount without penalty
-                    $ulbAssessAmt = ($taxDiff->first()->amount - $taxDiff->first()->additional_tax) * 4;                // Holding Tax Amount Without Panalty
+                $qtrParam = 5;                                                                                                      // For Calculating Qtr
+                $holdingTaxes = collect($taxDiffs)->map(function ($taxDiff) use ($qtrParam) {
+                    $totalFirstQtrs = $qtrParam - $taxDiff->first()->qtr;
+                    $selfAssessAmt = ($taxDiff->first()->amount - $taxDiff->first()->additional_tax) * $totalFirstQtrs;               // Holding Tax Amount without penalty
+                    $ulbAssessAmt = ($taxDiff->first()->amount - $taxDiff->first()->additional_tax) * $totalFirstQtrs;                // Holding Tax Amount Without Panalty
                     $diffAmt = $ulbAssessAmt - $selfAssessAmt;
                     return [
                         'Particulars' => $taxDiff->first()->fyear == '2016-2017' ? "Holding Tax @ 2%" : "Holding Tax @ 0.075% or 0.15% or 0.2%",

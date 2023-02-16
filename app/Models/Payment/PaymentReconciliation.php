@@ -2,6 +2,7 @@
 
 namespace App\Models\Payment;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -32,5 +33,33 @@ class PaymentReconciliation extends Model
             'transaction_amount AS amount',
             'clearance_date AS clearanceDate'
         )->orderByDesc('id');
+    }
+
+    /**
+     * 
+     */
+    public function addReconcilation($req)
+    {
+        $mPaymentReconciliation = new PaymentReconciliation();
+        $mPaymentReconciliation->cheque_dtl_id = $req->id;
+        $mPaymentReconciliation->payment_mode = $req->paymentMode;
+        $mPaymentReconciliation->transaction_no = $req->transactionNo;
+        $mPaymentReconciliation->transaction_amount = $req->transactionAmount;
+        $mPaymentReconciliation->transaction_date = $req->transactionDate;
+        $mPaymentReconciliation->bounce_reason = $req->remarks;
+        $mPaymentReconciliation->status = $req->status;
+        $mPaymentReconciliation->date = Carbon::now();
+        // $mPaymentReconciliation->department_id = $req->departmentId;
+        $mPaymentReconciliation->ulb_id = $req->ulbId;
+        $mPaymentReconciliation->user_id = $req->userId;
+        $mPaymentReconciliation->ward_no = $req->wardNo;
+        $mPaymentReconciliation->cheque_no = $req->chequeNo;
+        $mPaymentReconciliation->branch_name = $req->branchName;
+        $mPaymentReconciliation->bank_name = $req->bankName;
+        $mPaymentReconciliation->clearance_date = $req->clearanceDate;
+        $mPaymentReconciliation->cheque_date = $req->chequeDate;
+        $mPaymentReconciliation->cancellation_charge = $req->cancellationCharge;
+        $mPaymentReconciliation->module_id = $req->moduleId;
+        $mPaymentReconciliation->save();
     }
 }

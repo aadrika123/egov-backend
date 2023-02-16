@@ -82,4 +82,13 @@ class WaterTran extends Model
         $mWaterTranDetail = new WaterTranDetail();
         $mWaterTranDetail->saveDefaultTrans($totalConnectionCharges, $applicationId, $transactionId, $connectionId);
     }
+
+    public function chequeTranDtl($ulbId)
+    {
+
+        return WaterTran::select('*')
+            ->where('payment_mode', 'DD')
+            ->orWhere('payment_mode', 'CHEQUE')
+            ->where('ulb_id', $ulbId);
+    }
 }

@@ -60,6 +60,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(BankReconcillationController::class)->group(function () {
         Route::post('search-transaction', 'searchTransaction');
         Route::post('cheque-dtl-by-id', 'chequeDtlById');
+        Route::post('cheque-clearance', 'chequeClearance');
     });
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {
