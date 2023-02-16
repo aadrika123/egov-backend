@@ -182,6 +182,7 @@ class BankReconcillationController extends Controller
             //     'chequeId' => 'required',
             //     'status' => 'required'
             //     'remarks' => 'required'
+            //     'clearanceDate'=> 'required'|date
             // ]);
 
             // if ($validator->fails()) {
