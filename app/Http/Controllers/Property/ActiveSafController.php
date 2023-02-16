@@ -63,6 +63,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use PhpParser\JsonDecoder;
 
+use function PHPUnit\Framework\isEmpty;
+
 class ActiveSafController extends Controller
 {
     use Workflow;
@@ -896,9 +898,13 @@ class ActiveSafController extends Controller
         $reAssessWfMstrId = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
         $mPropSafDemand = new PropSafsDemand();
         $mPropMemoDtl = new PropSafMemoDtl();
+        $todayDate = Carbon::now()->format('Y-m-d');
+        $fYear = calculateFYear($todayDate);
 
         // Derivative Assignments
-        $demand = $mPropSafDemand->getFirstDemandBySafId($saf->id);
+        $demand = $mPropSafDemand->getFirstDemandByFyearSafId($saf->id, $fYear);
+        if (collect($demand)->isEmpty())
+            throw new Exception("Demand Not Available for the Current Year");
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
                 if ($saf->doc_upload_status == 0)
@@ -1061,6 +1067,9 @@ class ActiveSafController extends Controller
             $mPropSafDemand = new PropSafsDemand();
             $mPropProperties = new PropProperty();
             $mPropFloors = new PropFloor();
+            $mPropDemand = new PropDemand();
+            $todayDate = Carbon::now()->format('Y-m-d');
+            $currentFinYear = calculateFYear($todayDate);
 
             $userId = authUser()->id;
             $safId = $req->applicationId;
@@ -1073,8 +1082,8 @@ class ActiveSafController extends Controller
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
             $roleId = $readRoleDtls->wf_role_id;
 
-            if ($safDetails->finisher_role_id != $roleId)
-                throw new Exception("Forbidden Access");
+            // if ($safDetails->finisher_role_id != $roleId)
+            //     throw new Exception("Forbidden Access");
             $activeSaf = PropActiveSaf::query()
                 ->where('id', $req->applicationId)
                 ->first();
@@ -1087,7 +1096,6 @@ class ActiveSafController extends Controller
 
             $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
             $propId = $propDtls->id;
-            $demand = $mPropSafDemand->getFirstDemandBySafId($safId);
             $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
             if ($fieldVerifiedSaf->isEmpty())
                 throw new Exception("Site Verification not Exist");
@@ -1096,6 +1104,12 @@ class ActiveSafController extends Controller
             if ($req->status == 1) {
                 $safDetails->saf_pending_status = 0;
                 $safDetails->save();
+
+                $demand = $mPropDemand->getFirstDemandByFyearPropId($propId, $currentFinYear);
+                if (collect($demand)->isEmpty())
+                    $demand = $mPropSafDemand->getFirstDemandByFyearSafId($safId, $currentFinYear);
+                if (collect($demand)->isEmpty())
+                    throw new Exception("Demand Not Available for the Current Year");
                 // SAF Application replication
                 $samNo = "FAM-" . $safId;
                 $mergedDemand = array_merge($demand->toArray(), [
@@ -1103,7 +1117,8 @@ class ActiveSafController extends Controller
                     'sam_no' => $samNo,
                     'holding_no' => $activeSaf->new_holding_no ?? $activeSaf->holding_no,
                     'ward_id' => $activeSaf->ward_mstr_id,
-                    'prop_id' => $propId
+                    'prop_id' => $propId,
+                    'saf_id' => $safId
                 ]);
                 $memoReqs = new Request($mergedDemand);
                 $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
