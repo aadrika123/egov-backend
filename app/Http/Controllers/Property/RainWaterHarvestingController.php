@@ -472,8 +472,6 @@ class RainWaterHarvestingController extends Controller
             $metaReqs['workflowId'] = $harvesting->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['senderRoleId'] = $req->senderRoleId;
-            $metaReqs['receiverRoleId'] = $req->receiverRoleId;
             $metaReqs['verificationStatus'] = $req->verificationStatus;
             $metaReqs['comment'] = $req->comment;
 
