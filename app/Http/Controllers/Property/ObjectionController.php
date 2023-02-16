@@ -73,7 +73,6 @@ class ObjectionController extends Controller
     public function ownerDetailById(Request $request)
     {
         try {
-
             $Details = new PropOwner();
             $ownerDetails = $Details->getOwnerDetail($request);
 
@@ -596,7 +595,6 @@ class ObjectionController extends Controller
     //get document status by id
     public function objectionDocList(Request $req)
     {
-
         try {
             $mPropActiveObjection = new PropActiveObjection();
             $mPropActiveObjectionOwner = new PropActiveObjectionOwner();

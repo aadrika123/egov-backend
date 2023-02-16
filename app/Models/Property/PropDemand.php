@@ -73,4 +73,16 @@ class PropDemand extends Model
             ->orderByDesc('due_date')
             ->first();
     }
+
+    /**
+     * | Get Demands by Financial year
+     */
+    public function getDemandByFyear($fYear, $propId)
+    {
+        $propDemand = PropDemand::where('fyear', $fYear)
+            ->where('property_id', $propId)
+            ->orderBy('due_date')
+            ->get();
+        return $propDemand;
+    }
 }

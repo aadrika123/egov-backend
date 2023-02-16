@@ -1060,7 +1060,6 @@ class ActiveSafController extends Controller
             $propSafVerificationDtl = new PropSafVerificationDtl();
             $mPropSafMemoDtl = new PropSafMemoDtl();
             $mPropSafDemand = new PropSafsDemand();
-            $mPropDemand = new PropDemand();
             $mPropProperties = new PropProperty();
             $mPropFloors = new PropFloor();
 
@@ -1089,8 +1088,7 @@ class ActiveSafController extends Controller
 
             $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
             $propId = $propDtls->id;
-
-            $propDemands = $mPropDemand->getEffectFromDemandByPropId($propId);
+            $demand = $mPropSafDemand->getFirstDemandBySafId($safId);
             $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
             if ($fieldVerifiedSaf->isEmpty())
                 throw new Exception("Site Verification not Exist");
@@ -1100,6 +1098,16 @@ class ActiveSafController extends Controller
                 $safDetails->saf_pending_status = 0;
                 $safDetails->save();
                 // SAF Application replication
+                $samNo = "FAM-" . $safId;
+                $mergedDemand = array_merge($demand->toArray(), [
+                    'memo_type' => 'FAM',
+                    'sam_no' => $samNo,
+                    'holding_no' => $activeSaf->new_holding_no ?? $activeSaf->holding_no,
+                    'ward_id' => $activeSaf->ward_mstr_id,
+                    'prop_id' => $propId
+                ]);
+                $memoReqs = new Request($mergedDemand);
+                $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
                 $this->finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $mPropFloors, $safId);
                 $msg = "Application Approved Successfully";
             }

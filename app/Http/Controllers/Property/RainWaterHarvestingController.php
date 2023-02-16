@@ -9,6 +9,7 @@ use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
+use App\Models\Property\PropProperty;
 use App\Models\Property\PropRwhVerification;
 use App\Models\Property\RefPropDocsRequired;
 use App\Models\Workflows\WfActiveDocument;
@@ -502,6 +503,10 @@ class RainWaterHarvestingController extends Controller
             $activeHarvesting = PropActiveHarvesting::query()
                 ->where('id', $req->applicationId)
                 ->first();
+
+            $propProperties = PropProperty::where('id', $activeHarvesting->property_id)
+                ->first();
+
             $getFinisherQuery = $this->getFinisherId($activeHarvesting->workflow_id);                                 // Get Finisher using Trait
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
             if ($refGetFinisher->role_id != $req->roleId) {
@@ -519,6 +524,14 @@ class RainWaterHarvestingController extends Controller
                 $approvedHarvesting->save();
                 $activeHarvesting->delete();
 
+                $approvedProperties = $propProperties->replicate();
+                $approvedProperties->setTable('log_prop_properties');
+                $approvedProperties->id = $propProperties->id;
+                $approvedProperties->save();
+
+                $propProperties->is_water_harvesting = true;
+                $propProperties->save();
+
                 $msg = "Application Successfully Approved !!";
             }
             // Rejection
@@ -531,6 +544,9 @@ class RainWaterHarvestingController extends Controller
                 $activeHarvesting->delete();
                 $msg = "Application Successfully Rejected !!";
             }
+
+
+
             DB::commit();
             return responseMsgs(true, $msg, "", '011111', 01, '391ms', 'Post', $req->deviceId);
         } catch (Exception $e) {

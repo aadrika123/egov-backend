@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafMemoDtl;
 use Exception;
@@ -125,8 +126,20 @@ class ActiveSafControllerV2 extends Controller
         ]);
         try {
             $mPropSafMemoDtl = new PropSafMemoDtl();
+            $mPropDemands = new PropDemand();
             $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
             $details = collect($details)->first();
+
+            // Fam Receipt
+            if ($details->memo_type == 'FAM') {
+                $memoFyear = $details->from_fyear;
+                $propId = $details->prop_id;
+                $holdingTax2Perc = $mPropDemands->getDemandByFyear($memoFyear, $propId);
+                $details->fam_receipt = [
+                    'particulars' => 'Holding Tax @ 2%',
+                    'Quarter/Financial Year' => 'Quarter: 1/ Year: 2016-2017'
+                ];
+            }
             return responseMsgs(true, "", remove_null($details), "011803", 1.0, "", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, "", "POST", $req->deviceId);
@@ -167,27 +180,29 @@ class ActiveSafControllerV2 extends Controller
                 ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'ulb_name')
                 ->get();
 
-            if (!$data) {
-                $data = PropProperty::select(
-                    'prop_properties.id',
-                    'ulb_name as ulb',
-                    'prop_properties.holding_no',
-                    'prop_properties.new_holding_no',
-                    'ward_name',
-                    'prop_address',
-                    'prop_properties.status',
-                    DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
-                    DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
-                )
-                    ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-                    ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
-                    ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
-                    ->where('prop_properties.new_holding_no', $holdingNo)
-                    ->where('prop_properties.ulb_id', $ulbId)
-                    ->where('prop_properties.status', 1)
-                    ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'ulb_name')
-                    ->get();
+            if ($data->isNotEmpty()) {
+                return responseMsgs(true, "Holding Details", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
             }
+
+            $data = PropProperty::select(
+                'prop_properties.id',
+                'ulb_name as ulb',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                'ward_name',
+                'prop_address',
+                'prop_properties.status',
+                DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
+            )
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+                ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
+                ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+                ->where('prop_properties.new_holding_no', $holdingNo)
+                ->where('prop_properties.ulb_id', $ulbId)
+                ->where('prop_properties.status', 1)
+                ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'ulb_name')
+                ->get();
 
             if ($data->isEmpty()) {
                 throw new Exception("Enter Valid Holding No.");
