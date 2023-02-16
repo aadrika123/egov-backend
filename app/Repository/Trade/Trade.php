@@ -726,6 +726,7 @@ class Trade implements ITrade
             if ($request->paymentMode != 'CASH') {
                 $tradeChq = new TradeChequeDtl;
                 $tradeChq->tran_id = $transaction_id;
+                $tradeChq->temp_id = $licenceId;
                 $tradeChq->cheque_no      = $request->chequeNo;
                 $tradeChq->cheque_date    = $request->chequeDate;
                 $tradeChq->bank_name      = $request->bankName;
@@ -767,7 +768,7 @@ class Trade implements ITrade
             #----------End transaction------------------------
             #----------Response------------------------------
             $res['transactionId'] = $transaction_id;
-            $res['paymentReceipt'] = config('app.url') . "/api/trade/paymentReceipt/" . $licenceId . "/" . $transaction_id;
+            $res['paymentReceipt'] = config('app.url') . "/api/trade/application/payment-receipt/" . $licenceId . "/" . $transaction_id;
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
             DB::rollBack();

@@ -494,7 +494,7 @@ class TradeCitizenController extends Controller
             #----------End transaction------------------------
             #----------Response------------------------------
             $res['transactionId'] = $transaction_id;
-            $res['paymentReceipt'] = config('app.url') . "/api/trade/paymentReceipt/" . $licenceId . "/" . $transaction_id;
+            $res['paymentReceipt'] = config('app.url') . "/api/trade/application/payment-receipt/" . $licenceId . "/" . $transaction_id;
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
             DB::rollBack();
@@ -650,7 +650,7 @@ class TradeCitizenController extends Controller
 
     # Serial No
     public function surrenderList()
-    {
+    { 
         try {
             $citizenId = authUser()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');

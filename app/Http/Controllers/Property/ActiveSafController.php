@@ -229,7 +229,7 @@ class ActiveSafController extends Controller
         try {
             $mApplyDate = Carbon::now()->format("Y-m-d");
             $user_id = auth()->user()->id;
-            $ulb_id = $request->ulbId;
+            $ulb_id = $request->ulbId ?? auth()->user()->ulb_id;
             $userType = auth()->user()->user_type;
             $demand = array();
             $metaReqs = array();
@@ -619,7 +619,6 @@ class ActiveSafController extends Controller
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mWorkflowTracks = new WorkflowTrack();
             $mCustomDetails = new CustomDetail();
-            $getDocuments = new PropertyBifurcation();
             $forwardBackward = new WorkflowMap;
             $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
             // Saf Details
@@ -844,17 +843,17 @@ class ActiveSafController extends Controller
      */
     public function postNextLevel(Request $request)
     {
+        $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
         $request->validate([
             'applicationId' => 'required|integer',
             'senderRoleId' => 'required|integer',
             'receiverRoleId' => 'required|integer',
-            'comment' => 'required',
+            'comment' => $request->senderRoleId == $wfLevels['BO'] ? 'required' : 'nullable',
             'action' => 'required|In:forward,backward'
         ]);
 
         try {
             // Variable Assigments
-            $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $senderRoleId = $request->senderRoleId;
             $saf = PropActiveSaf::find($request->applicationId);
             $mWfMstr = new WfWorkflow();
@@ -1060,7 +1059,6 @@ class ActiveSafController extends Controller
             $propSafVerificationDtl = new PropSafVerificationDtl();
             $mPropSafMemoDtl = new PropSafMemoDtl();
             $mPropSafDemand = new PropSafsDemand();
-            $mPropDemand = new PropDemand();
             $mPropProperties = new PropProperty();
             $mPropFloors = new PropFloor();
 
@@ -1089,8 +1087,7 @@ class ActiveSafController extends Controller
 
             $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
             $propId = $propDtls->id;
-
-            $propDemands = $mPropDemand->getEffectFromDemandByPropId($propId);
+            $demand = $mPropSafDemand->getFirstDemandBySafId($safId);
             $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
             if ($fieldVerifiedSaf->isEmpty())
                 throw new Exception("Site Verification not Exist");
@@ -1100,6 +1097,16 @@ class ActiveSafController extends Controller
                 $safDetails->saf_pending_status = 0;
                 $safDetails->save();
                 // SAF Application replication
+                $samNo = "FAM-" . $safId;
+                $mergedDemand = array_merge($demand->toArray(), [
+                    'memo_type' => 'FAM',
+                    'sam_no' => $samNo,
+                    'holding_no' => $activeSaf->new_holding_no ?? $activeSaf->holding_no,
+                    'ward_id' => $activeSaf->ward_mstr_id,
+                    'prop_id' => $propId
+                ]);
+                $memoReqs = new Request($mergedDemand);
+                $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
                 $this->finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $mPropFloors, $safId);
                 $msg = "Application Approved Successfully";
             }
@@ -2153,6 +2160,8 @@ class ActiveSafController extends Controller
                     // $safTaxes2 = json_decode(json_encode($safTaxes2), true);
 
                     $safTaxes3 = $this->reviewTaxCalculation($safTaxes);
+
+                    // dd($safTaxes2);
                     $safTaxes4 = $this->reviewTaxCalculation($safTaxes2);
                     // dd(json_decode(json_encode($safTaxes), true));
                     $compairTax = $this->reviewTaxCalculationCom($safTaxes, $safTaxes2);
@@ -2176,6 +2185,7 @@ class ActiveSafController extends Controller
             $data["floor_comparison"] = $floors_compais;
             return responseMsgs(true, $message, remove_null($data), "010121", "1.0", "258ms", "POST", $request->deviceId);
         } catch (Exception $e) {
+            // dd($e->getMessage(),$e->getFile(),$e->getLine());
             return responseMsg(false, $e->getMessage(), "");
         }
     }

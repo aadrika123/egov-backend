@@ -1,20 +1,19 @@
 <?php
 
-namespace App\Models\Trade;
+namespace App\Models\Water;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TradeChequeDtl extends Model
+class WaterChequeDtl extends Model
 {
     use HasFactory;
 
-
     public function chequeDtlById($request)
     {
-        return TradeChequeDtl::select('*')
+        return WaterChequeDtl::select('*')
             ->where('id', $request->chequeId)
-            ->where('state', 2)
+            ->where('status', 2)
             ->first();
     }
 }

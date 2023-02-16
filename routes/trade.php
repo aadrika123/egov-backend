@@ -159,7 +159,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/amendable-list', 'amendmentList');
 
         // Route::post('list-surrender', 'surrenderList');
-        Route::post('list-application/surrenderable-list', 'surrenderList');
+        Route::post('application/surrenderable-list', 'surrenderList');
     });
 });
 

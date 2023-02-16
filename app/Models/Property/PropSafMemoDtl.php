@@ -83,7 +83,7 @@ class PropSafMemoDtl extends Model
                             JOIN (SELECT owner_name,guardian_name,saf_id,relation_type FROM prop_owners ORDER BY id) AS o ON o.saf_id=d.saf_id
                             JOIN prop_active_safs AS s ON s.id=d.saf_id
                             JOIN ulb_ward_masters AS u ON u.id=d.ward_mstr_id
-                            WHERE d.id=$memoId
+                            WHERE d.id=$memoId AND d.status=1
                     LIMIT 1";
         return DB::select($query);
     }

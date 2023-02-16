@@ -18,4 +18,12 @@ class PropChequeDtl extends Model
         $mPropChequeDtl = new PropChequeDtl();
         $mPropChequeDtl->create($req);
     }
+
+    public function chequeDtlById($request)
+    {
+        return PropChequeDtl::select('*')
+            ->where('id', $request->chequeId)
+            ->where('status', 2)
+            ->first();
+    }
 }

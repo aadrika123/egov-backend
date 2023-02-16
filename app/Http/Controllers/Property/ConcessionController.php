@@ -99,6 +99,7 @@ class ConcessionController extends Controller
             DB::beginTransaction();
             $concession = new PropActiveConcession;
             $concession->property_id = $request->propId;
+            $concession->owner_id = $request->ownerId;
             $concession->applicant_name = $request->applicantName;
             $concession->gender = $request->gender;
             $concession->dob = $request->dob;
@@ -572,6 +573,8 @@ class ConcessionController extends Controller
         }
     }
 
+
+
     /**
      * | Concession Application Approval or Rejected 
      * | @param req
@@ -602,11 +605,21 @@ class ConcessionController extends Controller
                     ->where('id', $req->applicationId)
                     ->first();
 
+                $propOwners = PropOwner::where('id', $activeConcession->prop_owner_id)
+                    ->first();
+
                 $approvedConcession = $activeConcession->replicate();
                 $approvedConcession->setTable('prop_concessions');
                 $approvedConcession->id = $activeConcession->id;
                 $approvedConcession->save();
                 $activeConcession->delete();
+
+                $approvedOwners = $propOwners->replicate();
+                $approvedOwners->setTable('log_prop_owners');
+                $approvedOwners->id = $propOwners->id;
+                $approvedOwners->save();
+
+                $this->updateOwner($propOwners, $activeConcession);
 
                 $msg =  "Application Successfully Approved !!";
             }
@@ -632,6 +645,30 @@ class ConcessionController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | Update Owner Details after approval
+     */
+    public function updateOwner($propOwners, $activeConcession)
+    {
+        if ($activeConcession->applied_for == 'Gender') {
+            $propOwners->gender = $activeConcession->gender;
+            $propOwners->save();
+        }
+        if ($activeConcession->applied_for == 'Senior Citizen') {
+            $propOwners->dob = $activeConcession->dob;
+            $propOwners->save();
+        }
+        if ($activeConcession->applied_for == 'Specially Abled') {
+            $propOwners->is_specially_abled = $activeConcession->is_specially_abled;
+            $propOwners->save();
+        }
+        if ($activeConcession->applied_for == 'Armed Force') {
+            $propOwners->is_armed_force = $activeConcession->is_armed_force;
+            $propOwners->save();
+        }
+    }
+
 
     /**
      * | Back to Citizen

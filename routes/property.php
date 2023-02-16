@@ -17,6 +17,7 @@ use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\property\ClusterController;
 use App\Http\Controllers\Property\ConcessionDocController;
 use App\Http\Controllers\Property\HoldingTaxController;
+use App\Http\Controllers\Property\ReportController;
 use App\Http\Controllers\Property\SafDocController;
 use App\Http\Controllers\Property\ZoneController;
 
@@ -364,4 +365,19 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('independent/generate-prop-orderid', 'generateOrderId');                      // (08) Generate Property Order ID
   Route::post('prop-payment-history', 'propPaymentHistory');                                // (06) Property Payment History
   Route::post('prop-ulb-receipt', 'proUlbReceipt');                                         // (09) Property Ulb Payment Receipt
+});
+
+#Added By Sandeep Bara
+#Date 16/02/2023
+
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+
+  /**
+   * | Route Outside the Middleware
+   | Serial No : 
+   */
+  Route::controller(ReportController::class)->group(function () {
+    Route::post('reports/property/collection', 'collectionReport');
+    Route::post('reports/saf/collection', 'safCollection');
+  });
 });
