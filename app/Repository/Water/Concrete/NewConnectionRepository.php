@@ -89,6 +89,7 @@ class NewConnectionRepository implements iNewConnection
         $workflowID = $this->_waterWorkflowId;
         $owner = $req['owners'];
         $ulbId = $req->ulbId;
+        $ta=$req['tenant'];
 
         # check the property type on vacant land
         $checkResponse = $this->checkVacantLand($req, $vacantLand);
@@ -129,6 +130,11 @@ class NewConnectionRepository implements iNewConnection
         $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId, $newConnectionCharges);
         # water applicant
         foreach ($owner as $owners) {
+            $objApplicant = new WaterApplicant();
+            $objApplicant->saveWaterApplicant($applicationId, $owners);
+        }
+        # water applicant in case of tenant
+        foreach ($tenant as $tenants) {
             $objApplicant = new WaterApplicant();
             $objApplicant->saveWaterApplicant($applicationId, $owners);
         }

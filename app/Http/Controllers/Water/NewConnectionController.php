@@ -1612,8 +1612,8 @@ class NewConnectionController extends Controller
         $request->validate([
             'filterBy'  => 'required',
             'parameter' => $request->filterBy == $filterBy['APPLICATION'] ? 'required' : 'nullable',
-            'fromDate'  => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:d-m-Y' : 'nullable|date_format:d-m-Y',
-            'toDate'    => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:d-m-Y' : 'nullable|date_format:d-m-Y',
+            'fromDate'  => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:d-m-Y' : 'nullable',
+            'toDate'    => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:d-m-Y' : 'nullable',
         ]);
         try {
             $key = $request->filterBy;
