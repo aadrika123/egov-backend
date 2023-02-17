@@ -175,6 +175,11 @@ class ObjectionController extends Controller
 
             if (!$details)
                 throw new Exception("Application Not Found for this id");
+
+            if ($details->objection_for == 'Assessment Error') {
+                $this->assessmentDetails($details, $req);
+            };
+
             // Data Array
             $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
             $basicElement = [

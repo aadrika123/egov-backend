@@ -108,8 +108,8 @@ class CashVerificationController extends Controller
             'users.id',
             'users.user_name',
             DB::raw("sum(prop_transactions.amount) as amount,'property' as module,
-            sum(case when prop_transactions.verify_status = 1 then prop_transactions.amount else 0 end ) as verified_amount,
-            string_agg((case when prop_transactions.verify_status = 1 then 1 else 0 end)::text,',') As verify_status
+            sum(case when prop_transactions.verify_status = 1 then prop_transactions.amount  end ) as verified_amount,
+            string_agg((case when prop_transactions.verify_status = 1 then 1  end)::text,',') As verify_status
             "),
         )
             ->join('users', 'users.id', 'prop_transactions.user_id')
@@ -122,8 +122,8 @@ class CashVerificationController extends Controller
             'users.id',
             'users.user_name',
             DB::raw("sum(trade_transactions.paid_amount) as amount,'trade' as module , 
-            sum(case when trade_transactions.is_verified is true  then trade_transactions.paid_amount else 0 end ) as verified_amount,
-            string_agg((case when trade_transactions.is_verified is true then 1 else 0 end)::text,',') As verify_status
+            sum(case when trade_transactions.is_verified is true  then trade_transactions.paid_amount end ) as verified_amount,
+            string_agg((case when trade_transactions.is_verified is true then 1  end)::text,',') As verify_status
             "),
         )
             ->join('users', 'users.id', 'trade_transactions.emp_dtl_id')
@@ -136,8 +136,8 @@ class CashVerificationController extends Controller
             'users.id',
             'users.user_name',
             DB::raw("sum(water_trans.amount) as amount,'water' as module,
-            sum(case when water_trans.verify_status =1  then water_trans.amount else 0 end ) as verified_amount,
-            string_agg((case when water_trans.verify_status =1 then 1 else 0 end)::text,',') As verify_status
+            sum(case when water_trans.verify_status =1  then water_trans.amount  end ) as verified_amount,
+            string_agg((case when water_trans.verify_status =1 then 1 end)::text,',') As verify_status
             "),
         )
             ->join('users', 'users.id', 'water_trans.emp_dtl_id')
@@ -188,34 +188,40 @@ class CashVerificationController extends Controller
      */
     public function tcCollectionDtl(Request $request)
     {
-        $request->validate([
-            "date" => "required|date",
-            "userId" => "required|numeric",
+        try {
+            $request->validate([
+                "date" => "required|date",
+                "userId" => "required|numeric",
 
-        ]);
-        $userId =  $request->userId;
-        $ulbId =  authUser()->ulb_id;
-        $date = date('Y-m-d', strtotime($request->date));
-        $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
-        $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
-        $mTempTransaction = new TempTransaction();
-        $details = $mTempTransaction->transactionList($date, $userId, $ulbId);
+            ]);
+            $userId =  $request->userId;
+            $ulbId =  authUser()->ulb_id;
+            $date = date('Y-m-d', strtotime($request->date));
+            $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
+            $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $mTempTransaction = new TempTransaction();
+            $details = $mTempTransaction->transactionList($date, $userId, $ulbId);
+            if ($details->isEmpty())
+                throw new Exception("No Application Found for this id");
 
-        $data['property'] = collect($details)->where('module_id', $propertyModuleId)->values();
-        $data['water'] = collect($details)->where('module_id', $waterModuleId)->values();
-        $data['trade'] = collect($details)->where('module_id', $tradeModuleId)->values();
-        $data['Cash'] = collect($details)->where('payment_mode', '=', 'CASH')->sum('amount');
-        $data['Cheque'] = collect($details)->where('payment_mode', '=', 'CHEQUE')->sum('amount');
-        $data['DD'] = collect($details)->where('payment_mode', '=', 'DD')->sum('amount');
-        // $data['Neft'] = collect($details)->where('payment_mode', '=', 'Neft')->first()->amount;
-        // $data['RTGS'] = collect($details)->where('payment_mode', '=', 'RTGS')->first()->amount;
-        $data['totalAmount'] =  $details->sum('amount');
-        $data['numberOfTransaction'] =  $details->count();
-        $data['collectorName'] =  collect($details)[0]->user_name;
-        $data['date'] = $date;
+            $data['property'] = collect($details)->where('module_id', $propertyModuleId)->values();
+            $data['water'] = collect($details)->where('module_id', $waterModuleId)->values();
+            $data['trade'] = collect($details)->where('module_id', $tradeModuleId)->values();
+            $data['Cash'] = collect($details)->where('payment_mode', '=', 'CASH')->sum('amount');
+            $data['Cheque'] = collect($details)->where('payment_mode', '=', 'CHEQUE')->sum('amount');
+            $data['DD'] = collect($details)->where('payment_mode', '=', 'DD')->sum('amount');
+            // $data['Neft'] = collect($details)->where('payment_mode', '=', 'Neft')->first()->amount;
+            // $data['RTGS'] = collect($details)->where('payment_mode', '=', 'RTGS')->first()->amount;
+            $data['totalAmount'] =  $details->sum('amount');
+            $data['numberOfTransaction'] =  $details->count();
+            $data['collectorName'] =  collect($details)[0]->user_name;
+            $data['date'] = $date;
 
-        return responseMsgs(true, "TC Collection", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "TC Collection", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+        }
     }
 
     /**
@@ -565,48 +571,61 @@ class CashVerificationController extends Controller
             $water =  $request->water;
             $trade =  $request->trade;
 
-            foreach ($property as $propertyDtl) {
-                $pTempTransaction = TempTransaction::find($propertyDtl['id']);
-                $tran_no =  $propertyDtl['tran_no'];
-                PropTransaction::where('tran_no', $tran_no)
-                    ->update(
-                        [
-                            'verify_status' => 1,
-                            'verify_date' => Carbon::now(),
-                            'verified_by' => $userId
-                        ]
-                    );
-                $this->dailyCollection($propertyDtl);
-                $pTempTransaction->delete();
+            if ($property) {
+                foreach ($property as $propertyDtl) {
+                    $pTempTransaction = TempTransaction::find($propertyDtl['id']);
+                    $tran_no =  $propertyDtl['tran_no'];
+                    PropTransaction::where('tran_no', $tran_no)
+                        ->update(
+                            [
+                                'verify_status' => 1,
+                                'verify_date' => Carbon::now(),
+                                'verified_by' => $userId
+                            ]
+                        );
+                    $this->dailyCollection($propertyDtl);
+                    if (!$pTempTransaction)
+                        throw new Exception("No Transaction Found for this id");
+                    $pTempTransaction->delete();
+                }
             }
 
-            foreach ($water as $waterDtl) {
-                $wTempTransaction = TempTransaction::find($waterDtl['id']);
-                WaterTran::where('tran_no', $waterDtl['tran_no'])
-                    ->update(
-                        [
-                            'verify_status' => 1,
-                            'verified_date' => Carbon::now(),
-                            'verified_by' => $userId
-                        ]
-                    );
-                $this->dailyCollection($waterDtl);
-                $wTempTransaction->delete();
+            if ($water) {
+                foreach ($water as $waterDtl) {
+                    $wTempTransaction = TempTransaction::find($waterDtl['id']);
+                    WaterTran::where('tran_no', $waterDtl['tran_no'])
+                        ->update(
+                            [
+                                'verify_status' => 1,
+                                'verified_date' => Carbon::now(),
+                                'verified_by' => $userId
+                            ]
+                        );
+                    $this->dailyCollection($waterDtl);
+                    if (!$wTempTransaction)
+                        throw new Exception("No Transaction Found for this id");
+                    $wTempTransaction->delete();
+                }
             }
 
-            foreach ($trade as $tradeDtl) {
-                $tTempTransaction = TempTransaction::find($tradeDtl['id']);
-                TradeTransaction::where('tran_no', $tradeDtl['tran_no'])
-                    ->update(
-                        [
-                            'is_verified' => 1,
-                            'verify_date' => Carbon::now(),
-                            'verify_by' => $userId
-                        ]
-                    );
-                $this->dailyCollection($tradeDtl);
-                $tTempTransaction->delete();
+            if ($trade) {
+                foreach ($trade as $tradeDtl) {
+                    $tTempTransaction = TempTransaction::find($tradeDtl['id']);
+                    TradeTransaction::where('tran_no', $tradeDtl['tran_no'])
+                        ->update(
+                            [
+                                'is_verified' => 1,
+                                'verify_date' => Carbon::now(),
+                                'verify_by' => $userId
+                            ]
+                        );
+                    $this->dailyCollection($tradeDtl);
+                    if (!$tTempTransaction)
+                        throw new Exception("No Transaction Found for this id");
+                    $tTempTransaction->delete();
+                }
             }
+
             return responseMsgs(true, "Cash Verified", '', "010201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
