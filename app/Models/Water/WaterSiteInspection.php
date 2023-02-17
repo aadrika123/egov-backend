@@ -14,7 +14,7 @@ class WaterSiteInspection extends Model
      * |-------------------- save site inspecton -----------------------\
      * | @param req
      */
-    public function store($req)
+    public function storeInspectionDetails($req)
     {
         $saveSiteVerify = new WaterSiteInspection();
         $saveSiteVerify->property_type_id       =   $req->propertyType;
@@ -25,7 +25,7 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->flat_count             =   $req->flatCount;
         $saveSiteVerify->ward_id                =   $req->wardId;
         $saveSiteVerify->area_sqft              =   $req->areaSqft;
-        $saveSiteVerify->rate_id                =   $req->rateId;       // what is rate Id
+        $saveSiteVerify->rate_id                =   $req->rateId;                    // what is rate Id
         $saveSiteVerify->emp_details_id         =   $req->empDetailsId;
         $saveSiteVerify->apply_connection_id    =   $req->applyConnectionId;
         $saveSiteVerify->payment_status         =   $req->paymentStatus;
