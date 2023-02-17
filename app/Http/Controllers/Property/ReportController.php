@@ -50,7 +50,7 @@ class ReportController extends Controller
         $request->request->add(["metaData"=>["pr2.1",1.1,null,$request->getMethod(),null,]]);
         return $this->Repository->safCollection($request);
     }
-    public function safPropIndividualDemandAndCollecton(Request $request)
+    public function safPropIndividualDemandAndCollection(Request $request)
     {
         $request->validate(
             [
@@ -62,6 +62,6 @@ class ReportController extends Controller
             ]
         );
         $request->request->add(["metaData"=>["pr3.1",1.1,null,$request->getMethod(),null,]]);
-        return $this->Repository->safPropIndividualDemandAndCollecton($request);
+        return $this->Repository->safPropIndividualDemandAndCollection($request);
     }
 }

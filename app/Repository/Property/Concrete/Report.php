@@ -443,7 +443,7 @@ class Report implements IReport
         }
     }
 
-    public function safPropIndividualDemandAndCollecton(Request $request)
+    public function safPropIndividualDemandAndCollection(Request $request)
     {
         $metaData= collect($request->metaData)->all();        
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;

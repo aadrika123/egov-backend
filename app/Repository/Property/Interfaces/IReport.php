@@ -8,5 +8,5 @@ interface IReport
 {
     public function collectionReport(Request $request);
     public function safCollection(Request $request);
-    public function safPropIndividualDemandAndCollecton(Request $request);
+    public function safPropIndividualDemandAndCollection(Request $request);
 }

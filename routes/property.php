@@ -385,6 +385,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(ReportController::class)->group(function () {
     Route::post('reports/property/collection', 'collectionReport');
     Route::post('reports/saf/collection', 'safCollection');
-    Route::post('reports/property/prop-saf-individual-demand-collecton', 'safPropIndividualDemandAndCollecton');
+    Route::post('reports/property/prop-saf-individual-demand-collection', 'safPropIndividualDemandAndCollection');
   });
 });
