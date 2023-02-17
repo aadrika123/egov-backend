@@ -90,7 +90,6 @@ class ObjectionRepository implements iObjectionRepository
                 $objection = new PropActiveObjection();
                 $objection->ulb_id = $ulbId;
                 $objection->user_id = $userId;
-                $objection->citizen_id = $userId;
                 $objection->objection_for =  $objectionFor;
                 $objection->property_id = $request->propId;
                 $objection->remarks = $request->remarks;
@@ -99,7 +98,17 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->workflow_id = $ulbWorkflowId->id;
                 $objection->current_role = $initiatorRoleId[0]->role_id;
                 $objection->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
+                $objection->last_role_id = collect($initiatorRoleId)->first()->role_id;
                 $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
+
+                if ($userType == 'Citizen') {
+                    $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
+                    $objection->initiator_role_id = collect($initiatorRoleId)->first()->forward_role_id;      // Send to DA in Case of Citizen
+                    $objection->last_role_id = collect($initiatorRoleId)->first()->forward_role_id;
+                    $objection->user_id = null;
+                    $objection->citizen_id = $userId;
+                    $objection->doc_upload_status = 1;
+                }
                 $objection->save();
 
                 //objection No generation in model

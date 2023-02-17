@@ -22,6 +22,7 @@ use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
+use App\Traits\Property\Concession;
 use App\Traits\Property\SafDetailsTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,7 @@ class ObjectionController extends Controller
     use WorkflowTrait;
     use Objection;
     use SafDetailsTrait;
+    use Concession;
 
     protected $objection;
     protected $Repository;
@@ -329,18 +331,27 @@ class ObjectionController extends Controller
     // Post Next Level Application
     public function postNextLevel(Request $req)
     {
+        $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
         try {
             $req->validate([
                 'applicationId' => 'required',
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
-                'comment' => 'required'
+                'comment' => $req->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+                'action' => 'required|In:forward,backward'
             ]);
+
+
             $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
             // objection Application Update Current Role Updation
             $objection = PropActiveObjection::find($req->applicationId);
-            $objection->current_role = $req->receiverRoleId;
-            $objection->save();
+            $senderRoleId = $req->senderRoleId;
+
+            if ($req->action == 'forward') {
+                $this->checkPostCondition($senderRoleId, $wfLevels, $objection);          // Check Post Next level condition
+                $objection->last_role_id = $req->receiverRoleId;                      // Update Last Role Id
+                $metaReqs['verificationStatus'] = 1;
+            }
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $objection->workflow_id;
@@ -351,6 +362,9 @@ class ObjectionController extends Controller
             DB::beginTransaction();
             $track = new WorkflowTrack();
             $track->saveTrack($req);
+
+            $objection->current_role = $req->receiverRoleId;
+            $objection->save();
 
             DB::commit();
 

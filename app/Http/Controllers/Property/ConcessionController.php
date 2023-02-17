@@ -536,6 +536,7 @@ class ConcessionController extends Controller
             if ($req->action == 'forward') {
                 $this->checkPostCondition($senderRoleId, $wfLevels, $concession);          // Check Post Next level condition
                 $concession->last_role_id = $req->receiverRoleId;                      // Update Last Role Id
+                $metaReqs['verificationStatus'] = 1;
             }
 
             // Concession Application Update Current Role Updation
@@ -547,7 +548,6 @@ class ConcessionController extends Controller
             $metaReqs['workflowId'] = $concession->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['verificationStatus'] = $req->verificationStatus;
             $req->request->add($metaReqs);
 
             $track = new WorkflowTrack();
@@ -564,19 +564,19 @@ class ConcessionController extends Controller
     /**
      * | check Post Condition for backward forward
      */
-    public function checkPostCondition($senderRoleId, $wfLevels, $concession)
-    {
-        switch ($senderRoleId) {
-            case $wfLevels['BO']:                        // Back Office Condition
-                if ($concession->doc_upload_status == 0)
-                    throw new Exception("Document Not Fully Uploaded");
-                break;
-            case $wfLevels['DA']:                       // DA Condition
-                if ($concession->doc_verify_status == 0)
-                    throw new Exception("Document Not Fully Verified");
-                break;
-        }
-    }
+    // public function checkPostCondition($senderRoleId, $wfLevels, $concession)
+    // {
+    //     switch ($senderRoleId) {
+    //         case $wfLevels['BO']:                        // Back Office Condition
+    //             if ($concession->doc_upload_status == 0)
+    //                 throw new Exception("Document Not Fully Uploaded");
+    //             break;
+    //         case $wfLevels['DA']:                       // DA Condition
+    //             if ($concession->doc_verify_status == 0)
+    //                 throw new Exception("Document Not Fully Verified");
+    //             break;
+    //     }
+    // }
 
 
 

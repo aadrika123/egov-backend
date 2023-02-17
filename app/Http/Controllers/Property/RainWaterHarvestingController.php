@@ -20,6 +20,7 @@ use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
+use App\Traits\Property\Concession;
 use Illuminate\Http\Request;
 use App\Traits\Property\SAF;
 use App\Traits\Property\SafDetailsTrait;
@@ -44,6 +45,7 @@ class RainWaterHarvestingController extends Controller
     use Workflow;
     use Ward;
     use SafDetailsTrait;
+    use Concession;
     private $_todayDate;
     private $_bifuraction;
     private $_workflowId;
@@ -466,6 +468,7 @@ class RainWaterHarvestingController extends Controller
             if ($req->action == 'forward') {
                 $this->checkPostCondition($senderRoleId, $wfLevels, $harvesting);          // Check Post Next level condition
                 $harvesting->last_role_id = $req->receiverRoleId;                      // Update Last Role Id
+                $metaReqs['verificationStatus'] = 1;
             }
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');

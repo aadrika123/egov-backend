@@ -2,6 +2,7 @@
 
 namespace App\Traits\Property;
 
+use Exception;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -32,5 +33,22 @@ trait Concession
             ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
             ->where('prop_active_concessions.status', 1)
             ->where('prop_active_concessions.ulb_id', $ulbId);
+    }
+
+    /**
+     * | check Post Condition for backward forward
+     */
+    public function checkPostCondition($senderRoleId, $wfLevels, $concession)
+    {
+        switch ($senderRoleId) {
+            case $wfLevels['BO']:                        // Back Office Condition
+                if ($concession->doc_upload_status == 0)
+                    throw new Exception("Document Not Fully Uploaded");
+                break;
+            case $wfLevels['DA']:                       // DA Condition
+                if ($concession->doc_verify_status == 0)
+                    throw new Exception("Document Not Fully Verified");
+                break;
+        }
     }
 }

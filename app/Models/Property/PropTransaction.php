@@ -27,8 +27,16 @@ class PropTransaction extends Model
      */
     public function getPropByTranPropId($tranNo)
     {
-        return PropTransaction::where('tran_no', $tranNo)
-            ->firstOrFail();
+        return PropTransaction::select(
+            'prop_transactions.*',
+            'prop_cheque_dtls.bank_name',
+            'prop_cheque_dtls.branch_name',
+            'prop_cheque_dtls.cheque_no',
+            'prop_cheque_dtls.cheque_date',
+        )
+            ->where('tran_no', $tranNo)
+            ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
+            ->first();
     }
 
     // getPropTrans as trait function on current object
