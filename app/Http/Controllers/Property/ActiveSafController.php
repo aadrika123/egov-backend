@@ -1332,11 +1332,8 @@ class ActiveSafController extends Controller
             $demands = $calculateSafById['data']['demand'];
             $totalAmount = $demands['payableAmount'];
             $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0]);
-            $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
-            $orderDetails['name'] = $auth->user_name;
-            $orderDetails['mobile'] = $auth->mobile;
-            $orderDetails['email'] = $auth->email;
             DB::beginTransaction();
+            $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
 
             $this->postDemands($safDemandDetails, $req, $safDetails);                               // Update the data in saf prop demands
             $this->postPenaltyRebates($calculateSafById, $req);                                     // Post Penalty Rebates
@@ -1371,7 +1368,7 @@ class ActiveSafController extends Controller
                 'fyear' => $safDemandDetail['quarterYear'],
                 'qtr' => $safDemandDetail['qtr'],
                 'due_date' => $safDemandDetail['dueDate'],
-                'user_id' => authUser()->id,
+                'user_id' => authUser()->id ?? null,
                 'ulb_id' => $safDetails->ulb_id,
             ];
             if ($propSafDemand)                                                     // <---------------- If The Data is already Existing then update the data
