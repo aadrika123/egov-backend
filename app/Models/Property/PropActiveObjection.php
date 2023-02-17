@@ -89,9 +89,10 @@ class PropActiveObjection extends Model
                 'nw.ward_name as new_ward_no',
                 'o.ownership_type',
                 'pt.property_type',
-                'a.apt_code',
                 'a.apartment_address',
-                'a.no_of_block'
+                'a.no_of_block',
+                'a.apt_code as apartment_code',
+                'a.*',
             )
 
             ->join('prop_properties as p', 'p.id', '=', 'prop_active_objections.property_id')
