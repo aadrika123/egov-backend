@@ -562,25 +562,6 @@ class ConcessionController extends Controller
     }
 
     /**
-     * | check Post Condition for backward forward
-     */
-    // public function checkPostCondition($senderRoleId, $wfLevels, $concession)
-    // {
-    //     switch ($senderRoleId) {
-    //         case $wfLevels['BO']:                        // Back Office Condition
-    //             if ($concession->doc_upload_status == 0)
-    //                 throw new Exception("Document Not Fully Uploaded");
-    //             break;
-    //         case $wfLevels['DA']:                       // DA Condition
-    //             if ($concession->doc_verify_status == 0)
-    //                 throw new Exception("Document Not Fully Verified");
-    //             break;
-    //     }
-    // }
-
-
-
-    /**
      * | Concession Application Approval or Rejected 
      * | @param req
      * | Status-closed
@@ -989,7 +970,7 @@ class ConcessionController extends Controller
         $safId = $refApplication->id;
         $workflowId = $refApplication->workflow_id;
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
+        return  $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
         $explodeDocs = collect(explode('#', $documentList));
 
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
@@ -997,6 +978,25 @@ class ConcessionController extends Controller
             $key = array_shift($document);
             $label = array_shift($document);
             $documents = collect();
+
+            // collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId) {
+            //     $uploadedDoc = $uploadedDocs->where('doc_code', $item)
+            //         ->where('owner_dtl_id', $ownerId)
+            //         ->first();
+
+            //     if ($uploadedDoc) {
+            //         $response = [
+            //             "uploadedDocId" => $uploadedDoc->id ?? "",
+            //             "documentCode" => $item,
+            //             "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
+            //             "docPath" => $uploadedDoc->doc_path ?? "",
+            //             "verifyStatus" => $uploadedDoc->verify_status ?? "",
+            //             "remarks" => $uploadedDoc->remarks ?? "",
+            //         ];
+            //         $documents->push($response);
+            //     }
+            // });
+
 
             $reqDoc['docType'] = $key;
             $reqDoc['docName'] = substr($label, 1, -1);
