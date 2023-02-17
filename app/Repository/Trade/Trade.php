@@ -2510,7 +2510,9 @@ class Trade implements ITrade
                 });
                 $mWardPermission = objToArray($mWardPermission);
                 $mJoins = "leftjoin";
-            } else {
+            } 
+            else
+            {
                 $mJoins = "join";
             }
 

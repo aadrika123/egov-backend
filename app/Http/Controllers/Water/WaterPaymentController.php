@@ -159,9 +159,20 @@ class WaterPaymentController extends Controller
 
             $transactions = array();
 
+            # consumer Details
             $waterDtls = $mWaterConsumer->getConsumerDetailById($request->consumerId);
             if (!$waterDtls)
                 throw new Exception("Water Consumer Not Found!");
+
+            # if Consumer in made vie application
+            $applicationId = $waterDtls->apply_connection_id;
+            if (!$applicationId)
+                throw new Exception("This Consumer has not ApplicationId!!");
+
+            # if demand transaction exist
+            $connectionTran[] = $mWaterTran->getTransNo($applicationId, null)->first();                        // Water Connection payment History
+            if (!$connectionTran)
+                throw new Exception("Water Application Tran Details not Found!!");
 
             $waterTrans = $mWaterTran->ConsumerTransaction($request->consumerId)->get();         // Water Consumer Payment History
             $waterTrans = collect($waterTrans)->map(function ($value, $key) use ($mWaterConsumerDemand, $mWaterTranDetail) {
@@ -169,18 +180,6 @@ class WaterPaymentController extends Controller
                 $value['demand'] = $mWaterConsumerDemand->getDemandBydemandId($demandId['demand_id']);
                 return $value;
             });
-
-            if (!$waterTrans || $waterTrans->isEmpty())
-                throw new Exception("No Transaction Found!");
-
-            $applicationId = $waterDtls->apply_connection_id;
-            if (!$applicationId)
-                throw new Exception("This Property has not ApplicationId!!");
-
-            $connectionTran[] = $mWaterTran->getTransNo($applicationId, null)->first();                        // Water Connection payment History
-
-            if (!$connectionTran)
-                throw new Exception("Water Application Tran Details not Found!!");
 
             $transactions['Consumer'] = collect($waterTrans)->sortByDesc('id')->values();
             $transactions['connection'] = collect($connectionTran)->sortByDesc('id');
