@@ -397,5 +397,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/prop-saf-individual-demand-collection', 'safPropIndividualDemandAndCollection');
     Route::post('reports/saf/levelwisependingform', 'levelwisependingform');
     Route::post('reports/saf/levelformdetail', 'levelformdetail');
+    Route::post('reports/saf/userwiselevelpending', 'userWiseLevelPending');
+    Route::post('reports/saf/userWiseWardWireLevelPending', 'userWiseWardWireLevelPending');
   });
 });

@@ -310,8 +310,10 @@ class Trade implements ITrade
                     $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
                     $firm_date = $request->firmDetails['firmEstdDate'];
                     $refNoticeDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($noticeNo)));
-                    if ($refNoticeDetails) {
+                    if ($refNoticeDetails) {                       
                         $refDenialId = $refNoticeDetails->dnialid;
+                        $licence->dnial_id = $refDenialId;
+                        $licence->update();
                         $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date  
                         if ($firm_date < $mNoticeDate) {
                             throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date ");
@@ -648,7 +650,7 @@ class Trade implements ITrade
             if ($refLecenceData->tobacco_status == 1 && $request->licenseFor > 1) {
                 throw new Exception("Tobaco Application Not Take Licence More Than One Year");
             }
-            if ($refNoticeDetails = $this->readNotisDtl($refLecenceData->id)) {
+            if ($refNoticeDetails = $this->readNotisDtl($refLecenceData->denial_id)) {
                 $refDenialId = $refNoticeDetails->dnialid;
                 $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date 
             }
@@ -2072,6 +2074,7 @@ class Trade implements ITrade
     public function getPaybleAmount(Request $request)
     {
         try {
+            $mNoticeDate = null;
             $data['application_type_id'] = Config::get("TradeConstant.APPLICATION-TYPE." . $request->applicationType);
             if (!$data['application_type_id']) {
                 throw new Exception("Invalide Application Type");
@@ -2081,13 +2084,20 @@ class Trade implements ITrade
             }, $request->natureOfBusiness);
 
             $mNatureOfBussiness = implode(',', $mNatureOfBussiness);
+            if ($request->licenceId && ($refLecenceData = ActiveTradeLicence::find($request->licenceId))
+                    &&($refNoticeDetails = $this->readNotisDtl($refLecenceData->denial_id))) 
+            {
+                $refDenialId = $refNoticeDetails->dnialid;
+                $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date 
+            }
 
             $data["areaSqft"]       = $request->areaSqft;
             $data['curdate']        = Carbon::now()->format('Y-m-d');
             $data["firmEstdDate"]   = $request->firmEstdDate;
             $data["tobacco_status"] = $request->tocStatus;
-            $data['noticeDate']     = $request->noticeDate ?? null;
+            $data['noticeDate']     = $request->noticeDate ? $request->noticeDate :$mNoticeDate;
             $data["licenseFor"]     = $request->licenseFor;
+            $data["apply_licence_id"]  = $request->licenceId??null;
             $data["nature_of_business"] = $mNatureOfBussiness;
 
             $data = $this->cltCharge($data);

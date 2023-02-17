@@ -6,6 +6,7 @@ use App\EloquentModels\Common\ModelWard;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropTransaction;
+use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfRole;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
@@ -809,6 +810,92 @@ class Report implements IReport
             {
                 $data = $data->WHEREIN("prop_active_safs.ward_mstr_id",$mWardIds);
             }
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total/$perPage);                
+            $list=[
+                "perPage"=>$perPage,
+                "page"=>$page,
+                "items"=>$items,
+                "total"=>$total,
+                "numberOfPages"=>$numberOfPages
+            ];
+            // dd(DB::getQueryLog());
+            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function userWiseWardWireLevelPending(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;            
+            $roleId = $roleId2 = $userId = null;
+            $mWardPermission = collect([]);
+            
+            $safWorkFlow = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            if($request->roleId)
+            {
+                $roleId = $request->roleId;
+            }
+            if($request->userId)
+            {
+                $userId = $request->userId; 
+                $roleId2 = ($this->_common->getUserRoll($userId,$ulbId,$safWorkFlow))->role_id??0;
+            }
+            if(($request->roleId && $request->userId) && ($roleId!=$roleId2))
+            {
+                throw new Exception("Invalid RoleId Pass");
+            }
+            $roleId = $roleId2?$roleId2:$roleId;
+            if(!in_array($roleId,[11,8]))
+            {
+                $mWfWardUser = new WfWardUser();
+                $mWardPermission = $mWfWardUser->getWardsByUserId($userId);
+            }
+           
+            $mWardIds = $mWardPermission->implode("id",",");
+            $mWardIds = explode(',',($mWardIds?$mWardIds:"0"));
+            // DB::enableQueryLog();
+            $data = UlbWardMaster::SELECT(
+                    DB::RAW(" DISTINCT(ward_name) as ward_no, COUNT(prop_active_safs.id) AS total")
+            )
+            ->LEFTJOIN("prop_active_safs","ulb_ward_masters.id","prop_active_safs.ward_mstr_id");
+            if($roleId==8)
+            {
+                $data = $data->LEFTJOIN("wf_roles","wf_roles.id","prop_active_safs.current_role")
+                        ->WHERENOTNULL("prop_active_safs.user_id")
+                        ->WHERE(function($where){
+                            $where->WHERE("prop_active_safs.payment_status","=",0)
+                            ->ORWHERENULL("prop_active_safs.payment_status");
+                        });
+            }
+            else
+            {
+                $data = $data->JOIN("wf_roles","wf_roles.id","prop_active_safs.current_role") 
+                        ->WHERE("wf_roles.id",$roleId);
+            }
+            if(!in_array($roleId,[11,8]) && $userId)
+            {
+                $data = $data->WHEREIN("prop_active_safs.ward_mstr_id",$mWardIds);
+            }
+            $data = $data->WHERE("prop_active_safs.ulb_id",$ulbId);
+            $data = $data->groupBy(["ward_name"]);
+
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
