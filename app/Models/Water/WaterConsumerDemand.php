@@ -28,6 +28,7 @@ class WaterConsumerDemand extends Model
         return WaterConsumerDemand::where('consumer_id', $consumerId)
             ->where('paid_status', false)
             ->where('status', true)
+            ->orderByDesc('id')
             ->get();
     }
 }

@@ -66,7 +66,6 @@ class ObjectionRepository implements iObjectionRepository
     {
         try {
             $userId = authUser()->id;
-            // $ulbId = auth()->user()->ulb_id;
             $ulbId = $request->ulbId;
             $userType = auth()->user()->user_type;
             $objectionFor = $request->objectionFor;
@@ -82,8 +81,8 @@ class ObjectionRepository implements iObjectionRepository
             $initiatorRoleId = DB::select($refInitiatorRoleId);
             $finisherRoleId = DB::select($refFinisherRoleId);
 
+            DB::beginTransaction();
             if ($objectionFor == "Clerical Mistake") {
-                DB::beginTransaction();
 
                 //saving objection details
                 # Flag : call model <-----
@@ -114,6 +113,8 @@ class ObjectionRepository implements iObjectionRepository
                 //objection No generation in model
                 $objNo = new PropActiveObjection();
                 $objectionNo = $objNo->objectionNo($objection->id);
+                if (collect($objectionNo)->isEmpty())
+                    throw new Exception("Objection Not Found");
 
                 PropActiveObjection::where('id', $objection->id)
                     ->update(['objection_no' => $objectionNo]);
@@ -205,28 +206,6 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
                 $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
                 $objection->save();
-
-                //objection_form
-                // if ($file = $request->file('objFormDoc')) {
-                //     $docName = "objectionForm";
-                //     $name = $this->moveFile($docName, $file);
-
-                //     $objectionDoc = new PropActiveObjectionDocdtl;
-                //     $objectionDoc->objection_id = $objection->id;
-                //     $objectionDoc->remarks = $request->objRemarks;
-                //     $this->citizenDocUpload($objectionDoc, $name, $docName);
-                // }
-
-                // //Evidence Doc
-                // if ($file = $request->file('objEvidenceDoc')) {
-                //     $docName = "evidenceDoc";
-                //     $name = $this->moveFile($docName, $file);
-
-                //     $objectionDoc = new PropActiveObjectionDocdtl;
-                //     $objectionDoc->objection_id = $objection->id;
-                //     $objectionDoc->remarks = $request->objRemarks;
-                //     $this->citizenDocUpload($objectionDoc, $name, $docName);
-                // }
                 return responseMsg(true, "Successfully Saved", '');
             }
 
@@ -257,7 +236,7 @@ class ObjectionRepository implements iObjectionRepository
                 PropActiveObjection::where('id', $objection->id)
                     ->update(['objection_no' => $objectionNo]);
 
-                $abc =  json_decode($request->assessmentData);
+                $abc =  json_decode(json_encode($request->assessmentData, true));
                 $a = collect($abc);
 
                 // return $request;
@@ -348,6 +327,7 @@ class ObjectionRepository implements iObjectionRepository
 
             return responseMsgs(true, "Successfully Saved", $objectionNo, '010801', '01', '382ms-547ms', 'Post', '');
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json($e->getMessage());
         }
     }
@@ -355,51 +335,49 @@ class ObjectionRepository implements iObjectionRepository
     //assesment detail
     public function assesmentDetails($request)
     {
-        try {
-            $assesmentDetails = PropProperty::select(
-                'is_hoarding_board as isHoarding',
-                'hoarding_area',
-                'hoarding_installation_date',
-                'is_water_harvesting as isWaterHarvesting',
-                'is_mobile_tower as isMobileTower',
-                'tower_area',
-                'tower_installation_date',
-                'area_of_plot as areaOfPlot',
-                'property_type as propertyType',
-                'road_type_mstr_id',
-                'road_type as roadType',
-                'prop_type_mstr_id'
+        $assesmentDetails = PropProperty::select(
+            'is_hoarding_board as isHoarding',
+            'hoarding_area',
+            'hoarding_installation_date',
+            'is_water_harvesting as isWaterHarvesting',
+            'is_mobile_tower as isMobileTower',
+            'tower_area',
+            'tower_installation_date',
+            'area_of_plot as areaOfPlot',
+            'property_type as propertyType',
+            'road_type_mstr_id',
+            'road_type as roadType',
+            'prop_type_mstr_id'
+        )
+            ->where('prop_properties.id', $request->propId)
+            ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
+            ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
+            ->join('ref_prop_road_types', 'ref_prop_road_types.id', '=', 'prop_properties.road_type_mstr_id')
+            ->get();
+        if (collect($assesmentDetails)->isEmpty())
+            throw new Exception("Assessment Details Not Available");
+        foreach ($assesmentDetails as $assesmentDetailss) {
+            $assesmentDetailss['floor'] = PropProperty::select(
+                'ref_prop_floors.floor_name as floorNo',
+                'ref_prop_usage_types.usage_type as usageType',
+                'ref_prop_occupancy_types.occupancy_type as occupancyType',
+                'ref_prop_construction_types.construction_type as constructionType',
+                'prop_floors.builtup_area as buildupArea',
+                'prop_floors.date_from as dateFrom',
+                'prop_floors.date_upto as dateUpto',
             )
                 ->where('prop_properties.id', $request->propId)
                 ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
-                ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
-                ->join('ref_prop_road_types', 'ref_prop_road_types.id', '=', 'prop_properties.road_type_mstr_id')
+                ->join('ref_prop_floors', 'ref_prop_floors.id', '=', 'prop_floors.floor_mstr_id')
+                ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', '=', 'prop_floors.usage_type_mstr_id')
+                ->join('ref_prop_occupancy_types', 'ref_prop_occupancy_types.id', '=', 'prop_floors.occupancy_type_mstr_id')
+                ->join('ref_prop_construction_types', 'ref_prop_construction_types.id', '=', 'prop_floors.const_type_mstr_id')
                 ->get();
-            foreach ($assesmentDetails as $assesmentDetailss) {
-                $assesmentDetailss['floor'] = PropProperty::select(
-                    'ref_prop_floors.floor_name as floorNo',
-                    'ref_prop_usage_types.usage_type as usageType',
-                    'ref_prop_occupancy_types.occupancy_type as occupancyType',
-                    'ref_prop_construction_types.construction_type as constructionType',
-                    'prop_floors.builtup_area as buildupArea',
-                    'prop_floors.date_from as dateFrom',
-                    'prop_floors.date_upto as dateUpto',
-                )
-                    ->where('prop_properties.id', $request->propId)
-                    ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
-                    ->join('ref_prop_floors', 'ref_prop_floors.id', '=', 'prop_floors.floor_mstr_id')
-                    ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', '=', 'prop_floors.usage_type_mstr_id')
-                    ->join('ref_prop_occupancy_types', 'ref_prop_occupancy_types.id', '=', 'prop_floors.occupancy_type_mstr_id')
-                    ->join('ref_prop_construction_types', 'ref_prop_construction_types.id', '=', 'prop_floors.const_type_mstr_id')
-                    ->get();
-            }
-            if (isset($assesmentDetailss)) {
-                return responseMsgs(true, "Successfully Retrieved", remove_null($assesmentDetailss), '010804', '01', '332ms-367ms', 'Post', '');
-            } else {
-                return responseMsg(false, "Supply Valid Property Id", "");
-            }
-        } catch (Exception $e) {
-            echo $e->getMessage();
+        }
+        if (isset($assesmentDetailss)) {
+            return responseMsgs(true, "Successfully Retrieved", remove_null($assesmentDetailss), '010804', '01', '332ms-367ms', 'Post', '');
+        } else {
+            return responseMsg(false, "Supply Valid Property Id", "");
         }
     }
 
