@@ -87,9 +87,8 @@ class PropActiveHarvesting extends Model
                 'p.property_type',
                 'r.road_type as road_type_master',
                 'wr.role_name as current_role_name',
-                'a.apt_code',
-                'a.apartment_address',
-                'a.no_of_block'
+                'a.apt_code as apartment_code',
+                'a.*',
             )
             ->leftJoin('prop_properties as pp', 'pp.id', '=', 'h.property_id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'pp.ward_mstr_id')

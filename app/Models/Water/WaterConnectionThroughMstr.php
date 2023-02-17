@@ -5,19 +5,19 @@ namespace App\Models\Water;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class WaterPropertyTypeMstr extends Model
+class WaterConnectionThroughMstr extends Model
 {
     use HasFactory;
 
 
     /**
-     * | Get Property type Details
+     * | GEt the  Connection through
      */
-    public function getWaterPropertyTypeMstr()
+    public function getWaterConnectionThroughMstr()
     {
-        return WaterPropertyTypeMstr::select(
+        return WaterConnectionThroughMstr::select(
             'id',
-            'property_type'
+            'connection_through'
         )
             ->where('status', 1)
             ->get();

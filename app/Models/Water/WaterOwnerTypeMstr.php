@@ -9,11 +9,16 @@ class WaterOwnerTypeMstr extends Model
 {
     use HasFactory;
 
-     // water owners detais
-     public function getallOwnwers()
-     {
-         return WaterOwnerTypeMstr::select('water_owner_type_mstrs.id', 'water_owner_type_mstrs.owner_type')
-             ->where('status', 1)
-             ->get();
-     }
+    /**
+     * | Get Owner Type List
+     */
+    public function getWaterOwnerTypeMstr()
+    {
+        return WaterOwnerTypeMstr::select(
+            'id',
+            'owner_type'
+        )
+            ->where('status', 1)
+            ->get();
+    }
 }

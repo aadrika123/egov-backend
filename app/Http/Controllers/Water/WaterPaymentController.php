@@ -7,8 +7,12 @@ use App\Http\Requests\Water\siteAdjustment;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
+use App\Models\Water\WaterConnectionThroughMstr;
+use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterOwnerTypeMstr;
+use App\Models\Water\WaterParamPipelineType;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterPropertyTypeMstr;
 use App\Models\Water\WaterSiteInspection;
@@ -23,6 +27,7 @@ use DateTime;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -45,7 +50,7 @@ class WaterPaymentController extends Controller
     public function __construct()
     {
         $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
-        $this->_waterMasterData = Config::get('waterConstaint.');
+        $this->_waterMasterData = Config::get('waterConstaint.WATER_MASTER_DATA');
     }
 
 
@@ -53,13 +58,71 @@ class WaterPaymentController extends Controller
      * | Get The Master Data Related to Water 
      * | Fetch all master Data At Once
      * | @var 
-     * | @return 
+     * | @return returnValues
         | Serial No : 00 
      */
     public function getWaterMasterData()
     {
         try {
+            $redisConn = Redis::connection();
+            $returnValues = [];
+            $mWaterParamPipelineType = new WaterParamPipelineType();
+            $mWaterConnectionTypeMstr = new WaterConnectionTypeMstr();
+            $mWaterConnectionThroughMstr = new WaterConnectionThroughMstr();
             $mWaterPropertyTypeMstr = new WaterPropertyTypeMstr();
+            $mWaterOwnerTypeMstr = new WaterOwnerTypeMstr();
+
+            $waterParamPipelineType = json_decode(Redis::get('water-param-pipeline-type'));
+            $waterConnectionTypeMstr = json_decode(Redis::get('water-connection-type-mstr'));
+            $waterConnectionThroughMstr = json_decode(Redis::get('water-connection-through-mstr'));
+            $waterPropertyTypeMstr = json_decode(Redis::get('water-property-type-mstr'));
+            $waterOwnerTypeMstr = json_decode(Redis::get('water-owner-type-mstr'));
+
+            // Ward Masters
+            if (!$waterParamPipelineType) {
+                $waterParamPipelineType = $mWaterParamPipelineType->getWaterParamPipelineType();            // Get PipelineType By Model Function
+                $redisConn->set('water-param-pipeline-type', json_encode($waterParamPipelineType));                  // Caching
+            }
+
+            if (!$waterConnectionTypeMstr) {
+                $waterConnectionTypeMstr = $mWaterConnectionTypeMstr->getWaterConnectionTypeMstr();            // Get PipelineType By Model Function
+                $redisConn->set('water-connection-type-mstr', json_encode($waterConnectionTypeMstr));                  // Caching
+            }
+
+            if (!$waterConnectionThroughMstr) {
+                $waterConnectionThroughMstr = $mWaterConnectionThroughMstr->getWaterConnectionThroughMstr();            // Get PipelineType By Model Function
+                $redisConn->set('water-connection-through-mstr', json_encode($waterConnectionThroughMstr));                  // Caching
+            }
+
+            if (!$waterPropertyTypeMstr) {
+                $waterPropertyTypeMstr = $mWaterPropertyTypeMstr->getWaterPropertyTypeMstr();            // Get PipelineType By Model Function
+                $redisConn->set('water-property-type-mstr', json_encode($waterPropertyTypeMstr));                  // Caching
+            }
+
+            if (!$waterOwnerTypeMstr) {
+                $waterOwnerTypeMstr = $mWaterOwnerTypeMstr->getWaterOwnerTypeMstr();            // Get PipelineType By Model Function
+                $redisConn->set('water-owner-type-mstr', json_encode($waterOwnerTypeMstr));                  // Caching
+            }
+
+            $masterValues = [
+                'water_param_pipeline_type'     => $waterParamPipelineType,
+                'water-connection-type-mstr'    => $waterConnectionTypeMstr,
+                'water-connection-through-mstr' => $waterConnectionThroughMstr,
+                'water-property-type-mstr'      => $waterPropertyTypeMstr,
+                'water-owner-type-mstr'         => $waterOwnerTypeMstr,
+            ];
+
+            # Config Master Data 
+            $refMasterData = $this->_waterMasterData;
+            $confugMasterValues = [
+                "pipeline_size_type"    => $refMasterData['PIPELINE_SIZE_TYPE'],
+                "pipe_diameter"         => $refMasterData['PIPE_DIAMETER'],
+                "pipe_quality"          => $refMasterData['PIPE_QUALITY'],
+                "road_type"             => $refMasterData['ROAD_TYPE'],
+                "ferule_size"           => $refMasterData['FERULE_SIZE']
+            ];
+            $returnValues = collect($masterValues)->merge($confugMasterValues);
+            return responseMsgs(true, "list of Water Master Data!", remove_null($returnValues), "", "01", "ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
@@ -96,9 +159,20 @@ class WaterPaymentController extends Controller
 
             $transactions = array();
 
+            # consumer Details
             $waterDtls = $mWaterConsumer->getConsumerDetailById($request->consumerId);
             if (!$waterDtls)
                 throw new Exception("Water Consumer Not Found!");
+
+            # if Consumer in made vie application
+            $applicationId = $waterDtls->apply_connection_id;
+            if (!$applicationId)
+                throw new Exception("This Consumer has not ApplicationId!!");
+
+            # if demand transaction exist
+            $connectionTran[] = $mWaterTran->getTransNo($applicationId, null)->first();                        // Water Connection payment History
+            if (!$connectionTran)
+                throw new Exception("Water Application Tran Details not Found!!");
 
             $waterTrans = $mWaterTran->ConsumerTransaction($request->consumerId)->get();         // Water Consumer Payment History
             $waterTrans = collect($waterTrans)->map(function ($value, $key) use ($mWaterConsumerDemand, $mWaterTranDetail) {
@@ -106,18 +180,6 @@ class WaterPaymentController extends Controller
                 $value['demand'] = $mWaterConsumerDemand->getDemandBydemandId($demandId['demand_id']);
                 return $value;
             });
-
-            if (!$waterTrans || $waterTrans->isEmpty())
-                throw new Exception("No Transaction Found!");
-
-            $applicationId = $waterDtls->apply_connection_id;
-            if (!$applicationId)
-                throw new Exception("This Property has not ApplicationId!!");
-
-            $connectionTran[] = $mWaterTran->getTransNo($applicationId, null)->first();                        // Water Connection payment History
-
-            if (!$connectionTran)
-                throw new Exception("Water Application Tran Details not Found!!");
 
             $transactions['Consumer'] = collect($waterTrans)->sortByDesc('id')->values();
             $transactions['connection'] = collect($connectionTran)->sortByDesc('id');

@@ -23,6 +23,9 @@ use Illuminate\Support\Facades\DB;
 
 class CashVerificationController extends Controller
 {
+    /**
+     * | Unverified Cash Verification List
+     */
     public function cashVerificationList(Request $request)
     {
         try {
@@ -32,21 +35,16 @@ class CashVerificationController extends Controller
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $mTempTransaction =  new TempTransaction();
 
             if (isset($userId)) {
-                $data = TempTransaction::select('*')
-                    ->join('users', 'users.id', 'temp_transactions.user_id')
-                    ->where('tran_date', $date)
+                $data = $mTempTransaction->transactionDtl($date, $ulbId)
                     ->where('user_id', $userId)
-                    ->where('temp_transactions.ulb_id', $ulbId)
                     ->get();
             }
 
             if (!isset($userId)) {
-                $data = TempTransaction::select('*')
-                    ->join('users', 'users.id', 'temp_transactions.user_id')
-                    ->where('tran_date', $date)
-                    ->where('temp_transactions.ulb_id', $ulbId)
+                $data = $mTempTransaction->transactionDtl($date, $ulbId)
                     ->get();
             }
 
@@ -192,10 +190,10 @@ class CashVerificationController extends Controller
     {
         $request->validate([
             "date" => "required|date",
-            "id" => "required|numeric",
+            "userId" => "required|numeric",
 
         ]);
-        $userId =  $request->id;
+        $userId =  $request->userId;
         $ulbId =  authUser()->ulb_id;
         $date = date('Y-m-d', strtotime($request->date));
         $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -207,11 +205,10 @@ class CashVerificationController extends Controller
         $data['property'] = collect($details)->where('module_id', $propertyModuleId)->values();
         $data['water'] = collect($details)->where('module_id', $waterModuleId)->values();
         $data['trade'] = collect($details)->where('module_id', $tradeModuleId)->values();
-
-        $data['Cash'] = collect($details)->where('payment_mode', '=', 'Cash')->first()->amount;
-        $data['Cash'] = collect($details)->where('payment_mode', '=', 'Cash')->first()->amount;
-        $data['Cheque'] = collect($details)->where('payment_mode', '=', 'Cheque')->first()->amount;
-        // $data['DD'] = collect($details)->where('payment_mode', '=', 'DD')->first()->amount;
+        $data['Cash'] = collect($details)->where('payment_mode', '=', 'CASH')->sum('amount');
+        $data['Cheque'] = collect($details)->where('payment_mode', '=', 'CHEQUE')->sum('amount');
+        $data['DD'] = collect($details)->where('payment_mode', '=', 'DD')->sum('amount');
+        // $data['Neft'] = collect($details)->where('payment_mode', '=', 'Neft')->first()->amount;
         // $data['RTGS'] = collect($details)->where('payment_mode', '=', 'RTGS')->first()->amount;
         $data['totalAmount'] =  $details->sum('amount');
         $data['numberOfTransaction'] =  $details->count();
@@ -228,11 +225,11 @@ class CashVerificationController extends Controller
     {
         $request->validate([
             "date" => "required|date",
-            "id" => "required|numeric",
+            "userId" => "required|numeric",
 
         ]);
 
-        $userId = $request->id;
+        $userId = $request->userId;
         $date = date('Y-m-d', strtotime($request->date));
 
         $sql =   "WITH 
@@ -353,6 +350,7 @@ class CashVerificationController extends Controller
                 JOIN trade_transactions ON trade_transactions.temp_id = active_trade_owners.temp_id
                 WHERE active_trade_owners.is_active = true
                     AND trade_transactions.status = 1
+                    AND trade_transactions.is_verified = true
                     AND trade_transactions.tran_date = '" . $date . "'
                     AND payment_mode != 'netbanking'
                     AND trade_transactions.payment_mode != 'ONLINE'
@@ -362,6 +360,7 @@ class CashVerificationController extends Controller
                 AND trade_transactions.tran_date = '" . $date . "'
                 AND trade_transactions.payment_mode != 'ONLINE'
                 AND payment_mode != 'netbanking'
+                AND trade_transactions.is_verified = true
                 AND emp_dtl_id = $userId
         union
             (
@@ -377,6 +376,7 @@ class CashVerificationController extends Controller
                 JOIN trade_transactions ON trade_transactions.temp_id = trade_owners.temp_id
                 WHERE trade_owners.is_active = true
                     AND trade_transactions.status = 1
+                    AND trade_transactions.is_verified = true
                     AND trade_transactions.tran_date = '" . $date . "'
                     AND payment_mode != 'netbanking'
                     AND trade_transactions.payment_mode != 'ONLINE'
@@ -386,6 +386,7 @@ class CashVerificationController extends Controller
                 AND trade_transactions.tran_date = '" . $date . "'
                 AND trade_transactions.payment_mode != 'ONLINE'
                 AND payment_mode != 'netbanking'
+                AND trade_transactions.is_verified = true
                 AND emp_dtl_id = $userId
             )
         union
@@ -402,6 +403,7 @@ class CashVerificationController extends Controller
                 JOIN trade_transactions ON trade_transactions.temp_id = rejected_trade_owners.temp_id
                 WHERE rejected_trade_owners.is_active = true
                     AND trade_transactions.status = 1
+                    AND trade_transactions.is_verified = true
                     AND trade_transactions.tran_date = '" . $date . "'
                     AND payment_mode != 'netbanking'
                     AND trade_transactions.payment_mode != 'ONLINE'
@@ -411,6 +413,7 @@ class CashVerificationController extends Controller
                 AND trade_transactions.tran_date = '" . $date . "'
                 AND trade_transactions.payment_mode != 'ONLINE'
                 AND payment_mode != 'netbanking'
+                AND trade_transactions.is_verified = true
                 AND emp_dtl_id = $userId
             )
         )select * from  trade_transaction;";
@@ -431,6 +434,7 @@ class CashVerificationController extends Controller
                     JOIN water_trans ON water_trans.related_id = water_applicants.application_id
                     WHERE water_applicants.status = true
                         AND water_trans.status = 1
+                        AND water_trans.verify_status = 1
                         AND water_trans.tran_date = '" . $date . "'
                         AND payment_mode != 'netbanking'
                         AND water_trans.payment_mode != 'Online'
@@ -440,6 +444,7 @@ class CashVerificationController extends Controller
             		AND water_trans.tran_date = '" . $date . "'
                     AND water_trans.payment_mode != 'Online'
                     AND payment_mode != 'netbanking'
+                    AND water_trans.verify_status = 1
                     AND emp_dtl_id = $userId
 
         union
@@ -456,6 +461,7 @@ class CashVerificationController extends Controller
                     JOIN water_trans ON water_trans.related_id = water_approval_applicants.application_id
                     WHERE water_approval_applicants.status = true
                         AND water_trans.status = 1
+                        AND water_trans.verify_status = 1
                         AND water_trans.tran_date = '" . $date . "'
                         AND payment_mode != 'netbanking'
                         AND water_trans.payment_mode != 'Online'
@@ -465,6 +471,7 @@ class CashVerificationController extends Controller
             		AND water_trans.tran_date = '" . $date . "'
                     AND water_trans.payment_mode != 'Online'
                     AND payment_mode != 'netbanking'
+                    AND water_trans.verify_status = 1
                     AND emp_dtl_id = $userId
             )
         union
@@ -481,6 +488,7 @@ class CashVerificationController extends Controller
                     JOIN water_trans ON water_trans.related_id = water_rejection_applicants.application_id
                     WHERE water_rejection_applicants.status = true
                         AND water_trans.status = 1
+                        AND water_trans.verify_status = 1
                         AND water_trans.tran_date = '" . $date . "'
                         AND payment_mode != 'netbanking'
                         AND water_trans.payment_mode != 'Online'
@@ -490,6 +498,7 @@ class CashVerificationController extends Controller
             		AND water_trans.tran_date = '" . $date . "'
                     AND water_trans.payment_mode != 'Online'
                     AND payment_mode != 'netbanking'
+                    AND water_trans.verify_status = 1
                     AND emp_dtl_id = $userId
             )
 
@@ -508,6 +517,7 @@ class CashVerificationController extends Controller
                     JOIN water_trans ON water_trans.related_id = water_consumer_owners.consumer_id
                     WHERE water_consumer_owners.status = true
                         AND water_trans.status = 1
+                        AND water_trans.verify_status = 1
                         AND water_trans.tran_date = '" . $date . "'
                         AND payment_mode != 'netbanking'
                         AND water_trans.payment_mode != 'Online'
@@ -517,13 +527,14 @@ class CashVerificationController extends Controller
             		AND water_trans.tran_date = '" . $date . "'
                     AND water_trans.payment_mode != 'Online'
                     AND payment_mode != 'netbanking'
+                    AND water_trans.verify_status = 1
                     AND emp_dtl_id = $userId
             )
         )select * from  water_transaction;";
 
         $data['property'] =  DB::select($sql);
         $data['trade'] =  DB::select($trade);
-        $data['water'] =  DB::select($water);
+        return $data['water'] =  DB::select($water);
 
         $total['property'] =  collect($data['property'])->map(function ($value) {
             return $value->amount;
@@ -546,61 +557,66 @@ class CashVerificationController extends Controller
     /**
      * | For Verification of cash
      */
-
     public function cashVerify(Request $request)
     {
-        $userId = authUser()->id;
-        $property =  $request->property;
-        $water =  $request->water;
-        $trade =  $request->trade;
+        try {
+            $userId = authUser()->id;
+            $property =  $request->property;
+            $water =  $request->water;
+            $trade =  $request->trade;
 
-        foreach ($property as $propertyDtl) {
-            $pTempTransaction = TempTransaction::find($propertyDtl['id']);
-            $tran_no =  $propertyDtl['tran_no'];
-            PropTransaction::where('tran_no', $tran_no)
-                ->update(
-                    [
-                        'verify_status' => 1,
-                        'verify_date' => Carbon::now(),
-                        'verified_by' => $userId
-                    ]
-                );
-            $this->dailyCollection($propertyDtl);
-            $pTempTransaction->delete();
+            foreach ($property as $propertyDtl) {
+                $pTempTransaction = TempTransaction::find($propertyDtl['id']);
+                $tran_no =  $propertyDtl['tran_no'];
+                PropTransaction::where('tran_no', $tran_no)
+                    ->update(
+                        [
+                            'verify_status' => 1,
+                            'verify_date' => Carbon::now(),
+                            'verified_by' => $userId
+                        ]
+                    );
+                $this->dailyCollection($propertyDtl);
+                $pTempTransaction->delete();
+            }
+
+            foreach ($water as $waterDtl) {
+                $wTempTransaction = TempTransaction::find($waterDtl['id']);
+                WaterTran::where('tran_no', $waterDtl['tran_no'])
+                    ->update(
+                        [
+                            'verify_status' => 1,
+                            'verified_date' => Carbon::now(),
+                            'verified_by' => $userId
+                        ]
+                    );
+                $this->dailyCollection($waterDtl);
+                $wTempTransaction->delete();
+            }
+
+            foreach ($trade as $tradeDtl) {
+                $tTempTransaction = TempTransaction::find($tradeDtl['id']);
+                TradeTransaction::where('tran_no', $tradeDtl['tran_no'])
+                    ->update(
+                        [
+                            'is_verified' => 1,
+                            'verify_date' => Carbon::now(),
+                            'verify_by' => $userId
+                        ]
+                    );
+                $this->dailyCollection($tradeDtl);
+                $tTempTransaction->delete();
+            }
+            return responseMsgs(true, "Cash Verified", '', "010201", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
         }
-
-        foreach ($water as $waterDtl) {
-            $wTempTransaction = TempTransaction::find($waterDtl['id']);
-            WaterTran::where('tran_no', $waterDtl['tran_no'])
-                ->update(
-                    [
-                        'verify_status' => 1,
-                        'verified_date' => Carbon::now(),
-                        'verified_by' => $userId
-                    ]
-                );
-            $this->dailyCollection($waterDtl);
-            $wTempTransaction->delete();
-        }
-
-        foreach ($trade as $tradeDtl) {
-            $tTempTransaction = TempTransaction::find($tradeDtl['id']);
-            TradeTransaction::where('tran_no', $tradeDtl['tran_no'])
-                ->update(
-                    [
-                        'is_verified' => 1,
-                        'verify_date' => Carbon::now(),
-                        'verify_by' => $userId
-                    ]
-                );
-            $this->dailyCollection($tradeDtl);
-            $tTempTransaction->delete();
-        }
-
-        return responseMsgs(true, "Cash Verified", '', "010201", "1.0", "", "POST", $request->deviceId ?? "");
     }
 
 
+    /**
+     * | 
+     */
     public function dailyCollection($tranDtl)
     {
         $userId = authUser()->id;
@@ -627,35 +643,5 @@ class CashVerificationController extends Controller
         $RevDailycollectiondetail->transaction_id = $tranDtl['id'];
         $RevDailycollectiondetail->save();
         DB::commit();
-    }
-
-
-    /**
-     * | for storing temporary transaction data in temporary transaction table
-     */
-    public function tempTransaction(Request $req)
-    {
-        $mTempTransaction = new TempTransaction();
-        // $mTempTransaction->tempTransaction($req);
-
-        $mTempTransaction = new TempTransaction();
-        $mTempTransaction->transaction_id = $req->transactionId;
-        $mTempTransaction->application_id = $req->applicationId;
-        $mTempTransaction->module_id = $req->moduleId;
-        $mTempTransaction->workflow_id = $req->workflowId;
-        $mTempTransaction->transaction_no = $req->transactionNo;
-        $mTempTransaction->application_no = $req->applicationNo;
-        $mTempTransaction->amount = $req->amount;
-        $mTempTransaction->payment_mode = $req->paymentNo;
-        $mTempTransaction->cheque_dd_no = $req->chequeddNo;
-        $mTempTransaction->bank_name = $req->bankName;
-        $mTempTransaction->tran_date = $req->tranDate;
-        $mTempTransaction->user_id = $req->userId;
-        $mTempTransaction->ulb_id = $req->ulbId;
-        $mTempTransaction->ward_no = $req->wardNo;
-        $mTempTransaction->created_at = Carbon::now();
-        $mTempTransaction->save();
-
-        return "all ok";
     }
 }
