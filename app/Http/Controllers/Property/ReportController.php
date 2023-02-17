@@ -64,4 +64,14 @@ class ReportController extends Controller
         $request->request->add(["metaData"=>["pr3.1",1.1,null,$request->getMethod(),null,]]);
         return $this->Repository->safPropIndividualDemandAndCollection($request);
     }
+    public function levelwisependingform(Request $request)
+    {
+        $request->request->add(["metaData"=>["pr4.1",1.1,null,$request->getMethod(),null,]]);
+        return $this->Repository->levelwisependingform($request);
+    }
+    public function levelformdetail(Request $request)
+    {
+        $request->request->add(["metaData"=>["pr4.2",1.1,null,$request->getMethod(),null,]]);
+        return $this->Repository->levelformdetail($request);
+    }
 }

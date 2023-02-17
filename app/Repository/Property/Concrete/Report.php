@@ -3,8 +3,12 @@
 namespace App\Repository\Property\Concrete;
 
 use App\EloquentModels\Common\ModelWard;
+use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropTransaction;
+use App\Models\Workflows\WfRole;
+use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWardUser;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IReport;
 use App\Traits\Property\SAF;
@@ -12,6 +16,7 @@ use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Mockery\CountValidator\Exact;
 
@@ -205,7 +210,7 @@ class Report implements IReport
                 $ulbId = $request->ulbId;
             }
 
-            DB::enableQueryLog();
+            // DB::enableQueryLog();
             $activSaf = PropTransaction::select(
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
@@ -395,47 +400,47 @@ class Report implements IReport
                 ->WHEREIN("prop_transactions.status",[1,2])
                 ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
 
-                if($wardId)
-                {
-                    $activSaf = $activSaf->where("ulb_ward_masters.id",$wardId);
-                    $rejectedSaf = $rejectedSaf->where("ulb_ward_masters.id",$wardId);
-                    $saf = $saf->where("ulb_ward_masters.id",$wardId);
-                }
-                if($userId)
-                {
-                    $activSaf=$activSaf->where("prop_transactions.user_id",$userId);
-                    $rejectedSaf=$rejectedSaf->where("prop_transactions.user_id",$userId);
-                    $saf=$saf->where("prop_transactions.user_id",$userId);
-                }
-                if($paymentMode)
-                {
-                    $activSaf=$activSaf->where(DB::row("prop_transactions.upper(payment_mode)"),$paymentMode);
-                    $rejectedSaf=$rejectedSaf->where(DB::row("prop_transactions.upper(payment_mode)"),$paymentMode);
-                    $saf=$saf->where(DB::row("prop_transactions.upper(payment_mode)"),$paymentMode);
-                }
-                if($ulbId)
-                {
-                    $activSaf=$activSaf->where("prop_transactions.ulb_id",$ulbId);
-                    $rejectedSaf=$rejectedSaf->where("prop_transactions.ulb_id",$ulbId);
-                    $saf=$saf->where("prop_transactions.ulb_id",$ulbId);
-                }
-                
-                $data = $activSaf->union($rejectedSaf)->union($saf);
-                // dd(DB::getQueryLog());
-                $perPage = $request->perPage ? $request->perPage : 10;
-                $page = $request->page && $request->page > 0 ? $request->page : 1;
-                $paginator = $data->paginate($perPage);
-                $items = $paginator->items();
-                $total = $paginator->total();
-                $numberOfPages = ceil($total/$perPage);                
-                $list=[
-                    "perPage"=>$perPage,
-                    "page"=>$page,
-                    "items"=>$items,
-                    "total"=>$total,
-                    "numberOfPages"=>$numberOfPages
-                ];
-                return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+            if($wardId)
+            {
+                $activSaf = $activSaf->where("ulb_ward_masters.id",$wardId);
+                $rejectedSaf = $rejectedSaf->where("ulb_ward_masters.id",$wardId);
+                $saf = $saf->where("ulb_ward_masters.id",$wardId);
+            }
+            if($userId)
+            {
+                $activSaf=$activSaf->where("prop_transactions.user_id",$userId);
+                $rejectedSaf=$rejectedSaf->where("prop_transactions.user_id",$userId);
+                $saf=$saf->where("prop_transactions.user_id",$userId);
+            }
+            if($paymentMode)
+            {
+                $activSaf=$activSaf->where(DB::row("prop_transactions.upper(payment_mode)"),$paymentMode);
+                $rejectedSaf=$rejectedSaf->where(DB::row("prop_transactions.upper(payment_mode)"),$paymentMode);
+                $saf=$saf->where(DB::row("prop_transactions.upper(payment_mode)"),$paymentMode);
+            }
+            if($ulbId)
+            {
+                $activSaf=$activSaf->where("prop_transactions.ulb_id",$ulbId);
+                $rejectedSaf=$rejectedSaf->where("prop_transactions.ulb_id",$ulbId);
+                $saf=$saf->where("prop_transactions.ulb_id",$ulbId);
+            }
+            
+            $data = $activSaf->union($rejectedSaf)->union($saf);
+            // dd(DB::getQueryLog());
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total/$perPage);                
+            $list=[
+                "perPage"=>$perPage,
+                "page"=>$page,
+                "items"=>$items,
+                "total"=>$total,
+                "numberOfPages"=>$numberOfPages
+            ];
+            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
         {
@@ -662,6 +667,163 @@ class Report implements IReport
                 ];
                 
                 return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function levelwisependingform(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+
+            // DB::enableQueryLog();
+            $data = WfRole::SELECT("wf_roles.id","wf_roles.role_name",
+                    DB::RAW("COUNT(prop_active_safs.id) AS total")
+                    )
+                ->JOIN(DB::RAW("(
+                                        SELECT distinct(wf_role_id) as wf_role_id
+                                        FROM wf_workflowrolemaps 
+                                        WHERE  wf_workflowrolemaps.is_suspended = false AND (forward_role_id IS NOT NULL OR backward_role_id IS NOT NULL)
+                                            AND workflow_id IN(3,4,5) 
+                                        GROUP BY wf_role_id 
+                                ) AS roles
+                    "),function($join){
+                        $join->on("wf_roles.id","roles.wf_role_id");
+                    })
+                ->LEFTJOIN("prop_active_safs",function($join) use($ulbId){
+                    $join->ON("prop_active_safs.current_role","roles.wf_role_id")
+                    ->WHERE("prop_active_safs.ulb_id",$ulbId)
+                    ->WHERE(function($where){
+                        $where->ORWHERE("prop_active_safs.payment_status","<>",0)
+                        ->ORWHERENOTNULL("prop_active_safs.payment_status");
+                    });
+                })
+                ->GROUPBY(["wf_roles.id","wf_roles.role_name"])
+                ->UNION(
+                    PropActiveSaf::SELECT(
+                        DB::RAW("8 AS id, 'JSK' AS role_name,
+                                COUNT(prop_active_safs.id)")
+                    )
+                    ->WHERE("prop_active_safs.ulb_id",$ulbId)
+                    ->WHERENOTNULL("prop_active_safs.user_id")
+                    ->WHERE(function($where){
+                        $where->WHERE("prop_active_safs.payment_status","=",0)
+                            ->ORWHERENULL("prop_active_safs.payment_status");
+                    })
+                )
+                ->GET();
+                // dd(DB::getQueryLog());
+                return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function levelformdetail(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;            
+            $roleId = $roleId2 = $userId = null;
+            $mWardPermission = collect([]);
+            
+            $safWorkFlow = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            if($request->roleId)
+            {
+                $roleId = $request->roleId;
+            }
+            if($request->userId)
+            {
+                $userId = $request->userId; 
+                $roleId2 = ($this->_common->getUserRoll($userId,$ulbId,$safWorkFlow))->role_id??0;
+            }
+            if(($request->roleId && $request->userId) && ($roleId!=$roleId2))
+            {
+                throw new Exception("Invalid RoleId Pass");
+            }
+            $roleId = $roleId2?$roleId2:$roleId;
+            if(!in_array($roleId,[11,8]))
+            {
+                $mWfWardUser = new WfWardUser();
+                $mWardPermission = $mWfWardUser->getWardsByUserId($userId);
+            }
+           
+            $mWardIds = $mWardPermission->implode("id",",");
+            $mWardIds = explode(',',($mWardIds?$mWardIds:"0"));
+            // DB::enableQueryLog();
+            $data = PropActiveSaf::SELECT(
+                    DB::RAW("wf_roles.id AS role_id, wf_roles.role_name,
+                    prop_active_safs.id, prop_active_safs.saf_no, prop_active_safs.prop_address,
+                    ward_name as ward_no, 
+                    owner.owner_name, owner.mobile_no")
+            )
+            ->JOIN("ulb_ward_masters","ulb_ward_masters.id","prop_active_safs.ward_mstr_id")
+            ->LEFTJOIN(DB::RAW("( 
+                                SELECT DISTINCT(prop_active_safs_owners.saf_id) AS saf_id,STRING_AGG(owner_name,',') AS owner_name, 
+                                    STRING_AGG(mobile_no::TEXT,',') AS mobile_no
+                                FROM prop_active_safs_owners
+                                JOIN prop_active_safs ON prop_active_safs.id = prop_active_safs_owners.saf_id
+                                WHERE prop_active_safs_owners.status = 1 
+                                    AND prop_active_safs.ulb_id = $ulbId
+                                GROUP BY prop_active_safs_owners.saf_id
+                                ) AS owner
+                                "),function($join){
+                                    $join->on("owner.saf_id","=","prop_active_safs.id");
+                                });
+            if($roleId==8)
+            {
+                $data = $data->LEFTJOIN("wf_roles","wf_roles.id","prop_active_safs.current_role")
+                        ->WHERENOTNULL("prop_active_safs.user_id")
+                        ->WHERE(function($where){
+                            $where->WHERE("prop_active_safs.payment_status","=",0)
+                            ->ORWHERENULL("prop_active_safs.payment_status");
+                        });
+            }
+            else
+            {
+                $data = $data->JOIN("wf_roles","wf_roles.id","prop_active_safs.current_role") 
+                        ->WHERE("wf_roles.id",$roleId);
+            }
+            $data = $data->WHERE("prop_active_safs.ulb_id",$ulbId);
+            if(!in_array($roleId,[11,8]) && $userId)
+            {
+                $data = $data->WHEREIN("prop_active_safs.ward_mstr_id",$mWardIds);
+            }
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total/$perPage);                
+            $list=[
+                "perPage"=>$perPage,
+                "page"=>$page,
+                "items"=>$items,
+                "total"=>$total,
+                "numberOfPages"=>$numberOfPages
+            ];
+            // dd(DB::getQueryLog());
+            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
         {
