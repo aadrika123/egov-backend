@@ -1463,16 +1463,16 @@ class NewConnectionController extends Controller
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
             # calculation details
-            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])->get();
-            $calculation['calculation'] = collect($charges)->map(function ($value) {
-                return [
-                    'connectionFee' => $value['conn_fee'],
-                    'penalty' => $value['penalty'],
-                    'totalAmount' => $value['amount'],
-                    'chargeCatagory' => $value['charge_category'],
-                    'paidStatus' => $value['paid_status']
+            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
+                ->where('paid_status', false)
+                ->first();
+            $calculation['calculation'] = [
+                    'connectionFee' => $charges['conn_fee'],
+                    'penalty' => $charges['penalty'],
+                    'totalAmount' => $charges['amount'],
+                    'chargeCatagory' => $charges['charge_category'],
+                    'paidStatus' => $charges['paid_status']
                 ];
-            });
 
             $returnData = array_merge($applicationDetails, $waterTransDetail, $calculation);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
