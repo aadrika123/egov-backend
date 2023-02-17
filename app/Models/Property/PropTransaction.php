@@ -27,8 +27,16 @@ class PropTransaction extends Model
      */
     public function getPropByTranPropId($tranNo)
     {
-        return PropTransaction::where('tran_no', $tranNo)
-            ->firstOrFail();
+        return PropTransaction::select(
+            'prop_transactions.*',
+            'prop_cheque_dtls.bank_name',
+            'prop_cheque_dtls.branch_name',
+            'prop_cheque_dtls.cheque_no',
+            'prop_cheque_dtls.cheque_date',
+        )
+            ->where('tran_no', $tranNo)
+            ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
+            ->firstorfail();
     }
 
     // getPropTrans as trait function on current object
@@ -90,11 +98,15 @@ class PropTransaction extends Model
             ->get();
     }
 
+    /**
+     * | Property Transaction
+     */
     public function postPropTransactions($req, $demands)
     {
         $propTrans = new PropTransaction();
         $propTrans->property_id = $req['id'];
         $propTrans->amount = $req['amount'];
+        $propTrans->tran_type = 'Property';
         $propTrans->tran_date = $req['todayDate'];
         $propTrans->tran_no = $req['tranNo'];
         $propTrans->payment_mode = $req['paymentMode'];
@@ -112,6 +124,31 @@ class PropTransaction extends Model
         ];
     }
 
+    /**
+     * | Post Saf Transaction
+     */
+    public function postSafTransaction($req, $demands)
+    {
+        $propTrans = new PropTransaction();
+        $propTrans->saf_id = $req['id'];
+        $propTrans->amount = $req['amount'];
+        $propTrans->tran_type = 'Saf';
+        $propTrans->tran_date = $req['todayDate'];
+        $propTrans->tran_no = $req['tranNo'];
+        $propTrans->payment_mode = $req['paymentMode'];
+        $propTrans->user_id = $req['userId'];
+        $propTrans->ulb_id = $req['ulbId'];
+        $propTrans->from_fyear = collect($demands)->last()['fyear'];
+        $propTrans->to_fyear = collect($demands)->first()['fyear'];
+        $propTrans->from_qtr = collect($demands)->last()['qtr'];
+        $propTrans->to_qtr = collect($demands)->first()['qtr'];
+        $propTrans->demand_amt = collect($demands)->sum('amount');
+        $propTrans->save();
+
+        return [
+            'id' => $propTrans->id
+        ];
+    }
 
     /**
      * | public function Get Transaction Full Details by TranNo

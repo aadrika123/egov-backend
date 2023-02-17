@@ -324,7 +324,9 @@ class HoldingTaxController extends Controller
             $idGeneration = new IdGeneration;
             $mPropTrans = new PropTransaction();
 
-            $tranNo = $idGeneration->generateTransactionNo();
+            $tranNo = $req['transactionNo'];
+            if (!$tranNo)
+                $tranNo = $idGeneration->generateTransactionNo();
             $demands = $propDemand->getDemandByPropId($req['id']);
             if ($demands->isEmpty())
                 throw new Exception("No Dues For this Property");
@@ -332,7 +334,7 @@ class HoldingTaxController extends Controller
             $req->merge([
                 'userId' => $userId,
                 'todayDate' => $todayDate->format('Y-m-d'),
-                'tranNo' => $req['transactionNo'] ?? $tranNo
+                'tranNo' => $tranNo
             ]);
             DB::beginTransaction();
             $propTrans = $mPropTrans->postPropTransactions($req, $demands);
@@ -372,7 +374,7 @@ class HoldingTaxController extends Controller
             });
 
             DB::commit();
-            return responseMsgs(true, "Payment Successfully Done", "", "011604", "1.0", "", "POST", $req->deviceId);
+            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011604", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $req->deviceId ?? "");
@@ -385,10 +387,12 @@ class HoldingTaxController extends Controller
     public function postOtherPaymentModes($req)
     {
         $cash = Config::get('payment-constants.PAYMENT_MODE.3');
+        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $mTempTransaction = new TempTransaction();
         if ($req['paymentMode'] != $cash) {
             $mPropChequeDtl = new PropChequeDtl();
             $chequeReqs = [
+                'user_id' => $req['userId'],
                 'prop_id' => $req['id'],
                 'transaction_id' => $req['tranId'],
                 'cheque_date' => $req['chequeDate'],
@@ -396,14 +400,13 @@ class HoldingTaxController extends Controller
                 'branch_name' => $req['branchName'],
                 'cheque_no' => $req['chequeNo']
             ];
-
             $mPropChequeDtl->postChequeDtl($chequeReqs);
         }
 
         $tranReqs = [
             'transaction_id' => $req['tranId'],
             'application_id' => $req['id'],
-            'module_id' => 1,
+            'module_id' => $moduleId,
             'workflow_id' => 0,
             'transaction_no' => $req['tranNo'],
             'application_no' => $req->applicationNo,
@@ -469,12 +472,10 @@ class HoldingTaxController extends Controller
                 "paidUpto" => $propTrans->to_fyear,
                 "paidUptoQtr" => $propTrans->to_qtr,
                 "paymentMode" => $propTrans->payment_mode,
-                "bankName" => "",
-                "branchName" => "",
-                "chequeNo" => "",
-                "chequeDate" => "",
-                "noOfFlats" => "",
-                "monthlyRate" => "",
+                "bankName" => $propTrans->bank_name,
+                "branchName" => $propTrans->branch_name,
+                "chequeNo" => $propTrans->cheque_no,
+                "chequeDate" => $propTrans->cheque_date,
                 "demandAmount" => $propTrans->demand_amt,
                 "taxDetails" => $taxDetails,
                 "ulbId" => $propProperty['ulb_id'],

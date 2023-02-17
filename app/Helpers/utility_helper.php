@@ -306,6 +306,26 @@ if (!function_exists('FyListdesc')) {
         return ($data);
     }
 }
+if(!function_exists('getFY')){
+    function getFY($date = null){
+        if(is_null($date)){
+            $carbonDate = Carbon::now();//createFromFormat("Y-m-d", $date);
+            $MM = (int) $carbonDate->format("m");
+            $YY = (int) $carbonDate->format("Y");
+            // $MM = date("m");
+            // $YY = date("Y");
+        }else{
+
+            $MM = date("m", strtotime($date));
+            $YY = date("Y", strtotime($date));
+        }
+        if ($MM > 3) {
+         return ($YY)."-".($YY+1);
+     }else{
+         return ($YY-1)."-".($YY);
+     }
+    }
+}
 
 if (!function_exists('eloquentItteration')) {
     function eloquentItteration($a, $model)

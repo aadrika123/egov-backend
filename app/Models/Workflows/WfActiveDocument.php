@@ -29,6 +29,7 @@ class WfActiveDocument extends Model
             "remarks" => $req->remarks ?? null,
             "doc_code" => $req->docCode,
             "owner_dtl_id" => $req->ownerDtlId,
+            "verify_status" => $req->verifyStatus,
         ];
     }
 
@@ -109,7 +110,7 @@ class WfActiveDocument extends Model
     /**
      * | Get Owner PhotoGraph By applicationId Water Module
      */
-    public function getWaterOwnerPhotograph($applicationId, $workflowId, $moduleId, $ownerId,$docCode=null)
+    public function getWaterOwnerPhotograph($applicationId, $workflowId, $moduleId, $ownerId, $docCode = null)
     {
         return DB::table('wf_active_documents as d')
             ->select(
@@ -120,7 +121,7 @@ class WfActiveDocument extends Model
             ->where('d.active_id', $applicationId)
             ->where('d.workflow_id', $workflowId)
             ->where('d.module_id', $moduleId)
-            ->where('doc_code', ($docCode?$docCode:'PHOTOGRAPH'))
+            ->where('doc_code', ($docCode ? $docCode : 'PHOTOGRAPH'))
             ->where('owner_dtl_id', $ownerId)
             ->first();
     }

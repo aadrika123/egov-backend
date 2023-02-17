@@ -20,6 +20,7 @@ return [
     "PROPERTY_OBJECTION_FORGERY"        => "76",
     "RAIN_WATER_HARVESTING_ID"  => "98",
     "SAF_BIFURCATION_ID"        => "25",
+    "SAF_AMALGAMATION_ID"        => "373",
     // workflow master
     "WATER_MASTER_ID"   => "3",
     "TRADE_NOTICE_ID"      => "229",

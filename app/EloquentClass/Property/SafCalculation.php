@@ -436,7 +436,7 @@ class SafCalculation
                     $dateFrom = $this->_petrolPump['installDate'];
                     break;
                 case "vacantLand";
-                    $dateFrom = $this->_propertyDetails['dateOfPurchase'];
+                    $dateFrom = $this->_propertyDetails['landOccupationDate'];
                     break;
             }
 
@@ -524,7 +524,7 @@ class SafCalculation
                     $readFloorDetail = [
                         'propertyType' => "vacantLand",
                         'buildupArea' => $this->_propertyDetails['areaOfPlot'],
-                        'dateFrom' => $this->_propertyDetails['dateOfPurchase'],
+                        'dateFrom' => $this->_propertyDetails['landOccupationDate'],
                         'mFloorNo' => 'Vacant Land',
                     ];
                     break;
