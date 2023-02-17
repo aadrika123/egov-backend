@@ -112,7 +112,7 @@ class ApplySafController extends Controller
                 $owner_detail = $request['owner'];
                 foreach ($owner_detail as $owner_details) {
                     $owner = new PropActiveSafsOwner();
-                    $this->tApplySafOwner($owner, $safId, $owner_details);                                    // Trait Owner Details
+                    $this->tApplySafOwner($owner, $safId, $owner_details);              // Trait Owner Details
                     $owner->save();
                 }
             }
