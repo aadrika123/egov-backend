@@ -1779,7 +1779,7 @@ class ActiveSafController extends Controller
         $req->validate([
             "safId" => "required|numeric",
             "imagePath" => "required|array|min:3|max:3",
-            "imagePath.*" => "image|mimes:jpeg,jpg,png,gif",
+            "imagePath.*" => "required|image|mimes:jpeg,jpg,png,gif",
             "directionType" => "required|array|min:3|max:3",
             "directionType.*" => "required|In:Left,Right,Front",
             "longitude" => "required|array|min:3|max:3",
