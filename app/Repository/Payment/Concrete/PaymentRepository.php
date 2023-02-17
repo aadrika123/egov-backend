@@ -310,7 +310,7 @@ class PaymentRepository implements iPayment
                             $objHoldingTaxController->paymentHolding($transfer);
                         } else {                                     //<------------------ (SAF PAYMENT)
                             $obj = new ActiveSafController($this->_safRepo);
-                            $transfer = new Request($transfer);
+                            $transfer = new ReqPayment($transfer);
                             $obj->paymentSaf($transfer);
                         }
                         break;
