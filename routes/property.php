@@ -74,9 +74,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/approvalrejection', 'approvalRejectionSaf');                                       // Approval Rejection SAF Application(10)
     Route::post('saf/back-to-citizen', 'backToCitizen');                                                // Saf Application Back To Citizen(11)
     Route::post('saf/get-prop-byholding', 'getPropByHoldingNo');                                        // get Property (search) by ward no and holding no(12)
-    Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID(13)
-    Route::post('saf/generate-order-id', 'generateOrderId');                                            // Generate Order ID(14)
-    Route::post('saf/payment-receipt', 'generatePaymentReceipt');                                       // Generate payment Receipt(16)
     Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions(17)
     Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification(18)
     Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging(19)
@@ -347,17 +344,24 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
 
 /**
+ * | SAF
+     | Serial No : 01
+ */
+
+Route::controller(ActiveSafController::class)->group(function () {
+  Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment(15)
+  Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID(13)
+  Route::post('saf/generate-order-id', 'generateOrderId');                                            // Generate Order ID(14)
+  Route::post('saf/payment-receipt', 'generatePaymentReceipt');                                       // Generate payment Receipt(16)
+});
+
+/**
  * | Route Outside the Authenticated Middleware 
     Serial No : 18
  */
 Route::controller(ActiveSafControllerV2::class)->group(function () {
   Route::post('search-holding', 'searchHolding');
 });
-
-Route::controller(ActiveSafController::class)->group(function () {
-  Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment(15)
-});
-
 /**
  * | Holding Tax Controller(Created By-Anshu Kumar)
    | Serial No-16

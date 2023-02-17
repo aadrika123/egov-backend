@@ -1331,7 +1331,7 @@ class ActiveSafController extends Controller
             $safDetails = PropActiveSaf::find($req->id);
             $demands = $calculateSafById['data']['demand'];
             $totalAmount = $demands['payableAmount'];
-            $req->request->add(['workflowId' => $safDetails->workflow_id]);
+            $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0]);
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
             $orderDetails['name'] = $auth->user_name;
             $orderDetails['mobile'] = $auth->mobile;
