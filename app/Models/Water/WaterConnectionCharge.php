@@ -19,7 +19,7 @@ class WaterConnectionCharge extends Model
      */
     public function saveWaterCharge($applicationId, $req, $newConnectionCharges)
     {
-        $chargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY.NEW_CONNECTION');
+        $chargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
         $saveCharges = new WaterConnectionCharge();
         $saveCharges->application_id = $applicationId;
         $saveCharges->paid_status = 0;
@@ -35,6 +35,9 @@ class WaterConnectionCharge extends Model
             case (2):
                 $saveCharges->charge_category = $chargeCatagory['REGULAIZATION'];
                 break;
+        }
+        if ($req->chargeCatagory) {
+            $saveCharges->charge_category = $chargeCatagory['SITE_INSPECTON'];
         }
         $saveCharges->save();
         return $saveCharges->id;

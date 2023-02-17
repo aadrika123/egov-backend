@@ -139,8 +139,10 @@ class NewConnectionRepository implements iNewConnection
             $mWaterApplicant->saveWaterApplicant($applicationId, $owners, null);
         }
         # water applicant in case of tenant
-        foreach ($tenant as $tenants) {
-            $mWaterApplicant->saveWaterApplicant($applicationId, $tenants, $reftenant);
+        if (!is_null($tenant) || !empty($tenant)) {
+            foreach ($tenant as $tenants) {
+                $mWaterApplicant->saveWaterApplicant($applicationId, $tenants, $reftenant);
+            }
         }
         # water penalty
         if (!is_null($installment)) {

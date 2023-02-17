@@ -45,4 +45,8 @@ return [
         "DATE" => "byDate",
         "APPLICATION_ID" => "byApplicationId"
     ],
+
+    "WATER_MASTER_DATA" => [
+        "pipe"
+    ]
 ];

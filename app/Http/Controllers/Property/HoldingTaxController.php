@@ -387,10 +387,12 @@ class HoldingTaxController extends Controller
     public function postOtherPaymentModes($req)
     {
         $cash = Config::get('payment-constants.PAYMENT_MODE.3');
+        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $mTempTransaction = new TempTransaction();
         if ($req['paymentMode'] != $cash) {
             $mPropChequeDtl = new PropChequeDtl();
             $chequeReqs = [
+                'user_id' => $req['userId'],
                 'prop_id' => $req['id'],
                 'transaction_id' => $req['tranId'],
                 'cheque_date' => $req['chequeDate'],
@@ -398,14 +400,13 @@ class HoldingTaxController extends Controller
                 'branch_name' => $req['branchName'],
                 'cheque_no' => $req['chequeNo']
             ];
-
             $mPropChequeDtl->postChequeDtl($chequeReqs);
         }
 
         $tranReqs = [
             'transaction_id' => $req['tranId'],
             'application_id' => $req['id'],
-            'module_id' => 1,
+            'module_id' => $moduleId,
             'workflow_id' => 0,
             'transaction_no' => $req['tranNo'],
             'application_no' => $req->applicationNo,

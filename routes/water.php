@@ -27,7 +27,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | ------------------- Apply New Water Connection ------------------------ |
      */
     Route::resource('application/apply-new-connection', NewConnectionController::class);                             //01
-
     /**
      * | Created On:08-11-2022 
      * | Created by:Sam Kerketta
@@ -84,6 +83,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
         Route::post('generate-payment-receipt', 'generatePaymentReceipt');                              // Citizen
         Route::post('consumer/generate-demand-receiep', 'generateDemandPaymentReceipt');                // Consumer
+
+        Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
     });
 
     /**

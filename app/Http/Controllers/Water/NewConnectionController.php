@@ -1589,6 +1589,7 @@ class NewConnectionController extends Controller
         }
     }
 
+    #----------------------------------------- Site Inspection ----------------------------------------|
     /**
      * | Site Comparision Screen 
      * | Je comparision data

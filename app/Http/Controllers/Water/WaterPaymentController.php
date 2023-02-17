@@ -3,14 +3,21 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Water\siteAdjustment;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterPenaltyInstallment;
+use App\Models\Water\WaterPropertyTypeMstr;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
+use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Water\Concrete\WaterNewConnection;
+use App\Traits\Ward;
+use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use DateTime;
 use Exception;
@@ -28,7 +35,36 @@ use Illuminate\Support\Facades\Config;
 
 class WaterPaymentController extends Controller
 {
-    // water transaction Details
+    use Ward;
+    use Workflow;
+
+    // water Constant
+    private $_waterRoles;
+    private $_waterMasterData;
+
+    public function __construct()
+    {
+        $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
+        $this->_waterMasterData = Config::get('waterConstaint.');
+    }
+
+
+    /**
+     * | Get The Master Data Related to Water 
+     * | Fetch all master Data At Once
+     * | @var 
+     * | @return 
+        | Serial No : 00 
+     */
+    public function getWaterMasterData()
+    {
+        try {
+            $mWaterPropertyTypeMstr = new WaterPropertyTypeMstr();
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+        }
+    }
+
 
     /**
      * | Get Consumer Payment History 
@@ -190,6 +226,8 @@ class WaterPaymentController extends Controller
      * | @var 
      * | @return 
         | Serial No : 03
+        | Recheck
+        | Not Finish
      */
     public function generateDemandPaymentReceipt(Request $req)
     {
@@ -264,5 +302,134 @@ class WaterPaymentController extends Controller
         }
     }
 
-   
+
+    /**
+     * | Site Inspection Details Entry
+     * | Save the adjusted Data
+     * | @param request
+     * | @var 
+     * | @return
+        | Serial No : 04
+     */
+    public function saveSitedetails(siteAdjustment $request)
+    {
+        try {
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $mWaterNewConnection = new WaterNewConnection();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
+
+            $connectionCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
+            $waterDetails = WaterApplication::find($request->applicationId);
+            # Check Related Condition
+            $this->CheckInspectionCondition($request, $waterDetails);
+
+            # Get the Applied Connection Charge
+            $applicationCharge = $mWaterConnectionCharge->getWaterchargesById($request->applicationId)
+                ->where('charge_category', $connectionCatagory['NEW_CONNECTION'])
+                ->firstOrFail();
+            $oldChargeAmount = $applicationCharge['amount'];
+
+            # Generating Demand for new InspectionData
+            $newConnectionCharges = objToArray($mWaterNewConnection->calWaterConCharge($request));
+            if (!$newConnectionCharges['status']) {
+                throw new Exception(
+                    $newConnectionCharges['errors']
+                );
+            }
+            # param for the new Charges
+            $installment = $newConnectionCharges['installment_amount'];
+            $waterFeeId = $newConnectionCharges['water_fee_mstr_id'];
+            $newChargeAmount = $newConnectionCharges['conn_fee_charge']['amount'];
+
+            # If the Adjustment Hamper
+            if ($oldChargeAmount != $newChargeAmount) {
+                $this->adjustmentInConnection($request, $newConnectionCharges, $installment, $waterDetails);
+            }
+
+            $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+        }
+    }
+
+
+    /**
+     * | Check the Inspection related Details
+     * | Check Conditions
+     * | @param request
+     * | @var waterDetails
+     * | @var mWfRoleUsermap
+     * | @var waterRoles
+     * | @var userId
+     * | @var workflowId
+     * | @var getRoleReq
+     * | @var readRoleDtls
+     * | @var roleId
+        | Serial No : 04.01
+     */
+    public function CheckInspectionCondition($request, $waterDetails)
+    {
+        $mWfRoleUsermap = new WfRoleusermap();
+        $waterRoles = $this->_waterRoles;
+
+        # check the login user is Eo or not
+        $userId = authUser()->id;
+        $workflowId = $waterDetails->workflow_id;
+        $getRoleReq = new Request([                                                 # make request to get role id of the user
+            'userId' => $userId,
+            'workflowId' => $workflowId
+        ]);
+        $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+        $roleId = $readRoleDtls->wf_role_id;
+
+        # Checking Condition
+        if ($roleId != $waterRoles['JE']) {
+            throw new Exception("You are not Junier Enginer!");
+        }
+        if ($waterDetails->current_role != $waterRoles['JE']) {
+            throw new Exception("Application Is Not under Junier Injiner!");
+        }
+        if ($waterDetails->is_field_verified == true) {
+            throw new Exception("Application's site is Already Approved!");
+        }
+    }
+
+
+    /**
+     * | Changes in the Site Inspection Adjustment
+     * | Updating the Connection Charges And the Related Deatils
+     * | @param request
+     * | @param newConnectionCharges
+     * | @param installment
+        | Serial No : 04.02
+     */
+    public function adjustmentInConnection($request, $newConnectionCharges, $installment, $waterApplicationDetails)
+    {
+        $applicationId = $request->applicationId;
+        $newCharge = $newConnectionCharges['conn_fee_charge']['amount'];
+        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+        $mWaterConnectionCharge = new WaterConnectionCharge();
+        $mWaterApplication = new WaterApplication();
+        $mWaterTran = new WaterTran();
+        $chargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
+
+        # get Water Application Details
+        $mWaterApplication->updatePaymentStatus($applicationId, false);                     // Update the payment status false         
+
+        # water penalty
+        if (!is_null($installment)) {
+            foreach ($installment as $installments) {
+                $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $installments);
+            }
+        }
+        # connection charges
+        $request->merge([
+            'chargeCatagory' => $chargeCatagory['SITE_INSPECTON']
+        ]);
+        $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
+        # in case of connection charge is 0
+        if ($newCharge == 0) {
+            $mWaterTran->saveZeroConnectionCharg($newCharge, $waterApplicationDetails->ulb_id, $request, $applicationId, $connectionId);
+        }
+    }
 }
