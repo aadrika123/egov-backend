@@ -475,8 +475,6 @@ class HoldingTaxController extends Controller
                 "branchName" => "",
                 "chequeNo" => "",
                 "chequeDate" => "",
-                "noOfFlats" => "",
-                "monthlyRate" => "",
                 "demandAmount" => $propTrans->demand_amt,
                 "taxDetails" => $taxDetails,
                 "ulbId" => $propProperty['ulb_id'],
