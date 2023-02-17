@@ -47,6 +47,23 @@ return [
     ],
 
     "WATER_MASTER_DATA" => [
-        "pipe"
+        "PIPELINE_SIZE_TYPE" => [
+            "CI",
+            "DI"
+        ],
+        "PIPE_DIAMETER" => [
+            "15",
+            "20",
+            "25"
+        ],
+        "PIPE_QUALITY" => [
+            "GI",
+            "HDPE",
+            "PVC 80"
+        ],
+        "ROAD_TYPE" => [
+            "RMC",
+            "PWD"
+        ]
     ]
 ];
