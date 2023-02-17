@@ -38,6 +38,11 @@ class reqApplySaf extends FormRequest
             $rules['dateOfPurchase'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
             $rules["isOwnerChanged"] = "required|bool";
         }
+        if (isset($this->assessmentType) && $this->assessmentType == 5) {
+            $rules['holdingNoLists'] = "required|array";
+            $rules['holdingNoLists.*'] = "required";
+        }
+
         $rules['ward']          = "required|digits_between:1,9223372036854775807";
         $rules['propertyType']  = "required|int";
         $rules['ownershipType'] = "required|int";
