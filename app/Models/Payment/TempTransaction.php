@@ -39,4 +39,12 @@ class TempTransaction extends Model
             ->where('temp_transactions.ulb_id', $ulbId)
             ->get();
     }
+
+    public function transactionDtl($date, $ulbId)
+    {
+        return TempTransaction::select('*')
+            ->leftjoin('users', 'users.id', 'temp_transactions.user_id')
+            ->where('tran_date', $date)
+            ->where('temp_transactions.ulb_id', $ulbId);
+    }
 }
