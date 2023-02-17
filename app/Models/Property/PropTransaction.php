@@ -36,7 +36,7 @@ class PropTransaction extends Model
         )
             ->where('tran_no', $tranNo)
             ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
-            ->first();
+            ->firstorfail();
     }
 
     // getPropTrans as trait function on current object
