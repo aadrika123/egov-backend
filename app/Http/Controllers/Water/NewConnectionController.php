@@ -1466,15 +1466,17 @@ class NewConnectionController extends Controller
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
                 ->where('paid_status', false)
                 ->first();
-            $calculation['calculation'] = [
+            if ($charges) {
+                $calculation['calculation'] = [
                     'connectionFee' => $charges['conn_fee'],
                     'penalty' => $charges['penalty'],
                     'totalAmount' => $charges['amount'],
                     'chargeCatagory' => $charges['charge_category'],
                     'paidStatus' => $charges['paid_status']
                 ];
-
-            $returnData = array_merge($applicationDetails, $waterTransDetail, $calculation);
+                $waterTransDetail = array_merge($calculation, $waterTransDetail);
+            }
+            $returnData = array_merge($applicationDetails, $waterTransDetail);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
