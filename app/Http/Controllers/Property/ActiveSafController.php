@@ -1331,12 +1331,9 @@ class ActiveSafController extends Controller
             $safDetails = PropActiveSaf::find($req->id);
             $demands = $calculateSafById['data']['demand'];
             $totalAmount = $demands['payableAmount'];
-            $req->request->add(['workflowId' => $safDetails->workflow_id]);
-            $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
-            $orderDetails['name'] = $auth->user_name;
-            $orderDetails['mobile'] = $auth->mobile;
-            $orderDetails['email'] = $auth->email;
+            $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0]);
             DB::beginTransaction();
+            $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
 
             $this->postDemands($safDemandDetails, $req, $safDetails);                               // Update the data in saf prop demands
             $this->postPenaltyRebates($calculateSafById, $req);                                     // Post Penalty Rebates
@@ -1371,7 +1368,7 @@ class ActiveSafController extends Controller
                 'fyear' => $safDemandDetail['quarterYear'],
                 'qtr' => $safDemandDetail['qtr'],
                 'due_date' => $safDemandDetail['dueDate'],
-                'user_id' => authUser()->id,
+                'user_id' => authUser()->id ?? null,
                 'ulb_id' => $safDetails->ulb_id,
             ];
             if ($propSafDemand)                                                     // <---------------- If The Data is already Existing then update the data
@@ -1519,7 +1516,7 @@ class ActiveSafController extends Controller
             });
 
             DB::commit();
-            return responseMsgs(true, "Payment Successfully Done", "", "010115", "1.0", "567ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1629,12 +1626,10 @@ class ActiveSafController extends Controller
                 "paidUpto" => $upToFinYear,
                 "paidUptoQtr" => $upToFinQtr,
                 "paymentMode" => $safTrans->payment_mode,
-                "bankName" => "",
-                "branchName" => "",
-                "chequeNo" => "",
-                "chequeDate" => "",
-                "noOfFlats" => "",
-                "monthlyRate" => "",
+                "bankName" => $safTrans->bank_name,
+                "branchName" => $safTrans->branch_name,
+                "chequeNo" => $safTrans->cheque_no,
+                "chequeDate" => $safTrans->cheque_date,
                 "demandAmount" => roundFigure((float)$calDemandAmt),
                 "taxDetails" => $taxDetails,
                 "ulbId" => $activeSafDetails['ulb_id'],
