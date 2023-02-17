@@ -25,7 +25,9 @@ class ReportController extends Controller
                 "uptoDate" => "required|date|date_format:Y-m-d",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "userId" => "nullable|digits_between:1,9223372036854775807",
-                "paymentMode" => "nullable"
+                "paymentMode" => "nullable",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage"=>"nullable|digits_between:1,9223372036854775807",
             ]
         );
         $request->request->add(["metaData"=>["pr1.1",1.1,null,$request->getMethod(),null,]]);
@@ -40,7 +42,9 @@ class ReportController extends Controller
                 "uptoDate" => "required|date|date_format:Y-m-d",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "userId" => "nullable|digits_between:1,9223372036854775807",
-                "paymentMode" => "nullable"
+                "paymentMode" => "nullable",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage"=>"nullable|digits_between:1,9223372036854775807",
             ]
         );
         $request->request->add(["metaData"=>["pr2.1",1.1,null,$request->getMethod(),null,]]);
@@ -53,6 +57,8 @@ class ReportController extends Controller
                 "fiYear"=>"nullable|regex:/^\d{4}-\d{4}$/",
                 "key"=>"nullable|regex:/^[^<>{};:.,~!?@#$%^=&*\"]*$/i",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage"=>"nullable|digits_between:1,9223372036854775807",
             ]
         );
         $request->request->add(["metaData"=>["pr3.1",1.1,null,$request->getMethod(),null,]]);

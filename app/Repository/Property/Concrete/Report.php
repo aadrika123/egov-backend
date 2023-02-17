@@ -72,7 +72,6 @@ class Report implements IReport
             // DB::enableQueryLog();
             $data = PropTransaction::select(
                 DB::raw("
-                            ROW_NUMBER () OVER (ORDER BY prop_transactions.tran_date asc) AS s_no,
                             ulb_ward_masters.ward_name AS ward_no,
                             CONCAT('', prop_properties.holding_no, '') AS holding_no,
                             (
@@ -147,8 +146,21 @@ class Report implements IReport
                 {
                     $data=$data->where("prop_transactions.ulb_id",$ulbId);
                 }
-                $data = $data->limit(200)->get();
-                return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
+                // $data = $data->limit(200)->get();
+                $perPage = $request->perPage ? $request->perPage : 10;
+                $page = $request->page && $request->page > 0 ? $request->page : 1;
+                $paginator = $data->paginate($perPage);
+                $items = $paginator->items();
+                $total = $paginator->total();
+                $numberOfPages = ceil($total/$perPage);                
+                $list=[
+                    "perPage"=>$perPage,
+                    "page"=>$page,
+                    "items"=>$items,
+                    "total"=>$total,
+                    "numberOfPages"=>$numberOfPages
+                ];
+                return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
         {
@@ -196,7 +208,6 @@ class Report implements IReport
             DB::enableQueryLog();
             $activSaf = PropTransaction::select(
                 DB::raw("
-                            ROW_NUMBER () OVER (ORDER BY prop_transactions.tran_date asc) AS s_no,
                             ulb_ward_masters.ward_name AS ward_no,
                             CONCAT('', prop_active_safs.holding_no, '') AS holding_no,
                             (
@@ -260,7 +271,6 @@ class Report implements IReport
 
             $rejectedSaf = PropTransaction::select(
                 DB::raw("
-                            ROW_NUMBER () OVER (ORDER BY prop_transactions.tran_date asc) AS s_no,
                             ulb_ward_masters.ward_name AS ward_no,
                             CONCAT('', prop_rejected_safs.holding_no, '') AS holding_no,
                             (
@@ -324,7 +334,6 @@ class Report implements IReport
 
             $saf = PropTransaction::select(
                 DB::raw("
-                            ROW_NUMBER () OVER (ORDER BY prop_transactions.tran_date asc) AS s_no,
                             ulb_ward_masters.ward_name AS ward_no,
                             CONCAT('', prop_safs.holding_no, '') AS holding_no,
                             (
@@ -411,11 +420,22 @@ class Report implements IReport
                     $saf=$saf->where("prop_transactions.ulb_id",$ulbId);
                 }
                 
-                $data = $activSaf->union($rejectedSaf)->union($saf)
-                        ->limit(200)
-                        ->get();
+                $data = $activSaf->union($rejectedSaf)->union($saf);
                 // dd(DB::getQueryLog());
-                return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
+                $perPage = $request->perPage ? $request->perPage : 10;
+                $page = $request->page && $request->page > 0 ? $request->page : 1;
+                $paginator = $data->paginate($perPage);
+                $items = $paginator->items();
+                $total = $paginator->total();
+                $numberOfPages = ceil($total/$perPage);                
+                $list=[
+                    "perPage"=>$perPage,
+                    "page"=>$page,
+                    "items"=>$items,
+                    "total"=>$total,
+                    "numberOfPages"=>$numberOfPages
+                ];
+                return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
         {
@@ -436,8 +456,7 @@ class Report implements IReport
             $fiYear = getFY();
             if($request->fiYear)
             {
-                $fiYear = $request->fiYear;
-                
+                $fiYear = $request->fiYear;                
             }
             list($fromYear,$toYear)=explode("-",$fiYear);
             if($toYear-$fromYear !=1)
@@ -457,7 +476,7 @@ class Report implements IReport
                 $ulbId = $request->ulbId;
             }
 
-            // DB::enableQueryLog();
+            DB::enableQueryLog();
             $data = PropProperty::select(
                 DB::raw("ulb_ward_masters.ward_name as ward_no,
                         prop_properties.holding_no,
@@ -627,9 +646,22 @@ class Report implements IReport
                 if($ulbId)
                 {
                     $data=$data->where("prop_properties.ulb_id",$ulbId);
-                }
-                $data = $data->limit(200)->get();
-                return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
+                }         
+                $perPage = $request->perPage ? $request->perPage : 10;
+                $page = $request->page && $request->page > 0 ? $request->page : 1;
+                $paginator = $data->paginate($perPage);
+                $items = $paginator->items();
+                $total = $paginator->total();
+                $numberOfPages = ceil($total/$perPage);                
+                $list=[
+                    "perPage"=>$perPage,
+                    "page"=>$page,
+                    "items"=>$items,
+                    "total"=>$total,
+                    "numberOfPages"=>$numberOfPages
+                ];
+                
+                return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
         {
