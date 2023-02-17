@@ -73,7 +73,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(WaterPaymentController::class)->group(function () {
         # Consumer And Citizen Transaction Operation
-        Route::post('master/get-listed-details','getWaterMasterData');                                            // Admin/ Citizen
+        Route::post('master/get-listed-details', 'getWaterMasterData');                                            // Admin/ Citizen
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
         Route::post('generate-payment-receipt', 'generatePaymentReceipt');                              // Citizen
         Route::post('consumer/generate-demand-receiep', 'generateDemandPaymentReceipt');                // Consumer

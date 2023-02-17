@@ -58,7 +58,7 @@ class WaterPaymentController extends Controller
      * | Get The Master Data Related to Water 
      * | Fetch all master Data At Once
      * | @var 
-     * | @return 
+     * | @return returnValues
         | Serial No : 00 
      */
     public function getWaterMasterData()
@@ -118,7 +118,8 @@ class WaterPaymentController extends Controller
                 "pipeline_size_type"    => $refMasterData['PIPELINE_SIZE_TYPE'],
                 "pipe_diameter"         => $refMasterData['PIPE_DIAMETER'],
                 "pipe_quality"          => $refMasterData['PIPE_QUALITY'],
-                "road_type"             => $refMasterData['ROAD_TYPE']
+                "road_type"             => $refMasterData['ROAD_TYPE'],
+                "ferule_size"           => $refMasterData['FERULE_SIZE']
             ];
             $returnValues = collect($masterValues)->merge($confugMasterValues);
             return responseMsgs(true, "list of Water Master Data!", remove_null($returnValues), "", "01", "ms", "POST", "");

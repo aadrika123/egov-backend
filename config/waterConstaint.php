@@ -64,6 +64,12 @@ return [
         "ROAD_TYPE" => [
             "RMC",
             "PWD"
+        ],
+        "FERULE_SIZE" => [
+            "6",
+            "10",
+            "12",
+            "16"
         ]
     ]
 ];

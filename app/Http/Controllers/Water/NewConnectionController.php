@@ -1548,7 +1548,8 @@ class NewConnectionController extends Controller
 
     /**
      * | Search Application for Site Inspection
-     * | @param 
+     * | @param request
+     * | @var 
      */
     public function searchApplicationByParameter(Request $request)
     {
