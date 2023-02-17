@@ -9,9 +9,15 @@ class WaterConnectionTypeMstr extends Model
 {
     use HasFactory;
 
-    public function getConnectionType()
+    /**
+     * | Get Connection type
+     */
+    public function getWaterConnectionTypeMstr()
     {
-        return  WaterConnectionTypeMstr::select('water_connection_type_mstrs.id', 'water_connection_type_mstrs.connection_type')
+        return WaterConnectionTypeMstr::select(
+            'id',
+            'connection_type'
+        )
             ->where('status', 1)
             ->get();
     }

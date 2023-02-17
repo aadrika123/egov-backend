@@ -33,13 +33,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | ------------------- Water Connection / mobile ------------------------ |
      */
     Route::controller(NewConnectionController::class)->group(function () {
-        # Citizen View Water Screen For Mobile 
-        Route::post('list-connection-type', 'getConnectionType');                                        //05        // Get Water Connection Type Details mstr
-        Route::post('list-connection-through', 'getConnectionThrough');                                  //06        // Get Water Connection Through Details mstr
-        Route::post('list-property-type', 'getPropertyType');                                            //07        // Get Property Type Details mstr
-        Route::post('list-owner-type', 'getOwnerType');                                                  //08        // Get Owner Type Details mstr
-        Route::post('list-ward-no', 'getWardNo');                                                        //09        // Get Ward No According to Saf or Holding Details mstr
-
         # water Workflow
         Route::post('inbox', 'waterInbox');                                                             // Workflow
         Route::post('outbox', 'waterOutbox');                                                           // Workflow
@@ -80,6 +73,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(WaterPaymentController::class)->group(function () {
         # Consumer And Citizen Transaction Operation
+        Route::post('master/get-listed-details', 'getWaterMasterData');                                            // Admin/ Citizen
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
         Route::post('generate-payment-receipt', 'generatePaymentReceipt');                              // Citizen
         Route::post('consumer/generate-demand-receiep', 'generateDemandPaymentReceipt');                // Consumer

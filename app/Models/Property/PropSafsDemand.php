@@ -20,7 +20,9 @@ class PropSafsDemand extends Model
             ->get();
     }
 
-    // Get Saf First Demand by saf id
+    /**
+     * | 1.Used on Saf Payment Receipt
+     */
     public function getFirstDemandBySafId($safId)
     {
         return PropSafsDemand::where('saf_id', $safId)
