@@ -130,6 +130,8 @@ class ActiveSafControllerV2 extends Controller
             $mPropDemands = new PropDemand();
             $mPropSafDemands = new PropSafsDemand();
             $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
+            if (collect($details)->isEmpty())
+                throw new Exception("Memo Details Not Available");
             $details = collect($details)->first();
 
             // Fam Receipt
@@ -159,7 +161,7 @@ class ActiveSafControllerV2 extends Controller
                     $diffAmt = $ulbAssessAmt - $selfAssessAmt;
                     return [
                         'Particulars' => $taxDiff->first()->fyear == '2016-2017' ? "Holding Tax @ 2%" : "Holding Tax @ 0.075% or 0.15% or 0.2%",
-                        'Quarter/Financial Year' => 'Quarter' . $taxDiff->first()->qtr . '/' . $taxDiff->first()->fyear,
+                        'quarterFinancialYear' => 'Quarter' . $taxDiff->first()->qtr . '/' . $taxDiff->first()->fyear,
                         'basedOnSelfAssess' => roundFigure($selfAssessAmt),
                         'basedOnUlbCalc' => roundFigure($ulbAssessAmt),
                         'diffAmt' => roundFigure($diffAmt)
@@ -169,7 +171,7 @@ class ActiveSafControllerV2 extends Controller
 
                 $total = collect([
                     'Particulars' => 'Total Amount',
-                    'Quarter/Financial Year' => "",
+                    'quarterFinancialYear' => "",
                     'basedOnSelfAssess' => roundFigure($holdingTaxes->sum('basedOnSelfAssess')),
                     'basedOnUlbCalc' => roundFigure($holdingTaxes->sum('basedOnUlbCalc')),
                     'diffAmt' => roundFigure($holdingTaxes->sum('diffAmt')),

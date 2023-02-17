@@ -9,4 +9,6 @@ interface IReport
     public function collectionReport(Request $request);
     public function safCollection(Request $request);
     public function safPropIndividualDemandAndCollection(Request $request);
+    public function levelwisependingform(Request $request);
+    public function levelformdetail(Request $request);
 }
