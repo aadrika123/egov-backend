@@ -324,7 +324,9 @@ class HoldingTaxController extends Controller
             $idGeneration = new IdGeneration;
             $mPropTrans = new PropTransaction();
 
-            $tranNo = $idGeneration->generateTransactionNo();
+            $tranNo = $req['transactionNo'];
+            if (!$tranNo)
+                $tranNo = $idGeneration->generateTransactionNo();
             $demands = $propDemand->getDemandByPropId($req['id']);
             if ($demands->isEmpty())
                 throw new Exception("No Dues For this Property");
@@ -332,7 +334,7 @@ class HoldingTaxController extends Controller
             $req->merge([
                 'userId' => $userId,
                 'todayDate' => $todayDate->format('Y-m-d'),
-                'tranNo' => $req['transactionNo'] ?? $tranNo
+                'tranNo' => $tranNo
             ]);
             DB::beginTransaction();
             $propTrans = $mPropTrans->postPropTransactions($req, $demands);
@@ -372,7 +374,7 @@ class HoldingTaxController extends Controller
             });
 
             DB::commit();
-            return responseMsgs(true, "Payment Successfully Done", "", "011604", "1.0", "", "POST", $req->deviceId);
+            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011604", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $req->deviceId ?? "");
