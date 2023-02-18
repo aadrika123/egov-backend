@@ -54,7 +54,7 @@ class PropSafMemoDtl extends Model
                 'u.user_name as generated_by'
             )
             ->where('saf_id', $safId)
-            ->join('users as u', 'u.id', '=', 'm.user_id')
+            ->leftJoin('users as u', 'u.id', '=', 'm.user_id')
             ->where('status', 1)
             ->get();
     }
