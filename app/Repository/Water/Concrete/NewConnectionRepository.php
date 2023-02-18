@@ -378,6 +378,7 @@ class NewConnectionRepository implements iNewConnection
      * | check Post Condition for backward forward
         | Serial No : 04.01
         | working 
+        | Uncoment
      */
     public function checkPostCondition($senderRoleId, $wfLevels, $application)
     {
@@ -386,14 +387,14 @@ class NewConnectionRepository implements iNewConnection
                 if ($application->doc_upload_status == 0)
                     throw new Exception("Document Not Fully Uploaded");
                 break;
-            case $wfLevels['DA']:                       // DA Condition
-                if ($application->doc_status == 0)
-                    throw new Exception("Document Not Fully Verified");
-                break;
-            case $wfLevels['JE']:                       // JE Coditon in case of site adjustment
-                if ($application->doc_status == 0 || $application->payment_status == 0)
-                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
-                break;
+            // case $wfLevels['DA']:                       // DA Condition
+            //     if ($application->doc_status == 0)
+            //         throw new Exception("Document Not Fully Verified");
+            //     break;
+            // case $wfLevels['JE']:                       // JE Coditon in case of site adjustment
+            //     if ($application->doc_status == 0 || $application->payment_status == 0)
+            //         throw new Exception("Document Not Fully Verified or Payment in not Done!");
+            //     break;
         }
     }
 
