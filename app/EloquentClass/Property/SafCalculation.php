@@ -1101,7 +1101,7 @@ class SafCalculation
 
         if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  == 'Female' || $ownerDetails['gender'] == 'Transgender' || $years >= $seniorCitizen) {
             $rebate += $speciallyAbledRebatePerc;
-            $specialRebateAmt = roundFigure(($totalDemand * $speciallyAbledRebatePerc) / 100);
+            $specialRebateAmt = roundFigure(($this->_GRID['demand']['totalTax'] * $speciallyAbledRebatePerc) / 100);
             array_push($rebates, [
                 "rebateTypeId" => $this->_speciallyAbledRebateID,
                 "rebateType" => "speciallyAbledRebate",
