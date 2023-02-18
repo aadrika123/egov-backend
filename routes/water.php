@@ -108,6 +108,7 @@ Route::controller(WaterApplication::class)->group(function () {
     Route::post('payment-recipt', 'paymentRecipt');                                                     //15
     Route::post('cargeCal', 'calWaterConCharge');                                                       //16
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //17
+    Route::post('payment-water', 'paymentWater');
 });
 Route::controller(WaterConsumer::class)->group(function () {
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18        

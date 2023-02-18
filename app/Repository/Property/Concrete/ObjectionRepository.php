@@ -66,7 +66,6 @@ class ObjectionRepository implements iObjectionRepository
     {
         try {
             $userId = authUser()->id;
-            // $ulbId = auth()->user()->ulb_id;
             $ulbId = $request->ulbId;
             $userType = auth()->user()->user_type;
             $objectionFor = $request->objectionFor;
@@ -82,8 +81,8 @@ class ObjectionRepository implements iObjectionRepository
             $initiatorRoleId = DB::select($refInitiatorRoleId);
             $finisherRoleId = DB::select($refFinisherRoleId);
 
+            DB::beginTransaction();
             if ($objectionFor == "Clerical Mistake") {
-                DB::beginTransaction();
 
                 //saving objection details
                 # Flag : call model <-----
@@ -114,6 +113,8 @@ class ObjectionRepository implements iObjectionRepository
                 //objection No generation in model
                 $objNo = new PropActiveObjection();
                 $objectionNo = $objNo->objectionNo($objection->id);
+                if (collect($objectionNo)->isEmpty())
+                    throw new Exception("Objection Not Found");
 
                 PropActiveObjection::where('id', $objection->id)
                     ->update(['objection_no' => $objectionNo]);
@@ -205,28 +206,6 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
                 $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
                 $objection->save();
-
-                //objection_form
-                // if ($file = $request->file('objFormDoc')) {
-                //     $docName = "objectionForm";
-                //     $name = $this->moveFile($docName, $file);
-
-                //     $objectionDoc = new PropActiveObjectionDocdtl;
-                //     $objectionDoc->objection_id = $objection->id;
-                //     $objectionDoc->remarks = $request->objRemarks;
-                //     $this->citizenDocUpload($objectionDoc, $name, $docName);
-                // }
-
-                // //Evidence Doc
-                // if ($file = $request->file('objEvidenceDoc')) {
-                //     $docName = "evidenceDoc";
-                //     $name = $this->moveFile($docName, $file);
-
-                //     $objectionDoc = new PropActiveObjectionDocdtl;
-                //     $objectionDoc->objection_id = $objection->id;
-                //     $objectionDoc->remarks = $request->objRemarks;
-                //     $this->citizenDocUpload($objectionDoc, $name, $docName);
-                // }
                 return responseMsg(true, "Successfully Saved", '');
             }
 
@@ -348,6 +327,7 @@ class ObjectionRepository implements iObjectionRepository
 
             return responseMsgs(true, "Successfully Saved", $objectionNo, '010801', '01', '382ms-547ms', 'Post', '');
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json($e->getMessage());
         }
     }
