@@ -111,10 +111,10 @@ class WaterPaymentController extends Controller
 
             $masterValues = [
                 'water_param_pipeline_type'     => $waterParamPipelineType,
-                'water-connection-type-mstr'    => $waterConnectionTypeMstr,
-                'water-connection-through-mstr' => $waterConnectionThroughMstr,
-                'water-property-type-mstr'      => $waterPropertyTypeMstr,
-                'water-owner-type-mstr'         => $waterOwnerTypeMstr,
+                'water_connection_type_mstr'    => $waterConnectionTypeMstr,
+                'water_connection_through_mstr' => $waterConnectionThroughMstr,
+                'water_property_type_mstr'      => $waterPropertyTypeMstr,
+                'water_owner_type_mstr'         => $waterOwnerTypeMstr,
             ];
 
             # Config Master Data 
@@ -303,66 +303,58 @@ class WaterPaymentController extends Controller
         ]);
         try {
             $refTransactionNo = $req->transactionNo;
-            $mWaterConsumer = new WaterConsumer();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
             $mWaterTran = new WaterTran();
 
             $mTowards = Config::get('waterConstaint.TOWARDS');
             $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
 
-            $responseData = collect($refTransactionNo)->map(function ($value, $key) use (
-                $mWaterConsumer,
-                $mWaterTran,
-                $mTowards,
-                $mAccDescription,
-                $mDepartmentSection,
-            ) {
-                # Transaction Details according to transaction no
-                $transactionDetails = $mWaterTran->getTransactionByTransactionNo($value);
+            # Transaction Details according to transaction no
+            $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo);
 
-                # Consumer Deails and demand details
-                $consumerDetails = $mWaterConsumer->getConsumerListById($transactionDetails->related_id, $transactionDetails->demand_id);
+            # Consumer Deails and demand details
+            $consumerDetails = $mWaterConnectionCharge->getConsumerListById($transactionDetails->related_id, $transactionDetails->demand_id);
 
-                # Transaction Date
-                $refDate = $transactionDetails->tran_date;
-                $transactionDate = Carbon::parse($refDate)->format('Y-m-d');
+            # Transaction Date
+            $refDate = $transactionDetails->tran_date;
+            $transactionDate = Carbon::parse($refDate)->format('Y-m-d');
 
-                # transaction time
-                // $epoch = $webhookDetails->payment_created_at;
-                // $dateTime = new DateTime("@$epoch");
-                // $transactionTime = $dateTime->format('H:i:s');
+            # transaction time
+            // $epoch = $webhookDetails->payment_created_at;
+            // $dateTime = new DateTime("@$epoch");
+            // $transactionTime = $dateTime->format('H:i:s');
 
-                return [
-                    "departmentSection" => $mDepartmentSection,
-                    "accountDescription" => $mAccDescription,
-                    "transactionDate" => $transactionDate,
-                    "transactionNo" => $value,
-                    // "transactionTime" => $transactionTime,
-                    "applicationNo" => "",
-                    "customerName" => $consumerDetails->consumer_name,
-                    "customerMobile" => $consumerDetails->mobile_no,
-                    "address" => $consumerDetails->address,
-                    "paidFrom" => $consumerDetails->demand_from,
-                    "paidFromQtr" => "",
-                    "paidUpto" => $consumerDetails->demand_upto,
-                    "paidUptoQtr" => $consumerDetails->demand_upto,
-                    "paymentMode" => $transactionDetails->payment_mode,
-                    "bankName" => "",                                   // in case of cheque,dd,nfts
-                    "branchName" => "",                                 // in case of chque,dd,nfts
-                    "chequeNo" => "",                                   // in case of chque,dd,nfts
-                    "chequeDate" => "",                                 // in case of chque,dd,nfts
-                    "monthlyRate" => "",
-                    "demandAmount" => $consumerDetails->amount,
-                    "taxDetails" => "",
-                    "ulbId" => $consumerDetails->ulb_id,
-                    "ulbName" => $consumerDetails->ulb_name,
-                    "WardNo" => $consumerDetails->old_ward_name,
-                    "towards" => $mTowards,
-                    "description" => $mAccDescription,
-                    "totalPaidAmount" => $transactionDetails->amount,
-                    "paidAmtInWords" => getIndianCurrency($transactionDetails->amount),
-                ];
-            });
+            return [
+                "departmentSection" => $mDepartmentSection,
+                "accountDescription" => $mAccDescription,
+                "transactionDate" => $transactionDate,
+                "transactionNo" => $value,
+                // "transactionTime" => $transactionTime,
+                "applicationNo" => "",
+                "customerName" => $consumerDetails->consumer_name,
+                "customerMobile" => $consumerDetails->mobile_no,
+                "address" => $consumerDetails->address,
+                "paidFrom" => $consumerDetails->demand_from,
+                "paidFromQtr" => "",
+                "paidUpto" => $consumerDetails->demand_upto,
+                "paidUptoQtr" => $consumerDetails->demand_upto,
+                "paymentMode" => $transactionDetails->payment_mode,
+                "bankName" => "",                                   // in case of cheque,dd,nfts
+                "branchName" => "",                                 // in case of chque,dd,nfts
+                "chequeNo" => "",                                   // in case of chque,dd,nfts
+                "chequeDate" => "",                                 // in case of chque,dd,nfts
+                "monthlyRate" => "",
+                "demandAmount" => $consumerDetails->amount,
+                "taxDetails" => "",
+                "ulbId" => $consumerDetails->ulb_id,
+                "ulbName" => $consumerDetails->ulb_name,
+                "WardNo" => $consumerDetails->old_ward_name,
+                "towards" => $mTowards,
+                "description" => $mAccDescription,
+                "totalPaidAmount" => $transactionDetails->amount,
+                "paidAmtInWords" => getIndianCurrency($transactionDetails->amount),
+            ];
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
@@ -722,7 +714,7 @@ class WaterPaymentController extends Controller
             $idGeneration = new IdGeneration();
             $mWaterTran = new WaterTran();
             $userId = auth()->user()->id;
-            
+
 
             return responseMsgs(true, "Payment Success!", "", "", "01", "ms", "POST", "");
         } catch (Exception $e) {
@@ -842,5 +834,4 @@ class WaterPaymentController extends Controller
         ];
         $mTempTransaction->tempTransaction($tranReqs);
     }
-
 }
