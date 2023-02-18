@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Property\ReqPayment;
 use App\Http\Requests\Water\siteAdjustment;
+use App\MicroServices\IdGeneration;
 use App\Models\Payment\WebhookPaymentData;
+use App\Models\Property\PropTransaction;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionThroughMstr;
@@ -385,6 +388,7 @@ class WaterPaymentController extends Controller
      * | @var 
      * | @return
         | Serial No : 04
+        | Recheck
      */
     public function saveSitedetails(siteAdjustment $request)
     {
@@ -443,6 +447,7 @@ class WaterPaymentController extends Controller
      * | @var readRoleDtls
      * | @var roleId
         | Serial No : 04.01
+        | Recheck
      */
     public function CheckInspectionCondition($request, $waterDetails)
     {
@@ -479,6 +484,7 @@ class WaterPaymentController extends Controller
      * | @param newConnectionCharges
      * | @param installment
         | Serial No : 04.02
+        | Recheck
      */
     public function adjustmentInConnection($request, $newConnectionCharges, $installment, $waterApplicationDetails)
     {
@@ -518,8 +524,9 @@ class WaterPaymentController extends Controller
      * | @var 
      * | @return 
         | Serial No : 05
+        | Recheck
      */
-    public function handeRazorPay(Request $request)
+    public function initiateOnlineDemandPayment(Request $request)
     {
         try {
             $request->validate([
@@ -530,7 +537,7 @@ class WaterPaymentController extends Controller
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id;
-            
+
             #------------ new connection --------------------
             DB::beginTransaction();
             if ($request->applycationType == "consumer") {
@@ -577,12 +584,13 @@ class WaterPaymentController extends Controller
     }
 
 
-     /**
+    /**
      * | Online Payment for the consumer Demand
      * | Data After the Webhook Payment / Called by the Webhook
-     * | $param 
+     * | @param
+        | Recheck 
      */
-    public function onlineDemandPayment($args)
+    public function endOnlineDemandPayment($args)
     {
         try {
             $refUser        = Auth()->user();
@@ -698,5 +706,141 @@ class WaterPaymentController extends Controller
         }
     }
 
+
+    /**
+     * | Offline Paymnet for the Application Connection Charge
+     * | @param request
+        | Working
+        | new Request
+     */
+    public function offlineConnectionPayment(ReqPayment $request)
+    {
+        try {
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+            $todayDate = Carbon::now();
+            $mWaterConsumerDemand = new WaterConsumerDemand();
+            $idGeneration = new IdGeneration();
+            $mWaterTran = new WaterTran();
+            $userId = auth()->user()->id;
+            
+
+            return responseMsgs(true, "Payment Success!", "", "", "01", "ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+        }
+    }
+
+    public function paymentSaf(ReqPayment $req)
+    {
+        try {
+            // Variable Assignments
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+            $todayDate = Carbon::now();
+            $propSafsDemand = new PropSafsDemand();
+            $idGeneration = new IdGeneration;
+            $propTrans = new PropTransaction();
+            $userId = $req['userId'];
+            if (!$userId)
+                $userId = auth()->user()->id ?? 0;                                      // Authenticated user or Ghost User
+
+            $tranNo = $req['transactionNo'];
+            // Derivative Assignments
+            if (!$tranNo)
+                $tranNo = $idGeneration->generateTransactionNo();
+            $demands = $propSafsDemand->getDemandBySafId($req['id']);
+
+            if (!$demands || collect($demands)->isEmpty())
+                throw new Exception("Demand Not Available for Payment");
+            // Property Transactions
+            $req->merge([
+                'userId' => $userId,
+                'todayDate' => $todayDate->format('Y-m-d'),
+                'tranNo' => $tranNo
+            ]);
+            DB::beginTransaction();
+            $propTrans = $propTrans->postSafTransaction($req, $demands);
+
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $req->merge([
+                    'chequeDate' => $req['chequeDate'],
+                    'tranId' => $propTrans['id']
+                ]);
+                $this->postOtherPaymentModes($req);
+            }
+
+            // Reflect on Prop Tran Details
+            foreach ($demands as $demand) {
+                $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $demand->save();
+
+                $propTranDtl = new PropTranDtl();
+                $propTranDtl->tran_id = $propTrans['id'];
+                $propTranDtl->saf_demand_id = $demand['id'];
+                $propTranDtl->total_demand = $demand['amount'];
+                $propTranDtl->save();
+            }
+
+            // Update SAF Payment Status
+            $activeSaf = PropActiveSaf::find($req['id']);
+            $activeSaf->payment_status = 1;
+            $activeSaf->save();
+
+            // Replication Prop Rebates Penalties
+            $mPropPenalRebates = new PaymentPropPenaltyrebate();
+            $rebatePenalties = $mPropPenalRebates->getPenalRebatesBySafId($req['id']);
+
+            collect($rebatePenalties)->map(function ($rebatePenalty) use ($propTrans) {
+                $replicate = $rebatePenalty->replicate();
+                $replicate->setTable('prop_penaltyrebates');
+                $replicate->tran_id = $propTrans['id'];
+                $replicate->tran_date = $this->_todayDate->format('Y-m-d');
+                $replicate->save();
+            });
+
+            DB::commit();
+            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function postOtherPaymentModes($req)
+    {
+        $cash = Config::get('payment-constants.PAYMENT_MODE.3');
+        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $mTempTransaction = new TempTransaction();
+        if ($req['paymentMode'] != $cash) {
+            $mPropChequeDtl = new PropChequeDtl();
+            $chequeReqs = [
+                'user_id' => $req['userId'],
+                'prop_id' => $req['id'],
+                'transaction_id' => $req['tranId'],
+                'cheque_date' => $req['chequeDate'],
+                'bank_name' => $req['bankName'],
+                'branch_name' => $req['branchName'],
+                'cheque_no' => $req['chequeNo']
+            ];
+
+            $mPropChequeDtl->postChequeDtl($chequeReqs);
+        }
+
+        $tranReqs = [
+            'transaction_id' => $req['tranId'],
+            'application_id' => $req['id'],
+            'module_id' => $moduleId,
+            'workflow_id' => $req['workflowId'],
+            'transaction_no' => $req['tranNo'],
+            'application_no' => $req->applicationNo,
+            'amount' => $req['amount'],
+            'payment_mode' => $req['paymentMode'],
+            'cheque_dd_no' => $req['chequeNo'],
+            'bank_name' => $req['bankName'],
+            'tran_date' => $req['todayDate'],
+            'user_id' => $req['userId'],
+            'ulb_id' => $req['ulbId']
+        ];
+        $mTempTransaction->tempTransaction($tranReqs);
+    }
 
 }
