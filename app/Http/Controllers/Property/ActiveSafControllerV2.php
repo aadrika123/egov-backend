@@ -129,7 +129,11 @@ class ActiveSafControllerV2 extends Controller
             $mPropSafMemoDtl = new PropSafMemoDtl();
             $mPropDemands = new PropDemand();
             $mPropSafDemands = new PropSafsDemand();
+
             $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
+            if (collect($details)->isEmpty())
+                $details = $mPropSafMemoDtl->getPropMemoDtlsByMemoId($req->memoId);
+
             if (collect($details)->isEmpty())
                 throw new Exception("Memo Details Not Available");
             $details = collect($details)->first();
