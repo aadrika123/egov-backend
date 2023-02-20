@@ -62,4 +62,17 @@ class WaterPenaltyInstallment extends Model
                 'status' => false
             ]);
     }
+
+
+    /**
+     * | Update penalty Payment Status true in the payment
+     * | @param req
+     */
+    public function updatePenaltyPayment($req)
+    {
+        WaterPenaltyInstallment::whereIn('id', $req->penaltyId)
+            ->update([
+                'paid_status' => true
+            ]);
+    }
 }
