@@ -20,5 +20,7 @@ return [
         'CHEQUE',
         'DD',
         'NEFT'
-    ]
+    ],
+
+    'ONLINE' => "Online",
 ];

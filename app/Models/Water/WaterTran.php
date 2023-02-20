@@ -50,8 +50,7 @@ class WaterTran extends Model
             ->join('water_tran_details', 'water_tran_details.tran_id', '=', 'water_trans.id')
             ->where('tran_no', $transactionNo)
             ->where('water_trans.status', true)
-            ->where('water_tran_details.status', true)
-            ->firstOrFail();
+            ->where('water_tran_details.status', true);
     }
 
     /**
