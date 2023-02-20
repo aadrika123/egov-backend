@@ -97,17 +97,8 @@ class RainWaterHarvestingController extends Controller
             ]);
 
             $ulbId = $request->ulbId;
+            $userId = auth()->user()->id;
             $userType = auth()->user()->user_type;
-            $citizenId = NULL;
-            $userId = NULL;
-
-            if ($userType == 'Citizen') {
-                $citizenId = auth()->user()->id;
-            }
-
-            if ($userType != 'Citizen') {
-                $userId = auth()->user()->id;
-            }
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
@@ -119,7 +110,23 @@ class RainWaterHarvestingController extends Controller
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
             $mPropActiveHarvesting = new PropActiveHarvesting();
-            $waterHaravesting  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId, $citizenId);
+            $waterHaravesting  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId);
+
+            if ($userType == 'Citizen') {
+                $waterHaravesting->current_role = collect($initiatorRoleId)->first()->forward_role_id;
+                $waterHaravesting->initiator_role_id = collect($initiatorRoleId)->first()->forward_role_id;      // Send to DA in Case of Citizen
+                $waterHaravesting->last_role_id = collect($initiatorRoleId)->first()->forward_role_id;
+                $waterHaravesting->user_id = null;
+                $waterHaravesting->citizen_id = $userId;
+                $waterHaravesting->doc_upload_status = 1;
+            }
+            $waterHaravesting->save();
+
+            $propHarvesting = new PropActiveHarvesting();
+            $harvestingNo = $propHarvesting->harvestingNo($waterHaravesting->id);
+
+            PropActiveHarvesting::where('id', $waterHaravesting->id)
+                ->update(['application_no' => $harvestingNo]);
 
             if ($userType == 'Citizen') {
                 $metaReqs = array();
@@ -158,7 +165,7 @@ class RainWaterHarvestingController extends Controller
                 $request->request->add($wfReqs);
                 $track->saveTrack($request);
             }
-            return responseMsg(true, "Application applied!", $waterHaravesting->application_no);
+            return responseMsg(true, "Application applied!", $harvestingNo);
         } catch (Exception $error) {
             return responseMsg(false, "Error!", $error->getMessage());
         }

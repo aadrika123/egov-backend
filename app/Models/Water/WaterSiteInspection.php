@@ -14,35 +14,37 @@ class WaterSiteInspection extends Model
      * |-------------------- save site inspecton -----------------------\
      * | @param req
      */
-    public function storeInspectionDetails($req)
+    public function storeInspectionDetails($req, $waterFeeId, $waterDetails)
     {
         $saveSiteVerify = new WaterSiteInspection();
-        $saveSiteVerify->property_type_id       =   $req->propertyType;
-        $saveSiteVerify->pipeline_type_id       =   $req->pipelineType;
-        $saveSiteVerify->connection_type_id     =   $req->connectionType;
-        $saveSiteVerify->connection_through_id  =   $req->connectionThrough;
+        $saveSiteVerify->property_type_id       =   $req->propertyTypeId;
+        $saveSiteVerify->pipeline_type_id       =   $req->pipelineTypeId;
+        $saveSiteVerify->connection_type_id     =   $req->connectionTypeId;
+        $saveSiteVerify->connection_through     =   $waterDetails['connection_through'];
         $saveSiteVerify->category               =   $req->category;
-        $saveSiteVerify->flat_count             =   $req->flatCount;
-        $saveSiteVerify->ward_id                =   $req->wardId;
-        $saveSiteVerify->area_sqft              =   $req->areaSqft;
-        $saveSiteVerify->rate_id                =   $req->rateId;                    // what is rate Id
-        $saveSiteVerify->emp_details_id         =   $req->empDetailsId;
-        $saveSiteVerify->apply_connection_id    =   $req->applyConnectionId;
-        $saveSiteVerify->payment_status         =   $req->paymentStatus;
+        $saveSiteVerify->flat_count             =   $req->flatCount ?? null;
+        $saveSiteVerify->ward_id                =   $waterDetails['ward_id'];
+        $saveSiteVerify->area_sqft              =   $req->areaSqFt;
+        $saveSiteVerify->rate_id                =   $req->rateId ?? null;                    // what is rate Id
+        $saveSiteVerify->emp_details_id         =   authUser()->id;
+        $saveSiteVerify->apply_connection_id    =   $req->applicationId;
+        // $saveSiteVerify->payment_status         =   $req->paymentStatus;
         $saveSiteVerify->pipeline_size          =   $req->pipelineSize;
-        $saveSiteVerify->pipe_size              =   $req->pipeSize;
-        $saveSiteVerify->ferrule_type_id        =   $req->ferrule_type_id;           // what is ferrule
+        $saveSiteVerify->pipeline_size_type     =   $req->pipelineSizeType;
+        $saveSiteVerify->pipe_size              =   $req->diameter;
+
+        $saveSiteVerify->ferrule_type           =   $req->feruleSize;           // what is ferrule
         $saveSiteVerify->road_type              =   $req->roadType;
-        $saveSiteVerify->inspection_date        =   Carbon::now('y-m-d');
-        $saveSiteVerify->scheduled_status       =   $req->scheduledStatus;
-        $saveSiteVerify->water_lock_arng        =   $req->waterLockArng;
-        $saveSiteVerify->gate_valve             =   $req->gateValve;
-        $saveSiteVerify->verified_by            =   $req->verifiedBy;
-        $saveSiteVerify->road_app_fee_id        =   $req->roadAppFeeId;
-        $saveSiteVerify->verified_status        =   $req->verificationStatus;
-        $saveSiteVerify->inspection_time        =   $req->inspectionTime;
+        $saveSiteVerify->inspection_date        =   Carbon::now();
+        // $saveSiteVerify->scheduled_status       =   $req->scheduledStatus;
+        // $saveSiteVerify->water_lock_arng        =   $req->waterLockArng;
+        // $saveSiteVerify->gate_valve             =   $req->gateValve;
+        $saveSiteVerify->verified_by            =   authUser()->user_type;   // here role 
+        // $saveSiteVerify->road_app_fee_id        =   $req->roadAppFeeId;
+        // $saveSiteVerify->verified_status        =   true;
+        $saveSiteVerify->inspection_time        =   Carbon::now();
         $saveSiteVerify->ts_map                 =   $req->tsMap;
-        $saveSiteVerify->order_officer          =   $req->orderOfficer;
+        $saveSiteVerify->order_officer          =   authUser()->user_type;
         $saveSiteVerify->save();
     }
 

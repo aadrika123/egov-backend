@@ -280,4 +280,88 @@ class PropProperty extends Model
         ];
         $property->update($reqs);
     }
+
+
+    /**
+     * | Request made to save or replicate property
+     */
+    public function reqProp($req)
+    {
+        $reqs = [
+            'ulb_id' => $req->ulb_id,
+            'cluster_id' => $req->cluster_id,
+            'saf_id' => $req->saf_id,
+            'holding_no' => $req->holding_no,
+            'applicant_name' => $req->applicant_name,
+            'application_date' => $req->application_date,
+            'ward_mstr_id' => $req->ward_mstr_id,
+            'ownership_type_mstr_id' => $req->ownership_type_mstr_id,
+            'prop_type_mstr_id' => $req->prop_type_mstr_id,
+            'appartment_name' => $req->appartment_name,
+            'no_electric_connection' => $req->no_electric_connection,
+            'elect_consumer_no' => $req->elect_consumer_no,
+            'elect_acc_no' => $req->elect_acc_no,
+            'elect_bind_book_no' => $req->elect_bind_book_no,
+            'elect_cons_category' => $req->elect_cons_category,
+            'building_plan_approval_no' => $req->building_plan_approval_no,
+            'building_plan_approval_date' => $req->building_plan_approval_date,
+            'water_conn_no' => $req->water_conn_no,
+            'water_conn_date' => $req->water_conn_date,
+            'khata_no' => $req->khata_no,
+            'plot_no' => $req->plot_no,
+            'village_mauja_name' => $req->village_mauja_name,
+            'road_type_mstr_id' => $req->road_type_mstr_id,
+            'area_of_plot' => $req->area_of_plot,
+            'prop_address' => $req->prop_address,
+            'prop_city' => $req->prop_city,
+            'prop_dist' => $req->prop_dist,
+            'prop_pin_code' => $req->prop_pin_code,
+            'prop_state' => $req->prop_state,
+            'corr_address' => $req->corr_address,
+            'corr_city' => $req->corr_city,
+            'corr_dist' => $req->corr_dist,
+            'corr_pin_code' => $req->corr_pin_code,
+            'corr_state' => $req->corr_state,
+            'is_mobile_tower' => $req->is_mobile_tower,
+            'tower_area' => $req->tower_area,
+            'tower_installation_date' => $req->tower_installation_date,
+            'is_hoarding_board' => $req->is_hoarding_board,
+            'hoarding_area' => $req->hoarding_area,
+            'hoarding_installation_date' => $req->hoarding_installation_date,
+            'is_petrol_pump' => $req->is_petrol_pump,
+            'under_ground_area' => $req->under_ground_area,
+            'petrol_pump_completion_date' => $req->petrol_pump_completion_date,
+            'is_water_harvesting' => $req->is_water_harvesting,
+            'land_occupation_date' => $req->land_occupation_date,
+            'new_ward_mstr_id' => $req->new_ward_mstr_id,
+            'entry_type' => $req->entry_type,
+            'zone_mstr_id' => $req->zone_mstr_id,
+            'new_holding_no' => $req->new_holding_no,
+            'flat_registry_date' => $req->flat_registry_date,
+            'assessment_type' => $req->assessment_type,
+            'holding_type' => $req->holding_type,
+            'is_old' => $req->is_old,
+            'apartment_details_id' => $req->apartment_details_id,
+            'ip_address' => $req->ip_address,
+            'user_id' => $req->user_id,
+            'road_width' => $req->road_width,
+            'old_prop_id' => $req->old_prop_id,
+            'citizen_id' => $req->citizen_id,
+            'saf_no' => $req->saf_no,
+            'pt_no' => $req->pt_no
+        ];
+        return $reqs;
+    }
+
+    /**
+     * | Edit Property By Saf
+     * | Used To Edit Prop Dtls While Reassessment and Mutation Case
+     * | Functions Used replicateSaf()
+     */
+    public function editPropBySaf($propId, $safDtls)
+    {
+        $property = PropProperty::find($propId);
+        $reqs = $this->reqProp($safDtls);
+        $property->update($reqs);
+    }
 }

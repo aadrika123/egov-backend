@@ -125,7 +125,6 @@ class ConcessionController extends Controller
             }
 
             $concession->finisher_role_id = collect($finisherRoleId)->first()->role_id;
-            $concession->created_at = Carbon::now();
             $concession->date = Carbon::now();
             $concession->save();
 

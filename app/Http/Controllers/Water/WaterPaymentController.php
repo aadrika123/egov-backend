@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqPayment;
 use App\Http\Requests\Water\siteAdjustment;
 use App\MicroServices\IdGeneration;
+use App\Models\Payment\TempTransaction;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PropTransaction;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionThroughMstr;
 use App\Models\Water\WaterConnectionTypeMstr;
@@ -304,26 +306,33 @@ class WaterPaymentController extends Controller
         try {
             $refTransactionNo = $req->transactionNo;
             $mWaterConnectionCharge = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
             $mWaterTran = new WaterTran();
 
             $mTowards = Config::get('waterConstaint.TOWARDS');
             $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
 
-            # Transaction Details according to transaction no
-            $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo);
+            # transaction Deatils
+            $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
+                ->firstOrFail();
 
-            # Consumer Deails and demand details
-            $consumerDetails = $mWaterConnectionCharge->getConsumerListById($transactionDetails->related_id, $transactionDetails->demand_id);
+            # Connection Charges
+            $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($transactionDetails->related_id)
+                ->where('id', $transactionDetails->demand_id)
+                ->firstOrFail();
+
+            # if penalty Charges
+            $individulePenaltyCharges = $mWaterPenaltyInstallment->getPenaltyByApplicationId($transactionDetails->related_id)
+                ->where('paid_status', 1)
+                ->get();
+            return  $totalPenaltyAmount = collect($individulePenaltyCharges)->map(function ($value) {
+                return $value['balance_amount'];
+            })->sum();
 
             # Transaction Date
             $refDate = $transactionDetails->tran_date;
             $transactionDate = Carbon::parse($refDate)->format('Y-m-d');
-
-            # transaction time
-            // $epoch = $webhookDetails->payment_created_at;
-            // $dateTime = new DateTime("@$epoch");
-            // $transactionTime = $dateTime->format('H:i:s');
 
             return [
                 "departmentSection" => $mDepartmentSection,
@@ -380,7 +389,7 @@ class WaterPaymentController extends Controller
      * | @var 
      * | @return
         | Serial No : 04
-        | Recheck
+        | Working
      */
     public function saveSitedetails(siteAdjustment $request)
     {
@@ -397,10 +406,11 @@ class WaterPaymentController extends Controller
 
             # Get the Applied Connection Charge
             $applicationCharge = $mWaterConnectionCharge->getWaterchargesById($request->applicationId)
-                ->where('charge_category', $connectionCatagory['NEW_CONNECTION'])
+                ->where('charge_category', '!=', $connectionCatagory['SITE_INSPECTON'])
                 ->firstOrFail();
             $oldChargeAmount = $applicationCharge['amount'];
 
+            DB::beginTransaction();
             # Generating Demand for new InspectionData
             $newConnectionCharges = objToArray($mWaterNewConnection->calWaterConCharge($request));
             if (!$newConnectionCharges['status']) {
@@ -418,9 +428,11 @@ class WaterPaymentController extends Controller
                 $this->adjustmentInConnection($request, $newConnectionCharges, $installment, $waterDetails);
             }
 
-            $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId);
+            $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId, $waterDetails);
+            DB::commit();
             return responseMsgs(true, "Site Inspection Done!", $request->applicationId, "", "01", "ms", "POST", "");
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
@@ -439,7 +451,7 @@ class WaterPaymentController extends Controller
      * | @var readRoleDtls
      * | @var roleId
         | Serial No : 04.01
-        | Recheck
+        | Working
      */
     public function CheckInspectionCondition($request, $waterDetails)
     {
@@ -476,7 +488,7 @@ class WaterPaymentController extends Controller
      * | @param newConnectionCharges
      * | @param installment
         | Serial No : 04.02
-        | Recheck
+        | Working
      */
     public function adjustmentInConnection($request, $newConnectionCharges, $installment, $waterApplicationDetails)
     {
@@ -499,7 +511,8 @@ class WaterPaymentController extends Controller
         }
         # connection charges
         $request->merge([
-            'chargeCatagory' => $chargeCatagory['SITE_INSPECTON']
+            'chargeCatagory' => $chargeCatagory['SITE_INSPECTON'],
+            'ward_id' => $waterApplicationDetails['ward_id']
         ]);
         $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
         # in case of connection charge is 0
@@ -516,7 +529,7 @@ class WaterPaymentController extends Controller
      * | @var 
      * | @return 
         | Serial No : 05
-        | Recheck
+        | Recheck / Not Working
      */
     public function initiateOnlineDemandPayment(Request $request)
     {
@@ -580,7 +593,8 @@ class WaterPaymentController extends Controller
      * | Online Payment for the consumer Demand
      * | Data After the Webhook Payment / Called by the Webhook
      * | @param
-        | Recheck 
+        | Serial No : 06
+        | Recheck / Not Working
      */
     public function endOnlineDemandPayment($args)
     {
@@ -700,95 +714,82 @@ class WaterPaymentController extends Controller
 
 
     /**
-     * | Offline Paymnet for the Application Connection Charge
-     * | @param request
+     * | Consumer Demand Payment 
+     * | Offline Payment for the Monthely Payment
+     * | @param req
+     * | @var 
+     * | @return
+        | Serial No : 07
         | Working
-        | new Request
      */
-    public function offlineConnectionPayment(ReqPayment $request)
+    public function offlineConnectionPayment(Request $req)
     {
+        $req->validate([
+            'id' => 'required',
+            'penaltyId' => 'nullable|' # Request for the Penalty Id
+        ]);
         try {
+            # Variable Assignments
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $todayDate = Carbon::now();
-            $mWaterConsumerDemand = new WaterConsumerDemand();
-            $idGeneration = new IdGeneration();
-            $mWaterTran = new WaterTran();
-            $userId = auth()->user()->id;
-
-
-            return responseMsgs(true, "Payment Success!", "", "", "01", "ms", "POST", "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
-        }
-    }
-
-    public function paymentSaf(ReqPayment $req)
-    {
-        try {
-            // Variable Assignments
-            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
-            $todayDate = Carbon::now();
-            $propSafsDemand = new PropSafsDemand();
+            $mWaterApplication = new WaterApplication();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
             $idGeneration = new IdGeneration;
-            $propTrans = new PropTransaction();
-            $userId = $req['userId'];
-            if (!$userId)
-                $userId = auth()->user()->id ?? 0;                                      // Authenticated user or Ghost User
+            $waterTran = new WaterTran();
+            $userId = auth()->user()->id;                                               # Authenticated user or Ghost User
+            $refWaterApplication = $mWaterApplication->getApplicationById($req->id);
 
-            $tranNo = $req['transactionNo'];
-            // Derivative Assignments
-            if (!$tranNo)
-                $tranNo = $idGeneration->generateTransactionNo();
-            $demands = $propSafsDemand->getDemandBySafId($req['id']);
+            # Derivative Assignments
+            $tranNo = $idGeneration->generateTransactionNo();
+            $charges = $mWaterConnectionCharge->getWaterchargesById($req->id)->get();   # get water User connectin charges
 
-            if (!$demands || collect($demands)->isEmpty())
-                throw new Exception("Demand Not Available for Payment");
-            // Property Transactions
+            if (!$charges || collect($charges)->isEmpty())
+                throw new Exception("Connection Not Available for Payment!");
+            # Water Transactions
             $req->merge([
-                'userId' => $userId,
+                'userId'    => $userId,
                 'todayDate' => $todayDate->format('Y-m-d'),
-                'tranNo' => $tranNo
+                'tranNo'    => $tranNo
             ]);
             DB::beginTransaction();
-            $propTrans = $propTrans->postSafTransaction($req, $demands);
+            $waterTrans = $waterTran->waterTransaction($req, $refWaterApplication);
 
             if (in_array($req['paymentMode'], $offlinePaymentModes)) {
                 $req->merge([
                     'chequeDate' => $req['chequeDate'],
-                    'tranId' => $propTrans['id']
+                    'tranId' => $waterTrans['id']
                 ]);
                 $this->postOtherPaymentModes($req);
             }
 
             // Reflect on Prop Tran Details
-            foreach ($demands as $demand) {
-                $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
-                $demand->save();
+            foreach ($charges as $charges) {
+                $charges->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $charges->save();
 
-                $propTranDtl = new PropTranDtl();
-                $propTranDtl->tran_id = $propTrans['id'];
-                $propTranDtl->saf_demand_id = $demand['id'];
-                $propTranDtl->total_demand = $demand['amount'];
-                $propTranDtl->save();
+                $waterTranDetail = new WaterTranDetail();
+                $waterTranDetail->tran_id       = $waterTrans['id'];
+                $waterTranDetail->demand_id     = $charges['id'];
+                $waterTranDetail->total_demand  = $charges['balance_amount'];
+                $waterTranDetail->save();
             }
 
             // Update SAF Payment Status
-            $activeSaf = PropActiveSaf::find($req['id']);
+            $activeSaf = WaterApplication::find($req['id']);
             $activeSaf->payment_status = 1;
             $activeSaf->save();
 
-            // Replication Prop Rebates Penalties
-            $mPropPenalRebates = new PaymentPropPenaltyrebate();
-            $rebatePenalties = $mPropPenalRebates->getPenalRebatesBySafId($req['id']);
-
-            collect($rebatePenalties)->map(function ($rebatePenalty) use ($propTrans) {
-                $replicate = $rebatePenalty->replicate();
-                $replicate->setTable('prop_penaltyrebates');
-                $replicate->tran_id = $propTrans['id'];
-                $replicate->tran_date = $this->_todayDate->format('Y-m-d');
-                $replicate->save();
-            });
-
+            // Readjust Water Penalties
+            if ($req->penaltyId) {
+                $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+                $rebatePenalties = $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->id)
+                    ->where('paid_status', 0)
+                    ->get();
+                $checkPenalty = collect($rebatePenalties)->first();
+                if ($checkPenalty) {
+                    $mWaterPenaltyInstallment->updatePenaltyPayment($req);  # Payment of Penalty
+                }
+            }
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -797,13 +798,17 @@ class WaterPaymentController extends Controller
         }
     }
 
+    /**
+     * | Post Other Payment Modes for Cheque,DD,Neft
+        | Serial No : 07.01
+     */
     public function postOtherPaymentModes($req)
     {
         $cash = Config::get('payment-constants.PAYMENT_MODE.3');
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $mTempTransaction = new TempTransaction();
         if ($req['paymentMode'] != $cash) {
-            $mPropChequeDtl = new PropChequeDtl();
+            $mPropChequeDtl = new WaterChequeDtl();
             $chequeReqs = [
                 'user_id' => $req['userId'],
                 'prop_id' => $req['id'],

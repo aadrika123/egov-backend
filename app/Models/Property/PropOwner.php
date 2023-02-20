@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 class PropOwner extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     //owner details by ownerId
     public function getOwnerDetail($request)
@@ -55,4 +56,55 @@ class PropOwner extends Model
             ->get();
     }
 
+    /**
+     * | Get Owner by Owner Id
+     * | function used in replicate saf function
+     */
+    public function getPropOwnerByOwnerId($ownerId)
+    {
+        return PropOwner::find($ownerId);
+    }
+
+
+    /**
+     * | Request for Post Owner Details or Edit
+     */
+    public function reqOwner($req)
+    {
+        return [
+            'property_id' => $req->property_id,
+            'saf_id' => $req->saf_id,
+            'owner_name' => $req->owner_name,
+            'guardian_name' => $req->guardian_name,
+            'relation_type' => $req->relation_type,
+            'mobile_no' => $req->mobile_no,
+            'email' => $req->email,
+            'pan_no' => $req->pan_no,
+            'gender' => $req->gender,
+            'dob' => $req->dob,
+            'is_armed_force' => $req->is_armed_force,
+            'is_specially_abled' => $req->is_specially_abled,
+            'user_id' => $req->user_id,
+        ];
+    }
+
+    /**
+     * | Edit Owner
+     */
+    public function editOwner($safOwner)
+    {
+        $owner = PropOwner::find($safOwner->id);
+        $req = $this->reqOwner($safOwner);
+        $owner->update($req);
+    }
+
+    /**
+     * | Post New Owner
+     */
+    public function postOwner($safOwner)
+    {
+        $owner = new PropOwner();
+        $req = $this->reqOwner($safOwner);
+        $owner->create($req);
+    }
 }
