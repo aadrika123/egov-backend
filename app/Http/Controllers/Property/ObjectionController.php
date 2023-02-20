@@ -165,6 +165,7 @@ class ObjectionController extends Controller
 
         try {
             $mPropActiveObjection = new PropActiveObjection();
+            $mObjectionOwners = new PropActiveObjectionOwner();
             $mPropOwners = new PropOwner();
             $mPropFloors = new PropFloor();
             $mCustomDetails = new CustomDetail();
@@ -179,6 +180,11 @@ class ObjectionController extends Controller
             // if ($details->objection_for == 'Assessment Error') {
             //     $this->assessmentDetails($details, $req);
             // };
+
+            if ($details->objection_for == 'Clerical Mistake') {
+                return  $this->clericalDetails($details, $mPropOwners, $mObjectionOwners);
+            };
+
 
             // Data Array
             $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details

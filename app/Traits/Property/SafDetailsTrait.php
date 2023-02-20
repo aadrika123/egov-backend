@@ -226,4 +226,25 @@ trait SafDetailsTrait
         ];
         return $cardElement;
     }
+
+    /**
+     * | Objection Owner Details
+     */
+    public function objectionOwnerDetails($ownerDetail)
+    {
+        return [
+            1,
+            $ownerDetail['owner_name'],
+            $ownerDetail['gender'],
+            $ownerDetail['dob'],
+            $ownerDetail['guardian_name'],
+            $ownerDetail['relation'],
+            $ownerDetail['owner_mobile'],
+            $ownerDetail['aadhar'],
+            $ownerDetail['pan'],
+            $ownerDetail['email'],
+            ($ownerDetail['is_armed_force'] == true ? 'Yes' : 'No'),
+            ($ownerDetail['is_specially_abled'] == true ? 'Yes' : 'No'),
+        ];
+    }
 }
