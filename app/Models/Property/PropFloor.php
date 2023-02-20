@@ -83,6 +83,14 @@ class PropFloor extends Model
             ->first();
     }
 
+    /***
+     * | Get Floor By Floor Id
+     */
+    public function getFloorByFloorId($floorId)
+    {
+        return PropFloor::find($floorId);
+    }
+
     /**
      * | Meta Floor Requests
      */

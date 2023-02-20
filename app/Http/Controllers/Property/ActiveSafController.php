@@ -903,29 +903,75 @@ class ActiveSafController extends Controller
                 'ip_address',
                 'status',
                 'user_id',
-                'citizen_id'
+                'citizen_id',
+                'pt_no'
             )->first();
 
-        $propProperties = $toBeProperties->replicate();
-        $propProperties->setTable('prop_properties');
-        $propProperties->saf_id = $activeSaf->id;
-        $propProperties->new_holding_no = $activeSaf->holding_no;
-        $propProperties->save();
+        $assessmentType = $activeSaf->assessment_type;
 
-        // SAF Owners replication
-        foreach ($ownerDetails as $ownerDetail) {
-            $approvedOwners = $ownerDetail->replicate();
-            $approvedOwners->setTable('prop_owners');
-            $approvedOwners->property_id = $propProperties->id;
-            $approvedOwners->save();
+        if (in_array($assessmentType, ['New Assessment', 'Bifurcation', 'Amalgamation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation
+            $propProperties = $toBeProperties->replicate();
+            $propProperties->setTable('prop_properties');
+            $propProperties->saf_id = $activeSaf->id;
+            $propProperties->new_holding_no = $activeSaf->new_holding_no;
+            $propProperties->save();
+
+            // SAF Owners replication
+            foreach ($ownerDetails as $ownerDetail) {
+                $approvedOwners = $ownerDetail->replicate();
+                $approvedOwners->setTable('prop_owners');
+                $approvedOwners->property_id = $propProperties->id;
+                $approvedOwners->save();
+            }
+
+            // SAF Floors Replication
+            foreach ($floorDetails as $floorDetail) {
+                $propFloor = $floorDetail->replicate();
+                $propFloor->setTable('prop_floors');
+                $propFloor->property_id = $propProperties->id;
+                $propFloor->save();
+            }
         }
 
-        // SAF Floors Replication
-        foreach ($floorDetails as $floorDetail) {
-            $propFloor = $floorDetail->replicate();
-            $propFloor->setTable('prop_floors');
-            $propFloor->property_id = $propProperties->id;
-            $propFloor->save();
+        // Edit In Case of Reassessment,Mutation
+        if (in_array($assessmentType, ['Re Assessment', 'Mutation'])) {         // Edit Property In case of Reassessment, Mutation
+            $propId = $activeSaf->previous_holding_id;
+            $mProperty = new PropProperty();
+            $mPropOwners = new PropOwner();
+            $mPropFloors = new PropFloor();
+            // Edit Property
+            $mProperty->editPropBySaf($propId, $activeSaf);
+            // Edit Owners 
+            foreach ($ownerDetails as $ownerDetail) {
+                $ifOwnerExist = $mPropOwners->getPropOwnerByOwnerId($ownerDetail->id);
+                $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
+                $ownerDetail = new Request($ownerDetail);
+                if ($ifOwnerExist)
+                    $mPropOwners->editOwner($ownerDetail);
+                else
+                    $mPropOwners->postOwner($ownerDetail);
+            }
+            // Edit Floors
+            foreach ($floorDetails as $floorDetail) {
+                $ifFloorExist = $mPropFloors->getFloorByFloorId($floorDetail->prop_floor_details_id);
+                $floorReqs = new Request([
+                    'floor_mstr_id' => $floorDetail->floor_mstr_id,
+                    'usage_type_mstr_id' => $floorDetail->usage_type_id,
+                    'const_type_mstr_id' => $floorDetail->construction_type_id,
+                    'occupancy_type_mstr_id' => $floorDetail->occupancy_type_id,
+                    'builtup_area' => $floorDetail->builtup_area,
+                    'date_from' => $floorDetail->date_from,
+                    'date_upto' => $floorDetail->date_to,
+                    'carpet_area' => $floorDetail->carpet_area,
+                    'property_id' => $propId,
+                    'saf_id' => $safId
+
+                ]);
+                if ($ifFloorExist) {
+                    $mPropFloors->editFloor($ifFloorExist, $floorReqs);
+                } else
+                    $mPropFloors->postFloor($floorReqs);
+            }
         }
     }
 
@@ -977,8 +1023,8 @@ class ActiveSafController extends Controller
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
             $roleId = $readRoleDtls->wf_role_id;
 
-            // if ($safDetails->finisher_role_id != $roleId)
-            //     throw new Exception("Forbidden Access");
+            if ($safDetails->finisher_role_id != $roleId)
+                throw new Exception("Forbidden Access");
             $activeSaf = PropActiveSaf::query()
                 ->where('id', $req->applicationId)
                 ->first();
