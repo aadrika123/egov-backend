@@ -198,6 +198,22 @@ class CitizenRepository implements iCitizenRepository
             ->get();
         $applications['harvestings'] = $harvestingApplications;
 
+        //
+        $deactivationDetails = DB::table('prop_active_deactivation_requests')
+            ->join('wf_roles as r', 'r.id', '=', 'prop_active_deactivation_requests.current_role')
+            ->join('prop_properties as p', 'p.id', '=', 'prop_active_deactivation_requests.property_id')
+            ->select(
+                'prop_active_deactivation_requests.id as application_id',
+                // 'prop_active_deactivation_requests.application_no',
+                'prop_active_deactivation_requests.apply_date',
+                'p.holding_no',
+                'r.role_name as pending_at',
+                'prop_active_deactivation_requests.workflow_id'
+            )
+            ->where('prop_active_deactivation_requests.emp_detail_id', $userId)
+            ->get();
+        $applications['deactivation'] = $deactivationDetails;
+
         return collect($applications);
     }
 

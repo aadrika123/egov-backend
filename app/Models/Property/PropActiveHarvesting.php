@@ -45,7 +45,7 @@ class PropActiveHarvesting extends Model
             );
     }
 
-    public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId, $citizenId)
+    public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId)
     {
 
         $waterHaravesting = new PropActiveHarvesting();
@@ -55,20 +55,21 @@ class PropActiveHarvesting extends Model
         $waterHaravesting->workflow_id = $ulbWorkflowId->id;
         $waterHaravesting->current_role = collect($initiatorRoleId)->first()->role_id;
         $waterHaravesting->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
+        $waterHaravesting->last_role_id = collect($initiatorRoleId)->first()->role_id;
         $waterHaravesting->finisher_role_id = collect($finisherRoleId)->first()->role_id;
-        $waterHaravesting->citizen_id = $citizenId ?? null;
-        $waterHaravesting->user_id = $userId ?? null;
+        $waterHaravesting->user_id = $userId;
         $waterHaravesting->ulb_id = $request->ulbId;
-        $waterHaravesting->save();
+        return $waterHaravesting;
+        // $waterHaravesting->save();
 
-        $harvestingNo = $this->harvestingNo($waterHaravesting->id);
+        // $harvestingNo = $this->harvestingNo($waterHaravesting->id);
 
-        PropActiveHarvesting::where('id', $waterHaravesting->id)
-            ->update(['application_no' => $harvestingNo]);
+        // PropActiveHarvesting::where('id', $waterHaravesting->id)
+        //     ->update(['application_no' => $harvestingNo]);
 
-        $waterHaravestingDtl = PropActiveHarvesting::where('id', $waterHaravesting->id)
-            ->first();
-        return $waterHaravestingDtl;
+        // $waterHaravestingDtl = PropActiveHarvesting::where('id', $waterHaravesting->id)
+        //     ->first();
+        // return $waterHaravestingDtl;
     }
 
     /**

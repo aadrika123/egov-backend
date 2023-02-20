@@ -176,9 +176,9 @@ class ObjectionController extends Controller
             if (!$details)
                 throw new Exception("Application Not Found for this id");
 
-            if ($details->objection_for == 'Assessment Error') {
-                $this->assessmentDetails($details, $req);
-            };
+            // if ($details->objection_for == 'Assessment Error') {
+            //     $this->assessmentDetails($details, $req);
+            // };
 
             // Data Array
             $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
@@ -673,6 +673,24 @@ class ObjectionController extends Controller
             $key = array_shift($document);
             $label = array_shift($document);
             $documents = collect();
+
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $item)
+                    // ->where('owner_dtl_id', $ownerId)
+                    ->first();
+
+                if ($uploadedDoc) {
+                    $response = [
+                        "uploadedDocId" => $uploadedDoc->id ?? "",
+                        "documentCode" => $item,
+                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
+                        "docPath" => $uploadedDoc->doc_path ?? "",
+                        "verifyStatus" => $uploadedDoc->verify_status ?? "",
+                        "remarks" => $uploadedDoc->remarks ?? "",
+                    ];
+                    $documents->push($response);
+                }
+            });
 
             $reqDoc['docType'] = $key;
             $reqDoc['docName'] = substr($label, 1, -1);
