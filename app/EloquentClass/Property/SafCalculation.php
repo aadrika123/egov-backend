@@ -276,14 +276,14 @@ class SafCalculation
     public function readCapitalValueRate()
     {
         $readFloors = $this->_floors;
-        // Capital Value Rate
-        $readPropertyType = $this->_propertyDetails['propertyType'] == 1 ? 1 : 2;
-        $col1 = Config::get("PropertyConstaint.CIRCALE-RATE-USAGE.$readPropertyType");
 
+        // Capital Value Rate
         $readRoadType = $this->_readRoadType[$this->_effectiveDateRule3];
         $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$this->_effectiveDateRule3.$readRoadType");
 
-        $capitalValue = collect($readFloors)->map(function ($readfloor) use ($col1, $col3) {
+        $capitalValue = collect($readFloors)->map(function ($readfloor) use ($col3) {
+            $readFloorType = $readfloor['useType'] == 1 ? 1 : 2;
+            $col1 = Config::get("PropertyConstaint.CIRCALE-RATE-USAGE.$readFloorType");
 
             $readConstructionType = $readfloor['constructionType'];
             $col2 = Config::get("PropertyConstaint.CIRCALE-RATE-PROP.$this->_effectiveDateRule3.$readConstructionType");
@@ -1101,7 +1101,7 @@ class SafCalculation
 
         if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  == 'Female' || $ownerDetails['gender'] == 'Transgender' || $years >= $seniorCitizen) {
             $rebate += $speciallyAbledRebatePerc;
-            $specialRebateAmt = roundFigure(($totalDemand * $speciallyAbledRebatePerc) / 100);
+            $specialRebateAmt = roundFigure(($this->_GRID['demand']['totalTax'] * $speciallyAbledRebatePerc) / 100);
             array_push($rebates, [
                 "rebateTypeId" => $this->_speciallyAbledRebateID,
                 "rebateType" => "speciallyAbledRebate",

@@ -286,8 +286,7 @@ class WaterApplication extends Model
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             ->where('water_applications.status', true)
-            ->whereBetween('water_applications.apply_date', [$req['refStartTime'], $req['refEndTime']])
-            ->get();
+            ->whereBetween('water_applications.apply_date', [$req['refStartTime'], $req['refEndTime']]);
     }
 
 

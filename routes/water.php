@@ -79,6 +79,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/generate-demand-receiep', 'generateDemandPaymentReceipt');                // Consumer
 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
+        Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');
     });
 
     /**
@@ -107,6 +108,7 @@ Route::controller(WaterApplication::class)->group(function () {
     Route::post('payment-recipt', 'paymentRecipt');                                                     //15
     Route::post('cargeCal', 'calWaterConCharge');                                                       //16
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //17
+    Route::post('payment-water', 'paymentWater');
 });
 Route::controller(WaterConsumer::class)->group(function () {
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18        

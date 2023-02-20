@@ -1507,7 +1507,9 @@ class NewConnectionController extends Controller
                 "refEndTime" => date($reqDate)
             ];
             #application Details according to date
-            $refApplications = $mWaterApplication->getapplicationByDate($refTimeDate);
+            $refApplications = $mWaterApplication->getapplicationByDate($refTimeDate)
+            ->where('water_applications.user_id',authUser()->id)
+            ->get();
             # Final Data to return
             $returnValue = collect($refApplications)->map(function ($value, $key) use ($mWaterConnectionCharge) {
                 # calculation details
@@ -1578,7 +1580,7 @@ class NewConnectionController extends Controller
                         "refStartTime" => Carbon::parse($request->fromDate)->format('Y-m-d'),
                         "refEndTime" => Carbon::parse($request->toDate)->format('Y-m-d')
                     ];
-                    $refData = $mWaterApplicant->getapplicationByDate($refTimeDate);
+                    $refData = $mWaterApplicant->getapplicationByDate($refTimeDate)->get();
                     $returnData = collect($refData)->map(function ($value) use ($roleId) {
                         if ($value['current_role'] == $roleId) {
                             return $value;

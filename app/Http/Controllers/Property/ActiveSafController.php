@@ -1778,11 +1778,14 @@ class ActiveSafController extends Controller
     {
         $req->validate([
             "safId" => "required|numeric",
-            "imagePath" => "required|array",
-            "imagePath.*" => "image|mimes:jpeg,jpg,png,gif",
-            "directionType" => "required|array",
-            "longitude" => "required",
-            "latitude" => "required"
+            "imagePath" => "required|array|min:3|max:3",
+            "imagePath.*" => "required|image|mimes:jpeg,jpg,png,gif",
+            "directionType" => "required|array|min:3|max:3",
+            "directionType.*" => "required|In:Left,Right,Front",
+            "longitude" => "required|array|min:3|max:3",
+            "longitude.*" => "required|numeric",
+            "latitude" => "required|array|min:3|max:3",
+            "longitude.*" => "required|numeric"
         ]);
         try {
             $docUpload = new DocUpload;
@@ -1801,8 +1804,8 @@ class ActiveSafController extends Controller
                 $geoTagging->saf_id = $req->safId;
                 $geoTagging->image_path = $imageName;
                 $geoTagging->direction_type = $directionTypes[$key];
-                $geoTagging->longitude = $longitude;
-                $geoTagging->latitude = $latitude;
+                $geoTagging->longitude = $longitude[$key];
+                $geoTagging->latitude = $latitude[$key];
                 $geoTagging->relative_path = $relativePath;
                 $geoTagging->user_id = authUser()->id;
                 $geoTagging->save();
