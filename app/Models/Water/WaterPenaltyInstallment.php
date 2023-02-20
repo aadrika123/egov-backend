@@ -46,6 +46,20 @@ class WaterPenaltyInstallment extends Model
      */
     public function getPenaltyByApplicationId($applicationId)
     {
-        return WaterPenaltyInstallment::where('apply_connection_id',$applicationId);
+        return WaterPenaltyInstallment::where('apply_connection_id', $applicationId)
+            ->where('status', 1);
+    }
+
+
+    /**
+     * | Deactivate the water penalty charges
+     * | @param request
+     */
+    public function deactivatePenalty($applicationId)
+    {
+        WaterPenaltyInstallment::where('apply_connection_id', $applicationId)
+            ->update([
+                'status' => false
+            ]);
     }
 }

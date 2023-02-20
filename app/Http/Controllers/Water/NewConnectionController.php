@@ -495,14 +495,15 @@ class NewConnectionController extends Controller
             $levelRoles = Config::get('waterConstaint.ROLE-LABEL');
             $refApplicationId =  $req->applicatonId;
 
-            DB::beginTransaction();
             $refWaterApplications = $mWaterApplication->getApplicationById($refApplicationId)->firstorFail();
-            // if ($refWaterApplications->current_role == $levelRoles['BO']) {
-            //     $mWaterApplication->editWaterApplication($req);
-            // }
-            // if ($refWaterApplications->payment_status == true) {
-            //     throw new Exception("Payment has been made Water Cannot be Modified!");
-            // }
+            $this->checkEditParameters($req, $refWaterApplications);
+
+
+            DB::beginTransaction();
+            if ($refWaterApplications->current_role == $levelRoles['BO']) {
+                $this->boApplicationEdit($req, $refWaterApplications, $mWaterApplication);
+                return responseMsgs(true, "application Modified!", "", "", "01", "ms", "POST", "");
+            }
 
             $refConnectionCharges = $mWaterConnectionCharge->getWaterchargesById($refApplicationId)->firstOrFail();
             $Waterowner = $mWaterApplicant->getOwnerList($refApplicationId)->get();
@@ -510,10 +511,12 @@ class NewConnectionController extends Controller
                 return $value['id'];
             });
             $penaltyInstallment = $mWaterPenaltyInstallment->getPenaltyByApplicationId($refApplicationId)->get();
-            $refPenaltyInstallment = collect($penaltyInstallment)->map(function ($value) {
-                return  $value['id'];
-            });
-
+            $checkPenalty = collect($penaltyInstallment)->first()->values();
+            if ($checkPenalty) {
+                $refPenaltyInstallment = collect($penaltyInstallment)->map(function ($value) {
+                    return  $value['id'];
+                });
+            }
             $mwaterAudit->saveUpdatedDetailsId($refWaterApplications->id, $refWaterowner, $refConnectionCharges->id, $refPenaltyInstallment);
             $this->deactivateAndUpdateWater($refWaterApplications->id);
             $repNewConnectionRepository->store($req); // here<-----------------------
@@ -524,6 +527,46 @@ class NewConnectionController extends Controller
             return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         }
     }
+
+    /**
+     * | Check the Water parameter 
+     * | @param req
+        | 01<- 
+     */
+    public function checkEditParameters($request, $refApplication)
+    {
+        $online = Config::get('payment-constants.ONLINE');
+        switch ($refApplication) {
+            case ($refApplication->apply_from == $online):
+                if ($refApplication->current_role) {
+                    throw new Exception("Application is already in Workflow!");
+                }
+                if ($refApplication->user_id != authUser()->id) {
+                    throw new Exception("You are not the Autherised Person!");
+                }
+                if ($refApplication->payment_status == true) {
+                    throw new Exception("Payment has been made Water Cannot be Modified!");
+                }
+                break;
+        }
+    }
+
+    /**
+     * | Edit the water aplication by Bo
+     * | @param req
+     * | @param refApplication
+    | 01<-
+     */
+    public function boApplicationEdit($req, $refApplication, $mWaterApplication)
+    {
+        switch ($refApplication) {
+            case ($refApplication->current_role != authUser()->id):
+                throw new Exception("You Are Not the Valid Person!");
+                break;
+        }
+        $mWaterApplication->editWaterApplication($req);
+    }
+
 
     /**
      * | Deactivate the Water Deatils
@@ -1508,8 +1551,8 @@ class NewConnectionController extends Controller
             ];
             #application Details according to date
             $refApplications = $mWaterApplication->getapplicationByDate($refTimeDate)
-            ->where('water_applications.user_id',authUser()->id)
-            ->get();
+                ->where('water_applications.user_id', authUser()->id)
+                ->get();
             # Final Data to return
             $returnValue = collect($refApplications)->map(function ($value, $key) use ($mWaterConnectionCharge) {
                 # calculation details

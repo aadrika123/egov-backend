@@ -6,6 +6,7 @@ use App\EloquentModels\Common\ModelWard;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropTransaction;
+use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfRole;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
@@ -165,6 +166,7 @@ class Report implements IReport
                     "total"=>$total,
                     "numberOfPages"=>$numberOfPages
                 ];
+                $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
                 return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
@@ -440,6 +442,7 @@ class Report implements IReport
                 "total"=>$total,
                 "numberOfPages"=>$numberOfPages
             ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
@@ -481,7 +484,7 @@ class Report implements IReport
                 $ulbId = $request->ulbId;
             }
 
-            DB::enableQueryLog();
+            // DB::enableQueryLog();
             $data = PropProperty::select(
                 DB::raw("ulb_ward_masters.ward_name as ward_no,
                         prop_properties.holding_no,
@@ -665,7 +668,7 @@ class Report implements IReport
                     "total"=>$total,
                     "numberOfPages"=>$numberOfPages
                 ];
-                
+                $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
                 return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
@@ -723,7 +726,7 @@ class Report implements IReport
                     })
                 )
                 ->GET();
-                // dd(DB::getQueryLog());
+                $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
                 return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
@@ -822,9 +825,204 @@ class Report implements IReport
                 "total"=>$total,
                 "numberOfPages"=>$numberOfPages
             ];
-            // dd(DB::getQueryLog());
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function userWiseWardWireLevelPending(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;            
+            $roleId = $roleId2 = $userId = null;
+            $mWardPermission = collect([]);
+            
+            $safWorkFlow = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            if($request->roleId)
+            {
+                $roleId = $request->roleId;
+            }
+            if($request->userId)
+            {
+                $userId = $request->userId; 
+                $roleId2 = ($this->_common->getUserRoll($userId,$ulbId,$safWorkFlow))->role_id??0;
+            }
+            if(($request->roleId && $request->userId) && ($roleId!=$roleId2))
+            {
+                throw new Exception("Invalid RoleId Pass");
+            }
+            $roleId = $roleId2?$roleId2:$roleId;
+            if(!in_array($roleId,[11,8]))
+            {
+                $mWfWardUser = new WfWardUser();
+                $mWardPermission = $mWfWardUser->getWardsByUserId($userId);
+            }
+           
+            $mWardIds = $mWardPermission->implode("id",",");
+            $mWardIds = explode(',',($mWardIds?$mWardIds:"0"));
+            // DB::enableQueryLog();
+            $data = UlbWardMaster::SELECT(
+                    DB::RAW(" DISTINCT(ward_name) as ward_no, COUNT(prop_active_safs.id) AS total")
+            )
+            ->LEFTJOIN("prop_active_safs","ulb_ward_masters.id","prop_active_safs.ward_mstr_id");
+            if($roleId==8)
+            {
+                $data = $data->LEFTJOIN("wf_roles","wf_roles.id","prop_active_safs.current_role")
+                        ->WHERENOTNULL("prop_active_safs.user_id")
+                        ->WHERE(function($where){
+                            $where->WHERE("prop_active_safs.payment_status","=",0)
+                            ->ORWHERENULL("prop_active_safs.payment_status");
+                        });
+            }
+            else
+            {
+                $data = $data->JOIN("wf_roles","wf_roles.id","prop_active_safs.current_role") 
+                        ->WHERE("wf_roles.id",$roleId);
+            }
+            if(!in_array($roleId,[11,8]) && $userId)
+            {
+                $data = $data->WHEREIN("prop_active_safs.ward_mstr_id",$mWardIds);
+            }
+            $data = $data->WHERE("prop_active_safs.ulb_id",$ulbId);
+            $data = $data->groupBy(["ward_name"]);
+
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total/$perPage);                
+            $list=[
+                "perPage"=>$perPage,
+                "page"=>$page,
+                "items"=>$items,
+                "total"=>$total,
+                "numberOfPages"=>$numberOfPages
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+
+    public function safSamFamGeotagging(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;  
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $wardId = null;
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            $where = " WHERE status = 1 AND  ulb_id = $ulbId
+                        AND created_at::date BETWEEN '$fromDate' AND '$uptoDate'";
+            if($wardId)
+            {
+                $where .= " AND ward_mstr_id = $wardId ";
+            }            
+            $sql ="
+                WITH saf AS (
+                    SELECT 
+                    distinct saf.* 
+                    FROM(
+                            (
+                                select prop_active_safs.id as id, 
+                                    prop_active_safs.ward_mstr_id,
+                                    prop_active_safs.parked
+                                from prop_active_safs                                     
+                                $where
+                            )
+                            UNION (    
+                                select prop_safs.id as id, 
+                                    prop_safs.ward_mstr_id,
+                                    prop_safs.parked
+                                from prop_safs
+                                $where
+                
+                            )
+                            UNION (    
+                                select prop_rejected_safs.id as id, 
+                                    prop_rejected_safs.ward_mstr_id,
+                                    prop_rejected_safs.parked
+                                from prop_rejected_safs
+                                $where
+                            )
+                    ) saf
+                    join prop_transactions on prop_transactions.saf_id = saf.id 
+                    and prop_transactions.status in(1,2)
+                    GROUP BY saf.id,ward_mstr_id,parked
+                ),
+                memos AS (
+                        select prop_saf_memo_dtls.saf_id,
+                            prop_saf_memo_dtls.memo_type,
+                            prop_saf_memo_dtls.created_at::date as created_at
+                        FROM prop_saf_memo_dtls
+                        JOIN saf ON saf.id = prop_saf_memo_dtls.saf_id
+                        
+                ),
+                geotaging as (
+                    select prop_saf_geotag_uploads.saf_id
+                    from prop_saf_geotag_uploads
+                    join saf on saf.id = prop_saf_geotag_uploads.saf_id
+                    where prop_saf_geotag_uploads.status = 1
+                    group by prop_saf_geotag_uploads.saf_id
+                )
+                
+                select 
+                    count(distinct(saf.id)) total_saf,
+                    count(distinct( case when memos.memo_type = 'SAM' then memos.saf_id else null end)) as total_sam,
+                    count( distinct(case when memos.memo_type = 'FAM' then memos.saf_id else null end)) as total_fam,
+                    count( distinct(case when saf.parked = true then memos.saf_id else null end)) as total_btc,
+                    count(distinct(geotaging.saf_id)) total_geotaging,
+                    COALESCE(count(distinct(saf.id)) -  count(distinct( case when memos.memo_type = 'SAM' then memos.saf_id else null end))) as pending_sam,
+                    COALESCE(count(distinct(saf.id)) -  count(distinct( case when memos.memo_type = 'FAM' then memos.saf_id else null end))) as pending_fam,
+                    ward_name as ward_no
+                    
+                from saf
+                join ulb_ward_masters on ulb_ward_masters.id = saf.ward_mstr_id
+                LEFT JOIN memos ON memos.saf_id = saf.id
+                LEFT JOIN geotaging ON geotaging.saf_id = saf.id
+                group by ward_name
+                ORDER BY  ward_name
+            ";
+            $data = DB::select($sql);
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+
+            return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
+        } 
         catch(Exception $e)
         {
             return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);

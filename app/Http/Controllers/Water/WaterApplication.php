@@ -9,6 +9,7 @@ use App\Models\Payment\TempTransaction;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication as WaterWaterApplication;
 use App\Models\Water\WaterChequeDtl;
+use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterTran;
@@ -72,35 +73,49 @@ class WaterApplication extends Controller
         return $this->Repository->calWaterConCharge($request);
     }
 
+
+    /**
+     * | Consumer Demand Payment 
+     * | Offline Payment for the Monthely Payment
+     * | @param req
+     * | @var 
+     * | @return
+     */
     public function paymentWater(Request $req)
     {
+        $req->validate([
+            'id' => 'required',
+            'transactionNo' => 'required'
+        ]);
         try {
-            // Variable Assignments
+            # Variable Assignments
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $todayDate = Carbon::now();
+            $mWaterConsumer = new WaterConsumer();
             $waterConsumerDemand = new WaterConsumerDemand();
             $idGeneration = new IdGeneration;
             $waterTran = new WaterTran();
+            $refWaterConsumer = $mWaterConsumer->getConsumerDetailById($req->id);
             $userId = $req['userId'];
             if (!$userId)
                 $userId = auth()->user()->id ?? 0;                                      // Authenticated user or Ghost User
 
             $tranNo = $req['transactionNo'];
-            // Derivative Assignments
+            # Derivative Assignments
             if (!$tranNo)
                 $tranNo = $idGeneration->generateTransactionNo();
-            $demands = $waterConsumerDemand->getConsumerDemand($req['id']);
+            $demands = $waterConsumerDemand->getConsumerDemand($req->id);
 
             if (!$demands || collect($demands)->isEmpty())
-                throw new Exception("Demand Not Available for Payment");
-            // Property Transactions
+                throw new Exception("Demand Not Available for Payment!");
+            # Water Transactions
             $req->merge([
-                'userId' => $userId,
+                'userId'    => $userId,
                 'todayDate' => $todayDate->format('Y-m-d'),
-                'tranNo' => $tranNo
+                'tranNo'    => $tranNo
             ]);
             DB::beginTransaction();
-            $waterTrans = $waterTran->waterTransaction($req, $demands);
+            $waterTrans = $waterTran->waterTransaction($req, $refWaterConsumer);
 
             if (in_array($req['paymentMode'], $offlinePaymentModes)) {
                 $req->merge([
@@ -116,9 +131,9 @@ class WaterApplication extends Controller
                 $demand->save();
 
                 $waterTranDetail = new WaterTranDetail();
-                $waterTranDetail->tran_id = $waterTrans['id'];
-                $waterTranDetail->saf_demand_id = $demand['id'];
-                $waterTranDetail->total_demand = $demand['amount'];
+                $waterTranDetail->tran_id       = $waterTrans['id'];
+                $waterTranDetail->demand_id     = $demand['id'];
+                $waterTranDetail->total_demand  = $demand['balance_amount'];
                 $waterTranDetail->save();
             }
 
@@ -129,7 +144,7 @@ class WaterApplication extends Controller
 
             // Replication Prop Rebates Penalties
             $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-            $rebatePenalties = $mWaterPenaltyInstallment->getPenalRebatesBySafId($req['id']);
+            $rebatePenalties = $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->id)->get();
 
             collect($rebatePenalties)->map(function ($rebatePenalty) use ($waterTrans) {
                 $replicate = $rebatePenalty->replicate();

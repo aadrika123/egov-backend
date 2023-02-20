@@ -28,6 +28,7 @@ class PropSafMemoDtl extends Model
             'holding_no' => $req->holding_no,
             'prop_id' => $req->prop_id ?? null,
             'ward_mstr_id' => $req->ward_id,
+            'pt_no' => $req->pt_no ?? null
         ];
         PropSafMemoDtl::create($metaReqs);
     }
