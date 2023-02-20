@@ -752,7 +752,7 @@ class ActiveSafController extends Controller
         try {
             // Variable Assigments
             $senderRoleId = $request->senderRoleId;
-            $saf = PropActiveSaf::find($request->applicationId);
+            $saf = PropActiveSaf::findOrFail($request->applicationId);
             $mWfMstr = new WfWorkflow();
             $track = new WorkflowTrack();
             $samHoldingDtls = array();
@@ -796,11 +796,13 @@ class ActiveSafController extends Controller
         $mPropMemoDtl = new PropSafMemoDtl();
         $todayDate = Carbon::now()->format('Y-m-d');
         $fYear = calculateFYear($todayDate);
+        $idGeneration = new IdGeneration;
+        $ptNo = $idGeneration->generatePtNo(true, $saf->ulb_id);
 
         // Derivative Assignments
         $demand = $mPropSafDemand->getFirstDemandByFyearSafId($saf->id, $fYear);
         if (collect($demand)->isEmpty())
-            throw new Exception("Demand Not Available for the Current Year");
+            throw new Exception("Demand Not Available for the Current Year to Generate SAM");
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
                 if ($saf->doc_upload_status == 0)
@@ -811,16 +813,13 @@ class ActiveSafController extends Controller
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
 
-                if ($wfMstrId != $reAssessWfMstrId) {
-                    $holdingNo = 'HOL-SAF-' . $saf->id;
-                    $saf->holding_no = $holdingNo;
-                }
+                $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
 
-                $samNo = "SAM-" . $saf->id;
+                $samNo = "SAM-" . $saf->id;                 // Generate SAM No
                 $mergedDemand = array_merge($demand->toArray(), [
                     'memo_type' => 'SAM',
                     'sam_no' => $samNo,
-                    'holding_no' => $holdingNo,
+                    'pt_no' => $ptNo,
                     'ward_id' => $saf->ward_mstr_id
                 ]);
                 $memoReqs = new Request($mergedDemand);
@@ -1005,13 +1004,14 @@ class ActiveSafController extends Controller
                 if (collect($demand)->isEmpty())
                     $demand = $mPropSafDemand->getFirstDemandByFyearSafId($safId, $currentFinYear);
                 if (collect($demand)->isEmpty())
-                    throw new Exception("Demand Not Available for the Current Year");
+                    throw new Exception("Demand Not Available for the Current Year to Generate FAM");
                 // SAF Application replication
                 $samNo = "FAM-" . $safId;
                 $mergedDemand = array_merge($demand->toArray(), [
                     'memo_type' => 'FAM',
                     'sam_no' => $samNo,
                     'holding_no' => $activeSaf->new_holding_no ?? $activeSaf->holding_no,
+                    'pt_no' => $activeSaf->pt_no,
                     'ward_id' => $activeSaf->ward_mstr_id,
                     'prop_id' => $propId,
                     'saf_id' => $safId
