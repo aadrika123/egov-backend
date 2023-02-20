@@ -79,6 +79,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/generate-demand-receiep', 'generateDemandPaymentReceipt');                // Consumer
 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
+        Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');
     });
 
     /**

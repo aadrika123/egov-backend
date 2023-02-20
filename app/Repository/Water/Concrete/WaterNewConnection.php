@@ -229,7 +229,7 @@ class WaterNewConnection implements IWaterNewConnection
             if (!$RazorPayRequest) {
                 throw new Exception("Data Not Found");
             }
-            if ($RazorPayRequest->payment_from == "New Connection") {
+            if (in_array($RazorPayRequest->payment_from ,["New Connection","Site Inspection"])) {
                 $application = WaterApplication::find($args["id"]);
                 $cahges = 0;
                 $id = explode(",", $RazorPayRequest->demand_from_upto);
