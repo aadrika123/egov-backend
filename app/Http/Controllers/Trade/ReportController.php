@@ -9,7 +9,7 @@ use App\Traits\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class ReportControlle extends Controller
+class ReportController extends Controller
 {
     use Auth;    
     
@@ -29,6 +29,10 @@ class ReportControlle extends Controller
                 "fromDate" => "required|date|date_format:Y-m-d",
                 "uptoDate" => "required|date|date_format:Y-m-d",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "paymentMode" => "nullable",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage"=>"nullable|digits_between:1,9223372036854775807",
             ]
         );
         $request->request->add(["metaData"=>["tr1.1",1.1,null,$request->getMethod(),null,]]);

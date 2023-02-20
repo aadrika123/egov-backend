@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\Trade\ReportControlle;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Trade\TradeApplication;
 use App\Http\Controllers\Trade\TradeCitizenController;
 use App\Http\Controllers\Trade\TradeNoticeController;
+use App\Http\Controllers\Trade\ReportController;
 
 /**
  * | Created On-06-10-2022 
@@ -160,6 +162,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         // Route::post('list-surrender', 'surrenderList');
         Route::post('application/surrenderable-list', 'surrenderList');
+    });
+});
+
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+    Route::controller(ReportController::class)->group(function () {
+        Route::post("application/collection-reports", "CollectionReports");
     });
 });
 
