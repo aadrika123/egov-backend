@@ -93,24 +93,20 @@ class WaterTran extends Model
     }
 
     /**
-     * | Post Saf Transaction
+     * | Post Water Transaction
      */
-    public function waterTransaction($req, $demands)
+    public function waterTransaction($req, $consumer)
     {
         $waterTrans = new WaterTran();
-        $waterTrans->related_id = $req['id'];
-        $waterTrans->amount = $req['amount'];
-        $waterTrans->tran_type = 'Demand Collection';
-        $waterTrans->tran_date = $req['todayDate'];
-        $waterTrans->tran_no = $req['tranNo'];
-        $waterTrans->payment_mode = $req['paymentMode'];
-        $waterTrans->user_id = $req['userId'];
-        $waterTrans->ulb_id = $req['ulbId'];
-        $waterTrans->from_fyear = collect($demands)->last()['fyear'];
-        $waterTrans->to_fyear = collect($demands)->first()['fyear'];
-        $waterTrans->from_qtr = collect($demands)->last()['qtr'];
-        $waterTrans->to_qtr = collect($demands)->first()['qtr'];
-        $waterTrans->demand_amt = collect($demands)->sum('amount');
+        $waterTrans->related_id     = $req['id'];
+        $waterTrans->amount         = $req['amount'];
+        $waterTrans->tran_type      = 'Demand Collection';
+        $waterTrans->tran_date      = $req['todayDate'];
+        $waterTrans->tran_no        = $req['tranNo'];
+        $waterTrans->payment_mode   = $req['paymentMode'];
+        $waterTrans->emp_dtl_id     = $req['userId'];
+        $waterTrans->ulb_id         = $req['ulbId'];
+        $waterTrans->ward_id        = $consumer['ward_mstr_id'];
         $waterTrans->save();
 
         return [

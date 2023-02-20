@@ -322,10 +322,9 @@ class WaterPaymentController extends Controller
 
             # if penalty Charges
             $individulePenaltyCharges = $mWaterPenaltyInstallment->getPenaltyByApplicationId($transactionDetails->related_id)
-            ->where('paid_status',1)    
-            ->get();
-           return  $totalPenaltyAmount=collect($individulePenaltyCharges)->map(function($value)
-            {
+                ->where('paid_status', 1)
+                ->get();
+            return  $totalPenaltyAmount = collect($individulePenaltyCharges)->map(function ($value) {
                 return $value['balance_amount'];
             })->sum();
 
@@ -409,6 +408,7 @@ class WaterPaymentController extends Controller
                 ->firstOrFail();
             $oldChargeAmount = $applicationCharge['amount'];
 
+            DB::beginTransaction();
             # Generating Demand for new InspectionData
             $newConnectionCharges = objToArray($mWaterNewConnection->calWaterConCharge($request));
             if (!$newConnectionCharges['status']) {
@@ -426,9 +426,11 @@ class WaterPaymentController extends Controller
                 $this->adjustmentInConnection($request, $newConnectionCharges, $installment, $waterDetails);
             }
 
-            $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId);
+            $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId, $waterDetails);
+            DB::commit();
             return responseMsgs(true, "Site Inspection Done!", $request->applicationId, "", "01", "ms", "POST", "");
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
@@ -704,5 +706,127 @@ class WaterPaymentController extends Controller
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), $args);
         }
+    }
+
+
+    /**
+     * | Consumer Demand Payment 
+     * | Offline Payment for the Monthely Payment
+     * | @param req
+     * | @var 
+     * | @return
+        | Recheck
+     */
+    public function paymentWater(Request $req)
+    {
+        $req->validate([
+            'id' => 'required'
+        ]);
+        try {
+            # Variable Assignments
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+            $todayDate = Carbon::now();
+            $mWaterApplication = new WaterApplication();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
+            $idGeneration = new IdGeneration;
+            $waterTran = new WaterTran();
+            $userId = auth()->user()->id;                                      // Authenticated user or Ghost User
+            $refWaterApplication = $mWaterApplication->getApplicationById($req->id);
+
+            # Derivative Assignments
+            $tranNo = $idGeneration->generateTransactionNo();
+            $charges = $mWaterConnectionCharge->getWaterchargesById($req->id)->get(); // <------- here()
+
+            if (!$charges || collect($charges)->isEmpty())
+                throw new Exception("Connection Not Available for Payment!");
+            # Water Transactions
+            $req->merge([
+                'userId'    => $userId,
+                'todayDate' => $todayDate->format('Y-m-d'),
+                'tranNo'    => $tranNo
+            ]);
+            DB::beginTransaction();
+            $waterTrans = $waterTran->waterTransaction($req, $refWaterApplication);
+
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $req->merge([
+                    'chequeDate' => $req['chequeDate'],
+                    'tranId' => $waterTrans['id']
+                ]);
+                $this->postOtherPaymentModes($req);
+            }
+
+            // Reflect on Prop Tran Details
+            foreach ($charges as $charges) {
+                $charges->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $charges->save();
+
+                $waterTranDetail = new WaterTranDetail();
+                $waterTranDetail->tran_id       = $waterTrans['id'];
+                $waterTranDetail->demand_id     = $charges['id'];
+                $waterTranDetail->total_demand  = $charges['balance_amount'];
+                $waterTranDetail->save();
+            }
+
+            // Update SAF Payment Status
+            $activeSaf = WaterApplication::find($req['id']);
+            $activeSaf->payment_status = 1;
+            $activeSaf->save();
+
+            // Replication Prop Rebates Penalties
+            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+            $rebatePenalties = $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->id)->get();
+
+            collect($rebatePenalties)->map(function ($rebatePenalty) use ($mWaterPenaltyInstallment) {
+                $mWaterPenaltyInstallment->updatePenaltyPayment($req); // <----- here
+            });
+
+            DB::commit();
+            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Post Other Payment Modes for Cheque,DD,Neft
+     */
+    public function postOtherPaymentModes($req)
+    {
+        $cash = Config::get('payment-constants.PAYMENT_MODE.3');
+        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $mTempTransaction = new TempTransaction();
+        if ($req['paymentMode'] != $cash) {
+            $mPropChequeDtl = new WaterChequeDtl();
+            $chequeReqs = [
+                'user_id' => $req['userId'],
+                'prop_id' => $req['id'],
+                'transaction_id' => $req['tranId'],
+                'cheque_date' => $req['chequeDate'],
+                'bank_name' => $req['bankName'],
+                'branch_name' => $req['branchName'],
+                'cheque_no' => $req['chequeNo']
+            ];
+
+            $mPropChequeDtl->postChequeDtl($chequeReqs);
+        }
+
+        $tranReqs = [
+            'transaction_id' => $req['tranId'],
+            'application_id' => $req['id'],
+            'module_id' => $moduleId,
+            'workflow_id' => $req['workflowId'],
+            'transaction_no' => $req['tranNo'],
+            'application_no' => $req->applicationNo,
+            'amount' => $req['amount'],
+            'payment_mode' => $req['paymentMode'],
+            'cheque_dd_no' => $req['chequeNo'],
+            'bank_name' => $req['bankName'],
+            'tran_date' => $req['todayDate'],
+            'user_id' => $req['userId'],
+            'ulb_id' => $req['ulbId']
+        ];
+        $mTempTransaction->tempTransaction($tranReqs);
     }
 }
