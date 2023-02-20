@@ -138,4 +138,18 @@ class ReportController extends Controller
         $request->request->add(["metaData"=>["pr4.2.1.1",1.1,null,$request->getMethod(),null,]]);
         return $this->Repository->userWiseWardWireLevelPending($request);
     }
+
+    public function safSamFamGeotagging(Request $request)
+    {
+        $request->validate(
+            [
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData"=>["pr5.1",1.1,null,$request->getMethod(),null,]]);
+        return $this->Repository->safSamFamGeotagging($request);
+    }
 }

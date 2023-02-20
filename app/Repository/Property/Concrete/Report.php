@@ -917,4 +917,113 @@ class Report implements IReport
             return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
         }
     }
+
+
+    public function safSamFamGeotagging(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;  
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $wardId = null;
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            $where = " WHERE status = 1 AND  ulb_id = $ulbId
+                        AND created_at::date BETWEEN '$fromDate' AND '$uptoDate'";
+            if($wardId)
+            {
+                $where .= " AND ward_mstr_id = $wardId ";
+            }
+            $sql ="
+                WITH saf AS (
+                    SELECT 
+                    distinct saf.* 
+                    FROM(
+                            (
+                                select prop_active_safs.id as id, 
+                                    prop_active_safs.ward_mstr_id,
+                                    prop_active_safs.parked
+                                from prop_active_safs                                     
+                                $where
+                            )
+                            UNION (    
+                                select prop_safs.id as id, 
+                                    prop_safs.ward_mstr_id,
+                                    prop_safs.parked
+                                from prop_safs
+                                $where
+                
+                            )
+                            UNION (    
+                                select prop_rejected_safs.id as id, 
+                                    prop_rejected_safs.ward_mstr_id,
+                                    prop_rejected_safs.parked
+                                from prop_rejected_safs
+                                $where
+                            )
+                    ) saf
+                    join prop_transactions on prop_transactions.saf_id = saf.id 
+                    and prop_transactions.status in(1,2)
+                    GROUP BY saf.id,ward_mstr_id,parked
+                ),
+                memos AS (
+                        select prop_saf_memo_dtls.saf_id,
+                            prop_saf_memo_dtls.memo_type,
+                            prop_saf_memo_dtls.created_at::date as created_at
+                        FROM prop_saf_memo_dtls
+                        JOIN saf ON saf.id = prop_saf_memo_dtls.saf_id
+                        
+                ),
+                geotaging as (
+                    select prop_saf_geotag_uploads.saf_id
+                    from prop_saf_geotag_uploads
+                    join saf on saf.id = prop_saf_geotag_uploads.saf_id
+                    where prop_saf_geotag_uploads.status = 1
+                    group by prop_saf_geotag_uploads.saf_id
+                )
+                
+                select 
+                    count(distinct(saf.id)) total_saf,
+                    count(distinct( case when memos.memo_type = 'SAM' then memos.saf_id else null end)) as total_sam,
+                    count( distinct(case when memos.memo_type = 'FAM' then memos.saf_id else null end)) as total_fam,
+                    count( distinct(case when saf.parked = true then memos.saf_id else null end)) as total_btc,
+                    count(distinct(geotaging.saf_id)) total_geotaging,
+                    COALESCE(count(distinct(saf.id)) -  count(distinct( case when memos.memo_type = 'SAM' then memos.saf_id else null end))) as pending_sam,
+                    COALESCE(count(distinct(saf.id)) -  count(distinct( case when memos.memo_type = 'FAM' then memos.saf_id else null end))) as pending_fam,
+                    ward_name as ward_no
+                    
+                from saf
+                join ulb_ward_masters on ulb_ward_masters.id = saf.ward_mstr_id
+                LEFT JOIN memos ON memos.saf_id = saf.id
+                LEFT JOIN geotaging ON geotaging.saf_id = saf.id
+                group by ward_name
+                ORDER BY  ward_name
+            ";
+            $data = DB::query($sql);
+            dd($data);
+
+            return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
+        } 
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
 }
