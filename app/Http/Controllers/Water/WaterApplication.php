@@ -12,6 +12,7 @@ use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterTran;
+use App\Models\Water\WaterTranDetail;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Repository\Water\Interfaces\IWaterNewConnection;
 use Carbon\Carbon;
@@ -114,11 +115,11 @@ class WaterApplication extends Controller
                 $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
                 $demand->save();
 
-                $propTranDtl = new PropTranDtl();
-                $propTranDtl->tran_id = $waterTrans['id'];
-                $propTranDtl->saf_demand_id = $demand['id'];
-                $propTranDtl->total_demand = $demand['amount'];
-                $propTranDtl->save();
+                $waterTranDetail = new WaterTranDetail();
+                $waterTranDetail->tran_id = $waterTrans['id'];
+                $waterTranDetail->saf_demand_id = $demand['id'];
+                $waterTranDetail->total_demand = $demand['amount'];
+                $waterTranDetail->save();
             }
 
             // Update SAF Payment Status
@@ -134,7 +135,7 @@ class WaterApplication extends Controller
                 $replicate = $rebatePenalty->replicate();
                 $replicate->setTable('prop_penaltyrebates');
                 $replicate->tran_id = $waterTrans['id'];
-                $replicate->tran_date = $this->_todayDate->format('Y-m-d');
+                $replicate->tran_date = Carbon::now()->format('Y-m-d');
                 $replicate->save();
             });
 
