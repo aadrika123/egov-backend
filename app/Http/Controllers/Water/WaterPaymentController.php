@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqPayment;
 use App\Http\Requests\Water\siteAdjustment;
 use App\MicroServices\IdGeneration;
+use App\Models\Payment\TempTransaction;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PropTransaction;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionThroughMstr;
 use App\Models\Water\WaterConnectionTypeMstr;
@@ -387,7 +389,7 @@ class WaterPaymentController extends Controller
      * | @var 
      * | @return
         | Serial No : 04
-        | Recheck
+        | Working
      */
     public function saveSitedetails(siteAdjustment $request)
     {
@@ -404,7 +406,7 @@ class WaterPaymentController extends Controller
 
             # Get the Applied Connection Charge
             $applicationCharge = $mWaterConnectionCharge->getWaterchargesById($request->applicationId)
-                ->where('charge_category', $connectionCatagory['NEW_CONNECTION'])
+                ->where('charge_category', '!=', $connectionCatagory['SITE_INSPECTON'])
                 ->firstOrFail();
             $oldChargeAmount = $applicationCharge['amount'];
 
@@ -449,7 +451,7 @@ class WaterPaymentController extends Controller
      * | @var readRoleDtls
      * | @var roleId
         | Serial No : 04.01
-        | Recheck
+        | Working
      */
     public function CheckInspectionCondition($request, $waterDetails)
     {
@@ -486,7 +488,7 @@ class WaterPaymentController extends Controller
      * | @param newConnectionCharges
      * | @param installment
         | Serial No : 04.02
-        | Recheck
+        | Working
      */
     public function adjustmentInConnection($request, $newConnectionCharges, $installment, $waterApplicationDetails)
     {
@@ -509,7 +511,8 @@ class WaterPaymentController extends Controller
         }
         # connection charges
         $request->merge([
-            'chargeCatagory' => $chargeCatagory['SITE_INSPECTON']
+            'chargeCatagory' => $chargeCatagory['SITE_INSPECTON'],
+            'ward_id' => $waterApplicationDetails['ward_id']
         ]);
         $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
         # in case of connection charge is 0
@@ -526,7 +529,7 @@ class WaterPaymentController extends Controller
      * | @var 
      * | @return 
         | Serial No : 05
-        | Recheck
+        | Recheck / Not Working
      */
     public function initiateOnlineDemandPayment(Request $request)
     {
@@ -590,7 +593,8 @@ class WaterPaymentController extends Controller
      * | Online Payment for the consumer Demand
      * | Data After the Webhook Payment / Called by the Webhook
      * | @param
-        | Recheck 
+        | Serial No : 06
+        | Recheck / Not Working
      */
     public function endOnlineDemandPayment($args)
     {
@@ -715,12 +719,14 @@ class WaterPaymentController extends Controller
      * | @param req
      * | @var 
      * | @return
-        | Recheck
+        | Serial No : 07
+        | Working
      */
-    public function paymentWater(Request $req)
+    public function offlineConnectionPayment(Request $req)
     {
         $req->validate([
-            'id' => 'required'
+            'id' => 'required',
+            'penaltyId' => 'nullable|' # Request for the Penalty Id
         ]);
         try {
             # Variable Assignments
@@ -730,12 +736,12 @@ class WaterPaymentController extends Controller
             $mWaterConnectionCharge = new WaterConnectionCharge();
             $idGeneration = new IdGeneration;
             $waterTran = new WaterTran();
-            $userId = auth()->user()->id;                                      // Authenticated user or Ghost User
+            $userId = auth()->user()->id;                                               # Authenticated user or Ghost User
             $refWaterApplication = $mWaterApplication->getApplicationById($req->id);
 
             # Derivative Assignments
             $tranNo = $idGeneration->generateTransactionNo();
-            $charges = $mWaterConnectionCharge->getWaterchargesById($req->id)->get(); // <------- here()
+            $charges = $mWaterConnectionCharge->getWaterchargesById($req->id)->get();   # get water User connectin charges
 
             if (!$charges || collect($charges)->isEmpty())
                 throw new Exception("Connection Not Available for Payment!");
@@ -773,14 +779,17 @@ class WaterPaymentController extends Controller
             $activeSaf->payment_status = 1;
             $activeSaf->save();
 
-            // Replication Prop Rebates Penalties
-            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-            $rebatePenalties = $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->id)->get();
-
-            collect($rebatePenalties)->map(function ($rebatePenalty) use ($mWaterPenaltyInstallment) {
-                $mWaterPenaltyInstallment->updatePenaltyPayment($req); // <----- here
-            });
-
+            // Readjust Water Penalties
+            if ($req->penaltyId) {
+                $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+                $rebatePenalties = $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->id)
+                    ->where('paid_status', 0)
+                    ->get();
+                $checkPenalty = collect($rebatePenalties)->first();
+                if ($checkPenalty) {
+                    $mWaterPenaltyInstallment->updatePenaltyPayment($req);  # Payment of Penalty
+                }
+            }
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -791,6 +800,7 @@ class WaterPaymentController extends Controller
 
     /**
      * | Post Other Payment Modes for Cheque,DD,Neft
+        | Serial No : 07.01
      */
     public function postOtherPaymentModes($req)
     {

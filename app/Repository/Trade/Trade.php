@@ -369,7 +369,7 @@ class Trade implements ITrade
 
     # Serial No : 01.01
     public function newLicense($refActiveLicense, $request)
-    {
+    { 
         $refActiveLicense->firm_type_id        = $request->initialBusinessDetails['firmType'];
         $refActiveLicense->firm_description    = $request->initialBusinessDetails['otherFirmType'] ?? null;
         $refActiveLicense->category_type_id    = $request->initialBusinessDetails['categoryTypeId'] ?? null;
@@ -1964,7 +1964,6 @@ class Trade implements ITrade
             // return $data['licenceDtl'];
             $newData = array();
             $fullDetailsData = array();
-
             $basicDetails = $this->generateBasicDetails($licenseDetail);      // Trait function to get Basic Details
             $basicElement = [
                 'headerTitle' => "Basic Details",
@@ -1988,7 +1987,7 @@ class Trade implements ITrade
             $ownerDetails = $this->generateOwnerDetails($ownerDetails);
             $ownerElement = [
                 'headerTitle' => 'Owner Details',
-                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email"],
+                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email","Address"],
                 'tableData' => $ownerDetails
             ];
 
@@ -3915,7 +3914,8 @@ class Trade implements ITrade
                 DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no,ulb_masters.ulb_name, '$table' AS tbl")
             );
             if (!$test) {
-                $test = RejectedTradeLicence::select("id")->find($id);
+                $test = RejectedTradeLicence::select("id")->find($id);                
+                $table = "rejected_trade_licences";
                 $application = RejectedTradeLicence::select(
                     "rejected_trade_licences.*",
                     "trade_param_application_types.application_type",
@@ -3924,19 +3924,20 @@ class Trade implements ITrade
                     "trade_param_ownership_types.ownership_type",
                     DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no,ulb_masters.ulb_name,'$table' AS tbl")
                 );
-                $table = "rejected_trade_licences";
             }
-            if (!$test) {
+            if (!$test) {                
+                $table = "active_trade_licences";
                 $application = ActiveTradeLicence::select(
                     "active_trade_licences.*",
                     "trade_param_application_types.application_type",
                     "trade_param_category_types.category_type",
                     "trade_param_firm_types.firm_type",
                     "trade_param_ownership_types.ownership_type",
-                    DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no,ulb_masters.ulb_name,'$table' AS tbl")
+                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+                    new_ward.ward_name as new_ward_no,ulb_masters.ulb_name,'$table' AS tbl")
                 );
-                $table = "active_trade_licences";
             }
+            
             $application = $application
                 ->join("ulb_ward_masters", function ($join) use ($table) {
                     $join->on("ulb_ward_masters.id", "=", $table . ".ward_id");

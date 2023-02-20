@@ -1496,7 +1496,7 @@ class NewConnectionController extends Controller
         try {
             $mWaterConnectionCharge  = new WaterConnectionCharge();
             $mWaterApplication = new WaterApplication();
-            $mWaterApplicant = new WaterApplicant();
+            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
             $mWaterTran = new WaterTran();
 
             # Application Details
@@ -1520,6 +1520,13 @@ class NewConnectionController extends Controller
                     'paidStatus' => $charges['paid_status']
                 ];
                 $waterTransDetail = array_merge($calculation, $waterTransDetail);
+
+                if ($calculation['calculation']['penalty'] > 0) {
+                    $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
+                        ->where('paid_status', 0)
+                        ->get();
+                    $waterTransDetail = array_merge($penalty, $waterTransDetail);
+                }
             }
             $returnData = array_merge($applicationDetails, $waterTransDetail);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
