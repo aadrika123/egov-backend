@@ -4,6 +4,7 @@ namespace App\Models\Trade;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class TradeTransaction extends Model
 {
@@ -37,5 +38,24 @@ class TradeTransaction extends Model
             ->where('payment_mode', 'DD')
             ->orWhere('payment_mode', 'CHEQUE')
             ->where('ulb_id', $ulbId);
+    }
+
+    /**
+     * | Trade Transaction Details by date
+     */
+    public function tranDetail($date, $ulbId)
+    {
+        return TradeTransaction::select(
+            'users.id',
+            'users.user_name',
+            DB::raw("sum(paid_amount) as amount"),
+        )
+            ->join('users', 'users.id', 'trade_transactions.emp_dtl_id')
+            ->where('verify_date', $date)
+            ->where('trade_transactions.status', 1)
+            ->where('payment_mode', '!=', 'ONLINE')
+            ->where('is_verified', true)
+            ->where('trade_transactions.ulb_id', $ulbId)
+            ->groupBy(["users.id", "users.user_name"]);
     }
 }
