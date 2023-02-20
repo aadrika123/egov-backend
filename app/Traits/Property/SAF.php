@@ -130,7 +130,7 @@ trait SAF
         $floor->builtup_area = $floor_details['buildupArea'] ?? null;
         $floor->date_from = $floor_details['dateFrom'] ?? null;
         $floor->date_upto = $floor_details['dateUpto'] ?? null;
-        $floor->prop_floor_details_id = $floor_details['propFloorDetail'] ?? null;
+        $floor->prop_floor_details_id = $floor_details['propFloorDetailId'] ?? null;
     }
 
     // SAF Inbox 
