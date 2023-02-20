@@ -166,6 +166,7 @@ class Report implements IReport
                     "total"=>$total,
                     "numberOfPages"=>$numberOfPages
                 ];
+                $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
                 return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
@@ -441,6 +442,7 @@ class Report implements IReport
                 "total"=>$total,
                 "numberOfPages"=>$numberOfPages
             ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
@@ -482,7 +484,7 @@ class Report implements IReport
                 $ulbId = $request->ulbId;
             }
 
-            DB::enableQueryLog();
+            // DB::enableQueryLog();
             $data = PropProperty::select(
                 DB::raw("ulb_ward_masters.ward_name as ward_no,
                         prop_properties.holding_no,
@@ -666,7 +668,7 @@ class Report implements IReport
                     "total"=>$total,
                     "numberOfPages"=>$numberOfPages
                 ];
-                
+                $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
                 return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
@@ -724,7 +726,7 @@ class Report implements IReport
                     })
                 )
                 ->GET();
-                // dd(DB::getQueryLog());
+                $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
                 return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
@@ -823,7 +825,7 @@ class Report implements IReport
                 "total"=>$total,
                 "numberOfPages"=>$numberOfPages
             ];
-            // dd(DB::getQueryLog());
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
@@ -909,7 +911,7 @@ class Report implements IReport
                 "total"=>$total,
                 "numberOfPages"=>$numberOfPages
             ];
-            // dd(DB::getQueryLog());
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
@@ -950,7 +952,7 @@ class Report implements IReport
             if($wardId)
             {
                 $where .= " AND ward_mstr_id = $wardId ";
-            }
+            }            
             $sql ="
                 WITH saf AS (
                     SELECT 
@@ -1016,8 +1018,8 @@ class Report implements IReport
                 group by ward_name
                 ORDER BY  ward_name
             ";
-            $data = DB::query($sql);
-            dd($data);
+            $data = DB::select($sql);
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
 
             return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
         } 

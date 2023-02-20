@@ -8,6 +8,7 @@ use App\Repository\Property\Interfaces\IReport;
 use App\Traits\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
@@ -17,6 +18,7 @@ class ReportController extends Controller
     private $_common;
     public function __construct(IReport $TradeRepository)
     {
+        DB::enableQueryLog();
         $this->Repository = $TradeRepository;
         $this->_common = new CommonFunction();
     }
