@@ -1059,7 +1059,6 @@ class SafCalculation
         $speciallyAbledRebatePerc = $this->_speciallyAbledRebatePerc;
 
         $mLastQuarterDemand = (collect($this->_GRID['details'])->last()['totalTax']) * 4;   // Final Quarterly Tax 
-        $totalDemand = $this->_GRID['demand']['totalDemand'];
 
         if ($currentQuarter == 1) {                                                         // Rebate On Financial Year Payment On 1st Quarter
             $rebate1 += 5;
