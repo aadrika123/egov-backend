@@ -206,4 +206,23 @@ class PropTransaction extends Model
             ->orWhere('payment_mode', 'CHEQUE')
             ->where('prop_transactions.ulb_id', $ulbId);
     }
+
+    /**
+     * | Prop Transaction Details by date
+     */
+    public function tranDetail($date, $ulbId)
+    {
+        return PropTransaction::select(
+            'users.id',
+            'users.user_name',
+            DB::raw("sum(amount) as amount"),
+        )
+            ->join('users', 'users.id', 'prop_transactions.user_id')
+            ->where('verify_date', $date)
+            ->where('prop_transactions.status', 1)
+            ->where('payment_mode', '!=', 'ONLINE')
+            ->where('verify_status', 1)
+            ->where('prop_transactions.ulb_id', $ulbId)
+            ->groupBy(['users.id', 'users.user_name']);
+    }
 }

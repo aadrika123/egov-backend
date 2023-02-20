@@ -6,6 +6,7 @@ use App\MicroServices\IdGeneration;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class WaterTran extends Model
 {
@@ -115,5 +116,24 @@ class WaterTran extends Model
         return [
             'id' => $waterTrans->id
         ];
+    }
+
+    /**
+     * | Water Transaction Details by date
+     */
+    public function tranDetail($date, $ulbId)
+    {
+        return WaterTran::select(
+            'users.id',
+            'users.user_name',
+            DB::raw("sum(amount) as amount"),
+        )
+            ->join('users', 'users.id', 'water_trans.emp_dtl_id')
+            ->where('verified_date', $date)
+            ->where('water_trans.status', 1)
+            ->where('payment_mode', '!=', 'ONLINE')
+            ->where('verify_status', true)
+            ->where('water_trans.ulb_id', $ulbId)
+            ->groupBy(["users.id", "users.user_name"]);
     }
 }
