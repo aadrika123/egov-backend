@@ -299,7 +299,7 @@ class WaterPaymentController extends Controller
         | Recheck
         | Not Finish
      */
-    public function generateDemandPaymentReceipt(Request $req)
+    public function generateOfflinePaymentReceipt(Request $req)
     {
         $req->validate([
             'transactionNo' => 'required'
@@ -308,64 +308,76 @@ class WaterPaymentController extends Controller
             $refTransactionNo = $req->transactionNo;
             $mWaterConnectionCharge = new WaterConnectionCharge();
             $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+            $mWaterApplication = new WaterApplication();
+            $mWaterChequeDtl = new WaterChequeDtl();
             $mWaterTran = new WaterTran();
 
             $mTowards = Config::get('waterConstaint.TOWARDS');
             $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
+            $mPaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
 
             # transaction Deatils
             $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
                 ->firstOrFail();
 
+            #  Data not equal to Cash
+            if (!in_array($transactionDetails['payment_mode'] , [$mPaymentModes['1'], $mPaymentModes['5']])) {
+                $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->first();
+            }
+            # Application Deatils
+            $applicationDetails = $mWaterApplication->getDetailsByApplicationId($transactionDetails->related_id)->firstOrFail();
+
             # Connection Charges
-            $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($transactionDetails->related_id)
-                ->where('id', $transactionDetails->demand_id)
+            $connectionCharges = $mWaterConnectionCharge->getChargesById($transactionDetails->demand_id)
                 ->firstOrFail();
 
             # if penalty Charges
             $individulePenaltyCharges = $mWaterPenaltyInstallment->getPenaltyByApplicationId($transactionDetails->related_id)
                 ->where('paid_status', 1)
                 ->get();
-            return  $totalPenaltyAmount = collect($individulePenaltyCharges)->map(function ($value) {
-                return $value['balance_amount'];
-            })->sum();
+            if ($individulePenaltyCharges) {
+                $totalPenaltyAmount = collect($individulePenaltyCharges)->map(function ($value) {
+                    return $value['balance_amount'];
+                })->sum();
+            }
 
             # Transaction Date
             $refDate = $transactionDetails->tran_date;
             $transactionDate = Carbon::parse($refDate)->format('Y-m-d');
 
-            return [
+            $returnValues = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
                 "transactionDate" => $transactionDate,
-                "transactionNo" => $value,
+                "transactionNo" => $refTransactionNo,
                 // "transactionTime" => $transactionTime,
-                "applicationNo" => "",
-                "customerName" => $consumerDetails->consumer_name,
-                "customerMobile" => $consumerDetails->mobile_no,
-                "address" => $consumerDetails->address,
-                "paidFrom" => $consumerDetails->demand_from,
+                "applicationNo" => $applicationDetails['application_no'],
+                "customerName" => $applicationDetails['applicantname'],
+                "customerMobile" => $applicationDetails['mobileno'],
+                "address" => $applicationDetails['address'],
+                "paidFrom" => $connectionCharges['charge_category'],
                 "paidFromQtr" => "",
-                "paidUpto" => $consumerDetails->demand_upto,
-                "paidUptoQtr" => $consumerDetails->demand_upto,
-                "paymentMode" => $transactionDetails->payment_mode,
-                "bankName" => "",                                   // in case of cheque,dd,nfts
-                "branchName" => "",                                 // in case of chque,dd,nfts
-                "chequeNo" => "",                                   // in case of chque,dd,nfts
-                "chequeDate" => "",                                 // in case of chque,dd,nfts
+                "paidUpto" => "",
+                "paidUptoQtr" => "",
+                "paymentMode" => $transactionDetails['payment_mode'],
+                "bankName" => $chequeDetails[''] ?? null,                                   // in case of cheque,dd,nfts
+                "branchName" => $chequeDetails[''] ?? null,                                 // in case of chque,dd,nfts
+                "chequeNo" => $chequeDetails['']  ?? null,                                   // in case of chque,dd,nfts
+                "chequeDate" => $chequeDetails[''] ?? null,                                 // in case of chque,dd,nfts
                 "monthlyRate" => "",
-                "demandAmount" => $consumerDetails->amount,
+                "demandAmount" => $transactionDetails->amount,
                 "taxDetails" => "",
-                "ulbId" => $consumerDetails->ulb_id,
-                "ulbName" => $consumerDetails->ulb_name,
-                "WardNo" => $consumerDetails->old_ward_name,
+                "ulbId" => $transactionDetails['ulb_id'],
+                "ulbName" => $applicationDetails['ulb_name'],
+                "WardNo" => $applicationDetails['ward_name'],
                 "towards" => $mTowards,
                 "description" => $mAccDescription,
                 "totalPaidAmount" => $transactionDetails->amount,
+                "penaltyAmount" => $totalPenaltyAmount,
                 "paidAmtInWords" => getIndianCurrency($transactionDetails->amount),
             ];
-            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
@@ -391,6 +403,7 @@ class WaterPaymentController extends Controller
      * | @return
         | Serial No : 04
         | Working
+        | Change the Adjustment
      */
     public function saveSitedetails(siteAdjustment $request)
     {

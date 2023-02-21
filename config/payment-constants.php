@@ -23,4 +23,11 @@ return [
     ],
 
     'ONLINE' => "Online",
+    "PAYMENT_OFFLINE_MODE" => [
+        "1" => "Cash",
+        "2" => "Cheque",
+        "3" => "DD",
+        "4" => "Neft",
+        "5" => "Online"
+    ],
 ];

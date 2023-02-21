@@ -230,21 +230,58 @@ trait SafDetailsTrait
     /**
      * | Objection Owner Details
      */
-    public function objectionOwnerDetails($ownerDetail)
+    public function objectionOwnerDetails($ownerDetails)
     {
-        return [
-            1,
-            $ownerDetail['owner_name'],
-            $ownerDetail['gender'],
-            $ownerDetail['dob'],
-            $ownerDetail['guardian_name'],
-            $ownerDetail['relation'],
-            $ownerDetail['owner_mobile'],
-            $ownerDetail['aadhar'],
-            $ownerDetail['pan'],
-            $ownerDetail['email'],
-            ($ownerDetail['is_armed_force'] == true ? 'Yes' : 'No'),
-            ($ownerDetail['is_specially_abled'] == true ? 'Yes' : 'No'),
-        ];
+        return collect($ownerDetails)->map(function ($ownerDetail) {
+            return [
+                1,
+                $ownerDetail['owner_name'],
+                $ownerDetail['gender'],
+                $ownerDetail['dob'],
+                $ownerDetail['guardian_name'],
+                $ownerDetail['relation'],
+                $ownerDetail['owner_mobile'],
+                $ownerDetail['aadhar'],
+                $ownerDetail['pan'],
+                $ownerDetail['email'],
+                ($ownerDetail['is_armed_force'] == true ? 'Yes' : 'No'),
+                ($ownerDetail['is_specially_abled'] == true ? 'Yes' : 'No'),
+            ];
+        });
+    }
+
+    /**
+     * | Objection Details
+     */
+    public function objectionDetails($objectionLists)
+    {
+        return collect($objectionLists)->map(function ($objectionList, $key) {
+            return [
+                $key + 1,
+                $objectionList['type'],
+                $objectionList['assesment_data'],
+                $objectionList['applicant_data'],
+                // $objectionList['guardian_name'],
+            ];
+        });
+    }
+
+    /**
+     * |objection floor detaild
+     */
+
+    public function objectionFloorDetails($objectionFlooorDtls)
+    {
+        return collect($objectionFlooorDtls)->map(function ($objectionFlooorDtl, $key) {
+            return [
+                $key + 1,
+                $objectionFlooorDtl['prop_floor_id'],
+                $objectionFlooorDtl['usage_type_mstr_id'],
+                $objectionFlooorDtl['occupancy_type_mstr_id'],
+                $objectionFlooorDtl['const_type_mstr_id'],
+                $objectionFlooorDtl['builtup_area'],
+                $objectionFlooorDtl['date_from'],
+            ];
+        });
     }
 }

@@ -16,4 +16,14 @@ class WaterChequeDtl extends Model
             ->where('status', 2)
             ->first();
     }
+
+    /**
+     * | Get Details for the payment receipt
+     * | Onlyin case of connection
+     */
+    public function getChequeDtlsByTransId($transId)
+    {
+        return WaterChequeDtl::where('id',$transId)
+        ->where('status', 2);
+    }
 }

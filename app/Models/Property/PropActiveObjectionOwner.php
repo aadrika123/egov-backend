@@ -13,6 +13,6 @@ class PropActiveObjectionOwner extends Model
     {
         return PropActiveObjectionOwner::select('*')
             ->where('objection_id', $objId)
-            ->first();
+            ->get();
     }
 }

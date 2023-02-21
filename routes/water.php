@@ -76,7 +76,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('master/get-listed-details', 'getWaterMasterData');                                            // Admin/ Citizen
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
         Route::post('generate-payment-receipt', 'generatePaymentReceipt');                              // Citizen
-        Route::post('consumer/generate-demand-receiep', 'generateDemandPaymentReceipt');                // Consumer
+        Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');                // Consumer
 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');

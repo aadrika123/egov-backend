@@ -342,4 +342,46 @@ class WaterApplication extends Model
                 break;
         }
     }
+
+
+    /**
+     * |------------------- Get the Application details by applicationNo -------------------|
+     * | @param applicationNo
+     * | @param connectionTypes 
+     * | @return 
+     */
+    public function getDetailsByApplicationId($applicationId)
+    {
+        return WaterApplication::select(
+            'water_applications.id',
+            'water_applications.application_no',
+            'water_applications.ward_id',
+            'water_applications.address',
+            'water_applications.holding_no',
+            'water_applications.saf_no',
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name',
+            DB::raw("string_agg(water_applicants.applicant_name,',') as applicantName"),
+            DB::raw("string_agg(water_applicants.mobile_no::VARCHAR,',') as mobileNo"),
+            DB::raw("string_agg(water_applicants.guardian_name,',') as guardianName"),
+        )
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
+            ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
+            ->where('water_applications.status', true)
+            ->where('water_applications.id', $applicationId)
+            ->groupBy(
+                'water_applications.saf_no',
+                'water_applications.holding_no',
+                'water_applications.address',
+                'water_applications.id',
+                'water_applicants.application_id',
+                'water_applications.application_no',
+                'water_applications.ward_id',
+                'water_applications.ulb_id',
+                'ulb_ward_masters.ward_name',
+                'ulb_masters.id',
+                'ulb_masters.ulb_name'
+            );
+    }
 }
