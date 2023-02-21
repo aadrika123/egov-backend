@@ -408,6 +408,7 @@ class TradeApplication extends Controller
             }
             $allRolse = collect($this->_parent->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
             $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
+            $senderRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];
             $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
             if($licence->payment_status!=1 && ($role->serial_no  < $receiverRole["serial_no"]??0))
             {
@@ -426,11 +427,10 @@ class TradeApplication extends Controller
             }
             $tradC = new Trade();
             $documents = $tradC->checkWorckFlowForwardBackord($request);
-            if(($licence->max_level_attained < $receiverRole["serial_no"]??0) && !$documents)
+            if((($senderRole["serial_no"]??0) < ($receiverRole["serial_no"]??0)) && !$documents)
             {
                 throw new Exception("Not Every Actoin Are Performed");
             }
-            
             if($role->can_upload_document)
             {
                 if(($role->serial_no < $receiverRole["serial_no"]??0))

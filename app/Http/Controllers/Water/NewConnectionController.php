@@ -1486,7 +1486,7 @@ class NewConnectionController extends Controller
      * | @var 
      * | @return 
         | Serial No : 
-        | Used 
+        | Used Only for new Connection or New Regulization
      */
     public function getApplicationDetailById(Request $request)
     {
@@ -1504,14 +1504,15 @@ class NewConnectionController extends Controller
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
-            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->get();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
-                ->where('paid_status', false)
-                ->first();
-            if ($charges) {
+                ->where('charge_category', $applicationDetails['applicationDetails']['connection_type'])
+                ->firstOrFail();
+
+            if ($charges['paid_status'] == false) {
                 $calculation['calculation'] = [
                     'connectionFee' => $charges['conn_fee'],
                     'penalty' => $charges['penalty'],
@@ -1520,13 +1521,35 @@ class NewConnectionController extends Controller
                     'paidStatus' => $charges['paid_status']
                 ];
                 $waterTransDetail = array_merge($calculation, $waterTransDetail);
+            } else {
+                $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
+                    ->where('paid_status', 0)
+                    ->get();
+                $penaltyAmount = collect($penalty['penaltyInstallments'])->map(function ($value) {
+                    return $value['balance_amount'];
+                })->sum();
 
-                if ($calculation['calculation']['penalty'] > 0) {
-                    $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
-                        ->where('paid_status', 0)
-                        ->get();
-                    $waterTransDetail = array_merge($penalty, $waterTransDetail);
+                $calculation['calculation'] = [
+                    'connectionFee' => 0.00,           # Static
+                    'penalty' => $penaltyAmount,
+                    'totalAmount' => $penaltyAmount,
+                    'chargeCatagory' => $charges['charge_category'],
+                    'paidStatus' => $charges['paid_status']
+                ];
+                $waterTransDetail = array_merge($calculation, $waterTransDetail);
+            }
+
+            # penalty Data 
+            if ($charges['penalty'] > 0) {
+                $ids = null;
+                $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
+                    ->where('paid_status', 0)
+                    ->get();
+                foreach ($penalty['penaltyInstallments'] as $key => $val) {
+                    $ids = trim(($ids . "," . $val["id"]), ",");
+                    $penalty['penaltyInstallments'][$key]["ids"] = $ids;
                 }
+                $waterTransDetail = array_merge($penalty, $waterTransDetail);
             }
             $returnData = array_merge($applicationDetails, $waterTransDetail);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");

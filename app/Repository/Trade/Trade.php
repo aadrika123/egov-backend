@@ -185,38 +185,50 @@ class Trade implements ITrade
             } else {
                 $data['wardList'] = $this->_parent->WardPermission($refUserId);
             }
-            if ($request->getMethod() == "POST") {
-                if ($request->firmDetails['holdingNo']) {
+            if ($request->getMethod() == "POST") 
+            {
+                if ($request->firmDetails['holdingNo']) 
+                {
                     $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'], $refUlbId);
                     if ($property['status'])
                         $mProprtyId = $property['property']['id'];
                     else
                         throw new Exception("Property Details Not Found");
                 }
-                if ($mApplicationTypeId == 1) {
+                if ($mApplicationTypeId == 1) 
+                {
                     $mnaturOfBusiness = array_map(function ($val) {
                         return $val['id'];
                     }, $request->firmDetails['natureOfBusiness']);
                     $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
                 }
-                if ($mApplicationTypeId != 1) {
+                if ($mApplicationTypeId != 1) 
+                {
                     $mOldLicenceId = $request->licenseId;
                     $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
                     $refOldLicece = TradeLicence::find($mOldLicenceId);
-                    if (!$refOldLicece) {
+                    if (!$refOldLicece) 
+                    {
                         throw new Exception("Old Licence Not Found");
                     }
-                    if (!$refOldLicece->is_active) {
+                    if (!$refOldLicece->is_active) 
+                    {
                         $newLicense = ActiveTradeLicence::where("license_no", $refOldLicece->license_no)
                             ->orderBy("id")
                             ->first();
                         throw new Exception("Application Aready Apply Please Track  " . $newLicense->application_no);
                     }
-                    if ($refOldLicece->valid_upto > $nextMonth) {
+                    if ($refOldLicece->valid_upto > $nextMonth) 
+                    {
                         throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
                     }
-                    if ($refOldLicece->pending_status != 5) {
+                    if ($refOldLicece->pending_status != 5) 
+                    {
                         throw new Exception("Application Aready Apply Please Track  " . $refOldLicece->application_no);
+                    }
+                    if(in_array($mApplicationTypeId,[3,4]) && $refOldLicece->valid_upto<Carbon::now()->format('Y-m-d'))
+                    {
+                        throw new Exception("Application was Expired.You Can't Apply ".$request->applicationType.". Please Renew First.");
                     }
 
                     $mnaturOfBusiness = $refOldLicece->nature_of_bussiness;
@@ -2321,6 +2333,10 @@ class Trade implements ITrade
             {
                 throw new Exception("You Can Not Apply Surrender. Application No: " . $data->application_no . " Of Licence No: " . $data->license_no . " Expired On " . $data->valid_upto . ".");
             }
+            if ($mApplicationTypeId == 3 && $data->valid_upto < Carbon::now()->format('Y-m-d') && $data->tbl == "trade_licences") 
+            {
+                throw new Exception("You Can Not Apply Amendment. Application No: " . $data->application_no . " Of Licence No: " . $data->license_no . " Expired On " . $data->valid_upto . ".");
+            }
             return responseMsg(true, "", remove_null($data));
         } 
         catch (Exception $e) 
@@ -2888,8 +2904,11 @@ class Trade implements ITrade
         try {
 
             $data = (array)null;
-            $data['provisionalCertificate'] = config('app.url') . "/api/trade/provisionalCertificate/" . $id;
+            $data['provisionalCertificate'] = config('app.url') . "/api/trade/provisional-certificate/" . $id;
             $application = ActiveTradeLicence::select(
+                "active_trade_licences.id",
+                "active_trade_licences.application_date",
+                "active_trade_licences.establishment_date",
                 "application_no",
                 "provisional_license_no",
                 "license_no",
@@ -2923,6 +2942,9 @@ class Trade implements ITrade
                 ->first();
             if (!$application) {
                 $application = TradeLicence::select(
+                    "trade_licences.id",
+                    "trade_licences.application_date",
+                    "trade_licences.establishment_date",
                     "application_no",
                     "provisional_license_no",
                     "license_no",
@@ -2957,6 +2979,9 @@ class Trade implements ITrade
             }
             if (!$application) {
                 $application = RejectedTradeLicence::select(
+                    "rejected_trade_licences.id",
+                    "rejected_trade_licences.application_date",
+                    "rejected_trade_licences.establishment_date",
                     "application_no",
                     "provisional_license_no",
                     "license_no",
@@ -2991,6 +3016,9 @@ class Trade implements ITrade
             }
             if (!$application) {
                 $application = TradeRenewal::select(
+                    "trade_renewals.id",
+                    "trade_renewals.application_date",
+                    "trade_renewals.establishment_date",
                     "application_no",
                     "provisional_license_no",
                     "license_no",
@@ -3078,21 +3106,24 @@ class Trade implements ITrade
         try {
 
             $data = (array)null;
-            $data['licenceCertificate'] = config('app.url') . "/api/trade/licenceCertificate/" . $id;
+            $data['licenceCertificate'] = config('app.url') . "/api/trade/license-certificate/" . $id;
             $application = TradeLicence::select(
+                "trade_licences.id",
+                "trade_licences.application_date",
+                "trade_licences.establishment_date",
                 "application_no",
                 "provisional_license_no",
                 "license_no",
                 "firm_name",
                 "holding_no",
                 "address",
-                "application_date",
                 "license_date",
                 "valid_from",
                 "valid_upto",
                 "licence_for_years",
                 "establishment_date",
                 "nature_of_bussiness",
+                "firm_description",
                 "pending_status",
                 "owner.owner_name",
                 "owner.guardian_name",
@@ -3105,7 +3136,7 @@ class Trade implements ITrade
                 ->join("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "trade_licences.ward_id");
                 })
-                ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                             STRING_AGG(guardian_name,',') as guardian_name,
                                             STRING_AGG(mobile_no::text,',') as mobile,
                                             temp_id
@@ -3120,6 +3151,8 @@ class Trade implements ITrade
                 ->first();
             if (!$application) {
                 $application = TradeRenewal::select(
+                    "trade_renewals.id",
+                    "trade_renewals.establishment_date",
                     "application_no",
                     "provisional_license_no",
                     "license_no",
@@ -3133,6 +3166,7 @@ class Trade implements ITrade
                     "licence_for_years",
                     "establishment_date",
                     "nature_of_bussiness",
+                    "firm_description",
                     "pending_status",
                     "owner.owner_name",
                     "owner.guardian_name",
@@ -3145,9 +3179,9 @@ class Trade implements ITrade
                     ->join("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "trade_renewals.ward_id");
                     })
-                    ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                             STRING_AGG(guardian_name,',') as guardian_name,
-                                            STRING_AGG(mobile,',') as mobile,
+                                            STRING_AGG(mobile_no::text,',') as mobile,
                                             temp_id
                                         FROM trade_owners 
                                         WHERE temp_id = $id
@@ -4301,7 +4335,7 @@ class Trade implements ITrade
             $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
             $appUploadedDocVerified = collect();
             $appUploadedDoc->map(function($val) use($appUploadedDocVerified){   
-                $appUploadedDocVerified->push(["is_docVerify"=>(!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] !=0 ) ? true : false ) :true)]);             
+                $appUploadedDocVerified->push(["is_docVerify"=>(!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] ) ? true : false ) :true)]);             
                 
             });
             $is_appUploadedDocVerified = $appUploadedDocVerified->where("is_docVerify",false);            
@@ -4312,7 +4346,7 @@ class Trade implements ITrade
                 $val["documents"]->map(function($val1)use($Wdocuments,$ownerId){
                     $val1["ownerId"] = $ownerId;
                     $val1["is_uploded"] = (in_array($val1["docType"],["R","OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false ) :true;
-                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] !=0 ) ? true : false ) :true;
+                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] ) ? true : false ) :true;
                     $Wdocuments->push($val1);
                 });
             });
@@ -4325,7 +4359,7 @@ class Trade implements ITrade
                 return (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()));
             }
             if($fromRole["can_verify_document"])
-            {
+            {                
                 return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()));
             }
         }

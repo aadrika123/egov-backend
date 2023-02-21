@@ -87,7 +87,7 @@ class reqApplySaf extends FormRequest
             }
         }
         $rules['isWaterHarvesting'] = "required|bool";
-        if (isset($this->assessmentType) && $this->assessmentType != 1) {           // Holding No Required for Reassess,Mutation,Bifurcation,Amalgamation
+        if (isset($this->assessmentType) && $this->assessmentType != 1 && $this->assessmentType != 5) {           // Holding No Required for Reassess,Mutation,Bifurcation,Amalgamation
             $rules['holdingNo']         = "required|string";
         }
         $rules['zone']           = "required|int|in:1,2";
