@@ -366,6 +366,18 @@ class PropProperty extends Model
     }
 
     /**
+     * | verify holding No
+     */
+    public function verifyHolding($req)
+    {
+        return PropProperty::select('*')
+            ->where('holding_no', $req->holdingNo)
+            ->ORwhere('new_holding_no', $req->holdingNo)
+            ->where('ulb_id', $req->ulbId)
+            ->first();
+    }
+
+    /**
      * | Get Comparative Demand Details
      */
     public function getComparativeBasicDtls($propId)

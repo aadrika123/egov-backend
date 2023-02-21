@@ -2,6 +2,7 @@
 
 namespace App\Models\Property;
 
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -159,5 +160,18 @@ class PropActiveHarvesting extends Model
             throw new Exception("Application Not Found");
         $activeApplication->is_field_verified = true;
         $activeApplication->save();
+    }
+
+    /**
+     * | today applied application
+     */
+    public function todayAppliedApplications($userId)
+    {
+        $date = Carbon::now();
+        return PropActiveHarvesting::select(
+            'id'
+        )
+            ->where('user_id', $userId)
+            ->where('date', $date);
     }
 }

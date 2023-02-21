@@ -344,6 +344,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/delete-citizen-saf', 'deleteCitizenSaf');        // 01
     Route::post('saf/edit-citizen-saf', 'editCitizenSaf');            // 02
     Route::post('saf/memo-receipt', 'memoReceipt');                   // 03
+    Route::post('saf/verify-holding', 'verifyHoldingNo');             // 05
   });
 });
 
@@ -365,7 +366,7 @@ Route::controller(ActiveSafController::class)->group(function () {
     Serial No : 18
  */
 Route::controller(ActiveSafControllerV2::class)->group(function () {
-  Route::post('search-holding', 'searchHolding');
+  Route::post('search-holding', 'searchHolding');                     //04
 });
 /**
  * | Holding Tax Controller(Created By-Anshu Kumar)

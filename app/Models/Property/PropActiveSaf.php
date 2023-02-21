@@ -514,4 +514,35 @@ class PropActiveSaf extends Model
         ];
         return $mPropActiveSaf->update($reqs);
     }
+
+    /**
+     * | Recent Applications
+     */
+    public function recentApplication($userId)
+    {
+        return PropActiveSaf::select(
+            'saf_no as applicationNo',
+            'application_date as applyDate',
+            'assessment_type as assessmentType',
+            DB::raw("string_agg(owner_name,',') as applicantName"),
+        )
+            ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', 'prop_active_safs.id')
+            ->where('prop_active_safs.user_id', $userId)
+            ->orderBydesc('prop_active_safs.id')
+            ->groupBy('saf_no', 'application_date', 'assessment_type', 'prop_active_safs.id')
+            ->take(10)
+            ->get();
+    }
+
+
+    public function todayAppliedApplications($userId)
+    {
+        $date = Carbon::now();
+        return PropActiveSaf::select(
+            'id'
+        )
+            ->where('prop_active_safs.user_id', $userId)
+            ->where('application_date', $date);
+        // ->get();
+    }
 }

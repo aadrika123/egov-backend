@@ -27,6 +27,7 @@ class ActiveSafControllerV2 extends Controller
     /**
      * | Edit Applied Saf by SAF Id for BackOffice
      * | @param request $req
+     * | Serial 01
      */
     public function editCitizenSaf(Request $req)
     {
@@ -85,6 +86,7 @@ class ActiveSafControllerV2 extends Controller
 
     /**
      * | Delete Citizen Saf
+     * | Serial 02
      */
     public function deleteCitizenSaf(Request $req)
     {
@@ -119,6 +121,7 @@ class ActiveSafControllerV2 extends Controller
 
     /**
      * | Generate memo receipt
+     * | Serial 03
      */
     public function memoReceipt(Request $req)
     {
@@ -190,6 +193,7 @@ class ActiveSafControllerV2 extends Controller
 
     /**
      * | Search Holding of user not logged in
+     * | Serial 04
      */
     public function searchHolding(Request $req)
     {
@@ -252,6 +256,29 @@ class ActiveSafControllerV2 extends Controller
             return responseMsgs(true, "Holding Details", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Serial 05
+     */
+    public function verifyHoldingNo(Request $req)
+    {
+        try {
+            $req->validate([
+                'holdingNo' => 'required',
+                'ulbId' => 'required',
+            ]);
+            $mPropProperty = new PropProperty();
+            $data = $mPropProperty->verifyHolding($req);
+
+            if (!isset($data)) {
+                throw new Exception("Enter Valid Holding No.");
+            }
+
+            return responseMsgs(true, "Holding Exist", '', 010124, 1.0, "308ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         }
     }
