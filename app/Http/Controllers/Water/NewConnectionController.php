@@ -1486,7 +1486,7 @@ class NewConnectionController extends Controller
      * | @var 
      * | @return 
         | Serial No : 
-        | Used 
+        | Used Only for new Connection or New Regulization
      */
     public function getApplicationDetailById(Request $request)
     {
@@ -1504,12 +1504,13 @@ class NewConnectionController extends Controller
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
-            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->get();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
-                ->first();
+                ->where('charge_category', $applicationDetails['applicationDetails']['connection_type'])
+                ->firstOrFail();
             if ($charges['paid_status'] == false) {
                 $calculation['calculation'] = [
                     'connectionFee' => $charges['conn_fee'],
@@ -1520,10 +1521,17 @@ class NewConnectionController extends Controller
                 ];
                 $waterTransDetail = array_merge($calculation, $waterTransDetail);
             } else {
+                $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
+                    ->where('paid_status', 0)
+                    ->get();
+                $penaltyAmount = collect($penalty['penaltyInstallments'])->map(function ($value) {
+                    return $value['balance_amount'];
+                })->sum();
+
                 $calculation['calculation'] = [
                     'connectionFee' => 0.00,           # Static
-                    'penalty' => $charges['penalty'],
-                    'totalAmount' => $charges['amount'],
+                    'penalty' => $penaltyAmount,
+                    'totalAmount' => $penaltyAmount,
                     'chargeCatagory' => $charges['charge_category'],
                     'paidStatus' => $charges['paid_status']
                 ];

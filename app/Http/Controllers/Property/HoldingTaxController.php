@@ -9,6 +9,9 @@ use App\Http\Requests\Property\ReqPayment;
 use App\MicroServices\IdGeneration;
 use App\Models\Payment\TempTransaction;
 use App\Models\Payment\WebhookPaymentData;
+use App\Models\Property\MPropBuildingRentalrate;
+use App\Models\Property\MPropMultiFactor;
+use App\Models\Property\MPropRoadType;
 use App\Models\Property\PaymentPropPenaltyrebate;
 use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropDemand;
@@ -24,8 +27,11 @@ use App\Traits\Property\SAF;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Validator;
 
 class HoldingTaxController extends Controller
 {
@@ -34,6 +40,8 @@ class HoldingTaxController extends Controller
     protected $_propertyDetails;
     protected $_safRepo;
     protected $_holdingTaxInterest = 0;
+    protected $_paramRentalRate;
+    protected $_refParamRentalRate;
     /**
      * | Created On-19/01/2023 
      * | Created By-Anshu Kumar
@@ -653,5 +661,112 @@ class HoldingTaxController extends Controller
                 'amount' => $this->_holdingTaxInterest,
             ]
         ];
+    }
+
+    /**
+     * | Property Comparative Demand(16)
+     */
+    public function comparativeDemand(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            'propId' => 'required|numeric'
+        ]);
+
+        if ($validator->fails()) {
+            return responseMsgs(false, $validator->errors(), "", "011610", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+
+        try {
+            $details = array();
+            $propId = $req->propId;
+            $mPropProperty = new PropProperty();
+            $mPropMultiFactors = new MPropMultiFactor();
+            $mRoadType = new MPropRoadType();
+            $mPropRentalRates = new MPropBuildingRentalrate();
+            $this->_refParamRentalRate = json_decode(Redis::get('propMBuildingRentalRate'));
+            if (!$this->_refParamRentalRate)
+                $this->_refParamRentalRate = $mPropRentalRates->getRentalRates();
+            $fullDetail = $mPropProperty->getComparativeBasicDtls($propId);
+            $this->_paramRentalRate = 144;
+            $details['basicDetails'] = collect($fullDetail->first())->only([
+                'holding_no',
+                'new_holding_no', 'prop_address', 'old_ward_no', 'new_ward_no', 'owner_name', 'guardian_name'
+            ]);
+            $floors = collect($fullDetail)->map(function ($item) use ($mPropMultiFactors, $mRoadType) {
+                $floorMultiFactor = $mPropMultiFactors->getMultiFactorsByUsageType($item->usage_type_mstr_id);
+                $ruleSet2MultiFactors = $floorMultiFactor->where('effective_date', '2016-04-01')->first();
+                $roadTypes = $mRoadType->getRoadTypeByRoadWidth($item->road_width);
+                $ruleSet2RoadType = collect($roadTypes)->where('effective_date', '2016-04-01')->first()->prop_road_typ_id;
+                $calculation = $this->calculateRuleSet2($item, $ruleSet2MultiFactors, $ruleSet2RoadType);    // Current Function 16.1 
+                $rule2Req = collect($item)->merge($calculation);
+                $rule2 = collect($rule2Req)->only([
+                    'floor_id',
+                    'floor_name',
+                    'builtup_area',
+                    'floor_mstr_id',
+                    'usage_type_mstr_id',
+                    'const_type_mstr_id',
+                    'occupancy_type_mstr_id',
+                    'date_from',
+                    'date_upto',
+                    'carpet_area',
+                    'occupancy_factor',
+                    'usage_factor',
+                    'rental_rate',
+                    'arv',
+                    'arvTotalPropTax',
+                    'cvTotalPropTax'
+                ]);
+                $calculation3 = $this->calculateRuleSet3($item);
+                $rule3Req = collect($item)->merge($calculation3);
+                $rule3 = [
+                    "abc" => 218550,
+                ];
+                return new Collection([$rule2, $rule3]);
+            });
+            return $floors;
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011610", "1.0", "", "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Calculate RuleSet2 ARV(16.1)
+     */
+    public function calculateRuleSet2($floor, $ruleSet2MultiFactors, $roadType)
+    {
+        $carpetArea = $floor->carpet_area;
+        $readFloorOccupancyType = $floor->occupancy_type_mstr_id;
+        $paramOccupancyFactor = ($readFloorOccupancyType == 1) ? 1 : 1.5;
+        $multiFactor = $ruleSet2MultiFactors->multi_factor;
+        $refParamRentalRate = $this->_refParamRentalRate;
+        $refRentalRate = collect($refParamRentalRate)->where('prop_road_type_id', $roadType)
+            ->where('construction_types_id', $floor->const_type_mstr_id)
+            ->where('effective_date', '2016-04-01')
+            ->where('status', 1)
+            ->first();
+        $rentalRate = round($refRentalRate->rate * $this->_paramRentalRate);
+
+        $tempArv = $carpetArea * $multiFactor * $paramOccupancyFactor * (float)$rentalRate;
+        $tempArv = roundFigure($tempArv);
+        $arv = roundFigure(($tempArv * 2) / 100);
+        return [
+            'occupancy_factor' => $paramOccupancyFactor,
+            'usage_factor' => $multiFactor,
+            'rental_rate' => $rentalRate,
+            'arv' => $tempArv,
+            'arvTotalPropTax' => $arv,
+            'cvTotalPropTax' => ""
+        ];
+    }
+
+    /**
+     * | Calculate RuleSet3 (CV Rule 16.2)
+     */
+    public function calculateRuleSet3($floor)
+    {
+        $safCalculation = new SafCalculation;
+        $safCalculation->_multiFactors = 5;
+        return $safCalculation->calculateRuleSet3($floor->floor_mstr_id, 0);
     }
 }

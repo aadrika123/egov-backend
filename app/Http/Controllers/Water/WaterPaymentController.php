@@ -839,7 +839,7 @@ class WaterPaymentController extends Controller
                         $refPenallty = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($penaltyIds);
                         collect($refPenallty)->map(function ($value) {
                             if ($value['paid_status'] == 1) {
-                                throw new Exception("payment for he respoctive Penaty has been done!");
+                                throw new Exception("payment for the respoctive Penaty has been done!");
                             }
                         });
                         $refPenaltySumAmount = collect($refPenallty)->map(function ($value) {
@@ -883,53 +883,20 @@ class WaterPaymentController extends Controller
                 }
                 break;
 
-            case($req->chargeCategory == $paramChargeCatagory['NEW_CONNECTION']):
+            case ($req->chargeCategory == $paramChargeCatagory['NEW_CONNECTION']):
                 switch ($req) {
-                    case ($req->isInstallment == "yes"):
-                        $penaltyIds = $req->penaltyIds;
-                        $refPenallty = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($penaltyIds);
-                        collect($refPenallty)->map(function ($value) {
-                            if ($value['paid_status'] == 1) {
-                                throw new Exception("payment for he respoctive Penaty has been done!");
-                            }
-                        });
-                        $refPenaltySumAmount = collect($refPenallty)->map(function ($value) {
-                            return $value['balance_amount'];
-                        })->sum();
-                        if ($refPenaltySumAmount != $req->penaltyAmount) {
-                            throw new Exception("Respective Penalty Amount Not Matched!");
-                        }
-
-                        $refAmount = $req->amount - $refPenaltySumAmount;
+                    case (is_null($req->isInstallment) || !$req->isInstallment):
                         $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                             ->where('charge_category', $req->chargeCategory)
                             ->firstOrFail();
 
-                        $actualAmount = $actualCharge['conn_fee'];
-                        if ($actualAmount != $refAmount) {
+                        $actualAmount = $actualCharge['amount'];
+                        if ($actualAmount != $req->amount) {
                             throw new Exception("Connection Amount Not Matched!");
                         }
                         break;
-                    case ($req->isInstallment == "no"): # check <-------------- calculation
-                        $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
-                            ->where('charge_category', $req->chargeCategory)
-                            ->firstOrFail();
-
-                        $refPenallty = $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->applicationId)->get();
-                        collect($refPenallty)->map(function ($value) {
-                            if ($value['paid_status'] == 1) {
-                                throw new Exception("payment for he respoctive Penaty has been done!");
-                            }
-                        });
-
-                        $actualPenaltyAmount = (10 / 100 * $actualCharge['penalty']);
-                        if ($req->penaltyAmount != $actualPenaltyAmount) {
-                            throw new Exception("Penalty Amount Not Matched!");
-                        }
-                        $chargeAmount =  $actualCharge['amount'] - $actualPenaltyAmount;
-                        if ($actualCharge['conn_fee'] != $chargeAmount) {
-                            throw new Exception("Connection fee not matched!");
-                        }
+                    case ($req->isInstallment == "yes"): # check <-------------- calculation
+                        throw new Exception("No Installment in New Connection!");
                         break;
                 }
                 break;
@@ -994,7 +961,6 @@ class WaterPaymentController extends Controller
 
             case (is_null($req->penaltyIds) || empty($req->penaltyIds)):
                 $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->applicationId)
-                    ->where('charge_category', $req->chargeCategory)
                     ->update([
                         'paid_status' => 1,
                     ]);
