@@ -2904,7 +2904,7 @@ class Trade implements ITrade
         try {
 
             $data = (array)null;
-            $data['provisionalCertificate'] = config('app.url') . "/api/trade/provisionalCertificate/" . $id;
+            $data['provisionalCertificate'] = config('app.url') . "/api/trade/provisional-certificate/" . $id;
             $application = ActiveTradeLicence::select(
                 "active_trade_licences.id",
                 "active_trade_licences.application_date",
@@ -3106,7 +3106,7 @@ class Trade implements ITrade
         try {
 
             $data = (array)null;
-            $data['licenceCertificate'] = config('app.url') . "/api/trade/licenceCertificate/" . $id;
+            $data['licenceCertificate'] = config('app.url') . "/api/trade/license-certificate/" . $id;
             $application = TradeLicence::select(
                 "trade_licences.id",
                 "trade_licences.application_date",

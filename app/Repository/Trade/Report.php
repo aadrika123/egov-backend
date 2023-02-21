@@ -3,6 +3,7 @@
 namespace App\Repository\Trade;
 
 use App\EloquentModels\Common\ModelWard;
+use App\Models\Trade\TradeLicence;
 use App\Models\Trade\TradeTransaction;
 use App\Repository\Common\CommonFunction;
 use App\Traits\Auth;
@@ -343,21 +344,17 @@ class Report implements IReport
             {
                 $uptoDate = $request->uptoDate;
             }
-            $where = "WHERE trade_transactions.status IN(1,2) AND trade_transactions.tran_date between '$fromDate' AND '$uptoDate' ";
             if($request->wardId)
             {
                 $wardId = $request->wardId;
-                $where .= " AND trade_transactions.ward_id =  $wardId ";
             }
             if($request->userId)
             {
                 $userId = $request->userId;
-                $where .= " AND trade_transactions.emp_dtl_id =  $userId ";
             }
             if($request->paymentMode)
             {
                 $paymentMode = strtoupper($request->paymentMode);
-                $where .= " AND upper(trade_transactions.payment_mode) =  upper('$paymentMode') ";
             }
             if($request->ulbId)
             {
@@ -367,13 +364,13 @@ class Report implements IReport
             $data = TradeTransaction::select(
                     DB::raw("sum(trade_transactions.paid_amount) as amount, 
                             count(trade_transactions.id) total_no,
-                            users.id, 
+                            users.id as user_id, 
                             case when users.id  is null then 'Online' else users.user_name 
-                            end as users ")
+                            end as user_name ")
                     )
                     ->LEFTJOIN("users",function($join){
                         $join->on("users.id","=","trade_transactions.emp_dtl_id")
-                        ->whereIn(DB::raw("upper(trade_transactions.payment_mode)",["ONLINE","ONL"]));
+                        ->whereNotIn(DB::raw("upper(trade_transactions.payment_mode)"),["ONLINE","ONL"]);
                     })
                     ->whereIN("trade_transactions.status",[1,2])
                     ->WHEREBETWEEN("trade_transactions.tran_date",[$fromDate,$uptoDate]);
@@ -394,6 +391,7 @@ class Report implements IReport
                 $data=$data->where("trade_transactions.ulb_id",$ulbId);
             }
             $data=$data->groupBy(["users.id", "users.user_name"]);
+            
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
@@ -407,8 +405,28 @@ class Report implements IReport
                 "total"=>$total,
                 "numberOfPages"=>$numberOfPages
             ];
+            // dd(DB::getQueryLog());
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function valideAndExpired(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $licenseType = "valide";
+
+            // $data = TradeLicence::select("*")
+            
         }
         catch(Exception $e)
         {
