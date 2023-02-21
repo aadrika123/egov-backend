@@ -168,6 +168,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     Route::controller(ReportController::class)->group(function () {
         Route::post("application/collection-reports", "CollectionReports");
+        Route::post("application/team-summary", "teamSummary");
     });
 });
 
