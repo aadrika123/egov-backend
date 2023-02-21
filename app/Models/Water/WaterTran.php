@@ -100,7 +100,7 @@ class WaterTran extends Model
         $waterTrans = new WaterTran();
         $waterTrans->related_id     = $req['id'];
         $waterTrans->amount         = $req['amount'];
-        $waterTrans->tran_type      = 'Demand Collection';
+        $waterTrans->tran_type      = $req['chargeCategory'];
         $waterTrans->tran_date      = $req['todayDate'];
         $waterTrans->tran_no        = $req['tranNo'];
         $waterTrans->payment_mode   = $req['paymentMode'];

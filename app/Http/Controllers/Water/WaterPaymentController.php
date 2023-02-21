@@ -760,7 +760,7 @@ class WaterPaymentController extends Controller
                 'todayDate' => $todayDate->format('Y-m-d'),
                 'tranNo'    => $tranNo,
                 'id'        => $req->applicationId,
-                'ulbId'     => authUser()->ulb_id
+                'ulbId'     => authUser()->ulb_id,
             ]);
             DB::beginTransaction();
             $wardId['ward_mstr_id'] = $refWaterApplication['ward_id'];

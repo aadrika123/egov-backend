@@ -1510,7 +1510,7 @@ class NewConnectionController extends Controller
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
                 ->first();
-            if ($charges) {
+            if ($charges['paid_status'] == false) {
                 $calculation['calculation'] = [
                     'connectionFee' => $charges['conn_fee'],
                     'penalty' => $charges['penalty'],
