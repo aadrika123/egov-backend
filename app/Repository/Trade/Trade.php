@@ -3117,7 +3117,6 @@ class Trade implements ITrade
                 "firm_name",
                 "holding_no",
                 "address",
-                "application_date",
                 "license_date",
                 "valid_from",
                 "valid_upto",
@@ -3136,7 +3135,7 @@ class Trade implements ITrade
                 ->join("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "trade_licences.ward_id");
                 })
-                ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                             STRING_AGG(guardian_name,',') as guardian_name,
                                             STRING_AGG(mobile_no::text,',') as mobile,
                                             temp_id
@@ -3152,7 +3151,6 @@ class Trade implements ITrade
             if (!$application) {
                 $application = TradeRenewal::select(
                     "trade_renewals.id",
-                    "trade_renewals.application_date",
                     "trade_renewals.establishment_date",
                     "application_no",
                     "provisional_license_no",
@@ -3179,9 +3177,9 @@ class Trade implements ITrade
                     ->join("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "trade_renewals.ward_id");
                     })
-                    ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                             STRING_AGG(guardian_name,',') as guardian_name,
-                                            STRING_AGG(mobile,',') as mobile,
+                                            STRING_AGG(mobile_no::text,',') as mobile,
                                             temp_id
                                         FROM trade_owners 
                                         WHERE temp_id = $id
