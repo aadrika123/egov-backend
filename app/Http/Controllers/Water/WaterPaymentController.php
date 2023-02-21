@@ -961,7 +961,6 @@ class WaterPaymentController extends Controller
 
             case (is_null($req->penaltyIds) || empty($req->penaltyIds)):
                 $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->applicationId)
-                    ->where('charge_category', $req->chargeCategory)
                     ->update([
                         'paid_status' => 1,
                     ]);
