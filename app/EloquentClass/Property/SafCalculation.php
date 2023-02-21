@@ -33,14 +33,12 @@ class SafCalculation
     private $_ruleSets;
     private $_ulbId;
     private $_rentalValue;
-    private $_multiFactors;
     private $_paramRentalRate;
     private $_rentalRates;
     private $_virtualDate;
     private $_effectiveDateRule2;
     private $_effectiveDateRule3;
     private array $_readRoadType;
-    private $_capitalValueRate;
     private bool $_rwhPenaltyStatus = false;
     private $_mobileTowerArea;
     private $_mobileTowerInstallDate;
@@ -63,9 +61,11 @@ class SafCalculation
     private $_jskRebateID;
     private $_speciallyAbledRebateID;
     private $_seniorCitizenRebateID;
-    private $_capitalValueRateMPH;
     private $_currentQuarterDueDate;
     private $_penaltyRebateCalc;
+    public $_capitalValueRateMPH;
+    public $_multiFactors;
+    public $_capitalValueRate;
 
     /** 
      * | For Building

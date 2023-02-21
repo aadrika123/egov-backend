@@ -378,6 +378,7 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('independent/generate-prop-orderid', 'generateOrderId');                      // (08) Generate Property Order ID
   Route::post('prop-payment-history', 'propPaymentHistory');                                // (06) Property Payment History
   Route::post('prop-ulb-receipt', 'proUlbReceipt');                                         // (09) Property Ulb Payment Receipt
+  Route::post('prop-comparative-demand', 'comparativeDemand');                               // (10) Property Comparative Demand
 });
 
 

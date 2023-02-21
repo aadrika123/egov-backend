@@ -364,4 +364,42 @@ class PropProperty extends Model
         $reqs = $this->reqProp($safDtls);
         $property->update($reqs);
     }
+
+    /**
+     * | Get Comparative Demand Details
+     */
+    public function getComparativeBasicDtls($propId)
+    {
+        return DB::table('prop_properties as p')
+            ->select(
+                'p.holding_no',
+                'p.new_holding_no',
+                'p.prop_address',
+                'p.road_width',
+                'p.ulb_id',
+                'w.ward_name as old_ward_no',
+                'nw.ward_name as new_ward_no',
+                DB::raw("(SELECT owner_name FROM prop_owners WHERE property_id=$propId order by id LIMIT 1)"),
+                DB::raw("(SELECT guardian_name FROM prop_owners WHERE property_id=$propId order by id LIMIT 1)"),
+                'f.id as floor_id',
+                'f.builtup_area',
+                'f.floor_mstr_id',
+                'f.usage_type_mstr_id',
+                'f.const_type_mstr_id',
+                'f.occupancy_type_mstr_id',
+                'f.date_from',
+                'f.date_upto',
+                'f.carpet_area',
+                'rf.floor_name'
+            )
+            ->join('ulb_ward_masters as w', 'w.id', '=', 'p.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'p.new_ward_mstr_id')
+            ->leftJoin('prop_floors as f', 'f.property_id', '=', 'p.id')
+            ->join('ref_prop_floors as rf', 'rf.id', '=', 'f.floor_mstr_id')
+            ->where('p.id', $propId)
+            ->where('p.status', 1)
+            ->where('f.status', 1)
+            ->where('rf.status', 1)
+            ->get();
+    }
 }
