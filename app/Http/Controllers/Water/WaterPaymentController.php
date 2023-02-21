@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqPayment;
+use App\Http\Requests\Water\ReqWaterPayment;
 use App\Http\Requests\Water\siteAdjustment;
 use App\MicroServices\IdGeneration;
 use App\Models\Payment\TempTransaction;
@@ -717,17 +718,22 @@ class WaterPaymentController extends Controller
      * | Consumer Demand Payment 
      * | Offline Payment for the Monthely Payment
      * | @param req
-     * | @var 
-     * | @return
+     * | @var offlinePaymentModes
+     * | @var todayDate
+     * | @var mWaterApplication
+     * | @var idGeneration
+     * | @var waterTran
+     * | @var userId
+     * | @var refWaterApplication
+     * | @var tranNo
+     * | @var charges
+     * | @var wardId
+     * | @var waterTrans
         | Serial No : 07
         | Working
      */
-    public function offlineConnectionPayment(Request $req)
+    public function offlineConnectionPayment(ReqWaterPayment $req)
     {
-        $req->validate([
-            'id' => 'required',
-            'penaltyId' => 'nullable|' # Request for the Penalty Id
-        ]);
         try {
             # Variable Assignments
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
@@ -737,11 +743,14 @@ class WaterPaymentController extends Controller
             $idGeneration = new IdGeneration;
             $waterTran = new WaterTran();
             $userId = auth()->user()->id;                                               # Authenticated user or Ghost User
-            $refWaterApplication = $mWaterApplication->getApplicationById($req->id);
+            $refWaterApplication = $mWaterApplication->getApplicationById($req->applicationId)
+                ->firstOrFail();
+
+            $this->verifyPaymentRules($req, $refWaterApplication);
 
             # Derivative Assignments
             $tranNo = $idGeneration->generateTransactionNo();
-            $charges = $mWaterConnectionCharge->getWaterchargesById($req->id)->get();   # get water User connectin charges
+            $charges = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)->get();   # get water User connectin charges
 
             if (!$charges || collect($charges)->isEmpty())
                 throw new Exception("Connection Not Available for Payment!");
@@ -749,15 +758,20 @@ class WaterPaymentController extends Controller
             $req->merge([
                 'userId'    => $userId,
                 'todayDate' => $todayDate->format('Y-m-d'),
-                'tranNo'    => $tranNo
+                'tranNo'    => $tranNo,
+                'id'        => $req->applicationId,
+                'ulbId'     => authUser()->ulb_id,
             ]);
             DB::beginTransaction();
-            $waterTrans = $waterTran->waterTransaction($req, $refWaterApplication);
+            $wardId['ward_mstr_id'] = $refWaterApplication['ward_id'];
+            $waterTrans = $waterTran->waterTransaction($req, $wardId);
 
             if (in_array($req['paymentMode'], $offlinePaymentModes)) {
                 $req->merge([
                     'chequeDate' => $req['chequeDate'],
-                    'tranId' => $waterTrans['id']
+                    'tranId' => $waterTrans['id'],
+                    'id' => $req->applicationId,
+                    'applicationNo' => $refWaterApplication['application_no']
                 ]);
                 $this->postOtherPaymentModes($req);
             }
@@ -768,44 +782,169 @@ class WaterPaymentController extends Controller
                 $charges->save();
 
                 $waterTranDetail = new WaterTranDetail();
-                $waterTranDetail->tran_id       = $waterTrans['id'];
-                $waterTranDetail->demand_id     = $charges['id'];
-                $waterTranDetail->total_demand  = $charges['balance_amount'];
+                $waterTranDetail->tran_id           = $waterTrans['id'];
+                $waterTranDetail->demand_id         = $charges['id'];
+                $waterTranDetail->total_demand      = $charges['balance_amount'];
+                $waterTranDetail->application_id    = $req->applicationId;
+                $waterTranDetail->total_demand      = $req->amount;
                 $waterTranDetail->save();
             }
 
             // Update SAF Payment Status
-            $activeSaf = WaterApplication::find($req['id']);
-            $activeSaf->payment_status = 1;
-            $activeSaf->save();
+            if ($refWaterApplication['payment_status'] == false) {
+                $activeSaf = WaterApplication::find($req['id']);
+                $activeSaf->payment_status = 1;
+                $activeSaf->save();
+            }
 
             // Readjust Water Penalties
-            if ($req->penaltyId) {
-                $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-                $rebatePenalties = $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->id)
-                    ->where('paid_status', 0)
-                    ->get();
-                $checkPenalty = collect($rebatePenalties)->first();
-                if ($checkPenalty) {
-                    $mWaterPenaltyInstallment->updatePenaltyPayment($req);  # Payment of Penalty
-                }
-            }
+            $this->updatePenaltyPaymentStatus($req);
             DB::commit();
-            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "", "1.0", "ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
+
+    /**
+     * | Verify the requirements for the Offline payment
+     * | Check the valid condition on application and req
+     * | @param req
+     * | @param refApplication
+     * | @var mWaterPenaltyInstallment
+     * | @var mWaterConnectionCharge
+     * | @var penaltyIds
+     * | @var refPenallty
+     * | @var refPenaltySumAmount
+     * | @var refAmount
+     * | @var actualCharge
+     * | @var actualAmount
+     * | @var actualPenaltyAmount
+     * | @var chargeAmount
+        | Serial No : 07.01
+     */
+    public function verifyPaymentRules($req, $refApplication)
+    {
+        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+        $mWaterConnectionCharge = new WaterConnectionCharge();
+        $paramChargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
+
+        switch ($req) {
+            case ($req->chargeCategory == $paramChargeCatagory['REGULAIZATION']):
+                switch ($req) {
+                    case ($req->isInstallment == "yes"):
+                        $penaltyIds = $req->penaltyIds;
+                        $refPenallty = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($penaltyIds);
+                        collect($refPenallty)->map(function ($value) {
+                            if ($value['paid_status'] == 1) {
+                                throw new Exception("payment for he respoctive Penaty has been done!");
+                            }
+                        });
+                        $refPenaltySumAmount = collect($refPenallty)->map(function ($value) {
+                            return $value['balance_amount'];
+                        })->sum();
+                        if ($refPenaltySumAmount != $req->penaltyAmount) {
+                            throw new Exception("Respective Penalty Amount Not Matched!");
+                        }
+
+                        $refAmount = $req->amount - $refPenaltySumAmount;
+                        $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
+                            ->where('charge_category', $req->chargeCategory)
+                            ->firstOrFail();
+
+                        $actualAmount = $actualCharge['conn_fee'];
+                        if ($actualAmount != $refAmount) {
+                            throw new Exception("Connection Amount Not Matched!");
+                        }
+                        break;
+                    case ($req->isInstallment == "no"): # check <-------------- calculation
+                        $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
+                            ->where('charge_category', $req->chargeCategory)
+                            ->firstOrFail();
+
+                        $refPenallty = $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->applicationId)->get();
+                        collect($refPenallty)->map(function ($value) {
+                            if ($value['paid_status'] == 1) {
+                                throw new Exception("payment for he respoctive Penaty has been done!");
+                            }
+                        });
+
+                        $actualPenaltyAmount = (10 / 100 * $actualCharge['penalty']);
+                        if ($req->penaltyAmount != $actualPenaltyAmount) {
+                            throw new Exception("Penalty Amount Not Matched!");
+                        }
+                        $chargeAmount =  $actualCharge['amount'] - $actualPenaltyAmount;
+                        if ($actualCharge['conn_fee'] != $chargeAmount) {
+                            throw new Exception("Connection fee not matched!");
+                        }
+                        break;
+                }
+                break;
+
+            case($req->chargeCategory == $paramChargeCatagory['NEW_CONNECTION']):
+                switch ($req) {
+                    case ($req->isInstallment == "yes"):
+                        $penaltyIds = $req->penaltyIds;
+                        $refPenallty = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($penaltyIds);
+                        collect($refPenallty)->map(function ($value) {
+                            if ($value['paid_status'] == 1) {
+                                throw new Exception("payment for he respoctive Penaty has been done!");
+                            }
+                        });
+                        $refPenaltySumAmount = collect($refPenallty)->map(function ($value) {
+                            return $value['balance_amount'];
+                        })->sum();
+                        if ($refPenaltySumAmount != $req->penaltyAmount) {
+                            throw new Exception("Respective Penalty Amount Not Matched!");
+                        }
+
+                        $refAmount = $req->amount - $refPenaltySumAmount;
+                        $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
+                            ->where('charge_category', $req->chargeCategory)
+                            ->firstOrFail();
+
+                        $actualAmount = $actualCharge['conn_fee'];
+                        if ($actualAmount != $refAmount) {
+                            throw new Exception("Connection Amount Not Matched!");
+                        }
+                        break;
+                    case ($req->isInstallment == "no"): # check <-------------- calculation
+                        $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
+                            ->where('charge_category', $req->chargeCategory)
+                            ->firstOrFail();
+
+                        $refPenallty = $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->applicationId)->get();
+                        collect($refPenallty)->map(function ($value) {
+                            if ($value['paid_status'] == 1) {
+                                throw new Exception("payment for he respoctive Penaty has been done!");
+                            }
+                        });
+
+                        $actualPenaltyAmount = (10 / 100 * $actualCharge['penalty']);
+                        if ($req->penaltyAmount != $actualPenaltyAmount) {
+                            throw new Exception("Penalty Amount Not Matched!");
+                        }
+                        $chargeAmount =  $actualCharge['amount'] - $actualPenaltyAmount;
+                        if ($actualCharge['conn_fee'] != $chargeAmount) {
+                            throw new Exception("Connection fee not matched!");
+                        }
+                        break;
+                }
+                break;
+        }
+    }
+
+
     /**
      * | Post Other Payment Modes for Cheque,DD,Neft
-        | Serial No : 07.01
+        | Serial No : 07.02
      */
     public function postOtherPaymentModes($req)
     {
         $cash = Config::get('payment-constants.PAYMENT_MODE.3');
-        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $moduleId = Config::get('module-constants.WATER_MODULE_ID');
         $mTempTransaction = new TempTransaction();
         if ($req['paymentMode'] != $cash) {
             $mPropChequeDtl = new WaterChequeDtl();
@@ -828,7 +967,7 @@ class WaterPaymentController extends Controller
             'module_id' => $moduleId,
             'workflow_id' => $req['workflowId'],
             'transaction_no' => $req['tranNo'],
-            'application_no' => $req->applicationNo,
+            'application_no' => $req['applicationNo'],
             'amount' => $req['amount'],
             'payment_mode' => $req['paymentMode'],
             'cheque_dd_no' => $req['chequeNo'],
@@ -838,5 +977,28 @@ class WaterPaymentController extends Controller
             'ulb_id' => $req['ulbId']
         ];
         $mTempTransaction->tempTransaction($tranReqs);
+    }
+
+    /**
+     * | Update the penalty Status 
+     * | @param req
+        | Serial No : 07.03
+     */
+    public function updatePenaltyPaymentStatus($req)
+    {
+        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+        switch ($req) {
+            case (!empty($req->penaltyIds)):
+                $mWaterPenaltyInstallment->updatePenaltyPayment($req->penaltyIds);
+                break;
+
+            case (is_null($req->penaltyIds) || empty($req->penaltyIds)):
+                $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->applicationId)
+                    ->where('charge_category', $req->chargeCategory)
+                    ->update([
+                        'paid_status' => 1,
+                    ]);
+                break;
+        }
     }
 }

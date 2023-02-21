@@ -85,7 +85,7 @@ class WaterApplication extends Controller
     {
         $req->validate([
             'id' => 'required',
-            'transactionNo' => 'required'
+            // 'transactionNo' => 'required'
         ]);
         try {
             # Variable Assignments
