@@ -1540,6 +1540,9 @@ class NewConnectionController extends Controller
             # penalty Data 
             if ($charges['penalty'] > 0) {
                 $ids = null;
+                $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
+                    ->where('paid_status', 0)
+                    ->get();
                 foreach ($penalty['penaltyInstallments'] as $key => $val) {
                     $ids = trim(($ids . "," . $val["id"]), ",");
                     $penalty['penaltyInstallments'][$key]["ids"] = $ids;

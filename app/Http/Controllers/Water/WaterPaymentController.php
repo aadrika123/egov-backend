@@ -883,41 +883,25 @@ class WaterPaymentController extends Controller
                 }
                 break;
 
-            case($req->chargeCategory == $paramChargeCatagory['NEW_CONNECTION']):
+            case ($req->chargeCategory == $paramChargeCatagory['NEW_CONNECTION']):
                 switch ($req) {
-                    case ($req->isInstallment == "no"):
+                    case (!$req->isInstallment):
                         $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                             ->where('charge_category', $req->chargeCategory)
                             ->firstOrFail();
 
-                        $actualAmount = $actualCharge['conn_fee'];
-                        if ($actualAmount != $refAmount) {
+                        $actualAmount = $actualCharge['amount'];
+                        if ($actualAmount != $req->amount) {
                             throw new Exception("Connection Amount Not Matched!");
                         }
                         break;
                     case ($req->isInstallment == "yes"): # check <-------------- calculation
-                        $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
-                            ->where('charge_category', $req->chargeCategory)
-                            ->firstOrFail();
-
-                        $refPenallty = $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->applicationId)->get();
-                        collect($refPenallty)->map(function ($value) {
-                            if ($value['paid_status'] == 1) {
-                                throw new Exception("payment for he respoctive Penaty has been done!");
-                            }
-                        });
-
-                        $actualPenaltyAmount = (10 / 100 * $actualCharge['penalty']);
-                        if ($req->penaltyAmount != $actualPenaltyAmount) {
-                            throw new Exception("Penalty Amount Not Matched!");
-                        }
-                        $chargeAmount =  $actualCharge['amount'] - $actualPenaltyAmount;
-                        if ($actualCharge['conn_fee'] != $chargeAmount) {
-                            throw new Exception("Connection fee not matched!");
-                        }
+                        throw new Exception("No Installment in New Connection!");
                         break;
                 }
                 break;
+                case ($req->chargeCategory == $paramChargeCatagory['NEW_CONNECTION']):
+                    break;
         }
     }
 
