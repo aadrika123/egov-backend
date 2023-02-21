@@ -8,4 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class PropActiveObjectionDtl extends Model
 {
     use HasFactory;
+
+    /**
+     * 
+     */
+    public function getDtlbyObjectionId($objId)
+    {
+        return PropActiveObjectionDtl::where('objection_id', $objId)
+            ->join('ref_prop_objection_types', 'ref_prop_objection_types.id', 'prop_active_objection_dtls.objection_type_id')
+            ->orderByDesc('objection_type_id')
+            ->get();
+    }
 }

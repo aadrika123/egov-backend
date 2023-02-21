@@ -82,6 +82,12 @@ class RouteServiceProvider extends ServiceProvider
                 ->namespace($this->namespace)
                 ->group(base_path('routes/payment.php'));
 
+            //dashboard
+            Route::prefix('api/dashboard')
+                ->middleware('api')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/dashboard.php'));
+
             //Cluster
             //  Route::prefix('api/cluster')
             //  ->middleware('api')

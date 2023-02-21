@@ -56,47 +56,4 @@ trait Objection
                 'objection_for'
             );
     }
-
-    public function clericalDetails($details, $mPropOwners, $mObjectionOwners)
-    {
-        $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
-        $basicElement = [
-            'headerTitle' => "Basic Details",
-            "data" => $basicDetails
-        ];
-
-        $fullDetailsData['application_no'] = $details->objection_no;
-        $fullDetailsData['apply_date'] = $details->date;
-        $fullDetailsData['objection_for'] = $details->objection_for;
-        $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement]);
-        // Table Array
-        $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);
-        $ownerList = json_decode(json_encode($ownerList), true);       // Convert Std class to array
-        $ownerDetails = $this->generateOwnerDetails($ownerList);
-        $ownerElement = [
-            'headerTitle' => 'Owner Details',
-            'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
-            'tableData' => $ownerDetails
-        ];
-
-        /**
-         * | Clerical Mistake  
-         */
-        $objectionOwnerList = $mObjectionOwners->getOwnerDetail($details->objection_id);
-        $objectionOwnerList = json_decode(json_encode($objectionOwnerList), true);       // Convert Std class to array
-        $objectionOwnerDetails = $this->objectionOwnerDetails($objectionOwnerList);
-        $objectionOwnerElement = [
-            'headerTitle' => 'Objection Owner Details',
-            'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
-            'tableData' => $objectionOwnerDetails
-        ];
-
-        $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $objectionOwnerElement]);
-        // return $fullDetailsData;
-        // Card Details
-        $cardElement = $this->generateObjCardDtls($details, $ownerList);
-        $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
-
-        return responseMsgs(true, "Objection Details", remove_null($fullDetailsData), '010807', '01', '', 'Post', '');
-    }
 }

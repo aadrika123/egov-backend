@@ -364,4 +364,16 @@ class PropProperty extends Model
         $reqs = $this->reqProp($safDtls);
         $property->update($reqs);
     }
+
+    /**
+     * | verify holding No
+     */
+    public function verifyHolding($req)
+    {
+        return PropProperty::select('*')
+            ->where('holding_no', $req->holdingNo)
+            ->ORwhere('new_holding_no', $req->holdingNo)
+            ->where('ulb_id', $req->ulbId)
+            ->first();
+    }
 }

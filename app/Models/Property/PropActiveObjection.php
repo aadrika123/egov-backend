@@ -2,6 +2,7 @@
 
 namespace App\Models\Property;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -137,5 +138,18 @@ class PropActiveObjection extends Model
         return PropActiveObjection::select('*')
             ->where('id', $objId)
             ->first();
+    }
+
+    /**
+     * | applied application Today
+     */
+    public function todayAppliedApplications($userId)
+    {
+        $date = Carbon::now();
+        return PropActiveObjection::select(
+            'id'
+        )
+            ->where('user_id', $userId)
+            ->where('date', $date);
     }
 }

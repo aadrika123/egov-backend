@@ -2,6 +2,7 @@
 
 namespace App\Models\Property;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -121,5 +122,18 @@ class PropActiveConcession extends Model
         return PropActiveConcession::select('*')
             ->where('id', $conId)
             ->first();
+    }
+
+    /**
+     * | today applied application
+     */
+    public function todayAppliedApplications($userId)
+    {
+        $date = Carbon::now();
+        return PropActiveConcession::select(
+            'id'
+        )
+            ->where('user_id', $userId)
+            ->where('date', $date);
     }
 }
