@@ -885,22 +885,7 @@ class WaterPaymentController extends Controller
 
             case($req->chargeCategory == $paramChargeCatagory['NEW_CONNECTION']):
                 switch ($req) {
-                    case ($req->isInstallment == "yes"):
-                        $penaltyIds = $req->penaltyIds;
-                        $refPenallty = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($penaltyIds);
-                        collect($refPenallty)->map(function ($value) {
-                            if ($value['paid_status'] == 1) {
-                                throw new Exception("payment for he respoctive Penaty has been done!");
-                            }
-                        });
-                        $refPenaltySumAmount = collect($refPenallty)->map(function ($value) {
-                            return $value['balance_amount'];
-                        })->sum();
-                        if ($refPenaltySumAmount != $req->penaltyAmount) {
-                            throw new Exception("Respective Penalty Amount Not Matched!");
-                        }
-
-                        $refAmount = $req->amount - $refPenaltySumAmount;
+                    case ($req->isInstallment == "no"):
                         $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                             ->where('charge_category', $req->chargeCategory)
                             ->firstOrFail();
@@ -910,7 +895,7 @@ class WaterPaymentController extends Controller
                             throw new Exception("Connection Amount Not Matched!");
                         }
                         break;
-                    case ($req->isInstallment == "no"): # check <-------------- calculation
+                    case ($req->isInstallment == "yes"): # check <-------------- calculation
                         $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                             ->where('charge_category', $req->chargeCategory)
                             ->firstOrFail();

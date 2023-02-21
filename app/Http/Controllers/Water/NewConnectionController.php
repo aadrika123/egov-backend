@@ -1504,7 +1504,7 @@ class NewConnectionController extends Controller
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
-            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->first();
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->get();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
             # calculation details
@@ -1520,10 +1520,17 @@ class NewConnectionController extends Controller
                 ];
                 $waterTransDetail = array_merge($calculation, $waterTransDetail);
             } else {
+                $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
+                    ->where('paid_status', 0)
+                    ->get();
+                $penaltyAmount = collect($penalty['penaltyInstallments'])->map(function ($value) {
+                    return $value['balance_amount'];
+                })->sum();
+
                 $calculation['calculation'] = [
                     'connectionFee' => 0.00,           # Static
-                    'penalty' => $charges['penalty'],
-                    'totalAmount' => $charges['amount'],
+                    'penalty' => $penaltyAmount,
+                    'totalAmount' => $penaltyAmount,
                     'chargeCatagory' => $charges['charge_category'],
                     'paidStatus' => $charges['paid_status']
                 ];
@@ -1533,9 +1540,6 @@ class NewConnectionController extends Controller
             # penalty Data 
             if ($charges['penalty'] > 0) {
                 $ids = null;
-                $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
-                    ->where('paid_status', 0)
-                    ->get();
                 foreach ($penalty['penaltyInstallments'] as $key => $val) {
                     $ids = trim(($ids . "," . $val["id"]), ",");
                     $penalty['penaltyInstallments'][$key]["ids"] = $ids;
