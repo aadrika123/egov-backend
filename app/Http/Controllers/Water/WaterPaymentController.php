@@ -718,8 +718,17 @@ class WaterPaymentController extends Controller
      * | Consumer Demand Payment 
      * | Offline Payment for the Monthely Payment
      * | @param req
-     * | @var 
-     * | @return
+     * | @var offlinePaymentModes
+     * | @var todayDate
+     * | @var mWaterApplication
+     * | @var idGeneration
+     * | @var waterTran
+     * | @var userId
+     * | @var refWaterApplication
+     * | @var tranNo
+     * | @var charges
+     * | @var wardId
+     * | @var waterTrans
         | Serial No : 07
         | Working
      */
@@ -804,6 +813,16 @@ class WaterPaymentController extends Controller
      * | Check the valid condition on application and req
      * | @param req
      * | @param refApplication
+     * | @var mWaterPenaltyInstallment
+     * | @var mWaterConnectionCharge
+     * | @var penaltyIds
+     * | @var refPenallty
+     * | @var refPenaltySumAmount
+     * | @var refAmount
+     * | @var actualCharge
+     * | @var actualAmount
+     * | @var actualPenaltyAmount
+     * | @var chargeAmount
         | Serial No : 07.01
      */
     public function verifyPaymentRules($req, $refApplication)

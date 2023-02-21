@@ -1509,7 +1509,6 @@ class NewConnectionController extends Controller
 
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
-                ->where('paid_status', false)
                 ->first();
             if ($charges) {
                 $calculation['calculation'] = [
@@ -1520,19 +1519,17 @@ class NewConnectionController extends Controller
                     'paidStatus' => $charges['paid_status']
                 ];
                 $waterTransDetail = array_merge($calculation, $waterTransDetail);
-
-                if ($calculation['calculation']['penalty'] > 0) {
-                    $ids = null;
-                    $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
-                        ->where('paid_status', 0)
-                        ->get();
-                    foreach($penalty['penaltyInstallments'] as $key=>$val)
-                    {
-                        $ids = trim(($ids.",".$val["id"]),",");
-                        $penalty['penaltyInstallments'][$key]["ids"] = $ids;
-                    }
-                    $waterTransDetail = array_merge($penalty, $waterTransDetail);
+            }
+            if ($charges['penalty'] > 0) {
+                $ids = null;
+                $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
+                    ->where('paid_status', 0)
+                    ->get();
+                foreach ($penalty['penaltyInstallments'] as $key => $val) {
+                    $ids = trim(($ids . "," . $val["id"]), ",");
+                    $penalty['penaltyInstallments'][$key]["ids"] = $ids;
                 }
+                $waterTransDetail = array_merge($penalty, $waterTransDetail);
             }
             $returnData = array_merge($applicationDetails, $waterTransDetail);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
