@@ -169,6 +169,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(ReportController::class)->group(function () {
         Route::post("application/collection-reports", "CollectionReports");
         Route::post("application/team-summary", "teamSummary");
+        Route::post("application/valide-expire-list", "valideAndExpired");
     });
 });
 
