@@ -322,15 +322,14 @@ class WaterPaymentController extends Controller
                 ->firstOrFail();
 
             #  Data not equal to Cash
-            if ($transactionDetails['payment_mode'] != $mPaymentModes['1']) {
+            if (!in_array($transactionDetails['payment_mode'] , [$mPaymentModes['1'], $mPaymentModes['5']])) {
                 $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->first();
             }
             # Application Deatils
             $applicationDetails = $mWaterApplication->getDetailsByApplicationId($transactionDetails->related_id)->firstOrFail();
 
             # Connection Charges
-            $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($transactionDetails->related_id)
-                ->where('id', $transactionDetails->demand_id)
+            $connectionCharges = $mWaterConnectionCharge->getChargesById($transactionDetails->demand_id)
                 ->firstOrFail();
 
             # if penalty Charges
