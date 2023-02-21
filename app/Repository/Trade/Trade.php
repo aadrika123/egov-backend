@@ -4335,7 +4335,7 @@ class Trade implements ITrade
             $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
             $appUploadedDocVerified = collect();
             $appUploadedDoc->map(function($val) use($appUploadedDocVerified){   
-                $appUploadedDocVerified->push(["is_docVerify"=>(!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] !=0 ) ? true : false ) :true)]);             
+                $appUploadedDocVerified->push(["is_docVerify"=>(!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] ) ? true : false ) :true)]);             
                 
             });
             $is_appUploadedDocVerified = $appUploadedDocVerified->where("is_docVerify",false);            
@@ -4346,7 +4346,7 @@ class Trade implements ITrade
                 $val["documents"]->map(function($val1)use($Wdocuments,$ownerId){
                     $val1["ownerId"] = $ownerId;
                     $val1["is_uploded"] = (in_array($val1["docType"],["R","OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false ) :true;
-                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] !=0 ) ? true : false ) :true;
+                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] ) ? true : false ) :true;
                     $Wdocuments->push($val1);
                 });
             });
@@ -4359,7 +4359,7 @@ class Trade implements ITrade
                 return (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()));
             }
             if($fromRole["can_verify_document"])
-            {
+            {                
                 return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()));
             }
         }

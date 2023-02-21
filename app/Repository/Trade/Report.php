@@ -423,9 +423,66 @@ class Report implements IReport
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
-            $licenseType = "valide";
+            $wardId = null;
+            $userId = null;
+            $uptoDate = Carbon::now()->format("Y-m-d");
+            $oprater = ">=";
+            if(strtoupper($request->valide)=="EXPIRE")
+            {
+                $oprater = "<";
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            $where = " WHERE trade_licences.valid_upto $oprater '$uptoDate' ";
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+                $where .= " AND trade_licences.ward_id = $wardId";
+            }
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            $where .= " AND trade_licences.ulb_id = $ulbId";
 
-            // $data = TradeLicence::select("*")
+            $data = TradeLicence::select("trade_licences.*")
+                    ->LEFTJOIN(DB::RAW("(
+                        SELECT DISTINCT(trade_owners.temp_id) AS temp_id,
+                            STRING_AGG(owner_name,',') AS  owner_name,
+                            STRING_AGG(mobile_no::TEXT,',') AS  mobile_no
+                        FROM  trade_owners
+                        JOIN trade_licences ON trade_licences.id = trade_owners.temp_id
+                        $where
+                        GROUP BY trade_owners.temp_id
+                        ) AS owner_detail"),function($join){
+                            $join->on("owner_detail.temp_id","trade_licences.id");
+                        })
+                    ->where("trade_licences.valid_upto",$oprater,$uptoDate)
+                    ->where("trade_licences.ulb_id",$ulbId);
+            if($wardId)
+            {
+                $data = $data->where("trade_licences.ward_id",$wardId);
+            }
+
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total/$perPage);                
+            $list=[
+                "perPage"=>$perPage,
+                "page"=>$page,
+                "items"=>$items,
+                "total"=>$total,
+                "numberOfPages"=>$numberOfPages
+            ];
+            // dd(DB::getQueryLog());
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
             
         }
         catch(Exception $e)
