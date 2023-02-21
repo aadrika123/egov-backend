@@ -427,7 +427,7 @@ class Report implements IReport
             $userId = null;
             $uptoDate = Carbon::now()->format("Y-m-d");
             $oprater = ">=";
-            if(strtoupper($request->valide)=="EXPIRE")
+            if(strtoupper($request->licenseStatus)=="EXPIRED")
             {
                 $oprater = "<";
             }
@@ -447,18 +447,14 @@ class Report implements IReport
             }
             $where .= " AND trade_licences.ulb_id = $ulbId";
 
-            $data = TradeLicence::select("trade_licences.*")
-                    ->LEFTJOIN(DB::RAW("(
-                        SELECT DISTINCT(trade_owners.temp_id) AS temp_id,
-                            STRING_AGG(owner_name,',') AS  owner_name,
-                            STRING_AGG(mobile_no::TEXT,',') AS  mobile_no
-                        FROM  trade_owners
-                        JOIN trade_licences ON trade_licences.id = trade_owners.temp_id
-                        $where
-                        GROUP BY trade_owners.temp_id
-                        ) AS owner_detail"),function($join){
-                            $join->on("owner_detail.temp_id","trade_licences.id");
-                        })
+            $data = TradeLicence::select("trade_licences.id","trade_licences.ward_id",
+                        "trade_licences.ulb_id","trade_licences.application_no","trade_licences.provisional_license_no",
+                        "trade_licences.application_date","trade_licences.license_no","trade_licences.license_date",
+                        "trade_licences.valid_from","trade_licences.valid_upto","trade_licences.firm_name",
+                    DB::raw("ulb_ward_masters.ward_name as ward_no")
+            
+                    )
+                    ->join("ulb_ward_masters","ulb_ward_masters.id","trade_licences.ward_id")
                     ->where("trade_licences.valid_upto",$oprater,$uptoDate)
                     ->where("trade_licences.ulb_id",$ulbId);
             if($wardId)
