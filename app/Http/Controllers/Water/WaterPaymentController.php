@@ -721,7 +721,6 @@ class WaterPaymentController extends Controller
      * | @var 
      * | @return
         | Serial No : 07
-        | Write validation
         | Working
      */
     public function offlineConnectionPayment(ReqWaterPayment $req)
