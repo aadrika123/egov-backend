@@ -1519,7 +1519,18 @@ class NewConnectionController extends Controller
                     'paidStatus' => $charges['paid_status']
                 ];
                 $waterTransDetail = array_merge($calculation, $waterTransDetail);
+            } else {
+                $calculation['calculation'] = [
+                    'connectionFee' => 0.00,           # Static
+                    'penalty' => $charges['penalty'],
+                    'totalAmount' => $charges['amount'],
+                    'chargeCatagory' => $charges['charge_category'],
+                    'paidStatus' => $charges['paid_status']
+                ];
+                $waterTransDetail = array_merge($calculation, $waterTransDetail);
             }
+
+            # penalty Data 
             if ($charges['penalty'] > 0) {
                 $ids = null;
                 $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
