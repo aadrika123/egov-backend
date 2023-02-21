@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\Payment\TempTransaction;
 use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropActiveObjection;
@@ -44,19 +45,33 @@ class JskController extends Controller
     {
         try {
             $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+            $date = Carbon::now();
             $mpropActiveSaf =  new PropActiveSaf();
             $mPropActiveObjection = new PropActiveObjection();
             $mPropActiveConcession = new PropActiveConcession();
             $mPropActiveHarvesting = new PropActiveHarvesting();
+            $mTempTransaction = new TempTransaction();
 
 
             $a = $mpropActiveSaf->todayAppliedApplications($userId);
             $b = $mPropActiveObjection->todayAppliedApplications($userId);
             $c = $mPropActiveConcession->todayAppliedApplications($userId);
             $d = $mPropActiveHarvesting->todayAppliedApplications($userId);
+            $e = $mTempTransaction->transactionList($date, $userId, $ulbId);
+            $f =  collect($e)->sum('amount');
+            $g = collect($e)->where('payment_mode', 'CASH')->sum('amount');
+            $h = collect($e)->where('payment_mode', 'CHEQUE')->sum('amount');
+            $i = collect($e)->where('payment_mode', 'DD')->sum('amount');
+            $j = collect($e)->where('payment_mode', 'Online')->sum('amount');
 
-            $data = $a->union($b)->union($c)->union($d)->get()->count();
-            // return $data->count();
+            $data['Total Applied Application'] = $a->union($b)->union($c)->union($d)->get()->count();
+            $data['Total Collection'] = $f;
+            $data['Total Cash'] = $g;
+            $data['Total Cheque'] = $h;
+            $data['Total DD'] = $i;
+            $data['Total Online'] = $j;
+
 
 
 
