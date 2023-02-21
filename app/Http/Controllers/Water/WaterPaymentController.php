@@ -223,6 +223,7 @@ class WaterPaymentController extends Controller
         | Serial No : 02
         | Recheck 
         | Search From Water trans table Not in webhook table 
+        | may not used
      */
     public function generatePaymentReceipt(Request $req)
     {
@@ -297,7 +298,6 @@ class WaterPaymentController extends Controller
      * | @return 
         | Serial No : 03
         | Recheck
-        | Not Finish
      */
     public function generateOfflinePaymentReceipt(Request $req)
     {
@@ -322,7 +322,7 @@ class WaterPaymentController extends Controller
                 ->firstOrFail();
 
             #  Data not equal to Cash
-            if (!in_array($transactionDetails['payment_mode'] , [$mPaymentModes['1'], $mPaymentModes['5']])) {
+            if (!in_array($transactionDetails['payment_mode'], [$mPaymentModes['1'], $mPaymentModes['5']])) {
                 $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->first();
             }
             # Application Deatils
@@ -426,7 +426,7 @@ class WaterPaymentController extends Controller
 
             DB::beginTransaction();
             # Generating Demand for new InspectionData
-            $newConnectionCharges = objToArray($mWaterNewConnection->calWaterConCharge($request));
+            return $newConnectionCharges = objToArray($mWaterNewConnection->calWaterConCharge($request));
             if (!$newConnectionCharges['status']) {
                 throw new Exception(
                     $newConnectionCharges['errors']
@@ -514,6 +514,10 @@ class WaterPaymentController extends Controller
         $mWaterTran = new WaterTran();
         $chargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
 
+        # in case of connection charge is 0
+        if ($newCharge == 0) {
+            $mWaterTran->saveZeroConnectionCharg($newCharge, $waterApplicationDetails->ulb_id, $request, $applicationId, $connectionId);
+        }
         # get Water Application Details
         $mWaterApplication->updatePaymentStatus($applicationId, false);                     // Update the payment status false         
 
@@ -528,11 +532,8 @@ class WaterPaymentController extends Controller
             'chargeCatagory' => $chargeCatagory['SITE_INSPECTON'],
             'ward_id' => $waterApplicationDetails['ward_id']
         ]);
-        $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
-        # in case of connection charge is 0
-        if ($newCharge == 0) {
-            $mWaterTran->saveZeroConnectionCharg($newCharge, $waterApplicationDetails->ulb_id, $request, $applicationId, $connectionId);
-        }
+        $newConnectionCharges['conn_fee_charge']['amount'] =
+            $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
     }
 
 
@@ -862,14 +863,16 @@ class WaterPaymentController extends Controller
                             throw new Exception("Respective Penalty Amount Not Matched!");
                         }
 
-                        $refAmount = $req->amount - $refPenaltySumAmount;
                         $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                             ->where('charge_category', $req->chargeCategory)
                             ->firstOrFail();
 
-                        $actualAmount = $actualCharge['conn_fee'];
-                        if ($actualAmount != $refAmount) {
-                            throw new Exception("Connection Amount Not Matched!");
+                        if ($actualCharge['paid_status'] == false) {
+                            $refAmount = $req->amount - $refPenaltySumAmount;
+                            $actualAmount = $actualCharge['conn_fee'];
+                            if ($actualAmount != $refAmount) {
+                                throw new Exception("Connection Amount Not Matched!");
+                            }
                         }
                         break;
                     case ($req->isInstallment == "no"): # check <-------------- calculation
