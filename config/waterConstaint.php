@@ -32,6 +32,11 @@ return [
         "REGULAIZATION" => 2
     ],
 
+    "REF_CONNECTION_TYPE" => [
+        "New Connection" => 1,
+        "Regulaization" => 2
+    ],
+
     "JSK" => "JSK",
 
     "CHARGE_CATAGORY" => [

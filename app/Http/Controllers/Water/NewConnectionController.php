@@ -1522,9 +1522,15 @@ class NewConnectionController extends Controller
                 $waterTransDetail = array_merge($calculation, $waterTransDetail);
 
                 if ($calculation['calculation']['penalty'] > 0) {
+                    $ids = null;
                     $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
                         ->where('paid_status', 0)
                         ->get();
+                    foreach($penalty['penaltyInstallments'] as $key=>$val)
+                    {
+                        $ids = trim(($ids.",".$val["id"]),",");
+                        $penalty['penaltyInstallments'][$key]["ids"] = $ids;
+                    }
                     $waterTransDetail = array_merge($penalty, $waterTransDetail);
                 }
             }

@@ -68,11 +68,23 @@ class WaterPenaltyInstallment extends Model
      * | Update penalty Payment Status true in the payment
      * | @param req
      */
-    public function updatePenaltyPayment($req)
+    public function updatePenaltyPayment($penaltyId)
     {
-        WaterPenaltyInstallment::whereIn('id', $req->penaltyId)
+        WaterPenaltyInstallment::whereIn('id', $penaltyId)
             ->update([
                 'paid_status' => true
             ]);
+    }
+
+    /**
+     * | Get Penalty details by Penalty id 
+     * | the penalty id must be in array 
+     * | @param penaltyId
+     */
+    public function getPenaltyByArrayOfId($penaltyIds)
+    {
+        return WaterPenaltyInstallment::whereIn('id', $penaltyIds)
+            ->where('status', 1)
+            ->get();
     }
 }
