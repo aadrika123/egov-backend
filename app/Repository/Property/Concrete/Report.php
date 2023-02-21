@@ -146,7 +146,7 @@ class Report implements IReport
                 }
                 if($paymentMode)
                 {
-                    $data=$data->where(DB::row("prop_transactions.upper(payment_mode)"),$paymentMode);
+                    $data=$data->where(DB::raw("upper(prop_transactions.payment_mode)"),$paymentMode);
                 }
                 if($ulbId)
                 {

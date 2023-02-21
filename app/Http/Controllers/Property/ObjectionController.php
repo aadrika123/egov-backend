@@ -165,6 +165,7 @@ class ObjectionController extends Controller
 
         try {
             $mPropActiveObjection = new PropActiveObjection();
+            $mObjectionOwners = new PropActiveObjectionOwner();
             $mPropOwners = new PropOwner();
             $mPropFloors = new PropFloor();
             $mCustomDetails = new CustomDetail();
@@ -180,54 +181,97 @@ class ObjectionController extends Controller
             //     $this->assessmentDetails($details, $req);
             // };
 
+            if ($details->objection_for == 'Clerical Mistake') {
+                // return  $this->clericalDetails($details, $mPropOwners, $mObjectionOwners);
+
+                $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
+                $basicElement = [
+                    'headerTitle' => "Basic Details",
+                    "data" => $basicDetails
+                ];
+
+                $fullDetailsData['application_no'] = $details->objection_no;
+                $fullDetailsData['apply_date'] = $details->date;
+                $fullDetailsData['objection_for'] = $details->objection_for;
+                $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement]);
+                // Table Array
+                $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);
+                $ownerList = json_decode(json_encode($ownerList), true);       // Convert Std class to array
+                $ownerDetails = $this->generateOwnerDetails($ownerList);
+                $ownerElement = [
+                    'headerTitle' => 'Owner Details',
+                    'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                    'tableData' => $ownerDetails
+                ];
+
+                /**
+                 * | Clerical Mistake  
+                 */
+                $objectionOwnerList = $mObjectionOwners->getOwnerDetail($details->objection_id);
+                $objectionOwnerList = json_decode(json_encode($objectionOwnerList), true);       // Convert Std class to array
+                $objectionOwnerDetails = $this->objectionOwnerDetails($objectionOwnerList);
+                $objectionOwnerElement = [
+                    'headerTitle' => 'Objection Owner Details',
+                    'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                    'tableData' => $objectionOwnerDetails
+                ];
+
+                $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $objectionOwnerElement]);
+                // return $fullDetailsData;
+                // Card Details
+                $cardElement = $this->generateObjCardDtls($details, $ownerList);
+                $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
+            };
+
+
             // Data Array
-            $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
-            $basicElement = [
-                'headerTitle' => "Basic Details",
-                "data" => $basicDetails
-            ];
+            // $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
+            // $basicElement = [
+            //     'headerTitle' => "Basic Details",
+            //     "data" => $basicDetails
+            // ];
 
-            $propertyDetails = $this->generatePropertyDetails($details);   // (Property Details) Trait function to get Property Details
-            $propertyElement = [
-                'headerTitle' => "Property Details & Address",
-                'data' => $propertyDetails
-            ];
+            // $propertyDetails = $this->generatePropertyDetails($details);   // (Property Details) Trait function to get Property Details
+            // $propertyElement = [
+            //     'headerTitle' => "Property Details & Address",
+            //     'data' => $propertyDetails
+            // ];
 
-            $corrDetails = $this->generateCorrDtls($details);              // (Corresponding Address Details) Trait function to generate corresponding address details
-            $corrElement = [
-                'headerTitle' => 'Corresponding Address',
-                'data' => $corrDetails,
-            ];
+            // $corrDetails = $this->generateCorrDtls($details);              // (Corresponding Address Details) Trait function to generate corresponding address details
+            // $corrElement = [
+            //     'headerTitle' => 'Corresponding Address',
+            //     'data' => $corrDetails,
+            // ];
 
-            $electDetails = $this->generateElectDtls($details);            // (Electricity & Water Details) Trait function to generate Electricity Details
-            $electElement = [
-                'headerTitle' => 'Electricity & Water Details',
-                'data' => $electDetails
-            ];
-            $fullDetailsData['application_no'] = $details->objection_no;
-            $fullDetailsData['apply_date'] = $details->date;
-            $fullDetailsData['objection_for'] = $details->objection_for;
-            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
-            // Table Array
-            $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);
-            $ownerList = json_decode(json_encode($ownerList), true);       // Convert Std class to array
-            $ownerDetails = $this->generateOwnerDetails($ownerList);
-            $ownerElement = [
-                'headerTitle' => 'Owner Details',
-                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
-                'tableData' => $ownerDetails
-            ];
-            $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
-            $floorDetails = $this->generateFloorDetails($floorList);
-            $floorElement = [
-                'headerTitle' => 'Floor Details',
-                'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
-                'tableData' => $floorDetails
-            ];
-            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement]);
-            // Card Details
-            $cardElement = $this->generateObjCardDtls($details, $ownerList);
-            $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
+            // $electDetails = $this->generateElectDtls($details);            // (Electricity & Water Details) Trait function to generate Electricity Details
+            // $electElement = [
+            //     'headerTitle' => 'Electricity & Water Details',
+            //     'data' => $electDetails
+            // ];
+            // $fullDetailsData['application_no'] = $details->objection_no;
+            // $fullDetailsData['apply_date'] = $details->date;
+            // $fullDetailsData['objection_for'] = $details->objection_for;
+            // $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
+            // // Table Array
+            // $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);
+            // $ownerList = json_decode(json_encode($ownerList), true);       // Convert Std class to array
+            // $ownerDetails = $this->generateOwnerDetails($ownerList);
+            // $ownerElement = [
+            //     'headerTitle' => 'Owner Details',
+            //     'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+            //     'tableData' => $ownerDetails
+            // ];
+            // $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
+            // $floorDetails = $this->generateFloorDetails($floorList);
+            // $floorElement = [
+            //     'headerTitle' => 'Floor Details',
+            //     'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
+            //     'tableData' => $floorDetails
+            // ];
+            // $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement]);
+            // // Card Details
+            // $cardElement = $this->generateObjCardDtls($details, $ownerList);
+            // $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
 
             $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $req->id);
             $fullDetailsData['levelComment'] = $levelComment;

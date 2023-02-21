@@ -460,7 +460,7 @@ class TradeCitizen implements ITradeCitizen
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
                 if(trim($val->license_type)=="approved" && $val->valid_upto < $nextMonth)
                 {
-                    $val->option=["RENEWAL","AMENDMENT"];
+                    $val->option=["RENEWAL"];
                 }
                 if(trim($val->license_type)=="approved" && $val->valid_upto >= Carbon::now()->format('Y-m-d'))
                 {

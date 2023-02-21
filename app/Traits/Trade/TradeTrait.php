@@ -106,6 +106,7 @@ trait TradeTrait
                 $ownerDetail['aadhar_no'],
                 $ownerDetail['pan_no'],
                 $ownerDetail['email'],
+                $ownerDetail['address'],
 
             ];
         });

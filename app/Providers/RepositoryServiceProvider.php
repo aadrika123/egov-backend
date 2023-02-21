@@ -64,9 +64,10 @@ use App\Repository\Property\Interfaces\IPropertyBifurcation;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use App\Repository\Property\Interfaces\IReport;
 use App\Repository\Property\Interfaces\iSafDemandRepo;
-
+use App\Repository\Trade\IReport as TradeIReport;
 use App\Repository\Trade\ITradeCitizen;
 use App\Repository\Trade\ITradeNotice;
+use App\Repository\Trade\Report as TradeReport;
 use App\Repository\Trade\TradeCitizen;
 use App\Repository\Trade\TradeNotice;
 
@@ -95,6 +96,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(ITrade::class, Trade::class);
         $this->app->bind(ITradeCitizen::class, TradeCitizen::class);
         $this->app->bind(ITradeNotice::class, TradeNotice::class);
+        $this->app->bind(TradeIReport::class, TradeReport::class);
         #------water module----------
         $this->app->bind(iNewConnection::class, NewConnectionRepository::class);
         $this->app->bind(IWaterNewConnection::class, WaterNewConnection::class);
