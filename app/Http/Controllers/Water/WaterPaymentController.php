@@ -839,7 +839,7 @@ class WaterPaymentController extends Controller
                         $refPenallty = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($penaltyIds);
                         collect($refPenallty)->map(function ($value) {
                             if ($value['paid_status'] == 1) {
-                                throw new Exception("payment for he respoctive Penaty has been done!");
+                                throw new Exception("payment for the respoctive Penaty has been done!");
                             }
                         });
                         $refPenaltySumAmount = collect($refPenallty)->map(function ($value) {
@@ -885,7 +885,7 @@ class WaterPaymentController extends Controller
 
             case ($req->chargeCategory == $paramChargeCatagory['NEW_CONNECTION']):
                 switch ($req) {
-                    case (!$req->isInstallment):
+                    case (is_null($req->isInstallment) || !$req->isInstallment):
                         $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                             ->where('charge_category', $req->chargeCategory)
                             ->firstOrFail();
@@ -900,8 +900,6 @@ class WaterPaymentController extends Controller
                         break;
                 }
                 break;
-                case ($req->chargeCategory == $paramChargeCatagory['NEW_CONNECTION']):
-                    break;
         }
     }
 

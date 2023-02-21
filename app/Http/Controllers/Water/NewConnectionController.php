@@ -1486,7 +1486,7 @@ class NewConnectionController extends Controller
      * | @var 
      * | @return 
         | Serial No : 
-        | Used 
+        | Used Only for new Connection or New Regulization
      */
     public function getApplicationDetailById(Request $request)
     {
@@ -1509,7 +1509,8 @@ class NewConnectionController extends Controller
 
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
-                ->first();
+                ->where('charge_category', $applicationDetails['applicationDetails']['connection_type'])
+                ->firstOrFail();
             if ($charges['paid_status'] == false) {
                 $calculation['calculation'] = [
                     'connectionFee' => $charges['conn_fee'],
