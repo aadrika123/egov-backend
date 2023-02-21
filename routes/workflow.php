@@ -82,7 +82,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('ward-user/byId', 'WardUserbyId');                       // Get Workflow By Id
         Route::post('ward-user/list', 'getAllWardUser');                     // Get All Workflow
         Route::post('ward-user/delete', 'deleteWardUser');                   // Delete Workflow
-        Route::post('ward-user/tcList', 'tcList');
+        Route::post('ward-user/list-tc', 'tcList');
     });
 
 

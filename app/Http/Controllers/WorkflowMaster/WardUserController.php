@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\Workflows\WfWardUser;
 use Exception;
-
+use Illuminate\Support\Facades\DB;
 
 /**
  * Controller for Add, Update, View , Delete of Wf Ward User Table
@@ -106,13 +106,18 @@ class WardUserController extends Controller
 
     public function tcList(Request $req)
     {
-        // $req->validate([
-        //     'wardId' => 'required',
-        // ]);
+        $req->validate([
+            'wardId' => 'required',
+        ]);
         try {
             $ulbId =  authUser()->ulb_id;
             $TC = ['TC', 'TL', 'JSK'];
-            return  $data = User::select('users.id', 'user_name', 'user_type')
+            $data = User::select(
+                'users.id',
+                'user_name',
+                'user_type',
+                // DB::raw("user_name  as applicantName"),
+            )
                 // ->join('wf_ward_users', 'wf_ward_users.id', 'users.id')
                 ->where('ulb_id', $ulbId)
                 // ->where('ward_id', $req->wardId)
@@ -121,7 +126,7 @@ class WardUserController extends Controller
 
             // return collect($data)->
 
-            return responseMsg(true, "TC List", $data);
+            return responseMsgs(true, "TC List", remove_null($data), "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }
