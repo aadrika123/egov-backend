@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Payment\TempTransaction;
 use App\Models\Property\PropActiveConcession;
+use App\Models\Property\PropActiveDeactivationRequest;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
@@ -28,12 +29,50 @@ class JskController extends Controller
     {
         try {
             $userId = authUser()->id;
+            $userType = authUser()->user_type;
+            $rUserType = array('TC', 'TL', 'JSK');
+            $applicationType = $request->applicationType;
             $propActiveSaf =  new PropActiveSaf();
             $propTransaction =  new PropTransaction();
+            $propConcession  = new PropActiveConcession();
+            $propHarvesting = new PropActiveHarvesting();
+            $propObjection = new PropActiveObjection();
+            $propDeactivation = new PropActiveDeactivationRequest();
 
-            $data['recentApplications']  = $propActiveSaf->recentApplication($userId);
 
-            $data['recentPayments']  = $propTransaction->recentPayment($userId);
+            if (in_array($userType, $rUserType)) {
+
+                $data['recentApplications']  = $propActiveSaf->recentApplication($userId);
+
+                switch ($applicationType) {
+                        //Concession
+                    case ('Concession'):
+                        $data['recentApplications']  = $propConcession->recentApplication($userId);
+                        break;
+
+                        //Harvesting
+                    case ('Harvesting'):
+                        $data['recentApplications']  = $propHarvesting->recentApplication($userId);
+                        break;
+
+                        //Objection
+                    case ('Objection'):
+                        $data['recentApplications']  = $propObjection->recentApplication($userId);
+                        break;
+
+                        //Deactivation
+                    case ('Deactivation'):
+                        $data['recentApplications']  = $propDeactivation->recentApplication($userId);
+                        break;
+                }
+
+                $data['recentPayments']  = $propTransaction->recentPayment($userId);
+            }
+
+            if ($userType == 'BO') {
+
+                $propActiveSaf->totalReceivedApplication($currentRole);
+            }
 
             return responseMsgs(true, "JSK Dashboard", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
@@ -59,7 +98,7 @@ class JskController extends Controller
             $c = $mPropActiveConcession->todayAppliedApplications($userId);
             $d = $mPropActiveHarvesting->todayAppliedApplications($userId);
             $e = $mTempTransaction->transactionList($date, $userId, $ulbId);
-            $f =  collect($e)->sum('amount');
+            $f = collect($e)->sum('amount');
             $g = collect($e)->where('payment_mode', 'CASH')->sum('amount');
             $h = collect($e)->where('payment_mode', 'CHEQUE')->sum('amount');
             $i = collect($e)->where('payment_mode', 'DD')->sum('amount');
@@ -71,9 +110,6 @@ class JskController extends Controller
             $data['Total Cheque'] = $h;
             $data['Total DD'] = $i;
             $data['Total Online'] = $j;
-
-
-
 
             return responseMsgs(true, "JSK Dashboard", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {

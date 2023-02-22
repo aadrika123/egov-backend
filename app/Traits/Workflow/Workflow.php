@@ -3,10 +3,12 @@
 namespace App\Traits\Workflow;
 
 use App\Models\WorkflowCandidate;
+use App\Models\Workflows\WfRole;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflowrolemap;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -184,6 +186,25 @@ trait Workflow
         // dd(DB::getQueryLog());
 
         return remove_null($role);
+    }
+
+    public function getRoleByUserUlbId($ulbId, $userId)
+    {
+        // try {
+        $role = WfRole::select('wf_roles.*')
+            ->where('ulb_ward_masters.ulb_id', $ulbId)
+            ->where('wf_roleusermaps.user_id', $userId)
+            ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', 'wf_roles.id')
+            ->join('wf_ward_users', 'wf_ward_users.user_id', 'wf_roleusermaps.user_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'wf_ward_users.ward_id')
+            ->first();
+        if ($role) {
+            return ($role);
+        }
+        //     return responseMsg(false, "No Data Available", "");
+        // } catch (Exception $e) {
+        //     return $e;
+        // }
     }
 
     /**
