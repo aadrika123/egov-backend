@@ -261,7 +261,12 @@ class PropActiveSaf extends Model
                 's.prop_type_mstr_id',
                 'u.ward_name as old_ward_no',
                 'u1.ward_name as new_ward_no',
-                'p.property_type'
+                'p.property_type',
+                'doc_upload_status',
+                'payment_status',
+                'current_role',
+                's.user_id',
+                's.citizen_id'
             )
             ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
             ->join('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
@@ -549,21 +554,26 @@ class PropActiveSaf extends Model
     /**
      * | Total Received Appklication
      */
-    public function totalReceivedApplication($currentRole)
+    public function todayReceivedApplication($currentRole)
     {
-        $date = Carbon::now();
+        $date = Carbon::now()->format('Y-m-d');
+        // $date =  '2023-01-16';
         return PropActiveSaf::select(
             'saf_no as applicationNo',
             'application_date as applyDate',
             'assessment_type as assessmentType',
             DB::raw("string_agg(owner_name,',') as applicantName"),
         )
-            ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', 'prop_active_safs.id')
+
+            ->leftjoin('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', 'prop_active_safs.id')
+            ->leftjoin('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_safs.id')
             ->where('prop_active_safs.current_role', $currentRole)
-            // ->where('application_date', $date)
+            ->where('ref_table_dot_id', 'prop_active_safs.id')
+            // ->where('track_date' . '::' . 'date', $date)
+            ->whereRaw("date(track_date) = '$date'")
             ->orderBydesc('prop_active_safs.id')
             ->groupBy('saf_no', 'application_date', 'assessment_type', 'prop_active_safs.id')
-            // ->take(10)
+            ->take(10)
             ->get();
     }
 }

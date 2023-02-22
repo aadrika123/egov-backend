@@ -104,9 +104,11 @@ class WorkflowTrack extends Model
     /**
      * |total forwaded application
      */
-    public function totalForwadedApplication($currentRole)
+    public function todayForwadedApplication($currentRole, $ulbId)
     {
+        $date = Carbon::now();
         return WorkflowTrack::where('sender_role_id', $currentRole)
+            ->where('')
             ->get();
     }
 }

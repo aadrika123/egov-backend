@@ -78,8 +78,8 @@ class JskController extends Controller
 
             if ($userType == 'BO') {
 
-                $data['Total Received'] =  $propActiveSaf->totalReceivedApplication($currentRole->id);
-                return $mWorkflowTrack->totalForwadedApplication($currentRole->id);
+                // $data['Total Received'] =  $propActiveSaf->totalReceivedApplication($currentRole->id);
+                // return $mWorkflowTrack->totalForwadedApplication($currentRole->id);
             }
 
             return responseMsgs(true, "JSK Dashboard", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
@@ -92,32 +92,46 @@ class JskController extends Controller
     {
         try {
             $userId = authUser()->id;
+            $userType = authUser()->user_type;
             $ulbId = authUser()->ulb_id;
+            $rUserType = array('TC', 'TL', 'JSK');
             $date = Carbon::now();
             $mpropActiveSaf =  new PropActiveSaf();
             $mPropActiveObjection = new PropActiveObjection();
             $mPropActiveConcession = new PropActiveConcession();
             $mPropActiveHarvesting = new PropActiveHarvesting();
             $mTempTransaction = new TempTransaction();
+            $mWorkflowTrack = new WorkflowTrack();
+            $currentRole =  $this->getRoleByUserUlbId($ulbId, $userId);
 
 
-            $a = $mpropActiveSaf->todayAppliedApplications($userId);
-            $b = $mPropActiveObjection->todayAppliedApplications($userId);
-            $c = $mPropActiveConcession->todayAppliedApplications($userId);
-            $d = $mPropActiveHarvesting->todayAppliedApplications($userId);
-            $e = $mTempTransaction->transactionList($date, $userId, $ulbId);
-            $f = collect($e)->sum('amount');
-            $g = collect($e)->where('payment_mode', 'CASH')->sum('amount');
-            $h = collect($e)->where('payment_mode', 'CHEQUE')->sum('amount');
-            $i = collect($e)->where('payment_mode', 'DD')->sum('amount');
-            $j = collect($e)->where('payment_mode', 'Online')->sum('amount');
+            if (in_array($userType, $rUserType)) {
+                $a = $mpropActiveSaf->todayAppliedApplications($userId);
+                $b = $mPropActiveObjection->todayAppliedApplications($userId);
+                $c = $mPropActiveConcession->todayAppliedApplications($userId);
+                $d = $mPropActiveHarvesting->todayAppliedApplications($userId);
+                $e = $mTempTransaction->transactionList($date, $userId, $ulbId);
+                $f = collect($e)->sum('amount');
+                $g = collect($e)->where('payment_mode', 'CASH')->sum('amount');
+                $h = collect($e)->where('payment_mode', 'CHEQUE')->sum('amount');
+                $i = collect($e)->where('payment_mode', 'DD')->sum('amount');
+                $j = collect($e)->where('payment_mode', 'Online')->sum('amount');
 
-            $data['totalAppliedApplication'] = $a->union($b)->union($c)->union($d)->get()->count();
-            $data['totalCollection'] = $f;
-            $data['totalCash'] = $g;
-            $data['totalCheque'] = $h;
-            $data['totalDD'] = $i;
-            $data['totalOnline'] = $j;
+                $data['totalAppliedApplication'] = $a->union($b)->union($c)->union($d)->get()->count();
+                $data['totalCollection'] = $f;
+                $data['totalCash'] = $g;
+                $data['totalCheque'] = $h;
+                $data['totalDD'] = $i;
+                $data['totalOnline'] = $j;
+            }
+
+
+            if ($userType == 'BO') {
+
+                $data['totalReceivedApplication'] =  $mpropActiveSaf->todayReceivedApplication($currentRole->id)->count();
+                return $mWorkflowTrack->todayForwadedApplication($currentRole->id, $ulbId);
+            }
+
 
             return responseMsgs(true, "JSK Dashboard", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
