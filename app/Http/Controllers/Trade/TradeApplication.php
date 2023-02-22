@@ -379,12 +379,17 @@ class TradeApplication extends Controller
     # Serial No : 18
     public function postNextLevel(Request $request)
     {
-
+        $user = Auth()->user();
+        $user_id = $user->id;
+        $ulb_id = $user->ulb_id;
+        $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+       
         $request->validate([
             'applicationId' => 'required|integer',
             'senderRoleId' => 'required|integer',
             'receiverRoleId' => 'required|integer',
-            'comment' => 'required',
+            'comment' => ($role->is_initiator??false)?"nullable":'required',
         ]);
 
         try {
