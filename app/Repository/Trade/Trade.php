@@ -1930,7 +1930,7 @@ class Trade implements ITrade
             $mStatus = $this->applicationStatus($id);
             $mItemName      = "";
             $mCods          = "";
-            if ($refApplication->nature_of_bussiness) {
+            if (trim($refApplication->nature_of_bussiness)) {
                 $items = TradeParamItemType::itemsById($refApplication->nature_of_bussiness);
                 foreach ($items as $val) {
                     $mItemName  .= $val->trade_item . ",";
