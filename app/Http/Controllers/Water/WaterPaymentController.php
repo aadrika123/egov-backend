@@ -524,7 +524,8 @@ class WaterPaymentController extends Controller
             $adjustedConnFee = $applicationCharge['conn_fee'] - $newConnectionCharges['conn_fee_charge']['conn_fee'];
             $newConnectionCharges['conn_fee_charge']['conn_fee'] = $adjustedConnFee;
         }
-        if ($$newConnectionCharges['conn_fee_charge']['penalty'] > $applicationCharge['penalty']) {
+        if ($newConnectionCharges['conn_fee_charge']['penalty'] > $applicationCharge['penalty']) {
+
         }
         // $newConnectionCharges['conn_fee_charge']['penalty'] = 
         // $newConnectionCharges['conn_fee_charge']['amount'] =
@@ -1032,29 +1033,29 @@ class WaterPaymentController extends Controller
                 throw new Exception("Water Application Tran Details not Found!!");
 
             # Collecting the data for the transaction
-            $returnData = collect($connectionTran)->map(function ($refValue)
-            use ($mWaterConnectionCharge, $applicationId, $mWaterPenaltyInstallment, $mWaterTranDetail) {
+            // $returnData = collect($connectionTran)->map(function ($refValue)
+            // use ($mWaterConnectionCharge, $applicationId, $mWaterPenaltyInstallment, $mWaterTranDetail) {
 
-                # Connection Charges And Penalty
-                $getConnectionId = $mWaterTranDetail->getDetailByTranId($refValue['id']);
-                $refConnectionDetails = $mWaterConnectionCharge->getChargesById($getConnectionId['demand_id'])->first();
-                if ($refConnectionDetails['penalty'] > 0) {
-                    $penaltyList = $mWaterPenaltyInstallment->getPenaltyByApplicationId($applicationId)
-                        ->where('payment_from', $refConnectionDetails['charge_category'])
-                        ->get();
-                    $refConnectionDetails['PenaltyList'] =  $penaltyList;
-                    $refValue['connectionDetails'] = $refConnectionDetails;
-                    return  $refValue;
-                }
-                $refValue['connectionDetails'] = $refConnectionDetails;
-                return  $refValue;
-            });
+            //     # Connection Charges And Penalty
+            //     $getConnectionId = $mWaterTranDetail->getDetailByTranId($refValue['id']);
+            //     $refConnectionDetails = $mWaterConnectionCharge->getChargesById($getConnectionId['demand_id'])->first();
+            //     if ($refConnectionDetails['penalty'] > 0) {
+            //         $penaltyList = $mWaterPenaltyInstallment->getPenaltyByApplicationId($applicationId)
+            //             ->where('payment_from', $refConnectionDetails['charge_category'])
+            //             ->get();
+            //         $refConnectionDetails['PenaltyList'] =  $penaltyList;
+            //         $refValue['connectionDetails'] = $refConnectionDetails;
+            //         return  $refValue;
+            //     }
+            //     $refValue['connectionDetails'] = $refConnectionDetails;
+            //     return  $refValue;
+            // });
 
-            $transactions = [
-                'connectionTransaction' => collect($returnData)->sortByDesc('id'),
-            ];
+            // $transactions = [
+            //     'connectionTransaction' => collect($returnData)->sortByDesc('id'),
+            // ];
 
-            return responseMsgs(true, "", remove_null($transactions), "", "01", "ms", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "", remove_null($connectionTran), "", "01", "ms", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
