@@ -108,7 +108,8 @@ class WorkflowTrack extends Model
     {
         $date = Carbon::now();
         return WorkflowTrack::where('sender_role_id', $currentRole)
-            ->where('')
+            ->where('forward_date', $date)
+            ->where('ulb_id', $ulbId)
             ->get();
     }
 }

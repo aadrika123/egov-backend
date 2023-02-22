@@ -264,10 +264,16 @@ class PropActiveSaf extends Model
                 'p.property_type',
                 'doc_upload_status',
                 'payment_status',
-                'current_role',
+                'role_name as currentRole',
                 's.user_id',
-                's.citizen_id'
+                's.citizen_id',
+                DB::raw(
+                    "case when s.user_id is not null then 'TC/TL/JSK' when 
+                    s.citizen_id is not null then 'Citizen' end as appliedBy
+                "
+                ),
             )
+            ->join('wf_roles', 'wf_roles.id', 's.current_role')
             ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
             ->join('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
             ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
@@ -554,7 +560,7 @@ class PropActiveSaf extends Model
     /**
      * | Total Received Appklication
      */
-    public function todayReceivedApplication($currentRole)
+    public function todayReceivedApplication($currentRole, $ulbId)
     {
         $date = Carbon::now()->format('Y-m-d');
         // $date =  '2023-01-16';
@@ -568,6 +574,7 @@ class PropActiveSaf extends Model
             ->leftjoin('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', 'prop_active_safs.id')
             ->leftjoin('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_safs.id')
             ->where('prop_active_safs.current_role', $currentRole)
+            ->where('workflow_tracks.ulb_id', $ulbId)
             ->where('ref_table_dot_id', 'prop_active_safs.id')
             // ->where('track_date' . '::' . 'date', $date)
             ->whereRaw("date(track_date) = '$date'")

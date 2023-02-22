@@ -124,13 +124,18 @@ class JskController extends Controller
                 $data['totalDD'] = $i;
                 $data['totalOnline'] = $j;
             }
+            if ($currentRole->role_name == 'Back Office' || 'Section Incharge' || 'Dealing Assistant') {
 
-
-            if ($userType == 'BO') {
-
-                $data['totalReceivedApplication'] =  $mpropActiveSaf->todayReceivedApplication($currentRole->id)->count();
-                return $mWorkflowTrack->todayForwadedApplication($currentRole->id, $ulbId);
+                $data['totalReceivedApplication'] =  $mpropActiveSaf->todayReceivedApplication($currentRole->id, $ulbId)->count();
+                $data['totalForwadedApplication'] = $mWorkflowTrack->todayForwadedApplication($currentRole->id, $ulbId)->count();
             }
+
+            if ($currentRole->role_name == 'Executive Officer') {
+                $data['totalApprovedApplication'] =  $mpropActiveSaf->todayReceivedApplication($currentRole->id, $ulbId)->count();
+                $data['totalRejectedApplication'] = $mWorkflowTrack->todayForwadedApplication($currentRole->id, $ulbId)->count();
+            }
+
+
 
 
             return responseMsgs(true, "JSK Dashboard", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
