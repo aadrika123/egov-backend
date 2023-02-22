@@ -89,7 +89,18 @@ class WaterConnectionCharge extends Model
      */
     public function getChargesById($id)
     {
-        return WaterConnectionCharge::where('id',$id)
-        ->where('status',1);
+        return WaterConnectionCharge::where('id', $id)
+            ->where('status', 1);
+    }
+
+
+    /**
+     * | Get the Connection charges By array of ids
+     * | @param id
+     */
+    public function getChargesByIds($id)
+    {
+        return WaterConnectionCharge::whereIn('id', $id)
+            ->where('status', 1);
     }
 }
