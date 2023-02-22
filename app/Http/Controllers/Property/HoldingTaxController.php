@@ -717,14 +717,14 @@ class HoldingTaxController extends Controller
                     'arvTotalPropTax',
                     'cvTotalPropTax'
                 ]);
-                $calculation3 = $this->calculateRuleSet3($item);
-                $rule3Req = collect($item)->merge($calculation3);
+                // $calculation3 = $this->calculateRuleSet3($item);
+                // $rule3Req = collect($item)->merge($calculation3);
                 $rule3 = [
                     "abc" => 218550,
                 ];
                 return new Collection([$rule2, $rule3]);
             });
-            return $floors;
+            return responseMsgs(true, "Comparative Demand", remove_null($floors), "011610", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011610", "1.0", "", "POST", $req->deviceId);
         }
