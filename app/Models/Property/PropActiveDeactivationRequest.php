@@ -4,6 +4,7 @@ namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class PropActiveDeactivationRequest extends Model
 {
@@ -31,5 +32,22 @@ class PropActiveDeactivationRequest extends Model
             ->where('prop_properties.holding_no', 'LIKE', '%' . $holdingNo . '%')
             ->orWhere('prop_properties.new_holding_no', 'LIKE', '%' . $holdingNo . '%')
             ->first();
+    }
+
+    /**
+     * | REcent Applications
+     */
+    public function recentApplication($userId)
+    {
+        return PropActiveDeactivationRequest::select(
+            'holding_no as holdingNo',
+            'apply_date as applyDate',
+            DB::raw(" 'Deactivation' as assessmentType"),
+        )
+            ->join('prop_properties', 'prop_properties.id', 'prop_active_deactivation_requests.property_id')
+            ->where('prop_active_deactivation_requests.emp_detail_id', $userId)
+            ->orderBydesc('prop_active_deactivation_requests.id')
+            ->take(10)
+            ->get();
     }
 }

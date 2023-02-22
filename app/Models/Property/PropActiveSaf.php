@@ -261,8 +261,19 @@ class PropActiveSaf extends Model
                 's.prop_type_mstr_id',
                 'u.ward_name as old_ward_no',
                 'u1.ward_name as new_ward_no',
-                'p.property_type'
+                'p.property_type',
+                'doc_upload_status',
+                'payment_status',
+                'role_name as currentRole',
+                's.user_id',
+                's.citizen_id',
+                DB::raw(
+                    "case when s.user_id is not null then 'TC/TL/JSK' when 
+                    s.citizen_id is not null then 'Citizen' end as appliedBy
+                "
+                ),
             )
+            ->join('wf_roles', 'wf_roles.id', 's.current_role')
             ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
             ->join('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
             ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
@@ -544,5 +555,32 @@ class PropActiveSaf extends Model
             ->where('prop_active_safs.user_id', $userId)
             ->where('application_date', $date);
         // ->get();
+    }
+
+    /**
+     * | Total Received Appklication
+     */
+    public function todayReceivedApplication($currentRole, $ulbId)
+    {
+        $date = Carbon::now()->format('Y-m-d');
+        // $date =  '2023-01-16';
+        return PropActiveSaf::select(
+            'saf_no as applicationNo',
+            'application_date as applyDate',
+            'assessment_type as assessmentType',
+            DB::raw("string_agg(owner_name,',') as applicantName"),
+        )
+
+            ->leftjoin('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', 'prop_active_safs.id')
+            ->leftjoin('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_safs.id')
+            ->where('prop_active_safs.current_role', $currentRole)
+            ->where('workflow_tracks.ulb_id', $ulbId)
+            ->where('ref_table_dot_id', 'prop_active_safs.id')
+            // ->where('track_date' . '::' . 'date', $date)
+            ->whereRaw("date(track_date) = '$date'")
+            ->orderBydesc('prop_active_safs.id')
+            ->groupBy('saf_no', 'application_date', 'assessment_type', 'prop_active_safs.id')
+            ->take(10)
+            ->get();
     }
 }

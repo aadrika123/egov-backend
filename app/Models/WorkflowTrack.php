@@ -100,4 +100,16 @@ class WorkflowTrack extends Model
             ->leftJoin('users as u', 'u.id', '=', 'workflow_tracks.citizen_id')
             ->get();
     }
+
+    /**
+     * |total forwaded application
+     */
+    public function todayForwadedApplication($currentRole, $ulbId)
+    {
+        $date = Carbon::now();
+        return WorkflowTrack::where('sender_role_id', $currentRole)
+            ->where('forward_date', $date)
+            ->where('ulb_id', $ulbId)
+            ->get();
+    }
 }

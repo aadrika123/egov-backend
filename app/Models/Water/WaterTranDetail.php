@@ -35,4 +35,14 @@ class WaterTranDetail extends Model
         $TradeDtl->created_at       = Carbon::now();
         $TradeDtl->save();
     }
+
+    /**
+     * | Get demand Ids by array of trans Ids
+     * | @param transIds
+     */
+    public function getTransDemandByIds($transIds)
+    {
+        return WaterTranDetail::whereIn('tran_id', $transIds)
+            ->where('status', 1);
+    }
 }
