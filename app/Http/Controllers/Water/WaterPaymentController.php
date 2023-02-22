@@ -223,6 +223,7 @@ class WaterPaymentController extends Controller
         | Serial No : 02
         | Recheck 
         | Search From Water trans table Not in webhook table 
+        | may not used
      */
     public function generatePaymentReceipt(Request $req)
     {
@@ -297,9 +298,8 @@ class WaterPaymentController extends Controller
      * | @return 
         | Serial No : 03
         | Recheck
-        | Not Finish
      */
-    public function generateDemandPaymentReceipt(Request $req)
+    public function generateOfflinePaymentReceipt(Request $req)
     {
         $req->validate([
             'transactionNo' => 'required'
@@ -308,64 +308,76 @@ class WaterPaymentController extends Controller
             $refTransactionNo = $req->transactionNo;
             $mWaterConnectionCharge = new WaterConnectionCharge();
             $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+            $mWaterApplication = new WaterApplication();
+            $mWaterChequeDtl = new WaterChequeDtl();
             $mWaterTran = new WaterTran();
 
             $mTowards = Config::get('waterConstaint.TOWARDS');
             $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
+            $mPaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
 
             # transaction Deatils
             $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
                 ->firstOrFail();
 
+            #  Data not equal to Cash
+            if (!in_array($transactionDetails['payment_mode'], [$mPaymentModes['1'], $mPaymentModes['5']])) {
+                $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->first();
+            }
+            # Application Deatils
+            $applicationDetails = $mWaterApplication->getDetailsByApplicationId($transactionDetails->related_id)->firstOrFail();
+
             # Connection Charges
-            $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($transactionDetails->related_id)
-                ->where('id', $transactionDetails->demand_id)
+            $connectionCharges = $mWaterConnectionCharge->getChargesById($transactionDetails->demand_id)
                 ->firstOrFail();
 
             # if penalty Charges
             $individulePenaltyCharges = $mWaterPenaltyInstallment->getPenaltyByApplicationId($transactionDetails->related_id)
                 ->where('paid_status', 1)
                 ->get();
-            return  $totalPenaltyAmount = collect($individulePenaltyCharges)->map(function ($value) {
-                return $value['balance_amount'];
-            })->sum();
+            if ($individulePenaltyCharges) {
+                $totalPenaltyAmount = collect($individulePenaltyCharges)->map(function ($value) {
+                    return $value['balance_amount'];
+                })->sum();
+            }
 
             # Transaction Date
             $refDate = $transactionDetails->tran_date;
             $transactionDate = Carbon::parse($refDate)->format('Y-m-d');
 
-            return [
+            $returnValues = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
                 "transactionDate" => $transactionDate,
-                "transactionNo" => $value,
+                "transactionNo" => $refTransactionNo,
                 // "transactionTime" => $transactionTime,
-                "applicationNo" => "",
-                "customerName" => $consumerDetails->consumer_name,
-                "customerMobile" => $consumerDetails->mobile_no,
-                "address" => $consumerDetails->address,
-                "paidFrom" => $consumerDetails->demand_from,
+                "applicationNo" => $applicationDetails['application_no'],
+                "customerName" => $applicationDetails['applicantname'],
+                "customerMobile" => $applicationDetails['mobileno'],
+                "address" => $applicationDetails['address'],
+                "paidFrom" => $connectionCharges['charge_category'],
                 "paidFromQtr" => "",
-                "paidUpto" => $consumerDetails->demand_upto,
-                "paidUptoQtr" => $consumerDetails->demand_upto,
-                "paymentMode" => $transactionDetails->payment_mode,
-                "bankName" => "",                                   // in case of cheque,dd,nfts
-                "branchName" => "",                                 // in case of chque,dd,nfts
-                "chequeNo" => "",                                   // in case of chque,dd,nfts
-                "chequeDate" => "",                                 // in case of chque,dd,nfts
+                "paidUpto" => "",
+                "paidUptoQtr" => "",
+                "paymentMode" => $transactionDetails['payment_mode'],
+                "bankName" => $chequeDetails[''] ?? null,                                   // in case of cheque,dd,nfts
+                "branchName" => $chequeDetails[''] ?? null,                                 // in case of chque,dd,nfts
+                "chequeNo" => $chequeDetails['']  ?? null,                                   // in case of chque,dd,nfts
+                "chequeDate" => $chequeDetails[''] ?? null,                                 // in case of chque,dd,nfts
                 "monthlyRate" => "",
-                "demandAmount" => $consumerDetails->amount,
+                "demandAmount" => $transactionDetails->amount,
                 "taxDetails" => "",
-                "ulbId" => $consumerDetails->ulb_id,
-                "ulbName" => $consumerDetails->ulb_name,
-                "WardNo" => $consumerDetails->old_ward_name,
+                "ulbId" => $transactionDetails['ulb_id'],
+                "ulbName" => $applicationDetails['ulb_name'],
+                "WardNo" => $applicationDetails['ward_name'],
                 "towards" => $mTowards,
                 "description" => $mAccDescription,
                 "totalPaidAmount" => $transactionDetails->amount,
+                "penaltyAmount" => $totalPenaltyAmount,
                 "paidAmtInWords" => getIndianCurrency($transactionDetails->amount),
             ];
-            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
@@ -391,6 +403,7 @@ class WaterPaymentController extends Controller
      * | @return
         | Serial No : 04
         | Working
+        | Change the Adjustment
      */
     public function saveSitedetails(siteAdjustment $request)
     {
@@ -425,8 +438,8 @@ class WaterPaymentController extends Controller
             $newChargeAmount = $newConnectionCharges['conn_fee_charge']['amount'];
 
             # If the Adjustment Hamper
-            if ($oldChargeAmount != $newChargeAmount) {
-                $this->adjustmentInConnection($request, $newConnectionCharges, $installment, $waterDetails);
+            if ($oldChargeAmount < $newChargeAmount) {
+                $this->adjustmentInConnection($request, $newConnectionCharges, $installment, $waterDetails, $applicationCharge);
             }
 
             $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId, $waterDetails);
@@ -491,7 +504,7 @@ class WaterPaymentController extends Controller
         | Serial No : 04.02
         | Working
      */
-    public function adjustmentInConnection($request, $newConnectionCharges, $installment, $waterApplicationDetails)
+    public function adjustmentInConnection($request, $newConnectionCharges, $installment, $waterApplicationDetails, $applicationCharge)
     {
         $applicationId = $request->applicationId;
         $newCharge = $newConnectionCharges['conn_fee_charge']['amount'];
@@ -501,24 +514,36 @@ class WaterPaymentController extends Controller
         $mWaterTran = new WaterTran();
         $chargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
 
+        # connection charges
+        $request->merge([
+            'chargeCatagory' => $chargeCatagory['SITE_INSPECTON'],
+            'ward_id' => $waterApplicationDetails['ward_id']
+        ]);
+        # cherge changes 
+        if ($newConnectionCharges['conn_fee_charge']['conn_fee'] > $applicationCharge['conn_fee']) {
+            $adjustedConnFee = $applicationCharge['conn_fee'] - $newConnectionCharges['conn_fee_charge']['conn_fee'];
+            $newConnectionCharges['conn_fee_charge']['conn_fee'] = $adjustedConnFee;
+        }
+        if ($$newConnectionCharges['conn_fee_charge']['penalty'] > $applicationCharge['penalty']) {
+        }
+        // $newConnectionCharges['conn_fee_charge']['penalty'] = 
+        // $newConnectionCharges['conn_fee_charge']['amount'] =
+
+
+        $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
+
+        # in case of connection charge is 0
+        if ($newCharge == 0) {
+            $mWaterTran->saveZeroConnectionCharg($newCharge, $waterApplicationDetails->ulb_id, $request, $applicationId, $connectionId);
+        }
         # get Water Application Details
         $mWaterApplication->updatePaymentStatus($applicationId, false);                     // Update the payment status false         
 
         # water penalty
         if (!is_null($installment)) {
             foreach ($installment as $installments) {
-                $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $installments);
+                $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $installments, $chargeCatagory['SITE_INSPECTON']);
             }
-        }
-        # connection charges
-        $request->merge([
-            'chargeCatagory' => $chargeCatagory['SITE_INSPECTON'],
-            'ward_id' => $waterApplicationDetails['ward_id']
-        ]);
-        $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
-        # in case of connection charge is 0
-        if ($newCharge == 0) {
-            $mWaterTran->saveZeroConnectionCharg($newCharge, $waterApplicationDetails->ulb_id, $request, $applicationId, $connectionId);
         }
     }
 
@@ -849,14 +874,16 @@ class WaterPaymentController extends Controller
                             throw new Exception("Respective Penalty Amount Not Matched!");
                         }
 
-                        $refAmount = $req->amount - $refPenaltySumAmount;
                         $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                             ->where('charge_category', $req->chargeCategory)
                             ->firstOrFail();
 
-                        $actualAmount = $actualCharge['conn_fee'];
-                        if ($actualAmount != $refAmount) {
-                            throw new Exception("Connection Amount Not Matched!");
+                        if ($actualCharge['paid_status'] == false) {
+                            $refAmount = $req->amount - $refPenaltySumAmount;
+                            $actualAmount = $actualCharge['conn_fee'];
+                            if ($actualAmount != $refAmount) {
+                                throw new Exception("Connection Amount Not Matched!");
+                            }
                         }
                         break;
                     case ($req->isInstallment == "no"): # check <-------------- calculation
@@ -965,6 +992,71 @@ class WaterPaymentController extends Controller
                         'paid_status' => 1,
                     ]);
                 break;
+        }
+    }
+
+
+    /**
+     * | Get the payment history for the Application
+     * | @param req
+     * | @var 
+     * | @return 
+        | Serial No : 08
+        | Working
+        | add the detils for the penalty and conncetion charges
+     */
+    public function getApplicationPaymentHistory(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|digits_between:1,9223372036854775807'
+        ]);
+        try {
+            $mWaterTran = new WaterTran();
+            $mWaterApplication = new WaterApplication();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+            $mWaterTranDetail = new WaterTranDetail();
+
+            $transactions = array();
+            $applicationId = $request->id;
+
+            # Application Details
+            $waterDtls = $mWaterApplication->getDetailsByApplicationId($applicationId)->first();
+            if (!$waterDtls)
+                throw new Exception("Water Application Not Found!");
+
+            # if demand transaction exist
+            $connectionTran = $mWaterTran->getTransNo($applicationId, null)->get();                        // Water Connection payment History
+            $checkTrans = collect($connectionTran)->first();
+            if (!$checkTrans)
+                throw new Exception("Water Application Tran Details not Found!!");
+
+            # Collecting the data for the transaction
+            $returnData = collect($connectionTran)->map(function ($refValue)
+            use ($mWaterConnectionCharge, $applicationId, $mWaterPenaltyInstallment, $mWaterTranDetail) {
+
+                # Connection Charges And Penalty
+                $getConnectionId = $mWaterTranDetail->getDetailByTranId($refValue['id']);
+                $refConnectionDetails = $mWaterConnectionCharge->getChargesById($getConnectionId['demand_id'])->first();
+                if ($refConnectionDetails['penalty'] > 0) {
+                    $penaltyList = $mWaterPenaltyInstallment->getPenaltyByApplicationId($applicationId)
+                        ->where('payment_from', $refConnectionDetails['charge_category'])
+                        ->get();
+                    $refConnectionDetails['PenaltyList'] =  $penaltyList;
+                    $refValue['connectionDetails'] = $refConnectionDetails;
+                    return  $refValue;
+                }
+                $refValue['connectionDetails'] = $refConnectionDetails;
+                return  $refValue;
+            });
+
+            $transactions = [
+                'connectionTransaction' => collect($returnData)->sortByDesc('id'),
+            ];
+
+            return responseMsgs(true, "", remove_null($transactions), "", "01", "ms", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
 }

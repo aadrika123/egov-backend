@@ -82,4 +82,25 @@ class WaterConnectionCharge extends Model
                 'status' => false
             ]);
     }
+
+    /**
+     * | Get the Connection charges By Id
+     * | @param id
+     */
+    public function getChargesById($id)
+    {
+        return WaterConnectionCharge::where('id', $id)
+            ->where('status', 1);
+    }
+
+
+    /**
+     * | Get the Connection charges By array of ids
+     * | @param id
+     */
+    public function getChargesByIds($id)
+    {
+        return WaterConnectionCharge::whereIn('id', $id)
+            ->where('status', 1);
+    }
 }

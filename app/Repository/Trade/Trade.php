@@ -1930,7 +1930,7 @@ class Trade implements ITrade
             $mStatus = $this->applicationStatus($id);
             $mItemName      = "";
             $mCods          = "";
-            if ($refApplication->nature_of_bussiness) {
+            if (trim($refApplication->nature_of_bussiness)) {
                 $items = TradeParamItemType::itemsById($refApplication->nature_of_bussiness);
                 foreach ($items as $val) {
                     $mItemName  .= $val->trade_item . ",";
@@ -2600,7 +2600,7 @@ class Trade implements ITrade
             $licence = $licence
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
                 ->get();
-            // dd(DB::getQueryLog());            
+            // dd($licence);            
             return responseMsg(true, "", $licence);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
@@ -3973,10 +3973,10 @@ class Trade implements ITrade
             }
             
             $application = $application
-                ->join("ulb_ward_masters", function ($join) use ($table) {
+                ->leftjoin("ulb_ward_masters", function ($join) use ($table) {
                     $join->on("ulb_ward_masters.id", "=", $table . ".ward_id");
                 })
-                ->join("ulb_ward_masters AS new_ward", function ($join) use ($table) {
+                ->leftjoin("ulb_ward_masters AS new_ward", function ($join) use ($table) {
                     $join->on("new_ward.id", "=", $table . ".new_ward_id");
                 })
                 ->join("ulb_masters", "ulb_masters.id", $table . ".ulb_id")

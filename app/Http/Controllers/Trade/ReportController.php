@@ -59,8 +59,10 @@ class ReportController extends Controller
     public function valideAndExpired(Request $request)
     {
         $request->validate(
-            [                
-                "uptoDate" => "required|date|date_format:Y-m-d",
+            [      
+                "uptoDate" => "nullable|date|date_format:Y-m-d",
+                "licenseNo"=>"nullable|regex:/^[^<>{};:.,~!?@#$%^=&*\"]*$/i",
+                "licenseStatus"=>"nullable|in:EXPIRE,VALID",     
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",

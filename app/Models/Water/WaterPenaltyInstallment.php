@@ -15,13 +15,14 @@ class WaterPenaltyInstallment extends Model
      * | @var
         |
      */
-    public function saveWaterPenelty($applicationId, $installments)
+    public function saveWaterPenelty($applicationId, $installments,$connectionFor)
     {
         $quaters = new WaterPenaltyInstallment();
         $quaters->apply_connection_id = $applicationId;
         $quaters->installment_amount = $installments['installment_amount'];
         $quaters->penalty_head = $installments['penalty_head'];
         $quaters->balance_amount = $installments['balance_amount'];
+        $quaters->payment_from = $connectionFor;
         $quaters->save();
     }
 
