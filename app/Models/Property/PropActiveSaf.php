@@ -551,6 +551,7 @@ class PropActiveSaf extends Model
      */
     public function totalReceivedApplication($currentRole)
     {
+        $date = Carbon::now();
         return PropActiveSaf::select(
             'saf_no as applicationNo',
             'application_date as applyDate',
@@ -559,9 +560,10 @@ class PropActiveSaf extends Model
         )
             ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', 'prop_active_safs.id')
             ->where('prop_active_safs.current_role', $currentRole)
+            // ->where('application_date', $date)
             ->orderBydesc('prop_active_safs.id')
             ->groupBy('saf_no', 'application_date', 'assessment_type', 'prop_active_safs.id')
-            ->take(10)
+            // ->take(10)
             ->get();
     }
 }

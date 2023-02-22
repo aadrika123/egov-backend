@@ -201,10 +201,6 @@ trait Workflow
         if ($role) {
             return ($role);
         }
-        //     return responseMsg(false, "No Data Available", "");
-        // } catch (Exception $e) {
-        //     return $e;
-        // }
     }
 
     /**
