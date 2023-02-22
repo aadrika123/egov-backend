@@ -136,4 +136,21 @@ class PropActiveConcession extends Model
             ->where('user_id', $userId)
             ->where('date', $date);
     }
+
+    /**
+     * | REcent Applications
+     */
+    public function recentApplication($userId)
+    {
+        return PropActiveConcession::select(
+            'application_no as applicationNo',
+            'date as applyDate',
+            'applied_for as assessmentType',
+            "applicant_name as applicantName",
+        )
+            ->where('prop_active_concessions.user_id', $userId)
+            ->orderBydesc('prop_active_concessions.id')
+            ->take(10)
+            ->get();
+    }
 }

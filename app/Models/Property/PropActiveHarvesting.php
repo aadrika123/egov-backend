@@ -174,4 +174,23 @@ class PropActiveHarvesting extends Model
             ->where('user_id', $userId)
             ->where('date', $date);
     }
+
+    /**
+     * | REcent Applications
+     */
+    public function recentApplication($userId)
+    {
+        return PropActiveHarvesting::select(
+            'application_no as applicationNo',
+            'date as applyDate',
+            // 'applied_for as assessmentType',
+            DB::raw("string_agg(owner_name,',') as applicantName"),
+        )
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_active_harvestings.property_id')
+            ->where('prop_active_harvestings.user_id', $userId)
+            ->orderBydesc('prop_active_harvestings.id')
+            ->groupBy('application_no', 'date', 'prop_active_harvestings.id')
+            ->take(10)
+            ->get();
+    }
 }

@@ -545,4 +545,25 @@ class PropActiveSaf extends Model
             ->where('application_date', $date);
         // ->get();
     }
+
+    /**
+     * | Total Received Appklication
+     */
+    public function totalReceivedApplication($currentRole)
+    {
+        $date = Carbon::now();
+        return PropActiveSaf::select(
+            'saf_no as applicationNo',
+            'application_date as applyDate',
+            'assessment_type as assessmentType',
+            DB::raw("string_agg(owner_name,',') as applicantName"),
+        )
+            ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', 'prop_active_safs.id')
+            ->where('prop_active_safs.current_role', $currentRole)
+            // ->where('application_date', $date)
+            ->orderBydesc('prop_active_safs.id')
+            ->groupBy('saf_no', 'application_date', 'assessment_type', 'prop_active_safs.id')
+            // ->take(10)
+            ->get();
+    }
 }

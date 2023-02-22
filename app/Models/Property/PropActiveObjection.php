@@ -152,4 +152,23 @@ class PropActiveObjection extends Model
             ->where('user_id', $userId)
             ->where('date', $date);
     }
+
+    /**
+     * | REcent Applications
+     */
+    public function recentApplication($userId)
+    {
+        return PropActiveObjection::select(
+            'objection_no as applicationNo',
+            'date as applyDate',
+            'objection_for as assessmentType',
+            // DB::raw("string_agg(owner_name,',') as applicantName"),
+        )
+            // ->join('prop_owners', 'prop_owners.property_id', 'prop_active_harvestings.property_id')
+            ->where('prop_active_objections.user_id', $userId)
+            ->orderBydesc('prop_active_objections.id')
+            // ->groupBy('application_no', 'date', 'prop_active_harvestings.id')
+            ->take(10)
+            ->get();
+    }
 }

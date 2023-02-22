@@ -100,4 +100,13 @@ class WorkflowTrack extends Model
             ->leftJoin('users as u', 'u.id', '=', 'workflow_tracks.citizen_id')
             ->get();
     }
+
+    /**
+     * |total forwaded application
+     */
+    public function totalForwadedApplication($currentRole)
+    {
+        return WorkflowTrack::where('sender_role_id', $currentRole)
+            ->get();
+    }
 }
