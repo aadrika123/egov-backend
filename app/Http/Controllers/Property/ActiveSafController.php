@@ -904,7 +904,11 @@ class ActiveSafController extends Controller
                 'status',
                 'user_id',
                 'citizen_id',
-                'pt_no'
+                'pt_no',
+                'building_name',
+                'street_name',
+                'location',
+                'landmark',
             )->first();
 
         $assessmentType = $activeSaf->assessment_type;
