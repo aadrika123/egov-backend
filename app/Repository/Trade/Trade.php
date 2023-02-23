@@ -2576,6 +2576,7 @@ class Trade implements ITrade
                     $join->on("owner.temp_id", "active_trade_licences.id");
                 })
                 ->where("active_trade_licences.is_parked", FALSE)
+                ->where("active_trade_licences.payment_status", 1)
                 ->where("active_trade_licences.current_role", $mRoleId)
                 ->where("active_trade_licences.ulb_id", $refUlbId);
             if (isset($inputs['key']) && trim($inputs['key'])) {
