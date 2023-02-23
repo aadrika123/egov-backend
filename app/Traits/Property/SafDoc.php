@@ -35,45 +35,13 @@ trait SafDoc
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_SUPER_STRUCTURE")->requirements;
                 break;
             case $flip['VACANT LAND']:
-                $documentList = $this->vacantDocLists($mRefReqDocs, $moduleId, $transferType);     // Function (1.1)
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_LAND")->requirements;     // Function (1.1)
                 break;
         }
 
         return $documentList;
     }
 
-    /**
-     * | Vacant Land Document List
-     */
-    public function vacantDocLists($mRefReqDocs, $moduleId, $transferType)
-    {
-        $confTransferTypes = Config::get('PropertyConstaint.TRANSFER_MODES');
-        $transerTypes = flipConstants($confTransferTypes);
-        switch ($transferType) {
-            case  $transerTypes['Sale']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_SALE")->requirements;
-                break;
-            case  $transerTypes['Gift']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_GIFT")->requirements;
-                break;
-            case  $transerTypes['Will']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_WILL")->requirements;
-                break;
-            case  $transerTypes['Lease']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_LEASE")->requirements;
-                break;
-            case  $transerTypes['Partition']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_PARTITION")->requirements;
-                break;
-            case  $transerTypes['Succession']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_SUCCESSION")->requirements;
-                break;
-            default:
-                throw new Exception("Not Available Documents List for this Transfer Type");
-        }
-
-        return $documentList;
-    }
 
     /**
      * | Get Owner Document Lists
