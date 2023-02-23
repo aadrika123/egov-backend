@@ -39,10 +39,10 @@ class SafCalculation
     public $_effectiveDateRule3;
     public array $_readRoadType;
     private bool $_rwhPenaltyStatus = false;
-    private $_mobileTowerArea;
+    public $_mobileTowerArea;
     private $_mobileTowerInstallDate;
-    private array $_hoardingBoard;
-    private array $_petrolPump;
+    public array $_hoardingBoard;
+    public array $_petrolPump;
     private $_mobileQuaterlyRuleSets;
     private $_hoardingQuaterlyRuleSets;
     private $_petrolPumpQuaterlyRuleSets;
@@ -826,7 +826,7 @@ class SafCalculation
         // All Taxes Quaterly
         $tax = [
             "arv" => roundFigure($tempArv),
-            "buildupArea" => $readFloorBuildupArea ?? 0,
+            "buildupArea" => $readFloorBuildupArea ?? $this->_mobileTowerArea ?? 0,
             "carpetArea" => $carpetArea,
             "multiFactor" => $multiFactor,
             "arvTotalPropTax" => $arv,

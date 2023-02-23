@@ -234,6 +234,15 @@ class ObjectionController extends Controller
                 //floor Details
                 if ($objectionList[0]['objection_type_id']  == 9) {
 
+                    $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
+                    $floorDetails = $this->generateFloorDetails($floorList);
+                    $floorElement = [
+                        'headerTitle' => 'Floor Details',
+                        'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
+                        'tableData' => $floorDetails
+                    ];
+
+
                     $objectionFlooorDtl = $mPropActiveObjectionFloor->getfloorObjectionId($details->objection_id);
                     $objectionFlooorDtl = json_decode(json_encode($objectionFlooorDtl), true);       // Convert Std class to array
                     $objectionFloorDetails = $this->objectionFloorDetails($objectionFlooorDtl);
@@ -242,7 +251,7 @@ class ObjectionController extends Controller
                         'tableHead' => ["#", "Floor No.", "Usage Type", "Occupancy Type", "Construction Type", "Built Up Area (in Sq. Ft.)", "Carpet Area (in Sq. Ft.)", "Date of Completion"],
                         'tableData' => $objectionFloorDetails
                     ];
-                    $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$objectionElement, $objectionFloorElement]);
+                    $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$objectionElement, $floorElement,  $objectionFloorElement]);
                 }
             }
 
