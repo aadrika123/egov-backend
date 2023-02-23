@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Water;
 use App\Http\Controllers\Controller;
 use App\Models\Water\WaterConsumer as WaterWaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerInitialMeter;
+use App\Models\Water\WaterConsumerMeter;
 use App\Repository\Water\Interfaces\IConsumer;
 use Exception;
 use Illuminate\Http\Request;
@@ -47,8 +49,11 @@ class WaterConsumer extends Controller
             'ConsumerId' => 'required|',
         ]);
         try {
-            $WaterConsumerDemand = new WaterConsumerDemand();
-            $consumerDemand['consumerDemands'] = $WaterConsumerDemand->getConsumerDemand($request->ConsumerId);
+            $mWaterConsumerDemand = new WaterConsumerDemand();
+            $mWaterConsumerMeter = new WaterConsumerMeter();
+            $refConsumerId = $request->ConsumerId;
+
+            $consumerDemand['consumerDemands'] = $mWaterConsumerDemand->getConsumerDemand($refConsumerId);
             $consumerDemand['totalSumDemand'] = collect($consumerDemand['consumerDemands'])->map(function ($value, $key) {
                 return $value['balance_amount'];
             })->sum();
@@ -56,10 +61,11 @@ class WaterConsumer extends Controller
                 return $value['penalty'];
             })->sum();
 
+            $consumerDemand['meterDetails'] = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
+
             return responseMsgs(true, "List of Consumer Demand!", $consumerDemand, "", "01", "ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
-
 }
