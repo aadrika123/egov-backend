@@ -18,4 +18,13 @@ class MPropMultiFactor extends Model
             ->where('status', 1)
             ->get();
     }
+
+    /**
+     * | Get All Multi Factors
+     */
+    public function multiFactorsLists()
+    {
+        return MPropMultiFactor::where('status', 1)
+            ->get();
+    }
 }
