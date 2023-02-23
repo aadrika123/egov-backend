@@ -1038,12 +1038,20 @@ class WaterPaymentController extends Controller
                     $penaltyList = $mWaterPenaltyInstallment->getPenaltyByApplicationId($applicationId)
                         ->where('payment_from', $value['charge_category'])
                         ->get();
+
                     $checkPenalty = collect($penaltyList)->map(function ($penaltyList) {
                         if ($penaltyList['paid_status'] == 0) {
                             return false;
                         }
                         return true;
                     });
+
+                    $penaltyAmount = collect($penaltyList)->map(function ($secondvalue) {
+                        if ($secondvalue['paid_status'] == 0) {
+                            return $secondvalue['balance_amount'];
+                        }
+                    })->filter()->sum();
+
                     switch ($checkPenalty) {
                         case ($checkPenalty->contains(false)):
                             $penaltyPaymentStatus = false;
@@ -1055,12 +1063,12 @@ class WaterPaymentController extends Controller
                     }
 
                     $refConnectionDetails['penaltyList'] = $penaltyList;
-                }
-
-                if ($penaltyPaymentStatus == false || $value['paid_status'] == false) {
-                    $status['penaltyPaymentStatus']     = $penaltyPaymentStatus ?? null;
-                    $status['chargeCatagory']           = $value['charge_category'];
-                    return $status;
+                    if ($penaltyPaymentStatus == false || $value['paid_status'] == false) {
+                        $status['penaltyPaymentStatus']     = $penaltyPaymentStatus ?? null;
+                        $status['chargeCatagory']           = $value['charge_category'];
+                        $status['penaltyAmount']            = $penaltyAmount;
+                        return $status;
+                    }
                 }
             })->filter();
             $transactions = [
