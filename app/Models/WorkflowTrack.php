@@ -17,6 +17,7 @@ class WorkflowTrack extends Model
     public function saveTrack($request)
     {
         $userId = authUser()->id;
+        $ulbId = authUser()->ulb_id;
         $mTrackDate = Carbon::now()->format('Y-m-d H:i:s');
         $track = new WorkflowTrack;
         $track->workflow_id = $request->workflowId;
@@ -32,6 +33,7 @@ class WorkflowTrack extends Model
         $track->receiver_role_id = $request->receiverRoleId ?? null;
         $track->verification_status = $request->verificationStatus;
         $track->user_id = $userId;
+        $track->ulb_id = $ulbId;
         $track->save();
     }
 
