@@ -42,6 +42,7 @@ class HoldingTaxController extends Controller
     protected $_holdingTaxInterest = 0;
     protected $_paramRentalRate;
     protected $_refParamRentalRate;
+    protected $_carbon;
     /**
      * | Created On-19/01/2023 
      * | Created By-Anshu Kumar
@@ -52,6 +53,7 @@ class HoldingTaxController extends Controller
     public function __construct(iSafRepository $safRepo)
     {
         $this->_safRepo = $safRepo;
+        $this->_carbon = Carbon::now();
     }
     /**
      * | Generate Holding Demand(1)
@@ -700,8 +702,8 @@ class HoldingTaxController extends Controller
             $safCalculation->_effectiveDateRule3 = $effectDateRuleset3;
             $safCalculation->_multiFactors = $safCalculation->readMultiFactor();        // Get Multi Factors List
             $safCalculation->_propertyDetails['roadType'] = $basicDetails->road_width;
-            $safCalculation->_readRoadType['2016-04-01'] = $safCalculation->readRoadType('2016-04-01');
-            $safCalculation->_readRoadType['2022-04-01'] = $safCalculation->readRoadType('2022-04-01');
+            $safCalculation->_readRoadType[$effectDateRuleset2] = $safCalculation->readRoadType($effectDateRuleset2);
+            $safCalculation->_readRoadType[$effectDateRuleset3] = $safCalculation->readRoadType($effectDateRuleset3);
             $safCalculation->_ulbId = $basicDetails->ulb_id;
             $safCalculation->_wardNo = $basicDetails->old_ward_no;
             $safCalculation->readParamRentalRate();
@@ -743,7 +745,9 @@ class HoldingTaxController extends Controller
                 'arvTotalPropTax' => roundFigure((float)collect($arvRule)->sum('arvTotalPropTax') ?? 0 + (float)collect($cvRule)->sum('arvTotalPropTax') ?? 0),
                 'cvTotalPropTax' => roundFigure((float)collect($arvRule)->sum('cvArvPropTax') + (float)collect($cvRule)->sum('cvArvPropTax') ?? 0),
             ];
-            $comparativeDemand['basicDetails'] = $basicDetails;
+            $comparativeDemand['basicDetails'] = array_merge((array)$basicDetails, [
+                'todayDate' => $this->_carbon->format('d-m-Y')
+            ]);
             return responseMsgs(true, "Comparative Demand", remove_null($comparativeDemand), "011610", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011610", "1.0", "", "POST", $req->deviceId);
@@ -772,6 +776,7 @@ class HoldingTaxController extends Controller
             );
             $setRule2 = [
                 'floor' => $rule2['floor'],
+                'buildupArea' => $rule2['buildupArea'],
                 'usageFactor' => $rule2['multiFactor'],
                 'occupancyFactor' => $rule2['occupancyFactor'],
                 'carpetArea' => $rule2['carpetArea'],
@@ -799,6 +804,7 @@ class HoldingTaxController extends Controller
         );
         $setRule3 = [
             'floor' => $rule3['floor'],
+            'buildupArea' => $rule3['buildupArea'],
             'usageFactor' => $rule3['multiFactor'],
             'occupancyFactor' => $rule3['occupancyFactor'],
             'carpetArea' => $rule3['carpetArea'],

@@ -1032,18 +1032,26 @@ class WaterPaymentController extends Controller
 
             # Connection Charges And Penalty
             $refConnectionDetails = $mWaterConnectionCharge->getWaterchargesById($applicationId)->get();
-             $penaltyList = collect($refConnectionDetails)->map(function ($value, $key)
+            $penaltyList = collect($refConnectionDetails)->map(function ($value, $key)
             use ($mWaterPenaltyInstallment, $applicationId) {
                 if ($value['penalty'] > 0) {
                     $penaltyList = $mWaterPenaltyInstallment->getPenaltyByApplicationId($applicationId)
                         ->where('payment_from', $value['charge_category'])
                         ->get();
+
                     $checkPenalty = collect($penaltyList)->map(function ($penaltyList) {
                         if ($penaltyList['paid_status'] == 0) {
                             return false;
                         }
                         return true;
                     });
+
+                    $penaltyAmount = collect($penaltyList)->map(function ($secondvalue) {
+                        if ($secondvalue['paid_status'] == 0) {
+                            return $secondvalue['balance_amount'];
+                        }
+                    })->filter()->sum();
+
                     switch ($checkPenalty) {
                         case ($checkPenalty->contains(false)):
                             $penaltyPaymentStatus = false;
@@ -1055,15 +1063,17 @@ class WaterPaymentController extends Controller
                     }
 
                     $refConnectionDetails['penaltyList'] = $penaltyList;
+                    if ($penaltyPaymentStatus == false || $value['paid_status'] == false) {
+                        $status['penaltyPaymentStatus']     = $penaltyPaymentStatus ?? null;
+                        $status['chargeCatagory']           = $value['charge_category'];
+                        $status['penaltyAmount']            = $penaltyAmount;
+                        return $status;
+                    }
                 }
-                $status['penaltyPaymentStatus']     = $penaltyPaymentStatus ?? null;
-                $status['connectionPaymentStatus']  = $value['paid_status'];
-                $status['ConnectionCharge']         = $value;
-                return $status;
-            });
+            })->filter();
             $transactions = [
                 "transactionHistory" => collect($connectionTran)->sortByDesc('id')->values(),
-                "paymentList" => $penaltyList
+                "paymentList" => $penaltyList->values()->first()
             ];
 
             return responseMsgs(true, "", remove_null($transactions), "", "01", "ms", "POST", $request->deviceId ?? "");
