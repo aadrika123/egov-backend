@@ -895,7 +895,7 @@ class Trade implements ITrade
         $rules = [];
         $message = [];
 
-        $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
+        $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\, \s]+$/';
         $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.&\s]+$/';
         try {
             if ($rollId == -1 || (!in_array($mUserType, ['BO', 'SUPER ADMIN']))) 
@@ -931,7 +931,7 @@ class Trade implements ITrade
             $rules["firmDetails.accountNo"] = "regex:$mRegex";
 
             $rules["initialBusinessDetails.firmType"] = "required|digits_between:1,9223372036854775807";
-            $rules["initialBusinessDetails.categoryTypeId"] = "requird|digits_between:1,9223372036854775807";
+            $rules["initialBusinessDetails.categoryTypeId"] = "required|digits_between:1,9223372036854775807";
             if (isset($request->initialBusinessDetails['firmType']) && $request->initialBusinessDetails['firmType'] == 5) {
                 $rules["initialBusinessDetails.otherFirmType"] = "required|regex:$mRegex";
             }
@@ -960,7 +960,6 @@ class Trade implements ITrade
                 else
                     throw new Exception("Property Details Not Found");
             }
-
             DB::beginTransaction();
 
             if ($refOldLicece->payment_status == 0) 
@@ -1033,7 +1032,7 @@ class Trade implements ITrade
             }
             DB::commit();
             return responseMsg(true, "Application Update SuccessFully!", "");
-        } catch (Exception $e) {
+        } catch (Exception $e) {            
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }

@@ -135,7 +135,11 @@ class PropActiveSaf extends Model
 
             'prop_state' => $req->propState,
             'corr_state' => $req->corrState,
-            'new_ward_mstr_id' => $req->newWard
+            'new_ward_mstr_id' => $req->newWard,
+            'building_name' => $req->buildingName,
+            'street_name' => $req->streetName,
+            'location' => $req->location,
+            'landmark' => $req->landmark
         ];
 
         return $saf->update($reqs);
