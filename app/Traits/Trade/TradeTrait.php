@@ -40,7 +40,7 @@ trait TradeTrait
             ['displayString' => 'Firm Type', 'key' => 'firmType', 'value' => $data->firm_type],
             ['displayString' => 'Nature Of Business', 'key' => 'natureofBusiness', 'value' => $data->nature_of_bussiness],
             ['displayString' => 'K No.', 'key' => 'kNo', 'value' => $data->k_no],
-            ['displayString' => 'Area', 'key' => 'area', 'value' => $data->area_in_sqft],
+            ['displayString' => 'Area In Sqft.', 'key' => 'area', 'value' => $data->area_in_sqft],
             ['displayString' => 'Account No', 'key' => 'accountNo', 'value' => $data->account_no],
             ['displayString' => 'Firm Name', 'key' => 'firmName', 'value' => $data->firm_name],
             ['displayString' => 'Cateogry Type', 'key' => 'categoryType', 'value' => $data->category_type],
@@ -119,10 +119,10 @@ trait TradeTrait
             ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->ward_no],
             ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $owners],
             ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
-            ['displayString' => 'Assessment Type', 'key' => 'assessmentType', 'value' => $req->assessment_type],
+            ['displayString' => 'Application Type', 'key' => 'applicationType', 'value' => $req->application_type],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
             ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $req->application_date],
-            ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Area In Sqft.', 'key' => 'area', 'value' => $req->area_in_sqft],
         ]);
     }
 

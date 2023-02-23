@@ -34,6 +34,7 @@ class PropOwner extends Model
     {
         return DB::table('prop_owners')
             ->where('property_id', $propertyId)
+            ->orderBy('id')
             ->get();
     }
 

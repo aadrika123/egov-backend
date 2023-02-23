@@ -153,4 +153,24 @@ class PropActiveConcession extends Model
             ->take(10)
             ->get();
     }
+
+    /**
+     * | Today Received Appklication
+     */
+    public function todayReceivedApplication($currentRole, $ulbId)
+    {
+        $date = Carbon::now()->format('Y-m-d');
+        return PropActiveConcession::select(
+            'application_no as applicationNo',
+            'date as applyDate',
+        )
+
+            ->join('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_concessions.id')
+            ->where('prop_active_concessions.current_role', $currentRole)
+            ->where('workflow_tracks.ulb_id', $ulbId)
+            ->where('ref_table_dot_id', 'prop_active_concessions.id')
+            ->whereRaw("date(track_date) = '$date'")
+            ->orderBydesc('prop_active_concessions.id')
+            ->get();
+    }
 }

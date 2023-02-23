@@ -17,6 +17,7 @@ class WorkflowTrack extends Model
     public function saveTrack($request)
     {
         $userId = authUser()->id;
+        $ulbId = authUser()->ulb_id;
         $mTrackDate = Carbon::now()->format('Y-m-d H:i:s');
         $track = new WorkflowTrack;
         $track->workflow_id = $request->workflowId;
@@ -32,6 +33,7 @@ class WorkflowTrack extends Model
         $track->receiver_role_id = $request->receiverRoleId ?? null;
         $track->verification_status = $request->verificationStatus;
         $track->user_id = $userId;
+        $track->ulb_id = $ulbId;
         $track->save();
     }
 
@@ -104,9 +106,42 @@ class WorkflowTrack extends Model
     /**
      * |total forwaded application
      */
-    public function totalForwadedApplication($currentRole)
+    public function todayForwadedApplication($currentRole, $ulbId, $propertyWorflows)
     {
+        $date = Carbon::now();
         return WorkflowTrack::where('sender_role_id', $currentRole)
+            ->where('forward_date', $date)
+            ->where('ulb_id', $ulbId)
+            ->whereIn('workflow_id', $propertyWorflows)
+            ->get();
+    }
+
+
+    /**
+     * |Total Approved application
+     */
+    public function todayApprovedApplication($currentRole, $ulbId, $propertyWorflows)
+    {
+        $date = Carbon::now();
+        return WorkflowTrack::where('receiver_role_id', $currentRole)
+            ->where('forward_date', $date)
+            ->where('ulb_id', $ulbId)
+            ->where('verification_status', 1)
+            ->whereIn('workflow_id', $propertyWorflows)
+            ->get();
+    }
+
+    /**
+     * |Total Rejected application
+     */
+    public function todayRejectedApplication($currentRole, $ulbId, $propertyWorflows)
+    {
+        $date = Carbon::now();
+        return WorkflowTrack::where('receiver_role_id', $currentRole)
+            ->where('forward_date', $date)
+            ->where('ulb_id', $ulbId)
+            ->where('verification_status', 2)
+            ->whereIn('workflow_id', $propertyWorflows)
             ->get();
     }
 }
