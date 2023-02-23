@@ -171,4 +171,26 @@ class PropActiveObjection extends Model
             ->take(10)
             ->get();
     }
+
+    /**
+     * | Today Received Appklication
+     */
+    public function todayReceivedApplication($currentRole, $ulbId)
+    {
+        $date = Carbon::now()->format('Y-m-d');
+        return PropActiveObjection::select(
+            'objection_no as applicationNo',
+            'date as applyDate',
+            // 'assessment_type as assessmentType',
+            // DB::raw("string_agg(owner_name,',') as applicantName"),
+        )
+
+            ->join('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_objections.id')
+            ->where('prop_active_objections.current_role', $currentRole)
+            ->where('workflow_tracks.ulb_id', $ulbId)
+            ->where('ref_table_dot_id', 'prop_active_objections.id')
+            ->whereRaw("date(track_date) = '$date'")
+            ->orderBydesc('prop_active_objections.id')
+            ->get();
+    }
 }

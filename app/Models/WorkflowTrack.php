@@ -104,12 +104,42 @@ class WorkflowTrack extends Model
     /**
      * |total forwaded application
      */
-    public function todayForwadedApplication($currentRole, $ulbId)
+    public function todayForwadedApplication($currentRole, $ulbId, $propertyWorflows)
     {
         $date = Carbon::now();
         return WorkflowTrack::where('sender_role_id', $currentRole)
             ->where('forward_date', $date)
             ->where('ulb_id', $ulbId)
+            ->whereIn('workflow_id', $propertyWorflows)
+            ->get();
+    }
+
+
+    /**
+     * |Total Approved application
+     */
+    public function todayApprovedApplication($currentRole, $ulbId, $propertyWorflows)
+    {
+        $date = Carbon::now();
+        return WorkflowTrack::where('receiver_role_id', $currentRole)
+            ->where('forward_date', $date)
+            ->where('ulb_id', $ulbId)
+            ->where('verification_status', 1)
+            ->whereIn('workflow_id', $propertyWorflows)
+            ->get();
+    }
+
+    /**
+     * |Total Rejected application
+     */
+    public function todayRejectedApplication($currentRole, $ulbId, $propertyWorflows)
+    {
+        $date = Carbon::now();
+        return WorkflowTrack::where('receiver_role_id', $currentRole)
+            ->where('forward_date', $date)
+            ->where('ulb_id', $ulbId)
+            ->where('verification_status', 2)
+            ->whereIn('workflow_id', $propertyWorflows)
             ->get();
     }
 }
