@@ -2599,6 +2599,7 @@ class Trade implements ITrade
             }
             $licence = $licence
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
+                // ->limit(100)
                 ->get();
             // dd($licence);            
             return responseMsg(true, "", $licence);
