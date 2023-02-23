@@ -474,7 +474,7 @@ class Report implements IReport
             }
             if($licenseNo)
             {
-                $data = $data->where('trade_licences.license_no', 'ILIKE', "'%" . $licenseNo . "%'");
+                $data = $data->where('trade_licences.license_no', 'ILIKE', "%" . $licenseNo . "%");
             }
             if((!$oprater) && $licenseNo)
             {
@@ -495,7 +495,6 @@ class Report implements IReport
                     $data= $data->union($old);
                     
             }
-            
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
@@ -510,7 +509,7 @@ class Report implements IReport
                 "total"=>$total,
                 "numberOfPages"=>$numberOfPages
             ];
-            dd(DB::getQueryLog());
+            // dd(DB::getQueryLog());
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
             
