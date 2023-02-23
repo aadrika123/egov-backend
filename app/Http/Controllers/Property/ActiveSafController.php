@@ -758,6 +758,7 @@ class ActiveSafController extends Controller
             $samHoldingDtls = array();
 
             // Derivative Assignments
+            DB::beginTransaction();
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId);          // Check Post Next level condition
@@ -765,7 +766,6 @@ class ActiveSafController extends Controller
                 $metaReqs['verificationStatus'] = 1;
             }
             // SAF Application Update Current Role Updation
-            DB::beginTransaction();
             $saf->current_role = $request->receiverRoleId;
             $saf->save();
 
@@ -904,7 +904,11 @@ class ActiveSafController extends Controller
                 'status',
                 'user_id',
                 'citizen_id',
-                'pt_no'
+                'pt_no',
+                'building_name',
+                'street_name',
+                'location',
+                'landmark',
             )->first();
 
         $assessmentType = $activeSaf->assessment_type;

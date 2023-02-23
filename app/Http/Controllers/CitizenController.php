@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use Exception;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
@@ -49,6 +50,7 @@ class CitizenController extends Controller
 
         try {
 
+            DB::beginTransaction();
             $mCitizen = new ActiveCitizen();
             $citizens = $mCitizen->getCitizenByMobile($request->mobile);
             if (isset($citizens))
@@ -58,9 +60,12 @@ class CitizenController extends Controller
 
             $this->docUpload($request, $id);
 
+            DB::commit();
+
             return responseMsg(true, "Succesfully Registered", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+            DB::rollBack();
         }
     }
 
@@ -239,14 +244,14 @@ class CitizenController extends Controller
                 'gender' => $data->gender,
                 'dob' => $data->dob,
                 'aadhar' => $data->aadhar,
-                'aadhar_doc' => $data->aadhar_doc,
+                'aadhar_doc' => $data->relative_path . $data->aadhar_doc,
                 'is_specially_abled' => $data->is_specially_abled,
-                'specially_abled_doc' => $data->specially_abled_doc,
+                'specially_abled_doc' => $data->relative_path . $data->specially_abled_doc,
                 'is_armed_force' => $data->is_armed_force,
-                'armed_force_doc' => $data->armed_force_doc,
+                'armed_force_doc' => $data->relative_path . $data->armed_force_doc,
                 'relative_path' => $data->relative_path,
                 'user_type' => $data->user_type,
-                'profile_photo' => $data->profile_photo,
+                'profile_photo' => $data->relative_path . $data->profile_photo,
             ];
             $filtered = collect($collection);
             $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($filtered)];
@@ -273,6 +278,12 @@ class CitizenController extends Controller
             )
                 ->where('id', $userId)
                 ->first();
+
+            $details->aadhar_doc = ($details->relative_path . $details->aadhar_doc);
+            $details->specially_abled_doc = ($details->relative_path . $details->specially_abled_doc);
+            $details->armed_force_doc = ($details->relative_path . $details->armed_force_doc);
+            $details->profile_photo = ($details->relative_path . $details->profile_photo);
+
             $message = ["status" => true, "message" => "Data Fetched", "data" => remove_null($details)];
             return $message;
         }

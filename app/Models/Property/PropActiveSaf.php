@@ -27,7 +27,7 @@ class PropActiveSaf extends Model
             'ward_mstr_id' => $req->ward,
             'ownership_type_mstr_id' => $req->ownershipType,
             'prop_type_mstr_id' => $req->propertyType,
-            'appartment_name' => $req->apartmentName,
+            'appartment_name' => $req->appartmentName,
             'flat_registry_date' => $req->flatRegistryDate,
             'zone_mstr_id' => $req->zone,
             'no_electric_connection' => $req->electricityConnection,
@@ -88,7 +88,14 @@ class PropActiveSaf extends Model
             'current_role' => $req->initiatorRoleId,
             'initiator_role_id' => $req->initiatorRoleId,
             'finisher_role_id' => $req->finisherRoleId,
-            'citizen_id' => $req->citizenId ?? null
+            'citizen_id' => $req->citizenId ?? null,
+
+            'building_name' => $req->buildingName,
+            'street_name' => $req->streetName,
+            'location' => $req->location,
+            'landmark' => $req->landmark,
+
+
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);
         return response()->json([

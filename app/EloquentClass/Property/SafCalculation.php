@@ -26,19 +26,18 @@ class SafCalculation
 {
 
     private array $_GRID;
-    private array $_propertyDetails;
-    private array $_floors;
-    private $_wardNo;
+    public array $_propertyDetails;
+    public array $_floors;
+    public $_wardNo;
     private $_isResidential;
     private $_ruleSets;
-    private $_ulbId;
+    public $_ulbId;
     private $_rentalValue;
-    private $_paramRentalRate;
-    private $_rentalRates;
+    public $_rentalRates;
     private $_virtualDate;
-    private $_effectiveDateRule2;
-    private $_effectiveDateRule3;
-    private array $_readRoadType;
+    public $_effectiveDateRule2;
+    public $_effectiveDateRule3;
+    public array $_readRoadType;
     private bool $_rwhPenaltyStatus = false;
     private $_mobileTowerArea;
     private $_mobileTowerInstallDate;
@@ -52,7 +51,7 @@ class SafCalculation
     private $_currentQuarterStartDate;
     private $_currentQuarterDate;
     private $_loggedInUserType;
-    private $_redis;
+    public $_redis;
     private $_citizenRebatePerc;
     private $_jskRebatePerc;
     private $_speciallyAbledRebatePerc;
@@ -66,6 +65,7 @@ class SafCalculation
     public $_capitalValueRateMPH;
     public $_multiFactors;
     public $_capitalValueRate;
+    public $_paramRentalRate;
 
     /** 
      * | For Building
@@ -113,7 +113,6 @@ class SafCalculation
     {
         $this->_redis = Redis::connection();
         $propertyDetails = $this->_propertyDetails;
-        $this->_paramRentalRate = Config::get("PropertyConstaint.PARAM_RENTAL_RATE");
 
         $this->_effectiveDateRule2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE2");
         $this->_effectiveDateRule3 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3");
@@ -138,14 +137,7 @@ class SafCalculation
             $this->_rwhPenaltyStatus = true;
         }
 
-        $refParamRentalRate = json_decode(Redis::get('propMBuildingRentalConst:' . $this->_ulbId));         // Get Building Rental Constant From Redis
-
-        if (!$refParamRentalRate) {                                                                         // Get Building Rental Constant From Database
-            $refParamRentalRate = MPropBuildingRentalconst::where('ulb_id', $this->_ulbId)->first();
-            $this->_redis->set('propMBuildingRentalConst:' . $this->_ulbId, json_encode($refParamRentalRate));
-        }
-
-        $this->_paramRentalRate = $refParamRentalRate->x;
+        $this->readParamRentalRate();                                                           // Read Rental Rate (1.1.3)
 
         // Check If the one of the floors is commercial for Building
         if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
@@ -227,6 +219,20 @@ class SafCalculation
             $this->_redis->set('propMUsageTypeMultiFactor', json_encode($refMultiFactor));
         }
         return $refMultiFactor;
+    }
+
+    /**
+     *  Read Rental Rate (1.1.3)
+     */
+    public function readParamRentalRate()
+    {
+        $refParamRentalRate = json_decode(Redis::get('propMBuildingRentalConst:' . $this->_ulbId));         // Get Building Rental Constant From Redis
+
+        if (!$refParamRentalRate) {                                                                         // Get Building Rental Constant From Database
+            $refParamRentalRate = MPropBuildingRentalconst::where('ulb_id', $this->_ulbId)->first();
+            $this->_redis->set('propMBuildingRentalConst:' . $this->_ulbId, json_encode($refParamRentalRate));
+        }
+        $this->_paramRentalRate = $refParamRentalRate->x;
     }
 
     /**
@@ -788,9 +794,13 @@ class SafCalculation
             $readMultiFactor = collect($this->_multiFactors)->where('usage_type_id', $readFloorUsageType)
                 ->where('effective_date', $this->_effectiveDateRule2)
                 ->first();
+            if (collect($readMultiFactor)->isEmpty())
+                throw new Exception("Multi Factor Not Available");
             $multiFactor = (float)$readMultiFactor->multi_factor;
 
-            $carpetArea = ($readFloorBuildupArea * $paramCarpetAreaPerc) / 100;
+            $carpetArea = $this->_floors[$key]['carpetArea'] ?? "";
+
+            $carpetArea = !empty($carpetArea) ? $carpetArea : ($readFloorBuildupArea * $paramCarpetAreaPerc) / 100;
 
             // Rental Rate Calculation
             $rentalRates = collect($this->_rentalRates)
@@ -816,8 +826,10 @@ class SafCalculation
         // All Taxes Quaterly
         $tax = [
             "arv" => roundFigure($tempArv),
+            "buildupArea" => $readFloorBuildupArea ?? 0,
             "carpetArea" => $carpetArea,
             "multiFactor" => $multiFactor,
+            "arvTotalPropTax" => $arv,
             "rentalRate" => roundFigure($rentalRate),
             "occupancyFactor" => $paramOccupancyFactor,
 
@@ -901,7 +913,10 @@ class SafCalculation
 
         // For Floors
         if (is_numeric($key)) {                                                                             // Applicable for floors
-            $readCircleRate = $this->_capitalValueRate[$key];
+            $readCircleRate = $this->_capitalValueRate[$key] ?? "";
+            if (empty($readCircleRate))
+                throw new Exception("Circle Rate Not Available");
+
             $readFloorUsageType = $this->_floors[$key]['useType'];
             $readBuildupArea = $this->_floors[$key]['buildupArea'];
 
