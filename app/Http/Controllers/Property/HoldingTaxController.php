@@ -687,6 +687,8 @@ class HoldingTaxController extends Controller
             $safCalculation = new SafCalculation;
             $mPropProperty = new PropProperty();
             $floorTypes = Config::get('PropertyConstaint.FLOOR-TYPE');
+            $effectDateRuleset2 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE2');
+            $effectDateRuleset3 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE3');
             // Derivative Assignments
             $fullDetails = $mPropProperty->getComparativeBasicDtls($propId);             // Full Details of the Floor
             $basicDetails = collect($fullDetails)->first();
@@ -694,15 +696,15 @@ class HoldingTaxController extends Controller
                 throw new Exception("Floor Not Available");
             $safCalculation->_redis = Redis::connection();
             $safCalculation->_rentalRates = $safCalculation->calculateRentalRates();
-            $safCalculation->_paramRentalRate = 144;
-            $safCalculation->_effectiveDateRule2 = '2016-04-01';
-            $safCalculation->_effectiveDateRule3 = '2022-04-01';
+            $safCalculation->_effectiveDateRule2 = $effectDateRuleset2;
+            $safCalculation->_effectiveDateRule3 = $effectDateRuleset3;
             $safCalculation->_multiFactors = $safCalculation->readMultiFactor();        // Get Multi Factors List
             $safCalculation->_propertyDetails['roadType'] = $basicDetails->road_width;
             $safCalculation->_readRoadType['2016-04-01'] = $safCalculation->readRoadType('2016-04-01');
             $safCalculation->_readRoadType['2022-04-01'] = $safCalculation->readRoadType('2022-04-01');
             $safCalculation->_ulbId = $basicDetails->ulb_id;
             $safCalculation->_wardNo = $basicDetails->old_ward_no;
+            $safCalculation->readParamRentalRate();
             $floors = array();
             foreach ($fullDetails as $detail) {
                 array_push($floors, [

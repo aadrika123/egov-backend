@@ -113,7 +113,6 @@ class SafCalculation
     {
         $this->_redis = Redis::connection();
         $propertyDetails = $this->_propertyDetails;
-        $this->_paramRentalRate = Config::get("PropertyConstaint.PARAM_RENTAL_RATE");
 
         $this->_effectiveDateRule2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE2");
         $this->_effectiveDateRule3 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3");
@@ -138,14 +137,7 @@ class SafCalculation
             $this->_rwhPenaltyStatus = true;
         }
 
-        $refParamRentalRate = json_decode(Redis::get('propMBuildingRentalConst:' . $this->_ulbId));         // Get Building Rental Constant From Redis
-
-        if (!$refParamRentalRate) {                                                                         // Get Building Rental Constant From Database
-            $refParamRentalRate = MPropBuildingRentalconst::where('ulb_id', $this->_ulbId)->first();
-            $this->_redis->set('propMBuildingRentalConst:' . $this->_ulbId, json_encode($refParamRentalRate));
-        }
-
-        $this->_paramRentalRate = $refParamRentalRate->x;
+        $this->readParamRentalRate();                                                           // Read Rental Rate (1.1.3)
 
         // Check If the one of the floors is commercial for Building
         if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
@@ -227,6 +219,20 @@ class SafCalculation
             $this->_redis->set('propMUsageTypeMultiFactor', json_encode($refMultiFactor));
         }
         return $refMultiFactor;
+    }
+
+    /**
+     *  Read Rental Rate (1.1.3)
+     */
+    public function readParamRentalRate()
+    {
+        $refParamRentalRate = json_decode(Redis::get('propMBuildingRentalConst:' . $this->_ulbId));         // Get Building Rental Constant From Redis
+
+        if (!$refParamRentalRate) {                                                                         // Get Building Rental Constant From Database
+            $refParamRentalRate = MPropBuildingRentalconst::where('ulb_id', $this->_ulbId)->first();
+            $this->_redis->set('propMBuildingRentalConst:' . $this->_ulbId, json_encode($refParamRentalRate));
+        }
+        $this->_paramRentalRate = $refParamRentalRate->x;
     }
 
     /**
