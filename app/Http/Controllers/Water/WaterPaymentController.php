@@ -1056,16 +1056,16 @@ class WaterPaymentController extends Controller
 
                     $refConnectionDetails['penaltyList'] = $penaltyList;
                 }
+
                 if ($penaltyPaymentStatus == false || $value['paid_status'] == false) {
                     $status['penaltyPaymentStatus']     = $penaltyPaymentStatus ?? null;
-                    $status['connectionPaymentStatus']  = $value['paid_status'];
-                    $status['ConnectionCharge']         = $value;
+                    $status['chargeCatagory']           = $value['charge_category'];
                     return $status;
                 }
-            });
+            })->filter();
             $transactions = [
                 "transactionHistory" => collect($connectionTran)->sortByDesc('id')->values(),
-                "paymentList" => $penaltyList->filter()->values()
+                "paymentList" => $penaltyList->values()->first()
             ];
 
             return responseMsgs(true, "", remove_null($transactions), "", "01", "ms", "POST", $request->deviceId ?? "");
