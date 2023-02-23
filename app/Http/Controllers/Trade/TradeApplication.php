@@ -478,7 +478,6 @@ class TradeApplication extends Controller
 
             $track = new WorkflowTrack();
             $track->saveTrack($request);
-            dd(DB::getQueryLog());
             DB::commit();
             return responseMsgs(true, $sms, "", "010109", "1.0", "286ms", "POST", $request->deviceId);
         } catch (Exception $e) {
