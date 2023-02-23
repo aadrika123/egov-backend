@@ -895,7 +895,7 @@ class Trade implements ITrade
         $rules = [];
         $message = [];
 
-        $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
+        $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\, \s]+$/';
         $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.&\s]+$/';
         try {
             if ($rollId == -1 || (!in_array($mUserType, ['BO', 'SUPER ADMIN']))) 
@@ -931,14 +931,14 @@ class Trade implements ITrade
             $rules["firmDetails.accountNo"] = "regex:$mRegex";
 
             $rules["initialBusinessDetails.firmType"] = "required|digits_between:1,9223372036854775807";
-            $rules["initialBusinessDetails.categoryTypeId"] = "requird|digits_between:1,9223372036854775807";
+            $rules["initialBusinessDetails.categoryTypeId"] = "required|digits_between:1,9223372036854775807";
             if (isset($request->initialBusinessDetails['firmType']) && $request->initialBusinessDetails['firmType'] == 5) {
                 $rules["initialBusinessDetails.otherFirmType"] = "required|regex:$mRegex";
             }
             $rules["initialBusinessDetails.ownershipType"] = "required|digits_between:1,9223372036854775807";
 
             $rules["ownerDetails"] = "required|array";
-            $rules["ownerDetails.*.id"] = "digits_between:1,9223372036854775807";
+            $rules["ownerDetails.*.id"] = "nullable|digits_between:1,9223372036854775807";
             $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
             $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/|nullable";
             $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
@@ -960,7 +960,6 @@ class Trade implements ITrade
                 else
                     throw new Exception("Property Details Not Found");
             }
-
             DB::beginTransaction();
 
             if ($refOldLicece->payment_status == 0) 
@@ -1014,7 +1013,7 @@ class Trade implements ITrade
                     $refOldOwner->state            = $owner['state'] ?? null;
                     $refOldOwner->email_id          = $owner['email'] ?? null;
                     $refOldOwner->update();
-                } elseif (!$refOldLicece->doc_verify_emp_details_id) {
+                } elseif (!$refOldLicece->is_doc_verified) {
                     $newOwner = new ActiveTradeOwner();
                     $newOwner->temp_id      = $mLicenceId;
                     $newOwner->owner_name      = $owner['businessOwnerName'];
@@ -1033,7 +1032,7 @@ class Trade implements ITrade
             }
             DB::commit();
             return responseMsg(true, "Application Update SuccessFully!", "");
-        } catch (Exception $e) {
+        } catch (Exception $e) {            
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }

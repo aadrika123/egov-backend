@@ -42,6 +42,7 @@ class HoldingTaxController extends Controller
     protected $_holdingTaxInterest = 0;
     protected $_paramRentalRate;
     protected $_refParamRentalRate;
+    protected $_carbon;
     /**
      * | Created On-19/01/2023 
      * | Created By-Anshu Kumar
@@ -52,6 +53,7 @@ class HoldingTaxController extends Controller
     public function __construct(iSafRepository $safRepo)
     {
         $this->_safRepo = $safRepo;
+        $this->_carbon = Carbon::now();
     }
     /**
      * | Generate Holding Demand(1)
@@ -687,72 +689,85 @@ class HoldingTaxController extends Controller
             $safCalculation = new SafCalculation;
             $mPropProperty = new PropProperty();
             $floorTypes = Config::get('PropertyConstaint.FLOOR-TYPE');
+            $effectDateRuleset2 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE2');
+            $effectDateRuleset3 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE3');
             // Derivative Assignments
             $fullDetails = $mPropProperty->getComparativeBasicDtls($propId);             // Full Details of the Floor
-            $basicDetails = collect($fullDetails)->first();
+            // return $fullDetails;
             if (collect($fullDetails)->isEmpty())
-                throw new Exception("Floor Not Available");
+                throw new Exception("No Property Found");
+            $basicDetails = collect($fullDetails)->first();
             $safCalculation->_redis = Redis::connection();
             $safCalculation->_rentalRates = $safCalculation->calculateRentalRates();
-            $safCalculation->_paramRentalRate = 144;
-            $safCalculation->_effectiveDateRule2 = '2016-04-01';
-            $safCalculation->_effectiveDateRule3 = '2022-04-01';
+            $safCalculation->_effectiveDateRule2 = $effectDateRuleset2;
+            $safCalculation->_effectiveDateRule3 = $effectDateRuleset3;
             $safCalculation->_multiFactors = $safCalculation->readMultiFactor();        // Get Multi Factors List
             $safCalculation->_propertyDetails['roadType'] = $basicDetails->road_width;
-            $safCalculation->_readRoadType['2016-04-01'] = $safCalculation->readRoadType('2016-04-01');
-            $safCalculation->_readRoadType['2022-04-01'] = $safCalculation->readRoadType('2022-04-01');
+            $safCalculation->_readRoadType[$effectDateRuleset2] = $safCalculation->readRoadType($effectDateRuleset2);
+            $safCalculation->_readRoadType[$effectDateRuleset3] = $safCalculation->readRoadType($effectDateRuleset3);
             $safCalculation->_ulbId = $basicDetails->ulb_id;
             $safCalculation->_wardNo = $basicDetails->old_ward_no;
-            $floors = array();
-            foreach ($fullDetails as $detail) {
-                array_push($floors, [
-                    'floorMstrId' => $detail->floor_mstr_id,
-                    'buildupArea' => $detail->builtup_area,
-                    'useType' => $detail->usage_type_mstr_id,
-                    'constructionType' => $detail->const_type_mstr_id,
-                    'carpetArea' => $detail->carpet_area,
-                    'occupancyType' => $detail->occupancy_type_mstr_id,
-                ]);
-            }
-            $safCalculation->_floors = $floors;
-            $capitalvalueRates = $safCalculation->readCapitalValueRate();
+            $safCalculation->readParamRentalRate();
 
-            foreach ($fullDetails as $key => $detail) {
-                $floorMstrId = $detail->floor_mstr_id;
-                $floorBuiltupArea = $detail->builtup_area;
-                $floorUsageType = $detail->usage_type_mstr_id;
-                $floorConstType = $detail->const_type_mstr_id;
-                $floorCarpetArea = $detail->carpet_area;
-                $floorFromDate = $detail->date_from;
-                $floorOccupancyType = $detail->occupancy_type_mstr_id;
-                $safCalculation->_floors[$floorMstrId]['useType'] = $floorUsageType;
-                $safCalculation->_floors[$floorMstrId]['buildupArea'] = $floorBuiltupArea;
-                $safCalculation->_floors[$floorMstrId]['carpetArea'] = $floorCarpetArea;
-                $safCalculation->_floors[$floorMstrId]['occupancyType'] = $floorOccupancyType;
-                $safCalculation->_floors[$floorMstrId]['constructionType'] = $floorConstType;
-                $safCalculation->_capitalValueRate[$floorMstrId] = $capitalvalueRates[$key];
-                $rules = $this->generateComparativeDemand($floorFromDate, $floorTypes, $floorMstrId, $safCalculation);
-                array_push($comparativeDemand['arvRule'], $rules['arvRule']);
-                array_push($comparativeDemand['cvRule'], $rules['cvRule']);
+            if (!is_null($basicDetails->floor_id))                                          // If The Property Have Floors
+            {
+                $floors = array();
+                foreach ($fullDetails as $detail) {
+                    array_push($floors, [
+                        'floorMstrId' => $detail->floor_mstr_id,
+                        'buildupArea' => $detail->builtup_area,
+                        'useType' => $detail->usage_type_mstr_id,
+                        'constructionType' => $detail->const_type_mstr_id,
+                        'carpetArea' => $detail->carpet_area,
+                        'occupancyType' => $detail->occupancy_type_mstr_id,
+                    ]);
+                }
+                $safCalculation->_floors = $floors;
+                $capitalvalueRates = $safCalculation->readCapitalValueRate();
+
+                foreach ($fullDetails as $key => $detail) {
+                    $floorMstrId = $detail->floor_mstr_id;
+                    $floorBuiltupArea = $detail->builtup_area;
+                    $floorUsageType = $detail->usage_type_mstr_id;
+                    $floorConstType = $detail->const_type_mstr_id;
+                    $floorCarpetArea = $detail->carpet_area;
+                    $floorFromDate = $detail->date_from;
+                    $floorOccupancyType = $detail->occupancy_type_mstr_id;
+                    $safCalculation->_floors[$floorMstrId]['useType'] = $floorUsageType;
+                    $safCalculation->_floors[$floorMstrId]['buildupArea'] = $floorBuiltupArea;
+                    $safCalculation->_floors[$floorMstrId]['carpetArea'] = $floorCarpetArea;
+                    $safCalculation->_floors[$floorMstrId]['occupancyType'] = $floorOccupancyType;
+                    $safCalculation->_floors[$floorMstrId]['constructionType'] = $floorConstType;
+                    $safCalculation->_capitalValueRate[$floorMstrId] = $capitalvalueRates[$key];
+                    $rules = $this->generateFloorComparativeDemand($floorFromDate, $floorTypes, $floorMstrId, $safCalculation);  // 16.1
+                    array_push($comparativeDemand['arvRule'], $rules['arvRule']);
+                    array_push($comparativeDemand['cvRule'], $rules['cvRule']);
+                }
             }
+
+            // Check Other Demands
+            $otherDemands = $this->generateOtherDemands($basicDetails, $safCalculation);
+
+            $comparativeDemand['arvRule'] = array_merge($comparativeDemand['arvRule'], $otherDemands['arvRule']);
             $arvRule = $comparativeDemand['arvRule'];
             $cvRule = $comparativeDemand['cvRule'];
             $comparativeDemand['total'] = [
                 'arvTotalPropTax' => roundFigure((float)collect($arvRule)->sum('arvTotalPropTax') ?? 0 + (float)collect($cvRule)->sum('arvTotalPropTax') ?? 0),
                 'cvTotalPropTax' => roundFigure((float)collect($arvRule)->sum('cvArvPropTax') + (float)collect($cvRule)->sum('cvArvPropTax') ?? 0),
             ];
-            $comparativeDemand['basicDetails'] = $basicDetails;
+            $comparativeDemand['basicDetails'] = array_merge((array)$basicDetails, [
+                'todayDate' => $this->_carbon->format('d-m-Y')
+            ]);
             return responseMsgs(true, "Comparative Demand", remove_null($comparativeDemand), "011610", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011610", "1.0", "", "POST", $req->deviceId);
         }
     }
 
-
     /**
-     * | Generate Comparative Demand
+     * | Generate Comparative Demand(16.1)
      */
-    public function generateComparativeDemand($floorFromDate, $floorTypes, $floorMstrId, $safCalculation, $onePercPenalty = 0)
+    public function generateFloorComparativeDemand($floorFromDate, $floorTypes, $floorMstrId, $safCalculation, $onePercPenalty = 0)
     {
         if ($floorFromDate < $safCalculation->_effectiveDateRule3) {
             $rule2 = $safCalculation->calculateRuleSet2($floorMstrId, $onePercPenalty);
@@ -770,6 +785,7 @@ class HoldingTaxController extends Controller
             );
             $setRule2 = [
                 'floor' => $rule2['floor'],
+                'buildupArea' => $rule2['buildupArea'],
                 'usageFactor' => $rule2['multiFactor'],
                 'occupancyFactor' => $rule2['occupancyFactor'],
                 'carpetArea' => $rule2['carpetArea'],
@@ -797,6 +813,7 @@ class HoldingTaxController extends Controller
         );
         $setRule3 = [
             'floor' => $rule3['floor'],
+            'buildupArea' => $rule3['buildupArea'],
             'usageFactor' => $rule3['multiFactor'],
             'occupancyFactor' => $rule3['occupancyFactor'],
             'carpetArea' => $rule3['carpetArea'],
@@ -812,5 +829,22 @@ class HoldingTaxController extends Controller
             'arvRule' => $setRule2 ?? [],
             'cvRule' => $setRule3 ?? []
         ];
+    }
+
+    /**
+     * | Get Floor Demand (16.2)
+     */
+    public function generateOtherDemands($basicDetails, $safCalculation)
+    {
+        $array['arvRule'] = array();
+        $array['cvRule'] = array();
+
+        if ($basicDetails->is_mobile_tower == true) {
+            $safCalculation->_mobileTowerArea = $basicDetails->tower_area;
+            if ($basicDetails->tower_installation_date < $safCalculation->_effectiveDateRule2)
+                $rule2 = $safCalculation->calculateRuleSet2("mobileTower", 0);
+            array_push($array['arvRule'], $rule2);
+        }
+        return $array;
     }
 }

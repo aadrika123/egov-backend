@@ -389,6 +389,16 @@ class PropProperty extends Model
                 'p.prop_address',
                 'p.road_width',
                 'p.ulb_id',
+                'p.prop_type_mstr_id',
+                'p.is_mobile_tower',
+                'p.tower_area',
+                'p.tower_installation_date',
+                'p.is_hoarding_board',
+                'p.hoarding_area',
+                'p.hoarding_installation_date',
+                'p.is_petrol_pump',
+                'p.under_ground_area',
+                'p.petrol_pump_completion_date',
                 'w.ward_name as old_ward_no',
                 'nw.ward_name as new_ward_no',
                 DB::raw("(SELECT owner_name FROM prop_owners WHERE property_id=$propId order by id LIMIT 1)"),
@@ -402,16 +412,12 @@ class PropProperty extends Model
                 'f.date_from',
                 'f.date_upto',
                 'f.carpet_area',
-                'rf.floor_name'
             )
             ->join('ulb_ward_masters as w', 'w.id', '=', 'p.ward_mstr_id')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'p.new_ward_mstr_id')
             ->leftJoin('prop_floors as f', 'f.property_id', '=', 'p.id')
-            ->join('ref_prop_floors as rf', 'rf.id', '=', 'f.floor_mstr_id')
             ->where('p.id', $propId)
             ->where('p.status', 1)
-            ->where('f.status', 1)
-            ->where('rf.status', 1)
             ->get();
     }
 }
