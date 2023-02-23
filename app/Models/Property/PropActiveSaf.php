@@ -558,7 +558,7 @@ class PropActiveSaf extends Model
     }
 
     /**
-     * | Total Received Appklication
+     * | Today Received Appklication
      */
     public function todayReceivedApplication($currentRole, $ulbId)
     {
@@ -571,8 +571,8 @@ class PropActiveSaf extends Model
             DB::raw("string_agg(owner_name,',') as applicantName"),
         )
 
-            ->leftjoin('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', 'prop_active_safs.id')
-            ->leftjoin('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_safs.id')
+            ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', 'prop_active_safs.id')
+            ->join('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_safs.id')
             ->where('prop_active_safs.current_role', $currentRole)
             ->where('workflow_tracks.ulb_id', $ulbId)
             ->where('ref_table_dot_id', 'prop_active_safs.id')
