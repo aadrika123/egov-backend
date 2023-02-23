@@ -1032,7 +1032,7 @@ class WaterPaymentController extends Controller
 
             # Connection Charges And Penalty
             $refConnectionDetails = $mWaterConnectionCharge->getWaterchargesById($applicationId)->get();
-             $penaltyList = collect($refConnectionDetails)->map(function ($value, $key)
+            $penaltyList = collect($refConnectionDetails)->map(function ($value, $key)
             use ($mWaterPenaltyInstallment, $applicationId) {
                 if ($value['penalty'] > 0) {
                     $penaltyList = $mWaterPenaltyInstallment->getPenaltyByApplicationId($applicationId)
@@ -1056,14 +1056,16 @@ class WaterPaymentController extends Controller
 
                     $refConnectionDetails['penaltyList'] = $penaltyList;
                 }
-                $status['penaltyPaymentStatus']     = $penaltyPaymentStatus ?? null;
-                $status['connectionPaymentStatus']  = $value['paid_status'];
-                $status['ConnectionCharge']         = $value;
-                return $status;
+                if ($penaltyPaymentStatus == false || $value['paid_status'] == false) {
+                    $status['penaltyPaymentStatus']     = $penaltyPaymentStatus ?? null;
+                    $status['connectionPaymentStatus']  = $value['paid_status'];
+                    $status['ConnectionCharge']         = $value;
+                    return $status;
+                }
             });
             $transactions = [
                 "transactionHistory" => collect($connectionTran)->sortByDesc('id')->values(),
-                "paymentList" => $penaltyList
+                "paymentList" => $penaltyList->filter()->values()
             ];
 
             return responseMsgs(true, "", remove_null($transactions), "", "01", "ms", "POST", $request->deviceId ?? "");
