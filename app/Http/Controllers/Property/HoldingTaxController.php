@@ -693,9 +693,10 @@ class HoldingTaxController extends Controller
             $effectDateRuleset3 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE3');
             // Derivative Assignments
             $fullDetails = $mPropProperty->getComparativeBasicDtls($propId);             // Full Details of the Floor
-            $basicDetails = collect($fullDetails)->first();
+            // return $fullDetails;
             if (collect($fullDetails)->isEmpty())
-                throw new Exception("Floor Not Available");
+                throw new Exception("No Property Found");
+            $basicDetails = collect($fullDetails)->first();
             $safCalculation->_redis = Redis::connection();
             $safCalculation->_rentalRates = $safCalculation->calculateRentalRates();
             $safCalculation->_effectiveDateRule2 = $effectDateRuleset2;
@@ -707,38 +708,47 @@ class HoldingTaxController extends Controller
             $safCalculation->_ulbId = $basicDetails->ulb_id;
             $safCalculation->_wardNo = $basicDetails->old_ward_no;
             $safCalculation->readParamRentalRate();
-            $floors = array();
-            foreach ($fullDetails as $detail) {
-                array_push($floors, [
-                    'floorMstrId' => $detail->floor_mstr_id,
-                    'buildupArea' => $detail->builtup_area,
-                    'useType' => $detail->usage_type_mstr_id,
-                    'constructionType' => $detail->const_type_mstr_id,
-                    'carpetArea' => $detail->carpet_area,
-                    'occupancyType' => $detail->occupancy_type_mstr_id,
-                ]);
-            }
-            $safCalculation->_floors = $floors;
-            $capitalvalueRates = $safCalculation->readCapitalValueRate();
 
-            foreach ($fullDetails as $key => $detail) {
-                $floorMstrId = $detail->floor_mstr_id;
-                $floorBuiltupArea = $detail->builtup_area;
-                $floorUsageType = $detail->usage_type_mstr_id;
-                $floorConstType = $detail->const_type_mstr_id;
-                $floorCarpetArea = $detail->carpet_area;
-                $floorFromDate = $detail->date_from;
-                $floorOccupancyType = $detail->occupancy_type_mstr_id;
-                $safCalculation->_floors[$floorMstrId]['useType'] = $floorUsageType;
-                $safCalculation->_floors[$floorMstrId]['buildupArea'] = $floorBuiltupArea;
-                $safCalculation->_floors[$floorMstrId]['carpetArea'] = $floorCarpetArea;
-                $safCalculation->_floors[$floorMstrId]['occupancyType'] = $floorOccupancyType;
-                $safCalculation->_floors[$floorMstrId]['constructionType'] = $floorConstType;
-                $safCalculation->_capitalValueRate[$floorMstrId] = $capitalvalueRates[$key];
-                $rules = $this->generateComparativeDemand($floorFromDate, $floorTypes, $floorMstrId, $safCalculation);
-                array_push($comparativeDemand['arvRule'], $rules['arvRule']);
-                array_push($comparativeDemand['cvRule'], $rules['cvRule']);
+            if (!is_null($basicDetails->floor_id))                                          // If The Property Have Floors
+            {
+                $floors = array();
+                foreach ($fullDetails as $detail) {
+                    array_push($floors, [
+                        'floorMstrId' => $detail->floor_mstr_id,
+                        'buildupArea' => $detail->builtup_area,
+                        'useType' => $detail->usage_type_mstr_id,
+                        'constructionType' => $detail->const_type_mstr_id,
+                        'carpetArea' => $detail->carpet_area,
+                        'occupancyType' => $detail->occupancy_type_mstr_id,
+                    ]);
+                }
+                $safCalculation->_floors = $floors;
+                $capitalvalueRates = $safCalculation->readCapitalValueRate();
+
+                foreach ($fullDetails as $key => $detail) {
+                    $floorMstrId = $detail->floor_mstr_id;
+                    $floorBuiltupArea = $detail->builtup_area;
+                    $floorUsageType = $detail->usage_type_mstr_id;
+                    $floorConstType = $detail->const_type_mstr_id;
+                    $floorCarpetArea = $detail->carpet_area;
+                    $floorFromDate = $detail->date_from;
+                    $floorOccupancyType = $detail->occupancy_type_mstr_id;
+                    $safCalculation->_floors[$floorMstrId]['useType'] = $floorUsageType;
+                    $safCalculation->_floors[$floorMstrId]['buildupArea'] = $floorBuiltupArea;
+                    $safCalculation->_floors[$floorMstrId]['carpetArea'] = $floorCarpetArea;
+                    $safCalculation->_floors[$floorMstrId]['occupancyType'] = $floorOccupancyType;
+                    $safCalculation->_floors[$floorMstrId]['constructionType'] = $floorConstType;
+                    $safCalculation->_capitalValueRate[$floorMstrId] = $capitalvalueRates[$key];
+                    $rules = $this->generateFloorComparativeDemand($floorFromDate, $floorTypes, $floorMstrId, $safCalculation);  // 16.1
+                    array_push($comparativeDemand['arvRule'], $rules['arvRule']);
+                    array_push($comparativeDemand['cvRule'], $rules['cvRule']);
+                }
             }
+
+            // Check Other Demands
+            $otherDemands = $this->generateOtherDemands($basicDetails, $safCalculation);
+
+            $comparativeDemand['arvRule'] = array_merge($comparativeDemand['arvRule'], $otherDemands['arvRule']);
             $arvRule = $comparativeDemand['arvRule'];
             $cvRule = $comparativeDemand['cvRule'];
             $comparativeDemand['total'] = [
@@ -754,11 +764,10 @@ class HoldingTaxController extends Controller
         }
     }
 
-
     /**
-     * | Generate Comparative Demand
+     * | Generate Comparative Demand(16.1)
      */
-    public function generateComparativeDemand($floorFromDate, $floorTypes, $floorMstrId, $safCalculation, $onePercPenalty = 0)
+    public function generateFloorComparativeDemand($floorFromDate, $floorTypes, $floorMstrId, $safCalculation, $onePercPenalty = 0)
     {
         if ($floorFromDate < $safCalculation->_effectiveDateRule3) {
             $rule2 = $safCalculation->calculateRuleSet2($floorMstrId, $onePercPenalty);
@@ -820,5 +829,22 @@ class HoldingTaxController extends Controller
             'arvRule' => $setRule2 ?? [],
             'cvRule' => $setRule3 ?? []
         ];
+    }
+
+    /**
+     * | Get Floor Demand (16.2)
+     */
+    public function generateOtherDemands($basicDetails, $safCalculation)
+    {
+        $array['arvRule'] = array();
+        $array['cvRule'] = array();
+
+        if ($basicDetails->is_mobile_tower == true) {
+            $safCalculation->_mobileTowerArea = $basicDetails->tower_area;
+            if ($basicDetails->tower_installation_date < $safCalculation->_effectiveDateRule2)
+                $rule2 = $safCalculation->calculateRuleSet2("mobileTower", 0);
+            array_push($array['arvRule'], $rule2);
+        }
+        return $array;
     }
 }
