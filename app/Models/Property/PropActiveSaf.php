@@ -27,7 +27,7 @@ class PropActiveSaf extends Model
             'ward_mstr_id' => $req->ward,
             'ownership_type_mstr_id' => $req->ownershipType,
             'prop_type_mstr_id' => $req->propertyType,
-            'appartment_name' => $req->apartmentName,
+            'appartment_name' => $req->appartmentName,
             'flat_registry_date' => $req->flatRegistryDate,
             'zone_mstr_id' => $req->zone,
             'no_electric_connection' => $req->electricityConnection,

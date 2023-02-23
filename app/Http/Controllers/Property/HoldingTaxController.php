@@ -679,26 +679,138 @@ class HoldingTaxController extends Controller
         }
 
         try {
-            $details = array();
+            // Variable Assignments
+            $comparativeDemand = array();
+            $comparativeDemand['arvRule'] = array();
+            $comparativeDemand['cvRule'] = array();
             $propId = $req->propId;
+            $safCalculation = new SafCalculation;
             $mPropProperty = new PropProperty();
-            $mPropMultiFactors = new MPropMultiFactor();
-            $mRoadType = new MPropRoadType();
-            $mPropRentalRates = new MPropBuildingRentalrate();
-            $this->_refParamRentalRate = json_decode(Redis::get('propMBuildingRentalRate'));
-            if (!$this->_refParamRentalRate)
-                $this->_refParamRentalRate = $mPropRentalRates->getRentalRates();
-            return $fullDetail = $mPropProperty->getComparativeBasicDtls($propId);
-            $this->_paramRentalRate = 144;
-            $details['basicDetails'] = collect($fullDetail->first())->only([
-                'holding_no',
-                'new_holding_no', 'prop_address', 'old_ward_no', 'new_ward_no', 'owner_name', 'guardian_name'
-            ]);
-            $floors = collect($fullDetail)->map(function ($item) use ($mPropMultiFactors, $mRoadType) {
-            });
-            return responseMsgs(true, "Comparative Demand", remove_null($floors), "011610", "1.0", "", "POST", $req->deviceId ?? "");
+            $floorTypes = Config::get('PropertyConstaint.FLOOR-TYPE');
+            // Derivative Assignments
+            $fullDetails = $mPropProperty->getComparativeBasicDtls($propId);             // Full Details of the Floor
+            $basicDetails = collect($fullDetails)->first();
+            if (collect($fullDetails)->isEmpty())
+                throw new Exception("Floor Not Available");
+            $safCalculation->_redis = Redis::connection();
+            $safCalculation->_rentalRates = $safCalculation->calculateRentalRates();
+            $safCalculation->_paramRentalRate = 144;
+            $safCalculation->_effectiveDateRule2 = '2016-04-01';
+            $safCalculation->_effectiveDateRule3 = '2022-04-01';
+            $safCalculation->_multiFactors = $safCalculation->readMultiFactor();        // Get Multi Factors List
+            $safCalculation->_propertyDetails['roadType'] = $basicDetails->road_width;
+            $safCalculation->_readRoadType['2016-04-01'] = $safCalculation->readRoadType('2016-04-01');
+            $safCalculation->_readRoadType['2022-04-01'] = $safCalculation->readRoadType('2022-04-01');
+            $safCalculation->_ulbId = $basicDetails->ulb_id;
+            $safCalculation->_wardNo = $basicDetails->old_ward_no;
+            $floors = array();
+            foreach ($fullDetails as $detail) {
+                array_push($floors, [
+                    'floorMstrId' => $detail->floor_mstr_id,
+                    'buildupArea' => $detail->builtup_area,
+                    'useType' => $detail->usage_type_mstr_id,
+                    'constructionType' => $detail->const_type_mstr_id,
+                    'carpetArea' => $detail->carpet_area,
+                    'occupancyType' => $detail->occupancy_type_mstr_id,
+                ]);
+            }
+            $safCalculation->_floors = $floors;
+            $capitalvalueRates = $safCalculation->readCapitalValueRate();
+
+            foreach ($fullDetails as $key => $detail) {
+                $floorMstrId = $detail->floor_mstr_id;
+                $floorBuiltupArea = $detail->builtup_area;
+                $floorUsageType = $detail->usage_type_mstr_id;
+                $floorConstType = $detail->const_type_mstr_id;
+                $floorCarpetArea = $detail->carpet_area;
+                $floorFromDate = $detail->date_from;
+                $floorOccupancyType = $detail->occupancy_type_mstr_id;
+                $safCalculation->_floors[$floorMstrId]['useType'] = $floorUsageType;
+                $safCalculation->_floors[$floorMstrId]['buildupArea'] = $floorBuiltupArea;
+                $safCalculation->_floors[$floorMstrId]['carpetArea'] = $floorCarpetArea;
+                $safCalculation->_floors[$floorMstrId]['occupancyType'] = $floorOccupancyType;
+                $safCalculation->_floors[$floorMstrId]['constructionType'] = $floorConstType;
+                $safCalculation->_capitalValueRate[$floorMstrId] = $capitalvalueRates[$key];
+                $rules = $this->generateComparativeDemand($floorFromDate, $floorTypes, $floorMstrId, $safCalculation);
+                array_push($comparativeDemand['arvRule'], $rules['arvRule']);
+                array_push($comparativeDemand['cvRule'], $rules['cvRule']);
+            }
+            $arvRule = $comparativeDemand['arvRule'];
+            $cvRule = $comparativeDemand['cvRule'];
+            $comparativeDemand['total'] = [
+                'arvTotalPropTax' => roundFigure((float)collect($arvRule)->sum('arvTotalPropTax') ?? 0 + (float)collect($cvRule)->sum('arvTotalPropTax') ?? 0),
+                'cvTotalPropTax' => roundFigure((float)collect($arvRule)->sum('cvArvPropTax') + (float)collect($cvRule)->sum('cvArvPropTax') ?? 0),
+            ];
+            $comparativeDemand['basicDetails'] = $basicDetails;
+            return responseMsgs(true, "Comparative Demand", remove_null($comparativeDemand), "011610", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011610", "1.0", "", "POST", $req->deviceId);
         }
+    }
+
+
+    /**
+     * | Generate Comparative Demand
+     */
+    public function generateComparativeDemand($floorFromDate, $floorTypes, $floorMstrId, $safCalculation, $onePercPenalty = 0)
+    {
+        if ($floorFromDate < $safCalculation->_effectiveDateRule3) {
+            $rule2 = $safCalculation->calculateRuleSet2($floorMstrId, $onePercPenalty);
+            $rule2 = array_merge(
+                $rule2,
+                ['circleRate' => ""],
+                ['taxPerc' => ""],
+                ['calculationFactor' => ""],
+                ['matrixFactor' => $rule2['rentalRate']],
+                ['cvArvPropTax' => 0],
+                ['arvPsf' => $rule2['arv']],
+                ['floorMstr' => $floorMstrId],
+                ['floor' => $floorTypes[$floorMstrId]],
+                ['ruleApplied' => 'Arv Rule']
+            );
+            $setRule2 = [
+                'floor' => $rule2['floor'],
+                'usageFactor' => $rule2['multiFactor'],
+                'occupancyFactor' => $rule2['occupancyFactor'],
+                'carpetArea' => $rule2['carpetArea'],
+                'rentalRate' => $rule2['rentalRate'],
+                'taxPerc' => $rule2['taxPerc'],
+                'calculationFactor' => $rule2['calculationFactor'],
+                'arvPsf' => $rule2['arvPsf'],
+                'circleRate' => $rule2['circleRate'],
+                'arvTotalPropTax' => $rule2['arvTotalPropTax'],
+                'cvArvPropTax' => $rule2['cvArvPropTax']
+            ];
+        }
+
+        $rule3 = $safCalculation->calculateRuleSet3($floorMstrId, $onePercPenalty);
+        $rule3 = array_merge(
+            $rule3,
+            ['arvTotalPropTax' => 0],
+            ['multiFactor' => ""],
+            ['carpetArea' => ""],
+            ['cvArvPropTax' => $rule3['arv']],
+            ['arvPsf' => ""],
+            ['floorMstr' => $floorMstrId],
+            ['floor' => $floorTypes[$floorMstrId]],
+            ['ruleApplied' => 'CV Rule']
+        );
+        $setRule3 = [
+            'floor' => $rule3['floor'],
+            'usageFactor' => $rule3['multiFactor'],
+            'occupancyFactor' => $rule3['occupancyFactor'],
+            'carpetArea' => $rule3['carpetArea'],
+            'rentalRate' => $rule3['matrixFactor'],
+            'taxPerc' => $rule3['taxPerc'],
+            'calculationFactor' => $rule3['calculationFactor'],
+            'arvPsf' => $rule3['arvPsf'],
+            'circleRate' => $rule3['circleRate'],
+            'arvTotalPropTax' => $rule3['arvTotalPropTax'],
+            'cvArvPropTax' => $rule3['cvArvPropTax']
+        ];
+        return [
+            'arvRule' => $setRule2 ?? [],
+            'cvRule' => $setRule3 ?? []
+        ];
     }
 }
