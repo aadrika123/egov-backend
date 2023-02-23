@@ -2549,21 +2549,23 @@ class Trade implements ITrade
             $inputs = $request->all();
             // DB::enableQueryLog();          
             $licence = ActiveTradeLicence::select(
-                "active_trade_licences.id",
-                "active_trade_licences.application_no",
-                "active_trade_licences.provisional_license_no",
-                "active_trade_licences.license_no",
-                "active_trade_licences.document_upload_status",
-                "active_trade_licences.payment_status",
-                "active_trade_licences.firm_name",
-                "active_trade_licences.application_date",
-                "active_trade_licences.apply_from",
-                "owner.owner_name",
-                "owner.guardian_name",
-                "owner.mobile_no",
-                "owner.email_id",
-                // DB::raw("workflow_tracks.id AS level_id")
-            )
+                    "active_trade_licences.id",
+                    "active_trade_licences.application_no",
+                    "active_trade_licences.provisional_license_no",
+                    "active_trade_licences.license_no",
+                    "active_trade_licences.document_upload_status",
+                    "active_trade_licences.payment_status",
+                    "active_trade_licences.firm_name",
+                    "active_trade_licences.application_date",
+                    "active_trade_licences.apply_from",
+                    "owner.owner_name",
+                    "owner.guardian_name",
+                    "owner.mobile_no",
+                    "owner.email_id",
+                    "trade_param_application_types.application_type",
+                    // DB::raw("workflow_tracks.id AS level_id")
+                )
+                ->JOIN("trade_param_application_types","trade_param_application_types.id","active_trade_licences.application_type_id")
                 ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
                                             STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -2646,18 +2648,20 @@ class Trade implements ITrade
             $inputs = $request->all();
             // DB::enableQueryLog();
             $licence = ActiveTradeLicence::select(
-                "active_trade_licences.id",
-                "active_trade_licences.application_no",
-                "active_trade_licences.provisional_license_no",
-                "active_trade_licences.license_no",
-                "active_trade_licences.firm_name",
-                "active_trade_licences.application_date",
-                "active_trade_licences.apply_from",
-                "owner.owner_name",
-                "owner.guardian_name",
-                "owner.mobile_no",
-                "owner.email_id"
-            )
+                    "active_trade_licences.id",
+                    "active_trade_licences.application_no",
+                    "active_trade_licences.provisional_license_no",
+                    "active_trade_licences.license_no",
+                    "active_trade_licences.firm_name",
+                    "active_trade_licences.application_date",
+                    "active_trade_licences.apply_from",
+                    "owner.owner_name",
+                    "owner.guardian_name",
+                    "owner.mobile_no",
+                    "owner.email_id",
+                    "trade_param_application_types.application_type",
+                )
+                ->JOIN("trade_param_application_types","trade_param_application_types.id","active_trade_licences.application_type_id")
                 ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
                                             STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -2718,20 +2722,22 @@ class Trade implements ITrade
             $mWardPermission = $this->_parent->WardPermission($refUserId);
             $inputs = $request->all();
             $licence = ActiveTradeLicence::select(
-                "active_trade_licences.id",
-                "active_trade_licences.application_no",
-                "active_trade_licences.provisional_license_no",
-                "active_trade_licences.license_no",
-                "active_trade_licences.document_upload_status",
-                "active_trade_licences.payment_status",
-                "active_trade_licences.firm_name",
-                "active_trade_licences.application_date",
-                "active_trade_licences.apply_from",
-                "owner.owner_name",
-                "owner.guardian_name",
-                "owner.mobile_no",
-                "owner.email_id",
-            )
+                    "active_trade_licences.id",
+                    "active_trade_licences.application_no",
+                    "active_trade_licences.provisional_license_no",
+                    "active_trade_licences.license_no",
+                    "active_trade_licences.document_upload_status",
+                    "active_trade_licences.payment_status",
+                    "active_trade_licences.firm_name",
+                    "active_trade_licences.application_date",
+                    "active_trade_licences.apply_from",
+                    "owner.owner_name",
+                    "owner.guardian_name",
+                    "owner.mobile_no",
+                    "owner.email_id",
+                    "trade_param_application_types.application_type",
+                )
+                ->JOIN("trade_param_application_types","trade_param_application_types.id","active_trade_licences.application_type_id")
                 ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
                                             STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -2807,20 +2813,22 @@ class Trade implements ITrade
             $inputs = $request->all();
             // DB::enableQueryLog();          
             $licence = ActiveTradeLicence::select(
-                "active_trade_licences.id",
-                "active_trade_licences.application_no",
-                "active_trade_licences.provisional_license_no",
-                "active_trade_licences.license_no",
-                "active_trade_licences.document_upload_status",
-                "active_trade_licences.payment_status",
-                "active_trade_licences.firm_name",
-                "active_trade_licences.application_date",
-                "active_trade_licences.apply_from",
-                "owner.owner_name",
-                "owner.guardian_name",
-                "owner.mobile_no",
-                "owner.email_id"
-            )
+                    "active_trade_licences.id",
+                    "active_trade_licences.application_no",
+                    "active_trade_licences.provisional_license_no",
+                    "active_trade_licences.license_no",
+                    "active_trade_licences.document_upload_status",
+                    "active_trade_licences.payment_status",
+                    "active_trade_licences.firm_name",
+                    "active_trade_licences.application_date",
+                    "active_trade_licences.apply_from",
+                    "owner.owner_name",
+                    "owner.guardian_name",
+                    "owner.mobile_no",
+                    "owner.email_id",
+                    "trade_param_application_types.application_type",
+                )
+                ->JOIN("trade_param_application_types","trade_param_application_types.id","active_trade_licences.application_type_id")
                 ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
                                             STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
