@@ -55,85 +55,53 @@ class TradeApplication extends Controller
         $this->Repository = $TradeRepository;
         $this->_modelWard = new ModelWard();
         $this->_parent = new CommonFunction();
-        DB::enableQueryLog();
     }
     public function getMstrForNewLicense(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco1.1",1.1,null,$request->getMethod(),null,]]);
-        }
-        $metaData= collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
             $request->request->add(["applicationType"=>"NEWLICENSE"]);
             return $this->getApplyData($request);
         }
         catch(Exception $e)
         {
-            return responseMsgs(false, $e->getMessage(), $request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
     public function getMstrForRenewal(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco1.2",1.1,null,$request->getMethod(),null,]]);
-        }
-        $metaData= collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $request->request->add(["applicationType"=>"RENEWAL"]);            
+            $request->request->add(["applicationType"=>"RENEWAL"]);
             return $this->getApplyData($request);
         }
         catch(Exception $e)
         {
-            return responseMsgs(false, $e->getMessage(), $request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
     public function getMstrForAmendment(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco1.3",1.1,null,$request->getMethod(),null,]]);
-        }
-        $metaData= collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $request->request->add(["applicationType"=>"AMENDMENT"]);            
+            $request->request->add(["applicationType"=>"AMENDMENT"]);
             return $this->getApplyData($request);
         }
         catch(Exception $e)
         {
-            return responseMsgs(false, $e->getMessage(), $request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
     public function getMstrForSurender(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco1.5",1.1,null,$request->getMethod(),null,]]);
-        }
-        $metaData= collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $request->request->add(["applicationType"=>"SURRENDER"]);            
+            $request->request->add(["applicationType"=>"SURRENDER"]);
             return $this->getApplyData($request);
         }
         catch(Exception $e)
         {
-            return responseMsgs(false, $e->getMessage(), $request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
     public function getApplyData(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco1.0",1.1,null,$request->getMethod(),null,]]);
-
-        }
-        $metaData= collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
@@ -152,7 +120,7 @@ class TradeApplication extends Controller
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) 
             {
-                return responseMsgs(false, $validator->errors(), $request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+                return responseMsg(false, $validator->errors(), $request->all());
             }
             #------------------------End Declaration-----------------------
 
@@ -208,23 +176,14 @@ class TradeApplication extends Controller
             {
                 $data['wardList'] = $this->_parent->WardPermission($refUserId);
             }
-            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true, "", remove_null($data),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
     # Serial No : 01
     public function applyApplication(ReqAddRecorde $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco2.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
-        $metaData= collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-
         $refUser            = Auth()->user();
         $refUserId          = $refUser->id;
         $refUlbId           = $refUser->ulb_id;
@@ -258,46 +217,26 @@ class TradeApplication extends Controller
             }            
             return $this->Repository->addRecord($request);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
     public function paymentCounter(paymentCounter $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco3.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->paymentCounter($request);
     }
     # Serial No : 02
     public function updateLicenseBo(ReqUpdateBasicDtl $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco4.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->updateLicenseBo($request);
     }
 
     public function updateBasicDtl(ReqUpdateBasicDtl $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco5.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->updateBasicDtl($request);
     }
 
     public function getDocList(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco6.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         $tradC = new Trade();
         return $tradC->getLicenseDocLists($request);
     }
@@ -309,14 +248,7 @@ class TradeApplication extends Controller
         $id = $request->id;
         $transectionId =  $request->transectionId;
         $request->setMethod('POST');
-        $request->request->add(["id"=>$id,"transectionId"=>$transectionId]);    
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco7.1",1.1,null,$request->getMethod(),null,]]);
-
-        } 
-        $metaData= collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;  
+        $request->request->add(["id"=>$id,"transectionId"=>$transectionId]);       
         $rules =[
             "id" => "required|digits_between:1,9223372036854775807",
             "transectionId" => "required|digits_between:1,9223372036854775807",
@@ -324,156 +256,87 @@ class TradeApplication extends Controller
         $validator = Validator::make($request->all(), $rules,);
         if ($validator->fails()) 
         {
-            return responseMsgs(false, $validator->errors(), $request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsg(false, $validator->errors(), $request->all());
         }
         return $this->Repository->readPaymentReceipt($id, $transectionId);
     }
     # Serial No : 05
     public function documentUpload(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco8.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->documentUpload($request);
     }
     
     # Serial No : 07
     public function documentVirify(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco9.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->documentVirify($request);
     }
     # Serial No : 08 
     public function getLicenceDtl(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco10.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
-        $metaData= collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
 
         $rules["applicationId"] = "required|digits_between:1,9223372036854775807";
         $validator = Validator::make($request->all(), $rules,);
         if ($validator->fails()) {
-            return responseMsgs(false, $validator->errors(), $request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsg(false, $validator->errors(), $request->all());
         }
         return $this->Repository->readLicenceDtl($request);
     }
     # Serial No : 09 
     public function getDenialDetails(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco11.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->readDenialdtlbyNoticno($request);
     }
     # Serial No : 10 
     public function paybleAmount(ReqPaybleAmount $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco12.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->getPaybleAmount($request);
     }
 
     # Serial No : 12 
     public function validateHoldingNo(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco13.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->isvalidateHolding($request);
     }
     # Serial No : 13 
     public function searchLicence(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco14.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->searchLicenceByNo($request);
     }
     # Serial No : 14
     public function readApplication(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco15.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
-        $metaData= collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         $rules = [
             "entityValue"   =>  "required",
             "entityName"    =>  "required",
         ];
         $validator = Validator::make($request->all(), $rules,);
         if ($validator->fails()) {
-            return responseMsgs(false, $validator->errors(), $request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsg(false, $validator->errors(), $request->all());
         }
         return $this->Repository->readApplication($request);
     }
     # Serial No : 15
     public function postEscalate(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco16.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->postEscalate($request);
     }
     public function specialInbox(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco17.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->specialInbox($request);
     }
     public function btcInbox(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco18.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->btcInbox($request);
     }
     # Serial No : 16
     public function inbox(ReqInbox $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco19.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->inbox($request);
     }
     # Serial No : 17
     public function outbox(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco20.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->outbox($request);
     }
 
@@ -481,19 +344,12 @@ class TradeApplication extends Controller
     # Serial No
     public function backToCitizen(Request $req)
     {
-        if(!$req->metaData)
-        {
-            $req->request->add(["metaData"=>["tco21.1",1.1,null,$req->getMethod(),null,]]);
-
-        }
-        $metaData= collect($req->metaData)->all();
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         $req->validate([
             'applicationId' => 'required|integer',
             'workflowId' => 'required|integer',
             'currentRoleId' => 'required|integer',
             'comment' => 'required|string'
-        ]);        
+        ]);
 
         try {
             $activeLicence = ActiveTradeLicence::find($req->applicationId);
@@ -512,7 +368,7 @@ class TradeApplication extends Controller
             $track->saveTrack($req);
 
             DB::commit();
-            return responseMsgs(true, "Successfully Done", "", $apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -535,11 +391,7 @@ class TradeApplication extends Controller
             'receiverRoleId' => 'required|integer',
             'comment' => ($role->is_initiator??false)?"nullable":'required',
         ]);
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco22.1",1.1,null,$request->getMethod(),null,]]);
 
-        }
         try {
             // Trade Application Update Current Role Updation
             $user = Auth()->user();
@@ -637,11 +489,6 @@ class TradeApplication extends Controller
     # Serial No
     public function approveReject(Request $req)
     {
-        if(!$req->metaData)
-        {
-            $req->request->add(["metaData"=>["tco23.1",1.1,null,$req->getMethod(),null,]]);
-
-        }
         try {
             $req->validate([
                 "applicationId" => "required",
@@ -713,11 +560,6 @@ class TradeApplication extends Controller
     # Serial No : 19
     public function provisionalCertificate(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco24.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         $id=$request->id;
         $request->setMethod('POST');
         $request->request->add(["id"=>$id]);       
@@ -734,11 +576,6 @@ class TradeApplication extends Controller
     # Serial No : 20
     public function licenceCertificate(Request $request)
     { 
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco25.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         $id=$request->id;
         $request->setMethod('POST');
         $request->request->add(["id"=>$id]);       
@@ -755,11 +592,6 @@ class TradeApplication extends Controller
     # Serial No : 21
     public function applyDenail(ReqApplyDenail $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco26.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         try {
             $user = Auth()->user();
             $userId = $user->id;
@@ -785,31 +617,16 @@ class TradeApplication extends Controller
     # Serial No : 22
     public function addIndependentComment(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco27.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->addIndependentComment($request);
     }
     # Serial No : 23
     public function readIndipendentComment(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco28.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->readIndipendentComment($request);
     }
     # Serial No : 24
     public function denialInbox(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco29.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         try {
             $user = Auth()->user();
             $user_id = $user->id;
@@ -828,11 +645,6 @@ class TradeApplication extends Controller
     # Serial No : 25
     public function denialview(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco30.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         $id = $request->id;
         $mailID = $request->mailID;
         return $this->Repository->denialView($id, $mailID, $request);
@@ -840,22 +652,12 @@ class TradeApplication extends Controller
     # Serial No : 26
     public function approvedApplication(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco32.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->approvedApplication($request);
     }
 
 
     public function reports(Request $request)
     {
-        if(!$request->metaData)
-        {
-            $request->request->add(["metaData"=>["tco33.1",1.1,null,$request->getMethod(),null,]]);
-
-        }
         return $this->Repository->reports($request);
     }
 
@@ -864,11 +666,6 @@ class TradeApplication extends Controller
      */
     public function getUploadDocuments(Request $req)
     {
-        if(!$req->metaData)
-        {
-            $req->request->add(["metaData"=>["tco34.1",1.1,null,$req->getMethod(),null,]]);
-
-        }
         $req->validate([
             'applicationId' => 'required|digits_between:1,9223372036854775807'
         ]);
@@ -901,11 +698,6 @@ class TradeApplication extends Controller
      */
     public function uploadDocument(Request $req)
     {
-        if(!$req->metaData)
-        {
-            $req->request->add(["metaData"=>["tco35.1",1.1,null,$req->getMethod(),null,]]);
-
-        }
         $req->validate([
             "applicationId" => "required|digits_between:1,9223372036854775807",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
