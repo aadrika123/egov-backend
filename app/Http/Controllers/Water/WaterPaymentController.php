@@ -1058,16 +1058,12 @@ class WaterPaymentController extends Controller
                     }
                     $refConnectionDetails['penaltyList'] = $penaltyList;
                 }
-
-                $refValue['connectionDetails']          = $refConnectionDetails;
                 $refValue['penaltyPaymentStatus']       = $penaltyPaymentStatus;
                 $refValue['applicaionPaymentStatus']    = $refConnectionDetails['paid_status'];
                 return  $refValue;
             });
 
-            $transactions = [
-                'Transactions' => collect($returnData)->sortByDesc('id'),
-            ];
+            $transactions = collect($returnData)->sortByDesc('id')->values();
 
             return responseMsgs(true, "", remove_null($transactions), "", "01", "ms", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
