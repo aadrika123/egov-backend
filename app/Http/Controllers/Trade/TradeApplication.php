@@ -540,7 +540,8 @@ class TradeApplication extends Controller
             }
             if(($sms["status"]??false))
             {
-                $owners = $this->getAllOwnereDtlByLId($req->applicationId);
+                $tradC = new Trade();
+                $owners = $tradC->getAllOwnereDtlByLId($req->applicationId);
                 foreach($owners as $val)
                 {
                     $respons=send_sms($val["mobile_no"],$sms["sms"],$sms["temp_id"]);
