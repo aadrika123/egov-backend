@@ -902,13 +902,7 @@ class SafCalculation
                 ->where('effective_date', $this->_effectiveDateRule3)
                 ->first();
             $readCalculationFactor = $readMultiFactor->multi_factor;
-            $propRoadTypeId = ($key == 'petrolPump' ? 1 : $this->_readRoadType[$this->_effectiveDateRule3]);    // Petrol Pump case road type is 1
-            $rentalRates = collect($this->_rentalRates)
-                ->where('prop_road_type_id', $propRoadTypeId)
-                ->where('construction_types_id', 1)
-                ->where('effective_date', $this->_effectiveDateRule3)
-                ->first();
-            $readMatrixFactor = $rentalRates->rate;
+            $readMatrixFactor = 1;              // Rental Rate 1 fixed for usage type not residential
         }
 
         // For Floors
@@ -931,12 +925,15 @@ class SafCalculation
                 ->first();
 
             $readCalculationFactor = $readMultiFactor->multi_factor;                                        // (Calculation Factor as Multi Factor)
-            $rentalRates = collect($this->_rentalRates)
-                ->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule3])
-                ->where('construction_types_id', $this->_floors[$key]['constructionType'])
-                ->where('effective_date', $this->_effectiveDateRule3)
-                ->first();
-            $readMatrixFactor = $rentalRates->rate;                                                         // (Matrix Factor as Rental Rate)
+            if ($readUsageType == 1) {
+                $rentalRates = collect($this->_rentalRates)
+                    ->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule3])
+                    ->where('construction_types_id', $this->_floors[$key]['constructionType'])
+                    ->where('effective_date', $this->_effectiveDateRule3)
+                    ->first();
+                $readMatrixFactor = $rentalRates->rate;                                                     // (Matrix Factor as Rental Rate)
+            } else
+                $readMatrixFactor = 1;                      // (Matrix Factor for the Type of Floors which is not Residential)
         }
 
         $calculatePropertyTax = ($readCircleRate * $readBuildupArea * $paramOccupancyFactor * $taxPerc * (float)$readCalculationFactor) / 100;
