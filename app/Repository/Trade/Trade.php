@@ -4464,7 +4464,7 @@ class Trade implements ITrade
         $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
         $allRolse = collect($this->_parent->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
         $init_finish = $this->_parent->iniatorFinisher($user_id,$ulb_id,$refWorkflowId);
-        $mUserType      = $this->_parent->userType($refWorkflowId);
+        $mUserType      = $this->_parent->userType($refWorkflowId,$ulb_id);
         $fromRole =[];
         if(!empty($allRolse))
         {
