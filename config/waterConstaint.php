@@ -2,6 +2,12 @@
 
 return [
     // Label Role ID
+
+    "METER_CONN_TYPE" => [
+        "1" => "Meter",
+        "2" => "Gallon",
+        "3" => "Fixed"
+    ],
     "ROLE-LABEL" => [
         "BO" => 11,
         "DA" => 6,
@@ -77,9 +83,11 @@ return [
             "16"
         ],
         "DEACTIVATION_CRITERIA" => [
-            "Duble Connection",
+            "Double Connection",
             "Waiver Committee",
             "No Connection"
-        ]
+        ],
+
+        
     ]
 ];
