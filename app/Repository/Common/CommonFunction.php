@@ -235,7 +235,7 @@ class CommonFunction implements ICommonFunction
     public function userType($refWorkflowId, $ulb_id = null): string
     {
         $user = Auth()->user();
-        $user_id = $user->id;
+        $user_id = $user->id??0;
         $ulb_id = $user->ulb_id ? $user->ulb_id:($ulb_id?$ulb_id:0);
         $user_data = $this->getUserRoll($user_id, $ulb_id, $refWorkflowId);
         $roll_id =  $user_data->role_id ?? -1;
