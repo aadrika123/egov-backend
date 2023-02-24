@@ -30,10 +30,12 @@ class TradeTransaction extends Model
             "cheque_date",
             "bank_name",
             "branch_name",
-            "state",
+            "trade_cheque_dtls.status",
             "cheque_no",
             "clear_bounce_date",
+            // "user_name"
         )
+            // ->join('users', 'users.id', 'trade_cheque_dtls.emp_dtl_id')
             ->leftjoin('trade_cheque_dtls', 'trade_cheque_dtls.tran_id', 'trade_transactions.id')
             ->where('payment_mode', 'DD')
             ->orWhere('payment_mode', 'CHEQUE')

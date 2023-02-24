@@ -834,6 +834,99 @@ class Report implements IReport
         }
     }
 
+    public function levelUserPending(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;            
+            $roleId = $roleId2 = $userId = null;
+            $joins = "join";
+            
+            $safWorkFlow = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            if($request->roleId)
+            {
+                $roleId = $request->roleId;
+            }            
+            if(($request->roleId && $request->userId) && ($roleId!=$roleId2))
+            {
+                throw new Exception("Invalid RoleId Pass");
+            }
+            if(in_array($roleId,[11,8]))
+            {
+                $joins="leftjoin";
+            }
+           
+            // DB::enableQueryLog();
+            $data = PropActiveSaf::SELECT(
+                    DB::RAW(
+                        "count(prop_active_safs.id),
+                    users_role.user_id ,
+                    users_role.user_name,
+                    users_role.wf_role_id as role_id,
+                    users_role.role_name")
+            )
+            ->$joins(
+                DB::RAW("(
+                        select wf_role_id,user_id,user_name,role_name,concat('{',ward_ids,'}') as ward_ids
+                        from (
+                            select wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,
+                            users.user_name, wf_roles.role_name,
+                            string_agg(wf_ward_users.ward_id::text,',') as ward_ids
+                            from wf_roleusermaps 
+                            join wf_roles on wf_roles.id = wf_roleusermaps.wf_role_id
+                                AND wf_roles.status =1
+                            join users on users.id = wf_roleusermaps.user_id
+                            left join wf_ward_users on wf_ward_users.user_id = wf_roleusermaps.user_id and wf_ward_users.is_suspended = false
+                            where wf_roleusermaps.wf_role_id =$roleId
+                                AND wf_roleusermaps.is_suspended = false
+                            group by wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,users.user_name,wf_roles.role_name
+                        )role_user_ward
+                    ) users_role
+                    "),function($join)use($joins){
+                        if($joins=="join")
+                        {
+                            $join->on("users_role.wf_role_id","=","prop_active_safs.current_role")
+                            ->where("prop_active_safs.ward_mstr_id",DB::raw("ANY (ward_ids::int[])"));
+                        }
+                        else
+                        {
+                            $join->on(DB::raw("1"),DB::raw("1"));
+                        }
+                    }
+            )
+            ->WHERE("prop_active_safs.ulb_id",$ulbId)
+            ->groupBy(["users_role.user_id" ,"users_role.user_name","users_role.wf_role_id" ,"users_role.role_name"]);
+            
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total/$perPage);                
+            $list=[
+                "perPage"=>$perPage,
+                "page"=>$page,
+                "items"=>$items,
+                "total"=>$total,
+                "numberOfPages"=>$numberOfPages
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            dd($e->getMessage(),$e->getLine(),$e->getFile());
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
     public function userWiseWardWireLevelPending(Request $request)
     {
         $metaData= collect($request->metaData)->all();        

@@ -4459,12 +4459,13 @@ class Trade implements ITrade
     public function checkWorckFlowForwardBackord(Request $request)
     {
         $user = Auth()->user();
+        $ulb_id = $user->ulb_id? $user->ulb_id:0;
         $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-        $allRolse = collect($this->_parent->getAllRoles($user->id,$user->ulb_id,$refWorkflowId,0,true));
-        $init_finish = $this->_parent->iniatorFinisher($user->id,$user->ulb_id,$refWorkflowId);
+        $allRolse = collect($this->_parent->getAllRoles($user->id,$ulb_id,$refWorkflowId,0,true));
+        $init_finish = $this->_parent->iniatorFinisher($user->id,$ulb_id,$refWorkflowId);
         $mUserType      = $this->_parent->userType($refWorkflowId);
         $fromRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];        
-        if(($fromRole["can_upload_document"]??false) || strtoupper($mUserType)=="ONLINE" || ($fromRole["can_verify_document"] ??false))
+        if(strtoupper($mUserType)=="ONLINE" || ($fromRole["can_upload_document"]??false) ||  ($fromRole["can_verify_document"] ??false))
         {
             $documents = $this->getLicenseDocLists($request);
             if(!$documents->original["status"])
@@ -4496,11 +4497,11 @@ class Trade implements ITrade
             $is_ownerUploadedDoc = $Wdocuments->where("is_uploded",false);
             $is_ownerDocVerify = $Wdocuments->where("is_docVerify",false);
             
-            if($fromRole["can_upload_document"] || strtoupper($mUserType)=="ONLINE")
+            if(($fromRole["can_upload_document"]??false) || strtoupper($mUserType)=="ONLINE")
             {
                 return (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()));
             }
-            if($fromRole["can_verify_document"])
+            if($fromRole["can_verify_document"]??false)
             {                
                 return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()));
             }

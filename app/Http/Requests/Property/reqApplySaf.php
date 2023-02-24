@@ -42,6 +42,8 @@ class reqApplySaf extends FormRequest
             $rules['holdingNoLists'] = "required|array";
             $rules['holdingNoLists.*'] = "required";
         }
+        if (isset($this->isGBSaf))
+            $rules['isGBSaf'] = "required|bool";
 
         $rules['ward']          = "required|digits_between:1,9223372036854775807";
         $rules['propertyType']  = "required|int";

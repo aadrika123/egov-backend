@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\CustomDetail;
 use App\Models\Masters\RefRequiredDocument;
-use App\Models\PropActiveObjectionDocdtl;
 use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
 use App\Models\Property\PropActiveObjection;
@@ -220,7 +219,7 @@ class ObjectionController extends Controller
                 $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);
                 $ownerList = json_decode(json_encode($ownerList), true);
 
-                //Assessment DEtails
+                //Assessment Details
                 $objectionList = $mPropActiveObjectionDtl->getDtlbyObjectionId($details->objection_id);
                 $objectionList = json_decode(json_encode($objectionList), true);       // Convert Std class to array
                 $objectionDetails = $this->objectionDetails($objectionList);
@@ -234,46 +233,35 @@ class ObjectionController extends Controller
                 //floor Details
                 if ($objectionList[0]['objection_type_id']  == 9) {
 
-                    $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
-                    $floorDetails = $this->generateFloorDetails($floorList);
-                    $floorElement = [
-                        'headerTitle' => 'Floor Details',
-                        'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
-                        'tableData' => $floorDetails
-                    ];
-
-
-                    $objectionFlooorDtl = $mPropActiveObjectionFloor->getfloorObjectionId($details->objection_id);
-                    $objectionFlooorDtl = json_decode(json_encode($objectionFlooorDtl), true);       // Convert Std class to array
-                    $objectionFloorDetails = $this->objectionFloorDetails($objectionFlooorDtl);
+                    $objectionFlooorDtls = $mPropActiveObjectionFloor->getfloorObjectionId($details->objection_id);
                     $objectionFloorElement = [
                         'headerTitle' => 'Objection Floor Details',
                         'tableHead' => ["#", "Floor No.", "Usage Type", "Occupancy Type", "Construction Type", "Built Up Area (in Sq. Ft.)", "Carpet Area (in Sq. Ft.)", "Date of Completion"],
-                        'tableData' => $objectionFloorDetails
+                        'tableData' => array()
                     ];
-                    $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$objectionElement, $floorElement,  $objectionFloorElement]);
+                    $floorElement = [
+                        'headerTitle' => 'Floor Details',
+                        'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
+                        'tableData' => array()
+                    ];
+                    foreach ($objectionFlooorDtls as $objectionFlooorDtl) {
+
+                        $floorId = $objectionFlooorDtl->prop_floor_id;
+                        $floorList = $mPropFloors->getFloorByFloorMstrId($floorId);
+
+                        $objectionFlooorDtl = json_decode(json_encode($objectionFlooorDtl), true);       // Convert Std class to array
+
+                        $objectionFloorDetails = $this->generateObjectionFloorDetails($objectionFlooorDtl);
+                        array_push($objectionFloorElement['tableData'], $objectionFloorDetails);
+
+                        $floorDetails = $this->generateFloorDetails($floorList);
+
+                        array_push($floorElement['tableData'], $floorDetails->first());
+                    }
+                    $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$objectionElement,  $objectionFloorElement, $floorElement]);
                 }
             }
 
-            // $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $objectionOwnerElement]);
-            // return $fullDetailsData;
-            // Card Details
-            // $cardElement = $this->generateObjCardDtls($details, $ownerList);
-            // $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
-            // };
-
-            // $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $objectionOwnerElement]);
-
-            // // Table Array
-
-            $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
-            $floorDetails = $this->generateFloorDetails($floorList);
-            $floorElement = [
-                'headerTitle' => 'Floor Details',
-                'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
-                'tableData' => $floorDetails
-            ];
-            // $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $objectionOwnerElement]);
             // Card Details
             $cardElement = $this->generateObjCardDtls($details, $ownerList);
             $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;

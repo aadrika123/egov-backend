@@ -11,6 +11,7 @@ interface IReport
     public function safPropIndividualDemandAndCollection(Request $request);
     public function levelwisependingform(Request $request);
     public function levelformdetail(Request $request);
+    public function levelUserPending(Request $request);
     public function userWiseWardWireLevelPending(Request $request);
     public function safSamFamGeotagging(Request $request);
 }

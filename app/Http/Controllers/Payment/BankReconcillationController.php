@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Payment;
 use App\Http\Controllers\Controller;
 use App\Models\Payment\PaymentReconciliation;
 use App\Models\Property\PropChequeDtl;
+use App\Models\Property\PropDemand;
+use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
 use App\Models\Trade\TradeChequeDtl;
 use App\Models\Trade\TradeTransaction;
@@ -60,7 +62,7 @@ class BankReconcillationController extends Controller
                         ->first();
                 }
                 if (!isset($data)) {
-                    return  $data = $chequeTranDtl
+                    $data = $chequeTranDtl
                         ->whereBetween('tran_date', [$fromDate, $toDate])
                         ->get();
                 }
@@ -75,7 +77,7 @@ class BankReconcillationController extends Controller
                         ->first();
                 }
                 if (!isset($data)) {
-                    return  $data = $chequeTranDtl
+                    $data = $chequeTranDtl
                         ->whereBetween('tran_date', [$fromDate, $toDate])
                         ->get();
                 }
@@ -112,7 +114,7 @@ class BankReconcillationController extends Controller
 
 
             if (!empty(collect($data))) {
-                return responseMsg(true, "Data Acording to request!", $data);
+                return responseMsgs(true, "Data Acording to request!", $data, '010801', '01', '382ms-547ms', 'Post', '');
             }
             return responseMsg(false, "data not found!", "");
         } catch (Exception $error) {
@@ -200,7 +202,12 @@ class BankReconcillationController extends Controller
 
             if ($moduleId == $propertyModuleId) {
                 $mChequeDtl =  PropChequeDtl::find($request->chequeId);
-                $mChequeDtl->status = $request->status;
+                if ($request->status == 'clear') {
+                    $mChequeDtl->status = 1;
+                }
+                if ($request->status == 'bounce') {
+                    $mChequeDtl->status = 3;
+                }
                 $mChequeDtl->clear_bounce_date = $request->clearanceDate;
                 $mChequeDtl->bounce_amount = $request->cancellationCharge;
                 $mChequeDtl->remarks = $request->remarks;
@@ -208,6 +215,39 @@ class BankReconcillationController extends Controller
 
                 $transaction = PropTransaction::where('id', $mChequeDtl->transaction_id)
                     ->first();
+
+                if ($request->status == 'clear') {
+
+                    PropTransaction::where('id', $mChequeDtl->transaction_id)
+                        ->update(
+                            [
+                                'verify_status' => 1,
+                                'verify_date' => Carbon::now(),
+                                'verified_by' => $userId
+                            ]
+                        );
+                }
+
+                if ($request->status == 'bounce') {
+
+                    PropTransaction::where('id', $mChequeDtl->transaction_id)
+                        ->update(
+                            [
+                                'verify_status' => 3,
+                                'verify_date' => Carbon::now(),
+                                'verified_by' => $userId
+                            ]
+                        );
+
+                    $propTranDtls =  PropTranDtl::where('tran_id', $transaction->id)->get();
+
+                    // foreach ($propTranDtls as $propTranDtl) {
+                    //     PropDemand::where()->get();
+                    // }
+                }
+
+
+
 
                 $request->merge([
                     'id' => $mChequeDtl->id,
@@ -233,7 +273,12 @@ class BankReconcillationController extends Controller
 
             if ($moduleId == $waterModuleId) {
                 $mChequeDtl =  WaterChequeDtl::find($request->chequeId);
-                $mChequeDtl->status = $request->status;
+                if ($request->status == 'clear') {
+                    $mChequeDtl->status = 1;
+                }
+                if ($request->status == 'bounce') {
+                    $mChequeDtl->status = 3;
+                }
                 $mChequeDtl->clear_bounce_date = $request->clearanceDate;
                 $mChequeDtl->bounce_amount = $request->cancellationCharge;
                 $mChequeDtl->remarks = $request->remarks;
@@ -266,7 +311,12 @@ class BankReconcillationController extends Controller
 
             if ($moduleId == $tradeModuleId) {
                 $mChequeDtl =  TradeChequeDtl::find($request->chequeId);
-                $mChequeDtl->state = $request->status;
+                if ($request->status == 'clear') {
+                    $mChequeDtl->status = 1;
+                }
+                if ($request->status == 'bounce') {
+                    $mChequeDtl->status = 3;
+                }
                 $mChequeDtl->clear_bounce_date = $request->clearanceDate;
                 $mChequeDtl->bounce_amount = $request->cancellationCharge;
                 $mChequeDtl->remarks = $request->remarks;
