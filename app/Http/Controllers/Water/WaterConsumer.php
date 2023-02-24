@@ -68,4 +68,25 @@ class WaterConsumer extends Controller
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
+
+
+    /**
+     * | Consumer Deactivation Process
+     * | Deactivet the consumer using the consumer Id
+     * | @param consumerId
+     * | @var 
+     * | @return 
+        | Serial No : 03
+        | Working
+     */
+    public function deactivateConsumer(Request $request)
+    {
+        try{
+            
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(true,$e->getMessage(),$e->getFile(),"","01",".ms","POST","");
+        }
+    }
 }

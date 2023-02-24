@@ -747,8 +747,10 @@ class HoldingTaxController extends Controller
 
             // Check Other Demands
             $otherDemands = $this->generateOtherDemands($basicDetails, $safCalculation);
-
+            // Include other Demands
             $comparativeDemand['arvRule'] = array_merge($comparativeDemand['arvRule'], $otherDemands['arvRule']);
+            $comparativeDemand['cvRule'] = array_merge($comparativeDemand['cvRule'], $otherDemands['cvRule']);
+
             $arvRule = $comparativeDemand['arvRule'];
             $cvRule = $comparativeDemand['cvRule'];
             $comparativeDemand['total'] = [
@@ -836,15 +838,82 @@ class HoldingTaxController extends Controller
      */
     public function generateOtherDemands($basicDetails, $safCalculation)
     {
+        $onePercPenalty = 0;
         $array['arvRule'] = array();
         $array['cvRule'] = array();
-
+        $safCalculation->_capitalValueRateMPH = $safCalculation->readCapitalValueRateMHP();
+        // Mobile Tower
         if ($basicDetails->is_mobile_tower == true) {
             $safCalculation->_mobileTowerArea = $basicDetails->tower_area;
-            if ($basicDetails->tower_installation_date < $safCalculation->_effectiveDateRule2)
-                $rule2 = $safCalculation->calculateRuleSet2("mobileTower", 0);
-            array_push($array['arvRule'], $rule2);
+            if ($basicDetails->tower_installation_date < $safCalculation->_effectiveDateRule2) {
+                $rule2 = $safCalculation->calculateRuleSet2("mobileTower", $onePercPenalty);
+                $rule2['floor'] = "mobileTower";
+                $rule2['usageFactor'] = $rule2['multiFactor'];
+                $rule2['arvPsf'] = $rule2['arv'];
+                array_push($array['arvRule'], $this->responseDemand($rule2));
+            }
+
+            $rule3 = $safCalculation->calculateRuleSet3("mobileTower", $onePercPenalty);
+            $rule3['floor'] = "mobileTower";
+            $rule3['rentalRate'] = $rule3['matrixFactor'];
+            $rule3['cvArvPropTax'] = $rule3['arv'];
+            array_push($array['cvRule'], $this->responseDemand($rule3));
+        }
+        // Hoarding Board
+        if ($basicDetails->is_hoarding_board == true) {
+            $safCalculation->_hoardingBoard['area'] = $basicDetails->hoarding_area;
+            if ($basicDetails->hoarding_installation_date < $safCalculation->_effectiveDateRule2) {
+                $rule2 = $safCalculation->calculateRuleSet2("hoardingBoard", $onePercPenalty);
+                $rule2['floor'] = "hoardingBoard";
+                $rule2['usageFactor'] = $rule2['multiFactor'];
+                $rule2['arvPsf'] = $rule2['arv'];
+                array_push($array['arvRule'], $this->responseDemand($rule2));
+            }
+
+            $rule3 = $safCalculation->calculateRuleSet3("hoardingBoard", $onePercPenalty);
+            $rule3['floor'] = "hoardingBoard";
+            $rule3['rentalRate'] = $rule3['matrixFactor'];
+            $rule3['cvArvPropTax'] = $rule3['arv'];
+            array_push($array['cvRule'], $this->responseDemand($rule3));
+        }
+        // Petrol Pump
+        if ($basicDetails->is_petrol_pump == true) {
+            $safCalculation->_petrolPump['area'] = $basicDetails->under_ground_area;
+            if ($basicDetails->petrol_pump_completion_date < $safCalculation->_effectiveDateRule2) {
+                $rule2 = $safCalculation->calculateRuleSet2("petrolPump", $onePercPenalty);
+                $rule2['floor'] = "petrolPump";
+                $rule2['usageFactor'] = $rule2['multiFactor'];
+                $rule2['arvPsf'] = $rule2['arv'];
+                array_push($array['arvRule'], $this->responseDemand($rule2));
+            }
+
+            $rule3 = $safCalculation->calculateRuleSet3("petrolPump", $onePercPenalty);
+            $rule3['floor'] = "petrolPump";
+            $rule3['rentalRate'] = $rule3['matrixFactor'];
+            $rule3['cvArvPropTax'] = $rule3['arv'];
+            array_push($array['cvRule'], $this->responseDemand($rule3));
         }
         return $array;
+    }
+
+    /**
+     * | response demands(16.2.1)
+     */
+    public function responseDemand($rule)
+    {
+        return [
+            "floor" => $rule['floor'],
+            "buildupArea" => $rule['buildupArea'],
+            "usageFactor" => $rule['usageFactor'] ?? 'N/A',
+            "occupancyFactor" => $rule['occupancyFactor'],
+            "carpetArea" => $rule['carpetArea'] ?? "N/A",
+            "rentalRate" => $rule['rentalRate'],
+            "taxPerc" => $rule['taxPerc'] ?? "N/A",
+            "calculationFactor" => $rule['calculationFactor'] ?? "N/A",
+            "arvPsf" => $rule['arvPsf'] ?? "N/A",
+            "circleRate" => $rule['circleRate'] ?? "",
+            "arvTotalPropTax" => $rule['arvTotalPropTax'] ?? 0,
+            "cvArvPropTax" => $rule['cvArvPropTax'] ?? 0
+        ];
     }
 }
