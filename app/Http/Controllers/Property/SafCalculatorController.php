@@ -20,9 +20,7 @@ class SafCalculatorController extends Controller
     {
         $data = $this->details($req);
         $req = $data;
-        // return $req;
         $array = $this->generateSafRequest($req);
-
         $safCalculation = new SafCalculation();
         $request = new Request($array);
         $safTaxes = $safCalculation->calculateTax($request);

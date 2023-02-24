@@ -1896,6 +1896,9 @@ class ActiveSafController extends Controller
      */
     public function getDemandBySafId(Request $req)
     {
+        $req->validate([
+            'id' => 'required|numeric'
+        ]);
         try {
             $safDetails = $this->details($req);
             $req = $safDetails;

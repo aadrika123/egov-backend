@@ -29,7 +29,6 @@ class WfActiveDocument extends Model
             "remarks" => $req->remarks ?? null,
             "doc_code" => $req->docCode,
             "owner_dtl_id" => $req->ownerDtlId,
-            "verify_status" => $req->verifyStatus,
         ];
     }
 
@@ -39,6 +38,11 @@ class WfActiveDocument extends Model
     public function postDocuments($req)
     {
         $metaReqs = $this->metaReqs($req);
+        if (isset($req->verifyStatus)) {
+            $metaReqs = array_merge($metaReqs, [
+                "verify_status" => $req->verifyStatus
+            ]);
+        }
         WfActiveDocument::create($metaReqs);
     }
 
