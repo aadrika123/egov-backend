@@ -28,26 +28,27 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->rate_id                =   $req->rateId ?? null;                    // what is rate Id
         $saveSiteVerify->emp_details_id         =   authUser()->id;
         $saveSiteVerify->apply_connection_id    =   $req->applicationId;
-        // $saveSiteVerify->payment_status         =   $req->paymentStatus;
         $saveSiteVerify->pipeline_size          =   $req->pipelineSize;
         $saveSiteVerify->pipeline_size_type     =   $req->pipelineSizeType;
         $saveSiteVerify->pipe_size              =   $req->diameter;
-
-        $saveSiteVerify->ferrule_type           =   $req->feruleSize;           // what is ferrule
+        $saveSiteVerify->ferrule_type           =   $req->feruleSize;                       // what is ferrule
         $saveSiteVerify->road_type              =   $req->roadType;
         $saveSiteVerify->inspection_date        =   Carbon::now();
-        // $saveSiteVerify->scheduled_status       =   $req->scheduledStatus;
-        // $saveSiteVerify->water_lock_arng        =   $req->waterLockArng;
-        // $saveSiteVerify->gate_valve             =   $req->gateValve;
-        $saveSiteVerify->verified_by            =   authUser()->user_type;   // here role 
-        // $saveSiteVerify->road_app_fee_id        =   $req->roadAppFeeId;
-        // $saveSiteVerify->verified_status        =   true;
+        $saveSiteVerify->verified_by            =   authUser()->user_type;                  // here role 
         $saveSiteVerify->inspection_time        =   Carbon::now();
         $saveSiteVerify->ts_map                 =   $req->tsMap;
         $saveSiteVerify->order_officer          =   authUser()->user_type;
         $saveSiteVerify->save();
+        // $saveSiteVerify->scheduled_status       =   $req->scheduledStatus;
+        // $saveSiteVerify->water_lock_arng        =   $req->waterLockArng;
+        // $saveSiteVerify->gate_valve             =   $req->gateValve;
+        // $saveSiteVerify->payment_status         =   $req->paymentStatus;
+        // $saveSiteVerify->road_app_fee_id        =   $req->roadAppFeeId;
+        // $saveSiteVerify->verified_status        =   true;
+
     }
 
+    
     /**
      * | Get Site inspection Details by ApplicationId
      * | According to verification status false

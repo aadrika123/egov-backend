@@ -90,6 +90,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(WaterConsumer::class)->group(function () {
         Route::post('consumer/list-demand', 'listConsumerDemand');                                      // Consumer
+        Route::post('admin/consumer/deactivation', 'deactivateConsumer');                               // Admin / Not Used
     });
 });
 

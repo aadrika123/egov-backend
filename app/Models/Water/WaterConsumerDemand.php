@@ -31,4 +31,17 @@ class WaterConsumerDemand extends Model
             ->orderByDesc('id')
             ->get();
     }
+
+    /**
+     * | Deactivate the consumer Demand
+     * | Demand Ids will be in array
+     * | @param DemandIds
+     */
+    public function deactivateDemand($demandIds)
+    {
+        WaterConsumerDemand::whereIn('id', $demandIds)
+            ->update([
+                'status' => false
+            ]);
+    }
 }

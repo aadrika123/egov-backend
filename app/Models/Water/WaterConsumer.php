@@ -271,4 +271,27 @@ class WaterConsumer extends Model
             ->firstOrFail();
     }
 
+
+    /**
+     * | Dectivate the water Consumer 
+     * | @param req
+     */
+    public function dissconnetConsumer($consumerId)
+    {
+        WaterConsumer::where('id',$consumerId)
+        ->update([
+            'status' => 0
+        ]);
+    }
+
+    /**
+     * | Get Consumer By consumerId
+     * | @param ConsumerId
+     */
+    public function getConsumerById($consumerId)
+    {
+        WaterConsumer::where('id',$consumerId)
+        ->firstOrFail();
+    }
+
 }

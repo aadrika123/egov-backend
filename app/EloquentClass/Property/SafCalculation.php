@@ -902,13 +902,7 @@ class SafCalculation
                 ->where('effective_date', $this->_effectiveDateRule3)
                 ->first();
             $readCalculationFactor = $readMultiFactor->multi_factor;
-            $propRoadTypeId = ($key == 'petrolPump' ? 1 : $this->_readRoadType[$this->_effectiveDateRule3]);    // Petrol Pump case road type is 1
-            $rentalRates = collect($this->_rentalRates)
-                ->where('prop_road_type_id', $propRoadTypeId)
-                ->where('construction_types_id', 1)
-                ->where('effective_date', $this->_effectiveDateRule3)
-                ->first();
-            $readMatrixFactor = $rentalRates->rate;
+            $readMatrixFactor = 1;              // Rental Rate 1 fixed for usage type not residential
         }
 
         // For Floors
@@ -931,12 +925,15 @@ class SafCalculation
                 ->first();
 
             $readCalculationFactor = $readMultiFactor->multi_factor;                                        // (Calculation Factor as Multi Factor)
-            $rentalRates = collect($this->_rentalRates)
-                ->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule3])
-                ->where('construction_types_id', $this->_floors[$key]['constructionType'])
-                ->where('effective_date', $this->_effectiveDateRule3)
-                ->first();
-            $readMatrixFactor = $rentalRates->rate;                                                         // (Matrix Factor as Rental Rate)
+            if ($readUsageType == 1) {
+                $rentalRates = collect($this->_rentalRates)
+                    ->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule3])
+                    ->where('construction_types_id', $this->_floors[$key]['constructionType'])
+                    ->where('effective_date', $this->_effectiveDateRule3)
+                    ->first();
+                $readMatrixFactor = $rentalRates->rate;                                                     // (Matrix Factor as Rental Rate)
+            } else
+                $readMatrixFactor = 1;                      // (Matrix Factor for the Type of Floors which is not Residential)
         }
 
         $calculatePropertyTax = ($readCircleRate * $readBuildupArea * $paramOccupancyFactor * $taxPerc * (float)$readCalculationFactor) / 100;
@@ -993,7 +990,9 @@ class SafCalculation
             ]);
         });
 
+
         $this->_GRID['demand'] = $demand;
+
         $this->_GRID['demand']['totalQuarters'] = $this->_GRID['details']->count();
         // From Quarter Year and Quarter Month
         $this->_GRID['demand']['fromQuarterYear'] = $this->_GRID['details']->first()['quarterYear'];
@@ -1017,9 +1016,8 @@ class SafCalculation
             $lateAssessmentStatus = $lateAssementFloors->isEmpty() == true ? false : true;
 
             // Late Assessment Penalty
-            if ($lateAssessmentStatus == true) {
+            if ($lateAssessmentStatus == true)
                 $fine = $this->_isResidential == true ? 2000 : 5000;
-            }
         }
 
         // Check Late Assessment Penalty for Vacant Land
@@ -1041,6 +1039,14 @@ class SafCalculation
 
         $this->_GRID['demand']['lateAssessmentStatus'] = $lateAssessmentStatus;
         $this->_GRID['demand']['lateAssessmentPenalty'] = $fine;
+
+        // For Government Building SAF The total Tax 
+        if (isset($this->_propertyDetails['isGBSaf'])) {
+            if ($this->_propertyDetails['isGBSaf'] == true && $this->_isResidential == true) {
+                $this->_GRID['demand']['isGBSaf'] = true;
+                $this->_GRID['demand']['totalTax'] = $this->_GRID['demand']['totalTax'] / 2;
+            }
+        }
 
         $taxes = collect($this->_GRID['demand'])->only(['totalTax', 'totalOnePercPenalty', 'lateAssessmentPenalty']);   // All Penalties are Added
         $totalDemandAmount = $taxes->sum();                                                                             // Total Demand with Penalty
