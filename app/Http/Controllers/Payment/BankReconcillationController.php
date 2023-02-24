@@ -241,10 +241,9 @@ class BankReconcillationController extends Controller
 
                     $propTranDtls =  PropTranDtl::where('tran_id', $transaction->id)->get();
 
-                    foreach ($propTranDtls as $propTranDtl) {
-                    }
-
-                    PropDemand::where()->get();
+                    // foreach ($propTranDtls as $propTranDtl) {
+                    //     PropDemand::where()->get();
+                    // }
                 }
 
 
