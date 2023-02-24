@@ -4465,7 +4465,12 @@ class Trade implements ITrade
         $allRolse = collect($this->_parent->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
         $init_finish = $this->_parent->iniatorFinisher($user_id,$ulb_id,$refWorkflowId);
         $mUserType      = $this->_parent->userType($refWorkflowId);
-        $fromRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];        
+        $fromRole =[];
+        if(!empty($allRolse))
+        {
+            $fromRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];       
+
+        }
         if(strtoupper($mUserType)=="ONLINE" || ($fromRole["can_upload_document"]??false) ||  ($fromRole["can_verify_document"] ??false))
         {
             $documents = $this->getLicenseDocLists($request);
