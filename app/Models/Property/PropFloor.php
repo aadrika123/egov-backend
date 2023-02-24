@@ -129,4 +129,13 @@ class PropFloor extends Model
 
         PropFloor::create($metaReqs);
     }
+
+    /**
+     * |get flloor by floor mstr id
+     */
+    public function getFloorByFloorMstrId($floorId)
+    {
+        return PropFloor::where('id', $floorId)
+            ->get();
+    }
 }

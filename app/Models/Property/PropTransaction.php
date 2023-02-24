@@ -198,10 +198,10 @@ class PropTransaction extends Model
             "bounce_status",
             "cheque_no",
             "clear_bounce_date",
-            // "user_name"
+            "user_name"
         )
-            ->leftjoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 'prop_transactions.id')
-            // ->join('users', 'users.id', 'prop_cheque_dtls.user_id')
+            ->join('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 'prop_transactions.id')
+            ->join('users', 'users.id', 'prop_cheque_dtls.user_id')
             ->where('payment_mode', 'DD')
             ->orWhere('payment_mode', 'CHEQUE')
             ->where('prop_transactions.ulb_id', $ulbId);
