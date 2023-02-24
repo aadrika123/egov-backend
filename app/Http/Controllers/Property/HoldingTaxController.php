@@ -785,20 +785,7 @@ class HoldingTaxController extends Controller
                 ['floor' => $floorTypes[$floorMstrId]],
                 ['ruleApplied' => 'Arv Rule']
             );
-            $setRule2 = [
-                'floor' => $rule2['floor'],
-                'buildupArea' => $rule2['buildupArea'],
-                'usageFactor' => $rule2['multiFactor'],
-                'occupancyFactor' => $rule2['occupancyFactor'],
-                'carpetArea' => $rule2['carpetArea'],
-                'rentalRate' => $rule2['rentalRate'],
-                'taxPerc' => $rule2['taxPerc'],
-                'calculationFactor' => $rule2['calculationFactor'],
-                'arvPsf' => $rule2['arvPsf'],
-                'circleRate' => $rule2['circleRate'],
-                'arvTotalPropTax' => $rule2['arvTotalPropTax'],
-                'cvArvPropTax' => $rule2['cvArvPropTax']
-            ];
+            $setRule2 = $this->responseDemand($rule2);          // Function (16.1)
         }
 
         $rule3 = $safCalculation->calculateRuleSet3($floorMstrId, $onePercPenalty);
@@ -811,25 +798,34 @@ class HoldingTaxController extends Controller
             ['arvPsf' => ""],
             ['floorMstr' => $floorMstrId],
             ['floor' => $floorTypes[$floorMstrId]],
-            ['ruleApplied' => 'CV Rule']
+            ['ruleApplied' => 'CV Rule'],
+            ['rentalRate' => $rule3['matrixFactor']],       // Function (16.1)
         );
-        $setRule3 = [
-            'floor' => $rule3['floor'],
-            'buildupArea' => $rule3['buildupArea'],
-            'usageFactor' => $rule3['multiFactor'],
-            'occupancyFactor' => $rule3['occupancyFactor'],
-            'carpetArea' => $rule3['carpetArea'],
-            'rentalRate' => $rule3['matrixFactor'],
-            'taxPerc' => $rule3['taxPerc'],
-            'calculationFactor' => $rule3['calculationFactor'],
-            'arvPsf' => $rule3['arvPsf'],
-            'circleRate' => $rule3['circleRate'],
-            'arvTotalPropTax' => $rule3['arvTotalPropTax'],
-            'cvArvPropTax' => $rule3['cvArvPropTax']
-        ];
+        $setRule3 = $this->responseDemand($rule3);
         return [
             'arvRule' => $setRule2 ?? [],
             'cvRule' => $setRule3 ?? []
+        ];
+    }
+
+    /**
+     * | response demands(16.1)
+     */
+    public function responseDemand($rule)
+    {
+        return [
+            "floor" => $rule['floor'],
+            "buildupArea" => $rule['buildupArea'],
+            "usageFactor" => $rule['usageFactor'] ?? 'N/A',
+            "occupancyFactor" => $rule['occupancyFactor'],
+            "carpetArea" => $rule['carpetArea'] ?? "N/A",
+            "rentalRate" => $rule['rentalRate'],
+            "taxPerc" => $rule['taxPerc'] ?? "N/A",
+            "calculationFactor" => $rule['calculationFactor'] ?? "N/A",
+            "arvPsf" => $rule['arvPsf'] ?? "N/A",
+            "circleRate" => $rule['circleRate'] ?? "",
+            "arvTotalPropTax" => $rule['arvTotalPropTax'] ?? 0,
+            "cvArvPropTax" => $rule['cvArvPropTax'] ?? 0
         ];
     }
 
@@ -850,7 +846,7 @@ class HoldingTaxController extends Controller
                 $rule2['floor'] = "mobileTower";
                 $rule2['usageFactor'] = $rule2['multiFactor'];
                 $rule2['arvPsf'] = $rule2['arv'];
-                array_push($array['arvRule'], $this->responseDemand($rule2));
+                array_push($array['arvRule'], $this->responseDemand($rule2)); // (16.1)
             }
 
             $rule3 = $safCalculation->calculateRuleSet3("mobileTower", $onePercPenalty);
@@ -867,14 +863,14 @@ class HoldingTaxController extends Controller
                 $rule2['floor'] = "hoardingBoard";
                 $rule2['usageFactor'] = $rule2['multiFactor'];
                 $rule2['arvPsf'] = $rule2['arv'];
-                array_push($array['arvRule'], $this->responseDemand($rule2));
+                array_push($array['arvRule'], $this->responseDemand($rule2)); // (16.1)
             }
 
             $rule3 = $safCalculation->calculateRuleSet3("hoardingBoard", $onePercPenalty);
             $rule3['floor'] = "hoardingBoard";
             $rule3['rentalRate'] = $rule3['matrixFactor'];
             $rule3['cvArvPropTax'] = $rule3['arv'];
-            array_push($array['cvRule'], $this->responseDemand($rule3));
+            array_push($array['cvRule'], $this->responseDemand($rule3)); // (16.1)
         }
         // Petrol Pump
         if ($basicDetails->is_petrol_pump == true) {
@@ -884,36 +880,15 @@ class HoldingTaxController extends Controller
                 $rule2['floor'] = "petrolPump";
                 $rule2['usageFactor'] = $rule2['multiFactor'];
                 $rule2['arvPsf'] = $rule2['arv'];
-                array_push($array['arvRule'], $this->responseDemand($rule2));
+                array_push($array['arvRule'], $this->responseDemand($rule2)); // (16.1)
             }
 
             $rule3 = $safCalculation->calculateRuleSet3("petrolPump", $onePercPenalty);
             $rule3['floor'] = "petrolPump";
             $rule3['rentalRate'] = $rule3['matrixFactor'];
             $rule3['cvArvPropTax'] = $rule3['arv'];
-            array_push($array['cvRule'], $this->responseDemand($rule3));
+            array_push($array['cvRule'], $this->responseDemand($rule3)); // (16.1)
         }
         return $array;
-    }
-
-    /**
-     * | response demands(16.2.1)
-     */
-    public function responseDemand($rule)
-    {
-        return [
-            "floor" => $rule['floor'],
-            "buildupArea" => $rule['buildupArea'],
-            "usageFactor" => $rule['usageFactor'] ?? 'N/A',
-            "occupancyFactor" => $rule['occupancyFactor'],
-            "carpetArea" => $rule['carpetArea'] ?? "N/A",
-            "rentalRate" => $rule['rentalRate'],
-            "taxPerc" => $rule['taxPerc'] ?? "N/A",
-            "calculationFactor" => $rule['calculationFactor'] ?? "N/A",
-            "arvPsf" => $rule['arvPsf'] ?? "N/A",
-            "circleRate" => $rule['circleRate'] ?? "",
-            "arvTotalPropTax" => $rule['arvTotalPropTax'] ?? 0,
-            "cvArvPropTax" => $rule['cvArvPropTax'] ?? 0
-        ];
     }
 }

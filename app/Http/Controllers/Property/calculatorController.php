@@ -38,6 +38,10 @@ class calculatorController extends Controller
     {
         try {
             $calculation = new SafCalculation;
+            if (isset($req->isGBSaf)) {
+                $req->merge(['isGBSaf' => $req->isGBSaf]);
+            } else
+                $req->merge(['isGBSaf' => false]);
             $response = $calculation->calculateTax($req);
             $finalResponse['demand'] = $response->original['data']['demand'];
             $reviewDetails = collect($response->original['data']['details'])->groupBy(['ruleSet', 'mFloorNo', 'mUsageType']);
