@@ -89,6 +89,21 @@ class ReportController extends Controller
         $request->request->add(["metaData"=>["pr4.2",1.1,null,$request->getMethod(),null,]]);
         return $this->Repository->levelformdetail($request);
     }
+    
+    public function levelUserPending(Request $request)
+    {
+        $request->validate(
+            [
+                "roleId" => "required|digits_between:1,9223372036854775807",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage"=>"nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData"=>["pr4.2.1",1.1,null,$request->getMethod(),null,]]);
+        return $this->Repository->levelUserPending($request);
+    }
+
     public function userWiseLevelPending(Request $request)
     {
         $request->validate(
@@ -99,7 +114,7 @@ class ReportController extends Controller
                 "perPage"=>"nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData"=>["pr4.2.1",1.1,null,$request->getMethod(),null,]]);
+        $request->request->add(["metaData"=>["pr4.2.2",1.1,null,$request->getMethod(),null,]]);
 
         $refUser        = Auth()->user();
         $refUserId      = $refUser->id;
@@ -126,7 +141,8 @@ class ReportController extends Controller
 
         }
         return responseMsgs($respons["original"]["status"], $respons["original"]["message"], $respons["original"]["data"],$apiId, $version, $queryRunTime,$action,$deviceId);
-    }
+    }    
+
     public function userWiseWardWireLevelPending(Request $request)
     {
         $request->validate(
