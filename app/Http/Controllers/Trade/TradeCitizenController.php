@@ -464,7 +464,7 @@ class TradeCitizenController extends Controller
                 $TradeFineRebet2->save();
             }
             $request = new Request(["applicationId"=>$licenceId]);
-            if ($mPaymentStatus == 1 && $this->_counter->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status = 0 && !$refLevelData) {
+            if ($mPaymentStatus == 1 && $this->_counter->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status == 0 ) {
                 $refLecenceData->current_role = $refWorkflows['initiator']['forward_id'];
                 $refLecenceData->document_upload_status = 1;
                 $refLecenceData->pending_status  = 2;
