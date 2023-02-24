@@ -247,7 +247,7 @@ class TradeCitizen implements ITradeCitizen
                 $TradeFineRebet2->created_at     = $mTimstamp;
                 $TradeFineRebet2->save();
             }
-            $request = new Request(["applicationId"=>$licenceId]);
+            $request = new Request(["applicationId"=>$licenceId,"ulb_id"=>$refUlbId,"user_id"=>$refUserId]);
             if ($mPaymentStatus == 1 && $this->_counter->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status == 0 ) {
                 $refLecenceData->current_user_id = $refWorkflows['initiator']['id'];
                 $refLecenceData->document_upload_status = 1;

@@ -4459,10 +4459,11 @@ class Trade implements ITrade
     public function checkWorckFlowForwardBackord(Request $request)
     {
         $user = Auth()->user();
-        $ulb_id = $user->ulb_id? $user->ulb_id:0;
+        $user_id = $user->id??$request->user_id;
+        $ulb_id = $user->ulb_id ?? $request->ulb_id;
         $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-        $allRolse = collect($this->_parent->getAllRoles($user->id,$ulb_id,$refWorkflowId,0,true));
-        $init_finish = $this->_parent->iniatorFinisher($user->id,$ulb_id,$refWorkflowId);
+        $allRolse = collect($this->_parent->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
+        $init_finish = $this->_parent->iniatorFinisher($user_id,$ulb_id,$refWorkflowId);
         $mUserType      = $this->_parent->userType($refWorkflowId);
         $fromRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];        
         if(strtoupper($mUserType)=="ONLINE" || ($fromRole["can_upload_document"]??false) ||  ($fromRole["can_verify_document"] ??false))
