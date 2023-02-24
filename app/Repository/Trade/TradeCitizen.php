@@ -250,7 +250,8 @@ class TradeCitizen implements ITradeCitizen
             $request = new Request(["applicationId"=>$licenceId]);
             if ($mPaymentStatus == 1 && $this->_counter->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status == 0 ) {
                 $refLecenceData->current_user_id = $refWorkflows['initiator']['id'];
-                $refLecenceData->pending_status  = 2;
+                $refLecenceData->document_upload_status = 1;
+                $refLecenceData->pending_status  = 1;
                 $args["sender_role_id"] = $refWorkflows['initiator']['id'];
                 $args["receiver_role_id"] = $refWorkflows['initiator']['forward_id'];
                 $args["citizen_id"] = $refUserId;;
