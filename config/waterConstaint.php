@@ -75,6 +75,11 @@ return [
             "10",
             "12",
             "16"
+        ],
+        "DEACTIVATION_CRITERIA" => [
+            "Duble Connection",
+            "Waiver Committee",
+            "No Connection"
         ]
     ]
 ];

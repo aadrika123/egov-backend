@@ -127,7 +127,8 @@ class WaterPaymentController extends Controller
                 "pipe_diameter"         => $refMasterData['PIPE_DIAMETER'],
                 "pipe_quality"          => $refMasterData['PIPE_QUALITY'],
                 "road_type"             => $refMasterData['ROAD_TYPE'],
-                "ferule_size"           => $refMasterData['FERULE_SIZE']
+                "ferule_size"           => $refMasterData['FERULE_SIZE'],
+                "deactivation_criteria" => $refMasterData['DEACTIVATION_CRITERIA']
             ];
             $returnValues = collect($masterValues)->merge($confugMasterValues);
             return responseMsgs(true, "list of Water Master Data!", remove_null($returnValues), "", "01", "ms", "POST", "");
@@ -442,6 +443,7 @@ class WaterPaymentController extends Controller
                 $this->adjustmentInConnection($request, $newConnectionCharges, $installment, $waterDetails, $applicationCharge);
             }
 
+            # Store the site inspection details
             $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId, $waterDetails);
             DB::commit();
             return responseMsgs(true, "Site Inspection Done!", $request->applicationId, "", "01", "ms", "POST", "");
@@ -516,35 +518,34 @@ class WaterPaymentController extends Controller
 
         # connection charges
         $request->merge([
-            'chargeCatagory' => $chargeCatagory['SITE_INSPECTON'],
-            'ward_id' => $waterApplicationDetails['ward_id']
+            'chargeCatagory'    => $chargeCatagory['SITE_INSPECTON'],
+            'connectionType'    => $chargeCatagory['SITE_INSPECTON'],
+            'ward_id'           => $waterApplicationDetails['ward_id']
         ]);
 
-        # in case of connection charge is 0
+        # in case of connection charge is not 0
         if ($newCharge != 0) {
-            # get Water Application Details
-            $mWaterApplication->updatePaymentStatus($applicationId, false);                     // Update the payment status false         
-
-
             # cherge changes 
             if ($newConnectionCharges['conn_fee_charge']['conn_fee'] > $applicationCharge['conn_fee']) {
                 $adjustedConnFee = $applicationCharge['conn_fee'] - $newConnectionCharges['conn_fee_charge']['conn_fee'];
                 $newConnectionCharges['conn_fee_charge']['conn_fee'] = $adjustedConnFee;
                 $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
             }
+            # get Water Application Penalty 
             if ($newConnectionCharges['conn_fee_charge']['penalty'] > $applicationCharge['penalty']) {
+                $refPenaltyList = collect($installment)->map(function ($value) {
+                    return $value['balance_amount'];
+                })->sum();
+                $calculetedPenalty = $$applicationCharge['penalty'] - $refPenaltyList;
+                $refInstallment['installment_amount'] = $calculetedPenalty;
+                $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
             }
-            // $newConnectionCharges['conn_fee_charge']['penalty'] = 
-            // $newConnectionCharges['conn_fee_charge']['amount'] =
-
-            # water penalty
-            if (!is_null($installment)) {
-                foreach ($installment as $installments) {
-                    $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $installments, $chargeCatagory['SITE_INSPECTON']);
-                }
-            }
+            $mWaterApplication->updatePaymentStatus($applicationId, false);
         }
-        // $mWaterTran->saveZeroConnectionCharg($newCharge, $waterApplicationDetails->ulb_id, $request, $applicationId, $connectionId);
+        # if the transaction is 0
+        if ($newCharge == 0) {
+            $mWaterTran->saveZeroConnectionCharg($newCharge, $waterApplicationDetails->ulb_id, $request, $applicationId, $connectionId);
+        }
     }
 
 
@@ -771,6 +772,7 @@ class WaterPaymentController extends Controller
             $refWaterApplication = $mWaterApplication->getApplicationById($req->applicationId)
                 ->firstOrFail();
 
+            # check the pre requirement 
             $this->verifyPaymentRules($req, $refWaterApplication);
 
             # Derivative Assignments
@@ -788,9 +790,11 @@ class WaterPaymentController extends Controller
                 'ulbId'     => authUser()->ulb_id,
             ]);
             DB::beginTransaction();
+            # Save the Details of the transaction
             $wardId['ward_mstr_id'] = $refWaterApplication['ward_id'];
             $waterTrans = $waterTran->waterTransaction($req, $wardId);
 
+            # Save the Details for the Cheque,DD,nfet
             if (in_array($req['paymentMode'], $offlinePaymentModes)) {
                 $req->merge([
                     'chequeDate' => $req['chequeDate'],
@@ -801,7 +805,7 @@ class WaterPaymentController extends Controller
                 $this->postOtherPaymentModes($req);
             }
 
-            // Reflect on Prop Tran Details
+            # Reflect on water Tran Details
             foreach ($charges as $charges) {
                 $charges->paid_status = 1;           // <-------- Update Demand Paid Status 
                 $charges->save();
@@ -815,7 +819,7 @@ class WaterPaymentController extends Controller
                 $waterTranDetail->save();
             }
 
-            // Update SAF Payment Status
+            # Update Water Application Payment Status
             if ($refWaterApplication['payment_status'] == false) {
                 $activeSaf = WaterApplication::find($req['id']);
                 $activeSaf->payment_status = 1;
@@ -857,6 +861,7 @@ class WaterPaymentController extends Controller
         $paramChargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
 
         switch ($req) {
+                # In Case of Residential payment Offline
             case ($req->chargeCategory == $paramChargeCatagory['REGULAIZATION']):
                 switch ($req) {
                     case ($req->isInstallment == "yes"):
@@ -910,6 +915,7 @@ class WaterPaymentController extends Controller
                 }
                 break;
 
+                # In Case of New Connection payment Offline
             case ($req->chargeCategory == $paramChargeCatagory['NEW_CONNECTION']):
                 switch ($req) {
                     case (is_null($req->isInstallment) || !$req->isInstallment):
@@ -922,7 +928,7 @@ class WaterPaymentController extends Controller
                             throw new Exception("Connection Amount Not Matched!");
                         }
                         break;
-                    case ($req->isInstallment == "yes"): # check <-------------- calculation
+                    case ($req->isInstallment == "yes"):
                         throw new Exception("No Installment in New Connection!");
                         break;
                 }
@@ -998,7 +1004,7 @@ class WaterPaymentController extends Controller
 
     /**
      * | Get the payment history for the Application
-     * | @param req
+     * | @param request
      * | @var 
      * | @return 
         | Serial No : 08
@@ -1014,7 +1020,6 @@ class WaterPaymentController extends Controller
             $mWaterApplication = new WaterApplication();
             $mWaterConnectionCharge = new WaterConnectionCharge();
             $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-            $mWaterTranDetail = new WaterTranDetail();
 
             $transactions = array();
             $applicationId = $request->id;
@@ -1039,19 +1044,13 @@ class WaterPaymentController extends Controller
                         ->where('payment_from', $value['charge_category'])
                         ->get();
 
+                    #check the penalty paid status
                     $checkPenalty = collect($penaltyList)->map(function ($penaltyList) {
                         if ($penaltyList['paid_status'] == 0) {
                             return false;
                         }
                         return true;
                     });
-
-                    $penaltyAmount = collect($penaltyList)->map(function ($secondvalue) {
-                        if ($secondvalue['paid_status'] == 0) {
-                            return $secondvalue['balance_amount'];
-                        }
-                    })->filter()->sum();
-
                     switch ($checkPenalty) {
                         case ($checkPenalty->contains(false)):
                             $penaltyPaymentStatus = false;
@@ -1062,7 +1061,14 @@ class WaterPaymentController extends Controller
                             break;
                     }
 
-                    $refConnectionDetails['penaltyList'] = $penaltyList;
+                    # collect the penalty amount to be paid 
+                    $penaltyAmount = collect($penaltyList)->map(function ($secondvalue) {
+                        if ($secondvalue['paid_status'] == 0) {
+                            return $secondvalue['balance_amount'];
+                        }
+                    })->filter()->sum();
+
+                    # return data
                     if ($penaltyPaymentStatus == false || $value['paid_status'] == false) {
                         $status['penaltyPaymentStatus']     = $penaltyPaymentStatus ?? null;
                         $status['chargeCatagory']           = $value['charge_category'];
@@ -1071,11 +1077,11 @@ class WaterPaymentController extends Controller
                     }
                 }
             })->filter();
+            # return Data
             $transactions = [
                 "transactionHistory" => collect($connectionTran)->sortByDesc('id')->values(),
                 "paymentList" => $penaltyList->values()->first()
             ];
-
             return responseMsgs(true, "", remove_null($transactions), "", "01", "ms", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
