@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropApartmentDtl;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafMemoDtl;
@@ -278,6 +279,29 @@ class ActiveSafControllerV2 extends Controller
             }
 
             return responseMsgs(true, "Holding Exist", '', 010124, 1.0, "308ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Get Apartment List by Ward Id
+     */
+    public function getAptList(Request $req)
+    {
+        try {
+            $req->validate([
+                'wardMstrId' => 'required',
+                'ulbId' => 'required',
+            ]);
+            $mPropApartmentDtl = new PropApartmentDtl();
+            $data = $mPropApartmentDtl->apartmentList($req);
+
+            if (($data->isEmpty())) {
+                throw new Exception("Enter Valid wardMstrId");
+            }
+
+            return responseMsgs(true, "Apartment List", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         }

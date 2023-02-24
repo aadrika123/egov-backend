@@ -938,7 +938,7 @@ class Trade implements ITrade
             $rules["initialBusinessDetails.ownershipType"] = "required|digits_between:1,9223372036854775807";
 
             $rules["ownerDetails"] = "required|array";
-            $rules["ownerDetails.*.id"] = "digits_between:1,9223372036854775807";
+            $rules["ownerDetails.*.id"] = "nullable|digits_between:1,9223372036854775807";
             $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
             $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/|nullable";
             $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
@@ -1013,7 +1013,7 @@ class Trade implements ITrade
                     $refOldOwner->state            = $owner['state'] ?? null;
                     $refOldOwner->email_id          = $owner['email'] ?? null;
                     $refOldOwner->update();
-                } elseif (!$refOldLicece->doc_verify_emp_details_id) {
+                } elseif (!$refOldLicece->is_doc_verified) {
                     $newOwner = new ActiveTradeOwner();
                     $newOwner->temp_id      = $mLicenceId;
                     $newOwner->owner_name      = $owner['businessOwnerName'];
