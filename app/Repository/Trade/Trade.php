@@ -2048,12 +2048,13 @@ class Trade implements ITrade
     {
         $data = (array)null;
         $refUser = Auth()->user();
-        $refUlbId = $refUser->ulb_id;
+        $refUlbId = $refUser->ulb_id??$request->ulbId;
         $mNoticeNo = null;
         $mNowDate = Carbon::now()->format('Y-m-d'); // todays date
         try {
             $rules = [
                 "noticeNo" => "required|string",
+                "ulbId"=>$refUlbId?"nullable":"required",
             ];
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) {
