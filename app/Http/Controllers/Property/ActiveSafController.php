@@ -1713,6 +1713,9 @@ class ActiveSafController extends Controller
      */
     public function getPropByHoldingNo(Request $req)
     {
+        $req->validate(
+            isset($req->holdingNo) ? ['holdingNo' => 'required'] : ['propertyId' => 'required|numeric']
+        );
         try {
             $mProperties = new PropProperty();
             $mPropFloors = new PropFloor();
@@ -1906,6 +1909,20 @@ class ActiveSafController extends Controller
             $safCalculation = new SafCalculation();
             $request = new Request($array);
             $safTaxes = $safCalculation->calculateTax($request);
+            $demand['basicDetails'] = [
+                "ulb_id" => $req['ulb_id'],
+                "saf_no" => $req['saf_no'],
+                "prop_address" => $req['prop_address'],
+                "is_mobile_tower" => $req['is_mobile_tower'],
+                "is_hoarding_board" => $req['is_hoarding_board'],
+                "is_petrol_pump" => $req['is_petrol_pump'],
+                "is_water_harvesting" => $req['is_water_harvesting'],
+                "zone_mstr_id" => $req['zone_mstr_id'],
+                "holding_no" => $req['new_holding_no'] ?? $req['holding_no'],
+                "old_ward_no" => $req['old_ward_no'],
+                "new_ward_no" => $req['new_ward_no'],
+                "property_type" => $req['property_type']
+            ];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = collect($safTaxes->original['data']['details'])->groupBy('ruleSet');
             $demand['paymentStatus'] = $safDetails['payment_status'];
