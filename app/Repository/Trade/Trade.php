@@ -4383,6 +4383,12 @@ class Trade implements ITrade
     }
     public function applicationStatus($licenceId)
     {
+        $refUser        = Auth()->user();
+        $refUserId      = $refUser->id??0;
+        $refUlbId       = $refUser->ulb_id ?? 0;
+        $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        $modul_id = Config::get('module-constants.TRADE_MODULE_ID');
+        $mUserType      = $this->_parent->userType($refWorkflowId, $refUlbId);
         $application = TradeLicence::find($licenceId);
         if (!$application) {
             $application = ActiveTradeLicence::find($licenceId);
@@ -4396,12 +4402,35 @@ class Trade implements ITrade
         } elseif ($application->is_parked) {
             $rols  = WfRole::find($application->current_role);
             $status = "Application back to citizen by " . $rols->role_name;
-        } elseif (($application->current_role != $application->finisher_role) || ($application->current_role == $application->finisher_role)) {
+        } elseif ($application->pending_status!=0 && (($application->current_role != $application->finisher_role) || ($application->current_role == $application->finisher_role))) {
             $rols  = WfRole::find($application->current_role);
             $status = "Application pending at " . $rols->role_name;
         } elseif (!$application->is_active) {
             $status = "Application rejected ";
-        } elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
+        } 
+        elseif(strtoupper($mUserType)=="ONLINE" && $application->citizen_id == $refUserId && $application->payment_status == 0 )
+        {
+            $request = new Request(["applicationId"=>$licenceId,"ulb_id"=>$refUlbId,"user_id"=>$refUserId]);
+            $doc_status = $this->checkWorckFlowForwardBackord($request);
+            if($doc_status && $application->payment_status==0){
+                $status = "All Required Documents Are Uploaded But Payment is Pending ";
+            }
+            elseif($doc_status && $application->payment_status==1)
+            {
+                $status = "Pending At Counter";
+            }
+            elseif(!$doc_status && $application->payment_status==1)
+            {
+                $status = "Payment is Done But Document Not Uploaded";
+            }
+            elseif(!$doc_status && $application->payment_status==0)
+            {
+                $status = "Payment is Pending And Document Not Uploaded";
+            }
+
+
+        }
+        elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
             $status = "Payment is pending and document not uploaded ";
         } elseif ($application->payment_status == 1 && $application->document_upload_status == 0) {
             $status = "Payment is done but document not uploaded ";
