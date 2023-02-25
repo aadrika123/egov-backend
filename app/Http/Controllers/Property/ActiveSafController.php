@@ -1773,8 +1773,7 @@ class ActiveSafController extends Controller
             ]);
 
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
-            // $roleId = $readRoleDtls->wf_role_id;
-            $roleId = 7; //(Test Role ID)
+            $roleId = $readRoleDtls->wf_role_id;
 
             switch ($roleId) {
                 case $taxCollectorRole:                                                                  // In Case of Agency TAX Collector
