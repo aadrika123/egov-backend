@@ -4451,7 +4451,8 @@ class Trade implements ITrade
             $WorkflowTrack->verification_status = $arg["verification_status"] ?? 0;
             $WorkflowTrack->forward_time    = $arg["forward_time"] ?? null;
             $WorkflowTrack->save();
-            return $WorkflowTrack->id;
+            $i = $WorkflowTrack->id;
+            return $i;
         } catch (Exception $e) {
         }
     }

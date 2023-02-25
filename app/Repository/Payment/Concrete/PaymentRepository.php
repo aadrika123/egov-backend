@@ -320,7 +320,8 @@ class PaymentRepository implements iPayment
                         break;
                     case ('3'):                                      //<-------------------(TRADE)
                         $objTrade = new TradeCitizen();
-                        $objTrade->razorPayResponse($transfer);
+                        $a=$objTrade->razorPayResponse($transfer);
+                        // return $a;
                         break;
                     case ('5'):
                         Http::withHeaders([])

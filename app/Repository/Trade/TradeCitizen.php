@@ -236,7 +236,7 @@ class TradeCitizen implements ITradeCitizen
             $TradeFineRebet->type      = 'Delay Apply License';
             $TradeFineRebet->amount         = $chargeData['penalty'];
             $TradeFineRebet->created_at     = $mTimstamp;
-            $TradeFineRebet->save();
+            $i =$TradeFineRebet->save();
 
             $mDenialAmount = $mDenialAmount + $chargeData['arear_amount'];
             if ($mDenialAmount > 0) {
@@ -253,7 +253,7 @@ class TradeCitizen implements ITradeCitizen
                 $refLecenceData->document_upload_status = 1;
                 $refLecenceData->pending_status  = 1;
                 $args["sender_role_id"] = $refWorkflows['initiator']['id'];
-                $args["receiver_role_id"] = $refWorkflows['initiator']['forward_id'];
+                $args["receiver_role_id"] = $refWorkflows['initiator']['forward_role_id'];
                 $args["citizen_id"] = $refUserId;;
                 $args["ref_table_dot_id"] = "active_licences";
                 $args["ref_table_id_value"] = $licenceId;
@@ -266,16 +266,16 @@ class TradeCitizen implements ITradeCitizen
             $provNo = $this->_counter->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
             $refLecenceData->provisional_license_no = $provNo;
             $refLecenceData->payment_status         = $mPaymentStatus;
-            $refLecenceData->save();
-
             if ($refNoticeDetails) {
                 $this->_counter->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId, 1); //update status and fineAmount                     
             }
+            // dd($refLecenceData->all());
+            $refLecenceData->update();
             DB::commit();
             #----------End transaction------------------------
             #----------Response------------------------------
             $res['transactionId'] = $transaction_id;
-            $res['paymentReceipt'] = config('app.url') . "/api/trade/paymentReceipt/" . $licenceId . "/" . $transaction_id;
+            $res['paymentReceipt'] = config('app.url') . "/api/trade/payment-receipt/" . $licenceId . "/" . $transaction_id;
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
             DB::rollBack();
