@@ -4427,8 +4427,6 @@ class Trade implements ITrade
             {
                 $status = "Payment is Pending And Document Not Uploaded";
             }
-
-
         }
         elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
             $status = "Payment is pending and document not uploaded ";
