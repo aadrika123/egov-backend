@@ -448,7 +448,6 @@ class Report implements IReport
             if($request->wardId)
             {
                 $wardId = $request->wardId;
-                $where .= " AND trade_licences.ward_id = $wardId";
             }
             if($request->ulbId)
             {
