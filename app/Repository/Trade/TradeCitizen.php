@@ -463,16 +463,18 @@ class TradeCitizen implements ITradeCitizen
                     ->union($ApprovedLicence)->union($OldLicence)
                     ->get();
             $final1 = $final->map(function($val){
-                $val->option = [];
+                $option = [];
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
                 if(trim($val->license_type)=="approved" && $val->valid_upto < $nextMonth)
                 {
-                    $val->option=["RENEWAL"];
+                    $option[]="RENEWAL";
                 }
                 if(trim($val->license_type)=="approved" && $val->valid_upto >= Carbon::now()->format('Y-m-d'))
                 {
-                    $val->option=["RENEWAL","AMENDMENT","SURRENDER"];
+                    $option[]="AMENDMENT";
+                    $option[]="SURRENDER";
                 }
+                $val->option = $option;
                 return $val;
             });
             return responseMsg(true, "", remove_null($final));
