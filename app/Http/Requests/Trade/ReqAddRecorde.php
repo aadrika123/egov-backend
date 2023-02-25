@@ -33,8 +33,8 @@ class ReqAddRecorde extends TradeRequest
         if (in_array($mApplicationTypeId, [1])) 
         {
             $rules["firmDetails.areaSqft"] = "required|numeric";
-            $rules["firmDetails.businessAddress"] = "required|regex:$mRegex";
-            $rules["firmDetails.businessDescription"] = "required|regex:$mRegex";
+            $rules["firmDetails.businessAddress"] = "required|regex:$mFramNameRegex";
+            $rules["firmDetails.businessDescription"] = "required|regex:$mFramNameRegex";
             $rules["firmDetails.firmEstdDate"] = "required|date";
             $rules["firmDetails.firmName"] = "required|regex:$mFramNameRegex";
             $rules["firmDetails.premisesOwner"] = "required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\., \s]+$/";
@@ -43,7 +43,7 @@ class ReqAddRecorde extends TradeRequest
             $rules["firmDetails.newWardNo"] = "required|digits_between:1,9223372036854775807";
             $rules["firmDetails.wardNo"] = "required|digits_between:1,9223372036854775807";
             $rules["firmDetails.tocStatus"] = "required|bool";
-            $rules["firmDetails.landmark"] = "regex:$mRegex";
+            $rules["firmDetails.landmark"] = "regex:$mFramNameRegex";
             $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
             $rules["firmDetails.bind_book_no"] = "regex:$mRegex";
             $rules["firmDetails.account_no"] = "regex:$mRegex";
@@ -112,7 +112,7 @@ class ReqAddRecorde extends TradeRequest
         {
             $rules["firmDetails.areaSqft"] = "required|numeric";
             //$rules["firmDetails.businessAddress"]="required|regex:$mRegex";
-            $rules["firmDetails.businessDescription"] = "required|regex:$mRegex";
+            $rules["firmDetails.businessDescription"] = "required|regex:$mFramNameRegex";
             // $rules["firmDetails.firmName"]="required|regex:$mFramNameRegex";
             $rules["firmDetails.holdingNo"] = "required";
             $rules["initialBusinessDetails.ownershipType"] = "required|digits_between:1,9223372036854775807";
