@@ -322,7 +322,9 @@ class WaterApplication extends Model
 
     /**
      * | Update payment Status for the application
+     * | Only used in the process of site inspection
      * | @param applicationNo
+     * | @param action
      */
     public function updatePaymentStatus($applicationId, $action)
     {
@@ -330,14 +332,16 @@ class WaterApplication extends Model
             case (false):
                 WaterApplication::where('id', $applicationId)
                     ->update([
-                        'payment_status' => false
+                        'payment_status' => false,
+                        'is_field_verified' => true
                     ]);
                 break;
 
             case (true):
                 WaterApplication::where('id', $applicationId)
                     ->update([
-                        'payment_status' => true
+                        'payment_status' => true,
+                        'is_field_verified' => true
                     ]);
                 break;
         }
