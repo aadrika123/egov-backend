@@ -253,14 +253,6 @@ class TradeCitizen implements ITradeCitizen
                 $refLecenceData->current_role = $refWorkflows['initiator']['forward_role_id'];
                 $refLecenceData->document_upload_status = 1;
                 $refLecenceData->pending_status  = 1;
-                // $args["sender_role_id"] = $refWorkflows['initiator']['id'];
-                // $args["receiver_role_id"] = $refWorkflows['initiator']['forward_role_id'];
-                // $args["citizen_id"] = $refUserId;;
-                // $args["ref_table_dot_id"] = "active_licences";
-                // $args["ref_table_id_value"] = $licenceId;
-                // $args["workflow_id"] = $refWorkflowId;
-                // $args["module_id"] = Config::get('TradeConstant.MODULE-ID');
-
                 $metaReqs['applicationId'] = $licenceId;
                 $metaReqs['senderRoleId'] = $refWorkflows['initiator']['id'];
                 $metaReqs['receiverRoleId'] = $refWorkflows['initiator']['forward_role_id'];
@@ -275,7 +267,6 @@ class TradeCitizen implements ITradeCitizen
 
                 $track = new WorkflowTrack();
                 $tem = $track->saveTrack($myrequest);
-                // $tem =  $this->_counter->insertWorkflowTrack($args);
             }
 
             $provNo = $this->_counter->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
