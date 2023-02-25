@@ -218,9 +218,12 @@ class Trade implements ITrade
                             ->first();
                         throw new Exception("Application Aready Apply Please Track  " . $newLicense->application_no);
                     }
-                    if ($refOldLicece->valid_upto > $nextMonth) 
-                    {
+                    if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId,[3,4])) {
                         throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
+                    }
+                    if($refOldLicece->valid_upto < (Carbon::now()->format('Y-m-d')) && in_array($mApplicationTypeId,[3,4]))
+                    {
+                        throw new Exception("Licence Was Expired Please Renewal First" );
                     }
                     if ($refOldLicece->pending_status != 5) 
                     {
