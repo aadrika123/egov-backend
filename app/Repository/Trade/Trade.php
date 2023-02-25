@@ -4396,7 +4396,7 @@ class Trade implements ITrade
         } elseif ($application->is_parked) {
             $rols  = WfRole::find($application->current_role);
             $status = "Application back to citizen by " . $rols->role_name;
-        } elseif (($application->current_role != $application->finisher_role) || ($application->current_role == $application->finisher_role)) {
+        } elseif ($application->pending_status!=0 && (($application->current_role != $application->finisher_role) || ($application->current_role == $application->finisher_role))) {
             $rols  = WfRole::find($application->current_role);
             $status = "Application pending at " . $rols->role_name;
         } elseif (!$application->is_active) {
