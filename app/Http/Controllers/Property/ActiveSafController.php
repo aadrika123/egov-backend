@@ -1920,7 +1920,8 @@ class ActiveSafController extends Controller
                 "holding_no" => $req['new_holding_no'] ?? $req['holding_no'],
                 "old_ward_no" => $req['old_ward_no'],
                 "new_ward_no" => $req['new_ward_no'],
-                "property_type" => $req['property_type']
+                "property_type" => $req['property_type'],
+                "doc_upload_status" => $req['doc_upload_status']
             ];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = collect($safTaxes->original['data']['details'])->groupBy('ruleSet');
