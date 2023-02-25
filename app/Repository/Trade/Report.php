@@ -459,7 +459,7 @@ class Report implements IReport
                         "trade_licences.ulb_id","trade_licences.application_no","trade_licences.provisional_license_no",
                         "trade_licences.application_date","trade_licences.license_no","trade_licences.license_date",
                         "trade_licences.valid_from","trade_licences.valid_upto","trade_licences.firm_name",
-                    DB::raw("ulb_ward_masters.ward_name as ward_no")
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'approve' as type")
             
                     )
                     ->join("ulb_ward_masters","ulb_ward_masters.id","trade_licences.ward_id")                   
@@ -482,7 +482,7 @@ class Report implements IReport
                         "trade_renewals.ulb_id","trade_renewals.application_no","trade_renewals.provisional_license_no",
                         "trade_renewals.application_date","trade_renewals.license_no","trade_renewals.license_date",
                         "trade_renewals.valid_from","trade_renewals.valid_upto","trade_renewals.firm_name",
-                    DB::raw("ulb_ward_masters.ward_name as ward_no")
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'old' as type")
             
                     )
                     ->join("ulb_ward_masters","ulb_ward_masters.id","trade_renewals.ward_id")                   
