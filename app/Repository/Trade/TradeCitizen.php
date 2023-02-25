@@ -34,6 +34,7 @@ use App\Models\Trade\TradeFineRebete;
 use App\Models\Trade\TradeLicence;
 use App\Models\Trade\TradeRenewal;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\WorkflowTrack;
 
 class TradeCitizen implements ITradeCitizen
 {
@@ -249,18 +250,32 @@ class TradeCitizen implements ITradeCitizen
             }
             $request = new Request(["applicationId"=>$licenceId,"ulb_id"=>$refUlbId,"user_id"=>$refUserId]);
             if ($mPaymentStatus == 1 && $this->_counter->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status == 0 ) {
-                $refLecenceData->current_user_id = $refWorkflows['initiator']['id'];
+                $refLecenceData->current_role = $refWorkflows['initiator']['forward_role_id'];
                 $refLecenceData->document_upload_status = 1;
                 $refLecenceData->pending_status  = 1;
-                $args["sender_role_id"] = $refWorkflows['initiator']['id'];
-                $args["receiver_role_id"] = $refWorkflows['initiator']['forward_role_id'];
-                $args["citizen_id"] = $refUserId;;
-                $args["ref_table_dot_id"] = "active_licences";
-                $args["ref_table_id_value"] = $licenceId;
-                $args["workflow_id"] = $refWorkflowId;
-                $args["module_id"] = Config::get('TradeConstant.MODULE-ID');
+                // $args["sender_role_id"] = $refWorkflows['initiator']['id'];
+                // $args["receiver_role_id"] = $refWorkflows['initiator']['forward_role_id'];
+                // $args["citizen_id"] = $refUserId;;
+                // $args["ref_table_dot_id"] = "active_licences";
+                // $args["ref_table_id_value"] = $licenceId;
+                // $args["workflow_id"] = $refWorkflowId;
+                // $args["module_id"] = Config::get('TradeConstant.MODULE-ID');
 
-                $tem =  $this->_counter->insertWorkflowTrack($args);
+                $metaReqs['applicationId'] = $licenceId;
+                $metaReqs['senderRoleId'] = $refWorkflows['initiator']['id'];
+                $metaReqs['receiverRoleId'] = $refWorkflows['initiator']['forward_role_id'];
+                $metaReqs['comment'] = "";
+                $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
+                $metaReqs['workflowId'] = $refLecenceData->workflow_id;
+                $metaReqs['refTableDotId'] = 'active_trade_licences';
+                $metaReqs['refTableIdValue'] = $licenceId;
+                $metaReqs['user_id'] = $refUserId;
+                $metaReqs['ulb_id'] = $refUlbId;
+                $myrequest = new request($metaReqs);
+
+                $track = new WorkflowTrack();
+                $tem = $track->saveTrack($myrequest);
+                // $tem =  $this->_counter->insertWorkflowTrack($args);
             }
 
             $provNo = $this->_counter->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
@@ -269,7 +284,7 @@ class TradeCitizen implements ITradeCitizen
             if ($refNoticeDetails) {
                 $this->_counter->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId, 1); //update status and fineAmount                     
             }
-            // dd($refLecenceData->all());
+            ($refLecenceData->id);
             $refLecenceData->update();
             DB::commit();
             #----------End transaction------------------------
