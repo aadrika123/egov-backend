@@ -4034,10 +4034,10 @@ class Trade implements ITrade
                 "trade_param_ownership_types.ownership_type",
                 DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no")
             )
-                ->join("ulb_ward_masters", function ($join) {
+                ->leftjoin("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "trade_licences.ward_id");
                 })
-                ->join("ulb_ward_masters AS new_ward", function ($join) {
+                ->leftjoin("ulb_ward_masters AS new_ward", function ($join) {
                     $join->on("new_ward.id", "=", "trade_licences.new_ward_id");
                 })
                 ->join("trade_param_application_types", "trade_param_application_types.id", "trade_licences.application_type_id")
