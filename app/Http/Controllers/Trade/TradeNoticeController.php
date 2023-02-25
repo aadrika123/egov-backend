@@ -42,6 +42,7 @@ class TradeNoticeController extends Controller
             $ulbId = $user->ulb_id;
             $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
             $role = $this->_parent->getUserRoll($userId, $ulbId, $refWorkflowId);
+            // dd($role);
             if (!$role) {
                 throw new Exception("You Are Not Authorized");
             }

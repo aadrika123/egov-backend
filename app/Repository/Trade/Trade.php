@@ -3897,6 +3897,7 @@ class Trade implements ITrade
     public function getDenialFirmDetails($ulb_id, $notice_no) //for apply application
     {
         try {
+            DB::enableQueryLog();
             $data = TradeNoticeConsumerDtl::select(
                 "trade_notice_consumer_dtls.*",
                 DB::raw("trade_notice_consumer_dtls.notice_no,
@@ -3908,6 +3909,7 @@ class Trade implements ITrade
                 ->where("trade_notice_consumer_dtls.status", "=", 5)
                 ->where("trade_notice_consumer_dtls.ulb_id", $ulb_id)
                 ->first();
+                // dd(DB::getQueryLog());
             return $data;
         } catch (Exception $e) {
             echo $e->getMessage();
