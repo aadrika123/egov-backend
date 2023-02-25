@@ -2324,7 +2324,7 @@ class Trade implements ITrade
             {
                 throw new Exception("No Data Found");
             } 
-            elseif ($data->valid_upto > $mNextMonth && $mApplicationTypeId != 4 && $data->tbl == "trade_licences") 
+            elseif ($data->valid_upto > $mNextMonth && !in_array($mApplicationTypeId,[4,3]) && $data->tbl == "trade_licences") 
             {
                 throw new Exception("Licence Valid Upto " . $data->valid_upto);
             } 
