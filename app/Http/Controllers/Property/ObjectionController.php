@@ -214,6 +214,8 @@ class ObjectionController extends Controller
                 $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $objectionOwnerElement]);
             }
 
+
+
             if ($details->objection_for == 'Assessment Error') {
                 // Table Array
                 $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);
@@ -230,10 +232,11 @@ class ObjectionController extends Controller
                 ];
                 $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$objectionElement]);
 
-                //floor Details
-                if ($objectionList[0]['objection_type_id']  == 9) {
 
-                    $objectionFlooorDtls = $mPropActiveObjectionFloor->getfloorObjectionId($details->objection_id);
+                //floor Details
+                $objectionFlooorDtls = $mPropActiveObjectionFloor->getfloorObjectionId($details->objection_id);
+                if ($objectionFlooorDtls->isNotEmpty()) {
+
                     $objectionFloorElement = [
                         'headerTitle' => 'Objection Floor Details',
                         'tableHead' => ["#", "Floor No.", "Usage Type", "Occupancy Type", "Construction Type", "Built Up Area (in Sq. Ft.)", "Carpet Area (in Sq. Ft.)", "Date of Completion"],
