@@ -715,6 +715,19 @@ class TradeApplication extends Controller
 
         try {
             $tradC = new Trade();
+            $docUpload = new DocUpload;
+            $mWfActiveDocument = new WfActiveDocument();
+            $mActiveTradeLicence = new ActiveTradeLicence();
+            $relativePath = Config::get('TradeConstant.TRADE_RELATIVE_PATH');
+            $getLicenceDtls = $mActiveTradeLicence->getLicenceNo($req->applicationId);
+            if(!$getLicenceDtls)
+            {
+                throw new Exception("Data Not Found!!!!!");
+            }
+            if($getLicenceDtls->is_doc_verified)
+            {
+                throw new Exception("Document Are Verifed You Cant Reupload Documents");
+            }
             $documents = $tradC->getLicenseDocLists($req);
             if(!$documents->original["status"])
             {
@@ -760,12 +773,8 @@ class TradeApplication extends Controller
                 throw new Exception("Invalid Ownere Doc Code Pass");
             }
             
-            $metaReqs = array();
-            $docUpload = new DocUpload;
-            $mWfActiveDocument = new WfActiveDocument();
-            $mActiveTradeLicence = new ActiveTradeLicence();
-            $relativePath = Config::get('TradeConstant.TRADE_RELATIVE_PATH');
-            $getLicenceDtls = $mActiveTradeLicence->getLicenceNo($req->applicationId);
+            $metaReqs = array();            
+            
             $refImageName = $req->docCode;
             $refImageName = $getLicenceDtls->id . '-' . str_replace(' ', '_', $refImageName);
             $document = $req->document;
