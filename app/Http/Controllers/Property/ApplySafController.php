@@ -112,8 +112,7 @@ class ApplySafController extends Controller
                 $owner_detail = $request['owner'];
                 foreach ($owner_detail as $owner_details) {
                     $owner = new PropActiveSafsOwner();
-                    $this->tApplySafOwner($owner, $safId, $owner_details);              // Trait Owner Details
-                    $owner->save();
+                    $owner->addOwner($owner_details, $safId, $user_id);
                 }
             }
 
@@ -122,8 +121,7 @@ class ApplySafController extends Controller
                 $floor_detail = $request['floor'];
                 foreach ($floor_detail as $floor_details) {
                     $floor = new PropActiveSafsFloor();
-                    $this->tApplySafFloor($floor, $safId, $floor_details);
-                    $floor->save();
+                    $floor->addfloor($floor_details, $safId, $user_id);
                 }
             }
 

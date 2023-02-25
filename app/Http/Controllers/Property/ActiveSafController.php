@@ -1252,12 +1252,12 @@ class ActiveSafController extends Controller
     {
         $req->validate([
             'id' => 'required|integer',
-            'amount' => 'required|numeric',
-            'departmentId' => 'required|integer'
+            'amount' => 'required|numeric'
         ]);
 
         try {
             $auth = auth()->user();
+            $req->merge(['departmentId' => 1]);
             $calculateSafById = $this->calculateSafBySafId($req);
             $safDemandDetails = $this->generateSafDemand($calculateSafById['data']['details']);
             $safDetails = PropActiveSaf::find($req->id);
