@@ -465,11 +465,11 @@ class TradeCitizen implements ITradeCitizen
             $final1 = $final->map(function($val){
                 $option = [];
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-                if(trim($val->license_type)=="approved" && $val->valid_upto < $nextMonth)
+                if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $val->valid_upto < $nextMonth)
                 {
                     $option[]="RENEWAL";
                 }
-                if(trim($val->license_type)=="approved" && $val->valid_upto >= Carbon::now()->format('Y-m-d'))
+                if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $val->valid_upto >= Carbon::now()->format('Y-m-d'))
                 {
                     $option[]="AMENDMENT";
                     $option[]="SURRENDER";
