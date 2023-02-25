@@ -218,9 +218,12 @@ class Trade implements ITrade
                             ->first();
                         throw new Exception("Application Aready Apply Please Track  " . $newLicense->application_no);
                     }
-                    if ($refOldLicece->valid_upto > $nextMonth) 
-                    {
+                    if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId,[3,4])) {
                         throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
+                    }
+                    if($refOldLicece->valid_upto < (Carbon::now()->format('Y-m-d')) && in_array($mApplicationTypeId,[3,4]))
+                    {
+                        throw new Exception("Licence Was Expired Please Renewal First" );
                     }
                     if ($refOldLicece->pending_status != 5) 
                     {
@@ -2048,12 +2051,13 @@ class Trade implements ITrade
     {
         $data = (array)null;
         $refUser = Auth()->user();
-        $refUlbId = $refUser->ulb_id;
+        $refUlbId = $refUser->ulb_id??$request->ulbId;
         $mNoticeNo = null;
         $mNowDate = Carbon::now()->format('Y-m-d'); // todays date
         try {
             $rules = [
                 "noticeNo" => "required|string",
+                "ulbId"=>$refUlbId?"nullable":"required",
             ];
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) {
@@ -2320,7 +2324,7 @@ class Trade implements ITrade
             {
                 throw new Exception("No Data Found");
             } 
-            elseif ($data->valid_upto > $mNextMonth && $mApplicationTypeId != 4 && $data->tbl == "trade_licences") 
+            elseif ($data->valid_upto > $mNextMonth && !in_array($mApplicationTypeId,[4,3]) && $data->tbl == "trade_licences") 
             {
                 throw new Exception("Licence Valid Upto " . $data->valid_upto);
             } 
@@ -3897,6 +3901,7 @@ class Trade implements ITrade
     public function getDenialFirmDetails($ulb_id, $notice_no) //for apply application
     {
         try {
+            DB::enableQueryLog();
             $data = TradeNoticeConsumerDtl::select(
                 "trade_notice_consumer_dtls.*",
                 DB::raw("trade_notice_consumer_dtls.notice_no,
@@ -3908,6 +3913,7 @@ class Trade implements ITrade
                 ->where("trade_notice_consumer_dtls.status", "=", 5)
                 ->where("trade_notice_consumer_dtls.ulb_id", $ulb_id)
                 ->first();
+                // dd(DB::getQueryLog());
             return $data;
         } catch (Exception $e) {
             echo $e->getMessage();
@@ -4031,10 +4037,10 @@ class Trade implements ITrade
                 "trade_param_ownership_types.ownership_type",
                 DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no")
             )
-                ->join("ulb_ward_masters", function ($join) {
+                ->leftjoin("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "trade_licences.ward_id");
                 })
-                ->join("ulb_ward_masters AS new_ward", function ($join) {
+                ->leftjoin("ulb_ward_masters AS new_ward", function ($join) {
                     $join->on("new_ward.id", "=", "trade_licences.new_ward_id");
                 })
                 ->join("trade_param_application_types", "trade_param_application_types.id", "trade_licences.application_type_id")
