@@ -257,8 +257,14 @@ class WaterPaymentController extends Controller
             $transactionTime = $dateTime->format('H:i:s');
 
             $demandDetails = $mWaterConnectionCharge->getWaterchargesById($applicationId)
-            ->whereIn('charge_category',["New Connection","Regulaization"])
-            ->first();
+                ->whereIn('charge_category', ["New Connection", "Regulaization"])
+                ->first();
+            if ($demandDetails) {
+                $fee = [
+                    "conn_fee" => $demandDetails->conn_fee,
+                    "penalty" => $demandDetails->penalty
+                ];
+            }
 
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
@@ -283,8 +289,8 @@ class WaterPaymentController extends Controller
                 "monthlyRate" => "",
                 "demandAmount" => "",  // if the trans is diff
                 "taxDetails" => "",
-                "connectionFee" => $demandDetails->conn_fee,
-                "connectionPenalty" => $demandDetails->penalty,
+                "connectionFee" => $fee->conn_fee ?? $webhookDetails->payment_amount,
+                "connectionPenalty" => $fee->penalty ?? "0.0",
                 "ulbId" => $webhookDetails->ulb_id,
                 "WardNo" => $applicationDetails->ward_id,
                 "towards" => $mTowards,
