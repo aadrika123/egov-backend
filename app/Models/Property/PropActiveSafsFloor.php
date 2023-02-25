@@ -11,10 +11,7 @@ use Illuminate\Http\Request;
 class PropActiveSafsFloor extends Model
 {
     use HasFactory;
-    protected $fillable = [
-        'saf_id', 'floor_mstr_id', 'usage_type_mstr_id', 'const_type_mstr_id', 'occupancy_type_mstr_id',
-        'builtup_area', 'date_from', 'date_upto', 'user_id', 'prop_floor_details_id', 'carpet_area'
-    ];
+    protected $guarded = [];
 
     /**
      * | Get Saf Floor Details by SAF id
@@ -73,11 +70,11 @@ class PropActiveSafsFloor extends Model
     {
         $req = new Request($req);
         $floor = PropActiveSafsFloor::find($req->floorId);
-        if ($req->occupancyType == 1) {
+        if ($req->useType == 1)
             $carpetArea =  $req->buildupArea * 0.70;
-        } else {
+        else
             $carpetArea =  $req->buildupArea * 0.80;
-        }
+
         $reqs = [
             'floor_mstr_id' => $req->floorNo,
             'usage_type_mstr_id' => $req->useType,
@@ -87,20 +84,19 @@ class PropActiveSafsFloor extends Model
             'carpet_area' => $carpetArea,
             'date_from' => $req->dateFrom,
             'date_upto' => $req->dateUpto,
-            // 'prop_floor_details_id' => $req->propFloorDetail,
+            'prop_floor_details_id' => $req->propFloorDetailId,
             'user_id' => $citizenId,
 
         ];
         $floor->update($reqs);
     }
 
-    public function addfloor($req, $safId, $citizenId)
+    public function addfloor($req, $safId, $userId)
     {
-        if ($req['occupancyType'] == 1) {
+        if ($req['useType'] == 1)
             $carpetArea =  $req['buildupArea'] * 0.70;
-        } else {
+        else
             $carpetArea =  $req['buildupArea'] * 0.80;
-        }
 
         $floor = new  PropActiveSafsFloor();
         $floor->saf_id = $safId;
@@ -112,8 +108,8 @@ class PropActiveSafsFloor extends Model
         $floor->carpet_area = $carpetArea;
         $floor->date_from = $req['dateFrom'] ?? null;
         $floor->date_upto = $req['dateUpto'] ?? null;
-        $floor->prop_floor_details_id = $req['propFloorDetail'] ?? null;
-        $floor->user_id = $citizenId;
+        $floor->prop_floor_details_id = $req['propFloorDetailId'] ?? null;
+        $floor->user_id = $userId;
         $floor->save();
     }
 }

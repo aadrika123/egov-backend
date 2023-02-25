@@ -1252,12 +1252,12 @@ class ActiveSafController extends Controller
     {
         $req->validate([
             'id' => 'required|integer',
-            'amount' => 'required|numeric',
-            'departmentId' => 'required|integer'
+            'amount' => 'required|numeric'
         ]);
 
         try {
             $auth = auth()->user();
+            $req->merge(['departmentId' => 1]);
             $calculateSafById = $this->calculateSafBySafId($req);
             $safDemandDetails = $this->generateSafDemand($calculateSafById['data']['details']);
             $safDetails = PropActiveSaf::find($req->id);
@@ -1773,8 +1773,7 @@ class ActiveSafController extends Controller
             ]);
 
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
-            // $roleId = $readRoleDtls->wf_role_id;
-            $roleId = 7; //(Test Role ID)
+            $roleId = $readRoleDtls->wf_role_id;
 
             switch ($roleId) {
                 case $taxCollectorRole:                                                                  // In Case of Agency TAX Collector
