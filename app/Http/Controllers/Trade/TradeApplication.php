@@ -513,6 +513,7 @@ class TradeApplication extends Controller
                 // Objection Application replication
                 $approvedLicence = $activeLicence->replicate();
                 $approvedLicence->setTable('trade_licences');
+                $approvedLicence->pending_status =5;
                 $approvedLicence->id = $activeLicence->id;
                 $status = $this->giveValidity($approvedLicence);
                 if(!$status)
@@ -533,6 +534,7 @@ class TradeApplication extends Controller
                 $approvedLicence = $activeLicence->replicate();
                 $approvedLicence->setTable('rejected_trade_licences');
                 $approvedLicence->id = $activeLicence->id;
+                $approvedLicence->pending_status =4;
                 $approvedLicence->save();
                 $activeLicence->delete();
                 $msg = "Application Successfully Rejected !!";
