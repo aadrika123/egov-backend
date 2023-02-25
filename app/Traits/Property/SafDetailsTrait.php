@@ -116,8 +116,8 @@ trait SafDetailsTrait
                 $floorDetail->occupancy_type,
                 $floorDetail->construction_type,
                 $floorDetail->builtup_area,
-                $floorDetail->date_from,
-                $floorDetail->date_upto
+                // $floorDetail->date_from,
+                // $floorDetail->date_upto
             ];
         });
     }
@@ -280,8 +280,7 @@ trait SafDetailsTrait
                 $objectionFlooorDtl['usage_type_mstr_id'],
                 $objectionFlooorDtl['occupancy_type_mstr_id'],
                 $objectionFlooorDtl['const_type_mstr_id'],
-                $objectionFlooorDtl['builtup_area'],
-                $objectionFlooorDtl['date_from'],
+                $objectionFlooorDtl['carpet_area'],
             ];
 
         // $objectionFlooorDtl->prop_floor_id;

@@ -239,12 +239,12 @@ class ObjectionController extends Controller
 
                     $objectionFloorElement = [
                         'headerTitle' => 'Objection Floor Details',
-                        'tableHead' => ["#", "Floor No.", "Usage Type", "Occupancy Type", "Construction Type", "Built Up Area (in Sq. Ft.)", "Carpet Area (in Sq. Ft.)", "Date of Completion"],
+                        'tableHead' => ["#", "Floor No.", "Usage Type", "Occupancy Type", "Construction Type", "Built Up Area (in Sq. Ft.)", "Carpet Area (in Sq. Ft.)"],
                         'tableData' => array()
                     ];
                     $floorElement = [
                         'headerTitle' => 'Floor Details',
-                        'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
+                        'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area (in Sq. Ft.)", "Carpet Area (in Sq. Ft.)"],
                         'tableData' => array()
                     ];
                     foreach ($objectionFlooorDtls as $objectionFlooorDtl) {

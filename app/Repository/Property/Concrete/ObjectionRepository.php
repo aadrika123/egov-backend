@@ -333,9 +333,14 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor->prop_floor_id = $floors['propFloorId'];
                     $assement_floor->floor_mstr_id = $floors['floorNo'];
                     $assement_floor->usage_type_mstr_id = $floors['usageType'];
+
                     $assement_floor->occupancy_type_mstr_id = $floors['occupancyType'];
                     $assement_floor->const_type_mstr_id = $floors['constructionType'];
                     $assement_floor->builtup_area = $floors['buildupArea'];
+                    if ($floors['usageType'] == 1)
+                        $assement_floor->carpet_area = $floors['buildupArea'] * 0.70;
+                    else
+                        $assement_floor->carpet_area = $floors['buildupArea'] * 0.80;
                     // $assement_floor->date_from = $floors->dateFrom ?? null;
                     // $assement_floor->date_upto = $floors->dateUpto ?? null;
                     $assement_floor->save();
