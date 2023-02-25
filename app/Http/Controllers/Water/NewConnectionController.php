@@ -1119,7 +1119,7 @@ class NewConnectionController extends Controller
             $waterTypeDocs['listDocs'] = collect($documentList)->map(function ($value, $key) use ($refWaterApplication) {
                 return $filteredDocs = $this->filterDocument($value, $refWaterApplication)->first();
             });
-            $waterOwnerDocs['ownerDocs'] = collect($refWaterApplicant)->map(function ($owner) use ($refWaterApplication) {
+            return $waterOwnerDocs['ownerDocs'] = collect($refWaterApplicant)->map(function ($owner) use ($refWaterApplication) {
                 return $this->getOwnerDocLists($owner, $refWaterApplication);
             });
 
@@ -1251,8 +1251,8 @@ class NewConnectionController extends Controller
         $type   = ["ID_PROOF", "CONSUMER_PHOTO"];
 
         $documentList = $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);
-        $ownerDocList['documents'] = collect($documentList)->map(function ($value, $key) use ($application) {
-            return $filteredDocs = $this->filterDocument($value, $application)->first();
+        $ownerDocList['documents'] = collect($documentList)->map(function ($value, $key) use ($application,$refOwners) {
+            return $filteredDocs = $this->filterDocument($value, $application,$refOwners['id'])->first();
         });
         if (!empty($documentList)) {
             $ownerPhoto = $mWfActiveDocument->getWaterOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);

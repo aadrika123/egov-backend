@@ -34,6 +34,7 @@ use App\Models\Trade\TradeFineRebete;
 use App\Models\Trade\TradeLicence;
 use App\Models\Trade\TradeRenewal;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\WorkflowTrack;
 
 class TradeCitizen implements ITradeCitizen
 {
@@ -236,7 +237,7 @@ class TradeCitizen implements ITradeCitizen
             $TradeFineRebet->type      = 'Delay Apply License';
             $TradeFineRebet->amount         = $chargeData['penalty'];
             $TradeFineRebet->created_at     = $mTimstamp;
-            $TradeFineRebet->save();
+            $i =$TradeFineRebet->save();
 
             $mDenialAmount = $mDenialAmount + $chargeData['arear_amount'];
             if ($mDenialAmount > 0) {
@@ -247,34 +248,40 @@ class TradeCitizen implements ITradeCitizen
                 $TradeFineRebet2->created_at     = $mTimstamp;
                 $TradeFineRebet2->save();
             }
+            $request = new Request(["applicationId"=>$licenceId,"ulb_id"=>$refUlbId,"user_id"=>$refUserId]);
+            if ($mPaymentStatus == 1 && $this->_counter->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status == 0 ) {
+                $refLecenceData->current_role = $refWorkflows['initiator']['forward_role_id'];
+                $refLecenceData->document_upload_status = 1;
+                $refLecenceData->pending_status  = 1;
+                $metaReqs['applicationId'] = $licenceId;
+                $metaReqs['senderRoleId'] = $refWorkflows['initiator']['id'];
+                $metaReqs['receiverRoleId'] = $refWorkflows['initiator']['forward_role_id'];
+                $metaReqs['comment'] = "";
+                $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
+                $metaReqs['workflowId'] = $refLecenceData->workflow_id;
+                $metaReqs['refTableDotId'] = 'active_trade_licences';
+                $metaReqs['refTableIdValue'] = $licenceId;
+                $metaReqs['user_id'] = $refUserId;
+                $metaReqs['ulb_id'] = $refUlbId;
+                $myrequest = new request($metaReqs);
 
-            if ($mPaymentStatus == 1 && $refLecenceData->document_upload_status = 1 && $refLecenceData->pending_status = 0 && !$refLevelData) {
-                $refLecenceData->current_user_id = $refWorkflows['initiator']['id'];
-                $refLecenceData->pending_status  = 2;
-                $args["sender_role_id"] = $refWorkflows['initiator']['id'];
-                $args["receiver_role_id"] = $refWorkflows['initiator']['forward_id'];
-                $args["citizen_id"] = $refUserId;;
-                $args["ref_table_dot_id"] = "active_licences";
-                $args["ref_table_id_value"] = $licenceId;
-                $args["workflow_id"] = $refWorkflowId;
-                $args["module_id"] = Config::get('TradeConstant.MODULE-ID');
-
-                $tem =  $this->_counter->insertWorkflowTrack($args);
+                $track = new WorkflowTrack();
+                $tem = $track->saveTrack($myrequest);
             }
 
             $provNo = $this->_counter->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
             $refLecenceData->provisional_license_no = $provNo;
             $refLecenceData->payment_status         = $mPaymentStatus;
-            $refLecenceData->save();
-
             if ($refNoticeDetails) {
                 $this->_counter->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId, 1); //update status and fineAmount                     
             }
+            ($refLecenceData->id);
+            $refLecenceData->update();
             DB::commit();
             #----------End transaction------------------------
             #----------Response------------------------------
             $res['transactionId'] = $transaction_id;
-            $res['paymentReceipt'] = config('app.url') . "/api/trade/paymentReceipt/" . $licenceId . "/" . $transaction_id;
+            $res['paymentReceipt'] = config('app.url') . "/api/trade/payment-receipt/" . $licenceId . "/" . $transaction_id;
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
             DB::rollBack();
@@ -456,16 +463,18 @@ class TradeCitizen implements ITradeCitizen
                     ->union($ApprovedLicence)->union($OldLicence)
                     ->get();
             $final1 = $final->map(function($val){
-                $val->option = [];
+                $option = [];
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-                if(trim($val->license_type)=="approved" && $val->valid_upto < $nextMonth)
+                if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $val->valid_upto < $nextMonth)
                 {
-                    $val->option=["RENEWAL"];
+                    $option[]="RENEWAL";
                 }
-                if(trim($val->license_type)=="approved" && $val->valid_upto >= Carbon::now()->format('Y-m-d'))
+                if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $val->valid_upto >= Carbon::now()->format('Y-m-d'))
                 {
-                    $val->option=["RENEWAL","AMENDMENT","SURRENDER"];
+                    $option[]="AMENDMENT";
+                    $option[]="SURRENDER";
                 }
+                $val->option = $option;
                 return $val;
             });
             return responseMsg(true, "", remove_null($final));

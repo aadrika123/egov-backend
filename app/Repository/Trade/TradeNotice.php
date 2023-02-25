@@ -439,7 +439,7 @@ class TradeNotice implements ITradeNotice
                 $approvedApplication->save();
                 $application->forceDelete();
 
-                $msg =  "Notice Successfully Generated !!";
+                $msg =  "Notice Successfully Generated !!. Your Notice No. ".$approvedApplication->notice_no;
             }
 
             // Rejection
@@ -449,7 +449,7 @@ class TradeNotice implements ITradeNotice
                 $rejectedApplication = $application->replicate();
                 $rejectedApplication->setTable('rejected_trade_notice_consumer_dtls');
                 $rejectedApplication->id = $application->id;
-                $approvedApplication->status = 4;
+                $rejectedApplication->status = 4;
                 $rejectedApplication->save();
                 $application->forcedelete();
                 $msg = "Application Successfully Rejected !!";

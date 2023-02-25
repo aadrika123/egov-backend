@@ -18,7 +18,7 @@ class ReqCitizenAddRecorde extends TradeRequest
         $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE." . $this->applicationType);
         $mNowdate = Carbon::now()->format('Y-m-d');
         $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
-        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.&\s]+$/';
+        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\'&\s]+$/';
         $reftrade = new CommonFunction();
         $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
         $mUserType = $reftrade->userType($refWorkflowId);
@@ -32,8 +32,8 @@ class ReqCitizenAddRecorde extends TradeRequest
         if (in_array($mApplicationTypeId, [1])) 
         {
             $rules["firmDetails.areaSqft"] = "required|numeric";
-            $rules["firmDetails.businessAddress"] = "required|regex:$mRegex";
-            $rules["firmDetails.businessDescription"] = "required|regex:$mRegex";
+            $rules["firmDetails.businessAddress"] = "required|regex:$mFramNameRegex";
+            $rules["firmDetails.businessDescription"] = "required|regex:$mFramNameRegex";
             $rules["firmDetails.firmEstdDate"] = "required|date";
             $rules["firmDetails.firmName"] = "required|regex:$mFramNameRegex";
             $rules["firmDetails.premisesOwner"] = "required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\., \s]+$/";
@@ -42,7 +42,7 @@ class ReqCitizenAddRecorde extends TradeRequest
             $rules["firmDetails.newWardNo"] = "required|digits_between:1,9223372036854775807";
             $rules["firmDetails.wardNo"] = "required|digits_between:1,9223372036854775807";
             $rules["firmDetails.tocStatus"] = "required|bool";
-            $rules["firmDetails.landmark"] = "regex:$mRegex";
+            $rules["firmDetails.landmark"] = "regex:$mFramNameRegex";
             $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
             $rules["firmDetails.bind_book_no"] = "regex:$mRegex";
             $rules["firmDetails.account_no"] = "regex:$mRegex";
@@ -81,8 +81,8 @@ class ReqCitizenAddRecorde extends TradeRequest
             }
 
             $rules["ownerDetails"] = "required|array";
-            $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-            $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/|nullable";
+            $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9\.\,\']+)*$/";
+            $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9\.\,\']+)*$/|nullable";
             $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
             $rules["ownerDetails.*.email"] = "email|nullable";
         } 
@@ -113,7 +113,7 @@ class ReqCitizenAddRecorde extends TradeRequest
         {
             $rules["firmDetails.areaSqft"] = "required|numeric";
             //$rules["firmDetails.businessAddress"]="required|regex:$mRegex";
-            $rules["firmDetails.businessDescription"] = "required|regex:$mRegex";
+            $rules["firmDetails.businessDescription"] = "required|regex:$mFramNameRegex";
             // $rules["firmDetails.firmName"]="required|regex:$mFramNameRegex";
             $rules["firmDetails.holdingNo"] = "required";
             $rules["initialBusinessDetails.ownershipType"] = "required|digits_between:1,9223372036854775807";

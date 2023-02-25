@@ -143,8 +143,12 @@ class TradeApplication extends Controller
                         ->first();
                     throw new Exception("Application Already Apply Please Track  " . $newLicense->application_no);
                 }
-                if ($refOldLicece->valid_upto > $nextMonth) {
+                if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId,[3,4])) {
                     throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
+                }
+                if($refOldLicece->valid_upto < (Carbon::now()->format('Y-m-d')) && in_array($mApplicationTypeId,[3,4]))
+                {
+                    throw new Exception("Licence Was Expired Please Renewal First" );
                 }
                 if ($refOldLicece->pending_status != 5) {
                     throw new Exception("Application not approved Please Track  " . $refOldLicece->application_no);
@@ -513,6 +517,7 @@ class TradeApplication extends Controller
                 // Objection Application replication
                 $approvedLicence = $activeLicence->replicate();
                 $approvedLicence->setTable('trade_licences');
+                $approvedLicence->pending_status =5;
                 $approvedLicence->id = $activeLicence->id;
                 $status = $this->giveValidity($approvedLicence);
                 if(!$status)
@@ -533,6 +538,7 @@ class TradeApplication extends Controller
                 $approvedLicence = $activeLicence->replicate();
                 $approvedLicence->setTable('rejected_trade_licences');
                 $approvedLicence->id = $activeLicence->id;
+                $approvedLicence->pending_status =4;
                 $approvedLicence->save();
                 $activeLicence->delete();
                 $msg = "Application Successfully Rejected !!";
@@ -709,6 +715,19 @@ class TradeApplication extends Controller
 
         try {
             $tradC = new Trade();
+            $docUpload = new DocUpload;
+            $mWfActiveDocument = new WfActiveDocument();
+            $mActiveTradeLicence = new ActiveTradeLicence();
+            $relativePath = Config::get('TradeConstant.TRADE_RELATIVE_PATH');
+            $getLicenceDtls = $mActiveTradeLicence->getLicenceNo($req->applicationId);
+            if(!$getLicenceDtls)
+            {
+                throw new Exception("Data Not Found!!!!!");
+            }
+            if($getLicenceDtls->is_doc_verified)
+            {
+                throw new Exception("Document Are Verifed You Cant Reupload Documents");
+            }
             $documents = $tradC->getLicenseDocLists($req);
             if(!$documents->original["status"])
             {
@@ -754,12 +773,8 @@ class TradeApplication extends Controller
                 throw new Exception("Invalid Ownere Doc Code Pass");
             }
             
-            $metaReqs = array();
-            $docUpload = new DocUpload;
-            $mWfActiveDocument = new WfActiveDocument();
-            $mActiveTradeLicence = new ActiveTradeLicence();
-            $relativePath = Config::get('TradeConstant.TRADE_RELATIVE_PATH');
-            $getLicenceDtls = $mActiveTradeLicence->getLicenceNo($req->applicationId);
+            $metaReqs = array();            
+            
             $refImageName = $req->docCode;
             $refImageName = $getLicenceDtls->id . '-' . str_replace(' ', '_', $refImageName);
             $document = $req->document;

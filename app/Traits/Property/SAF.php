@@ -122,12 +122,18 @@ trait SAF
     // Trait SAF Floors
     public function tApplySafFloor($floor, $safId, $floor_details)
     {
+        // Calculate Carpet Area
+        $readFloorUsageType = $floor_details['useType'];
+        $paramCarpetAreaPerc = ($readFloorUsageType == 1) ? 70 : 80;
+        $carpetArea = ($floor_details['buildupArea'] * $paramCarpetAreaPerc) / 100;
+
         $floor->saf_id = $safId;
         $floor->floor_mstr_id = $floor_details['floorNo'] ?? null;
         $floor->usage_type_mstr_id = $floor_details['useType'] ?? null;
         $floor->const_type_mstr_id = $floor_details['constructionType'] ?? null;
         $floor->occupancy_type_mstr_id = $floor_details['occupancyType'] ?? null;
         $floor->builtup_area = $floor_details['buildupArea'] ?? null;
+        $floor->carpet_area = $carpetArea;
         $floor->date_from = $floor_details['dateFrom'] ?? null;
         $floor->date_upto = $floor_details['dateUpto'] ?? null;
         $floor->prop_floor_details_id = $floor_details['propFloorDetailId'] ?? null;
