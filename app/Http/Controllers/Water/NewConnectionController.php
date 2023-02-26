@@ -1251,8 +1251,8 @@ class NewConnectionController extends Controller
         $type   = ["ID_PROOF", "CONSUMER_PHOTO"];
 
         $documentList = $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);
-        $ownerDocList['documents'] = collect($documentList)->map(function ($value, $key) use ($application,$refOwners) {
-            return $filteredDocs = $this->filterDocument($value, $application,$refOwners['id'])->first();
+        $ownerDocList['documents'] = collect($documentList)->map(function ($value, $key) use ($application, $refOwners) {
+            return $filteredDocs = $this->filterDocument($value, $application, $refOwners['id'])->first();
         });
         if (!empty($documentList)) {
             $ownerPhoto = $mWfActiveDocument->getWaterOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);
@@ -1645,7 +1645,7 @@ class NewConnectionController extends Controller
             switch ($key) {
                 case ("byApplication"):
                     $mWaterApplicant = new WaterApplication();
-                    $returnData[] = $mWaterApplicant->getApplicationByNo($request->paramenter, $roleId)->firstOrFail();
+                    $returnData = $mWaterApplicant->getApplicationByNo($request->paramenter, $roleId)->get();
                     break;
                 case ("byDate"):
                     $mWaterApplicant = new WaterApplication();
