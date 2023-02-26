@@ -518,4 +518,153 @@ class Report implements IReport
             return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
         }
     }
+
+    public function CollectionSummary(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $wardId = null;
+            $userId = null;
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            $where=" AND trade_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate' ";
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+                $where.=" AND trade_transactions.ward_id = $wardId ";
+            }
+            if($request->userId)
+            {
+                $userId = $request->userId;
+                $where.=" AND trade_transactions.emp_dtl_id = $userId ";
+            }            
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            $where.=" AND trade_transactions.ulb_id = $ulbId ";
+            $total_transacton = DB::select("
+                            SELECT
+                                sum(COALESCE(trade_transactions.paid_amount,0)) as amount, 
+                                count(trade_transactions.id) as total_transaction,
+                                count(trade_transactions.temp_id) as total_consumer,
+                                payment_modes.mode as payment_mode
+                            FROM ( 
+                                    SELECT distinct(payment_mode) as mode
+                                    FROM trade_transactions 
+                                ) payment_modes
+                            LEFT JOIN trade_transactions ON trade_transactions.payment_mode = payment_modes.mode
+                                $where
+                            GROUP BY  payment_modes.mode
+                            ");
+            $deactivate_transacton = DB::select("
+                            SELECT
+                                sum(COALESCE(trade_transactions.paid_amount,0)) as amount, 
+                                count(trade_transactions.id) as total_transaction,
+                                count(trade_transactions.temp_id) as total_consumer,
+                                payment_modes.mode as payment_mode
+                            FROM ( 
+                                    SELECT distinct(payment_mode) as mode
+                                    FROM trade_transactions 
+                                ) payment_modes
+                            LEFT JOIN trade_transactions ON trade_transactions.payment_mode = payment_modes.mode
+                                $where AND trade_transactions.status IN(0,3)
+                            GROUP BY  payment_modes.mode
+                            ");
+            $actual_transacton = DB::select("
+                            SELECT
+                                sum(COALESCE(trade_transactions.paid_amount,0)) as amount, 
+                                count(trade_transactions.id) as total_transaction,
+                                count(trade_transactions.temp_id) as total_consumer,
+                                payment_modes.mode as payment_mode
+                            FROM ( 
+                                    SELECT distinct(payment_mode) as mode
+                                    FROM trade_transactions 
+                                ) payment_modes
+                            LEFT JOIN trade_transactions ON trade_transactions.payment_mode = payment_modes.mode
+                                $where AND trade_transactions.status IN(1,2)
+                            GROUP BY  payment_modes.mode
+                            ");
+            $application_type_transacton = DB::select("
+                            SELECT
+                                sum(COALESCE(trade_transactions.paid_amount,0)) as amount, 
+                                count(trade_transactions.id) as total_transaction,
+                                count(trade_transactions.temp_id) as total_consumer,
+                                trade_param_application_types.application_type,
+                                trade_param_application_types.id 
+                            FROM trade_param_application_types
+                            LEFT JOIN trade_transactions ON trade_transactions.tran_type =  trade_param_application_types.application_type 
+                                $where AND trade_transactions.status IN(1,2)
+                            GROUP BY  trade_param_application_types.application_type ,trade_param_application_types.id
+                            ORDER BY trade_param_application_types.id
+                            ");
+            $total_transacton=collect($total_transacton);
+            $deactivate_transacton=collect($deactivate_transacton);
+            $actual_transacton=collect($actual_transacton);
+            $application_type_transacton=collect($application_type_transacton);
+            
+            $total_collection_amount = $total_transacton->sum("amount");
+            $total_collection_consumer = $total_transacton->sum("total_consumer");
+            $total_collection_transection = $total_transacton->sum("total_transaction");
+
+            $deactivate_collection_amount = $deactivate_transacton->sum("amount");
+            $deactivate_collection_consumer = $deactivate_transacton->sum("total_consumer");
+            $deactivate_collection_transection = $deactivate_transacton->sum("total_transaction");
+
+            $actual_collection_amount = $actual_transacton->sum("amount");
+            $actual_collection_consumer = $actual_transacton->sum("total_consumer");
+            $actual_collection_transection = $actual_transacton->sum("total_transaction");
+
+            $application_type_collection_amount = $application_type_transacton->sum("amount");
+            $application_type_collection_consumer = $application_type_transacton->sum("total_consumer");
+            $application_type_collection_transection = $application_type_transacton->sum("total_transaction");
+
+            $data["total_collection"]["mode_wise"] = $total_transacton->all();
+            $data["total_collection"]["total"] = [
+                    "payment_mode"=>"total",
+                    "amount"=>$total_collection_amount,
+                    "total_transaction"=>$total_collection_transection,
+                    "total_consumer"=>$total_collection_consumer,
+                ];
+            $data["deactivate_collection"]["mode_wise"] = $deactivate_transacton->all();
+            $data["deactivate_collection"]["total"] = [
+                    "payment_mode"=>"total",
+                    "amount"=>$deactivate_collection_amount,
+                    "total_transaction"=>$deactivate_collection_transection,
+                    "total_consumer"=>$deactivate_collection_consumer,
+                ];
+            $data["actual_collection"]["mode_wise"] = $actual_transacton->all();
+            $data["actual_collection"]["total"] = [
+                    "payment_mode"=>"total",
+                    "amount"=>$actual_collection_amount,
+                    "total_transaction"=>$actual_collection_transection,
+                    "total_consumer"=>$actual_collection_consumer,
+                ];
+            $data["application_collection"]["mode_wise"] = $application_type_transacton->all();
+            $data["application_collection"]["total"] = [
+                    "payment_mode"=>"total",
+                    "amount"=>$application_type_collection_amount,
+                    "total_transaction"=>$application_type_collection_transection,
+                    "total_consumer"=>$application_type_collection_consumer,
+                ];
+
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
 }

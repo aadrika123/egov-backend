@@ -62,7 +62,7 @@ class ReportController extends Controller
             [      
                 "uptoDate" => "nullable|date|date_format:Y-m-d",
                 "licenseNo"=>"nullable|regex:/^[^<>{};:.,~!?@#$%^=&*\"]*$/i",
-                "licenseStatus"=>"nullable|in:EXPIRE,VALID",     
+                "licenseStatus"=>"nullable|in:EXPIRED,VALID",     
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",
@@ -71,5 +71,19 @@ class ReportController extends Controller
         );
         $request->request->add(["metaData"=>["tr3.1",1.1,null,$request->getMethod(),null,]]);
         return $this->Repository->valideAndExpired($request);
+    }
+    public function CollectionSummary(Request $request)
+    {
+        $request->validate(
+            [     
+                "fromDate" => "nullable|date|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|date_format:Y-m-d",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData"=>["tr5.1",1.1,null,$request->getMethod(),null,]]);
+        return $this->Repository->CollectionSummary($request);
     }
 }

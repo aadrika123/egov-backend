@@ -170,6 +170,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post("application/collection-reports", "CollectionReports");
         Route::post("application/team-summary", "teamSummary");
         Route::post("application/valid-expire-list", "valideAndExpired");
+        Route::post("application/collection-summary", "CollectionSummary");
     });
 });
 
