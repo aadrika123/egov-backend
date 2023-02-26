@@ -1645,7 +1645,7 @@ class NewConnectionController extends Controller
             switch ($key) {
                 case ("byApplication"):
                     $mWaterApplicant = new WaterApplication();
-                    $returnData = $mWaterApplicant->getApplicationByNo($request->paramenter, $roleId)->firstOrFail();
+                    $returnData[] = $mWaterApplicant->getApplicationByNo($request->paramenter, $roleId)->firstOrFail();
                     break;
                 case ("byDate"):
                     $mWaterApplicant = new WaterApplication();
