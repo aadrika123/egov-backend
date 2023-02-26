@@ -16,7 +16,6 @@ class PropActiveObjectionDtl extends Model
     {
         return PropActiveObjectionDtl::where('objection_id', $objId)
             ->join('ref_prop_objection_types', 'ref_prop_objection_types.id', 'prop_active_objection_dtls.objection_type_id')
-            ->orderByDesc('objection_type_id')
             ->get();
     }
 }

@@ -234,6 +234,7 @@ class WaterPaymentController extends Controller
 
         try {
             $mPaymentData = new WebhookPaymentData();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
             $mWaterApplication = new WaterApplication();
             $mWaterTransaction = new WaterTran();
 
@@ -254,6 +255,16 @@ class WaterPaymentController extends Controller
             $epoch = $webhookDetails->payment_created_at;
             $dateTime = new DateTime("@$epoch");
             $transactionTime = $dateTime->format('H:i:s');
+
+            $demandDetails = $mWaterConnectionCharge->getWaterchargesById($applicationId)
+                ->whereIn('charge_category', ["New Connection", "Regulaization"])
+                ->first();
+            if ($demandDetails) {
+                $fee = [
+                    "conn_fee" => $demandDetails->conn_fee,
+                    "penalty" => $demandDetails->penalty
+                ];
+            }
 
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
@@ -278,6 +289,8 @@ class WaterPaymentController extends Controller
                 "monthlyRate" => "",
                 "demandAmount" => "",  // if the trans is diff
                 "taxDetails" => "",
+                "connectionFee" => $fee->conn_fee ?? $webhookDetails->payment_amount,
+                "connectionPenalty" => $fee->penalty ?? "0.0",
                 "ulbId" => $webhookDetails->ulb_id,
                 "WardNo" => $applicationDetails->ward_id,
                 "towards" => $mTowards,
@@ -768,7 +781,7 @@ class WaterPaymentController extends Controller
             $mWaterConnectionCharge = new WaterConnectionCharge();
             $idGeneration = new IdGeneration;
             $waterTran = new WaterTran();
-            $userId = auth()->user()->id;                                               # Authenticated user or Ghost User
+            $userId = auth()->user()->id;                                                           # Authenticated user or Ghost User
             $refWaterApplication = $mWaterApplication->getApplicationById($req->applicationId)
                 ->firstOrFail();
 
@@ -777,7 +790,7 @@ class WaterPaymentController extends Controller
 
             # Derivative Assignments
             $tranNo = $idGeneration->generateTransactionNo();
-            $charges = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)->get();   # get water User connectin charges
+            $charges = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)->get();    # get water User connectin charges
 
             if (!$charges || collect($charges)->isEmpty())
                 throw new Exception("Connection Not Available for Payment!");
@@ -859,10 +872,14 @@ class WaterPaymentController extends Controller
         $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
         $mWaterConnectionCharge = new WaterConnectionCharge();
         $paramChargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
+        $connectionTypeIdConfig = Config::get('waterConstaint.CONNECTION_TYPE');
 
         switch ($req) {
                 # In Case of Residential payment Offline
             case ($req->chargeCategory == $paramChargeCatagory['REGULAIZATION']):
+                if ($refApplication['connection_type_id'] != $connectionTypeIdConfig['REGULAIZATION']) {
+                    throw new Exception("The respective application in not for Regulaization!");
+                }
                 switch ($req) {
                     case ($req->isInstallment == "yes"):
                         $penaltyIds = $req->penaltyIds;
@@ -917,6 +934,9 @@ class WaterPaymentController extends Controller
 
                 # In Case of New Connection payment Offline
             case ($req->chargeCategory == $paramChargeCatagory['NEW_CONNECTION']):
+                if ($refApplication['connection_type_id'] != $connectionTypeIdConfig['NEW_CONNECTION']) {
+                    throw new Exception("The respective application in not for New Connection!");
+                }
                 switch ($req) {
                     case (is_null($req->isInstallment) || !$req->isInstallment):
                         $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
@@ -982,6 +1002,7 @@ class WaterPaymentController extends Controller
     /**
      * | Update the penalty Status 
      * | @param req
+     * | @var mWaterPenaltyInstallment
         | Serial No : 07.03
      */
     public function updatePenaltyPaymentStatus($req)

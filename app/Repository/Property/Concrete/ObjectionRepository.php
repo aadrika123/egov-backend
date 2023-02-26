@@ -24,8 +24,10 @@ use App\Models\Workflows\WfActiveDocument;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
+use Hamcrest\Type\IsString;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use stdClass;
 
 /**
  * | Created On-20-11-2022
@@ -236,64 +238,74 @@ class ObjectionRepository implements iObjectionRepository
                 PropActiveObjection::where('id', $objection->id)
                     ->update(['objection_no' => $objectionNo]);
 
-                $abc =  json_decode($request->assessmentData);
+                if (is_string($request->assessmentData)) {
+                    $request->assessmentData = json_decode($request->assessmentData);
+                }
+                $abc = $request->assessmentData;
                 $a = collect($abc);
 
                 // return $request;
                 foreach ($a as $otid) {
-
+                    if ($otid instanceof stdClass) {
+                        $otid = (array)$otid;
+                    }
                     $assement_error = new PropActiveObjectionDtl;
                     $assement_error->objection_id = $objection->id;
-                    $assement_error->objection_type_id = $otid->id;
-                    // $assement_error->applicant_data =  $otid->value;
+                    $assement_error->objection_type_id = $otid['id'];
+                    // $assement_error->applicant_data =  $otid['value'];
 
                     $assesmentDetail = $this->assesmentDetails($request);
                     $assesmentData = collect($assesmentDetail);
 
-                    if ($otid->id == 2) {
+                    if ($otid['id'] == 2) {
                         $assement_error->data_ref_type = 'boolean';
                         $objection->objection_type_id = 2;
-                        $assement_error->assesment_data = collect($assesmentData['original']['data']['isWaterHarvesting']);
+                        $assessmmtData = collect($assesmentData['isWaterHarvesting']);
+                        $assement_error->assesment_data =  $assessmmtData->first();
                     }
                     //road width
-                    if ($otid->id == 3) {
+                    if ($otid['id'] == 3) {
                         $assement_error->data_ref_type = 'ref_prop_road_types.id';
                         $objection->objection_type_id = 3;
-                        $assement_error->assesment_data = collect($assesmentData['original']['data']['road_type_mstr_id']);
+                        $assessmmtData = collect($assesmentData['road_type_mstr_id']);
+                        $assement_error->assesment_data =  $assessmmtData->first();
                     }
                     //property_types
-                    if ($otid->id == 4) {
+                    if ($otid['id'] == 4) {
                         $assement_error->data_ref_type = 'ref_prop_types.id';
                         $objection->objection_type_id = 4;
-                        $assement_error->assesment_data = collect($assesmentData['original']['data']['prop_type_mstr_id']);
+                        $assessmmtData = collect($assesmentData['prop_type_mstr_id']);
+                        $assement_error->assesment_data =  $assessmmtData->first();
                     }
                     //area off plot
-                    if ($otid->id == 5) {
+                    if ($otid['id'] == 5) {
                         $assement_error->data_ref_type = 'area';
                         $objection->objection_type_id = 5;
-                        $assement_error->assesment_data = collect($assesmentData['original']['data']['areaOfPlot']);
+                        $assessmmtData = collect($assesmentData['areaOfPlot']);
+                        $assement_error->assesment_data =  $assessmmtData->first();
                     }
                     //mobile tower
-                    if ($otid->id == 6) {
-                        $assement_error->data_ref_type = 'boolean';
-                        $objection->objection_type_id = 6;
-                        $assement_error->assesment_data = collect($assesmentData['original']['data']['isMobileTower']);
-                        // $assement_error->applicant_area = $otid->area;
-                        // $assement_error->applicant_date = $otid->date;
-                    }
-                    //hoarding board
-                    if ($otid->id == 7) {
-                        $assement_error->data_ref_type = 'boolean';
-                        $objection->objection_type_id = 7;
-                        $assement_error->assesment_data = collect($assesmentData['original']['data']['isHoarding']);
-                        // $assement_error->applicant_area = $otid->area;
-                        // $assement_error->applicant_date = $otid->date;
-                    }
+                    // if ($otid['id'] == 6) {
+                    //     $assement_error->data_ref_type = 'boolean';
+                    //     $objection->objection_type_id = 6;
+                    //     $assement_error->assesment_data = collect($assesmentData['original']['data']['isMobileTower']);
+                    //     // $assement_error->applicant_area = $otid->area;
+                    //     // $assement_error->applicant_date = $otid->date;
+                    // }
+                    // //hoarding board
+                    // if ($otid['id'] == 7) {
+                    //     $assement_error->data_ref_type = 'boolean';
+                    //     $objection->objection_type_id = 7;
+                    //     $assement_error->assesment_data = collect($assesmentData['original']['data']['isHoarding']);
+                    //     // $assement_error->applicant_area = $otid->area;
+                    //     // $assement_error->applicant_date = $otid->date;
+                    // }
 
-                    if (isset($otid->area) && ($otid->date)) {
-                        $assement_error->applicant_area = $otid->area;
-                        $assement_error->applicant_date = $otid->date;
-                    }
+                    // if (isset($otid->area) && ($otid->date)) {
+                    //     $assement_error->applicant_area = $otid->area;
+                    //     $assement_error->applicant_date = $otid->date;
+                    // }
+                    $assement_error->applicant_data = $otid['value'] ?? null;
                     $assement_error->save();
                 }
 
@@ -305,21 +317,32 @@ class ObjectionRepository implements iObjectionRepository
                     ->update(['objection_no' => $objectionNo]);
 
                 $floorData = $request->floorData;
-                $floor = json_decode($floorData);
+                if (is_string($floorData)) {
+                    $floorData = json_decode($floorData);
+                }
+                $floor = $floorData;
                 $floor = collect($floor);
-
+                $floorId = $assesmentData['floor'];
                 foreach ($floor as $floors) {
+                    if ($floors instanceof stdClass) {
+                        $floors = (array)$floors;
+                    }
                     $assement_floor = new PropActiveObjectionFloor;
                     $assement_floor->property_id = $request->propId;
                     $assement_floor->objection_id = $objection->id;
-                    $assement_floor->prop_floor_id = $floors->propFloorId;
-                    $assement_floor->floor_mstr_id = $floors->floorNo;
-                    $assement_floor->usage_type_mstr_id = $floors->usageType;
-                    $assement_floor->occupancy_type_mstr_id = $floors->occupancyType;
-                    $assement_floor->const_type_mstr_id = $floors->constructionType;
-                    $assement_floor->builtup_area = $floors->buildupArea;
-                    $assement_floor->date_from = $floors->dateFrom;
-                    $assement_floor->date_upto = $floors->dateUpto ?? null;
+                    $assement_floor->prop_floor_id = $floors['propFloorId'];
+                    $assement_floor->floor_mstr_id = $floors['floorNo'];
+                    $assement_floor->usage_type_mstr_id = $floors['usageType'];
+
+                    $assement_floor->occupancy_type_mstr_id = $floors['occupancyType'];
+                    $assement_floor->const_type_mstr_id = $floors['constructionType'];
+                    $assement_floor->builtup_area = $floors['buildupArea'];
+                    if ($floors['usageType'] == 1)
+                        $assement_floor->carpet_area = $floors['buildupArea'] * 0.70;
+                    else
+                        $assement_floor->carpet_area = $floors['buildupArea'] * 0.80;
+                    // $assement_floor->date_from = $floors->dateFrom ?? null;
+                    // $assement_floor->date_upto = $floors->dateUpto ?? null;
                     $assement_floor->save();
                 }
             }
@@ -335,52 +358,50 @@ class ObjectionRepository implements iObjectionRepository
     //assesment detail
     public function assesmentDetails($request)
     {
-        try {
-            $assesmentDetails = PropProperty::select(
-                'is_hoarding_board as isHoarding',
-                'hoarding_area',
-                'hoarding_installation_date',
-                'is_water_harvesting as isWaterHarvesting',
-                'is_mobile_tower as isMobileTower',
-                'tower_area',
-                'tower_installation_date',
-                'area_of_plot as areaOfPlot',
-                'property_type as propertyType',
-                'road_type_mstr_id',
-                'road_type as roadType',
-                'prop_type_mstr_id'
+        $assesmentDetails = PropProperty::select(
+            'is_hoarding_board as isHoarding',
+            'hoarding_area',
+            'hoarding_installation_date',
+            'is_water_harvesting as isWaterHarvesting',
+            'is_mobile_tower as isMobileTower',
+            'tower_area',
+            'tower_installation_date',
+            'area_of_plot as areaOfPlot',
+            'property_type as propertyType',
+            'road_type_mstr_id',
+            'road_type as roadType',
+            'prop_type_mstr_id'
+        )
+            ->where('prop_properties.id', $request->propId)
+            ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
+            ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
+            ->join('ref_prop_road_types', 'ref_prop_road_types.id', '=', 'prop_properties.road_type_mstr_id')
+            ->get();
+        foreach ($assesmentDetails as $assesmentDetailss) {
+            $assesmentDetailss['floor'] = PropProperty::select(
+                'ref_prop_floors.floor_name as floorNo',
+                'ref_prop_usage_types.usage_type as usageType',
+                'ref_prop_occupancy_types.occupancy_type as occupancyType',
+                'ref_prop_construction_types.construction_type as constructionType',
+                'prop_floors.builtup_area as buildupArea',
+                'prop_floors.id',
+                'prop_floors.date_from as dateFrom',
+                'prop_floors.date_upto as dateUpto',
             )
                 ->where('prop_properties.id', $request->propId)
                 ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
-                ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
-                ->join('ref_prop_road_types', 'ref_prop_road_types.id', '=', 'prop_properties.road_type_mstr_id')
+                ->join('ref_prop_floors', 'ref_prop_floors.id', '=', 'prop_floors.floor_mstr_id')
+                ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', '=', 'prop_floors.usage_type_mstr_id')
+                ->join('ref_prop_occupancy_types', 'ref_prop_occupancy_types.id', '=', 'prop_floors.occupancy_type_mstr_id')
+                ->join('ref_prop_construction_types', 'ref_prop_construction_types.id', '=', 'prop_floors.const_type_mstr_id')
                 ->get();
-            foreach ($assesmentDetails as $assesmentDetailss) {
-                $assesmentDetailss['floor'] = PropProperty::select(
-                    'ref_prop_floors.floor_name as floorNo',
-                    'ref_prop_usage_types.usage_type as usageType',
-                    'ref_prop_occupancy_types.occupancy_type as occupancyType',
-                    'ref_prop_construction_types.construction_type as constructionType',
-                    'prop_floors.builtup_area as buildupArea',
-                    'prop_floors.date_from as dateFrom',
-                    'prop_floors.date_upto as dateUpto',
-                )
-                    ->where('prop_properties.id', $request->propId)
-                    ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
-                    ->join('ref_prop_floors', 'ref_prop_floors.id', '=', 'prop_floors.floor_mstr_id')
-                    ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', '=', 'prop_floors.usage_type_mstr_id')
-                    ->join('ref_prop_occupancy_types', 'ref_prop_occupancy_types.id', '=', 'prop_floors.occupancy_type_mstr_id')
-                    ->join('ref_prop_construction_types', 'ref_prop_construction_types.id', '=', 'prop_floors.const_type_mstr_id')
-                    ->get();
-            }
-            if (isset($assesmentDetailss)) {
-                return responseMsgs(true, "Successfully Retrieved", remove_null($assesmentDetailss), '010804', '01', '332ms-367ms', 'Post', '');
-            } else {
-                return responseMsg(false, "Supply Valid Property Id", "");
-            }
-        } catch (Exception $e) {
-            echo $e->getMessage();
         }
+        return $assesmentDetailss;
+        // if (isset($assesmentDetailss)) {
+        //     return responseMsgs(true, "Successfully Retrieved", remove_null($assesmentDetailss), '010804', '01', '332ms-367ms', 'Post', '');
+        // } else {
+        //     return responseMsg(false, "Supply Valid Property Id", "");
+        // }
     }
 
     //objectionn document upload 
