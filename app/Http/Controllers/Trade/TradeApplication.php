@@ -271,7 +271,7 @@ class TradeApplication extends Controller
                 }
                 
                 $response->original["data"] = $newrespons;
-                return responseMsgs($response->original["status"],
+                $response = responseMsgs($response->original["status"],
                     $response->original["message"],
                     $response->original["data"],
                     $response->original["meta-data"]["apiId"],
