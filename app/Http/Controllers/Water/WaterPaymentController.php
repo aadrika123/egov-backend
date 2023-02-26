@@ -289,6 +289,8 @@ class WaterPaymentController extends Controller
                 "monthlyRate" => "",
                 "demandAmount" => "",  // if the trans is diff
                 "taxDetails" => "",
+                "holdingNo" => $applicationDetails->holding_no,
+                "safNo" => $applicationDetails->saf_no,
                 "connectionFee" => $fee->conn_fee ?? $webhookDetails->payment_amount,
                 "connectionPenalty" => $fee->penalty ?? "0.0",
                 "ulbId" => $webhookDetails->ulb_id,

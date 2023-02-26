@@ -829,10 +829,17 @@ class NewConnectionController extends Controller
                 $doc["ownerName"] = $ownerList;
                 $doc['docName'] = $val->doc_for;
                 $doc['isMadatory'] = $val->is_mandatory;
-                $doc['docVal'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
-                $docFor = collect($doc['docVal'])->map(function ($value) {
+                $ref['docValue'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
+                $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
+                    $refDoc = $value['doc_name'];
+                    $refText = str_replace('_', ' ', $refDoc);
+                    $value['dispayName'] = ucwords(strtolower($refText));
+                    return $value;
+                });
+                $docFor = collect($ref['docValue'])->map(function ($value) {
                     return $value['doc_name'];
                 });
+
                 $doc['uploadDoc'] = [];
                 $uploadDoc = $refWfActiveDocument->getDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $docFor); # Check Document is Uploaded Of That Type
                 if (isset($uploadDoc->first()->doc_path)) {
@@ -850,8 +857,14 @@ class NewConnectionController extends Controller
                 $doc["ownerName"] = $val->applicant_name;
                 $doc["docName"]   = "ID Proof";
                 $doc['isMadatory'] = 1;
-                $doc['docVal'] = $refWaterNewConnection->getDocumentList(["ID_PROOF", "CONSUMER_PHOTO"]);
-                $refdocForId = collect($doc['docVal'])->map(function ($value, $key) {
+                $ref['docValue'] = $refWaterNewConnection->getDocumentList(["ID_PROOF", "CONSUMER_PHOTO"]);
+                $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
+                    $refDoc = $value['doc_name'];
+                    $refText = str_replace('_', ' ', $refDoc);
+                    $value['dispayName'] = ucwords(strtolower($refText));
+                    return $value;
+                });
+                $refdocForId = collect($ref['docValue'])->map(function ($value, $key) {
                     return $value['doc_name'];
                 });
                 $doc['uploadDoc'] = [];
@@ -1251,8 +1264,8 @@ class NewConnectionController extends Controller
         $type   = ["ID_PROOF", "CONSUMER_PHOTO"];
 
         $documentList = $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);
-        $ownerDocList['documents'] = collect($documentList)->map(function ($value, $key) use ($application,$refOwners) {
-            return $filteredDocs = $this->filterDocument($value, $application,$refOwners['id'])->first();
+        $ownerDocList['documents'] = collect($documentList)->map(function ($value, $key) use ($application, $refOwners) {
+            return $filteredDocs = $this->filterDocument($value, $application, $refOwners['id'])->first();
         });
         if (!empty($documentList)) {
             $ownerPhoto = $mWfActiveDocument->getWaterOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);
@@ -1645,7 +1658,7 @@ class NewConnectionController extends Controller
             switch ($key) {
                 case ("byApplication"):
                     $mWaterApplicant = new WaterApplication();
-                    $returnData = $mWaterApplicant->getApplicationByNo($request->paramenter, $roleId)->firstOrFail();
+                    $returnData = $mWaterApplicant->getApplicationByNo($request->paramenter, $roleId)->get();
                     break;
                 case ("byDate"):
                     $mWaterApplicant = new WaterApplication();

@@ -23,8 +23,9 @@ class siteAdjustment extends FormRequest
      */
     public function rules()
     {
-        return [
-            //
-        ];
+        $rules['areaSqft'] = 'required|';
+        $rules['propertyTypeId'] = 'required|int:1,2,3,4,5,6,7,8';
+        $rules['connectionTypeId'] = 'required|int|in:1,2';
+        return $rules;
     }
 }
