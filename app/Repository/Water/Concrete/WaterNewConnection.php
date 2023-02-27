@@ -123,12 +123,14 @@ class WaterNewConnection implements IWaterNewConnection
                 ->orderbydesc('water_applications.id')
                 ->get();
 
-            $returnValue = collect($connection)->map(function ($value) use ($mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection) {
+            $returnValue = collect($connection)->map(function ($value) use ($mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection, $connection) {
                 $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
                 $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
-                $value['connectionCharges'] = $mWaterConnectionCharge->getWaterchargesById($value['id'])
+                $refConnectionCharge = $mWaterConnectionCharge->getWaterchargesById($value['id'])
                     ->where('paid_status', 0)
                     ->first();
+                $refConnectionCharge['type'] = $value['type'];
+                $value['connectionCharges'] = $refConnectionCharge;
                 $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])->first();
                 if (!empty($siteDetails)) {
                     $value['siteInspectionCall'] = $mWaterParamConnFee->getCallParameter($siteDetails['site_inspection_property_type_id'], $siteDetails['site_inspection_area_sqft'])->first();
@@ -229,7 +231,7 @@ class WaterNewConnection implements IWaterNewConnection
             if (!$RazorPayRequest) {
                 throw new Exception("Data Not Found");
             }
-            if (in_array($RazorPayRequest->payment_from ,["New Connection","Site Inspection"])) {
+            if (in_array($RazorPayRequest->payment_from, ["New Connection", "Site Inspection"])) {
                 $application = WaterApplication::find($args["id"]);
                 $cahges = 0;
                 $id = explode(",", $RazorPayRequest->demand_from_upto);
