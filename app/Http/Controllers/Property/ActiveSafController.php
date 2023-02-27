@@ -749,7 +749,6 @@ class ActiveSafController extends Controller
 
         try {
             // Variable Assigments
-            $userId = auth()->user()->id;
             $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $saf = PropActiveSaf::findOrFail($request->applicationId);
             $mWfMstr = new WfWorkflow();
