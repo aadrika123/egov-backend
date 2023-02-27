@@ -225,11 +225,12 @@ class NewConnectionController extends Controller
     public function postNextLevel(Request $request)
     {
         try {
+            $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
             $request->validate([
                 'applicationId' => 'required',
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
-                'comment' => "required",
+                'comment' => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
                 'action' => 'required|In:forward,backward'
             ]);
             return $this->newConnection->postNextLevel($request);
@@ -809,6 +810,7 @@ class NewConnectionController extends Controller
             $data               = (array)null;
             $refWaterNewConnection = new WaterNewConnection();
             $refWfActiveDocument = new WfActiveDocument();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
             $moduleId = Config::get('module-constants.WATER_MODULE_ID');
 
             $connectionId = $request->applicationId;
@@ -816,6 +818,7 @@ class NewConnectionController extends Controller
             if (!$refApplication) {
                 throw new Exception("Application Not Found!");
             }
+            $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($connectionId)->first();
 
             $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication);  # get All Related Document Type List
             $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
@@ -881,6 +884,8 @@ class NewConnectionController extends Controller
 
             $data["documentsList"]  = $requiedDocs;
             $data["ownersDocList"]  = $ownerDoc;
+            $data['doc_upload_status'] = $refApplication['doc_upload_status'];
+            $data['connactionCharges'] = $connectionCharges;
             return responseMsg(true, "Document Uploaded!", $data);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());

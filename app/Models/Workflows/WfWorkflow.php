@@ -102,4 +102,12 @@ class WfWorkflow extends Model
             ->where('id', $workflowId)
             ->firstOrFail();
     }
+
+    /**
+     * | Get Wf Dtls
+     */
+    public function getWfDetails($ulbWorkflowId)
+    {
+        return WfWorkflow::findOrFail($ulbWorkflowId);
+    }
 }
