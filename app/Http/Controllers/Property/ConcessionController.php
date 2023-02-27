@@ -99,7 +99,7 @@ class ConcessionController extends Controller
             DB::beginTransaction();
             $concession = new PropActiveConcession;
             $concession->property_id = $request->propId;
-            $concession->owner_id = $request->ownerId;
+            $concession->prop_owner_id = $request->ownerId;
             $concession->applicant_name = $request->applicantName;
             $concession->gender = $request->gender;
             $concession->dob = $request->dob;
