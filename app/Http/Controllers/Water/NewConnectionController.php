@@ -809,9 +809,12 @@ class NewConnectionController extends Controller
             if (!$refApplication) {
                 throw new Exception("Application Not Found!");
             }
+            
             $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($connectionId)->first();
             $connectionCharges['type'] = Config::get('waterConstaint.New_Connection');
             $connectionCharges['applicationNo'] = $refApplication->application_no;
+            $connectionCharges['applicationId'] = $refApplication->id;
+            
             $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication);  # get All Related Document Type List
             $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
             $ownerList = collect($refOwneres)->map(function ($value) {
