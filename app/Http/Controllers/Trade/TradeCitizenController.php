@@ -145,7 +145,7 @@ class TradeCitizenController extends Controller
             if (!$refWorkflows['finisher']) {
                 throw new Exception("Finisher Not Available");
             }
-            if (in_array($mApplicationTypeId, ["2", "3", "4"]) && (!$request->id || !is_numeric($request->id))) {
+            if (in_array($mApplicationTypeId, ["2", "3", "4"]) && (!$request->licenseId || !is_numeric($request->licenseId))) {
                 throw new Exception("Old licence Id Requird");
             }
             return $this->Repository->addRecord($request);

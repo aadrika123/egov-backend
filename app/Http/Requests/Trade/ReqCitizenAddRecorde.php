@@ -27,7 +27,7 @@ class ReqCitizenAddRecorde extends TradeRequest
         $rules["applicationType"]="required|string|in:NEWLICENSE,RENEWAL,AMENDMENT,SURRENDER";
         if($this->applicationType!="NEWLICENSE")
         {
-            $rules["id"] ="required|digits_between:1,9223372036854775807";
+            $rules["licenseId"] ="required|digits_between:1,9223372036854775807";
         }
         if (in_array($mApplicationTypeId, [1])) 
         {
