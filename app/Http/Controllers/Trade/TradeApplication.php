@@ -712,7 +712,7 @@ class TradeApplication extends Controller
      *  get uploaded documents
      */
     public function getUploadDocuments(Request $req)
-    {
+    { 
         $req->validate([
             'applicationId' => 'required|digits_between:1,9223372036854775807'
         ]);
@@ -728,12 +728,9 @@ class TradeApplication extends Controller
             $tradR = new Trade();
             $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id,$licenceDetails->workflow_id,$modul_id);
             
-            // $documents = $documents->map(function($val) use($tradR){
-            //     $path =  $tradR->readDocumentPath($val->doc_path);
-            //     $val->doc_path = !empty(trim($val->doc_path)) ? $path : null;
-            //     return $val;
-            // });
-            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            $doc =$tradR->getLicenseDocLists($req);
+            $docVerifyStatus = $doc->original["data"]["docVerifyStatus"]??0;
+            return responseMsgs(true, ["docVerifyStatus"=>$docVerifyStatus], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }

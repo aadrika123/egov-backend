@@ -146,7 +146,7 @@ class PropActiveConcession extends Model
             'application_no as applicationNo',
             'date as applyDate',
             'applied_for as assessmentType',
-            "applicant_name as applicantName",
+            "applicant_name as applicantname",
         )
             ->where('prop_active_concessions.user_id', $userId)
             ->orderBydesc('prop_active_concessions.id')
