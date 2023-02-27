@@ -57,6 +57,7 @@ return [
         "APPLICATION_ID" => "byApplicationId"
     ],
 
+    "New_Connection" => "connection",
     "WATER_MASTER_DATA" => [
         "PIPELINE_SIZE_TYPE" => [
             "CI",
@@ -87,7 +88,5 @@ return [
             "Waiver Committee",
             "No Connection"
         ],
-
-        
     ]
 ];

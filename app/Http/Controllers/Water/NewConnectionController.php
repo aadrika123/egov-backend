@@ -694,10 +694,7 @@ class NewConnectionController extends Controller
 
             # Update the Doc Upload Satus in Application Table
             if ($refCheckDocument->contains(false)) {
-                WaterApplication::where('id', $req->applicationId)
-                    ->update([
-                        'doc_upload_status' => false
-                    ]);
+                $mWaterApplication->deactivateUploadStatus($req->applicationId);
             } else {
                 $this->updateWaterStatus($req, $getWaterDetails);
             }
@@ -752,16 +749,11 @@ class NewConnectionController extends Controller
      */
     public function updateWaterStatus($req, $application)
     {
+        $mWaterApplication = new WaterApplication();
         $waterRoles = $this->_waterRoles;
-        WaterApplication::where('id', $req->applicationId)
-            ->update([
-                'doc_upload_status' => true
-            ]);
+        $mWaterApplication->activateUploadStatus($req->applicationId);
         if ($application->payment_status == true) {
-            WaterApplication::where('id', $req->applicationId)
-                ->update([
-                    'current_role' => $waterRoles['DA']
-                ]);
+            $mWaterApplication->updateCurrentRoleForDa($$req->applicationId, $waterRoles);
         }
     }
 
@@ -802,16 +794,15 @@ class NewConnectionController extends Controller
             'applicationId' => 'required|numeric'
         ]);
         try {
-            $refApplication     = (array)null;
-            $refOwneres         = (array)null;
-            $requiedDocs        = (array)null;
-            $ownersDoc          = (array)null;
-            $testOwnersDoc      = (array)null;
-            $data               = (array)null;
-            $refWaterNewConnection = new WaterNewConnection();
-            $refWfActiveDocument = new WfActiveDocument();
+            $refApplication         = (array)null;
+            $refOwneres             = (array)null;
+            $requiedDocs            = (array)null;
+            $testOwnersDoc          = (array)null;
+            $data                   = (array)null;
+            $refWaterNewConnection  = new WaterNewConnection();
+            $refWfActiveDocument    = new WfActiveDocument();
             $mWaterConnectionCharge = new WaterConnectionCharge();
-            $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+            $moduleId               = Config::get('module-constants.WATER_MODULE_ID');
 
             $connectionId = $request->applicationId;
             $refApplication = WaterApplication::where("status", 1)->find($connectionId);
@@ -819,7 +810,7 @@ class NewConnectionController extends Controller
                 throw new Exception("Application Not Found!");
             }
             $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($connectionId)->first();
-
+            $connectionCharges['type'] = Config::get('waterConstaint.New_Connection');
             $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication);  # get All Related Document Type List
             $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
             $ownerList = collect($refOwneres)->map(function ($value) {

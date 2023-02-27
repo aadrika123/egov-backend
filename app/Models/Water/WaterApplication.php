@@ -388,4 +388,39 @@ class WaterApplication extends Model
                 'ulb_masters.ulb_name'
             );
     }
+
+
+    /**
+     * | Deactivate the Doc Upload Status
+     * | @param applicationId
+     */
+    public function deactivateUploadStatus($applicationId)
+    {
+        WaterApplication::where('id', $applicationId)
+            ->update([
+                'doc_upload_status' => false
+            ]);
+    }
+
+    /**
+     * | Activate the Doc Upload Status
+     */
+    public function activateUploadStatus($applicationId)
+    {
+        WaterApplication::where('id', $applicationId)
+            ->update([
+                'doc_upload_status' => true
+            ]);
+    }
+
+    /**
+     * | update the current role in case of online citizen apply
+     */
+    public function updateCurrentRoleForDa($applicationId, $waterRoles)
+    {
+        WaterApplication::where('id', $applicationId)
+            ->update([
+                'current_role' => $waterRoles['DA']
+            ]);
+    }
 }
