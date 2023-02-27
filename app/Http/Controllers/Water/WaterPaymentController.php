@@ -560,6 +560,7 @@ class WaterPaymentController extends Controller
         # if the transaction is 0
         if ($newCharge == 0) {
             $mWaterTran->saveZeroConnectionCharg($newCharge, $waterApplicationDetails->ulb_id, $request, $applicationId, $connectionId);
+            $mWaterApplication->updatePaymentStatus($applicationId, false);
         }
     }
 
