@@ -23,7 +23,7 @@ class PropSafMemoDtl extends Model
             'arv' => $req->arv,
             'quarterly_tax' => $req->amount,
             'user_id' => authUser()->id,
-            'memo_no' => $req->sam_no,
+            'memo_no' => $req->memo_no,
             'memo_type' => $req->memo_type,
             'holding_no' => $req->holding_no,
             'prop_id' => $req->prop_id ?? null,
