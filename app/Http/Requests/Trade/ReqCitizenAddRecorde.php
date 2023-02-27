@@ -136,8 +136,8 @@ class ReqCitizenAddRecorde extends TradeRequest
             }
             $rules["ownerDetails"] = "array";
             if ($this->ownerDetails) {
-                $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-                $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/|nullable";
+                $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9\,\.]+)*$/";
+                $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9\,\.]+)*$/|nullable";
                 $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
                 $rules["ownerDetails.*.email"] = "email|nullable";
             }
