@@ -49,6 +49,7 @@ use App\Models\Workflows\WfMaster;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Http\Request;
@@ -740,35 +741,50 @@ class ActiveSafController extends Controller
      */
     public function postNextLevel(Request $request)
     {
-        $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
         $request->validate([
             'applicationId' => 'required|integer',
-            'senderRoleId' => 'required|integer',
-            'receiverRoleId' => 'required|integer',
-            'comment' => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+            'receiverRoleId' => 'nullable|integer',
             'action' => 'required|In:forward,backward'
         ]);
 
         try {
             // Variable Assigments
-            $senderRoleId = $request->senderRoleId;
+            $userId = auth()->user()->id;
+            $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $saf = PropActiveSaf::findOrFail($request->applicationId);
             $mWfMstr = new WfWorkflow();
             $track = new WorkflowTrack();
+            $mWfWorkflows = new WfWorkflow();
+            $mWfRoleMaps = new WfWorkflowrolemap();
             $samHoldingDtls = array();
 
             // Derivative Assignments
+            $senderRoleId = $saf->current_role;
+            $request->validate([
+                'comment' => $senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+
+            ]);
+            $ulbWorkflowId = $saf->workflow_id;
+            $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
+            $workflowMstrId = $ulbWorkflowMaps->wf_master_id;
+            $roleMapsReqs = new Request([
+                'workflowId' => $workflowMstrId,
+                'roleId' => $senderRoleId
+            ]);
+            $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
             DB::beginTransaction();
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId);          // Check Post Next level condition
-                $saf->last_role_id = $request->receiverRoleId;                      // Update Last Role Id
                 $metaReqs['verificationStatus'] = 1;
+                $saf->current_role = $forwardBackwardIds->forward_role_id;
+                $saf->last_role_id =  $forwardBackwardIds->forward_role_id;                     // Update Last Role Id
             }
             // SAF Application Update Current Role Updation
-            $saf->current_role = $request->receiverRoleId;
-            $saf->save();
+            if ($request->action == 'backward')
+                $saf->current_role = $forwardBackwardIds->backward_role_id;
 
+            $saf->save();
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
             $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');

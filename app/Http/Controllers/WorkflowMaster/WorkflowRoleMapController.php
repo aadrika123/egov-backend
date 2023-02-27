@@ -272,6 +272,7 @@ class WorkflowRoleMapController extends Controller
             'can_edit' => $permission->can_edit,
             'can_send_sms' => $permission->can_send_sms,
             'can_comment' => $permission->can_comment,
+            'is_custom_enabled' => $permission->is_custom_enabled,
         ];
 
         return $data;
