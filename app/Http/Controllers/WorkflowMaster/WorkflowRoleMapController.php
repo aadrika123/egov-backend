@@ -24,6 +24,8 @@ use App\Repository\WorkflowMaster\Concrete\WorkflowRoleUserMapRepository;
 use Exception;
 use App\Traits\Workflow\Workflow;
 
+use function PHPUnit\Framework\isNull;
+
 /**
  * Created On-14-10-2022 
  * Created By-Mrinal Kumar
@@ -122,13 +124,15 @@ class WorkflowRoleMapController extends Controller
     {
         try {
             //workflow members
-            $data = new WorkflowMap();
-            $data = $data->getRoleByWorkflow($req);
+            $mWorkflowMap = new WorkflowMap();
+            $data = $mWorkflowMap->getRoleByWorkflow($req);
             $a['members'] = collect($data)['original']['data'];
 
             //logged in user role
             // $role = new WorkflowMap();
             $role = $this->getRole($req);
+            if ($role->isEmpty())
+                throw new Exception("You are not authorised");
             $roleId  = collect($role)['wf_role_id'];
 
             //members permission

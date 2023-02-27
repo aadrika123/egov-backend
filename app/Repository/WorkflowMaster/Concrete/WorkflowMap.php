@@ -165,7 +165,8 @@ class WorkflowMap implements iWorkflowMapRepository
             ->where('workflow_id', $request->workflowId)
             ->where(function ($where) {
                 $where->orWhereNotNull("wf_workflowrolemaps.forward_role_id")
-                    ->orWhereNotNull("wf_workflowrolemaps.backward_role_id");
+                    ->orWhereNotNull("wf_workflowrolemaps.backward_role_id")
+                    ->orWhereNotNull("wf_workflowrolemaps.serial_no");
             })
             ->orderBy('serial_no')
             ->get();
