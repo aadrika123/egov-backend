@@ -4403,8 +4403,13 @@ class Trade implements ITrade
             $application = RejectedTradeLicence::find($licenceId);
         }
         $status = "";
-        if ($application->pending_status == 5) {
+        if ($application->pending_status == 5) 
+        {
             $status = "License Created Successfully";
+            if($application->valid_upto < Carbon::now()->format("Y-m-d"))
+            {
+                $status = "License Expired On ".$application->valid_upto;
+            }
         } elseif ($application->is_parked) {
             $rols  = WfRole::find($application->current_role);
             $status = "Application back to citizen by " . $rols->role_name;

@@ -242,7 +242,47 @@ class TradeApplication extends Controller
     public function getDocList(Request $request)
     {
         $tradC = new Trade();
-        return $tradC->getLicenseDocLists($request);
+        $response =  $tradC->getLicenseDocLists($request);       
+        if($response->original["status"])
+        {
+            $ownerDoc = $response->original["data"]["ownerDocs"];
+            $Wdocuments = collect();
+            $ownerDoc->map(function($val) use($Wdocuments){                
+                $ownerId = $val["ownerDetails"]["ownerId"]??"";           
+                $val["documents"]->map(function($val1)use($Wdocuments,$ownerId){
+                    $val1["ownerId"] = $ownerId;
+                    $val1["is_uploded"] = (in_array($val1["docType"],["R","OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false ) :true;
+                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] !=0 ) ? true : false ) :true;
+                    
+                    collect($val1["masters"])->map(function($v) use($Wdocuments){
+                        $Wdocuments->push($v);
+                    });
+                });
+            });
+            if($Wdocuments->isEmpty())
+            {
+                $newrespons =[];
+                foreach($response->original["data"] as $key =>$val)
+                {
+                    if($key!="ownerDocs")
+                    {
+                        $newrespons[$key] = $val;
+                    }
+                }
+                
+                $response->original["data"] = $newrespons;
+                $response = responseMsgs($response->original["status"],
+                    $response->original["message"],
+                    $response->original["data"],
+                    $response->original["meta-data"]["apiId"],
+                    $response->original["meta-data"]["version"],
+                    $response->original["meta-data"]["responsetime"],
+                    $response->original["meta-data"]["action"],
+                    $response->original["meta-data"]["deviceId"]
+                );
+            }
+        }
+       return $response;
     }
 
 
