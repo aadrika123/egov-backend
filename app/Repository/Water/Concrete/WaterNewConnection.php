@@ -133,6 +133,7 @@ class WaterNewConnection implements IWaterNewConnection
                     ->first();
                 $refConnectionCharge['type'] = $value['type'];
                 $refConnectionCharge['applicationId'] = $value['id'];
+                $refConnectionCharge['applicationNo'] = $value['application_no'];
                 $value['connectionCharges'] = $refConnectionCharge;
                 $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])->first();
                 if (!empty($siteDetails)) {
