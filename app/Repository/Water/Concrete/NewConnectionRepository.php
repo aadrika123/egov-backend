@@ -486,9 +486,9 @@ class NewConnectionRepository implements iNewConnection
         if ($waterDetails->current_role != $roleId) {
             throw new Exception("Application has not Reached to the finisher ie. EO!");
         }
-        if ($waterDetails->doc_status == false) {
-            throw new Exception("Documet is Not verified!");
-        }
+        // if ($waterDetails->doc_status == false) {
+        //     throw new Exception("Documet is Not verified!");
+        // }
         if ($waterDetails->payment_status == false) {
             throw new Exception("Payment Not Done!");
         }
