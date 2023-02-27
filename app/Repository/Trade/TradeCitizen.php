@@ -85,11 +85,19 @@ class TradeCitizen implements ITradeCitizen
                 if (!$refOldLicece) {
                     throw new Exception("Old Licence Not Found");
                 }
-                if ($refOldLicece->valid_upto > $nextMonth) {
+                if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId,[3,4])) {
                     throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
+                }
+                if($refOldLicece->valid_upto < (Carbon::now()->format('Y-m-d')) && in_array($mApplicationTypeId,[3,4]))
+                {
+                    throw new Exception("Licence Was Expired Please Renewal First" );
                 }
                 if ($refOldLicece->pending_status != 5) {
                     throw new Exception("Application Aready Apply Please Track  " . $refOldLicece->application_no);
+                }
+                if(in_array($mApplicationTypeId,[3,4]) && $refOldLicece->valid_upto<Carbon::now()->format('Y-m-d'))
+                {
+                    throw new Exception("Application was Expired.You Can't Apply ".$request->applicationType.". Please Renew First.");
                 }
                 if ($refUlbId != $refOldLicece->ulb_id) {
                     throw new Exception("Application ulb Deffrence " . $refOldLicece->application_no);
