@@ -118,6 +118,7 @@ class CitizenRepository implements iCitizenRepository
         $applications = array();
         $propertyApplications = DB::table('prop_active_safs')
             ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_active_safs.current_role')
+            ->leftJoin('prop_transactions as t', 't.saf_id', '=', 'prop_active_safs.id')
             ->select(
                 'r.role_name as current_level',
                 'prop_active_safs.id as application_id',
@@ -132,7 +133,9 @@ class CitizenRepository implements iCitizenRepository
                 'parked as backToCitizen',
                 'workflow_id',
                 'prop_active_safs.created_at',
-                'prop_active_safs.updated_at'
+                'prop_active_safs.updated_at',
+                't.tran_no as transaction_no',
+                't.tran_date as transaction_date'
             )
             ->where('prop_active_safs.citizen_id', $userId)
             ->where('prop_active_safs.status', 1)

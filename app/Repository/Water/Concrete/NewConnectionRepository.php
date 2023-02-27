@@ -18,6 +18,7 @@ use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Traits\Ward;
@@ -361,25 +362,46 @@ class NewConnectionRepository implements iNewConnection
      */
     public function postNextLevel($req)
     {
+        $mWfWorkflows = new WfWorkflow();
+        $mWfRoleMaps = new WfWorkflowrolemap();
         $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
         $waterApplication = WaterApplication::find($req->applicationId);
+        $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
+        // Derivative Assignments
+        $senderRoleId = $waterApplication->current_role;
+        $req->validate([
+            'comment' => $req->senderRoleId == $senderRoleId['BO'] ? 'nullable' : 'required',
+        ]);
 
+        $ulbWorkflowId = $waterApplication->workflow_id;
+        $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
+        $workflowMstrId = $ulbWorkflowMaps->wf_master_id;
+        $roleMapsReqs = new Request([
+            'workflowId' => $workflowMstrId,
+            'roleId' => $senderRoleId
+        ]);
+        $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+
+        DB::beginTransaction();
         if ($req->action == 'forward') {
             $this->checkPostCondition($req->senderRoleId, $wfLevels, $waterApplication);            // Check Post Next level condition
-            $waterApplication->last_role_id = $req->receiverRoleId;                                 // Update Last Role Id
+            $metaReqs['verificationStatus'] = 1;
+            $waterApplication->current_role = $forwardBackwardIds->forward_role_id;
+            $waterApplication->last_role_id =  $forwardBackwardIds->forward_role_id;                                      // Update Last Role Id
         }
+        if ($req->action == 'backward') {
+            $waterApplication->current_role = $forwardBackwardIds->backward_role_id;
+        }
+
+        $waterApplication->save();
         $metaReqs['moduleId'] =  $this->_waterModulId;
         $metaReqs['workflowId'] = $this->_waterWorkId;
         $metaReqs['refTableDotId'] = 'water_applications.id';
         $metaReqs['refTableIdValue'] = $req->applicationId;
         $req->request->add($metaReqs);
 
-        DB::beginTransaction();
         $waterTrack = new WorkflowTrack();
         $waterTrack->saveTrack($req);
-
-        $waterApplication->current_role = $req->receiverRoleId;
-        $waterApplication->save();
         DB::commit();
 
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');

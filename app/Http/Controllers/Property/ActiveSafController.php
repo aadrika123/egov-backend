@@ -741,37 +741,49 @@ class ActiveSafController extends Controller
      */
     public function postNextLevel(Request $request)
     {
-        $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
         $request->validate([
             'applicationId' => 'required|integer',
-            'senderRoleId' => 'required|integer',
-            'receiverRoleId' => 'required|integer',
-            'comment' => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+            'receiverRoleId' => 'nullable|integer',
             'action' => 'required|In:forward,backward'
         ]);
 
         try {
             // Variable Assigments
+            $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $saf = PropActiveSaf::findOrFail($request->applicationId);
             $mWfMstr = new WfWorkflow();
             $track = new WorkflowTrack();
             $mWfWorkflows = new WfWorkflow();
+            $mWfRoleMaps = new WfWorkflowrolemap();
             $samHoldingDtls = array();
 
             // Derivative Assignments
             $senderRoleId = $saf->current_role;
+            $request->validate([
+                'comment' => $senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+
+            ]);
             $ulbWorkflowId = $saf->workflow_id;
+            $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
+            $workflowMstrId = $ulbWorkflowMaps->wf_master_id;
+            $roleMapsReqs = new Request([
+                'workflowId' => $workflowMstrId,
+                'roleId' => $senderRoleId
+            ]);
+            $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
             DB::beginTransaction();
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId);          // Check Post Next level condition
-                $saf->last_role_id = $request->receiverRoleId;                      // Update Last Role Id
                 $metaReqs['verificationStatus'] = 1;
+                $saf->current_role = $forwardBackwardIds->forward_role_id;
+                $saf->last_role_id =  $forwardBackwardIds->forward_role_id;                     // Update Last Role Id
             }
             // SAF Application Update Current Role Updation
-            $saf->current_role = $request->receiverRoleId;
-            $saf->save();
+            if ($request->action == 'backward')
+                $saf->current_role = $forwardBackwardIds->backward_role_id;
 
+            $saf->save();
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
             $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
@@ -817,11 +829,11 @@ class ActiveSafController extends Controller
                     throw new Exception("Document Not Fully Verified");
 
                 $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
-
+                $saf->save();
                 $samNo = "SAM-" . $saf->id;                 // Generate SAM No
                 $mergedDemand = array_merge($demand->toArray(), [
                     'memo_type' => 'SAM',
-                    'sam_no' => $samNo,
+                    'memo_no' => $samNo,
                     'pt_no' => $ptNo,
                     'ward_id' => $saf->ward_mstr_id
                 ]);
@@ -1059,10 +1071,10 @@ class ActiveSafController extends Controller
                 if (collect($demand)->isEmpty())
                     throw new Exception("Demand Not Available for the Current Year to Generate FAM");
                 // SAF Application replication
-                $samNo = "FAM-" . $safId;
+                $famNo = "FAM-" . $safId;
                 $mergedDemand = array_merge($demand->toArray(), [
                     'memo_type' => 'FAM',
-                    'sam_no' => $samNo,
+                    'memo_no' => $famNo,
                     'holding_no' => $activeSaf->new_holding_no ?? $activeSaf->holding_no,
                     'pt_no' => $activeSaf->pt_no,
                     'ward_id' => $activeSaf->ward_mstr_id,
