@@ -31,7 +31,7 @@ class CashVerificationController extends Controller
     {
         try {
             $ulbId =  authUser()->ulb_id;
-            $userId =  $request->userId;
+            $userId =  $request->id;
             $date = date('Y-m-d', strtotime($request->date));
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
@@ -104,7 +104,7 @@ class CashVerificationController extends Controller
     {
         try {
             $ulbId =  authUser()->ulb_id;
-            $userId =  $req->userId;
+            $userId =  $req->id;
             $date = date('Y-m-d', strtotime($req->date));
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');

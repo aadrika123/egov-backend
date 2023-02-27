@@ -830,11 +830,11 @@ class ActiveSafController extends Controller
                     throw new Exception("Document Not Fully Verified");
 
                 $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
-
+                $saf->save();
                 $samNo = "SAM-" . $saf->id;                 // Generate SAM No
                 $mergedDemand = array_merge($demand->toArray(), [
                     'memo_type' => 'SAM',
-                    'sam_no' => $samNo,
+                    'memo_no' => $samNo,
                     'pt_no' => $ptNo,
                     'ward_id' => $saf->ward_mstr_id
                 ]);
@@ -1072,10 +1072,10 @@ class ActiveSafController extends Controller
                 if (collect($demand)->isEmpty())
                     throw new Exception("Demand Not Available for the Current Year to Generate FAM");
                 // SAF Application replication
-                $samNo = "FAM-" . $safId;
+                $famNo = "FAM-" . $safId;
                 $mergedDemand = array_merge($demand->toArray(), [
                     'memo_type' => 'FAM',
-                    'sam_no' => $samNo,
+                    'memo_no' => $famNo,
                     'holding_no' => $activeSaf->new_holding_no ?? $activeSaf->holding_no,
                     'pt_no' => $activeSaf->pt_no,
                     'ward_id' => $activeSaf->ward_mstr_id,
