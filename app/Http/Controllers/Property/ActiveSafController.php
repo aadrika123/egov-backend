@@ -49,6 +49,7 @@ use App\Models\Workflows\WfMaster;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Http\Request;
@@ -751,13 +752,15 @@ class ActiveSafController extends Controller
 
         try {
             // Variable Assigments
-            $senderRoleId = $request->senderRoleId;
             $saf = PropActiveSaf::findOrFail($request->applicationId);
             $mWfMstr = new WfWorkflow();
             $track = new WorkflowTrack();
+            $mWfWorkflows = new WfWorkflow();
             $samHoldingDtls = array();
 
             // Derivative Assignments
+            $senderRoleId = $saf->current_role;
+            $ulbWorkflowId = $saf->workflow_id;
             DB::beginTransaction();
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
