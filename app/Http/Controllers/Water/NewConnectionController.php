@@ -885,7 +885,7 @@ class NewConnectionController extends Controller
             $data["documentsList"]  = $requiedDocs;
             $data["ownersDocList"]  = $ownerDoc;
             $data['doc_upload_status'] = $refApplication['doc_upload_status'];
-            $data['connactionCharges'] = $connectionCharges;
+            $data['connectionCharges'] = $connectionCharges;
             return responseMsg(true, "Document Uploaded!", $data);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
