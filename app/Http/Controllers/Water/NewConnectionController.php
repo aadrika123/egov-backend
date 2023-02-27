@@ -225,12 +225,10 @@ class NewConnectionController extends Controller
     public function postNextLevel(Request $request)
     {
         try {
-            $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
             $request->validate([
                 'applicationId' => 'required',
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
-                'comment' => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
                 'action' => 'required|In:forward,backward'
             ]);
             return $this->newConnection->postNextLevel($request);
