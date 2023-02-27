@@ -79,9 +79,9 @@ class TradeCitizen implements ITradeCitizen
                 throw new Exception("You Are Not Authorized For This Action. Please Apply From Counter");
             }
             if ($mApplicationTypeId != 1) {
-                $mOldLicenceId = $request->id;
+                $mOldLicenceId = $request->licenseId;
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-                $refOldLicece = ActiveTradeLicence::find($mOldLicenceId);
+                $refOldLicece = TradeLicence::find($mOldLicenceId);
                 if (!$refOldLicece) {
                     throw new Exception("Old Licence Not Found");
                 }
