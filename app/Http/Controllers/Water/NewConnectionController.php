@@ -916,10 +916,10 @@ class NewConnectionController extends Controller
                     if ($checkExist) {
                         $areaInSqft['areaInSqFt'] = decimalToSqFt($application['total_area_in_desimal']);
                         $propUsageType = $this->getPropUsageType($request, $application['id']);
-                        $getCatagory['catagory'] = $this->checkCatagory($request, $areaInSqft, $propUsageType);
+                        // $getCatagory['catagory'] = $this->checkCatagory($request, $areaInSqft, $propUsageType);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners['owners'] = collect($mPropOwner->getOwnerByPropId($application['id']));
-                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType)->merge($getCatagory);
+                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to Holding Not Found!");
@@ -934,10 +934,10 @@ class NewConnectionController extends Controller
                     if ($checkExist) {
                         $areaInSqft['areaInSqFt'] = decimalToSqFt($application['total_area_in_desimal']);
                         $safUsageType = $this->getPropUsageType($request, $application['id']);
-                        $getCatagory['catagory'] = $this->checkCatagory($request, $areaInSqft, $safUsageType);
+                        // $getCatagory['catagory'] = $this->checkCatagory($request, $areaInSqft, $safUsageType);
                         $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners['owners'] = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
-                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType)->merge($getCatagory);
+                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
                         return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     }
                     throw new Exception("Data According to SAF Not Found!");
