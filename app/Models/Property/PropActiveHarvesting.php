@@ -184,7 +184,7 @@ class PropActiveHarvesting extends Model
             'application_no as applicationNo',
             'date as applyDate',
             // 'applied_for as assessmentType',
-            DB::raw("'Rain Water Harvesting' as assessmentType"),
+            DB::raw("'Rain Water Harvesting' as 'assessmentType'"),
             DB::raw("string_agg(owner_name,',') as applicantName"),
         )
             ->join('prop_owners', 'prop_owners.property_id', 'prop_active_harvestings.property_id')
