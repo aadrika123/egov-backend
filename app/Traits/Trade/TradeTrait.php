@@ -390,14 +390,14 @@ trait TradeTrait
                     ->orderBy("tran_date","DESC")
                     ->first();
         $ReniwalLicence->is_active      = true;
-        $ReniwalLicence->tran_id        = $transection->id;
-        $ReniwalLicence->rate_id        = $transection->rate_id;
-        $ReniwalLicence->demand_amount  = $transection->paid_amount;
-        $ReniwalLicence->fine_amount    = $transection->penalty;
-        $ReniwalLicence->penalty_amount = $transection->penalty;
+        $ReniwalLicence->tran_id        = $transection->id??null;
+        $ReniwalLicence->rate_id        = $transection->rate_id??null;
+        $ReniwalLicence->demand_amount  = $transection->paid_amount??null;
+        $ReniwalLicence->fine_amount    = $transection->penalty??null;
+        $ReniwalLicence->penalty_amount = $transection->penalty??null;
         $ReniwalLicence->rebate_amount  = $transection->rebate??null;
         $ReniwalLicence->tax_percent    = $transection->tax_percent??null;
-        $ReniwalLicence->tax_amount	    = ($transection->paid_amount - $transection->penalty);
+        $ReniwalLicence->tax_amount	    = (($transection->paid_amount??0) - ($transection->penalty??0));
         $ReniwalLicence->total_taxable_amount = null;
         $ReniwalLicence->payable_amount = null;
         $ReniwalLicence->pmt_amount     = null;
