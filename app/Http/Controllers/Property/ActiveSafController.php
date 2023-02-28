@@ -698,15 +698,16 @@ class ActiveSafController extends Controller
         $request->validate([
             'comment' => 'required',
             'applicationId' => 'required|integer',
-            'senderRoleId' => 'nullable|integer'
         ]);
 
         try {
+            $userId = authUser()->id;
+            $userType = authUser()->user_type;
             $workflowTrack = new WorkflowTrack();
-            $saf = PropActiveSaf::find($request->applicationId);                // SAF Details
+            $mWfRoleUsermap = new WfRoleusermap();
+            $saf = PropActiveSaf::findOrFail($request->applicationId);                // SAF Details
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs = array();
-            DB::beginTransaction();
             // Save On Workflow Track For Level Independent
             $metaReqs = [
                 'workflowId' => $saf->workflow_id,
@@ -715,9 +716,22 @@ class ActiveSafController extends Controller
                 'refTableIdValue' => $saf->id,
                 'message' => $request->comment
             ];
+            if ($userType != 'Citizen') {
+                $roleReqs = new Request([
+                    'workflowId' => $saf->workflow_id,
+                    'userId' => $userId,
+                ]);
+                $wfRoleId = $mWfRoleUsermap->getRoleByUserWfId($roleReqs);
+                $metaReqs = array_merge($metaReqs, ['senderRoleId' => $wfRoleId->wf_role_id]);
+                $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
+            }
+            DB::beginTransaction();
+
             // For Citizen Independent Comment
-            if (!$request->senderRoleId) {
-                $metaReqs = array_merge($metaReqs, ['citizenId' => $saf->user_id]);
+            if ($userType == 'Citizen') {
+                $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
+                $metaReqs = array_merge($metaReqs, ['ulb_id' => $saf->ulb_id]);
+                $metaReqs = array_merge($metaReqs, ['user_id' => NULL]);
             }
 
             $request->request->add($metaReqs);
