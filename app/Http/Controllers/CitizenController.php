@@ -82,9 +82,9 @@ class CitizenController extends Controller
             ]);
 
         if ($request->photo) {
-            $filename = explode('.', $request->photo->getClientOriginalName());
+            $filename = 'photo';
             $document = $request->photo;
-            $imageName = $docUpload->upload($filename[0], $document, $imageRelativePath);
+            $imageName = $docUpload->upload($filename, $document, $imageRelativePath);
 
             ActiveCitizen::where('id', $id)
                 ->update([
@@ -93,9 +93,9 @@ class CitizenController extends Controller
         }
 
         if ($request->aadharDoc) {
-            $filename = explode('.', $request->aadharDoc->getClientOriginalName());
+            $filename = 'aadharDoc';
             $document = $request->aadharDoc;
-            $imageName = $docUpload->upload($filename[0], $document, $imageRelativePath);
+            $imageName = $docUpload->upload($filename, $document, $imageRelativePath);
 
             ActiveCitizen::where('id', $id)
                 ->update([
@@ -104,9 +104,9 @@ class CitizenController extends Controller
         }
 
         if ($request->speciallyAbledDoc) {
-            $filename = explode('.', $request->speciallyAbledDoc->getClientOriginalName());
+            $filename = 'speciallyAbled';
             $document = $request->speciallyAbledDoc;
-            $imageName = $docUpload->upload($filename[0], $document, $imageRelativePath);
+            $imageName = $docUpload->upload($filename, $document, $imageRelativePath);
 
             ActiveCitizen::where('id', $id)
                 ->update([
@@ -115,9 +115,9 @@ class CitizenController extends Controller
         }
 
         if ($request->armedForceDoc) {
-            $filename = explode('.', $request->armedForceDoc->getClientOriginalName());
+            $filename = 'armedForce';
             $document = $request->armedForceDoc;
-            $imageName = $docUpload->upload($filename[0], $document, $imageRelativePath);
+            $imageName = $docUpload->upload($filename, $document, $imageRelativePath);
 
             ActiveCitizen::where('id', $id)
                 ->update([

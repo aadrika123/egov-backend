@@ -19,7 +19,7 @@ class ReqAddRecorde extends TradeRequest
         $mNowdate = Carbon::now()->format('Y-m-d');
         $mTimstamp = Carbon::now()->format('Y-m-d H:i:s');
         $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
-        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\'\.\&\s]+$/i';
+        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\'\.\,\&\s]+$/i';
         $mAlphaNumCommaSlash = '/^[a-zA-Z0-9- ]+$/i';
         $mAlphaSpace = '/^[a-zA-Z ]+$/i';
         $mAlphaNumhyphen = '/^[a-zA-Z0-9- ]+$/i';
@@ -80,8 +80,8 @@ class ReqAddRecorde extends TradeRequest
             }
 
             $rules["ownerDetails"] = "required|array";
-            $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-            $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/|nullable";
+            $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9\.\,\']+)*$/";
+            $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9\.\,\']+)*$/|nullable";
             $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
             $rules["ownerDetails.*.email"] = "email|nullable";
         } 

@@ -248,6 +248,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/approval-rejection', 'finalApprovalRejection');     //11
     Route::post('harvesting/rejection', 'rejectionOfHarvesting');               //12
     Route::post('harvesting/details-by-id', 'getDetailsById');                  //13
+    Route::post('harvesting/static-details', 'staticDetails');
+
     Route::post('harvesting/escalate', 'postEscalate');                         //14
     Route::post('harvesting/special-inbox', 'specialInbox');                    //15
     Route::post('harvesting/comment-independent', 'commentIndependent');        //16

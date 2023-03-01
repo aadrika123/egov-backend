@@ -28,7 +28,8 @@ class PropActiveHarvesting extends Model
             'a.prop_type_mstr_id',
             'p.property_type',
             'prop_active_harvestings.workflow_id',
-            'prop_active_harvestings.current_role as role_id'
+            'prop_active_harvestings.current_role as role_id',
+            'date'
         )
             ->join('prop_properties as a', 'a.id', '=', 'prop_active_harvestings.property_id')
             ->join('prop_owners', 'prop_owners.property_id', 'a.id')
@@ -80,7 +81,7 @@ class PropActiveHarvesting extends Model
     {
         return DB::table('prop_active_harvestings as h')
             ->select(
-                'h.*',
+
                 'h.user_id as citizen_user_id',
                 'pp.*',
                 'w.ward_name as old_ward_no',
@@ -91,8 +92,12 @@ class PropActiveHarvesting extends Model
                 'wr.role_name as current_role_name',
                 'a.apt_code as apartment_code',
                 'a.*',
+                'prop_owners.*',
+                'h.*',
+
             )
             ->leftJoin('prop_properties as pp', 'pp.id', '=', 'h.property_id')
+            ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'pp.id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'pp.ward_mstr_id')
             ->leftJoin('wf_roles as wr', 'wr.id', '=', 'h.current_role')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'pp.new_ward_mstr_id')
@@ -183,6 +188,7 @@ class PropActiveHarvesting extends Model
         return PropActiveHarvesting::select(
             'application_no as applicationNo',
             'date as applyDate',
+            // "'Rain Water Harvesting' as 'assessmentType'",
             // 'applied_for as assessmentType',
             DB::raw("'Rain Water Harvesting' as assessmentType"),
             DB::raw("string_agg(owner_name,',') as applicantName"),
