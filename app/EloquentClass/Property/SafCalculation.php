@@ -642,12 +642,12 @@ class SafCalculation
         $readOccupancyType = $this->_floors[$key]['occupancyType'];
         $readPropertyType = $this->_propertyDetails['propertyType'];
 
-        $readRentalValue = collect($this->_rentalValue)->where('usage_types_id', $readOccupancyType)
+        $readRentalValue = collect($this->_rentalValue)->where('usage_types_id', $readUsageType)
             ->where('construction_types_id', $this->_floors[$key]['constructionType'])
             ->first();
 
         if (!$readRentalValue) {
-            return responseMsg(false, "Rental Value Not Available", "");
+            throw new Exception("Rental Value Not Available for this Usage Type");
         }
 
         $tempArv = $readBuildupArea * (float)$readRentalValue->rate;

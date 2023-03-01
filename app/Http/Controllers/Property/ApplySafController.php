@@ -128,10 +128,10 @@ class ApplySafController extends Controller
             // Insert Tax
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
+
             $detailsByRulesets = collect($safTaxes->original['data']['details'])->groupBy('ruleSet');
             $demandResponse['amounts'] = $safTaxes->original['data']['demand'];
             $demandResponse['details'] = $detailsByRulesets;
-
             $tax->insertTax($safId, $ulb_id, $safTaxes);                                               // Insert SAF Tax
 
             DB::commit();
