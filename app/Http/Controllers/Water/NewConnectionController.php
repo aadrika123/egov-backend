@@ -1766,9 +1766,11 @@ class NewConnectionController extends Controller
                 'inspectionTime' => 'required|date_format:H:i'
             ]);
             $mWaterSiteInspection = new WaterSiteInspection();
+            $refDate = Carbon::now();
+            $TodaysDate = date('d-m-Y', strtotime($refDate));
             $this->checkForSaveDateTime($request);
             $mWaterSiteInspection->saveSiteDateTime($request);
-            if ($request->inspectionDate == Carbon::now()) {
+            if ($request->inspectionDate == $TodaysDate) {
                 $canView['canView'] = true;
             } else {
                 $canView['canView'] = false;
