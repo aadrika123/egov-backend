@@ -28,7 +28,8 @@ class PropActiveHarvesting extends Model
             'a.prop_type_mstr_id',
             'p.property_type',
             'prop_active_harvestings.workflow_id',
-            'prop_active_harvestings.current_role as role_id'
+            'prop_active_harvestings.current_role as role_id',
+            'date'
         )
             ->join('prop_properties as a', 'a.id', '=', 'prop_active_harvestings.property_id')
             ->join('prop_owners', 'prop_owners.property_id', 'a.id')
@@ -80,7 +81,7 @@ class PropActiveHarvesting extends Model
     {
         return DB::table('prop_active_harvestings as h')
             ->select(
-                'h.*',
+
                 'h.user_id as citizen_user_id',
                 'pp.*',
                 'w.ward_name as old_ward_no',
@@ -91,6 +92,7 @@ class PropActiveHarvesting extends Model
                 'wr.role_name as current_role_name',
                 'a.apt_code as apartment_code',
                 'a.*',
+                'h.*',
             )
             ->leftJoin('prop_properties as pp', 'pp.id', '=', 'h.property_id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'pp.ward_mstr_id')
