@@ -277,6 +277,9 @@ class RainWaterHarvestingController extends Controller
         }
     }
 
+
+
+
     /**
      * |----------------------- function for the Outbox --------------------------
      * |@param ulbId
@@ -346,6 +349,45 @@ class RainWaterHarvestingController extends Controller
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    /**
+     * | Static details
+     */
+    public function staticDetails(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|integer',
+        ]);
+        try {
+            $mPropActiveHarvesting = new PropActiveHarvesting();
+            $mWfActiveDocument =  new WfActiveDocument();
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+
+            $details = $mPropActiveHarvesting->getDetailsById($req->applicationId);
+
+            $docs = $mWfActiveDocument->getDocsByAppId($details->id, $details->workflow_id, $moduleId);
+            $data = [
+                'id' => $details->id,
+                'applicationNo' => $details->application_no,
+                'harvestingBefore2017' => $details->harvesting_status,
+                'holdingNo' => $details->holding_no,
+                'newHoldingNo' => $details->new_holding_no,
+                'guardianName' => $details->guardian_name,
+                'applicantName' => $details->owner_name,
+                'wardNo' => $details->new_ward_no,
+                'propertyAddress' => $details->prop_address,
+                'mobileNo' => $details->mobile_no,
+                'dateOfCompletion' => $details->date_of_completion,
+                'harvestingImage' => $docs[0]->doc_path,
+
+            ];
+
+            return responseMsgs(true, "Static Details!", remove_null($data), 010125, 1.0, "", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $req->deviceId);
         }
     }
 
