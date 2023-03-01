@@ -111,6 +111,10 @@ class BankReconcillationController extends Controller
             }
 
             //search with verification status is pending
+            // if ($verifyStatus == '2') {
+            //     $a =  collect($data)->where('verify_status', 'CHEQUE');
+            //     $data = (array_values(objtoarray($a)));
+            // }
 
 
             if (!empty(collect($data))) {

@@ -1125,16 +1125,25 @@ class RainWaterHarvestingController extends Controller
      */
     public function siteVerification(Request $req)
     {
+        $req->validate([
+            "applicationId" => "required|numeric",
+            "verificationStatus" => "required|In:1,0",
+            // "harvestingImage.*" => "required|image|mimes:jpeg,jpg,png,gif",
+        ]);
         try {
             $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
             $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
+            $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
             $verificationStatus = $req->verificationStatus;                                             // Verification Status true or false
+            $images = $req->harvestingImage;
+            $refImageName = 'harvesting-geotagging-' .  $req->applicationId;
             $propActiveHarvesting = new PropActiveHarvesting();
             $verification = new PropRwhVerification();
             $mWfRoleUsermap = new WfRoleusermap();
+            $docUpload = new DocUpload;
+            $geoTagging = new PropHarvestingGeotagUpload();
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
-
 
             $applicationDtls = $propActiveHarvesting->getHarvestingNo($req->applicationId);
             $workflowId = $applicationDtls->workflow_id;
@@ -1147,7 +1156,7 @@ class RainWaterHarvestingController extends Controller
             $roleId = $readRoleDtls->wf_role_id;
 
             switch ($roleId) {
-                case $taxCollectorRole;                                                                  // In Case of Agency TAX Collector
+                case $taxCollectorRole;
                     if ($verificationStatus == 1) {
                         $req->agencyVerification = true;
                         $msg = "Site Successfully Verified";
@@ -1156,6 +1165,10 @@ class RainWaterHarvestingController extends Controller
                         $req->agencyVerification = false;
                         $msg = "Site Successfully rebuted";
                     }
+                    //GEO TAGGING
+                    $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
+                    $geoTagging->add($req, $imageName, $relativePath, $geoTagging);
+
                     break;
                     DB::beginTransaction();
                 case $ulbTaxCollectorRole;                                                                // In Case of Ulb Tax Collector
@@ -1200,7 +1213,6 @@ class RainWaterHarvestingController extends Controller
         try {
             $data = array();
             $mPropRwhVerification = new PropRwhVerification();
-
             $data = $mPropRwhVerification->getVerificationsData($req->applicationId);           // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
 
             return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
@@ -1212,41 +1224,40 @@ class RainWaterHarvestingController extends Controller
     /**
      * | Geo tagging
      */
-    public function geoTagging(Request $req)
-    {
-        $req->validate([
-            "applicationId" => "required|numeric",
-            "harvestingImage.*" => "required|image|mimes:jpeg,jpg,png,gif",
-            // "directionType" => "required|array|min:3|max:3",
-            // "directionType.*" => "required|In:Left,Right,Front",
-            "longitude" => "required|numeric",
-            "latitude" => "required|numeric"
-        ]);
-        try {
-            $docUpload = new DocUpload;
-            $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
-            $images = $req->harvestingImage;
-            // $directionTypes = $req->directionType;
-            $longitude = $req->longitude;
-            $latitude = $req->latitude;
+    // public function geoTagging(Request $req)
+    // {
+    //     $req->validate([
+    //         "applicationId" => "required|numeric",
+    //         "harvestingImage.*" => "required|image|mimes:jpeg,jpg,png,gif",
+    //         // "directionType" => "required|array|min:3|max:3",
+    //         // "directionType.*" => "required|In:Left,Right,Front",
+    //         "longitude" => "required|numeric",
+    //         "latitude" => "required|numeric"
+    //     ]);
+    //     try {
+    //         $docUpload = new DocUpload;
+    //         $geoTagging = new PropHarvestingGeotagUpload();
+    //         $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
+    //         $images = $req->harvestingImage;
+    //         $longitude = $req->longitude;
+    //         $latitude = $req->latitude;
+    //         $refImageName = 'harvesting-geotagging-' .  $req->applicationId;
+    //         // $directionTypes = $req->directionType;
 
-            $geoTagging = new PropHarvestingGeotagUpload();
-            $refImageName = 'harvesting-geotagging-' .  $req->applicationId;
+    //         $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
 
-            $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
+    //         $geoTagging->application_id = $req->applicationId;
+    //         $geoTagging->image_path = $imageName;
+    //         // $geoTagging->direction_type = $directionTypes;
+    //         $geoTagging->longitude = $longitude;
+    //         $geoTagging->latitude = $latitude;
+    //         $geoTagging->relative_path = $relativePath;
+    //         $geoTagging->user_id = authUser()->id;
+    //         $geoTagging->save();
 
-            $geoTagging->application_id = $req->applicationId;
-            $geoTagging->image_path = $imageName;
-            // $geoTagging->direction_type = $directionTypes[$key];
-            $geoTagging->longitude = $longitude;
-            $geoTagging->latitude = $latitude;
-            $geoTagging->relative_path = $relativePath;
-            $geoTagging->user_id = authUser()->id;
-            $geoTagging->save();
-
-            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
+    //         return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
+    //     } catch (Exception $e) {
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
 }
