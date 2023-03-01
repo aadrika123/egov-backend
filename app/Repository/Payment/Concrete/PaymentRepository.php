@@ -324,7 +324,7 @@ class PaymentRepository implements iPayment
                         break;
                     case ('5'):
                         Http::withHeaders([])
-                            ->post("http://192.168.0.127:8000/api/advertisements/payment-success-failure", $transfer);
+                            ->post("http://192.168.0.214:8002/api/advertisements/payment-success-failure", $transfer);
                         break;
                 }
             }

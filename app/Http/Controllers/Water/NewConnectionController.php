@@ -874,7 +874,7 @@ class NewConnectionController extends Controller
                 $doc["ownerName"] = $val->applicant_name;
                 $doc["docName"]   = "ID Proof";
                 $doc['isMadatory'] = 1;
-                $ref['docValue'] = $refWaterNewConnection->getDocumentList(["ID_PROOF", "CONSUMER_PHOTO"]);
+                $ref['docValue'] = $refWaterNewConnection->getDocumentList(["ID_PROOF"]);   #"CONSUMER_PHOTO"
                 $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
                     $refDoc = $value['doc_name'];
                     $refText = str_replace('_', ' ', $refDoc);
@@ -1793,6 +1793,33 @@ class NewConnectionController extends Controller
 
         if ($refApplication['current_role'] != $WaterRoles['JE']) {
             throw new Exception("Application is not Under the JE!");
+        }
+    }
+
+
+    /**
+     * | Get the Date/Time alog with site details 
+     * | Site Details  
+        | Routes 
+     */
+    public function getSiteInspectionDetails(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicationId' => 'required',
+            ]);
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $siteInspection = $mWaterSiteInspection->getInspectionById($request->applicationId)->first();
+            if (isset($siteInspection)) {
+                $returnData = [
+                    "inspectionDate" => $siteInspection->inspection_date,
+                    "inspectionTime" => $siteInspection->inspection_time
+                ];
+                return responseMsgs(true, "Site InspectionDetails!", $returnData, "", "01", ".ms", "POST", "");
+            }
+            throw new Exception("data Invalid!");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
 }

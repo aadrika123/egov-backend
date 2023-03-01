@@ -119,7 +119,7 @@ class WaterNewConnection implements IWaterNewConnection
                     }
                 )
                 // ->whereNotIn("status",[0,6,7])
-                ->join('wf_roles', 'wf_roles.id', "=", "water_applications.current_role")
+                ->leftjoin('wf_roles', 'wf_roles.id', "=", "water_applications.current_role")
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
                 ->where("water_applications.user_id", $refUserId)
                 ->orderbydesc('water_applications.id')
