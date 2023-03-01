@@ -1739,6 +1739,7 @@ class NewConnectionController extends Controller
      * | @param
      * | @var
      * | @return  
+        | Make Route
      */
     public function cancelSiteInspection(Request $request)
     {
@@ -1746,6 +1747,45 @@ class NewConnectionController extends Controller
             $mWaterSiteInspection = new WaterSiteInspection();
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Save the site Inspection Date and Time 
+     * | Create record behalf of the date and time with respective to application no
+     * | @param request
+     * | @var 
+     * | @return 
+     */
+    public function saveInspectionDateTime(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicationId' => 'required',
+                'inspectionDate' => 'required|date|date_format:d-m-Y',
+                'inspectionTime' => 'required|date_format:H:i'
+            ]);
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $this->checkForSaveDateTime($request);
+            $mWaterSiteInspection->saveSiteDateTime($request);
+            return responseMsgs(true, "Date for the Site Inspection is Saved!", "", "", "01", ".ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Check the validation for saving the site inspection 
+     * | @param request
+        | Add more Validation 
+     */
+    public function checkForSaveDateTime($request)
+    {
+        $refApplication = WaterApplication::findOrFail($request->applicationId);
+        $WaterRoles = Config::get('waterConstaint.ROLE-LABEL');
+
+        if ($refApplication['current_role'] != $WaterRoles['JE']) {
+            throw new Exception("Application is not Under the JE!");
         }
     }
 }

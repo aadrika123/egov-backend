@@ -16,7 +16,10 @@ class WaterSiteInspection extends Model
      */
     public function storeInspectionDetails($req, $waterFeeId, $waterDetails)
     {
-        $saveSiteVerify = new WaterSiteInspection();
+        $saveSiteVerify = WaterSiteInspection::where('apply_connection_id', $req->applicationId)
+            ->where('status', true)
+            ->first();
+
         $saveSiteVerify->property_type_id       =   $req->propertyTypeId;
         $saveSiteVerify->pipeline_type_id       =   $req->pipelineTypeId;
         $saveSiteVerify->connection_type_id     =   $req->connectionTypeId;
@@ -27,7 +30,6 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->area_sqft              =   $req->areaSqFt;
         $saveSiteVerify->rate_id                =   $req->rateId ?? null;                    // what is rate Id
         $saveSiteVerify->emp_details_id         =   authUser()->id;
-        $saveSiteVerify->apply_connection_id    =   $req->applicationId;
         $saveSiteVerify->pipeline_size          =   $req->pipelineSize;
         $saveSiteVerify->pipeline_size_type     =   $req->pipelineSizeType;
         $saveSiteVerify->pipe_size              =   $req->diameter;
@@ -48,7 +50,7 @@ class WaterSiteInspection extends Model
 
     }
 
-    
+
     /**
      * | Get Site inspection Details by ApplicationId
      * | According to verification status false
@@ -65,5 +67,21 @@ class WaterSiteInspection extends Model
             ->where('apply_connection_id', $applicationId)
             ->where('status', true)
             ->where('payment_status', 0);
+    }
+
+
+    /**
+     * | Save the Sheduled Date and Time of the Site Inspection
+     * | Create a record for further Edit in site inspection
+     * | @param request
+     */
+    public function saveSiteDateTime($request)
+    {
+        $inspectionDate = date('Y-m-d', strtotime($request->inspectionDate));
+        $mWaterSiteInspection = new WaterSiteInspection();
+        $mWaterSiteInspection->apply_connection_id    =   $request->applicationId;
+        $mWaterSiteInspection->inspection_date        =   $inspectionDate;
+        $mWaterSiteInspection->inspection_time        =   $request->inspectionTime;
+        $mWaterSiteInspection->save();
     }
 }
