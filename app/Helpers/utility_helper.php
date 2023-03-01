@@ -354,7 +354,7 @@ if (!function_exists('roundFigure')) {
     function roundFigure(float $number)
     {
         $round = round($number, 2);
-        return $round;
+        return number_format((float)$round, 2, '.', '');
     }
 }
 

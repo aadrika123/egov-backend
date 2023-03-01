@@ -22,6 +22,8 @@ class calculatorController extends Controller
         try {
             $calculation = new SafCalculation;
             $response = $calculation->calculateTax($request);
+            if ($response->original['status'] == false)
+                return $response->original;
             $fetchDetails = collect($response->original['data']['details'])->groupBy('ruleSet');
             $finalResponse['demand'] = $response->original['data']['demand'];
             $finalResponse['details']['description'] = $fetchDetails;
