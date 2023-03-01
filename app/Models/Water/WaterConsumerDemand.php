@@ -2,6 +2,7 @@
 
 namespace App\Models\Water;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -43,5 +44,32 @@ class WaterConsumerDemand extends Model
             ->update([
                 'status' => false
             ]);
+    }
+
+
+    /**
+     * | Save the consumer demand while Demand generation
+     * | @param demands
+     * | @param meterDetails
+     */
+    public function saveConsumerDemand($demands, $meterDetails, $consumerDetails, $request)
+    {
+        $mWaterConsumerDemand = new WaterConsumerDemand();
+        $mWaterConsumerDemand->consumer_id              =  $consumerDetails->id;
+        $mWaterConsumerDemand->ward_id                  =  $consumerDetails->ward_mstr_id;
+        $mWaterConsumerDemand->generation_date          =  $demands['generation_date'];
+        $mWaterConsumerDemand->amount                   =  $demands['amount'];
+        $mWaterConsumerDemand->paid_status              =  false;
+        $mWaterConsumerDemand->emp_details_id           =  authUser()->id;
+        $mWaterConsumerDemand->demand_from              =  $demands['demand_from'];
+        $mWaterConsumerDemand->demand_upto              =  $demands['demand_upto'];
+        $mWaterConsumerDemand->penalty                  =  $demands['penalty'];
+        $mWaterConsumerDemand->current_meter_reading    =  $request->finalRading;
+        $mWaterConsumerDemand->unit_amount              =  $demands['unit_amount'];
+        $mWaterConsumerDemand->connection_type          =  $meterDetails['charge_type'];
+        $mWaterConsumerDemand->demand_no                =  "RMC" . random_int(100000, 999999) . "/" . random_int(1, 10);
+        $mWaterConsumerDemand->balance_amount           =  $demands['penalty'] + $demands['amount'];
+        $mWaterConsumerDemand->created_at               =  Carbon::now();
+        $mWaterConsumerDemand->save();
     }
 }

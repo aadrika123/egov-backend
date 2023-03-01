@@ -92,55 +92,86 @@ class WaterConsumer extends Controller
 
 
     /**
-     * | Consumer Deactivation Process
-     * | Deactivet the consumer using the consumer Id
-     * | @param consumerId
+     * | Save the consumer demand 
+     * | @param 
      * | @var 
      * | @return 
         | Serial No : 03
-        | Validate
+        | Not Working
+        | Work on the valuidation and the saving of the meter details 
      */
-    public function deactivateConsumer(reqDeactivate $request)
+    public function saveGenerateConsumerDemand(Request $request)
     {
         try {
             $mWaterConsumerDemand = new WaterConsumerDemand();
-            $WaterWaterConsumer = new WaterWaterConsumer();
-            $mWaterConsumerDisconnection = new WaterConsumerDisconnection();
-            $refDeactivationCriteria = Config::get('waterConstaint.WATER_MASTER_DATA.DEACTIVATION_CRITERIA');
-            $refConsumerId = $request->consumerId;
-            $refConsumerDetails = $WaterWaterConsumer->getConsumerById($refConsumerId);
-            $this->checkDeactivationParameters($request);
+            $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
+            $mWaterConsumerMeter = new WaterConsumerMeter();
 
-            switch ($request) {
-                case (in_array($request->deactivateReason, $refDeactivationCriteria)):
-                    $mWaterConsumerDisconnection->saveDeactivationDetails($refConsumerDetails);
-                    $refConsumerDemand = $mWaterConsumerDemand->getConsumerDemand($refConsumerId);
-                    $checkDemand = collect($refConsumerDemand)->first();
-                    if ($checkDemand) {
-                        $consumerDemandIds = collect($refConsumerDemand)->map(function ($value, $key) {
-                            return $value['id'];
-                        });
-                        $mWaterConsumerDemand->deactivateDemand($consumerDemandIds);
-                    }
-                    $WaterWaterConsumer->dissconnetConsumer($refConsumerId);
-                    break;
-
-                case (!$request->deactivateReason):
-                    $refConsumerDemand = $mWaterConsumerDemand->getConsumerDemand($refConsumerId);
-                    $checkDemand = collect($refConsumerDemand)->first();
-                    if (!$checkDemand) {
-                        throw new Exception("Demand for the respective Consumer id Unpaid!");
-                    }
-                    $consumerDemandIds = collect($refConsumerDemand)->map(function ($value, $key) {
-                        return $value['id'];
+            // $this->checkDemandGeneration($request);
+            $consumerDetails = WaterWaterConsumer::findOrFail($request->consumerId);
+            $calculatedDemand = $this->Repository->calConsumerDemand($request);
+            if (isset($calculatedDemand)) {
+                # get the demand
+                $mWaterConsumerMeter->saveMeterReading($request);
+                $mWaterConsumerInitialMeter->saveConsumerReading();
+                return $generatedDemand = $calculatedDemand['consumer_tax'];
+                return  collect($generatedDemand)->map(function ($firstValue)
+                use ($mWaterConsumerDemand, $mWaterConsumerInitialMeter, $mWaterConsumerMeter, $consumerDetails, $request) {
+                    $meterDetails = [
+                        "charge_type"       => $firstValue['charge_type'],
+                        "amount"            => $firstValue['charge_type'],
+                        "effective_from"    => $firstValue['effective_from'],
+                        "initial_reading"   => $firstValue['initial_reading'],
+                        "final_reading"     => $firstValue['final_reading'],
+                        "rate_id"           => $firstValue['rate_id'],
+                    ];
+                    $refDemands = $firstValue['consumer_demand'];
+                    collect($refDemands)->map(function ($secondValue)
+                    use ($mWaterConsumerDemand, $meterDetails, $mWaterConsumerInitialMeter, $mWaterConsumerMeter, $consumerDetails, $request) {
+                        $mWaterConsumerDemand->saveConsumerDemand($secondValue, $meterDetails, $consumerDetails, $request);
+                        
                     });
-                    $mWaterConsumerDisconnection->saveDeactivationDetails($refConsumerDetails);
-                    $WaterWaterConsumer->dissconnetConsumer($refConsumerId);
-                    $mWaterConsumerDemand->deactivateDemand($consumerDemandIds);
-                    break;
+                })->first();
+
+                return responseMsgs(true, "Demand Generated! for" . $request->consumerId, "", "", "02", ".ms", "POST", "");
             }
         } catch (Exception $e) {
-            return responseMsgs(true, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
+    }
+
+
+    /**
+     * | Save the Meter details 
+     * | @param
+     * | @var 
+     * | @return
+        | Serial No : 04
+        | Not working  
+        | Check the parameter for the autherised person
+     */
+    public function saveMeterDetails(Request $request)
+    {
+        try{
+            $mWaterConsumerMeter = new WaterConsumerMeter();
+            $this->checkParamForMeterEntry($request);
+            $mWaterConsumerMeter->saveMeterDetails($request);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$e->getFile(),"","01",".ms","POST","");
+        }
+    }
+
+    /**
+     * | Chech the parameter before Meter entry
+     * | Validate the Admin For entring the meter details
+     * | @param req
+        | Serial No : 04.01
+        | Not Working
+     */
+    public function checkParamForMeterEntry($request)
+    {
+
     }
 }

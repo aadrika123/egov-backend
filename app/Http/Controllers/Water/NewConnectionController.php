@@ -26,6 +26,7 @@ use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterConsumerOwner;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterParamConnFee;
@@ -329,12 +330,32 @@ class NewConnectionController extends Controller
                 $request->validate([
                     "id" => "nullable|int",
                 ]);
+                $mWaterConsumerMeter = new WaterConsumerMeter();
+                $refConnectionName = Config::get('waterConstaint.METER_CONN_TYPE');
                 $consumerDetails = $this->newConnection->getApprovedWater($request);
                 $refApplicationId['applicationId'] = $consumerDetails['consumer_id'];
                 $metaRequest = new Request($refApplicationId);
                 $refDocumentDetails = $this->getUploadDocuments($metaRequest);
                 $documentDetails['documentDetails'] = collect($refDocumentDetails)['original']['data'];
-                $consumerDetails = $consumerDetails->merge($documentDetails);
+
+                # meter Details 
+                $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerId($request->id)->first();
+                if (isset($refMeterData)) {
+                    switch ($refMeterData['connection_type']) {
+                        case (1):
+                            $connectionName = $refConnectionName['1'];
+                            break;
+                        case (2):
+                            $connectionName = $refConnectionName['2'];
+                            break;
+                        case (3):
+                            $connectionName = $refConnectionName['3'];
+                            break;
+                    }
+                    $consumerDemand['meterDetails'] = $refMeterData;
+                    $consumerDemand['connectionName'] = $connectionName;
+                }
+                $consumerDetails = $consumerDetails->merge($documentDetails)->merge($consumerDemand);
                 return responseMsgs(true, "Consumer Details!", remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
             }
 
@@ -807,12 +828,12 @@ class NewConnectionController extends Controller
             if (!$refApplication) {
                 throw new Exception("Application Not Found!");
             }
-            
+
             $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($connectionId)->first();
             $connectionCharges['type'] = Config::get('waterConstaint.New_Connection');
             $connectionCharges['applicationNo'] = $refApplication->application_no;
             $connectionCharges['applicationId'] = $refApplication->id;
-            
+
             $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication);  # get All Related Document Type List
             $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
             $ownerList = collect($refOwneres)->map(function ($value) {
@@ -1655,18 +1676,38 @@ class NewConnectionController extends Controller
             $key = $request->filterBy;
             switch ($key) {
                 case ("byApplication"):
+                    $refSiteDetails['SiteInspectionDate'] = null;
                     $mWaterApplicant = new WaterApplication();
-                    $returnData = $mWaterApplicant->getApplicationByNo($request->paramenter, $roleId)->get();
+                    $mWaterSiteInspection = new WaterSiteInspection();
+                    $refApplication = $mWaterApplicant->getApplicationByNo($request->paramenter, $roleId)->get();
+                    $returnData = collect($refApplication)->map(function ($value) use ($mWaterSiteInspection) {
+                        $refViewSiteDetails['viewSiteDetails'] = false;
+                        $refSiteDetails['SiteInspectionDate'] = $mWaterSiteInspection->getInspectionById($value['id'])->first();
+                        if (isset($refSiteDetails['SiteInspectionDate'])) {
+                            $refViewSiteDetails['viewSiteDetails'] = $this->canViewSiteDetails($refSiteDetails['SiteInspectionDate']);
+                            return  collect($value)->merge(collect($refSiteDetails))->merge(collect($refViewSiteDetails));
+                        }
+                        return  collect($value)->merge(collect($refSiteDetails))->merge(collect($refViewSiteDetails));
+                    });
+
                     break;
                 case ("byDate"):
                     $mWaterApplicant = new WaterApplication();
+                    $mWaterSiteInspection = new WaterSiteInspection();
                     $refTimeDate = [
                         "refStartTime" => Carbon::parse($request->fromDate)->format('Y-m-d'),
                         "refEndTime" => Carbon::parse($request->toDate)->format('Y-m-d')
                     ];
                     $refData = $mWaterApplicant->getapplicationByDate($refTimeDate)->get();
-                    $returnData = collect($refData)->map(function ($value) use ($roleId) {
+                    $returnData = collect($refData)->map(function ($value) use ($roleId, $mWaterSiteInspection) {
                         if ($value['current_role'] == $roleId) {
+                            $refViewSiteDetails['viewSiteDetails'] = false;
+                            $refSiteDetails['SiteInspectionDate'] = $mWaterSiteInspection->getInspectionById($value['id'])->first();
+                            if (isset($refSiteDetails['SiteInspectionDate'])) {
+                                $refViewSiteDetails['viewSiteDetails'] = $this->canViewSiteDetails($refSiteDetails['SiteInspectionDate']);
+                                return  collect($value)->merge(collect($refSiteDetails))->merge(collect($refViewSiteDetails));
+                            }
+                            return  collect($value)->merge(collect($refSiteDetails))->merge(collect($refViewSiteDetails));
                             return $value;
                         }
                     })->filter()->values();
@@ -1675,6 +1716,36 @@ class NewConnectionController extends Controller
             return responseMsgs(true, "Searched Data!", remove_null($returnData), "", "01", "ms", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+        }
+    }
+
+
+    /**
+     * | Can View Site Details 
+     * | Check if the provided date is matchin to the current date
+     * | @param sitDetails  
+     */
+    public function canViewSiteDetails($sitDetails)
+    {
+        if ($sitDetails['inspection_date'] == Carbon::now()) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * | Cancel Site inspection 
+     * | In case of date missmatch or changes
+     * | @param
+     * | @var
+     * | @return  
+     */
+    public function cancelSiteInspection(Request $request)
+    {
+        try {
+            $mWaterSiteInspection = new WaterSiteInspection();
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
 }
