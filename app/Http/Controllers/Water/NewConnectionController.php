@@ -1681,7 +1681,6 @@ class NewConnectionController extends Controller
                     $mWaterSiteInspection = new WaterSiteInspection();
                     $refApplication = $mWaterApplicant->getApplicationByNo($request->paramenter, $roleId)->get();
                     $returnData = collect($refApplication)->map(function ($value) use ($mWaterSiteInspection) {
-                        $refSiteDetails['siteInspectionDate'] = null;
                         $refViewSiteDetails['viewSiteDetails'] = false;
                         $refSiteDetails['SiteInspectionDate'] = $mWaterSiteInspection->getInspectionById($value['id'])->first();
                         if (isset($refSiteDetails['SiteInspectionDate'])) {
@@ -1702,7 +1701,6 @@ class NewConnectionController extends Controller
                     $refData = $mWaterApplicant->getapplicationByDate($refTimeDate)->get();
                     $returnData = collect($refData)->map(function ($value) use ($roleId, $mWaterSiteInspection) {
                         if ($value['current_role'] == $roleId) {
-                            $refSiteDetails['siteInspectionDate'] = null;
                             $refViewSiteDetails['viewSiteDetails'] = false;
                             $refSiteDetails['SiteInspectionDate'] = $mWaterSiteInspection->getInspectionById($value['id'])->first();
                             if (isset($refSiteDetails['SiteInspectionDate'])) {
