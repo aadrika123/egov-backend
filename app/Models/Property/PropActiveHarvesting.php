@@ -92,9 +92,12 @@ class PropActiveHarvesting extends Model
                 'wr.role_name as current_role_name',
                 'a.apt_code as apartment_code',
                 'a.*',
+                'prop_owners.*',
                 'h.*',
+
             )
             ->leftJoin('prop_properties as pp', 'pp.id', '=', 'h.property_id')
+            ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'pp.id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'pp.ward_mstr_id')
             ->leftJoin('wf_roles as wr', 'wr.id', '=', 'h.current_role')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'pp.new_ward_mstr_id')

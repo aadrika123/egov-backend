@@ -375,10 +375,11 @@ class RainWaterHarvestingController extends Controller
                 'harvestingBefore2017' => $details->harvesting_status,
                 'holdingNo' => $details->holding_no,
                 'newHoldingNo' => $details->new_holding_no,
-                // 'guardianName' => $details->guardianName,
+                'guardianName' => $details->guardian_name,
+                'applicantName' => $details->owner_name,
                 'wardNo' => $details->new_ward_no,
                 'propertyAddress' => $details->prop_address,
-                // 'mobileNo' => $details->mobileNo,
+                'mobileNo' => $details->mobile_no,
                 'dateOfCompletion' => $details->date_of_completion,
                 'harvestingImage' => $docs[0]->doc_path,
 
