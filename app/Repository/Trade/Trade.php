@@ -3464,16 +3464,28 @@ class Trade implements ITrade
 
             // Save On Workflow Track
             DB::beginTransaction();
-            $workflowTrack = new WorkflowTrack;
-            $workflowTrack->workflow_id     =   Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $workflowTrack->citizen_id      =   $userId;
-            $workflowTrack->module_id       =   Config::get('TradeConstant.MODULE-ID');
-            $workflowTrack->ref_table_dot_id = "active_trade_licences";
-            $workflowTrack->ref_table_id_value = $refLicense->id;
-            $workflowTrack->message         =   $request->comment;
-            $workflowTrack->commented_by    =   $role_id;
-            $workflowTrack->track_date      =   Carbon::now()->format('Y-m-d H:i:s');
-            $workflowTrack->save();
+            $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
+            $metaReqs['workflowId'] = $refLicense->workflow_id;
+            $metaReqs['refTableDotId'] = 'active_trade_licences';
+            $metaReqs['refTableIdValue'] = $refLicense->id;
+            $metaReqs['senderRoleId'] = $role_id;            
+            $metaReqs['citizenId']=$userId;
+            $metaReqs['ulb_id']=$refLicense->ulb_id;
+            $request->request->add($metaReqs);
+
+            $track = new WorkflowTrack();
+            $track->saveTrack($request);
+
+            // $workflowTrack = new WorkflowTrack;
+            // $workflowTrack->workflow_id     =   Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            // $workflowTrack->citizen_id      =   $userId;
+            // $workflowTrack->module_id       =   Config::get('TradeConstant.MODULE-ID');
+            // $workflowTrack->ref_table_dot_id = "active_trade_licences";
+            // $workflowTrack->ref_table_id_value = $refLicense->id;
+            // $workflowTrack->message         =   $request->comment;
+            // $workflowTrack->commented_by    =   $role_id;
+            // $workflowTrack->track_date      =   Carbon::now()->format('Y-m-d H:i:s');
+            // $workflowTrack->save();
 
             DB::commit();
             return responseMsg(true, "You Have Commented Successfully!!", ['Comment' => $request->comment]);

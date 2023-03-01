@@ -518,6 +518,8 @@ class TradeApplication extends Controller
             $metaReqs['workflowId'] = $licence->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences';
             $metaReqs['refTableIdValue'] = $request->applicationId;
+            $metaReqs['user_id']=$user_id;
+            $metaReqs['ulb_id']=$ulb_id;
             $request->request->add($metaReqs);
 
             $track = new WorkflowTrack();
