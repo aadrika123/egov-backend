@@ -1866,7 +1866,7 @@ class ActiveSafController extends Controller
             "longitude" => "required|array|min:3|max:3",
             "longitude.*" => "required|numeric",
             "latitude" => "required|array|min:3|max:3",
-            "longitude.*" => "required|numeric"
+            "latitude.*" => "required|numeric"
         ]);
         try {
             $docUpload = new DocUpload;

@@ -202,8 +202,7 @@ class PropTransaction extends Model
         )
             ->join('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 'prop_transactions.id')
             ->join('users', 'users.id', 'prop_cheque_dtls.user_id')
-            ->where('payment_mode', 'DD')
-            ->orWhere('payment_mode', 'CHEQUE')
+            ->whereIn('payment_mode', ['CHEQUE', 'DD'])
             ->where('prop_transactions.ulb_id', $ulbId);
     }
 

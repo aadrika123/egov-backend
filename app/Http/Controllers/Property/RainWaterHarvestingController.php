@@ -8,6 +8,7 @@ use App\Models\CustomDetail;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropFloor;
+use App\Models\Property\PropHarvestingGeotagUpload;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropRwhVerification;
@@ -382,7 +383,6 @@ class RainWaterHarvestingController extends Controller
                 'mobileNo' => $details->mobile_no,
                 'dateOfCompletion' => $details->date_of_completion,
                 'harvestingImage' => $docs[0]->doc_path,
-
             ];
 
             return responseMsgs(true, "Static Details!", remove_null($data), 010125, 1.0, "", "POST", $req->deviceId);
@@ -1204,6 +1204,47 @@ class RainWaterHarvestingController extends Controller
             $data = $mPropRwhVerification->getVerificationsData($req->applicationId);           // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
 
             return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Geo tagging
+     */
+    public function geoTagging(Request $req)
+    {
+        $req->validate([
+            "applicationId" => "required|numeric",
+            "harvestingImage.*" => "required|image|mimes:jpeg,jpg,png,gif",
+            // "directionType" => "required|array|min:3|max:3",
+            // "directionType.*" => "required|In:Left,Right,Front",
+            "longitude" => "required|numeric",
+            "latitude" => "required|numeric"
+        ]);
+        try {
+            $docUpload = new DocUpload;
+            $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
+            $images = $req->harvestingImage;
+            // $directionTypes = $req->directionType;
+            $longitude = $req->longitude;
+            $latitude = $req->latitude;
+
+            $geoTagging = new PropHarvestingGeotagUpload();
+            $refImageName = 'harvesting-geotagging-' .  $req->applicationId;
+
+            $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
+
+            $geoTagging->application_id = $req->applicationId;
+            $geoTagging->image_path = $imageName;
+            // $geoTagging->direction_type = $directionTypes[$key];
+            $geoTagging->longitude = $longitude;
+            $geoTagging->latitude = $latitude;
+            $geoTagging->relative_path = $relativePath;
+            $geoTagging->user_id = authUser()->id;
+            $geoTagging->save();
+
+            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
