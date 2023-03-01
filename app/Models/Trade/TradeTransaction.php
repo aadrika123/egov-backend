@@ -37,8 +37,7 @@ class TradeTransaction extends Model
         )
             // ->join('users', 'users.id', 'trade_cheque_dtls.emp_dtl_id')
             ->leftjoin('trade_cheque_dtls', 'trade_cheque_dtls.tran_id', 'trade_transactions.id')
-            ->where('payment_mode', 'DD')
-            ->orWhere('payment_mode', 'CHEQUE')
+            ->whereIn('payment_mode', ['CHEQUE', 'DD'])
             ->where('ulb_id', $ulbId);
     }
 
