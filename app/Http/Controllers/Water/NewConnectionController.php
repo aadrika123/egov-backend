@@ -1768,7 +1768,12 @@ class NewConnectionController extends Controller
             $mWaterSiteInspection = new WaterSiteInspection();
             $this->checkForSaveDateTime($request);
             $mWaterSiteInspection->saveSiteDateTime($request);
-            return responseMsgs(true, "Date for the Site Inspection is Saved!", "", "", "01", ".ms", "POST", "");
+            if ($request->inspectionDate == Carbon::now()) {
+                $canView['canView'] = true;
+            } else {
+                $canView['canView'] = false;
+            }
+            return responseMsgs(true, "Date for the Site Inspection is Saved!", $canView, "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
