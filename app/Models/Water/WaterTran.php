@@ -87,8 +87,7 @@ class WaterTran extends Model
     {
         return WaterTran::select('*')
             ->leftjoin('water_cheque_dtls', 'water_cheque_dtls.transaction_id', 'water_trans.id')
-            ->where('payment_mode', 'DD')
-            ->orWhere('payment_mode', 'CHEQUE')
+            ->whereIn('payment_mode', ['CHEQUE', 'DD'])
             ->where('ulb_id', $ulbId);
     }
 
