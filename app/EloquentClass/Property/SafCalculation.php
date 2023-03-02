@@ -67,6 +67,7 @@ class SafCalculation
     public $_capitalValueRate;
     public $_paramRentalRate;
     public $_areaOfPlotInSqft;
+    public $_point20TaxedUsageTypes;
 
     /** 
      * | For Building
@@ -188,6 +189,7 @@ class SafCalculation
         $this->_jskRebateID = Config::get('PropertyConstaint.REBATES.JSK.ID');                          // 2.5
         $this->_speciallyAbledRebateID = Config::get('PropertyConstaint.REBATES.SPECIALLY_ABLED.ID');   // 5
         $this->_seniorCitizenRebateID = Config::get('PropertyConstaint.REBATES.SERIOR_CITIZEN.ID');     // 5
+        $this->_point20TaxedUsageTypes = Config::get('PropertyConstaint.POINT20-TAXED-COMM-USAGE-TYPES'); // The Type of Commercial Usage Types which have taxes 0.20 Perc
     }
 
     /**
@@ -927,8 +929,8 @@ class SafCalculation
             $readUsageType = $this->_floors[$key]['useType'];
             $taxPerc = ($readUsageType == 1) ? 0.075 : 0.15;                                                // 0.075 for Residential and 0.15 for Commercial
 
-            if ($this->_areaOfPlotInSqft >= 25000)
-                $taxPerc = 0.20;                                                // Tax Perc for the type of Property whose Sqft is > 250000
+            if ($readBuildupArea >= 25000 && in_array($readFloorUsageType, $this->_point20TaxedUsageTypes))
+                $taxPerc = 0.20;                                                                            // Tax Perc for the type of Property whose Sqft is > 250000
 
             $readMultiFactor = collect($this->_multiFactors)->where('usage_type_id', $readFloorUsageType)
                 ->where('effective_date', $this->_effectiveDateRule3)
