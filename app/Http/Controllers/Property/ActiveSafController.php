@@ -779,9 +779,8 @@ class ActiveSafController extends Controller
             ]);
             $ulbWorkflowId = $saf->workflow_id;
             $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
-            $workflowMstrId = $ulbWorkflowMaps->wf_master_id;
             $roleMapsReqs = new Request([
-                'workflowId' => $workflowMstrId,
+                'workflowId' => $ulbWorkflowMaps->id,
                 'roleId' => $senderRoleId
             ]);
             return $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
