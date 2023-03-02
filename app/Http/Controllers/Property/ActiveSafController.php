@@ -784,7 +784,7 @@ class ActiveSafController extends Controller
                 'workflowId' => $workflowMstrId,
                 'roleId' => $senderRoleId
             ]);
-            return $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+            $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
             DB::beginTransaction();
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);

@@ -519,9 +519,8 @@ class RainWaterHarvestingController extends Controller
 
             ]);
             $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
-            $workflowMstrId = $ulbWorkflowMaps->wf_master_id;
             $roleMapsReqs = new Request([
-                'workflowId' => $workflowMstrId,
+                'workflowId' => $ulbWorkflowMaps->workflow_id,
                 'roleId' => $senderRoleId
             ]);
             $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
