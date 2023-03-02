@@ -366,18 +366,12 @@ class NewConnectionRepository implements iNewConnection
         $mWfRoleMaps = new WfWorkflowrolemap();
         $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
         $waterApplication = WaterApplication::find($req->applicationId);
-        $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
         // Derivative Assignments
         $senderRoleId = $waterApplication->current_role;
-        $req->validate([
-            'comment' => $req->senderRoleId == $senderRoleId['BO'] ? 'nullable' : 'required',
-        ]);
-
         $ulbWorkflowId = $waterApplication->workflow_id;
         $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
-        $workflowMstrId = $ulbWorkflowMaps->wf_master_id;
         $roleMapsReqs = new Request([
-            'workflowId' => $workflowMstrId,
+            'workflowId' => $ulbWorkflowMaps->id,
             'roleId' => $senderRoleId
         ]);
         $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
@@ -398,6 +392,7 @@ class NewConnectionRepository implements iNewConnection
         $metaReqs['workflowId'] = $this->_waterWorkId;
         $metaReqs['refTableDotId'] = 'water_applications.id';
         $metaReqs['refTableIdValue'] = $req->applicationId;
+        $metaReqs['user_id'] = authUser()->id;
         $req->request->add($metaReqs);
 
         $waterTrack = new WorkflowTrack();
@@ -420,10 +415,10 @@ class NewConnectionRepository implements iNewConnection
                 if ($application->doc_upload_status == 0)
                     throw new Exception("Document Not Fully Uploaded");
                 break;
-                // case $wfLevels['DA']:                       // DA Condition
-                //     if ($application->doc_status == 0)
-                //         throw new Exception("Document Not Fully Verified");
-                //     break;
+                case $wfLevels['DA']:                       // DA Condition
+                    if ($application->doc_status == 0)
+                        throw new Exception("Document Not Fully Verified");
+                    break;
                 // case $wfLevels['JE']:                       // JE Coditon in case of site adjustment
                 //     if ($application->doc_status == 0 || $application->payment_status == 0)
                 //         throw new Exception("Document Not Fully Verified or Payment in not Done!");
@@ -508,18 +503,18 @@ class NewConnectionRepository implements iNewConnection
         if ($waterDetails->current_role != $roleId) {
             throw new Exception("Application has not Reached to the finisher ie. EO!");
         }
-        // if ($waterDetails->doc_status == false) {
-        //     throw new Exception("Documet is Not verified!");
-        // }
+        if ($waterDetails->doc_status == false) {
+            throw new Exception("Documet is Not verified!");
+        }
         if ($waterDetails->payment_status == false) {
             throw new Exception("Payment Not Done!");
         }
         if ($waterDetails->doc_upload_status == false) {
             throw new Exception("Full document is Not Uploaded!");
         }
-        if ($waterDetails->is_field_verified == false) {
-            throw new Exception("Field Verification Not Done!!");
-        }
+        // if ($waterDetails->is_field_verified == false) {
+        //     throw new Exception("Field Verification Not Done!!");
+        // }
 
         DB::beginTransaction();
         # Approval of water application 
