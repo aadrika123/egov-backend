@@ -226,11 +226,13 @@ class NewConnectionController extends Controller
     public function postNextLevel(Request $request)
     {
         try {
+            $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
             $request->validate([
                 'applicationId' => 'required',
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
-                'action' => 'required|In:forward,backward'
+                'action' => 'required|In:forward,backward',
+                'comment' => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
             ]);
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
@@ -1505,7 +1507,7 @@ class NewConnectionController extends Controller
         $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
         // Water List Documents
         $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
-        if ($ifPropDocUnverified == 1)
+        if ($ifPropDocUnverified == true)
             return 0;
         else
             return 1;
@@ -1745,6 +1747,7 @@ class NewConnectionController extends Controller
     {
         try {
             $mWaterSiteInspection = new WaterSiteInspection();
+            $mWaterSiteInspection->cancelInspectionDateTime($request);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
