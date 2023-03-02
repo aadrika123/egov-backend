@@ -75,10 +75,10 @@ class CitizenController extends Controller
     public function docUpload($request, $id)
     {
         $docUpload = new DocUpload;
-        $imageRelativePath = 'Uploads/Citizen/';
+        $imageRelativePath = 'Uploads/Citizen/' . $id;
         ActiveCitizen::where('id', $id)
             ->update([
-                'relative_path' => $imageRelativePath . $id . '/',
+                'relative_path' => $imageRelativePath . '/',
             ]);
 
         if ($request->photo) {

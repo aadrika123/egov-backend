@@ -245,12 +245,13 @@ class PropProperty extends Model
 
     /**
      * | Get Property id by saf id
+     * | Function Used On Approval Rejection Saf
      */
     public function getPropIdBySafId($safId)
     {
         return PropProperty::select('id')
             ->where('saf_id', $safId)
-            ->first();
+            ->firstOrFail();
     }
 
     /**
