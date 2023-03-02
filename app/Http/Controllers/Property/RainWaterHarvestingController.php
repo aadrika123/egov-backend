@@ -507,7 +507,7 @@ class RainWaterHarvestingController extends Controller
                 // 'comment' => $req->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
             ]);
 
-
+            $userId = authUser()->id;
             $track = new WorkflowTrack();
             $harvesting = PropActiveHarvesting::findorFail($req->applicationId);
             $mWfWorkflows = new WfWorkflow();
@@ -544,7 +544,7 @@ class RainWaterHarvestingController extends Controller
             $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['senderRoleId'] = $senderRoleId;
-
+            $metaReqs['user_id'] = $userId;
 
             $req->request->add($metaReqs);
             $track->saveTrack($req);

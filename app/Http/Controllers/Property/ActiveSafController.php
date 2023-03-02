@@ -763,6 +763,7 @@ class ActiveSafController extends Controller
 
         try {
             // Variable Assigments
+            $userId = authUser()->id;
             $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $saf = PropActiveSaf::findOrFail($request->applicationId);
             $mWfMstr = new WfWorkflow();
@@ -788,19 +789,26 @@ class ActiveSafController extends Controller
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId);          // Check Post Next level condition
-                $metaReqs['verificationStatus'] = 1;
                 $saf->current_role = $forwardBackwardIds->forward_role_id;
                 $saf->last_role_id =  $forwardBackwardIds->forward_role_id;                     // Update Last Role Id
+                $metaReqs['verificationStatus'] = 1;
+                $metaReqs['receiverRoleId'] = $forwardBackwardIds->forward_role_id;
             }
             // SAF Application Update Current Role Updation
-            if ($request->action == 'backward')
+            if ($request->action == 'backward') {
                 $saf->current_role = $forwardBackwardIds->backward_role_id;
+                $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
+            }
+
 
             $saf->save();
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
             $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
             $metaReqs['refTableIdValue'] = $request->applicationId;
+            $metaReqs['senderRoleId'] = $senderRoleId;
+            $metaReqs['user_id'] = $userId;
+
             $request->request->add($metaReqs);
 
             $track->saveTrack($request);
