@@ -502,18 +502,30 @@ class RainWaterHarvestingController extends Controller
         try {
             $req->validate([
                 'applicationId' => 'required|integer',
-                'senderRoleId' => 'required|integer',
-                'receiverRoleId' => 'required|integer',
-                'comment' => $req->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
-                'action' => 'required|In:forward,backward'
+                'receiverRoleId' => 'nullable|integer',
+                'action' => 'required|In:forward,backward',
+                // 'comment' => $req->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
             ]);
 
-            DB::beginTransaction();
 
             $track = new WorkflowTrack();
-            $harvesting = PropActiveHarvesting::find($req->applicationId);
-            $senderRoleId = $req->senderRoleId;
+            $harvesting = PropActiveHarvesting::findorFail($req->applicationId);
+            $mWfWorkflows = new WfWorkflow();
+            $mWfRoleMaps = new WfWorkflowrolemap();
+            $senderRoleId = $harvesting->current_role;
+            $ulbWorkflowId = $harvesting->workflow_id;
+            $req->validate([
+                'comment' => $senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
 
+            ]);
+            $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
+            $workflowMstrId = $ulbWorkflowMaps->wf_master_id;
+            $roleMapsReqs = new Request([
+                'workflowId' => $workflowMstrId,
+                'roleId' => $senderRoleId
+            ]);
+            $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+            DB::beginTransaction();
             if ($req->action == 'forward') {
                 $this->checkPostCondition($senderRoleId, $wfLevels, $harvesting);          // Check Post Next level condition
                 $harvesting->last_role_id = $req->receiverRoleId;                      // Update Last Role Id
