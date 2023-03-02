@@ -520,36 +520,55 @@ class ConcessionController extends Controller
     // Post Next Level Application
     public function postNextLevel(Request $req)
     {
-        $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
+        $wfLevels = Config::get('PropertyConstaint.CONCESSION-LABEL');
         $req->validate([
             'applicationId' => 'required|integer',
-            'senderRoleId' => 'required|integer',
-            'receiverRoleId' => 'required|integer',
-            'comment' => $req->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
-            'action' => 'required|In:forward,backward'
+            'receiverRoleId' => 'nullable|integer',
+            'action' => 'required|In:forward,backward',
         ]);
         try {
-            $senderRoleId = $req->senderRoleId;
+            $userId = authUser()->id;
+            $track = new WorkflowTrack();
+            $mWfWorkflows = new WfWorkflow();
+            $mWfRoleMaps = new WfWorkflowrolemap();
             $concession = PropActiveConcession::find($req->applicationId);
+            $senderRoleId = $concession->current_role;
+            $ulbWorkflowId = $concession->workflow_id;
+            $req->validate([
+                'comment' => $senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+            ]);
 
+            $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
+            $roleMapsReqs = new Request([
+                'workflowId' => $ulbWorkflowMaps->id,
+                'roleId' => $senderRoleId
+            ]);
+            $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+
+            DB::beginTransaction();
             if ($req->action == 'forward') {
                 $this->checkPostCondition($senderRoleId, $wfLevels, $concession);          // Check Post Next level condition
-                $concession->last_role_id = $req->receiverRoleId;                      // Update Last Role Id
+                $concession->current_role = $forwardBackwardIds->forward_role_id;
+                $concession->last_role_id =  $forwardBackwardIds->forward_role_id;         // Update Last Role Id
                 $metaReqs['verificationStatus'] = 1;
+                $metaReqs['receiverRoleId'] = $forwardBackwardIds->forward_role_id;
             }
 
-            // Concession Application Update Current Role Updation
-            DB::beginTransaction();
-            $concession->current_role = $req->receiverRoleId;
+            if ($req->action == 'backward') {
+                $concession->current_role = $forwardBackwardIds->backward_role_id;
+                $metaReqs['verificationStatus'] = 0;
+                $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
+            }
             $concession->save();
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $concession->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $req->request->add($metaReqs);
+            $metaReqs['senderRoleId'] = $senderRoleId;
+            $metaReqs['user_id'] = $userId;
 
-            $track = new WorkflowTrack();
+            $req->request->add($metaReqs);
             $track->saveTrack($req);
 
             DB::commit();

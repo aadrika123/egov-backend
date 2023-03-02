@@ -498,13 +498,12 @@ class RainWaterHarvestingController extends Controller
      */
     public function postNextLevel(Request $req)
     {
-        $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
+        $wfLevels = Config::get('PropertyConstaint.HARVESTING-LABEL');
         try {
             $req->validate([
                 'applicationId' => 'required|integer',
                 'receiverRoleId' => 'nullable|integer',
                 'action' => 'required|In:forward,backward',
-                // 'comment' => $req->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
             ]);
 
             $userId = authUser()->id;
@@ -516,14 +515,15 @@ class RainWaterHarvestingController extends Controller
             $ulbWorkflowId = $harvesting->workflow_id;
             $req->validate([
                 'comment' => $senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
-
             ]);
+
             $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
             $roleMapsReqs = new Request([
                 'workflowId' => $ulbWorkflowMaps->id,
                 'roleId' => $senderRoleId
             ]);
             $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+
             DB::beginTransaction();
             if ($req->action == 'forward') {
                 $wfMstrId = $mWfWorkflows->getWfMstrByWorkflowId($harvesting->workflow_id);
@@ -535,6 +535,7 @@ class RainWaterHarvestingController extends Controller
             }
             if ($req->action == 'backward') {
                 $harvesting->current_role = $forwardBackwardIds->backward_role_id;
+                $metaReqs['verificationStatus'] = 0;
                 $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
             }
 
@@ -748,17 +749,19 @@ class RainWaterHarvestingController extends Controller
     /**
      * | Independent Comments
      */
-    public function commentIndependent(Request $req)
+    public function commentIndependent(Request $request)
     {
-        $req->validate([
+        $request->validate([
             'comment' => 'required',
             'applicationId' => 'required|integer',
-            'senderRoleId' => 'nullable|integer'
         ]);
 
         try {
+            $userId = authUser()->id;
+            $userType = authUser()->user_type;
             $workflowTrack = new WorkflowTrack();
-            $harvesting = PropActiveHarvesting::find($req->applicationId);                // SAF Details
+            $mWfRoleUsermap = new WfRoleusermap();
+            $harvesting = PropActiveHarvesting::findOrFail($request->applicationId);                // SAF Details
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs = array();
             DB::beginTransaction();
@@ -768,18 +771,32 @@ class RainWaterHarvestingController extends Controller
                 'moduleId' => $mModuleId,
                 'refTableDotId' => "prop_active_harvestings.id",
                 'refTableIdValue' => $harvesting->id,
-                'message' => $req->comment
+                'message' => $request->comment
             ];
+
+            if ($userType != 'Citizen') {
+                $roleReqs = new Request([
+                    'workflowId' => $harvesting->workflow_id,
+                    'userId' => $userId,
+                ]);
+                $wfRoleId = $mWfRoleUsermap->getRoleByUserWfId($roleReqs);
+                $metaReqs = array_merge($metaReqs, ['senderRoleId' => $wfRoleId->wf_role_id]);
+                $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
+            }
+            DB::beginTransaction();
+
             // For Citizen Independent Comment
-            if (!$req->senderRoleId) {
-                $metaReqs = array_merge($metaReqs, ['citizenId' => $harvesting->user_id]);
+            if ($userType == 'Citizen') {
+                $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
+                $metaReqs = array_merge($metaReqs, ['ulb_id' => $harvesting->ulb_id]);
+                $metaReqs = array_merge($metaReqs, ['user_id' => NULL]);
             }
 
-            $req->request->add($metaReqs);
-            $workflowTrack->saveTrack($req);
+            $request->request->add($metaReqs);
+            $workflowTrack->saveTrack($request);
 
             DB::commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $req->comment], "010108", "1.0", "", "POST", "");
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");

@@ -135,7 +135,11 @@ class PropFloor extends Model
      */
     public function getFloorByFloorMstrId($floorId)
     {
-        return PropFloor::where('id', $floorId)
+        return PropFloor::where('prop_floors.id', $floorId)
+            ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', 'prop_floors.usage_type_mstr_id')
+            ->join('ref_prop_floors', 'ref_prop_floors.id', 'prop_floors.floor_mstr_id')
+            ->join('ref_prop_occupancy_types', 'ref_prop_occupancy_types.id', 'prop_floors.occupancy_type_mstr_id')
+            ->join('ref_prop_construction_types', 'ref_prop_construction_types.id', 'prop_floors.const_type_mstr_id')
             ->get();
     }
 }
