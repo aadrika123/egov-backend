@@ -116,9 +116,8 @@ trait SafDetailsTrait
                 $floorDetail->occupancy_type,
                 $floorDetail->construction_type,
                 $floorDetail->builtup_area,
-                $floorDetail->carpet_area,
-                // $floorDetail->date_from,
-                // $floorDetail->date_upto
+                $floorDetail->date_from,
+                $floorDetail->date_upto
             ];
         });
     }
