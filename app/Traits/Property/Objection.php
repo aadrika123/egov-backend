@@ -2,6 +2,7 @@
 
 namespace App\Traits\Property;
 
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -55,5 +56,22 @@ trait Objection
                 'p.assessment_type',
                 'objection_for'
             );
+    }
+
+    /**
+     * | check Post Condition for backward forward
+     */
+    public function checkPostCondition($senderRoleId, $wfLevels, $concession)
+    {
+        switch ($senderRoleId) {
+            case $wfLevels['BO']:                        // Back Office Condition
+                if ($concession->doc_upload_status == 0)
+                    throw new Exception("Document Not Fully Uploaded");
+                break;
+            case $wfLevels['SI']:                       // SI Condition
+                if ($concession->doc_verify_status == 0)
+                    throw new Exception("Document Not Fully Verified");
+                break;
+        }
     }
 }

@@ -361,6 +361,30 @@ return [
         "EO" => "10"
     ],
 
+    //Harvesting Label Role ID
+    "HARVESTING-LABEL" => [
+        "BO" => "11",
+        "TC" => "5",
+        "UTC" => "7",
+        "SI" => "9",
+        "EO" => "10"
+    ],
+
+    //Concession Label Role ID
+    "CONCESSION-LABEL" => [
+        "BO" => "11",
+        "DA" => "6",
+        "SI" => "9",
+        "EO" => "10"
+    ],
+
+    //Objection Label Role ID
+    "OBJECTION-LABEL" => [
+        "BO" => "11",
+        "SI" => "9",
+        "EO" => "10"
+    ],
+
     "VACANT_LAND"   => "4",
     // Saf Pending Status
     "SAF_PENDING_STATUS" => [

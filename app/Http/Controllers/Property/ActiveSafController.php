@@ -797,6 +797,7 @@ class ActiveSafController extends Controller
             // SAF Application Update Current Role Updation
             if ($request->action == 'backward') {
                 $saf->current_role = $forwardBackwardIds->backward_role_id;
+                $metaReqs['verificationStatus'] = 0;
                 $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
             }
 

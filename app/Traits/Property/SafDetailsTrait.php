@@ -116,6 +116,7 @@ trait SafDetailsTrait
                 $floorDetail->occupancy_type,
                 $floorDetail->construction_type,
                 $floorDetail->builtup_area,
+                $floorDetail->carpet_area,
                 // $floorDetail->date_from,
                 // $floorDetail->date_upto
             ];
@@ -259,8 +260,8 @@ trait SafDetailsTrait
             return [
                 $key + 1,
                 $objectionList['type'],
-                $objectionList['assesment_data'],
-                $objectionList['applicant_data'],
+                $objectionList['asses_valu'],
+                $objectionList['obj_valu'],
                 // $objectionList['guardian_name'],
             ];
         });
@@ -276,11 +277,13 @@ trait SafDetailsTrait
         // return collect($objectionFlooorDtls)->map(function ($objectionFlooorDtl, $key) {
         return
             [
-                $objectionFlooorDtl['prop_floor_id'],
-                $objectionFlooorDtl['usage_type_mstr_id'],
-                $objectionFlooorDtl['occupancy_type_mstr_id'],
-                $objectionFlooorDtl['const_type_mstr_id'],
+                $objectionFlooorDtl['floor_name'],
+                $objectionFlooorDtl['usage_type'],
+                $objectionFlooorDtl['occupancy_type'],
+                $objectionFlooorDtl['construction_type'],
+                $objectionFlooorDtl['builtup_area'],
                 $objectionFlooorDtl['carpet_area'],
+
             ];
 
         // $objectionFlooorDtl->prop_floor_id;
