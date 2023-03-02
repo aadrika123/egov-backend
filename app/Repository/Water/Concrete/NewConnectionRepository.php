@@ -503,18 +503,18 @@ class NewConnectionRepository implements iNewConnection
         if ($waterDetails->current_role != $roleId) {
             throw new Exception("Application has not Reached to the finisher ie. EO!");
         }
-        // if ($waterDetails->doc_status == false) {
-        //     throw new Exception("Documet is Not verified!");
-        // }
+        if ($waterDetails->doc_status == false) {
+            throw new Exception("Documet is Not verified!");
+        }
         if ($waterDetails->payment_status == false) {
             throw new Exception("Payment Not Done!");
         }
         if ($waterDetails->doc_upload_status == false) {
             throw new Exception("Full document is Not Uploaded!");
         }
-        if ($waterDetails->is_field_verified == false) {
-            throw new Exception("Field Verification Not Done!!");
-        }
+        // if ($waterDetails->is_field_verified == false) {
+        //     throw new Exception("Field Verification Not Done!!");
+        // }
 
         DB::beginTransaction();
         # Approval of water application 
