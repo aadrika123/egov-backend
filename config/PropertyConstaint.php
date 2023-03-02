@@ -99,6 +99,7 @@ return [
         "TENANTED" => '2'
 
     ],
+
     "USAGE-TYPE" => [
         "1" => [
             "CODE" => "A",
@@ -279,6 +280,12 @@ return [
 
         ],
     ],
+
+    /**
+     * | The type of Usage Types which is assured to be tax perc 0.20 if their buildup area is more than 25000 sqft
+     */
+    "POINT20-TAXED-COMM-USAGE-TYPES" => [2, 4, 13, 17, 20, 22],
+
     "CONSTRUCTION-TYPE" => [
         "1" => "Pucca with RCC Roof (RCC)",
         "2" => "Pucca with Asbestos/Corrugated Sheet (ACC)",

@@ -708,6 +708,8 @@ class HoldingTaxController extends Controller
             $safCalculation->_ulbId = $basicDetails->ulb_id;
             $safCalculation->_wardNo = $basicDetails->old_ward_no;
             $safCalculation->readParamRentalRate();
+            $safCalculation->_point20TaxedUsageTypes = Config::get('PropertyConstaint.POINT20-TAXED-COMM-USAGE-TYPES'); // The Type of Commercial Usage Types which have taxes 0.20 Perc
+
 
             if (!is_null($basicDetails->floor_id))                                          // If The Property Have Floors
             {
