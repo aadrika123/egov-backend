@@ -520,32 +520,34 @@ class RainWaterHarvestingController extends Controller
             ]);
             $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
             $roleMapsReqs = new Request([
-                'workflowId' => $ulbWorkflowMaps->workflow_id,
+                'workflowId' => $ulbWorkflowMaps->id,
                 'roleId' => $senderRoleId
             ]);
             $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
             DB::beginTransaction();
             if ($req->action == 'forward') {
+                $wfMstrId = $mWfWorkflows->getWfMstrByWorkflowId($harvesting->workflow_id);
                 $this->checkPostCondition($senderRoleId, $wfLevels, $harvesting);          // Check Post Next level condition
-                $harvesting->last_role_id = $req->receiverRoleId;                      // Update Last Role Id
+                $harvesting->current_role = $forwardBackwardIds->forward_role_id;
+                $harvesting->last_role_id =  $forwardBackwardIds->forward_role_id;         // Update Last Role Id
                 $metaReqs['verificationStatus'] = 1;
+                $metaReqs['receiverRoleId'] = $forwardBackwardIds->forward_role_id;
+            }
+            if ($req->action == 'backward') {
+                $harvesting->current_role = $forwardBackwardIds->backward_role_id;
+                $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
             }
 
+            $harvesting->save();
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $harvesting->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['verificationStatus'] = $req->verificationStatus;
-            $metaReqs['comment'] = $req->comment;
+            $metaReqs['senderRoleId'] = $senderRoleId;
+
 
             $req->request->add($metaReqs);
             $track->saveTrack($req);
-
-
-            // harvesting Application Update Current Role Updation
-            $harvesting->current_role = $req->receiverRoleId;
-            $harvesting->save();
-
 
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", '011110', 01, '446ms', 'Post', $req->deviceId);
