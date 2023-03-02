@@ -398,6 +398,7 @@ class NewConnectionRepository implements iNewConnection
         $metaReqs['workflowId'] = $this->_waterWorkId;
         $metaReqs['refTableDotId'] = 'water_applications.id';
         $metaReqs['refTableIdValue'] = $req->applicationId;
+        $metaReqs['user_id'] = authUser()->id;
         $req->request->add($metaReqs);
 
         $waterTrack = new WorkflowTrack();
