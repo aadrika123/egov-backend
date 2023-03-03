@@ -10,5 +10,6 @@ interface IReport
     public function teamSummary (Request $request);
     public function valideAndExpired(Request $request);
     public function CollectionSummary(Request $request);
+    public function tradeDaseboarde(Request $request);
 
 }
