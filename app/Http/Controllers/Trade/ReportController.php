@@ -86,7 +86,7 @@ class ReportController extends Controller
         $request->request->add(["metaData"=>["tr5.1",1.1,null,$request->getMethod(),null,]]);
         return $this->Repository->CollectionSummary($request);
     }
-    public function tradeDaseboarde(Request $request)
+    public function tradeDaseboard(Request $request)
     {
         $request->validate(
             [     
@@ -95,6 +95,6 @@ class ReportController extends Controller
             ]
         );
         $request->request->add(["metaData"=>["tr6.1",1.1,null,$request->getMethod(),null,]]);
-        return $this->Repository->tradeDaseboarde($request);
+        return $this->Repository->tradeDaseboard($request);
     }
 }

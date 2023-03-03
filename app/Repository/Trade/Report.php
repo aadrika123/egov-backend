@@ -668,7 +668,7 @@ class Report implements IReport
         }
     }
 
-    public function tradeDaseboarde(Request $request)
+    public function tradeDaseboard(Request $request)
     {
         $metaData= collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
