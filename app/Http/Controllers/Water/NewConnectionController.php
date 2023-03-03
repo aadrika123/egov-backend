@@ -1407,7 +1407,7 @@ class NewConnectionController extends Controller
      * | @var 
      * | @return 
      */
-    public function docVerifyReject(Request $req)
+    public function docVerifyRejects(Request $req)
     {
         $req->validate([
             'id' => 'required|digits_between:1,9223372036854775807',
