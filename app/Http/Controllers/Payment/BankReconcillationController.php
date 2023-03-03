@@ -203,7 +203,6 @@ class BankReconcillationController extends Controller
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
             $mPaymentReconciliation = new PaymentReconciliation();
 
-
             if ($moduleId == $propertyModuleId) {
                 $mChequeDtl =  PropChequeDtl::find($request->chequeId);
                 if ($request->status == 'clear') {
@@ -215,7 +214,7 @@ class BankReconcillationController extends Controller
                 $mChequeDtl->clear_bounce_date = $request->clearanceDate;
                 $mChequeDtl->bounce_amount = $request->cancellationCharge;
                 $mChequeDtl->remarks = $request->remarks;
-                $mChequeDtl->save();
+                // $mChequeDtl->save();
 
                 $transaction = PropTransaction::where('id', $mChequeDtl->transaction_id)
                     ->first();
@@ -237,18 +236,18 @@ class BankReconcillationController extends Controller
                     PropTransaction::where('id', $mChequeDtl->transaction_id)
                         ->update(
                             [
-                                'verify_status' => 3,
-                                'verify_date' => Carbon::now(),
-                                'verified_by' => $userId
+                                // 'verify_status' => 3,
+                                // 'verify_date' => Carbon::now(),
+                                // 'verified_by' => $userId
                             ]
                         );
 
                     $propTranDtls = PropTranDtl::where('tran_id', $transaction->id)->get();
 
-                    // foreach ($propTranDtls as $propTranDtl) {
+                    foreach ($propTranDtls as $propTranDtl) {
 
-                    //     PropDemand::where()->get();
-                    // }
+                        return PropDemand::where()->get();
+                    }
                 }
 
                 $request->merge([

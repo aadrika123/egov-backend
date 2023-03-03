@@ -60,6 +60,7 @@ class PropActiveHarvesting extends Model
         $waterHaravesting->last_role_id = collect($initiatorRoleId)->first()->role_id;
         $waterHaravesting->finisher_role_id = collect($finisherRoleId)->first()->role_id;
         $waterHaravesting->user_id = $userId;
+        $waterHaravesting->date = Carbon::now();
         $waterHaravesting->ulb_id = $request->ulbId;
         return $waterHaravesting;
         // $waterHaravesting->save();

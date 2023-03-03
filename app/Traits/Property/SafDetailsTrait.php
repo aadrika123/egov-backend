@@ -118,6 +118,8 @@ trait SafDetailsTrait
                 $floorDetail->builtup_area,
                 $floorDetail->date_from,
                 $floorDetail->date_upto
+                // $floorDetail->date_from,
+                // $floorDetail->date_upto
             ];
         });
     }
