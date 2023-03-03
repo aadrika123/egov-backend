@@ -722,7 +722,9 @@ class Report implements IReport
                                                 AND ulb_id = $ulbId
                                         )
                                     ) license  on trade_param_application_types.id = license.application_type_id                                
-                                group by application_type
+                                    
+                                    group by application_type,trade_param_application_types.id
+                                    ORDER BY trade_param_application_types.id
                             ");
             
 
