@@ -66,6 +66,8 @@ class SafCalculation
     public $_multiFactors;
     public $_capitalValueRate;
     public $_paramRentalRate;
+    public $_areaOfPlotInSqft;
+    public $_point20TaxedUsageTypes;
 
     /** 
      * | For Building
@@ -132,7 +134,8 @@ class SafCalculation
         }
 
         // Rain Water Harvesting Penalty If The Plot Area is Greater than 3228 sqft. and Rain Water Harvesting is none
-        $readAreaOfPlot =  $this->_propertyDetails['areaOfPlot'] * 435.6;                                    // (In Decimal To SqFt)
+        $readAreaOfPlot =  decimalToSqFt($this->_propertyDetails['areaOfPlot']);                              // (In Decimal To SqFt)
+        $this->_areaOfPlotInSqft = $readAreaOfPlot;
         if ($propertyDetails['propertyType'] != $this->_vacantPropertyTypeId && $propertyDetails['isWaterHarvesting'] == 0 && $readAreaOfPlot > 3228) {
             $this->_rwhPenaltyStatus = true;
         }
@@ -141,7 +144,8 @@ class SafCalculation
 
         // Check If the one of the floors is commercial for Building
         if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
-            $readCommercial = collect($this->_floors)->where('useType', '!=', 1);
+            $readCommercial = collect($this->_floors)->where('useType', '!=', 1)
+                ->where('useType', '!=', 10);
             $this->_isResidential = $readCommercial->isEmpty();
         }
 
@@ -186,6 +190,7 @@ class SafCalculation
         $this->_jskRebateID = Config::get('PropertyConstaint.REBATES.JSK.ID');                          // 2.5
         $this->_speciallyAbledRebateID = Config::get('PropertyConstaint.REBATES.SPECIALLY_ABLED.ID');   // 5
         $this->_seniorCitizenRebateID = Config::get('PropertyConstaint.REBATES.SERIOR_CITIZEN.ID');     // 5
+        $this->_point20TaxedUsageTypes = Config::get('PropertyConstaint.POINT20-TAXED-COMM-USAGE-TYPES'); // The Type of Commercial Usage Types which have taxes 0.20 Perc
     }
 
     /**
@@ -642,12 +647,17 @@ class SafCalculation
         $readOccupancyType = $this->_floors[$key]['occupancyType'];
         $readPropertyType = $this->_propertyDetails['propertyType'];
 
-        $readRentalValue = collect($this->_rentalValue)->where('usage_types_id', $readOccupancyType)
+        if ($readUsageType == 1)
+            $usageTypeId = 1;       // For Residential Usage Type
+        else
+            $usageTypeId = 2;       // For the Type of Property which is not Residential
+
+        $readRentalValue = collect($this->_rentalValue)->where('usage_types_id', $usageTypeId)
             ->where('construction_types_id', $this->_floors[$key]['constructionType'])
             ->first();
 
         if (!$readRentalValue) {
-            return responseMsg(false, "Rental Value Not Available", "");
+            throw new Exception("Rental Value Not Available for this Usage Type");
         }
 
         $tempArv = $readBuildupArea * (float)$readRentalValue->rate;
@@ -679,7 +689,7 @@ class SafCalculation
         $quaterHealthTax = roundFigure($healthTax / 4);
         $quaterEducationTax = roundFigure($educationTax / 4);
         $quaterlyTax = roundFigure($quaterHoldingTax + $quaterLatrineTax + $quaterWaterTax + $quaterHealthTax + $quaterEducationTax);
-        $onePercPenaltyTax = ($quaterlyTax * $onePercPenalty) / 100;
+        $onePercPenaltyTax = ($readUsageType != 10) ? ($quaterlyTax * $onePercPenalty) / 100 : 0;       // For Religious Place One Perc is 0
 
         // Tax Calculation Quaterly
         $tax = [
@@ -920,6 +930,9 @@ class SafCalculation
             $readUsageType = $this->_floors[$key]['useType'];
             $taxPerc = ($readUsageType == 1) ? 0.075 : 0.15;                                                // 0.075 for Residential and 0.15 for Commercial
 
+            if ($readBuildupArea >= 25000 && in_array($readFloorUsageType, $this->_point20TaxedUsageTypes))
+                $taxPerc = 0.20;                                                                            // Tax Perc for the type of Property whose Sqft is > 250000
+
             $readMultiFactor = collect($this->_multiFactors)->where('usage_type_id', $readFloorUsageType)
                 ->where('effective_date', $this->_effectiveDateRule3)
                 ->first();
@@ -1004,14 +1017,18 @@ class SafCalculation
         $this->_GRID['demand']['isResidential'] = $this->_isResidential;
 
         $fine = 0;
+
         // Check Late Assessment Penalty for Building
         if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
             $floorDetails = collect($this->_floors);
             $lateAssementFloors = $floorDetails->filter(function ($value, $key) {                           // Collection of floors which have late Assessment
                 $currentDate = Carbon::now()->floorMonth();
                 $dateFrom = Carbon::createFromFormat('Y-m-d', $value['dateFrom'])->floorMonth();
-                $diffInMonths = $currentDate->diffInMonths($dateFrom);
-                return $diffInMonths > 3;
+                $usageType = $value['useType'];
+                if ($usageType != 10) {                                                                     // Late Assessment Not Applicable for the Religious Floors
+                    $diffInMonths = $currentDate->diffInMonths($dateFrom);
+                    return $diffInMonths > 3;
+                }
             });
             $lateAssessmentStatus = $lateAssementFloors->isEmpty() == true ? false : true;
 

@@ -223,7 +223,7 @@ class WaterApplication extends Model
 
         $mWaterConsumer = new WaterConsumer();
         $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
-        // $approvedWater->delete();
+        $approvedWater->delete();
         return $consumerId;
     }
 
@@ -241,7 +241,7 @@ class WaterApplication extends Model
         $rejectedWaterRep->setTable('water_rejection_application_details');
         $rejectedWaterRep->id = $rejectedWater->id;
         $rejectedWaterRep->save();
-        // $rejectedWater->delete();
+        $rejectedWater->delete();
 
     }
 

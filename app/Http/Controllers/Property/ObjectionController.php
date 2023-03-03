@@ -43,7 +43,6 @@ class ObjectionController extends Controller
     use WorkflowTrait;
     use Objection;
     use SafDetailsTrait;
-    use Concession;
 
     protected $objection;
     protected $Repository;
@@ -221,8 +220,34 @@ class ObjectionController extends Controller
                 $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);
                 $ownerList = json_decode(json_encode($ownerList), true);
 
-                //Assessment Details
-                $objectionList = $mPropActiveObjectionDtl->getDtlbyObjectionId($details->objection_id);
+
+                $sql = " SELECT Odtls.*,
+                            ot.type,
+                            case when Odtls.objection_type_id not in (3,4) then Odtls.assesment_data
+                                when Odtls.objection_type_id =3 then ref_prop_road_types.road_type
+                                when Odtls.objection_type_id =4 then ref_prop_types.property_type 
+                                end as obj_valu,
+                            case when Odtls.objection_type_id not in (3,4) then Odtls.assesment_data
+                                when Odtls.objection_type_id =3 then objection_type_road.road_type
+                                when Odtls.objection_type_id =4 then objection_type_prop.property_type 
+                                end as asses_valu,
+                            ref_prop_road_types.road_type,
+                            ref_prop_types.property_type
+                        FROM prop_active_objection_dtls as Odtls
+                        inner join ref_prop_objection_types as ot on ot.id = Odtls.objection_type_id
+                        left join ref_prop_road_types on ref_prop_road_types.id::text = Odtls.assesment_data and Odtls.objection_type_id =3
+                        left join ref_prop_types on ref_prop_types.id::text = Odtls.assesment_data and Odtls.objection_type_id =4
+
+                        left join ref_prop_road_types objection_type_road on objection_type_road.id::text = Odtls.applicant_data and Odtls.objection_type_id =3
+                        left join ref_prop_types objection_type_prop on objection_type_prop.id::text = Odtls.applicant_data and Odtls.objection_type_id =4
+
+                        where objection_id = $details->objection_id";
+                $objectionList =  DB::select($sql);
+
+
+                // //Assessment Details
+                //  $objectionList = $mPropActiveObjectionDtl->getDtlbyObjectionId($details->objection_id);
+
                 $objectionList = json_decode(json_encode($objectionList), true);       // Convert Std class to array
                 $objectionDetails = $this->objectionDetails($objectionList);
                 $objectionElement = [
@@ -376,40 +401,57 @@ class ObjectionController extends Controller
     // Post Next Level Application
     public function postNextLevel(Request $req)
     {
-        $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
+        $wfLevels = Config::get('PropertyConstaint.OBJECTION-LABEL');
         try {
             $req->validate([
-                'applicationId' => 'required',
-                'senderRoleId' => 'required',
-                'receiverRoleId' => 'required',
-                'comment' => $req->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
-                'action' => 'required|In:forward,backward'
+                'applicationId' => 'required|integer',
+                'receiverRoleId' => 'nullable|integer',
+                'action' => 'required|In:forward,backward',
+            ]);
+            $userId = authUser()->id;
+            $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
+            $objection = PropActiveObjection::find($req->applicationId);
+            $track = new WorkflowTrack();
+            $mWfWorkflows = new WfWorkflow();
+            $mWfRoleMaps = new WfWorkflowrolemap();
+            $senderRoleId = $objection->current_role;
+            $ulbWorkflowId = $objection->workflow_id;
+            $req->validate([
+                'comment' => $senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
             ]);
 
+            $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
+            $roleMapsReqs = new Request([
+                'workflowId' => $ulbWorkflowMaps->id,
+                'roleId' => $senderRoleId
+            ]);
+            $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
 
-            $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
-            // objection Application Update Current Role Updation
-            $objection = PropActiveObjection::find($req->applicationId);
-            $senderRoleId = $req->senderRoleId;
-
+            DB::beginTransaction();
             if ($req->action == 'forward') {
                 $this->checkPostCondition($senderRoleId, $wfLevels, $objection);          // Check Post Next level condition
-                $objection->last_role_id = $req->receiverRoleId;                      // Update Last Role Id
+                $objection->current_role = $forwardBackwardIds->forward_role_id;
+                $objection->last_role_id =  $forwardBackwardIds->forward_role_id;         // Update Last Role Id
                 $metaReqs['verificationStatus'] = 1;
+                $metaReqs['receiverRoleId'] = $forwardBackwardIds->forward_role_id;
             }
 
+            if ($req->action == 'backward') {
+                $objection->current_role = $forwardBackwardIds->backward_role_id;
+                $metaReqs['verificationStatus'] = 0;
+                $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
+            }
+
+            $objection->save();
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $objection->workflow_id;
             $metaReqs['refTableDotId'] = $mRefTable;
             $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['senderRoleId'] = $senderRoleId;
+            $metaReqs['user_id'] = $userId;
+
             $req->request->add($metaReqs);
-
-            DB::beginTransaction();
-            $track = new WorkflowTrack();
             $track->saveTrack($req);
-
-            $objection->current_role = $req->receiverRoleId;
-            $objection->save();
 
             DB::commit();
 

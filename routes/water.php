@@ -63,6 +63,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::post('admin/search-application', 'searchApplicationByParameter');
         Route::post('site-verification/comparision', 'listComparision');
+        Route::post('admin/application/save-inspection-date', 'saveInspectionDateTime');
+        Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');
         Route::post('final-submit-application', 'finalSubmitionApplication');                           // Not Used
     });
 

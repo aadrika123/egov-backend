@@ -226,11 +226,13 @@ class NewConnectionController extends Controller
     public function postNextLevel(Request $request)
     {
         try {
+            $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
             $request->validate([
                 'applicationId' => 'required',
                 'senderRoleId' => 'required',
                 'receiverRoleId' => 'required',
-                'action' => 'required|In:forward,backward'
+                'action' => 'required|In:forward,backward',
+                'comment' => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
             ]);
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
@@ -874,7 +876,7 @@ class NewConnectionController extends Controller
                 $doc["ownerName"] = $val->applicant_name;
                 $doc["docName"]   = "ID Proof";
                 $doc['isMadatory'] = 1;
-                $ref['docValue'] = $refWaterNewConnection->getDocumentList(["ID_PROOF", "CONSUMER_PHOTO"]);
+                $ref['docValue'] = $refWaterNewConnection->getDocumentList(["ID_PROOF"]);   #"CONSUMER_PHOTO"
                 $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
                     $refDoc = $value['doc_name'];
                     $refText = str_replace('_', ' ', $refDoc);
@@ -1505,7 +1507,7 @@ class NewConnectionController extends Controller
         $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
         // Water List Documents
         $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
-        if ($ifPropDocUnverified == 1)
+        if ($ifPropDocUnverified == true)
             return 0;
         else
             return 1;
@@ -1739,11 +1741,86 @@ class NewConnectionController extends Controller
      * | @param
      * | @var
      * | @return  
+        | Make Route
      */
     public function cancelSiteInspection(Request $request)
     {
         try {
             $mWaterSiteInspection = new WaterSiteInspection();
+            $mWaterSiteInspection->cancelInspectionDateTime($request);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Save the site Inspection Date and Time 
+     * | Create record behalf of the date and time with respective to application no
+     * | @param request
+     * | @var 
+     * | @return 
+     */
+    public function saveInspectionDateTime(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicationId' => 'required',
+                'inspectionDate' => 'required|date|date_format:d-m-Y',
+                'inspectionTime' => 'required|date_format:H:i'
+            ]);
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $refDate = Carbon::now();
+            $TodaysDate = date('d-m-Y', strtotime($refDate));
+            $this->checkForSaveDateTime($request);
+            $mWaterSiteInspection->saveSiteDateTime($request);
+            if ($request->inspectionDate == $TodaysDate) {
+                $canView['canView'] = true;
+            } else {
+                $canView['canView'] = false;
+            }
+            return responseMsgs(true, "Date for the Site Inspection is Saved!", $canView, "", "01", ".ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Check the validation for saving the site inspection 
+     * | @param request
+        | Add more Validation 
+     */
+    public function checkForSaveDateTime($request)
+    {
+        $refApplication = WaterApplication::findOrFail($request->applicationId);
+        $WaterRoles = Config::get('waterConstaint.ROLE-LABEL');
+
+        if ($refApplication['current_role'] != $WaterRoles['JE']) {
+            throw new Exception("Application is not Under the JE!");
+        }
+    }
+
+
+    /**
+     * | Get the Date/Time alog with site details 
+     * | Site Details  
+        | Routes 
+     */
+    public function getSiteInspectionDetails(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicationId' => 'required',
+            ]);
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $siteInspection = $mWaterSiteInspection->getInspectionById($request->applicationId)->first();
+            if (isset($siteInspection)) {
+                $returnData = [
+                    "inspectionDate" => $siteInspection->inspection_date,
+                    "inspectionTime" => $siteInspection->inspection_time
+                ];
+                return responseMsgs(true, "Site InspectionDetails!", $returnData, "", "01", ".ms", "POST", "");
+            }
+            throw new Exception("data Invalid!");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }

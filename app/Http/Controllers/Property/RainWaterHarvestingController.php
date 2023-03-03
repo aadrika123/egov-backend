@@ -498,43 +498,57 @@ class RainWaterHarvestingController extends Controller
      */
     public function postNextLevel(Request $req)
     {
-        $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
+        $wfLevels = Config::get('PropertyConstaint.HARVESTING-LABEL');
         try {
             $req->validate([
                 'applicationId' => 'required|integer',
-                'senderRoleId' => 'required|integer',
-                'receiverRoleId' => 'required|integer',
-                'comment' => $req->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
-                'action' => 'required|In:forward,backward'
+                'receiverRoleId' => 'nullable|integer',
+                'action' => 'required|In:forward,backward',
             ]);
 
-            DB::beginTransaction();
-
+            $userId = authUser()->id;
             $track = new WorkflowTrack();
-            $harvesting = PropActiveHarvesting::find($req->applicationId);
-            $senderRoleId = $req->senderRoleId;
+            $harvesting = PropActiveHarvesting::findorFail($req->applicationId);
+            $mWfWorkflows = new WfWorkflow();
+            $mWfRoleMaps = new WfWorkflowrolemap();
+            $senderRoleId = $harvesting->current_role;
+            $ulbWorkflowId = $harvesting->workflow_id;
+            $req->validate([
+                'comment' => $senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+            ]);
 
+            $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
+            $roleMapsReqs = new Request([
+                'workflowId' => $ulbWorkflowMaps->id,
+                'roleId' => $senderRoleId
+            ]);
+            $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+
+            DB::beginTransaction();
             if ($req->action == 'forward') {
+                $wfMstrId = $mWfWorkflows->getWfMstrByWorkflowId($harvesting->workflow_id);
                 $this->checkPostCondition($senderRoleId, $wfLevels, $harvesting);          // Check Post Next level condition
-                $harvesting->last_role_id = $req->receiverRoleId;                      // Update Last Role Id
+                $harvesting->current_role = $forwardBackwardIds->forward_role_id;
+                $harvesting->last_role_id =  $forwardBackwardIds->forward_role_id;         // Update Last Role Id
                 $metaReqs['verificationStatus'] = 1;
+                $metaReqs['receiverRoleId'] = $forwardBackwardIds->forward_role_id;
+            }
+            if ($req->action == 'backward') {
+                $harvesting->current_role = $forwardBackwardIds->backward_role_id;
+                $metaReqs['verificationStatus'] = 0;
+                $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
             }
 
+            $harvesting->save();
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $harvesting->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['verificationStatus'] = $req->verificationStatus;
-            $metaReqs['comment'] = $req->comment;
+            $metaReqs['senderRoleId'] = $senderRoleId;
+            $metaReqs['user_id'] = $userId;
 
             $req->request->add($metaReqs);
             $track->saveTrack($req);
-
-
-            // harvesting Application Update Current Role Updation
-            $harvesting->current_role = $req->receiverRoleId;
-            $harvesting->save();
-
 
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", '011110', 01, '446ms', 'Post', $req->deviceId);
@@ -735,17 +749,19 @@ class RainWaterHarvestingController extends Controller
     /**
      * | Independent Comments
      */
-    public function commentIndependent(Request $req)
+    public function commentIndependent(Request $request)
     {
-        $req->validate([
+        $request->validate([
             'comment' => 'required',
             'applicationId' => 'required|integer',
-            'senderRoleId' => 'nullable|integer'
         ]);
 
         try {
+            $userId = authUser()->id;
+            $userType = authUser()->user_type;
             $workflowTrack = new WorkflowTrack();
-            $harvesting = PropActiveHarvesting::find($req->applicationId);                // SAF Details
+            $mWfRoleUsermap = new WfRoleusermap();
+            $harvesting = PropActiveHarvesting::findOrFail($request->applicationId);                // SAF Details
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs = array();
             DB::beginTransaction();
@@ -755,18 +771,32 @@ class RainWaterHarvestingController extends Controller
                 'moduleId' => $mModuleId,
                 'refTableDotId' => "prop_active_harvestings.id",
                 'refTableIdValue' => $harvesting->id,
-                'message' => $req->comment
+                'message' => $request->comment
             ];
+
+            if ($userType != 'Citizen') {
+                $roleReqs = new Request([
+                    'workflowId' => $harvesting->workflow_id,
+                    'userId' => $userId,
+                ]);
+                $wfRoleId = $mWfRoleUsermap->getRoleByUserWfId($roleReqs);
+                $metaReqs = array_merge($metaReqs, ['senderRoleId' => $wfRoleId->wf_role_id]);
+                $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
+            }
+            DB::beginTransaction();
+
             // For Citizen Independent Comment
-            if (!$req->senderRoleId) {
-                $metaReqs = array_merge($metaReqs, ['citizenId' => $harvesting->user_id]);
+            if ($userType == 'Citizen') {
+                $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
+                $metaReqs = array_merge($metaReqs, ['ulb_id' => $harvesting->ulb_id]);
+                $metaReqs = array_merge($metaReqs, ['user_id' => NULL]);
             }
 
-            $req->request->add($metaReqs);
-            $workflowTrack->saveTrack($req);
+            $request->request->add($metaReqs);
+            $workflowTrack->saveTrack($request);
 
             DB::commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $req->comment], "010108", "1.0", "", "POST", "");
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1125,16 +1155,25 @@ class RainWaterHarvestingController extends Controller
      */
     public function siteVerification(Request $req)
     {
+        $req->validate([
+            "applicationId" => "required|numeric",
+            "verificationStatus" => "required|In:1,0",
+            // "harvestingImage.*" => "required|image|mimes:jpeg,jpg,png,gif",
+        ]);
         try {
             $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
             $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
+            $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
             $verificationStatus = $req->verificationStatus;                                             // Verification Status true or false
+            $images = $req->harvestingImage;
+            $refImageName = 'harvesting-geotagging-' .  $req->applicationId;
             $propActiveHarvesting = new PropActiveHarvesting();
             $verification = new PropRwhVerification();
             $mWfRoleUsermap = new WfRoleusermap();
+            $docUpload = new DocUpload;
+            $geoTagging = new PropHarvestingGeotagUpload();
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
-
 
             $applicationDtls = $propActiveHarvesting->getHarvestingNo($req->applicationId);
             $workflowId = $applicationDtls->workflow_id;
@@ -1147,7 +1186,7 @@ class RainWaterHarvestingController extends Controller
             $roleId = $readRoleDtls->wf_role_id;
 
             switch ($roleId) {
-                case $taxCollectorRole;                                                                  // In Case of Agency TAX Collector
+                case $taxCollectorRole;
                     if ($verificationStatus == 1) {
                         $req->agencyVerification = true;
                         $msg = "Site Successfully Verified";
@@ -1156,6 +1195,10 @@ class RainWaterHarvestingController extends Controller
                         $req->agencyVerification = false;
                         $msg = "Site Successfully rebuted";
                     }
+                    //GEO TAGGING
+                    $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
+                    $geoTagging->add($req, $imageName, $relativePath, $geoTagging);
+
                     break;
                     DB::beginTransaction();
                 case $ulbTaxCollectorRole;                                                                // In Case of Ulb Tax Collector
@@ -1200,7 +1243,6 @@ class RainWaterHarvestingController extends Controller
         try {
             $data = array();
             $mPropRwhVerification = new PropRwhVerification();
-
             $data = $mPropRwhVerification->getVerificationsData($req->applicationId);           // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
 
             return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
@@ -1212,41 +1254,40 @@ class RainWaterHarvestingController extends Controller
     /**
      * | Geo tagging
      */
-    public function geoTagging(Request $req)
-    {
-        $req->validate([
-            "applicationId" => "required|numeric",
-            "harvestingImage.*" => "required|image|mimes:jpeg,jpg,png,gif",
-            // "directionType" => "required|array|min:3|max:3",
-            // "directionType.*" => "required|In:Left,Right,Front",
-            "longitude" => "required|numeric",
-            "latitude" => "required|numeric"
-        ]);
-        try {
-            $docUpload = new DocUpload;
-            $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
-            $images = $req->harvestingImage;
-            // $directionTypes = $req->directionType;
-            $longitude = $req->longitude;
-            $latitude = $req->latitude;
+    // public function geoTagging(Request $req)
+    // {
+    //     $req->validate([
+    //         "applicationId" => "required|numeric",
+    //         "harvestingImage.*" => "required|image|mimes:jpeg,jpg,png,gif",
+    //         // "directionType" => "required|array|min:3|max:3",
+    //         // "directionType.*" => "required|In:Left,Right,Front",
+    //         "longitude" => "required|numeric",
+    //         "latitude" => "required|numeric"
+    //     ]);
+    //     try {
+    //         $docUpload = new DocUpload;
+    //         $geoTagging = new PropHarvestingGeotagUpload();
+    //         $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
+    //         $images = $req->harvestingImage;
+    //         $longitude = $req->longitude;
+    //         $latitude = $req->latitude;
+    //         $refImageName = 'harvesting-geotagging-' .  $req->applicationId;
+    //         // $directionTypes = $req->directionType;
 
-            $geoTagging = new PropHarvestingGeotagUpload();
-            $refImageName = 'harvesting-geotagging-' .  $req->applicationId;
+    //         $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
 
-            $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
+    //         $geoTagging->application_id = $req->applicationId;
+    //         $geoTagging->image_path = $imageName;
+    //         // $geoTagging->direction_type = $directionTypes;
+    //         $geoTagging->longitude = $longitude;
+    //         $geoTagging->latitude = $latitude;
+    //         $geoTagging->relative_path = $relativePath;
+    //         $geoTagging->user_id = authUser()->id;
+    //         $geoTagging->save();
 
-            $geoTagging->application_id = $req->applicationId;
-            $geoTagging->image_path = $imageName;
-            // $geoTagging->direction_type = $directionTypes[$key];
-            $geoTagging->longitude = $longitude;
-            $geoTagging->latitude = $latitude;
-            $geoTagging->relative_path = $relativePath;
-            $geoTagging->user_id = authUser()->id;
-            $geoTagging->save();
-
-            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
+    //         return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
+    //     } catch (Exception $e) {
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
 }
