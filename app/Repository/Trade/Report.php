@@ -667,4 +667,71 @@ class Report implements IReport
             return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
         }
     }
+
+    public function tradeDaseboarde(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $fiYear = getFY();
+            if($request->fiYear)
+            {
+                $fiYear = $request->fiYear;
+            }            
+            list($fromYear,$toYear)=explode("-",$fiYear);
+            if($toYear-$fromYear !=1)
+            {
+                throw new Exception("Enter Valide Financial Year");
+            }
+            $fromDate = $fromYear."-04-01";
+            $uptoDate = $toYear."-03-31";
+                       
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            $data = DB::select("
+                                select count(license.id) , application_type 
+                                from trade_param_application_types
+                                left join (
+                                        (
+                                            select id,application_date,application_type_id
+                                            from active_trade_licences
+                                            where active_trade_licences.application_date between '$fromDate' and '$uptoDate'
+                                                AND ulb_id = $ulbId
+                                        )
+                                        union(
+                                            select id,application_date,application_type_id
+                                            from rejected_trade_licences
+                                            where rejected_trade_licences.application_date between '$fromDate' and '$uptoDate'
+                                                AND ulb_id = $ulbId
+                                        )
+                                        union(
+                                            select id,application_date,application_type_id
+                                            from trade_licences
+                                            where trade_licences.application_date between '$fromDate' and '$uptoDate'
+                                                AND ulb_id = $ulbId
+                                        )
+                                        union(
+                                            select id,application_date,application_type_id
+                                            from trade_renewals
+                                            where trade_renewals.application_date between '$fromDate' and '$uptoDate'
+                                                AND ulb_id = $ulbId
+                                        )
+                                    ) license  on trade_param_application_types.id = license.application_type_id                                
+                                group by application_type
+                            ");
+            
+
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
 }

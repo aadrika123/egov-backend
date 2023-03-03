@@ -144,7 +144,8 @@ class SafCalculation
 
         // Check If the one of the floors is commercial for Building
         if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
-            $readCommercial = collect($this->_floors)->where('useType', '!=', 1);
+            $readCommercial = collect($this->_floors)->where('useType', '!=', 1)
+                ->where('useType', '!=', 10);
             $this->_isResidential = $readCommercial->isEmpty();
         }
 
@@ -688,7 +689,7 @@ class SafCalculation
         $quaterHealthTax = roundFigure($healthTax / 4);
         $quaterEducationTax = roundFigure($educationTax / 4);
         $quaterlyTax = roundFigure($quaterHoldingTax + $quaterLatrineTax + $quaterWaterTax + $quaterHealthTax + $quaterEducationTax);
-        $onePercPenaltyTax = ($quaterlyTax * $onePercPenalty) / 100;
+        $onePercPenaltyTax = ($readUsageType != 10) ? ($quaterlyTax * $onePercPenalty) / 100 : 0;       // For Religious Place One Perc is 0
 
         // Tax Calculation Quaterly
         $tax = [
@@ -1016,14 +1017,18 @@ class SafCalculation
         $this->_GRID['demand']['isResidential'] = $this->_isResidential;
 
         $fine = 0;
+
         // Check Late Assessment Penalty for Building
         if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
             $floorDetails = collect($this->_floors);
             $lateAssementFloors = $floorDetails->filter(function ($value, $key) {                           // Collection of floors which have late Assessment
                 $currentDate = Carbon::now()->floorMonth();
                 $dateFrom = Carbon::createFromFormat('Y-m-d', $value['dateFrom'])->floorMonth();
-                $diffInMonths = $currentDate->diffInMonths($dateFrom);
-                return $diffInMonths > 3;
+                $usageType = $value['useType'];
+                if ($usageType != 10) {                                                                     // Late Assessment Not Applicable for the Religious Floors
+                    $diffInMonths = $currentDate->diffInMonths($dateFrom);
+                    return $diffInMonths > 3;
+                }
             });
             $lateAssessmentStatus = $lateAssementFloors->isEmpty() == true ? false : true;
 
