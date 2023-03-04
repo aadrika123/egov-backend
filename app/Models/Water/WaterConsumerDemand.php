@@ -52,7 +52,7 @@ class WaterConsumerDemand extends Model
      * | @param demands
      * | @param meterDetails
      */
-    public function saveConsumerDemand($demands, $meterDetails, $consumerDetails, $request)
+    public function saveConsumerDemand($demands, $meterDetails, $consumerDetails, $request, $taxId)
     {
         $mWaterConsumerDemand = new WaterConsumerDemand();
         $mWaterConsumerDemand->consumer_id              =  $consumerDetails->id;
@@ -60,6 +60,7 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand->generation_date          =  $demands['generation_date'];
         $mWaterConsumerDemand->amount                   =  $demands['amount'];
         $mWaterConsumerDemand->paid_status              =  false;
+        $mWaterConsumerDemand->consumer_tax_id          =  $taxId;
         $mWaterConsumerDemand->emp_details_id           =  authUser()->id;
         $mWaterConsumerDemand->demand_from              =  $demands['demand_from'];
         $mWaterConsumerDemand->demand_upto              =  $demands['demand_upto'];
