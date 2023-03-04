@@ -726,7 +726,6 @@ class ActiveSafController extends Controller
                 $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
             }
             DB::beginTransaction();
-
             // For Citizen Independent Comment
             if ($userType == 'Citizen') {
                 $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);

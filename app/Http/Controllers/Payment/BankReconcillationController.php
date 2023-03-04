@@ -93,7 +93,7 @@ class BankReconcillationController extends Controller
                         ->first();
                 }
                 if (!isset($data)) {
-                    return  $data = $chequeTranDtl
+                    $data = $chequeTranDtl
                         ->whereBetween('tran_date', [$fromDate, $toDate])
                         ->get();
                 }

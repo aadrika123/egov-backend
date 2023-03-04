@@ -8,13 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class TradeChequeDtl extends Model
 {
     use HasFactory;
-    public $timestamps=false;
+    public $timestamps = false;
 
     public function chequeDtlById($request)
     {
         return TradeChequeDtl::select('*')
             ->where('id', $request->chequeId)
-            ->where('state', 2)
+            ->where('status', 2)
             ->first();
     }
 }
