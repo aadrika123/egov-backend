@@ -117,6 +117,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-user/{id}', 'getUser');
         Route::get('get-all-users', 'getAllUsers');
         Route::post('list-employees', 'employeeList');
+        Route::post('get-user-notifications', 'userNotification');
 
         // Route are authorized for super admin only using Middleware 
         Route::group(['middleware' => ['can:isSuperAdmin']], function () {
