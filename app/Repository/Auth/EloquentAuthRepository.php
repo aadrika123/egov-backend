@@ -6,6 +6,7 @@ use App\Http\Requests\Auth\AuthUserRequest;
 use App\Http\Requests\Auth\LoginUserRequest;
 use App\Http\Requests\Auth\ChangePassRequest;
 use App\Models\User;
+use App\Models\UserNotification;
 use App\Repository\Auth\AuthRepository;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redis;
@@ -437,5 +438,28 @@ class EloquentAuthRepository implements AuthRepository
             ->get();
 
         return responseMsg(true, "List Employee", $data);
+    }
+
+    /**
+     * | Get user Notification
+     */
+
+    public function userNotification()
+    {
+        $ulbId = authUser()->ulb_id;
+        $userId = authUser()->id;
+
+        $data = UserNotification::where('user_id', $userId)
+            ->where('ulb_id', $ulbId)
+            ->where('status', 1)
+            ->orderByDesc('id')
+            ->get();
+
+
+        if ($data->isEmpty())
+            return responseMsgs(true, "No Current Notification", '', "010108", "1.0", "", "POST", "");
+
+
+        return responseMsgs(true, "Your Notificationn", remove_null($data), "010108", "1.0", "", "POST", "");
     }
 }

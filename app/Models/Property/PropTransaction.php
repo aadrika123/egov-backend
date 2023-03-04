@@ -188,6 +188,7 @@ class PropTransaction extends Model
     {
         return PropTransaction::select(
             'prop_cheque_dtls.*',
+            DB::raw("1 as module_id"),
             'tran_date',
             'tran_no',
             'payment_mode',

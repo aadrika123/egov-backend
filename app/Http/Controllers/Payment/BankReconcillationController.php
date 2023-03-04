@@ -44,6 +44,7 @@ class BankReconcillationController extends Controller
             $ulbId = authUser()->ulb_id;
             $moduleId = $request->moduleId;
             $paymentMode = $request->paymentMode;
+            $verifyStatus = $request->verifyStatus;
             $fromDate = Carbon::create($request->fromDate)->format('Y-m-d');
             $toDate = Carbon::create($request->toDate)->format('Y-m-d');
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -55,6 +56,22 @@ class BankReconcillationController extends Controller
 
             if ($moduleId == $propertyModuleId) {
                 $chequeTranDtl  = $mPropTransaction->chequeTranDtl($ulbId);
+
+                if ($request->chequeNo) {
+                    $data =  $chequeTranDtl
+                        ->where('cheque_no', $request->chequeNo)
+                        ->first();
+                }
+                if (!isset($data)) {
+                    $data = $chequeTranDtl
+                        ->whereBetween('tran_date', [$fromDate, $toDate])
+                        ->get();
+                }
+            }
+
+            if ($moduleId == $waterModuleId) {
+
+                $chequeTranDtl  = $mWaterTran->chequeTranDtl($ulbId);
 
                 if ($request->chequeNo) {
                     $data =  $chequeTranDtl
@@ -83,23 +100,6 @@ class BankReconcillationController extends Controller
                 }
             }
 
-            if ($moduleId == $waterModuleId) {
-
-                $chequeTranDtl  = $mWaterTran->chequeTranDtl($ulbId);
-
-                if ($request->chequeNo) {
-                    $data =  $chequeTranDtl
-                        ->where('cheque_no', $request->chequeNo)
-                        ->first();
-                }
-                if (!isset($data)) {
-                    return  $data = $chequeTranDtl
-                        ->whereBetween('tran_date', [$fromDate, $toDate])
-                        ->get();
-                }
-            }
-            //
-
             if ($paymentMode == 'DD') {
                 $a =  collect($data)->where('payment_mode', 'DD');
                 $data = (array_values(objtoarray($a)));
@@ -111,13 +111,22 @@ class BankReconcillationController extends Controller
             }
 
             //search with verification status is pending
-            // if ($verifyStatus == '2') {
-            //     $a =  collect($data)->where('verify_status', 'CHEQUE');
-            //     $data = (array_values(objtoarray($a)));
-            // }
+            if ($verifyStatus == '2') {
+                $a =  collect($data)->where('status', '2');
+                $data = (array_values(objtoarray($a)));
+            }
 
+            if ($verifyStatus == '1') {
+                $a =  collect($data)->where('status', '1');
+                $data = (array_values(objtoarray($a)));
+            }
 
-            if (!empty(collect($data))) {
+            if ($verifyStatus == '3') {
+                $a =  collect($data)->where('status', '3');
+                $data = (array_values(objtoarray($a)));
+            }
+
+            if (collect($data)->isNotEmpty()) {
                 return responseMsgs(true, "Data Acording to request!", $data, '010801', '01', '382ms-547ms', 'Post', '');
             }
             return responseMsg(false, "data not found!", "");
@@ -203,7 +212,6 @@ class BankReconcillationController extends Controller
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
             $mPaymentReconciliation = new PaymentReconciliation();
 
-
             if ($moduleId == $propertyModuleId) {
                 $mChequeDtl =  PropChequeDtl::find($request->chequeId);
                 if ($request->status == 'clear') {
@@ -215,7 +223,7 @@ class BankReconcillationController extends Controller
                 $mChequeDtl->clear_bounce_date = $request->clearanceDate;
                 $mChequeDtl->bounce_amount = $request->cancellationCharge;
                 $mChequeDtl->remarks = $request->remarks;
-                $mChequeDtl->save();
+                // $mChequeDtl->save();
 
                 $transaction = PropTransaction::where('id', $mChequeDtl->transaction_id)
                     ->first();
@@ -237,18 +245,18 @@ class BankReconcillationController extends Controller
                     PropTransaction::where('id', $mChequeDtl->transaction_id)
                         ->update(
                             [
-                                'verify_status' => 3,
-                                'verify_date' => Carbon::now(),
-                                'verified_by' => $userId
+                                // 'verify_status' => 3,
+                                // 'verify_date' => Carbon::now(),
+                                // 'verified_by' => $userId
                             ]
                         );
 
                     $propTranDtls = PropTranDtl::where('tran_id', $transaction->id)->get();
 
-                    // foreach ($propTranDtls as $propTranDtl) {
+                    foreach ($propTranDtls as $propTranDtl) {
 
-                    //     PropDemand::where()->get();
-                    // }
+                        return PropDemand::where()->get();
+                    }
                 }
 
                 $request->merge([
