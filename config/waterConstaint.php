@@ -1,7 +1,7 @@
 <?php
 
 return [
-    // Label Role ID
+    // Label Role ID (waterConstaint)
 
     "METER_CONN_TYPE" => [
         "1" => "Meter",

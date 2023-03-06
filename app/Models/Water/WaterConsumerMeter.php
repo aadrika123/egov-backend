@@ -31,6 +31,7 @@ class WaterConsumerMeter extends Model
 
         $mWaterConsumerMeter->final_meter_reading = $req->finalRading;
         $mWaterConsumerMeter->save();
+        return $mWaterConsumerMeter->id;
     }
 
     /**
