@@ -321,6 +321,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(PermissionController::class)->group(function () {
         Route::post('add-permission', 'addPermission');
         Route::post('add-role-permission', 'addRolePermission');
+
+        Route::post('care-taker', 'careTakerProperty');
     });
 });
 
