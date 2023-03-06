@@ -17,11 +17,11 @@ class InsertTax
      */
     public function insertTax($safId, $ulbId, $safTaxes)
     {
-        $safDemand = collect($safTaxes->original['data']['details']);
-        $details = $this->generateSafDemand($safDemand);
-
+        // $safDemand = collect($safTaxes->original['data']['details']);
+        // $details = $this->generateSafDemand($safDemand);
+        $details = $safTaxes;
+        $safDemand = new PropSafsDemand();
         foreach ($details as $detail) {
-            $safDemand = new PropSafsDemand();
             $reqs = [
                 'saf_id' => $safId,
                 'arv' => $detail['arv'],
@@ -37,6 +37,8 @@ class InsertTax
                 'due_date' => $detail['dueDate'],
                 'user_id' => authUser()->id,
                 'ulb_id' => $ulbId,
+                'adjust_amount' => $detail['adjustAmount'],
+                'balance' => $detail['balance']
             ];
             $safDemand->postDemands($reqs);
         }
