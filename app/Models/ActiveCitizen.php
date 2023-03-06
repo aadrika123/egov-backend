@@ -53,9 +53,12 @@ class ActiveCitizen extends Authenticatable
     {
         $citizenInfo = ActiveCitizen::where('mobile', $request->mobileNo)
             ->first();
-        $token['token'] = $citizenInfo->createToken('my-app-token')->plainTextToken;
-        $citizenInfo->remember_token = $token['token'];
-        $citizenInfo->save();
-        return $token;
+
+        if ($citizenInfo) {
+            $token['token'] = $citizenInfo->createToken('my-app-token')->plainTextToken;
+            $citizenInfo->remember_token = $token['token'];
+            $citizenInfo->save();
+            return $token;
+        }
     }
 }

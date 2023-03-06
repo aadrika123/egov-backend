@@ -31,7 +31,7 @@ class ThirdPartyController extends Controller
     {
         try {
             $request->validate([
-                'mobileNo' => "required|exists:active_citizens,mobile|digits:10|regex:/[0-9]{10}/", #
+                'mobileNo' => "required|digits:10|regex:/[0-9]{10}/", #exists:active_citizens,mobile|
             ]);
             $refIdGeneration = new IdGeneration();
             $mOtpRequest = new OtpRequest();
@@ -69,7 +69,7 @@ class ThirdPartyController extends Controller
             }
             $token = $mActiveCitizen->changeToken($request);
             $checkOtp->delete();
-            return responseMsgs(true, "OTP Validated!", $token, "", "01", ".ms", "POST", "");
+            return responseMsgs(true, "OTP Validated!", remove_null($token), "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
