@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,11 +17,21 @@ class OtpRequest extends Model
      */
     public function saveOtp($request, $generateOtp)
     {
-        $mOtpMaster = new OtpRequest();
-        $mOtpMaster->mobile_no   = $request->mobileNo;
-        $mOtpMaster->otp         = $generateOtp;
-        $mOtpMaster->otp_time    = Carbon::now();
-        $mOtpMaster->save();
+        $refData = OtpRequest::where('mobile_no', $request->mobileNo)
+            ->first();
+        if ($refData) {
+            $refData->otp_time  = Carbon::now();
+            $refData->otp       = $generateOtp;
+            $refData->hit_count = $refData->hit_count + 1;
+            $refData->update();
+        } else {
+            $mOtpMaster = new OtpRequest();
+            $mOtpMaster->mobile_no  = $request->mobileNo;
+            $mOtpMaster->otp        = $generateOtp;
+            $mOtpMaster->otp_time   = Carbon::now();
+            $mOtpMaster->hit_count  = 1;
+            $mOtpMaster->save();
+        }
     }
 
     /**

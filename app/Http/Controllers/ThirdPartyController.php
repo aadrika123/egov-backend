@@ -25,12 +25,13 @@ class ThirdPartyController extends Controller
      * | @return 
         | Serial No : 01
         | Not Checked
+        | Dont share otp 
      */
     public function sendOtp(Request $request)
     {
         try {
             $request->validate([
-                'mobileNo' => "required|digits:10|regex:/[0-9]{10}/", #exists:active_citizens,mobile|
+                'mobileNo' => "required|exists:active_citizens,mobile|digits:10|regex:/[0-9]{10}/", #
             ]);
             $refIdGeneration = new IdGeneration();
             $mOtpRequest = new OtpRequest();
@@ -38,6 +39,7 @@ class ThirdPartyController extends Controller
             DB::beginTransaction();
             $mOtpRequest->saveOtp($request, $generateOtp);
             DB::commit();
+            return responseMsgs(true, "OTP send to your mobile No!", $generateOtp, "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "0101", "01", ".ms", "POST", "");
@@ -48,6 +50,8 @@ class ThirdPartyController extends Controller
      * | Verify OTP 
      * | Check OTP and Create a Token
      * | @param request
+        | Serial No : 02
+        | Not Checked
      */
     public function verifyOtp(Request $request)
     {
@@ -64,6 +68,7 @@ class ThirdPartyController extends Controller
                 return responseMsgs(false, $msg, "", "", "01", ".ms", "POST", "");
             }
             $token = $mActiveCitizen->changeToken($request);
+            $checkOtp->delete();
             return responseMsgs(true, "OTP Validated!", $token, "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
