@@ -561,7 +561,7 @@ class SafCalculation
         // is implimented rule set 1 (before 2016-2017), (2016-2017 TO 2021-2022), (2021-2022 TO TILL NOW)
         if ($dateFrom < $this->_effectiveDateRule2) {
             $quarterDueDate = calculateQuaterDueDate($dateFrom);
-            $onePercPenalty = $this->onePercPenalty($quarterDueDate);                   // One Percent Penalty
+            $onePercPenalty = $this->onePercPenalty($quarterDueDate);                    // One Percent Penalty
             $ruleSets[] = [
                 "quarterYear" => calculateFyear($dateFrom),                              // Calculate Financial Year means to Calculate the FinancialYear
                 "ruleSet" => "RuleSet1",

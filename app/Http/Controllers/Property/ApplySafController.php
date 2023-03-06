@@ -146,7 +146,7 @@ class ApplySafController extends Controller
             $demandResponse['amounts'] = $safTaxes->original['data']['demand'];
             $demandResponse['details'] = $detailsByRulesets;
             $tax->insertTax($safId, $ulb_id, $generatedDemandDtls);      // Insert SAF Tax
-
+            // return $generatedDemandDtls->groupBy('ruleSet');
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
@@ -265,6 +265,8 @@ class ApplySafController extends Controller
             $demand = $safDemandList->where('due_date', $item['dueDate'])->first();
             $item['adjustAmount'] = $demand->amount;
             $item['balance'] = roundFigure($item['totalTax'] - $demand->amount);
+            if ($item['balance'] == 0)
+                $item['onePercPenaltyTax'] = 0;
         }
         return $generatedDemand;
     }
