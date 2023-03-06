@@ -88,11 +88,11 @@ class RouteServiceProvider extends ServiceProvider
                 ->namespace($this->namespace)
                 ->group(base_path('routes/dashboard.php'));
 
-            //Cluster
-            //  Route::prefix('api/cluster')
-            //  ->middleware('api')
-            //  ->namespace($this->namespace)
-            //  ->group(base_path('routes/cluster.php'));
+            // Permissions
+            Route::prefix('api/permissions')
+                ->middleware('api')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/permission.php'));
         });
     }
 

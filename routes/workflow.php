@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\WorkflowMaster\MasterController;
 use App\Http\Controllers\WorkflowMaster\RoleController;
 use App\Http\Controllers\WorkflowMaster\WardUserController;
@@ -140,13 +141,5 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('getRoleByWardUlbId', 'getRoleByWardUlbId');
 
         Route::post('get-ulb-workflow', 'getWorkflow');
-    });
-
-
-    /**
-     * | Workflow Document Controller (10)
-     */
-    Route::controller(WfDocumentController::class)->group(function () {
-        Route::post('document/verify-reject', 'docVerifyReject'); // 01
     });
 });

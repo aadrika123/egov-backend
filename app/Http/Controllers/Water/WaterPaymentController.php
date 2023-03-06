@@ -580,20 +580,20 @@ class WaterPaymentController extends Controller
             $request->validate([
                 'id'                => 'required|digits_between:1,9223372036854775807',
                 'applycationType'   => 'required|string|in:connection,consumer',
+                'fromDate'          => 'nullable|',
+                'toDate'            => 'nullable|'
             ]);
 
             $refUser            = Auth()->user();
-            $refUserId          = $refUser->id;
-            $refUlbId           = $refUser->ulb_id;
-
             #------------ new connection --------------------
             DB::beginTransaction();
+            $this->checkPaymentParams($request);
             if ($request->applycationType == "consumer") {
-                $application = WaterApplication::find($request->id);
+                $application = WaterConsumer::find($request->id);
                 if (!$application) {
                     throw new Exception("Data Not Found!......");
                 }
-                $cahges = $this->getWaterConnectionChages($application->id);
+                $cahges = $this->getWaterConsumerDemand($application->id);
                 if (!$cahges) {
                     throw new Exception("No Anny Due Amount!......");
                 }
@@ -630,6 +630,19 @@ class WaterPaymentController extends Controller
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    /**
+     * | Check the params for the payment Initiation
+     * | @param
+        | Serial No : 05.01
+        | Not Working  
+     */
+    public function getWaterConsumerDemand($request)
+    {
+        $mWaterConsumerDemand = new WaterConsumerDemand();
+        
+    }
+
 
 
     /**

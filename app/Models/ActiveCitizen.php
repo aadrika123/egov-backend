@@ -43,4 +43,22 @@ class ActiveCitizen extends Authenticatable
         return ActiveCitizen::where('mobile', $mobile)
             ->first();
     }
+
+
+    /**
+     * | Change the Access Token in Case of Password Change 
+     * | @param
+     */
+    public function changeToken($request)
+    {
+        $citizenInfo = ActiveCitizen::where('mobile', $request->mobileNo)
+            ->first();
+
+        if ($citizenInfo) {
+            $token['token'] = $citizenInfo->createToken('my-app-token')->plainTextToken;
+            $citizenInfo->remember_token = $token['token'];
+            $citizenInfo->save();
+            return $token;
+        }
+    }
 }

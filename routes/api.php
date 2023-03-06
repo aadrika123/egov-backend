@@ -10,6 +10,7 @@ use App\Http\Controllers\Menu\MenuController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\SelfAdvertisementController;
+use App\Http\Controllers\ThirdPartyController;
 use App\Http\Controllers\UlbController;
 use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\Workflows\WorkflowController;
@@ -110,10 +111,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-user/{id}', 'getUser');
         Route::get('get-all-users', 'getAllUsers');
         Route::post('list-employees', 'employeeList');
-
         Route::post('get-user-notifications', 'userNotification');
-        Route::post('add-user-notification', 'addNotification');
-        Route::post('delete-user-notification', 'deactivateNotification');
 
         // Route are authorized for super admin only using Middleware 
         Route::group(['middleware' => ['can:isSuperAdmin']], function () {
@@ -352,12 +350,23 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 });
 
 /**
+ * | Get OTP for the for Change Password
+ * | Created By : Sam kerketta
+ * | Created At : 06-03-2023
+ */
+Route::controller(ThirdPartyController::class)->group(function () {
+    Route::post('user/send-otp', 'sendOtp');
+    Route::post('user/verify-otp', "verifyOtp");
+});
+
+
+
+/**
  * This Route is for Demo Purpose
  */
 Route::controller(DemoController::class)->group(function () {
     Route::post('water-connection', 'waterConnection');
 });
-
 #---------------------------- document read ------------------------------
 Route::get('/getImageLink', function () {
     return view('getImageLink');
