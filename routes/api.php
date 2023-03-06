@@ -8,25 +8,18 @@ use App\Http\Controllers\CustomController;
 use App\Http\Controllers\DemoController;
 use App\Http\Controllers\Menu\MenuController;
 use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\SelfAdvertisementController;
 use App\Http\Controllers\UlbController;
-use App\Http\Controllers\UlbMaster;
 use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\Workflows\WorkflowController;
 use App\Http\Controllers\Workflows\WorkflowTrackController;
 use App\Http\Controllers\Ward\WardController;
 use App\Http\Controllers\WcController;
-use App\Http\Controllers\WorkflowMaster\MasterController;
 use App\Http\Controllers\WorkflowMaster\RoleController;
-use App\Http\Controllers\WorkflowMaster\WardUserController;
 use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
-use App\Http\Controllers\WorkflowMaster\WorkflowMap;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleController;
-use App\Http\Controllers\WorkflowMaster\WorkflowWardUserController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleUserMapController;
-use App\Http\Controllers\WorkflowMaster\WorkflowRoleMapController;
-use App\Http\Controllers\WorkflowMaster\WorkflowController as WfController;
-use App\Http\Controllers\Workflows\WfDocumentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -319,6 +312,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(CustomController::class)->group(function () {
         Route::post('get-all-custom-tab-data', 'getCustomDetails');
         Route::post('post-custom-data', 'postCustomDetails');
+    });
+
+    /**
+     * | Permissions Masters
+       | Serial No : 10
+     */
+    Route::controller(PermissionController::class)->group(function () {
+        Route::post('add-permission', 'addPermission');
+        Route::post('add-role-permission', 'addRolePermission');
     });
 });
 
