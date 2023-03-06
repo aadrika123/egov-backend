@@ -10,6 +10,7 @@ use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSafsDemand;
 use App\Models\Workflows\WfWorkflow;
 use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
@@ -27,10 +28,16 @@ class ApplySafController extends Controller
     protected $_workflowIds;
     protected $_todayDate;
     protected $_REQUEST;
+    protected $_safDemand;
+    protected $_generatedDemand;
+    protected $_propProperty;
+    protected $_holdingNo;
     public function __construct()
     {
         $this->_workflowIds = Config::get('PropertyConstaint.SAF_WORKFLOWS');
         $this->_todayDate = Carbon::now();
+        $this->_safDemand = new PropSafsDemand();
+        $this->_propProperty = new PropProperty();
     }
     /**
      * | Created On-17-02-2022 
@@ -64,6 +71,7 @@ class ApplySafController extends Controller
     {
         try {
             // Variable Assignments
+            $assessmentId = $request->assessmentType;
             $mApplyDate = Carbon::now()->format("Y-m-d");
             $user_id = auth()->user()->id;
             $ulb_id = $request->ulbId ?? auth()->user()->ulb_id;
@@ -127,13 +135,18 @@ class ApplySafController extends Controller
 
             // Insert Tax
             $demand['amounts'] = $safTaxes->original['data']['demand'];
-            $demand['details'] = $this->generateSafDemand($safTaxes->original['data']['details']);
-
+            $generatedDemandDtls = $this->generateSafDemand($safTaxes->original['data']['details']);
+            $demand['details'] = $generatedDemandDtls;
+            $this->_generatedDemand = $generatedDemandDtls;
+            if ($assessmentId == 2) {                                    // In Case Of Reassessment Amount Adjustment
+                $this->_holdingNo = $request->holdingNo;
+                $generatedDemandDtls = $this->adjustDemand();            // (2.3)
+            }
             $detailsByRulesets = collect($safTaxes->original['data']['details'])->groupBy('ruleSet');
             $demandResponse['amounts'] = $safTaxes->original['data']['demand'];
             $demandResponse['details'] = $detailsByRulesets;
-            $tax->insertTax($safId, $ulb_id, $safTaxes);                                               // Insert SAF Tax
-
+            $tax->insertTax($safId, $ulb_id, $generatedDemandDtls);      // Insert SAF Tax
+            // return $generatedDemandDtls->groupBy('ruleSet');
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
@@ -230,5 +243,31 @@ class ApplySafController extends Controller
                 'holdingNo' => implode(",", $req->holdingNoLists)
             ]);
         }
+    }
+
+    /**
+     * | Demand Adjustment In Case of Reassessment
+     */
+    public function adjustDemand()
+    {
+        $safDemand = $this->_safDemand;
+        $generatedDemand = $this->_generatedDemand;
+        $propProperty = $this->_propProperty;
+        $holdingNo = $this->_holdingNo;
+        $propSafs = $propProperty->getSafIdByHoldingNo($holdingNo);
+        $safDemandList = $safDemand->getFullDemandsBySafId($propSafs->saf_id);
+        if ($safDemandList->isEmpty())
+            throw new Exception("Previous Saf Demand is Not Available");
+        $generatedDemand = $generatedDemand->sortBy('due_date');
+
+        // Demand Adjustment
+        foreach ($generatedDemand as $item) {
+            $demand = $safDemandList->where('due_date', $item['dueDate'])->first();
+            $item['adjustAmount'] = $demand->amount;
+            $item['balance'] = roundFigure($item['totalTax'] - $demand->amount);
+            if ($item['balance'] == 0)
+                $item['onePercPenaltyTax'] = 0;
+        }
+        return $generatedDemand;
     }
 }
