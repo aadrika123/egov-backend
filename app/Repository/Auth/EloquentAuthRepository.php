@@ -443,23 +443,40 @@ class EloquentAuthRepository implements AuthRepository
     /**
      * | Get user Notification
      */
-
     public function userNotification()
     {
         $ulbId = authUser()->ulb_id;
         $userId = authUser()->id;
+        $muserNotification = new UserNotification();
 
-        $data = UserNotification::where('user_id', $userId)
-            ->where('ulb_id', $ulbId)
-            ->where('status', 1)
-            ->orderByDesc('id')
-            ->get();
-
-
+        $data =  $muserNotification->notificationByUserId($userId, $ulbId);
         if ($data->isEmpty())
             return responseMsgs(true, "No Current Notification", '', "010108", "1.0", "", "POST", "");
 
-
         return responseMsgs(true, "Your Notificationn", remove_null($data), "010108", "1.0", "", "POST", "");
+    }
+
+    /**
+     * | Add Notification
+     */
+    public function addNotification($req)
+    {
+        $ulbId = authUser()->ulb_id;
+        $userId = authUser()->id;
+        $muserNotification = new UserNotification();
+        $muserNotification->addNotification($userId, $ulbId, $req);
+
+        return responseMsgs(true, "Notificationn Addedd", '', "010108", "1.0", "", "POST", "");
+    }
+
+    /**
+     * | Get user Notification
+     */
+    public function deactivateNotification($req)
+    {
+        $muserNotification = new UserNotification();
+        $muserNotification->deactivateNotification($req);
+
+        return responseMsgs(true, "Notificationn Deactivated", '', "010108", "1.0", "", "POST", "");
     }
 }

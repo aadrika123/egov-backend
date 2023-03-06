@@ -44,7 +44,7 @@ class BankReconcillationController extends Controller
             $ulbId = authUser()->ulb_id;
             $moduleId = $request->moduleId;
             $paymentMode = $request->paymentMode;
-            $verifyStatus = $request->verifyStatus;
+            $verifyStatus = $request->verificationType;
             $fromDate = Carbon::create($request->fromDate)->format('Y-m-d');
             $toDate = Carbon::create($request->toDate)->format('Y-m-d');
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -110,18 +110,18 @@ class BankReconcillationController extends Controller
                 $data = (array_values(objtoarray($a)));
             }
 
-            //search with verification status is pending
-            if ($verifyStatus == '2') {
+            //search with verification status
+            if ($verifyStatus == 'pending') {
                 $a =  collect($data)->where('status', '2');
                 $data = (array_values(objtoarray($a)));
             }
 
-            if ($verifyStatus == '1') {
+            if ($verifyStatus == 'clear') {
                 $a =  collect($data)->where('status', '1');
                 $data = (array_values(objtoarray($a)));
             }
 
-            if ($verifyStatus == '3') {
+            if ($verifyStatus == 'bounce') {
                 $a =  collect($data)->where('status', '3');
                 $data = (array_values(objtoarray($a)));
             }

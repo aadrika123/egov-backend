@@ -119,4 +119,20 @@ class UserController extends Controller
     {
         return $this->EloquentAuth->userNotification($request);
     }
+
+    /**
+     * | add Notificatio
+     */
+    public function addNotification(Request $request)
+    {
+        return $this->EloquentAuth->addNotification($request);
+    }
+
+    /**
+     * | deactivate Notification
+     */
+    public function deactivateNotification(Request $request)
+    {
+        return $this->EloquentAuth->deactivateNotification($request);
+    }
 }
