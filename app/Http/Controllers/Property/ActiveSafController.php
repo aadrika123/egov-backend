@@ -1456,6 +1456,7 @@ class ActiveSafController extends Controller
 
             // Reflect on Prop Tran Details
             foreach ($demands as $demand) {
+                $demand->balance = 0;
                 $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
                 $demand->save();
 

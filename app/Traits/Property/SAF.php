@@ -291,6 +291,7 @@ trait SAF
 
         $taxes = $groupBy->map(function ($values) {
             return $values->map(function ($collection) {
+                $totalAmt = roundFigure($collection->sum('totalTax'));
                 return collect([
                     'quarterYear' => $collection->first()['quarterYear'],
                     'qtr' => $collection->first()['qtr'],
@@ -304,8 +305,10 @@ trait SAF
                     'healthCess' => roundFigure($collection->sum('healthTax')),
                     'latrineTax' => roundFigure($collection->sum('latrineTax')),
                     'additionTax' => roundFigure($collection->sum('additionalTax')),
-                    'totalTax' => roundFigure($collection->sum('totalTax')),
-                    'ruleSet' => $collection->first()['ruleSet']
+                    'totalTax' => $totalAmt,
+                    'ruleSet' => $collection->first()['ruleSet'],
+                    'adjustAmount' => 0,
+                    'balance' => $totalAmt
                 ]);
             });
         });
