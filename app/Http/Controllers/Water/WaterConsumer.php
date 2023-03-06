@@ -30,7 +30,7 @@ class WaterConsumer extends Controller
      * | Calcullate the Consumer demand 
      * | @param request
      * | @return Repository
-        | Serial No : 00
+        | Serial No : 01
         | Working
      */
     public function calConsumerDemand(Request $request)
@@ -45,6 +45,9 @@ class WaterConsumer extends Controller
      * | @param request consumerId
      * | @var WaterConsumerDemand  model
      * | @var consumerDemand  
+     * | @var refConsumerId
+     * | @var refMeterData
+     * | @var connectionName
      * | @return consumerDemand  Consumer Demand List
         | Serial no : 02
         | Working
@@ -102,7 +105,6 @@ class WaterConsumer extends Controller
      * | @var calculatedDemand
      * | @var demandDetails
      * | @var meterId
-     * | @var 
      * | @return 
         | Serial No : 03
         | Not Tested
@@ -111,10 +113,14 @@ class WaterConsumer extends Controller
     public function saveGenerateConsumerDemand(Request $request)
     {
         try {
+            $request->validate([
+                'consumerId' => "required|digits_between:1,9223372036854775807",
+            ]);
+
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
             $mWaterConsumerMeter = new WaterConsumerMeter();
             $refMeterConnectionType = Config::get('waterConstaint.METER_CONN_TYPE');
-            // $this->checkDemandGeneration($request);
+            $this->checkDemandGeneration($request);
             $consumerDetails = WaterWaterConsumer::findOrFail($request->consumerId);
             $calculatedDemand = $this->Repository->calConsumerDemand($request);
 
@@ -152,6 +158,12 @@ class WaterConsumer extends Controller
      * | Save the Details for the Connection Type Meter 
      * | In Case Of Connection Type is meter OR Gallon 
      * | @param Request  
+     * | @var mWaterConsumerDemand
+     * | @var mWaterConsumerTax
+     * | @var generatedDemand
+     * | @var taxId
+     * | @var meterDetails
+     * | @var refDemands
         | Serial No : 03.01
         | Not Tested
      */
@@ -180,6 +192,15 @@ class WaterConsumer extends Controller
         });
     }
 
+    /**
+     * | Validate the user and other criteria for the Genereating demand
+     * | @param request
+        | Serial No : 03.02
+        | Not Used 
+     */
+    public function checkDemandGeneration()
+    {
+    }
 
 
     /**
