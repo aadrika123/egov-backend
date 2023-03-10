@@ -726,7 +726,6 @@ class ActiveSafController extends Controller
                 $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
             }
             DB::beginTransaction();
-
             // For Citizen Independent Comment
             if ($userType == 'Citizen') {
                 $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
@@ -1457,6 +1456,7 @@ class ActiveSafController extends Controller
 
             // Reflect on Prop Tran Details
             foreach ($demands as $demand) {
+                $demand->balance = 0;
                 $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
                 $demand->save();
 

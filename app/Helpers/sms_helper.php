@@ -41,7 +41,6 @@ if(!function_exists('SMSJHGOVT'))
             curl_setopt($post, CURLOPT_RETURNTRANSFER, 1);
             $result = curl_exec($post); //result from mobile seva server
             curl_close($post);
-
             $response = ['response'=>true, 'status'=> 'success', 'msg'=>1];
             if (strpos($result, '402,MsgID') !== false)
             {
@@ -69,10 +68,10 @@ if(!function_exists('send_sms'))
 {
     function send_sms($mobile,$message, $templateid)
     {
-        // $res=SMSJHGOVT("9708846652", $message, $templateid);
+        $res=SMSJHGOVT("7050180186", $message, $templateid);
         //print_var($message);
         // $res=SMSJHGOVT($mobile, $message, $templateid);
-        // return $res;
+        return $res;
     }
 }
 if(!function_exists('Trade'))
@@ -427,7 +426,7 @@ if(!function_exists("OTP"))
             try
             {
                 #OTP Code. {#var#} for Your Application No {#var#} {#var#}              
-                $sms = "OTP Code. ".$data["otp"]." for Your Application No ".$data["application_no"]." ".$data["ulb_name"]."";
+                $sms = "OTP Code.".$data["otp"]." for Your Application No ".$data["application_no"]." ".$data["ulb_name"]."";
                 $temp_id = "1307162359726658524";
                 return array("sms"=>$sms,"temp_id"=>$temp_id,'status'=>true);              
             } 

@@ -85,10 +85,16 @@ class WaterTran extends Model
 
     public function chequeTranDtl($ulbId)
     {
-        return WaterTran::select('*')
+        return WaterTran::select(
+            'water_trans.*',
+            'water_cheque_dtls.*',
+            'user_name',
+            DB::raw("2 as module_id"),
+        )
             ->leftjoin('water_cheque_dtls', 'water_cheque_dtls.transaction_id', 'water_trans.id')
+            ->join('users', 'users.id', 'water_cheque_dtls.user_id')
             ->whereIn('payment_mode', ['CHEQUE', 'DD'])
-            ->where('ulb_id', $ulbId);
+            ->where('water_trans.ulb_id', $ulbId);
     }
 
     /**

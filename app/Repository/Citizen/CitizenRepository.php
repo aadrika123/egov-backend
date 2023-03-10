@@ -85,6 +85,7 @@ class CitizenRepository implements iCitizenRepository
             $applications['Water'] = $this->appliedWaterApplications($userId);
             $applications['Trade'] = $this->appliedTradeApplications($userId);
             $applications['Holding'] = $this->getCitizenProperty($userId);
+            $applications['careTaker'] = $this->getCaretakerProperty($userId);
         }
 
         if ($req->getMethod() == 'POST') {                                                      // Get Applications By Module
@@ -102,6 +103,10 @@ class CitizenRepository implements iCitizenRepository
 
             if ($req->module == 'Holding') {
                 $applications['Holding'] = $this->getCitizenProperty($userId);
+            }
+
+            if ($req->module == 'careTaker') {
+                $applications['CareTaker'] = $this->getCaretakerProperty($userId);
             }
         }
 
@@ -295,6 +300,45 @@ class CitizenRepository implements iCitizenRepository
             $application['applications'] = $properties;
             $application['totalApplications'] = collect($properties)->count();
             return collect($application);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    //
+    public function getCaretakerProperty($userId)
+    {
+        try {
+            $data = array();
+            $activeCitizen = DB::table('active_citizens')
+                ->where('id', $userId)
+                ->first();
+            $propIds =  ($activeCitizen->caretaker);
+            $propIds = explode(',', $propIds);
+
+            foreach ($propIds as $propId) {
+                $a = json_decode($propId);
+                $propdtl =  PropProperty::where('prop_properties.id', $a->propId)
+                    ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+                    // ->join('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
+                    // ->orderBydesc('prop_transactions.id')
+                    ->first();
+
+                $propDtls = [
+                    'prop_id' => $propdtl->id,
+                    'holding_no' => $propdtl->holding_no,
+                    'new_holding_no' => $propdtl->new_holding_no,
+                    'apply_date' => $propdtl->application_date,
+                    'owner_name' => $propdtl->owner_name,
+                    'leftamount' => $propdtl->balance,
+                    'lastpaidamount' => $propdtl->amount,
+                    'lastpaiddate' => $propdtl->tran_date,
+                ];
+
+                array_push($data, $propDtls);
+            }
+
+            return collect($data);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

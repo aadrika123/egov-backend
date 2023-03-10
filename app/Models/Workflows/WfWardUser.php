@@ -18,6 +18,7 @@ class WfWardUser extends Model
     {
         return WfWardUser::select('id', 'ward_id')
             ->where('user_id', $userId)
+            ->orderBy('ward_id')
             ->get();
     }
 

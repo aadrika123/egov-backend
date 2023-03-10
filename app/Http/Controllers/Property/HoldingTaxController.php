@@ -345,6 +345,8 @@ class HoldingTaxController extends Controller
             if ($demands->isEmpty())
                 throw new Exception("No Dues For this Property");
             // Property Transactions
+            if (in_array($req['paymentMode'], $offlinePaymentModes))
+                $userId = auth()->user()->id;
             $req->merge([
                 'userId' => $userId,
                 'todayDate' => $todayDate->format('Y-m-d'),

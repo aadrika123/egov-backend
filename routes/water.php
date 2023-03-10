@@ -47,7 +47,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('back-to-citizen', 'backToCitizen');                                                // Workflow
         Route::post('btc-inbox', 'btcInbox');                                                           // Workflow
         Route::post('workflow/get-doc-list', 'getDocList');                                             // Workflow
-        Route::post('doc-verify-reject', 'docVerifyRejects');                                            // Workflow
+        Route::post('doc-verify-reject', 'docVerifyRejects');                                           // Workflow
         Route::post('upload-document', 'uploadWaterDoc');                                               // Workflow/Citizen
         Route::post('get-upload-documents', 'getUploadDocuments');                                      // Workflow/Citizen  
         Route::Post('application/delete', 'deleteWaterApplication');                                    // Citizen     
@@ -83,6 +83,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin / Consumer
+        Route::post(''); // Route
     });
 
     /**

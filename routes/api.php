@@ -8,25 +8,19 @@ use App\Http\Controllers\CustomController;
 use App\Http\Controllers\DemoController;
 use App\Http\Controllers\Menu\MenuController;
 use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\SelfAdvertisementController;
+use App\Http\Controllers\ThirdPartyController;
 use App\Http\Controllers\UlbController;
-use App\Http\Controllers\UlbMaster;
 use App\Http\Controllers\UlbWorkflowController;
 use App\Http\Controllers\Workflows\WorkflowController;
 use App\Http\Controllers\Workflows\WorkflowTrackController;
 use App\Http\Controllers\Ward\WardController;
 use App\Http\Controllers\WcController;
-use App\Http\Controllers\WorkflowMaster\MasterController;
 use App\Http\Controllers\WorkflowMaster\RoleController;
-use App\Http\Controllers\WorkflowMaster\WardUserController;
 use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
-use App\Http\Controllers\WorkflowMaster\WorkflowMap;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleController;
-use App\Http\Controllers\WorkflowMaster\WorkflowWardUserController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleUserMapController;
-use App\Http\Controllers\WorkflowMaster\WorkflowRoleMapController;
-use App\Http\Controllers\WorkflowMaster\WorkflowController as WfController;
-use App\Http\Controllers\Workflows\WfDocumentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -117,6 +111,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('get-user/{id}', 'getUser');
         Route::get('get-all-users', 'getAllUsers');
         Route::post('list-employees', 'employeeList');
+        Route::post('get-user-notifications', 'userNotification');
 
         // Route are authorized for super admin only using Middleware 
         Route::group(['middleware' => ['can:isSuperAdmin']], function () {
@@ -316,6 +311,17 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get-all-custom-tab-data', 'getCustomDetails');
         Route::post('post-custom-data', 'postCustomDetails');
     });
+
+    /**
+     * | Permissions Masters
+       | Serial No : 10
+     */
+    Route::controller(PermissionController::class)->group(function () {
+        Route::post('add-permission', 'addPermission');
+        Route::post('add-role-permission', 'addRolePermission');
+
+        Route::post('care-taker', 'careTakerProperty');
+    });
 });
 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
@@ -344,12 +350,23 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 });
 
 /**
+ * | Get OTP for the for Change Password
+ * | Created By : Sam kerketta
+ * | Created At : 06-03-2023
+ */
+Route::controller(ThirdPartyController::class)->group(function () {
+    Route::post('user/send-otp', 'sendOtp');
+    Route::post('user/verify-otp', "verifyOtp");
+});
+
+
+
+/**
  * This Route is for Demo Purpose
  */
 Route::controller(DemoController::class)->group(function () {
     Route::post('water-connection', 'waterConnection');
 });
-
 #---------------------------- document read ------------------------------
 Route::get('/getImageLink', function () {
     return view('getImageLink');

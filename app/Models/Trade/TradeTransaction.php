@@ -24,21 +24,22 @@ class TradeTransaction extends Model
         return  TradeTransaction::select(
             'trade_cheque_dtls.*',
             'tran_date',
+            DB::raw("3 as module_id"),
             'tran_no',
             'payment_mode',
-            'paid_amount',
+            'paid_amount as amount',
             "cheque_date",
             "bank_name",
             "branch_name",
             "trade_cheque_dtls.status",
             "cheque_no",
             "clear_bounce_date",
-            // "user_name"
+            "user_name"
         )
-            // ->join('users', 'users.id', 'trade_cheque_dtls.emp_dtl_id')
             ->leftjoin('trade_cheque_dtls', 'trade_cheque_dtls.tran_id', 'trade_transactions.id')
+            ->join('users', 'users.id', 'trade_cheque_dtls.emp_dtl_id')
             ->whereIn('payment_mode', ['CHEQUE', 'DD'])
-            ->where('ulb_id', $ulbId);
+            ->where('trade_transactions.ulb_id', $ulbId);
     }
 
     /**

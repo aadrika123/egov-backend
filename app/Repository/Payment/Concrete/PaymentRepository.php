@@ -322,9 +322,9 @@ class PaymentRepository implements iPayment
                         $objTrade = new TradeCitizen();
                         $objTrade->razorPayResponse($transfer);
                         break;
-                    case ('5'):
+                    case ('5'): # Advertisment 
                         Http::withHeaders([])
-                            ->post("http://192.168.0.214:8002/api/advertisements/payment-success-failure", $transfer);
+                            ->post("http://203.129.217.246:8001/api/advertisements/payment-success-failure", $transfer);
                         break;
                 }
             }

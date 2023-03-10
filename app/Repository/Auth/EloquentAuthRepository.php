@@ -6,6 +6,7 @@ use App\Http\Requests\Auth\AuthUserRequest;
 use App\Http\Requests\Auth\LoginUserRequest;
 use App\Http\Requests\Auth\ChangePassRequest;
 use App\Models\User;
+use App\Models\UserNotification;
 use App\Repository\Auth\AuthRepository;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redis;
@@ -437,5 +438,45 @@ class EloquentAuthRepository implements AuthRepository
             ->get();
 
         return responseMsg(true, "List Employee", $data);
+    }
+
+    /**
+     * | Get user Notification
+     */
+    public function userNotification()
+    {
+        $ulbId = authUser()->ulb_id;
+        $userId = authUser()->id;
+        $muserNotification = new UserNotification();
+
+        $data =  $muserNotification->notificationByUserId($userId, $ulbId);
+        if ($data->isEmpty())
+            return responseMsgs(true, "No Current Notification", '', "010108", "1.0", "", "POST", "");
+
+        return responseMsgs(true, "Your Notificationn", remove_null($data), "010108", "1.0", "", "POST", "");
+    }
+
+    /**
+     * | Add Notification
+     */
+    public function addNotification($req)
+    {
+        $ulbId = authUser()->ulb_id;
+        $userId = authUser()->id;
+        $muserNotification = new UserNotification();
+        $muserNotification->addNotification($userId, $ulbId, $req);
+
+        return responseMsgs(true, "Notificationn Addedd", '', "010108", "1.0", "", "POST", "");
+    }
+
+    /**
+     * | Get user Notification
+     */
+    public function deactivateNotification($req)
+    {
+        $muserNotification = new UserNotification();
+        $muserNotification->deactivateNotification($req);
+
+        return responseMsgs(true, "Notificationn Deactivated", '', "010108", "1.0", "", "POST", "");
     }
 }

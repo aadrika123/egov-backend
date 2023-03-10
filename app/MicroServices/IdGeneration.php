@@ -82,4 +82,13 @@ class IdGeneration
     {
         return Carbon::createFromDate()->milli . carbon::now()->diffInMicroseconds();
     }
+
+    /**
+     * | Generate Random OTP 
+     */
+    public function generateOtp()
+    {
+        $otp = Carbon::createFromDate()->milli . random_int(100, 999);
+        return $otp;
+    }
 }
