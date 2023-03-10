@@ -13,9 +13,12 @@ use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Controller for giving Controller
- * Created On-06-03-2023 
- * Created By-Mrinal Kumar
+ * | Controller for giving Controller
+ * | Created On-06-03-2023 
+ * | Created By-Mrinal Kumar
+ * | Status-Closed
+ * 
+ * | Modified Function getUserPermission() By Anshu Kumar On 10-03-2023 
  */
 
 class PermissionController extends Controller
