@@ -345,6 +345,26 @@ class CitizenRepository implements iCitizenRepository
     }
 
     /**
+     * | Care taker property tag
+     */
+    public function caretakerPropertyTag(Request $request)
+    {
+        try {
+            $mPropProperty = new PropProperty();
+            $mActiveCitizen = new ActiveCitizen();
+            $userId = authUser()->id;
+            $data = array();
+
+            $pid = $mPropProperty->getPropertyId($request->holdingNo);
+            // $cid = $mActiveCitizen->getCitizenDtl($userId);
+
+            return collect($data);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
      * | Independent Comment for the Citizen on their applications
      * | @param req requested parameters
      * | Status-Closed
