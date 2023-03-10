@@ -86,30 +86,30 @@ class WaterPaymentController extends Controller
             $waterPropertyTypeMstr = json_decode(Redis::get('water-property-type-mstr'));
             $waterOwnerTypeMstr = json_decode(Redis::get('water-owner-type-mstr'));
 
-            // Ward Masters
+            # Ward Masters
             if (!$waterParamPipelineType) {
-                $waterParamPipelineType = $mWaterParamPipelineType->getWaterParamPipelineType();            // Get PipelineType By Model Function
-                $redisConn->set('water-param-pipeline-type', json_encode($waterParamPipelineType));                  // Caching
+                $waterParamPipelineType = $mWaterParamPipelineType->getWaterParamPipelineType();                // Get PipelineType By Model Function
+                $redisConn->set('water-param-pipeline-type', json_encode($waterParamPipelineType));             // Caching
             }
 
             if (!$waterConnectionTypeMstr) {
-                $waterConnectionTypeMstr = $mWaterConnectionTypeMstr->getWaterConnectionTypeMstr();            // Get PipelineType By Model Function
-                $redisConn->set('water-connection-type-mstr', json_encode($waterConnectionTypeMstr));                  // Caching
+                $waterConnectionTypeMstr = $mWaterConnectionTypeMstr->getWaterConnectionTypeMstr();             // Get PipelineType By Model Function
+                $redisConn->set('water-connection-type-mstr', json_encode($waterConnectionTypeMstr));           // Caching
             }
 
             if (!$waterConnectionThroughMstr) {
-                $waterConnectionThroughMstr = $mWaterConnectionThroughMstr->getWaterConnectionThroughMstr();            // Get PipelineType By Model Function
-                $redisConn->set('water-connection-through-mstr', json_encode($waterConnectionThroughMstr));                  // Caching
+                $waterConnectionThroughMstr = $mWaterConnectionThroughMstr->getWaterConnectionThroughMstr();    // Get PipelineType By Model Function
+                $redisConn->set('water-connection-through-mstr', json_encode($waterConnectionThroughMstr));     // Caching
             }
 
             if (!$waterPropertyTypeMstr) {
-                $waterPropertyTypeMstr = $mWaterPropertyTypeMstr->getWaterPropertyTypeMstr();            // Get PipelineType By Model Function
-                $redisConn->set('water-property-type-mstr', json_encode($waterPropertyTypeMstr));                  // Caching
+                $waterPropertyTypeMstr = $mWaterPropertyTypeMstr->getWaterPropertyTypeMstr();                   // Get PipelineType By Model Function
+                $redisConn->set('water-property-type-mstr', json_encode($waterPropertyTypeMstr));               // Caching
             }
 
             if (!$waterOwnerTypeMstr) {
-                $waterOwnerTypeMstr = $mWaterOwnerTypeMstr->getWaterOwnerTypeMstr();            // Get PipelineType By Model Function
-                $redisConn->set('water-owner-type-mstr', json_encode($waterOwnerTypeMstr));                  // Caching
+                $waterOwnerTypeMstr = $mWaterOwnerTypeMstr->getWaterOwnerTypeMstr();                            // Get PipelineType By Model Function
+                $redisConn->set('water-owner-type-mstr', json_encode($waterOwnerTypeMstr));                     // Caching
             }
 
             $masterValues = [
@@ -122,7 +122,7 @@ class WaterPaymentController extends Controller
 
             # Config Master Data 
             $refMasterData = $this->_waterMasterData;
-            $confugMasterValues = [
+            $configMasterValues = [
                 "pipeline_size_type"    => $refMasterData['PIPELINE_SIZE_TYPE'],
                 "pipe_diameter"         => $refMasterData['PIPE_DIAMETER'],
                 "pipe_quality"          => $refMasterData['PIPE_QUALITY'],
@@ -130,7 +130,7 @@ class WaterPaymentController extends Controller
                 "ferule_size"           => $refMasterData['FERULE_SIZE'],
                 "deactivation_criteria" => $refMasterData['DEACTIVATION_CRITERIA']
             ];
-            $returnValues = collect($masterValues)->merge($confugMasterValues);
+            $returnValues = collect($masterValues)->merge($configMasterValues);
             return responseMsgs(true, "list of Water Master Data!", remove_null($returnValues), "", "01", "ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");

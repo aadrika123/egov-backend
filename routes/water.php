@@ -83,7 +83,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin / Consumer
-        Route::post(''); // Route
     });
 
     /**
