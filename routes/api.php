@@ -312,15 +312,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get-all-custom-tab-data', 'getCustomDetails');
         Route::post('post-custom-data', 'postCustomDetails');
     });
-
-    /**
-     * | Permissions Masters
-       | Serial No : 10
-     */
-    Route::controller(PermissionController::class)->group(function () {
-        Route::post('add-permission', 'addPermission');
-        Route::post('add-role-permission', 'addRolePermission');
-    });
 });
 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
