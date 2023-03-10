@@ -634,8 +634,10 @@ class ActiveSafController extends Controller
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mPropSafMemoDtls = new PropSafMemoDtl();
+            $mSafGeoTag = new PropSafGeotagUpload();
             $memoDtls = array();
             $data = array();
+            $geoTags = array();
 
             // Derivative Assignments
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
@@ -652,6 +654,9 @@ class ActiveSafController extends Controller
 
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
             $data['memoDtls'] = $memoDtls;
+
+            $geoTags = $mSafGeoTag->getGeoTags($req->applicationId);
+            $data['geoTagging'] = $geoTags;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return $e->getMessage();
@@ -1799,12 +1804,14 @@ class ActiveSafController extends Controller
             $propActiveSaf = new PropActiveSaf();
             $verification = new PropSafVerification();
             $mWfRoleUsermap = new WfRoleusermap();
+            $verificationDtl = new PropSafVerificationDtl();
             $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
 
             $safDtls = $propActiveSaf->getSafNo($req->safId);
             $workflowId = $safDtls->workflow_id;
             $roadWidthType = $this->readRoadWidthType($req->roadWidth);                                 // Read Road Width Type by Trait
-            $getRoleReq = new Request([                                                 // make request to get role id of the user
+            $getRoleReq = new Request([                                                                 // make request to get role id of the user
                 'userId' => $userId,
                 'workflowId' => $workflowId
             ]);
@@ -1812,6 +1819,7 @@ class ActiveSafController extends Controller
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
             $roleId = $readRoleDtls->wf_role_id;
 
+            DB::beginTransaction();
             switch ($roleId) {
                 case $taxCollectorRole:                                                                  // In Case of Agency TAX Collector
                     $req->agencyVerification = true;
@@ -1822,30 +1830,38 @@ class ActiveSafController extends Controller
                     $req->agencyVerification = false;
                     $req->ulbVerification = true;
                     $msg = "Site Successfully Verified";
-                    DB::beginTransaction();
                     $propActiveSaf->verifyFieldStatus($req->safId);                                         // Enable Fields Verify Status
                     break;
 
                 default:
                     return responseMsg(false, "Forbidden Access", "");
             }
-            $req->merge(['roadType' => $roadWidthType, 'userId' => $userId]);
+            $req->merge(['roadType' => $roadWidthType, 'userId' => $userId, 'ulbId' => $ulbId]);
             // Verification Store
             $verificationId = $verification->store($req);                            // Model function to store verification and get the id
             // Verification Dtl Table Update                                         // For Tax Collector
             foreach ($req->floor as $floorDetail) {
-                $verificationDtl = new PropSafVerificationDtl();
-                $verificationDtl->verification_id = $verificationId;
-                $verificationDtl->saf_id = $req->safId;
-                $verificationDtl->saf_floor_id = $floorDetail['floorId'] ?? null;
-                $verificationDtl->floor_mstr_id = $floorDetail['floorNo'];
-                $verificationDtl->usage_type_id = $floorDetail['useType'];
-                $verificationDtl->construction_type_id = $floorDetail['constructionType'];
-                $verificationDtl->occupancy_type_id = $floorDetail['occupancyType'];
-                $verificationDtl->builtup_area = $floorDetail['buildupArea'];
-                $verificationDtl->date_from = $floorDetail['dateFrom'];
-                $verificationDtl->date_to = $floorDetail['dateUpto'];
-                $verificationDtl->save();
+                if ($floorDetail['useType'] == 1)
+                    $carpetArea =  $floorDetail['buildupArea'] * 0.70;
+                else
+                    $carpetArea =  $floorDetail['buildupArea'] * 0.80;
+
+                $floorReq = [
+                    'verification_id' => $verificationId,
+                    'saf_id' => $req->safId,
+                    'saf_floor_id' => $floorDetail['floorId'] ?? null,
+                    'floor_mstr_id' => $floorDetail['floorNo'],
+                    'usage_type_id' => $floorDetail['useType'],
+                    'construction_type_id' => $floorDetail['constructionType'],
+                    'occupancy_type_id' => $floorDetail['occupancyType'],
+                    'builtup_area' => $floorDetail['buildupArea'],
+                    'date_from' => $floorDetail['dateFrom'],
+                    'date_to' => $floorDetail['dateUpto'],
+                    'carpet_area' => $carpetArea,
+                    'user_id' => $userId,
+                    'ulb_id' => $ulbId
+                ];
+                $verificationDtl->store($floorReq);
             }
 
             DB::commit();
@@ -1906,7 +1922,9 @@ class ActiveSafController extends Controller
         }
     }
 
-    // Get TC Verifications
+    /**
+     * | Get The Verification done by Agency Tc
+     */
     public function getTcVerifications(Request $req)
     {
         try {
@@ -1914,13 +1932,15 @@ class ActiveSafController extends Controller
             $safVerifications = new PropSafVerification();
             $safVerificationDtls = new PropSafVerificationDtl();
 
-            $data = $safVerifications->getVerificationsData($req->safId);           // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
+            $data = $safVerifications->getVerificationsData($req->safId);                       // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
 
             $data = json_decode(json_encode($data), true);
 
             $verificationDtls = $safVerificationDtls->getFullVerificationDtls($data['id']);     // <----- Prop Saf Verification Model Function to Get Verification Floor Dtls
-
-            $data['floorDetails'] = $verificationDtls;
+            $existingFloors = $verificationDtls->where('saf_floor_id', '!=', NULL);
+            $newFloors = $verificationDtls->where('saf_floor_id', NULL);
+            $data['newFloors'] = $newFloors->values();
+            $data['existingFloors'] = $existingFloors->values();
             return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
