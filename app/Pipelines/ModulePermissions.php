@@ -18,7 +18,6 @@ class ModulePermissions
         }
 
         return $next($request)
-            ->join('wf_permissions as p', 'p.id', '=', 'wf_role_permissions.permision_id')
-            ->where('p.module_id', request()->input('module'));
+            ->where('action_masters.module_id', request()->input('module'));
     }
 }

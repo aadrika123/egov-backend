@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Permissions\ActionMaster;
 use Illuminate\Http\Request;
 use App\Models\Workflows\WfPermission;
 use App\Models\Workflows\WfRolePermission;
@@ -57,7 +58,7 @@ class PermissionController extends Controller
                 return $item->wf_role_id;
             });
             $permissions = app(Pipeline::class)
-                ->send(WfRolePermission::query()->whereIn('wf_role_permissions.wf_role_id', $roleIds)->where('p.status', true))
+                ->send(ActionMaster::query()->whereIn('action_masters.role_id', $roleIds)->where('action_masters.status', 1))
                 ->through([
                     ModulePermissions::class,
                 ])
