@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Auth\ChangePassRequest;
 use App\MicroServices\DocUpload;
 use App\Models\ActiveCitizen;
+use App\Models\Property\PropProperty;
+use App\Pipelines\ModulePermissions;
+use App\Pipelines\SearchHolding;
+use App\Pipelines\SearchPtn;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use Exception;
@@ -13,6 +17,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Pipeline\Pipeline;
+
+use function PHPUnit\Framework\isEmpty;
 
 /**
  * | Created On-08-08-2022 
@@ -353,6 +360,43 @@ class CitizenController extends Controller
             throw new Exception("Old Password dosen't Match!");
         } catch (Exception $e) {
             return response()->json(["status" => false, "message" => $e->getMessage(), "data" => $request->password], 400);
+        }
+    }
+
+    /**
+     * | Care taker property tag
+     */
+    public function caretakerPropertyTag(Request $request)
+    {
+        $request->validate([
+            // 'holdingNo' => 'required'
+            //  'ptNo' => 'required'
+        ]);
+        try {
+            $userId = authUser()->id;
+            $activeCitizen = ActiveCitizen::find($userId);
+
+            $propDtl = app(Pipeline::class)
+                ->send(PropProperty::query()->where('status', 1))
+                ->through([
+                    SearchHolding::class,
+                    SearchPtn::class
+                ])
+                ->thenReturn()
+                ->first();
+
+            if (!isset($propDtl))
+                throw new Exception('Property Not Found');
+
+            if ($activeCitizen->caretaker == NULL)
+                $activeCitizen->caretaker = '{"propId":' . $propDtl->id . '}';
+            else
+                $activeCitizen->caretaker = $activeCitizen->caretaker .     ',{"propId":' . $propDtl->id . '}';
+            $activeCitizen->save();
+
+            return responseMsgs(true, "Property Tagged!", '', '010801', '01', '623ms', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }

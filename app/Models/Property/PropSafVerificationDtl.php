@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 class PropSafVerificationDtl extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     // Get Floor Details by Verification Id
     public function getVerificationDetails($verificationId)
@@ -19,12 +20,36 @@ class PropSafVerificationDtl extends Model
     // Get Full Verification Details
     public function getFullVerificationDtls($verifyId)
     {
-        return DB::table('prop_saf_verification_dtls')
-            ->select('prop_saf_verification_dtls.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')
-            ->join('ref_prop_floors as f', 'f.id', '=', 'prop_saf_verification_dtls.floor_mstr_id')
-            ->join('ref_prop_usage_types as u', 'u.id', '=', 'prop_saf_verification_dtls.usage_type_id')
-            ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_saf_verification_dtls.occupancy_type_id')
-            ->join('ref_prop_construction_types as c', 'c.id', '=', 'prop_saf_verification_dtls.construction_type_id')
+        return DB::table('prop_saf_verification_dtls as v')
+            ->select(
+                'v.id',
+                'v.verification_id',
+                'v.saf_id',
+                'v.saf_floor_id',
+                'v.floor_mstr_id',
+                'v.usage_type_id as usage_type_mstr_id',
+                'v.construction_type_id as const_type_mstr_id',
+                'v.occupancy_type_id as occupancy_type_mstr_id',
+                'v.builtup_area',
+                'v.date_from',
+                'v.date_to as date_upto',
+                'v.carpet_area',
+                'v.verified_by',
+                'v.created_at',
+                'v.updated_at',
+                'v.status',
+                'v.user_id',
+                'v.ulb_id',
+                'v.created_at',
+                'f.floor_name',
+                'u.usage_type',
+                'o.occupancy_type',
+                'c.construction_type'
+            )
+            ->join('ref_prop_floors as f', 'f.id', '=', 'v.floor_mstr_id')
+            ->join('ref_prop_usage_types as u', 'u.id', '=', 'v.usage_type_id')
+            ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'v.occupancy_type_id')
+            ->join('ref_prop_construction_types as c', 'c.id', '=', 'v.construction_type_id')
             ->where('verification_id', $verifyId)
             ->get();
     }
@@ -41,5 +66,13 @@ class PropSafVerificationDtl extends Model
             $verification->status = 0;
             $verification->save();
         });
+    }
+
+    /**
+     * | Store Verification Details
+     */
+    public function store($req)
+    {
+        PropSafVerificationDtl::create($req);
     }
 }

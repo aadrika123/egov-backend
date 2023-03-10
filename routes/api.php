@@ -200,6 +200,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('citizens/get-transactions', 'getTransactionHistory');                                      // Get User Transaction History
         Route::post('change-citizen-pass', 'changeCitizenPass');                                               // Change the Password of The Citizen Using its Old Password 
         Route::post('citizen-profile-details', 'profileDetails');
+        Route::post('caretaker-property-tagging', 'caretakerPropertyTag');
     });
 
     /**
@@ -319,8 +320,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(PermissionController::class)->group(function () {
         Route::post('add-permission', 'addPermission');
         Route::post('add-role-permission', 'addRolePermission');
-
-        Route::post('care-taker', 'careTakerProperty');
     });
 });
 
