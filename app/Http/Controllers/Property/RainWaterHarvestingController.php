@@ -368,7 +368,7 @@ class RainWaterHarvestingController extends Controller
 
             $details = $mPropActiveHarvesting->getDetailsById($req->applicationId);
 
-            $docs = $mWfActiveDocument->getDocsByAppId($details->id, $details->workflow_id, $moduleId);
+            $docs =  $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $details->workflow_id, $moduleId, ['WATER_HARVESTING'])->first();
             $data = [
                 'id' => $details->id,
                 'applicationNo' => $details->application_no,
@@ -381,7 +381,7 @@ class RainWaterHarvestingController extends Controller
                 'propertyAddress' => $details->prop_address,
                 'mobileNo' => $details->mobile_no,
                 'dateOfCompletion' => $details->date_of_completion,
-                'harvestingImage' => $docs[0]->doc_path,
+                'harvestingImage' => $docs->doc_path,
             ];
 
             return responseMsgs(true, "Static Details!", remove_null($data), 010125, 1.0, "", "POST", $req->deviceId);
