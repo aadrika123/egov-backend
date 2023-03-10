@@ -1889,26 +1889,36 @@ class ActiveSafController extends Controller
         ]);
         try {
             $docUpload = new DocUpload;
+            $geoTagging = new PropSafGeotagUpload();
             $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
             $images = $req->imagePath;
             $directionTypes = $req->directionType;
             $longitude = $req->longitude;
             $latitude = $req->latitude;
 
-            collect($images)->map(function ($image, $key) use ($directionTypes, $relativePath, $req, $docUpload, $longitude, $latitude) {
-                $geoTagging = new PropSafGeotagUpload();
+            collect($images)->map(function ($image, $key) use ($directionTypes, $relativePath, $req, $docUpload, $longitude, $latitude, $geoTagging) {
                 $refImageName = 'saf-geotagging-' . $directionTypes[$key] . '-' . $req->safId;
-
+                $docExistReqs = new Request([
+                    'safId' => $req->safId,
+                    'directionType' => $directionTypes[$key]
+                ]);
                 $imageName = $docUpload->upload($refImageName, $image, $relativePath);         // <------- Get uploaded image name and move the image in folder
+                $isDocExist = $geoTagging->getGeoTagBySafIdDirectionType($docExistReqs);
 
-                $geoTagging->saf_id = $req->safId;
-                $geoTagging->image_path = $imageName;
-                $geoTagging->direction_type = $directionTypes[$key];
-                $geoTagging->longitude = $longitude[$key];
-                $geoTagging->latitude = $latitude[$key];
-                $geoTagging->relative_path = $relativePath;
-                $geoTagging->user_id = authUser()->id;
-                $geoTagging->save();
+                $docReqs = [
+                    'saf_id' => $req->safId,
+                    'image_path' => $imageName,
+                    'direction_type' => $directionTypes[$key],
+                    'longitude' => $longitude[$key],
+                    'latitude' => $latitude[$key],
+                    'relative_path' => $relativePath,
+                    'user_id' => authUser()->id
+                ];
+
+                if ($isDocExist)
+                    $geoTagging->edit($isDocExist, $docReqs);
+                else
+                    $geoTagging->store($isDocExist, $docReqs);
             });
 
             return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
