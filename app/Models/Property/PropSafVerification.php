@@ -46,11 +46,13 @@ class PropSafVerification extends Model
                 'v.road_width',
                 'p.property_type',
                 'r.road_type as road_type_master',
-                'u.ward_name as old_ward_no'
+                'u.ward_name as old_ward_no',
+                'u.ward_name as new_ward_no'
             )
             ->join('ref_prop_types as p', 'p.id', '=', 'v.prop_type_id')
             ->join('ref_prop_road_types as r', 'r.id', '=', 'v.road_type_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'v.ward_id')
+            ->leftJoin('ulb_ward_masters as u1', 'u1.id', '=', 'v.new_ward_id')
             ->where('v.saf_id', $safId)
             ->where('v.agency_verification', true)
             ->first();

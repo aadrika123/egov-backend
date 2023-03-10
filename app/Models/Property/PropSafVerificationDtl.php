@@ -32,7 +32,7 @@ class PropSafVerificationDtl extends Model
                 'v.occupancy_type_id as occupancy_type_mstr_id',
                 'v.builtup_area',
                 'v.date_from',
-                'v.date_to',
+                'v.date_to as date_upto',
                 'v.carpet_area',
                 'v.verified_by',
                 'v.created_at',

@@ -634,8 +634,10 @@ class ActiveSafController extends Controller
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mPropSafMemoDtls = new PropSafMemoDtl();
+            $mSafGeoTag = new PropSafGeotagUpload();
             $memoDtls = array();
             $data = array();
+            $geoTags = array();
 
             // Derivative Assignments
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
@@ -652,6 +654,9 @@ class ActiveSafController extends Controller
 
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
             $data['memoDtls'] = $memoDtls;
+
+            $geoTags = $mSafGeoTag->getGeoTags($req->applicationId);
+            $data['geoTagging'] = $geoTags;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return $e->getMessage();
@@ -1917,7 +1922,9 @@ class ActiveSafController extends Controller
         }
     }
 
-    // Get TC Verifications
+    /**
+     * | Get The Verification done by Agency Tc
+     */
     public function getTcVerifications(Request $req)
     {
         try {
