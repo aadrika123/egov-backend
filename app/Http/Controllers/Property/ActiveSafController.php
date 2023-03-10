@@ -1837,9 +1837,9 @@ class ActiveSafController extends Controller
             // Verification Dtl Table Update                                         // For Tax Collector
             foreach ($req->floor as $floorDetail) {
                 if ($floorDetail['useType'] == 1)
-                    $carpetArea =  $req['buildupArea'] * 0.70;
+                    $carpetArea =  $floorDetail['buildupArea'] * 0.70;
                 else
-                    $carpetArea =  $req['buildupArea'] * 0.80;
+                    $carpetArea =  $floorDetail['buildupArea'] * 0.80;
 
                 $floorReq = [
                     'verification_id' => $verificationId,
