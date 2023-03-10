@@ -860,6 +860,10 @@ class RainWaterHarvestingController extends Controller
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
+
+            $getHarvestingDtls->doc_upload_status = 1;
+            $getHarvestingDtls->save();
+
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
