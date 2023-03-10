@@ -61,10 +61,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('search-consumer', 'searchWaterConsumer');                                          // Admin/Consumer   
         Route::post('consumer/get-listed-details', 'approvedWaterApplications');                        // Consumer
 
+        # Site Inspection
         Route::post('admin/search-application', 'searchApplicationByParameter');
         Route::post('site-verification/comparision', 'listComparision');
         Route::post('admin/application/save-inspection-date', 'saveInspectionDateTime');
         Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');
+        Route::post('admin/application/cancel-inspection-sheduling', 'cancelSiteInspection');
         Route::post('final-submit-application', 'finalSubmitionApplication');                           // Not Used
     });
 
