@@ -634,10 +634,8 @@ class ActiveSafController extends Controller
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mPropSafMemoDtls = new PropSafMemoDtl();
-            $mSafGeoTag = new PropSafGeotagUpload();
             $memoDtls = array();
             $data = array();
-            $geoTags = array();
 
             // Derivative Assignments
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
@@ -654,9 +652,6 @@ class ActiveSafController extends Controller
 
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
             $data['memoDtls'] = $memoDtls;
-
-            $geoTags = $mSafGeoTag->getGeoTags($req->applicationId);
-            $data['geoTagging'] = $geoTags;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return $e->getMessage();
@@ -1927,12 +1922,18 @@ class ActiveSafController extends Controller
      */
     public function getTcVerifications(Request $req)
     {
+        $req->validate([
+            'safId' => 'required|numeric'
+        ]);
         try {
             $data = array();
             $safVerifications = new PropSafVerification();
             $safVerificationDtls = new PropSafVerificationDtl();
+            $mSafGeoTag = new PropSafGeotagUpload();
 
             $data = $safVerifications->getVerificationsData($req->safId);                       // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
+            if (collect($data)->isEmpty())
+                throw new Exception("Tc Verification Not Done");
 
             $data = json_decode(json_encode($data), true);
 
@@ -1941,6 +1942,8 @@ class ActiveSafController extends Controller
             $newFloors = $verificationDtls->where('saf_floor_id', NULL);
             $data['newFloors'] = $newFloors->values();
             $data['existingFloors'] = $existingFloors->values();
+            $geoTags = $mSafGeoTag->getGeoTags($req->safId);
+            $data['geoTagging'] = $geoTags;
             return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

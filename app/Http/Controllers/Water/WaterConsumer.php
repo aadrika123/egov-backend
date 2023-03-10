@@ -16,6 +16,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\CssSelector\Node\FunctionNode;
 
 class WaterConsumer extends Controller
 {
@@ -232,5 +233,27 @@ class WaterConsumer extends Controller
      */
     public function checkParamForMeterEntry($request)
     {
+    }
+
+
+    /**
+     * | Deactivation Consumer Appliation 
+     * | @param request
+     * | @var 
+     * | @return 
+        | Serial No : 05
+        | Not Working 
+     */
+    public function consumerDeactivateApplication(Request $request)
+    {
+        try{
+            $mWaterWaterConsumer = new WaterWaterConsumer();
+            $refWaterConsumer = $mWaterWaterConsumer->getConsumerDetailById($request->consumerId);
+
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$e->getFile(),"","01",".ms","POST","");
+        }
     }
 }

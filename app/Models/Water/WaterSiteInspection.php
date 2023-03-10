@@ -16,10 +16,8 @@ class WaterSiteInspection extends Model
      */
     public function storeInspectionDetails($req, $waterFeeId, $waterDetails)
     {
-        $saveSiteVerify = WaterSiteInspection::where('apply_connection_id', $req->applicationId)
-            ->where('status', true)
-            ->first();
-
+        $saveSiteVerify = new WaterSiteInspection();
+        $saveSiteVerify->apply_connection_id    =   $req->applicationId;
         $saveSiteVerify->property_type_id       =   $req->propertyTypeId;
         $saveSiteVerify->pipeline_type_id       =   $req->pipelineTypeId;
         $saveSiteVerify->connection_type_id     =   $req->connectionTypeId;
@@ -55,6 +53,7 @@ class WaterSiteInspection extends Model
      * | Get Site inspection Details by ApplicationId
      * | According to verification status false
      * | @param applicationId
+        | Not Used 
      */
     public function getInspectionById($applicationId)
     {
@@ -75,6 +74,7 @@ class WaterSiteInspection extends Model
      * | Save the Sheduled Date and Time of the Site Inspection
      * | Create a record for further Edit in site inspection
      * | @param request
+     | Not used 
      */
     public function saveSiteDateTime($request)
     {
