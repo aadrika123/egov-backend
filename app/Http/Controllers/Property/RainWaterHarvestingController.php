@@ -1198,6 +1198,7 @@ class RainWaterHarvestingController extends Controller
                     $metaReqs['relativePath'] = $relativePath;
                     $metaReqs['document'] = $imageName;
                     $metaReqs['docCode'] = $docCode['documentCode'];
+                    $metaReqs['verifyStatus'] = 1;
 
                     $metaReqs = new Request($metaReqs);
                     $mWfActiveDocument->postDocuments($metaReqs);
@@ -1246,11 +1247,17 @@ class RainWaterHarvestingController extends Controller
         try {
             $data = array();
             $mPropRwhVerification = new PropRwhVerification();
+            $mWfActiveDocument = new WfActiveDocument();
+            $mPropActiveHarvesting = new PropActiveHarvesting();
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+
+            $applicationDtls = $mPropActiveHarvesting->getDetailsById($req->applicationId);
             $data = $mPropRwhVerification->getVerificationsData($req->applicationId);
             if (collect($data)->isEmpty())
                 throw new Exception("Tc Verification Not Done");
 
-            // $tcImage = getTcUploadedImage($req->applicationId);
+            $document = $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $applicationDtls->workflow_id, $moduleId, ['WATER_HARVESTING_FIELD_IMAGE'])->first();
+            $data->doc_path = $document->doc_path;
 
             return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
         } catch (Exception $e) {
