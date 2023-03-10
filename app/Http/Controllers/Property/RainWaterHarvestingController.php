@@ -1243,6 +1243,10 @@ class RainWaterHarvestingController extends Controller
             $data = array();
             $mPropRwhVerification = new PropRwhVerification();
             $data = $mPropRwhVerification->getVerificationsData($req->applicationId);
+            if (collect($data)->isEmpty())
+                throw new Exception("Tc Verification Not Done");
+
+            // $tcImage = getTcUploadedImage($req->applicationId);
 
             return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
         } catch (Exception $e) {
