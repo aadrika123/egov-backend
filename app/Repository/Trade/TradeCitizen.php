@@ -498,14 +498,16 @@ class TradeCitizen implements ITradeCitizen
     {
        
         try {
+           
             $id = $request->id;
-            $refUser        = Auth()->user();
+            $refUser        = Auth()->user(); 
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id ?? 0;
             $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
             $modul_id = Config::get('module-constants.TRADE_MODULE_ID');
-            
+           
             $init_finish = $this->_parent->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            
             $finisher = $init_finish['finisher'];
             $finisher['short_user_name'] = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.' . strtoupper($init_finish['finisher']['role_name']));
             $mUserType      = $this->_parent->userType($refWorkflowId);
@@ -513,6 +515,7 @@ class TradeCitizen implements ITradeCitizen
             $mStatus = $this->_counter->applicationStatus($id);
             $mItemName      = "";
             $mCods          = "";
+            
             if ($refApplication->nature_of_bussiness) 
             {
                 $items = TradeParamItemType::itemsById($refApplication->nature_of_bussiness);
@@ -551,6 +554,7 @@ class TradeCitizen implements ITradeCitizen
             $data["levelData"]      = $mlevelData;
             $data['finisher']       = $finisher;
             $data = remove_null($data);
+
             return responseMsg(true, "", $data);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), '');

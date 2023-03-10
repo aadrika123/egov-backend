@@ -97,4 +97,19 @@ class ReportController extends Controller
         $request->request->add(["metaData"=>["tr6.1",1.1,null,$request->getMethod(),null,]]);
         return $this->Repository->tradeDaseboard($request);
     }
+    public function ApplicantionTrackStatus(Request $request)
+    {
+        $request->validate(
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage"=>"nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData"=>["tr7.1",1.1,null,$request->getMethod(),null,]]);
+        return $this->Repository->ApplicantionTrackStatus($request);
+    }
 }

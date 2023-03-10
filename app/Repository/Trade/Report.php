@@ -3,9 +3,13 @@
 namespace App\Repository\Trade;
 
 use App\EloquentModels\Common\ModelWard;
+use App\Models\Trade\ActiveTradeLicence;
+use App\Models\Trade\RejectedTradeLicence;
 use App\Models\Trade\TradeLicence;
 use App\Models\Trade\TradeRenewal;
 use App\Models\Trade\TradeTransaction;
+use App\Models\Workflows\WfTrack;
+use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use App\Traits\Auth;
 use Carbon\Carbon;
@@ -730,6 +734,300 @@ class Report implements IReport
 
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function ApplicantionTrackStatus(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $wardId = null;
+            
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            $active = ActiveTradeLicence::select("active_trade_licences.id",
+                                    "active_trade_licences.application_date",
+                                    "active_trade_licences.ward_id",
+                                    "active_trade_licences.document_upload_status",
+                                    "active_trade_licences.payment_status",
+                                    "active_trade_licences.pending_status",
+                                    "active_trade_licences.is_parked",
+                                    "active_trade_licences.workflow_id",
+                                    "owners.owner_name","owners.mobile_no",
+                                    DB::raw("ulb_ward_masters.ward_name as ward_no")
+                        )
+                        ->join("ulb_ward_masters","ulb_ward_masters.id","active_trade_licences.ward_id")
+                        ->leftjoin(DB::raw("(
+                            select string_agg(owner_name,',') as owner_name,
+                                string_agg(mobile_no::text,',') as mobile_no,
+                                active_trade_owners.temp_id
+                            from active_trade_owners 
+                            join active_trade_licences on active_trade_licences.id = active_trade_owners.temp_id
+                            where active_trade_owners.is_active = true
+                                and active_trade_licences.application_date between '$fromDate' and '$uptoDate'
+                                and active_trade_licences.ulb_id = $ulbId" .
+                                ($wardId ? " And active_trade_licences.ward_id = $wardId " : " ")
+                                .
+                                "
+                            group by active_trade_owners.temp_id
+                            )owners"),function($join){
+                                $join->on("owners.temp_id","active_trade_licences.id");
+                            })
+                            ->whereBetween("active_trade_licences.application_date",[$fromDate,$uptoDate])
+                            ->where("active_trade_licences.ulb_id",$ulbId);
+                            if($wardId)
+                            {
+                                $active = $active->where("active_trade_licences.ward_id",$wardId);
+                            }
+            $rejected = RejectedTradeLicence::select("rejected_trade_licences.id",
+                "rejected_trade_licences.application_date",
+                "rejected_trade_licences.ward_id",
+                "rejected_trade_licences.document_upload_status",
+                "rejected_trade_licences.payment_status",
+                "rejected_trade_licences.pending_status",
+                "rejected_trade_licences.is_parked",
+                "rejected_trade_licences.workflow_id",
+                "owners.owner_name","owners.mobile_no",
+                DB::raw("ulb_ward_masters.ward_name as ward_no")
+                )
+                ->join("ulb_ward_masters","ulb_ward_masters.id","rejected_trade_licences.ward_id")
+                ->leftjoin(DB::raw("(
+                    select string_agg(owner_name,',') as owner_name,
+                        string_agg(mobile_no::text,',') as mobile_no,
+                        rejected_trade_owners.temp_id
+                    from rejected_trade_owners 
+                    join rejected_trade_licences on rejected_trade_licences.id = rejected_trade_owners.temp_id
+                    where rejected_trade_owners.is_active = true
+                        and rejected_trade_licences.application_date between '$fromDate' and '$uptoDate'
+                        and rejected_trade_licences.ulb_id = $ulbId" .
+                        ($wardId ? " And rejected_trade_licences.ward_id = $wardId " : " ")
+                        .
+                        "
+                    group by rejected_trade_owners.temp_id
+                    )owners"),function($join){
+                        $join->on("owners.temp_id","rejected_trade_licences.id");
+                    })
+                    ->whereBetween("rejected_trade_licences.application_date",[$fromDate,$uptoDate])
+                    ->where("rejected_trade_licences.ulb_id",$ulbId);
+                    if($wardId)
+                    {
+                        $rejected = $rejected->where("rejected_trade_licences.ward_id",$wardId);
+                    }
+            $approved = TradeLicence::select("trade_licences.id",
+                "trade_licences.application_date",
+                "trade_licences.ward_id",
+                "trade_licences.document_upload_status",
+                "trade_licences.payment_status",
+                "trade_licences.pending_status",
+                "trade_licences.is_parked",
+                "trade_licences.workflow_id",
+                "owners.owner_name","owners.mobile_no",
+                DB::raw("ulb_ward_masters.ward_name as ward_no")
+                )
+                ->join("ulb_ward_masters","ulb_ward_masters.id","trade_licences.ward_id")
+                ->leftjoin(DB::raw("(
+                    select string_agg(owner_name,',') as owner_name,
+                        string_agg(mobile_no::text,',') as mobile_no,
+                        trade_owners.temp_id
+                    from trade_owners 
+                    join trade_licences on trade_licences.id = trade_owners.temp_id
+                    where trade_licences.is_active = true
+                        and trade_licences.application_date between '$fromDate' and '$uptoDate'
+                        and trade_licences.ulb_id = $ulbId" .
+                        ($wardId ? " And trade_licences.ward_id = $wardId " : " ")
+                        .
+                        "
+                    group by trade_owners.temp_id
+                    )owners"),function($join){
+                        $join->on("owners.temp_id","trade_licences.id");
+                    })
+                    ->whereBetween("trade_licences.application_date",[$fromDate,$uptoDate])
+                    ->where("trade_licences.ulb_id",$ulbId);
+                    if($wardId)
+                    {
+                        $approved = $approved->where("trade_licences.ward_id",$wardId);
+                    }
+            $old = TradeRenewal::select("trade_renewals.id",
+                "trade_renewals.application_date",
+                "trade_renewals.ward_id",
+                "trade_renewals.document_upload_status",
+                "trade_renewals.payment_status",
+                "trade_renewals.pending_status",
+                "trade_renewals.is_parked",
+                "trade_renewals.workflow_id",
+                "owners.owner_name","owners.mobile_no",
+                DB::raw("ulb_ward_masters.ward_name as ward_no")
+                )
+                ->join("ulb_ward_masters","ulb_ward_masters.id","trade_renewals.ward_id")
+                ->leftjoin(DB::raw("(
+                    select string_agg(owner_name,',') as owner_name,
+                        string_agg(mobile_no::text,',') as mobile_no,
+                        trade_owners.temp_id
+                    from trade_owners 
+                    join trade_renewals on trade_renewals.id = trade_owners.temp_id
+                    where trade_renewals.is_active = true
+                        and trade_renewals.application_date between '$fromDate' and '$uptoDate'
+                        and trade_renewals.ulb_id = $ulbId" .
+                        ($wardId ? " And trade_renewals.ward_id = $wardId " : " ")
+                        .
+                        "
+                    group by trade_owners.temp_id
+                    )owners"),function($join){
+                        $join->on("owners.temp_id","trade_renewals.id");
+                    })
+                    ->whereBetween("trade_renewals.application_date",[$fromDate,$uptoDate])
+                    ->where("trade_renewals.ulb_id",$ulbId);
+                    if($wardId)
+                    {
+                        $old = $old->where("trade_renewals.ward_id",$wardId);
+                    }
+
+            $data = $active
+                    ->union($rejected)
+                    ->union($approved)
+                    ->union($old);
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total/$perPage); 
+            // $item2 =[];
+            foreach($items as $key=>$val)
+            {
+                $level = [];
+                $dealingStatus = WorkflowTrack::select("workflow_tracks.track_date",
+                                        "workflow_tracks.forward_date",
+                                        "verification_status",
+                                        DB::raw("'dealing' AS Role")
+                                        )
+                                    ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
+                                    ->where("wf_roles.role_name","ILIKE","Dealing Assistant")
+                                    ->where("workflow_tracks.ref_table_id_value",$val["id"])
+                                    ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
+                                    ->where("workflow_tracks.status",true)
+                                    ->where("workflow_tracks.workflow_id",$val["workflow_id"])
+                                    ->whereNull("workflow_tracks.citizen_id")
+                                    ->orderBy("workflow_tracks.id","DESC")
+                                    ->first();
+                $juniorStatus = WorkflowTrack::select("workflow_tracks.track_date",
+                                "workflow_tracks.forward_date",
+                                "verification_status",
+                                DB::raw("'junior' AS Role")
+                                )
+                                ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
+                                ->where("wf_roles.role_name","ILIKE","Junior Engineer")
+                                ->where("workflow_tracks.ref_table_id_value",$val["id"])
+                                ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
+                                ->where("workflow_tracks.status",true)
+                                ->where("workflow_tracks.workflow_id",$val["workflow_id"])
+                                ->whereNull("workflow_tracks.citizen_id")
+                                ->orderBy("workflow_tracks.id","DESC")
+                                ->first();
+                $sectionStatus = WorkflowTrack::select("workflow_tracks.track_date",
+                                "workflow_tracks.forward_date",
+                                "verification_status",
+                                DB::raw("'section' AS Role")
+                                )
+                                ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
+                                ->where("wf_roles.role_name","ILIKE","Section Head")
+                                ->where("workflow_tracks.ref_table_id_value",$val["id"])
+                                ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
+                                ->where("workflow_tracks.status",true)
+                                ->where("workflow_tracks.workflow_id",$val["workflow_id"])
+                                ->whereNull("workflow_tracks.citizen_id")
+                                ->orderBy("workflow_tracks.id","DESC")
+                                ->first();
+
+                $assistantStatus = WorkflowTrack::select("workflow_tracks.track_date",
+                                "workflow_tracks.forward_date",
+                                "verification_status",
+                                DB::raw("'assistant' AS Role")
+                                )
+                                ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
+                                ->where("wf_roles.role_name","ILIKE","Assistant Engineer")
+                                ->where("workflow_tracks.ref_table_id_value",$val["id"])
+                                ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
+                                ->where("workflow_tracks.status",true)
+                                ->where("workflow_tracks.workflow_id",$val["workflow_id"])
+                                ->whereNull("workflow_tracks.citizen_id")
+                                ->orderBy("workflow_tracks.id","DESC")
+                                ->first();
+
+                $executiveStatus = WorkflowTrack::select("workflow_tracks.track_date",
+                                "workflow_tracks.forward_date",
+                                "verification_status",                                
+                                DB::raw("'executive' AS Role")
+                                )
+                                ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
+                                ->where("wf_roles.role_name","ILIKE","Executive Officer")
+                                ->where("workflow_tracks.ref_table_id_value",$val["id"])
+                                ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
+                                ->where("workflow_tracks.status",true)
+                                ->where("workflow_tracks.workflow_id",$val["workflow_id"])
+                                ->whereNull("workflow_tracks.citizen_id")
+                                ->orderBy("workflow_tracks.id","DESC")
+                                ->first();
+                if($dealingStatus)
+                {
+                    $level[] = $dealingStatus;
+                    
+                }
+                if($juniorStatus)
+                {
+                    $level[] = $juniorStatus;
+                }
+                if($sectionStatus)
+                {
+                    $level[] = $sectionStatus;
+                }
+                if($assistantStatus)
+                {
+                    $level[] = $assistantStatus;
+                }
+                if($executiveStatus)
+                {
+                    
+                    $level[] = $executiveStatus;
+                }
+                
+                $val["level"]=$level;
+                // array_push($item2,$val);
+            }               
+            $list=[
+                "perPage"=>$perPage,
+                "page"=>$page,
+                "items"=>$items,
+                "total"=>$total,
+                "numberOfPages"=>$numberOfPages
+            ];
+            // dd(DB::getQueryLog());
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
         {
