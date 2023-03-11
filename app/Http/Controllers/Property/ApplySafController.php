@@ -284,9 +284,12 @@ class ApplySafController extends Controller
             $ulbId = $req->ulbId ?? auth()->user()->ulb_id;
             $propActiveSafs = new PropActiveSaf();
             $safCalculation = new SafCalculation;
+            $mPropFloors = new PropActiveSafsFloor();
             $demand = array();
             $safReq = array();
-            $assessmentId = $req->assessmentType;
+            $reqFloors = $req->floors;
+            $applicationDate = $this->_todayDate->format('Y-m-d');
+
             // Derivative Assignments
             $ulbWfId = $this->readAssessUlbWfId($req, $ulbId);
             $roadWidthType = $this->readRoadWidthType($req->roadWidth);          // Read Road Width Type
@@ -306,7 +309,7 @@ class ApplySafController extends Controller
             $generatedDemandDtls = $this->generateSafDemand($safTaxes->original['data']['details']);
             $demand['details'] = $generatedDemandDtls->groupBy('ruleSet');
 
-            $safReq = new Request([
+            $safReq = [
                 'assessment_type' => $req->assessmentType,
                 'ulb_id' => $req->ulbId,
                 'building_name' => $req->buildingName,
@@ -333,11 +336,27 @@ class ApplySafController extends Controller
 
                 'is_water_harvesting' => $req->isWaterHarvesting,
                 'area_of_plot' => $req->areaOfPlot,
-            ]);
+                'is_gb_saf' => true,
+                'application_date' => $applicationDate
+            ];
 
             DB::beginTransaction();
-            $propActiveSafs->storeGBSaf();
+            $createSaf = $propActiveSafs->storeGBSaf($safReq);           // Store Saf
+            $safId = $createSaf->original['safId'];
+            $safNo = $createSaf->original['safNo'];
+
+            // Store Floors
+            foreach ($reqFloors as $floor) {
+                $mPropFloors->addfloor($floor, $safId, $userId);
+            }
+
             DB::commit();
+            return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
+                "safNo" => $safNo,
+                "applyDate" => $applicationDate,
+                "safId" => $safId,
+                "demand" => $demand
+            ], "010102", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010103", "1.0", "", "POST", $req->deviceId ?? "");
