@@ -290,32 +290,24 @@ class ActiveSafController extends Controller
         try {
             $mWfRoleUser = new WfRoleusermap();
             $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
-            $readWards = $mWfWardUser->getWardsByUserId($userId);                       // Model () to get Occupied Wards of Current User
+            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
 
-            $occupiedWards = collect($readWards)->map(function ($ward) {
-                return $ward->ward_id;
-            });
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $readRoles = $mWfRoleUser->getRoleIdByUserId($userId);                      // Model to () get Role By User Id
-
-            $roleIds = $readRoles->map(function ($role, $key) {
-                return $role->wf_role_id;
-            });
-
-            $data = $this->Repository->getSaf($this->_workflowIds)                     // Repository function to get SAF Details
+            $safInbox = $this->Repository->getSaf($workflowIds)                                          // Repository function to get SAF Details
                 ->where('parked', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleIds)
+                ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
-
-            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
-
             return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", "339ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -336,31 +328,27 @@ class ActiveSafController extends Controller
         try {
             $mWfRoleUser = new WfRoleusermap();
             $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
             $mUserId = authUser()->id;
             $mUlbId = authUser()->ulb_id;
             $mDeviceId = $req->deviceId ?? "";
 
-            $readWards = $mWfWardUser->getWardsByUserId($mUserId);                  // Model function to get ward list
-            $occupiedWardsId = collect($readWards)->map(function ($ward) {              // Collection filteration
-                return $ward->ward_id;
-            });
+            $occupiedWardsId = $mWfWardUser->getWardsByUserId($mUserId)->pluck('ward_id');                  // Model function to get ward list
 
-            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);                 // Model function to get Role By User Id
-            $roleIds = $readRoles->map(function ($role, $key) {
-                return $role->wf_role_id;
-            });
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($mUserId)->pluck('wf_role_id');                 // Model function to get Role By User Id
 
-            $data = $this->Repository->getSaf($this->_workflowIds)                 // Repository function getSAF
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
+            $safInbox = $this->Repository->getSaf($workflowIds)                 // Repository function getSAF
                 ->where('parked', true)
                 ->where('prop_active_safs.ulb_id', $mUlbId)
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleIds)
+                ->whereIn('ward_mstr_id', $occupiedWardsId)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
 
-            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWardsId);
             return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, "271ms", "POST", $mDeviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
@@ -375,31 +363,26 @@ class ActiveSafController extends Controller
         try {
             $mWfRoleUser = new WfRoleusermap();
             $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
             $mUserId = authUser()->id;
             $mUlbId = authUser()->ulb_id;
             $mDeviceId = $req->deviceId ?? "";
 
-            $readWards = $mWfWardUser->getWardsByUserId($mUserId);                  // Model function to get ward list
-            $occupiedWardsId = collect($readWards)->map(function ($ward) {          // Collection filteration
-                return $ward->ward_id;
-            });
+            $occupiedWardsId = $mWfWardUser->getWardsByUserId($mUserId)->pluck('ward_id');                  // Model function to get ward list
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($mUserId)->pluck('wf_role_id');                 // Model function to get Role By User Id
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);                 // Model function to get Role By User Id
-            $roleIds = $readRoles->map(function ($role, $key) {
-                return $role->wf_role_id;
-            });
-
-            $data = $this->Repository->getSaf($this->_workflowIds)                 // Repository function getSAF
+            $safInbox = $this->Repository->getSaf($workflowIds)                 // Repository function getSAF
                 ->where('is_field_verified', true)
                 ->where('prop_active_safs.ulb_id', $mUlbId)
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleIds)
+                ->whereIn('ward_mstr_id', $occupiedWardsId)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
 
-            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWardsId);
             return responseMsgs(true, "field Verified Inbox!", remove_null($safInbox), 010125, 1.0, "", "POST", $mDeviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $mDeviceId);
@@ -422,23 +405,18 @@ class ActiveSafController extends Controller
         try {
             $mWfRoleUser = new WfRoleusermap();
             $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
 
-            $workflowRoles = $mWfRoleUser->getRoleIdByUserId($userId);
-            $roles = $workflowRoles->map(function ($value, $key) {
-                return $value->wf_role_id;
-            });
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $wardId = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');
 
-            $refWard = $mWfWardUser->getWardsByUserId($userId);
-            $wardId = $refWard->map(function ($value, $key) {
-                return $value->ward_id;
-            });
-
-            $safData = $this->Repository->getSaf($this->_workflowIds)   // Repository function to get SAF
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
+            $safData = $this->Repository->getSaf($workflowIds)   // Repository function to get SAF
                 ->where('prop_active_safs.ulb_id', $ulbId)
-                ->whereNotIn('current_role', $roles)
+                ->whereNotIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
@@ -465,16 +443,19 @@ class ActiveSafController extends Controller
     {
         try {
             $mWfWardUser = new WfWardUser();
+            $mWfRoleUserMaps = new WfRoleusermap();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
-            $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
-            $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
-                return $item->ward_id;
-            });
-            $safData = $this->Repository->getSaf($this->_workflowIds)                      // Repository function to get SAF Details
+
+            $wardIds = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                        // Get All Occupied Ward By user id using trait
+            $roleIds = $mWfRoleUserMaps->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
+
+            $safData = $this->Repository->getSaf($workflowIds)                      // Repository function to get SAF Details
                 ->where('is_escalate', 1)
                 ->where('prop_active_safs.ulb_id', $ulbId)
-                ->whereIn('ward_mstr_id', $wardId)
+                ->whereIn('ward_mstr_id', $wardIds)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type')
                 ->get();

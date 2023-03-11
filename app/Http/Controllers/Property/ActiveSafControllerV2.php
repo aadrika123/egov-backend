@@ -13,6 +13,7 @@ use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
+use App\Models\Workflows\WfWorkflowrolemap;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -308,17 +309,16 @@ class ActiveSafControllerV2 extends Controller
     public function pendingGeoTaggingList(Request $req, iSafRepository $iSafRepo)
     {
         try {
-            $workflowIds = [3, 4, 5];
             $agencyTcRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
             $mWfWardUser = new WfWardUser();
-
+            $mWorkflowRoleMap = new WfWorkflowrolemap();
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
+
+            $workflowIds = $mWorkflowRoleMap->getWfByRoleId([$agencyTcRole])->pluck('workflow_id');
             $readWards = $mWfWardUser->getWardsByUserId($userId);                       // Model () to get Occupied Wards of Current User
 
-            $occupiedWards = collect($readWards)->map(function ($ward) {
-                return $ward->ward_id;
-            });
+            $occupiedWards = collect($readWards)->pluck('ward_id');
 
             $data = $iSafRepo->getSaf($workflowIds)                             // Repository function to get SAF Details
                 ->where('parked', false)
