@@ -231,7 +231,9 @@ class WaterConsumer extends Controller
         try {
             $mWaterConsumerMeter = new WaterConsumerMeter();
             $this->checkParamForMeterEntry($request);
+            
             $mWaterConsumerMeter->saveMeterDetails($request);
+            return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
@@ -246,6 +248,8 @@ class WaterConsumer extends Controller
      */
     public function checkParamForMeterEntry($request)
     {
+        $mWaterWaterConsumer = new WaterWaterConsumer();
+        $mWaterWaterConsumer->getConsumerDetailById($request->consumerId);
     }
 
 
