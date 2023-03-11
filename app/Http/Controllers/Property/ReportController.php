@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
-    use Auth;    
-    
+    use Auth;
+
     private $Repository;
     private $_common;
     public function __construct(IReport $TradeRepository)
@@ -33,10 +33,10 @@ class ReportController extends Controller
                 "userId" => "nullable|digits_between:1,9223372036854775807",
                 "paymentMode" => "nullable",
                 "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage"=>"nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData"=>["pr1.1",1.1,null,$request->getMethod(),null,]]);
+        $request->request->add(["metaData" => ["pr1.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->collectionReport($request);
     }
 
@@ -50,29 +50,29 @@ class ReportController extends Controller
                 "userId" => "nullable|digits_between:1,9223372036854775807",
                 "paymentMode" => "nullable",
                 "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage"=>"nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData"=>["pr2.1",1.1,null,$request->getMethod(),null,]]);
+        $request->request->add(["metaData" => ["pr2.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->safCollection($request);
     }
     public function safPropIndividualDemandAndCollection(Request $request)
     {
         $request->validate(
             [
-                "fiYear"=>"nullable|regex:/^\d{4}-\d{4}$/",
-                "key"=>"nullable|regex:/^[^<>{};:.,~!?@#$%^=&*\"]*$/i",
+                "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
+                "key" => "nullable|regex:/^[^<>{};:.,~!?@#$%^=&*\"]*$/i",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage"=>"nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData"=>["pr3.1",1.1,null,$request->getMethod(),null,]]);
+        $request->request->add(["metaData" => ["pr3.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->safPropIndividualDemandAndCollection($request);
     }
     public function levelwisependingform(Request $request)
     {
-        $request->request->add(["metaData"=>["pr4.1",1.1,null,$request->getMethod(),null,]]);
+        $request->request->add(["metaData" => ["pr4.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->levelwisependingform($request);
     }
     public function levelformdetail(Request $request)
@@ -83,13 +83,13 @@ class ReportController extends Controller
                 "roleId" => "nullable|digits_between:1,9223372036854775807",
                 "userId" => "nullable|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage"=>"nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData"=>["pr4.2",1.1,null,$request->getMethod(),null,]]);
+        $request->request->add(["metaData" => ["pr4.2", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->levelformdetail($request);
     }
-    
+
     public function levelUserPending(Request $request)
     {
         $request->validate(
@@ -97,10 +97,10 @@ class ReportController extends Controller
                 "roleId" => "required|digits_between:1,9223372036854775807",
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage"=>"nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData"=>["pr4.2.1",1.1,null,$request->getMethod(),null,]]);
+        $request->request->add(["metaData" => ["pr4.2.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->levelUserPending($request);
     }
 
@@ -111,37 +111,34 @@ class ReportController extends Controller
                 "userId" => "required|digits_between:1,9223372036854775807",
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage"=>"nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData"=>["pr4.2.2",1.1,null,$request->getMethod(),null,]]);
+        $request->request->add(["metaData" => ["pr4.2.2", 1.1, null, $request->getMethod(), null,]]);
 
         $refUser        = Auth()->user();
         $refUserId      = $refUser->id;
         $ulbId          = $refUser->ulb_id;
         $safWorkFlow = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-        if($request->ulbId)
-        {
+        if ($request->ulbId) {
             $ulbId = $request->ulbId;
         }
-        
+
         $respons =  $this->levelformdetail($request);
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
 
-        $roles = ($this->_common->getUserRoll($request->userId,$ulbId,$safWorkFlow));
+        $roles = ($this->_common->getUserRoll($request->userId, $ulbId, $safWorkFlow));
         $respons = json_decode(json_encode($respons), true);
-        if($respons["original"]["status"])
-        {
-            $respons["original"]["data"]["items"] = collect($respons["original"]["data"]["items"])->map(function($val) use($roles){
-                                                        $val["role_name"] = $roles->role_name??"";
-                                                        $val["role_id"] = $roles->role_id??0;
-                                                        return $val;
-                                                    });
-
+        if ($respons["original"]["status"]) {
+            $respons["original"]["data"]["items"] = collect($respons["original"]["data"]["items"])->map(function ($val) use ($roles) {
+                $val["role_name"] = $roles->role_name ?? "";
+                $val["role_id"] = $roles->role_id ?? 0;
+                return $val;
+            });
         }
-        return responseMsgs($respons["original"]["status"], $respons["original"]["message"], $respons["original"]["data"],$apiId, $version, $queryRunTime,$action,$deviceId);
-    }    
+        return responseMsgs($respons["original"]["status"], $respons["original"]["message"], $respons["original"]["data"], $apiId, $version, $queryRunTime, $action, $deviceId);
+    }
 
     public function userWiseWardWireLevelPending(Request $request)
     {
@@ -150,10 +147,10 @@ class ReportController extends Controller
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "userId" => "required|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage"=>"nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData"=>["pr4.2.1.1",1.1,null,$request->getMethod(),null,]]);
+        $request->request->add(["metaData" => ["pr4.2.1.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->userWiseWardWireLevelPending($request);
     }
 
@@ -167,7 +164,32 @@ class ReportController extends Controller
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData"=>["pr5.1",1.1,null,$request->getMethod(),null,]]);
+        $request->request->add(["metaData" => ["pr5.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->safSamFamGeotagging($request);
+    }
+
+    //========================================================================================================
+    // Modification By : Mrinal Kumar
+    // Date : 11-03-2023
+
+    /**
+     * | Ward wise holding report
+     */
+    public function wardWiseHoldingReport(Request $request)
+    {
+        $wardMstrId = $request->wardMstrId;
+
+
+
+        $sql = ("SELECT *  FROM prop_demands
+                    WHERE paid_status = 0 
+                    AND fyear = '2022-2023'
+                    AND ward_mstr_id = $wardMstrId
+                    AND ulb_id = $request->ulbId
+                    ORDER BY id desc
+                "
+        );
+
+        return DB::select($sql);
     }
 }
