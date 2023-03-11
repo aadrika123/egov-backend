@@ -133,17 +133,17 @@ class WaterConsumer extends Controller
                     case ($refMeterConnectionType['1']):
                         $meterId = $mWaterConsumerMeter->saveMeterReading($request);
                         $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterId);
-                        $this->savingDemand($calculatedDemand, $request, $consumerDetails);
+                        $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
                         break;
 
                     case ($refMeterConnectionType['2']):
                         $meterId = $mWaterConsumerMeter->saveMeterReading($request);
                         $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterId);
-                        $this->savingDemand($calculatedDemand, $request, $consumerDetails);
+                        $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
                         break;
 
                     case ($refMeterConnectionType['3']):
-                        return $this->savingDemand($calculatedDemand, $request, $consumerDetails);
+                        return $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
                         break;
                 }
                 DB::commit();
@@ -151,6 +151,7 @@ class WaterConsumer extends Controller
             }
         } catch (Exception $e) {
             DB::rollBack();
+            dd($e->getMessage(), $e->getFile(), $e->getLine());
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
@@ -168,14 +169,14 @@ class WaterConsumer extends Controller
         | Serial No : 03.01
         | Not Tested
      */
-    public function savingDemand($calculatedDemand, $request, $consumerDetails)
+    public function savingDemand($calculatedDemand, $request, $consumerDetails, $demandType, $refMeterConnectionType)
     {
         $mWaterConsumerDemand = new WaterConsumerDemand();
         $mWaterConsumerTax = new WaterConsumerTax();
         $generatedDemand = $calculatedDemand['consumer_tax'];
 
         collect($generatedDemand)->map(function ($firstValue)
-        use ($mWaterConsumerDemand, $consumerDetails, $request, $mWaterConsumerTax) {
+        use ($mWaterConsumerDemand, $consumerDetails, $request, $mWaterConsumerTax, $demandType, $refMeterConnectionType) {
             $taxId = $mWaterConsumerTax->saveConsumerTax($firstValue, $consumerDetails);
             $meterDetails = [
                 "charge_type"       => $firstValue['charge_type'],
@@ -185,11 +186,23 @@ class WaterConsumer extends Controller
                 "final_reading"     => $firstValue['final_reading'],
                 "rate_id"           => $firstValue['rate_id'],
             ];
-            $refDemands = $firstValue['consumer_demand'];
-            collect($refDemands)->map(function ($secondValue)
-            use ($mWaterConsumerDemand, $meterDetails, $consumerDetails, $request, $taxId) {
-                $mWaterConsumerDemand->saveConsumerDemand($secondValue, $meterDetails, $consumerDetails, $request, $taxId);
-            });
+            switch ($demandType) {
+                case ($refMeterConnectionType['1']):
+                    $refDemands = $firstValue['consumer_demand'];
+                    $mWaterConsumerDemand->saveConsumerDemand($refDemands, $meterDetails, $consumerDetails, $request, $taxId);
+                    break;
+                case ($refMeterConnectionType['2']):
+                    $refDemands = $firstValue['consumer_demand'];
+                    $mWaterConsumerDemand->saveConsumerDemand($refDemands, $meterDetails, $consumerDetails, $request, $taxId);
+                    break;
+                case ($refMeterConnectionType['3']):
+                    $refDemands = $firstValue['consumer_demand'];
+                    collect($refDemands)->map(function ($secondValue)
+                    use ($mWaterConsumerDemand, $meterDetails, $consumerDetails, $request, $taxId) {
+                        $mWaterConsumerDemand->saveConsumerDemand($secondValue, $meterDetails, $consumerDetails, $request, $taxId);
+                    });
+                    break;
+            }
         });
     }
 
@@ -246,14 +259,11 @@ class WaterConsumer extends Controller
      */
     public function consumerDeactivateApplication(Request $request)
     {
-        try{
+        try {
             $mWaterWaterConsumer = new WaterWaterConsumer();
             $refWaterConsumer = $mWaterWaterConsumer->getConsumerDetailById($request->consumerId);
-
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$e->getFile(),"","01",".ms","POST","");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
 }

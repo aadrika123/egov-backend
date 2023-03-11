@@ -64,12 +64,12 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand->emp_details_id           =  authUser()->id;
         $mWaterConsumerDemand->demand_from              =  $demands['demand_from'];
         $mWaterConsumerDemand->demand_upto              =  $demands['demand_upto'];
-        $mWaterConsumerDemand->penalty                  =  $demands['penalty'];
+        $mWaterConsumerDemand->penalty                  =  $demands['penalty'] ?? 0;
         $mWaterConsumerDemand->current_meter_reading    =  $request->finalRading;
         $mWaterConsumerDemand->unit_amount              =  $demands['unit_amount'];
         $mWaterConsumerDemand->connection_type          =  $meterDetails['charge_type'];
         $mWaterConsumerDemand->demand_no                =  "RMC" . random_int(100000, 999999) . "/" . random_int(1, 10);
-        $mWaterConsumerDemand->balance_amount           =  $demands['penalty'] + $demands['amount'];
+        $mWaterConsumerDemand->balance_amount           =  $demands['penalty'] ?? 0 + $demands['amount'];
         $mWaterConsumerDemand->created_at               =  Carbon::now();
         $mWaterConsumerDemand->save();
     }
