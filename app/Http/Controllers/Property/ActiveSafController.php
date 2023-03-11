@@ -101,14 +101,12 @@ class ActiveSafController extends Controller
 
     protected $user_id;
     protected $_todayDate;
-    protected $_workflowIds;
     protected $Repository;
     // Initializing function for Repository
     protected $saf_repository;
     public function __construct(iSafRepository $saf_repository)
     {
         $this->Repository = $saf_repository;
-        $this->_workflowIds = Config::get('PropertyConstaint.SAF_WORKFLOWS');
         $this->_todayDate = Carbon::now();
     }
 
@@ -307,7 +305,7 @@ class ActiveSafController extends Controller
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
-                ->get();
+                ->paginate(10);
             return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", "339ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

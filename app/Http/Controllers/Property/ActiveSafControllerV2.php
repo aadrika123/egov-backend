@@ -317,20 +317,18 @@ class ActiveSafControllerV2 extends Controller
 
             $workflowIds = $mWorkflowRoleMap->getWfByRoleId([$agencyTcRole])->pluck('workflow_id');
             $readWards = $mWfWardUser->getWardsByUserId($userId);                       // Model () to get Occupied Wards of Current User
-
             $occupiedWards = collect($readWards)->pluck('ward_id');
-
-            $data = $iSafRepo->getSaf($workflowIds)                             // Repository function to get SAF Details
+            $safInbox = $iSafRepo->getSaf($workflowIds)                                 // Repository function to get SAF Details
                 ->where('parked', false)
                 ->where('is_geo_tagged', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->where('prop_active_safs.status', 1)
                 ->where('current_role', $agencyTcRole)
+                ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
 
-            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
             return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "011806", "1.0", "", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011806", "1.0", "", "POST", $req->deviceId ?? "");
