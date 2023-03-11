@@ -11,11 +11,14 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
+use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWardUser;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use App\Repository\Property\Interfaces\iSafRepository;
 
-use function PHPUnit\Framework\isEmpty;
 
 /**
  * | Created On-10-02-2023 
@@ -33,15 +36,7 @@ class ActiveSafControllerV2 extends Controller
     public function editCitizenSaf(Request $req)
     {
         $req->validate([
-            'id' => 'required|numeric',
-            // 'owner' => 'array',
-            // 'owner.*.ownerId' => 'required|numeric',
-            // 'owner.*.ownerName' => 'required',
-            // 'owner.*.guardianName' => 'required',
-            // 'owner.*.relation' => 'required',
-            // 'owner.*.mobileNo' => 'numeric|string|digits:10',
-            // 'owner.*.aadhar' => 'numeric|string|digits:12|nullable',
-            // 'owner.*.email' => 'email|nullable',
+            'id' => 'required|numeric'
         ]);
 
         try {
@@ -304,6 +299,41 @@ class ActiveSafControllerV2 extends Controller
             return responseMsgs(true, "Apartment List", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Get Pending GeoTaggings
+     */
+    public function pendingGeoTaggingList(Request $req, iSafRepository $iSafRepo)
+    {
+        try {
+            $workflowIds = [3, 4, 5];
+            $agencyTcRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
+            $mWfWardUser = new WfWardUser();
+
+            $userId = auth()->user()->id;
+            $ulbId = auth()->user()->ulb_id;
+            $readWards = $mWfWardUser->getWardsByUserId($userId);                       // Model () to get Occupied Wards of Current User
+
+            $occupiedWards = collect($readWards)->map(function ($ward) {
+                return $ward->ward_id;
+            });
+
+            $data = $iSafRepo->getSaf($workflowIds)                             // Repository function to get SAF Details
+                ->where('parked', false)
+                ->where('is_geo_tagged', false)
+                ->where('prop_active_safs.ulb_id', $ulbId)
+                ->where('prop_active_safs.status', 1)
+                ->where('current_role', $agencyTcRole)
+                ->orderByDesc('id')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->get();
+
+            $safInbox = $data->whereIn('ward_mstr_id', $occupiedWards);
+            return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "011806", "1.0", "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011806", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }

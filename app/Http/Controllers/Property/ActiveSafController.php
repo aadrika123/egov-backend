@@ -862,6 +862,13 @@ class ActiveSafController extends Controller
                 $mPropMemoDtl->postSafMemoDtls($memoReqs);
                 $this->replicateSaf($saf->id);
                 break;
+
+            case $wfLevels['TC']:
+                if ($saf->is_geo_tagged == false)
+                    throw new Exception("Geo Tagging Not Done");
+            case $wfLevels['UTC']:
+                if ($saf->is_field_verified == false)
+                    throw new Exception("Field Verification Not Done");
         }
         return [
             'holdingNo' =>  $holdingNo ?? "",
@@ -1891,11 +1898,13 @@ class ActiveSafController extends Controller
             $docUpload = new DocUpload;
             $geoTagging = new PropSafGeotagUpload();
             $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
+            $safDtls = PropActiveSaf::findOrFail($req->safId);
             $images = $req->imagePath;
             $directionTypes = $req->directionType;
             $longitude = $req->longitude;
             $latitude = $req->latitude;
 
+            DB::beginTransaction();
             collect($images)->map(function ($image, $key) use ($directionTypes, $relativePath, $req, $docUpload, $longitude, $latitude, $geoTagging) {
                 $refImageName = 'saf-geotagging-' . $directionTypes[$key] . '-' . $req->safId;
                 $docExistReqs = new Request([
@@ -1914,15 +1923,19 @@ class ActiveSafController extends Controller
                     'relative_path' => $relativePath,
                     'user_id' => authUser()->id
                 ];
-
                 if ($isDocExist)
                     $geoTagging->edit($isDocExist, $docReqs);
                 else
                     $geoTagging->store($isDocExist, $docReqs);
             });
 
+            $safDtls->is_geo_tagged = true;
+            $safDtls->save();
+
+            DB::commit();
             return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
