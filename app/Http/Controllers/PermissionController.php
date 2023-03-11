@@ -33,14 +33,20 @@ class PermissionController extends Controller
             'module' => 'required'
         ]);
         try {
+            // Variable Assignments
             $userId = auth()->user()->id;
             $mWfRoleUserMap = new WfRoleusermap();
+            $mActionMaster = new ActionMaster();
+
+            // Derivative Assignments
             $wfRoles = $mWfRoleUserMap->getRoleIdByUserId($userId);
             $roleIds = collect($wfRoles)->map(function ($item) {
                 return $item->wf_role_id;
             });
+            $mActionMaster->_roleIds = $roleIds;
+            $baseQuery = $mActionMaster->getPermissionsByRoleId();
             $permissions = app(Pipeline::class)
-                ->send(ActionMaster::query()->whereIn('action_masters.role_id', $roleIds)->where('action_masters.status', 1))
+                ->send($baseQuery)
                 ->through([
                     ModulePermissions::class,
                 ])
