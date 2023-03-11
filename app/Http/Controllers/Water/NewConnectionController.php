@@ -1850,7 +1850,7 @@ class NewConnectionController extends Controller
             }
             throw new Exception("Invalid data!");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
         }
     }
 }

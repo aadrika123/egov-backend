@@ -553,21 +553,37 @@ class WaterPaymentController extends Controller
                         $unpaidPenalty = $this->checkOldPenalty($applicationId, $chargeCatagory);
                         $calculetedPenalty = $newConnectionCharges['conn_fee_charge']['penalty'] - $applicationCharge['penalty'];
                         $refInstallment['installment_amount'] = $calculetedPenalty + $unpaidPenalty;
-                        $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId);
+
+                        $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                         $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
                     }
                     # for the Case of no extra penalty 
                     $unpaidPenalty = $this->checkOldPenalty($applicationId, $chargeCatagory);
                     if ($unpaidPenalty != 0) {
                         $refInstallment['installment_amount'] = $unpaidPenalty;
-                    }
 
-                    $newConnectionCharges['conn_fee_charge']['penalty'] = $refInstallment['installment_amount'];
-                    $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId);
-                    $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
+                        $newConnectionCharges['conn_fee_charge']['penalty'] = $refInstallment['installment_amount'] ?? 0;
+                        $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
+                        $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
+                    }
+                    # if there is no old penalty and all penalty is paid
+                    $newConnectionCharges['conn_fee_charge']['penalty'] = 0;
                     $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
                     $mWaterApplication->updatePaymentStatus($applicationId, false);
                 }
+                # in case of no change in connection charges but the old penalty is unpaid
+                $unpaidPenalty = $this->checkOldPenalty($applicationId, $chargeCatagory);
+                if ($unpaidPenalty != 0) {
+                    $refInstallment['installment_amount'] = $unpaidPenalty;
+                    $newConnectionCharges['conn_fee_charge']['penalty'] = $refInstallment['installment_amount'] ?? 0;
+
+                    $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
+                    $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
+
+                    $newConnectionCharges['conn_fee_charge']['conn_fee'] = 0;
+                    $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
+                }
+
                 break;
             case ($newCharge == 0):
                 $oldPenalty = $mWaterPenaltyInstallment->getPenaltyByApplicationId($applicationId)
@@ -575,10 +591,10 @@ class WaterPaymentController extends Controller
                     ->get();
                 $unpaidPenaltyIds = collect($oldPenalty)->map(function ($value) {
                     if ($value['paid_status'] == 0) {
-                       return $value['id'];
+                        return $value['id'];
                     }
                 });
-                
+
                 $mWaterApplication->updatePaymentStatus($applicationId, true);
                 break;
         }
