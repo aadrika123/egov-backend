@@ -61,6 +61,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    */
   Route::controller(ApplySafController::class)->group(function () {
     Route::post('saf/apply', 'applySaf');                                                               // Applying Saf Route(2)
+    Route::post('saf/gb-apply', 'applyGbSaf');                                                           // Applying GB Saf (3)
   });
 
   Route::controller(ActiveSafController::class)->group(function () {
