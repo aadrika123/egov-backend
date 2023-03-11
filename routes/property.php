@@ -17,6 +17,7 @@ use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\property\ClusterController;
 use App\Http\Controllers\Property\ConcessionDocController;
 use App\Http\Controllers\Property\HoldingTaxController;
+use App\Http\Controllers\Property\PropertyController;
 use App\Http\Controllers\Property\ReportController;
 use App\Http\Controllers\Property\SafDocController;
 use App\Http\Controllers\Property\ZoneController;
@@ -349,6 +350,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/verify-holding', 'verifyHoldingNo');             // 05
     Route::post('saf/list-apartment', 'getAptList');             // 05
   });
+
+  /**
+    | Serial No : 19
+   */
+  Route::controller(PropertyController::class)->group(function () {
+    Route::post('caretaker-otp', 'caretakerOtp');                             // 01
+    Route::post('caretaker-property-tagging', 'caretakerPropertyTag');        // 02
+
+
+  });
 });
 
 
@@ -406,5 +417,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/saf/userwiselevelpending', 'userWiseLevelPending');
     Route::post('reports/saf/userWiseWardWireLevelPending', 'userWiseWardWireLevelPending');
     Route::post('reports/saf/saf-sam-fam-geotagging', 'safSamFamGeotagging');
+
+    Route::post('reports/ward-wise-holding', 'wardWiseHoldingReport');
   });
 });
