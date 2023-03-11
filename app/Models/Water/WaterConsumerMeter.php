@@ -27,6 +27,7 @@ class WaterConsumerMeter extends Model
     {
         $mWaterConsumerMeter = WaterConsumerMeter::where('consumer_id', $req->consumerId)
             ->where('status', true)
+            ->orderByDesc('id')
             ->first();
 
         $mWaterConsumerMeter->final_meter_reading = $req->finalRading;
@@ -51,6 +52,6 @@ class WaterConsumerMeter extends Model
         // $mWaterConsumerMeter->initial_reading           = $req-> ;
         // $mWaterConsumerMeter->rate_per_month            = $req-> ;
         // $mWaterConsumerMeter->save();
-     
+
     }
 }
