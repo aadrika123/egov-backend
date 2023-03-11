@@ -1821,7 +1821,7 @@ class NewConnectionController extends Controller
         if ($refApplication['current_role'] != $WaterRoles['JE']) {
             throw new Exception("Application is not Under the JE!");
         }
-        if ($readRoles['wf_role_id'] != $WaterRoles['JE']) {
+        if ($readRoles->wf_role_id != $WaterRoles['JE']) {
             throw new Exception("you Are Not Autherised for the process!");
         }
     }

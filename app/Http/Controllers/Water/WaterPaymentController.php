@@ -573,11 +573,12 @@ class WaterPaymentController extends Controller
                 $oldPenalty = $mWaterPenaltyInstallment->getPenaltyByApplicationId($applicationId)
                     ->where('water_penalty_installments.payment_from', '!=', $chargeCatagory['SITE_INSPECTON'])
                     ->get();
-                $unpaidPenalty = collect($oldPenalty)->map(function ($value) {
+                $unpaidPenaltyIds = collect($oldPenalty)->map(function ($value) {
                     if ($value['paid_status'] == 0) {
                        return $value['id'];
                     }
                 });
+                
                 $mWaterApplication->updatePaymentStatus($applicationId, true);
                 break;
         }
