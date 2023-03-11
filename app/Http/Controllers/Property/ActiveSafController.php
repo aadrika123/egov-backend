@@ -37,6 +37,8 @@ use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
 use App\Models\Property\RefPropConstructionType;
 use App\Models\Property\RefPropFloor;
+use App\Models\Property\RefPropGbbuildingusagetype;
+use App\Models\Property\RefPropGbpropusagetype;
 use App\Models\Property\RefPropOccupancyType;
 use App\Models\Property\RefPropOwnershipType;
 use App\Models\Property\RefPropRoadType;
@@ -132,6 +134,8 @@ class ActiveSafController extends Controller
             $refPropConstructionType = new RefPropConstructionType();
             $refPropTransferMode = new RefPropTransferMode();
             $refPropRoadType = new RefPropRoadType();
+            $refPropGbbuildingusagetype = new RefPropGbbuildingusagetype();
+            $refPropGbpropusagetype = new RefPropGbpropusagetype();
 
             // Getting Masters from Redis Cache
             $wardMaster = json_decode(Redis::get('wards-ulb-' . $ulbId));
@@ -143,6 +147,8 @@ class ActiveSafController extends Controller
             $constructionType = json_decode(Redis::get('property-construction-types'));
             $transferModuleType = json_decode(Redis::get('property-transfer-modes'));
             $roadType = json_decode(Redis::get('property-road-type'));
+            $gbbuildingusagetypes = json_decode(Redis::get('property-gb-building-usage-types'));
+            $gbpropusagetypes = json_decode(Redis::get('property-gb-prop-usage-types'));
 
             // Ward Masters
             if (!$wardMaster) {
@@ -215,6 +221,22 @@ class ActiveSafController extends Controller
             }
 
             $data['road_type'] = $roadType;
+
+            // GB Building Usage Types
+            if (!$gbbuildingusagetypes) {
+                $gbbuildingusagetypes = $refPropGbbuildingusagetype->getGbbuildingusagetypes();   // <--- Get GB Building Usage Types
+                $redisConn->set('property-gb-building-usage-types', json_encode($gbbuildingusagetypes));
+            }
+
+            $data['gbbuildingusage_type'] = $gbbuildingusagetypes;
+
+            // GB Prop Usage Types
+            if (!$gbpropusagetypes) {
+                $gbpropusagetypes = $refPropGbpropusagetype->getGbpropusagetypes();   // <--- Get GB Prop Usage Types
+                $redisConn->set('property-gb-prop-usage-types', json_encode($gbpropusagetypes));
+            }
+
+            $data['gbpropusage_type'] = $gbpropusagetypes;
 
             return responseMsgs(true, 'Property Masters', $data, "010101", "1.0", "317ms", "GET", "");
         } catch (Exception $e) {

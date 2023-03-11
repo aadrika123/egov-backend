@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Models\Property\PropDemand;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IReport;
 use App\Traits\Auth;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -178,18 +180,47 @@ class ReportController extends Controller
     public function wardWiseHoldingReport(Request $request)
     {
         $wardMstrId = $request->wardMstrId;
+        $currentMonth = Carbon::now()->month;
+        $currentYear = Carbon::now()->year;
+        $start = Carbon::createFromDate($request->year, 4, 1);
+
+        $fromDate = $start->format('Y-m-d');
+        if ($currentMonth > 3) {
+            $end = Carbon::createFromDate($currentYear + 1, 3, 31);
+            $toDate = $end->format('Y-m-d');
+        } else
+            $toDate = ($currentYear . '-03-31');
 
 
-
-        $sql = ("SELECT *  FROM prop_demands
-                    WHERE paid_status = 0 
-                    AND fyear = '2022-2023'
-                    AND ward_mstr_id = $wardMstrId
-                    AND ulb_id = $request->ulbId
-                    ORDER BY id desc
-                "
-        );
-
-        return DB::select($sql);
+        return $data =  PropDemand::select(
+            'holding_no',
+            'new_holding_no',
+            'owner_name',
+            'mobile_no',
+            'pt_no',
+            'prop_address',
+            'prop_demands.balance',
+            'prop_demands.ward_mstr_id',
+            'fyear',
+        )
+            ->join('prop_properties', 'prop_properties.id', 'prop_demands.property_id')
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_demands.property_id')
+            ->where('paid_status', 0)
+            ->whereBetween('due_date', [$fromDate, $toDate])
+            ->where('prop_demands.ulb_id', $request->ulbId)
+            ->where('prop_demands.ward_mstr_id', $wardMstrId)
+            ->groupby(
+                'prop_demands.property_id',
+                'holding_no',
+                'new_holding_no',
+                'pt_no',
+                'prop_demands.balance',
+                'prop_demands.ward_mstr_id',
+                'fyear',
+                'prop_address',
+                'owner_name',
+                'mobile_no',
+            )
+            ->get();
     }
 }
