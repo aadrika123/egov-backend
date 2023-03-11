@@ -1082,13 +1082,11 @@ class SafCalculation
     {
         $mTodayDate = Carbon::now()->format("Y-m-d");
         $rebates = array();
-        $ownerDetails = collect($this->_propertyDetails['owner'])->first();
         $rebate = 0;
         $rebate1 = 0;
         $rebateAmount = 0;
         $currentQuarter = calculateQtr($mTodayDate);
         $currentDate = Carbon::now();
-        $years = $currentDate->diffInYears(Carbon::parse($ownerDetails['dob']));
 
         $seniorCitizen = 60;                                                                // Define for year of senior citizen
         // Rebate Percentage Amount
@@ -1136,16 +1134,22 @@ class SafCalculation
             ]);
         }
 
-        if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  == 'Female' || $ownerDetails['gender'] == 'Transgender' || $years >= $seniorCitizen) {
-            $rebate += $speciallyAbledRebatePerc;
-            $specialRebateAmt = roundFigure(($this->_GRID['demand']['totalTax'] * $speciallyAbledRebatePerc) / 100);
-            array_push($rebates, [
-                "rebateTypeId" => $this->_speciallyAbledRebateID,
-                "rebateType" => "speciallyAbledRebate",
-                "rebatePerc" => $speciallyAbledRebatePerc,
-                "rebateAmount" => $specialRebateAmt
-            ]);
+        if (isset($this->_propertyDetails['owner'])) {
+            $ownerDetails = collect($this->_propertyDetails['owner'])->first();
+            $years = $currentDate->diffInYears(Carbon::parse($ownerDetails['dob']));
+
+            if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  == 'Female' || $ownerDetails['gender'] == 'Transgender' || $years >= $seniorCitizen) {
+                $rebate += $speciallyAbledRebatePerc;
+                $specialRebateAmt = roundFigure(($this->_GRID['demand']['totalTax'] * $speciallyAbledRebatePerc) / 100);
+                array_push($rebates, [
+                    "rebateTypeId" => $this->_speciallyAbledRebateID,
+                    "rebateType" => "speciallyAbledRebate",
+                    "rebatePerc" => $speciallyAbledRebatePerc,
+                    "rebateAmount" => $specialRebateAmt
+                ]);
+            }
         }
+
 
         $this->_GRID['demand']['rebatePerc'] = $rebate1;
         $this->_GRID['rebates'] = $rebates;

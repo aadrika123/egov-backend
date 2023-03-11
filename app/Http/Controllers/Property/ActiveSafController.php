@@ -2,30 +2,23 @@
 
 namespace App\Http\Controllers\Property;
 
-use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\Property\ReqPayment;
 use App\Http\Requests\Property\ReqSiteVerification;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
 use App\Models\CustomDetail;
 use App\Models\Payment\TempTransaction;
-use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PaymentPropPenaltyrebate;
 use App\Models\Property\PaymentPropPenalty;
-use App\Models\Property\PaymentPropRebate;
 use App\Models\Property\PropActiveSaf;
-use App\Models\Property\PropActiveSafsDoc;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropFloor;
-use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropOwner;
-use App\Models\Property\PropPenalty;
 use App\Models\Property\PropPenaltyrebate;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafGeotagUpload;
@@ -46,14 +39,11 @@ use App\Models\Property\RefPropTransferMode;
 use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
 use App\Models\UlbWardMaster;
-use App\Models\Workflows\WfActiveDocument;
-use App\Models\Workflows\WfMaster;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
-use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
@@ -67,9 +57,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
-use PhpParser\JsonDecoder;
 
-use function PHPUnit\Framework\isEmpty;
 
 class ActiveSafController extends Controller
 {
@@ -95,7 +83,7 @@ class ActiveSafController extends Controller
      * | wf_workflow_id=5
      * |                                 # SAF Bifurcation
      * | wf_mstr_id=25
-     * | wf_workflow_id=182
+     * | wf_workflow_id=182 
      * |                                 # SAF Amalgamation
      * | wf_mstr_id=373
      * | wf_workflow_id=381
@@ -327,7 +315,7 @@ class ActiveSafController extends Controller
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
-                ->paginate(10);
+                ->get();
             return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", "339ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

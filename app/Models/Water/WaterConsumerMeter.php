@@ -16,7 +16,8 @@ class WaterConsumerMeter extends Model
     public function getMeterDetailsByConsumerId($consumerId)
     {
         return WaterConsumerMeter::where('consumer_id', $consumerId)
-            ->where('status', true);
+            ->where('status', true)
+            ->orderByDesc('id');
     }
 
     /**
@@ -27,6 +28,7 @@ class WaterConsumerMeter extends Model
     {
         $mWaterConsumerMeter = WaterConsumerMeter::where('consumer_id', $req->consumerId)
             ->where('status', true)
+            ->orderByDesc('id')
             ->first();
 
         $mWaterConsumerMeter->final_meter_reading = $req->finalRading;
@@ -40,17 +42,16 @@ class WaterConsumerMeter extends Model
      */
     public function saveMeterDetails($req)
     {
-        // $mWaterConsumerMeter = new WaterConsumerMeter();
-        // $mWaterConsumerMeter->consumer_id               = $req-> ;
-        // $mWaterConsumerMeter->connection_date           = $req-> ;
-        // $mWaterConsumerMeter->emp_details_id            = $req-> ;
-        // $mWaterConsumerMeter->connection_type           = $req-> ;
-        // $mWaterConsumerMeter->meter_no                  = $req-> ;
-        // $mWaterConsumerMeter->final_meter_reading       = $req-> ;
-        // $mWaterConsumerMeter->meter_intallation_date    = $req-> ;
-        // $mWaterConsumerMeter->initial_reading           = $req-> ;
-        // $mWaterConsumerMeter->rate_per_month            = $req-> ;
-        // $mWaterConsumerMeter->save();
-     
+        $mWaterConsumerMeter = new WaterConsumerMeter();
+        $mWaterConsumerMeter->consumer_id               = $req->consumerId;
+        $mWaterConsumerMeter->connection_date           = $req->connectionDate;
+        $mWaterConsumerMeter->emp_details_id            = authUser()->id;
+        $mWaterConsumerMeter->connection_type           = $req->connectionType;
+        $mWaterConsumerMeter->meter_no                  = $req->meterNo;
+        $mWaterConsumerMeter->final_meter_reading       = $req->finalMeterReading;
+        $mWaterConsumerMeter->meter_intallation_date    = $req->installationDate;
+        $mWaterConsumerMeter->initial_reading           = $req->intialReading;
+        $mWaterConsumerMeter->rate_per_month            = $req->ratePerMonth ?? 0;
+        $mWaterConsumerMeter->save();
     }
 }

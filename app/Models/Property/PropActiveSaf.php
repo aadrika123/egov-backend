@@ -54,17 +54,17 @@ class PropActiveSaf extends Model
             'corr_dist' => $req->corrDist,
             'corr_pin_code' => $req->corrPinCode,
             'is_mobile_tower' => $req->isMobileTower,
-            'tower_area' => $req->mobileTower['area'],
-            'tower_installation_date' => $req->mobileTower['dateFrom'],
+            'tower_area' => $req->mobileTower['area'] ?? null,
+            'tower_installation_date' => $req->mobileTower['dateFrom'] ?? null,
 
             'is_hoarding_board' => $req->isHoardingBoard,
-            'hoarding_area' => $req->hoardingBoard['area'],
-            'hoarding_installation_date' => $req->hoardingBoard['dateFrom'],
+            'hoarding_area' => $req->hoardingBoard['area'] ?? null,
+            'hoarding_installation_date' => $req->hoardingBoard['dateFrom'] ?? null,
 
 
             'is_petrol_pump' => $req->isPetrolPump,
-            'under_ground_area' => $req->petrolPump['area'],
-            'petrol_pump_completion_date' => $req->petrolPump['dateFrom'],
+            'under_ground_area' => $req->petrolPump['area'] ?? null,
+            'petrol_pump_completion_date' => $req->petrolPump['dateFrom'] ?? null,
 
             'is_water_harvesting' => $req->isWaterHarvesting,
             'land_occupation_date' => $req->landOccupationDate,
@@ -97,6 +97,18 @@ class PropActiveSaf extends Model
             'is_gb_saf' => isset($req->isGBSaf) ? $req->isGBSaf : false
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);
+        return response()->json([
+            'safId' => $propActiveSafs->id,
+            'safNo' => $propActiveSafs->saf_no,
+        ]);
+    }
+
+    /**
+     * | Store GB Saf
+     */
+    public function storeGBSaf($req)
+    {
+        $propActiveSafs = PropActiveSaf::create($req);
         return response()->json([
             'safId' => $propActiveSafs->id,
             'safNo' => $propActiveSafs->saf_no,

@@ -6,6 +6,7 @@ use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
+use App\Http\Requests\ReqGBSaf;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
@@ -25,7 +26,6 @@ class ApplySafController extends Controller
     use SAF;
     use Workflow;
 
-    protected $_workflowIds;
     protected $_todayDate;
     protected $_REQUEST;
     protected $_safDemand;
@@ -34,7 +34,6 @@ class ApplySafController extends Controller
     protected $_holdingNo;
     public function __construct()
     {
-        $this->_workflowIds = Config::get('PropertyConstaint.SAF_WORKFLOWS');
         $this->_todayDate = Carbon::now();
         $this->_safDemand = new PropSafsDemand();
         $this->_propProperty = new PropProperty();
@@ -250,12 +249,12 @@ class ApplySafController extends Controller
      */
     public function adjustDemand()
     {
-        $safDemand = $this->_safDemand;
+        $mSafDemand = $this->_safDemand;
         $generatedDemand = $this->_generatedDemand;
         $propProperty = $this->_propProperty;
         $holdingNo = $this->_holdingNo;
         $propSafs = $propProperty->getSafIdByHoldingNo($holdingNo);
-        $safDemandList = $safDemand->getFullDemandsBySafId($propSafs->saf_id);
+        $safDemandList = $mSafDemand->getFullDemandsBySafId($propSafs->saf_id);
         if ($safDemandList->isEmpty())
             throw new Exception("Previous Saf Demand is Not Available");
         $generatedDemand = $generatedDemand->sortBy('due_date');
@@ -263,11 +262,104 @@ class ApplySafController extends Controller
         // Demand Adjustment
         foreach ($generatedDemand as $item) {
             $demand = $safDemandList->where('due_date', $item['dueDate'])->first();
-            $item['adjustAmount'] = $demand->amount;
-            $item['balance'] = roundFigure($item['totalTax'] - $demand->amount);
+            if (collect($demand)->isEmpty())
+                $item['adjustAmount'] = 0;
+            else
+                $item['adjustAmount'] = $demand->amount;
+            $item['balance'] = roundFigure($item['totalTax'] - $item['adjustAmount']);
             if ($item['balance'] == 0)
                 $item['onePercPenaltyTax'] = 0;
         }
         return $generatedDemand;
+    }
+
+    /**
+     * | Apply GB Saf
+     */
+    public function applyGbSaf(ReqGBSaf $req)
+    {
+        try {
+            // Variable Assignments
+            $userId = auth()->user()->id;
+            $ulbId = $req->ulbId ?? auth()->user()->ulb_id;
+            $propActiveSafs = new PropActiveSaf();
+            $safCalculation = new SafCalculation;
+            $mPropFloors = new PropActiveSafsFloor();
+            $demand = array();
+            $safReq = array();
+            $reqFloors = $req->floors;
+            $applicationDate = $this->_todayDate->format('Y-m-d');
+
+            // Derivative Assignments
+            $ulbWfId = $this->readAssessUlbWfId($req, $ulbId);
+            $roadWidthType = $this->readRoadWidthType($req->roadWidth);          // Read Road Width Type
+            $req = $req->merge(
+                [
+                    'road_type_mstr_id' => $roadWidthType,
+                    'ward' => $req->wardId,
+                    'propertyType' => 1,
+                    'roadType' => $req->roadWidth,
+                    'floor' => $req->floors,
+                    'isGBSaf' => true
+                ]
+            );
+
+            $safTaxes = $safCalculation->calculateTax($req);
+            $demand['amounts'] = $safTaxes->original['data']['demand'];
+            $generatedDemandDtls = $this->generateSafDemand($safTaxes->original['data']['details']);
+            $demand['details'] = $generatedDemandDtls->groupBy('ruleSet');
+
+            $safReq = [
+                'assessment_type' => $req->assessmentType,
+                'ulb_id' => $req->ulbId,
+                'building_name' => $req->buildingName,
+                'gb_office_name' => $req->nameOfOffice,
+                'ward_mstr_id' => $req->wardId,
+                'prop_address' => $req->buildingAddress,
+                'gb_usage_types' => $req->gbUsageTypes,
+                'gb_prop_usage_types' => $req->gbPropUsageTypes,
+                'zone_mstr_id' => $req->zone,
+                'road_width' => $req->roadWidth,
+                'road_type_mstr_id' => $roadWidthType,
+                'is_mobile_tower' => $req->isMobileTower,
+                'tower_area' => $req->mobileTower['area'] ?? null,
+                'tower_installation_date' => $req->mobileTower['dateFrom'] ?? null,
+
+                'is_hoarding_board' => $req->isHoardingBoard,
+                'hoarding_area' => $req->hoardingBoard['area'] ?? null,
+                'hoarding_installation_date' => $req->hoardingBoard['dateFrom'] ?? null,
+
+
+                'is_petrol_pump' => $req->isPetrolPump,
+                'under_ground_area' => $req->petrolPump['area'] ?? null,
+                'petrol_pump_completion_date' => $req->petrolPump['dateFrom'] ?? null,
+
+                'is_water_harvesting' => $req->isWaterHarvesting,
+                'area_of_plot' => $req->areaOfPlot,
+                'is_gb_saf' => true,
+                'application_date' => $applicationDate
+            ];
+
+            DB::beginTransaction();
+            $createSaf = $propActiveSafs->storeGBSaf($safReq);           // Store Saf
+            $safId = $createSaf->original['safId'];
+            $safNo = $createSaf->original['safNo'];
+
+            // Store Floors
+            foreach ($reqFloors as $floor) {
+                $mPropFloors->addfloor($floor, $safId, $userId);
+            }
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
+                "safNo" => $safNo,
+                "applyDate" => $applicationDate,
+                "safId" => $safId,
+                "demand" => $demand
+            ], "010102", "1.0", "1s", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010103", "1.0", "", "POST", $req->deviceId ?? "");
+        }
     }
 }

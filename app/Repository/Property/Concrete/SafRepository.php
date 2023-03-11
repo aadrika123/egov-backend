@@ -37,6 +37,7 @@ class SafRepository implements iSafRepository
                 'prop_active_safs.applicant_name',
             )
             ->whereIn('workflow_id', $workflowIds)
+            ->where('is_gb_saf', false)
             ->where('payment_status', 1);
         return $data;
     }
