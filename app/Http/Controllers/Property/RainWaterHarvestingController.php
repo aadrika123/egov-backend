@@ -46,7 +46,6 @@ class RainWaterHarvestingController extends Controller
     use Workflow;
     use Ward;
     use SafDetailsTrait;
-    use Concession;
     private $_todayDate;
     private $_bifuraction;
     private $_workflowId;
@@ -369,7 +368,7 @@ class RainWaterHarvestingController extends Controller
 
             $details = $mPropActiveHarvesting->getDetailsById($req->applicationId);
 
-            $docs = $mWfActiveDocument->getDocsByAppId($details->id, $details->workflow_id, $moduleId);
+            $docs =  $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $details->workflow_id, $moduleId, ['WATER_HARVESTING'])->first();
             $data = [
                 'id' => $details->id,
                 'applicationNo' => $details->application_no,
@@ -382,7 +381,7 @@ class RainWaterHarvestingController extends Controller
                 'propertyAddress' => $details->prop_address,
                 'mobileNo' => $details->mobile_no,
                 'dateOfCompletion' => $details->date_of_completion,
-                'harvestingImage' => $docs[0]->doc_path,
+                'harvestingImage' => $docs->doc_path,
             ];
 
             return responseMsgs(true, "Static Details!", remove_null($data), 010125, 1.0, "", "POST", $req->deviceId);
@@ -861,6 +860,10 @@ class RainWaterHarvestingController extends Controller
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
+
+            $getHarvestingDtls->doc_upload_status = 1;
+            $getHarvestingDtls->save();
+
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
@@ -1024,25 +1027,7 @@ class RainWaterHarvestingController extends Controller
         $data =  RefRequiredDocument::where('code', 'PROP_RAIN_WATER_HARVESTING')
             ->first();
 
-        $document = explode(',', $data->requirements);
-        $key = array_shift($document);
-        $code = collect($document);
-        $label = array_shift($document);
-        $documents = collect();
-
-        $reqDoc['docType'] = $key;
-        $reqDoc['docName'] = substr($label, 1, -1);
-        $reqDoc['uploadedDoc'] = $documents->first();
-
-        $reqDoc['masters'] = collect($document)->map(function ($doc) {
-            $strLower = strtolower($doc);
-            $strReplace = str_replace('_', ' ', $strLower);
-            $arr = [
-                "documentCode" => $doc,
-                "docVal" => ucwords($strReplace),
-            ];
-            return $arr;
-        });
+        $reqDoc = $this->getReqDoc($data);
 
         return responseMsgs(true, "Citizen Doc List", remove_null($reqDoc), 010717, 1.0, "413ms", "POST", "", "");
     }
@@ -1165,12 +1150,15 @@ class RainWaterHarvestingController extends Controller
             $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
             $verificationStatus = $req->verificationStatus;                                             // Verification Status true or false
             $images = $req->harvestingImage;
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $refImageName = 'harvesting-geotagging-' .  $req->applicationId;
             $propActiveHarvesting = new PropActiveHarvesting();
             $verification = new PropRwhVerification();
             $mWfRoleUsermap = new WfRoleusermap();
             $docUpload = new DocUpload;
             $geoTagging = new PropHarvestingGeotagUpload();
+            $mWfActiveDocument = new WfActiveDocument();
+            $mRefRequiredDocument = new RefRequiredDocument();
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
 
@@ -1181,8 +1169,13 @@ class RainWaterHarvestingController extends Controller
                 'workflowId' => $workflowId
             ]);
 
+            $doc = $mRefRequiredDocument->getDocsByDocCode($moduleId, 'PROP_HARVESTING_FIELD_IMAGE');
+            $reqDoc = $this->getReqDoc($doc);
+            $docCode = $reqDoc['masters']->first();
+
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
             $roleId = $readRoleDtls->wf_role_id;
+
 
             switch ($roleId) {
                 case $taxCollectorRole;
@@ -1197,6 +1190,18 @@ class RainWaterHarvestingController extends Controller
                     //GEO TAGGING
                     $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
                     $geoTagging->add($req, $imageName, $relativePath, $geoTagging);
+
+                    $metaReqs['moduleId'] = $moduleId;
+                    $metaReqs['activeId'] = $req->applicationId;
+                    $metaReqs['workflowId'] = $applicationDtls->workflow_id;
+                    $metaReqs['ulbId'] = $applicationDtls->ulb_id;
+                    $metaReqs['relativePath'] = $relativePath;
+                    $metaReqs['document'] = $imageName;
+                    $metaReqs['docCode'] = $docCode['documentCode'];
+                    $metaReqs['verifyStatus'] = 1;
+
+                    $metaReqs = new Request($metaReqs);
+                    $mWfActiveDocument->postDocuments($metaReqs);
 
                     break;
                     DB::beginTransaction();
@@ -1242,7 +1247,17 @@ class RainWaterHarvestingController extends Controller
         try {
             $data = array();
             $mPropRwhVerification = new PropRwhVerification();
-            $data = $mPropRwhVerification->getVerificationsData($req->applicationId);           // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
+            $mWfActiveDocument = new WfActiveDocument();
+            $mPropActiveHarvesting = new PropActiveHarvesting();
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+
+            $applicationDtls = $mPropActiveHarvesting->getDetailsById($req->applicationId);
+            $data = $mPropRwhVerification->getVerificationsData($req->applicationId);
+            if (collect($data)->isEmpty())
+                throw new Exception("Tc Verification Not Done");
+
+            $document = $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $applicationDtls->workflow_id, $moduleId, ['WATER_HARVESTING_FIELD_IMAGE'])->first();
+            $data->doc_path = $document->doc_path;
 
             return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -1251,42 +1266,47 @@ class RainWaterHarvestingController extends Controller
     }
 
     /**
-     * | Geo tagging
+     * | check Post Condition for backward forward
      */
-    // public function geoTagging(Request $req)
-    // {
-    //     $req->validate([
-    //         "applicationId" => "required|numeric",
-    //         "harvestingImage.*" => "required|image|mimes:jpeg,jpg,png,gif",
-    //         // "directionType" => "required|array|min:3|max:3",
-    //         // "directionType.*" => "required|In:Left,Right,Front",
-    //         "longitude" => "required|numeric",
-    //         "latitude" => "required|numeric"
-    //     ]);
-    //     try {
-    //         $docUpload = new DocUpload;
-    //         $geoTagging = new PropHarvestingGeotagUpload();
-    //         $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
-    //         $images = $req->harvestingImage;
-    //         $longitude = $req->longitude;
-    //         $latitude = $req->latitude;
-    //         $refImageName = 'harvesting-geotagging-' .  $req->applicationId;
-    //         // $directionTypes = $req->directionType;
+    public function checkPostCondition($senderRoleId, $wfLevels, $harvesting)
+    {
+        switch ($senderRoleId) {
+            case $wfLevels['BO']:                        // Back Office Condition
+                if ($harvesting->doc_upload_status == 0)
+                    throw new Exception("Document Not Fully Uploaded");
+                break;
+                // case $wfLevels['DA']:                       // DA Condition
+                //     if ($harvesting->doc_verify_status == 0)
+                //         throw new Exception("Document Not Fully Verified");
+                //     break;
+        }
+    }
 
-    //         $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
+    /**
+     * | Get Req Docs
+     */
+    public function getReqDoc($data)
+    {
+        $document = explode(',', $data->requirements);
+        $key = array_shift($document);
+        $code = collect($document);
+        $label = array_shift($document);
+        $documents = collect();
 
-    //         $geoTagging->application_id = $req->applicationId;
-    //         $geoTagging->image_path = $imageName;
-    //         // $geoTagging->direction_type = $directionTypes;
-    //         $geoTagging->longitude = $longitude;
-    //         $geoTagging->latitude = $latitude;
-    //         $geoTagging->relative_path = $relativePath;
-    //         $geoTagging->user_id = authUser()->id;
-    //         $geoTagging->save();
+        $reqDoc['docType'] = $key;
+        $reqDoc['docName'] = substr($label, 1, -1);
+        $reqDoc['uploadedDoc'] = $documents->first();
 
-    //         return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
-    //     } catch (Exception $e) {
-    //         return responseMsg(false, $e->getMessage(), "");
-    //     }
-    // }
+        $reqDoc['masters'] = collect($document)->map(function ($doc) {
+            $strLower = strtolower($doc);
+            $strReplace = str_replace('_', ' ', $strLower);
+            $arr = [
+                "documentCode" => $doc,
+                "docVal" => ucwords($strReplace),
+            ];
+            return $arr;
+        });
+
+        return $reqDoc;
+    }
 }

@@ -33,7 +33,7 @@ class PropActiveHarvesting extends Model
         )
             ->join('prop_properties as a', 'a.id', '=', 'prop_active_harvestings.property_id')
             ->join('prop_owners', 'prop_owners.property_id', 'a.id')
-            ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
+            ->leftjoin('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
             ->where('prop_active_harvestings.status', 1)
             ->where('prop_active_harvestings.ulb_id', $ulbId)

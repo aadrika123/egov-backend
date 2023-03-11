@@ -85,7 +85,7 @@ class CitizenRepository implements iCitizenRepository
             $applications['Water'] = $this->appliedWaterApplications($userId);
             $applications['Trade'] = $this->appliedTradeApplications($userId);
             $applications['Holding'] = $this->getCitizenProperty($userId);
-            $applications['careTaker'] = $this->getCaretakerProperty($userId);
+            $applications['CareTaker'] = $this->getCaretakerProperty($userId);
         }
 
         if ($req->getMethod() == 'POST') {                                                      // Get Applications By Module

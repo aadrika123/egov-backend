@@ -634,10 +634,8 @@ class ActiveSafController extends Controller
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mPropSafMemoDtls = new PropSafMemoDtl();
-            $mSafGeoTag = new PropSafGeotagUpload();
             $memoDtls = array();
             $data = array();
-            $geoTags = array();
 
             // Derivative Assignments
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
@@ -654,9 +652,6 @@ class ActiveSafController extends Controller
 
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
             $data['memoDtls'] = $memoDtls;
-
-            $geoTags = $mSafGeoTag->getGeoTags($req->applicationId);
-            $data['geoTagging'] = $geoTags;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return $e->getMessage();
@@ -1894,26 +1889,36 @@ class ActiveSafController extends Controller
         ]);
         try {
             $docUpload = new DocUpload;
+            $geoTagging = new PropSafGeotagUpload();
             $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
             $images = $req->imagePath;
             $directionTypes = $req->directionType;
             $longitude = $req->longitude;
             $latitude = $req->latitude;
 
-            collect($images)->map(function ($image, $key) use ($directionTypes, $relativePath, $req, $docUpload, $longitude, $latitude) {
-                $geoTagging = new PropSafGeotagUpload();
+            collect($images)->map(function ($image, $key) use ($directionTypes, $relativePath, $req, $docUpload, $longitude, $latitude, $geoTagging) {
                 $refImageName = 'saf-geotagging-' . $directionTypes[$key] . '-' . $req->safId;
-
+                $docExistReqs = new Request([
+                    'safId' => $req->safId,
+                    'directionType' => $directionTypes[$key]
+                ]);
                 $imageName = $docUpload->upload($refImageName, $image, $relativePath);         // <------- Get uploaded image name and move the image in folder
+                $isDocExist = $geoTagging->getGeoTagBySafIdDirectionType($docExistReqs);
 
-                $geoTagging->saf_id = $req->safId;
-                $geoTagging->image_path = $imageName;
-                $geoTagging->direction_type = $directionTypes[$key];
-                $geoTagging->longitude = $longitude[$key];
-                $geoTagging->latitude = $latitude[$key];
-                $geoTagging->relative_path = $relativePath;
-                $geoTagging->user_id = authUser()->id;
-                $geoTagging->save();
+                $docReqs = [
+                    'saf_id' => $req->safId,
+                    'image_path' => $imageName,
+                    'direction_type' => $directionTypes[$key],
+                    'longitude' => $longitude[$key],
+                    'latitude' => $latitude[$key],
+                    'relative_path' => $relativePath,
+                    'user_id' => authUser()->id
+                ];
+
+                if ($isDocExist)
+                    $geoTagging->edit($isDocExist, $docReqs);
+                else
+                    $geoTagging->store($isDocExist, $docReqs);
             });
 
             return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
@@ -1927,12 +1932,18 @@ class ActiveSafController extends Controller
      */
     public function getTcVerifications(Request $req)
     {
+        $req->validate([
+            'safId' => 'required|numeric'
+        ]);
         try {
             $data = array();
             $safVerifications = new PropSafVerification();
             $safVerificationDtls = new PropSafVerificationDtl();
+            $mSafGeoTag = new PropSafGeotagUpload();
 
             $data = $safVerifications->getVerificationsData($req->safId);                       // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
+            if (collect($data)->isEmpty())
+                throw new Exception("Tc Verification Not Done");
 
             $data = json_decode(json_encode($data), true);
 
@@ -1941,6 +1952,8 @@ class ActiveSafController extends Controller
             $newFloors = $verificationDtls->where('saf_floor_id', NULL);
             $data['newFloors'] = $newFloors->values();
             $data['existingFloors'] = $existingFloors->values();
+            $geoTags = $mSafGeoTag->getGeoTags($req->safId);
+            $data['geoTagging'] = $geoTags;
             return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
