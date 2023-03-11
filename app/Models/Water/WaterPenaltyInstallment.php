@@ -15,7 +15,7 @@ class WaterPenaltyInstallment extends Model
      * | @var
         |
      */
-    public function saveWaterPenelty($applicationId, $installments,$connectionFor)
+    public function saveWaterPenelty($applicationId, $installments, $connectionFor)
     {
         $quaters = new WaterPenaltyInstallment();
         $quaters->apply_connection_id = $applicationId;
@@ -87,5 +87,22 @@ class WaterPenaltyInstallment extends Model
         return WaterPenaltyInstallment::whereIn('id', $penaltyIds)
             ->where('status', 1)
             ->get();
+    }
+
+
+    /**
+     * | Deactivate the penalty
+     * | In case of site inspection change the old penalty status to 2
+     * | @param 
+     * | @param 
+     */
+    public function deactivateOldPenalty($request, $applicationId, $chargeCatagory)
+    {
+        WaterPenaltyInstallment::where('apply_connection_id', $applicationId)
+            ->where('payment_from', '!=', $chargeCatagory['SITE_INSPECTON'])
+            ->where('paid_status', 0)
+            ->update([
+                'status' => 2
+            ]);
     }
 }

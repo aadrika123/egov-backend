@@ -92,6 +92,7 @@ class MenuRepo implements iMenuRepo
         }
         $mRoleMenus->role_id        = $req->roleId;
         $mRoleMenus->menu_id        = $req->menuId;
+        $mRoleMenus->route          = $req->route ?? null;
         $mRoleMenus->save();
         return responseMsg(true, "Successfully Enabled the Menu Permission for the Role", "");
     }

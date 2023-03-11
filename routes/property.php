@@ -348,7 +348,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/edit-citizen-saf', 'editCitizenSaf');            // 02
     Route::post('saf/memo-receipt', 'memoReceipt');                   // 03
     Route::post('saf/verify-holding', 'verifyHoldingNo');             // 05
-    Route::post('saf/list-apartment', 'getAptList');             // 05
+    Route::post('saf/list-apartment', 'getAptList');                  // 05
+    Route::post('saf/pending-geotagging-list', 'pendingGeoTaggingList'); // 06
   });
 
   /**

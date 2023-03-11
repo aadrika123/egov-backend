@@ -4,13 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Permissions\ActionMaster;
 use Illuminate\Http\Request;
-use App\Models\Workflows\WfPermission;
-use App\Models\Workflows\WfRolePermission;
 use App\Models\Workflows\WfRoleusermap;
 use App\Pipelines\ModulePermissions;
 use Exception;
 use Illuminate\Pipeline\Pipeline;
-use Illuminate\Support\Facades\DB;
 
 /**
  * | Controller for giving Controller
@@ -33,14 +30,20 @@ class PermissionController extends Controller
             'module' => 'required'
         ]);
         try {
+            // Variable Assignments
             $userId = auth()->user()->id;
             $mWfRoleUserMap = new WfRoleusermap();
+            $mActionMaster = new ActionMaster();
+
+            // Derivative Assignments
             $wfRoles = $mWfRoleUserMap->getRoleIdByUserId($userId);
             $roleIds = collect($wfRoles)->map(function ($item) {
                 return $item->wf_role_id;
             });
+            $mActionMaster->_roleIds = $roleIds;
+            $baseQuery = $mActionMaster->getPermissionsByRoleId();
             $permissions = app(Pipeline::class)
-                ->send(ActionMaster::query()->whereIn('action_masters.role_id', $roleIds)->where('action_masters.status', 1))
+                ->send($baseQuery)
                 ->through([
                     ModulePermissions::class,
                 ])

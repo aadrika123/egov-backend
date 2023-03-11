@@ -33,7 +33,7 @@ class MenuMaster extends Model
         $newMenues->menu_string  =  $request->menuName;
         $newMenues->top_level  =  $request->topLevel;
         $newMenues->sub_level  =  $request->subLevel;
-        $newMenues->parent_serial  =  $request->parentSerial;
+        $newMenues->parent_serial  =  $request->parentSerial ?? 0;
         $newMenues->description  =  $request->description;
         $newMenues->serial = $request->serial;
         $newMenues->route = $request->route;

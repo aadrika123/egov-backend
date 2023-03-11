@@ -2,6 +2,7 @@
 
 namespace App\Models\Water;
 
+use App\Models\Workflows\WfRole;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,8 +15,9 @@ class WaterSiteInspection extends Model
      * |-------------------- save site inspecton -----------------------\
      * | @param req
      */
-    public function storeInspectionDetails($req, $waterFeeId, $waterDetails)
+    public function storeInspectionDetails($req, $waterFeeId, $waterDetails, $refRoleDetails)
     {
+        $role = WfRole::where('id', $refRoleDetails)->first();
         $saveSiteVerify = new WaterSiteInspection();
         $saveSiteVerify->apply_connection_id    =   $req->applicationId;
         $saveSiteVerify->property_type_id       =   $req->propertyTypeId;
@@ -34,11 +36,12 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->ferrule_type           =   $req->feruleSize;                       // what is ferrule
         $saveSiteVerify->road_type              =   $req->roadType;
         $saveSiteVerify->inspection_date        =   Carbon::now();
-        $saveSiteVerify->verified_by            =   authUser()->user_type;                  // here role 
+        $saveSiteVerify->verified_by            =   $role['role_name'];                     // here role 
         $saveSiteVerify->inspection_time        =   Carbon::now();
         $saveSiteVerify->ts_map                 =   $req->tsMap;
-        $saveSiteVerify->order_officer          =   authUser()->user_type;
+        $saveSiteVerify->order_officer          =   $refRoleDetails;
         $saveSiteVerify->save();
+        
         // $saveSiteVerify->scheduled_status       =   $req->scheduledStatus;
         // $saveSiteVerify->water_lock_arng        =   $req->waterLockArng;
         // $saveSiteVerify->gate_valve             =   $req->gateValve;

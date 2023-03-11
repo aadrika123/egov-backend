@@ -19,9 +19,6 @@ return [
     "SAF_OBJECTION_REF_TABLE" => "prop_active_objections.id",
     "SAF_HARVESTING_REF_TABLE" => "prop_active_harvestings.id",
 
-    // Mutation Reassessment, New Assessment,Bifurcation,Amalgamation Workflows
-    "SAF_WORKFLOWS" => [3, 4, 5, 182, 381],
-
     "OBJECTION" => [
         "2"     => "RainHarvesting",
         "3"     => "RoadWidth",

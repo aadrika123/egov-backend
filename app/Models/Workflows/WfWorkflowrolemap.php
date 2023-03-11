@@ -133,4 +133,14 @@ class WfWorkflowrolemap extends Model
             ->where('is_suspended', false)
             ->firstOrFail();
     }
+
+    /**
+     * | Get Ulb Workflows By Role Ids
+     */
+    public function getWfByRoleId($roleIds)
+    {
+        return WfWorkflowrolemap::select('workflow_id')
+            ->whereIn('wf_role_id', $roleIds)
+            ->get();
+    }
 }
