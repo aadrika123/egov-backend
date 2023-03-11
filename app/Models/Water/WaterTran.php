@@ -73,7 +73,7 @@ class WaterTran extends Model
         $Tradetransaction->amount           = $totalConnectionCharges;
         $Tradetransaction->emp_dtl_id       = authUser()->id;
         $Tradetransaction->created_at       = Carbon::now();
-        $Tradetransaction->ip_address       = '';
+        $Tradetransaction->ip_address       = getClientIpAddress();
         $Tradetransaction->ulb_id           = $ulbId;
         $Tradetransaction->tran_no          = $transactionNo;
         $Tradetransaction->save();
