@@ -8,11 +8,11 @@ use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\ReqGBSaf;
+use App\Models\Property\PropActiveGbOfficer;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropDemand;
-use App\Models\Property\PropGbOfficer;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Workflows\WfWorkflow;
@@ -20,7 +20,6 @@ use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
@@ -316,7 +315,7 @@ class ApplySafController extends Controller
             $propActiveSafs = new PropActiveSaf();
             $safCalculation = new SafCalculation;
             $mPropFloors = new PropActiveSafsFloor();
-            $mPropGbOfficer = new PropGbOfficer();
+            $mPropGbOfficer = new PropActiveGbOfficer();
             $mPropSafDemand = $this->_safDemand;
             $demand = array();
             $safReq = array();
@@ -381,7 +380,8 @@ class ApplySafController extends Controller
                 'application_date' => $applicationDate,
                 'initiator_role_id' => $currentRole,
                 'current_role' => $currentRole,
-                'finisher_role_id' => $finisherRoleId->role_id
+                'finisher_role_id' => $finisherRoleId->role_id,
+                'workflow_id' => $ulbWfId
             ];
 
             DB::beginTransaction();
@@ -426,7 +426,7 @@ class ApplySafController extends Controller
                     'health_cess' => $item['healthCess'],
                     'latrine_tax' => $item['latrineTax'],
                     'additional_tax' => $item['additionTax'],
-                    'fyear' => $item['qtr'],
+                    'fyear' => $item['quarterYear'],
                     'due_date' => $item['dueDate'],
                     'amount' => $item['totalTax'],
                     'user_id' => $userId,
