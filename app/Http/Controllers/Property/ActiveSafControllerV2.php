@@ -273,8 +273,9 @@ class ActiveSafControllerV2 extends Controller
             if (!isset($data)) {
                 throw new Exception("Enter Valid Holding No.");
             }
+            $datas['id'] = $data->id;
 
-            return responseMsgs(true, "Holding Exist", '', 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Holding Exist", $datas, 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         }

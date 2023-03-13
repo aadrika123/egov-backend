@@ -16,6 +16,7 @@ use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\property\ClusterController;
 use App\Http\Controllers\Property\ConcessionDocController;
+use App\Http\Controllers\Property\GbSafController;
 use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Property\PropertyController;
 use App\Http\Controllers\Property\ReportController;
@@ -359,8 +360,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(PropertyController::class)->group(function () {
     Route::post('caretaker-otp', 'caretakerOtp');                             // 01
     Route::post('caretaker-property-tagging', 'caretakerPropertyTag');        // 02
+  });
 
-
+  /**
+    | Serial No : 20
+   */
+  Route::controller(GbSafController::class)->group(function () {
+    Route::post('gbsaf/inbox', 'inbox');                             // 01
+    Route::post('gbsaf/outbox', 'outbox');
+    Route::post('gbsaf/next-level', 'postNextLevel');
+    Route::post('gbsaf/final-approve-reject', 'approvalRejectionGbSaf');
   });
 });
 
