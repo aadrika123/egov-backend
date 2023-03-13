@@ -168,7 +168,7 @@ class ClusterController extends Controller
             }
             $mPropProperty = new PropProperty();
             $results = $mPropProperty->searchCollectiveHolding($request->holdingNo);
-            if ($results->count() !== count($request->holdingNo)) {
+            if ($results->count() != count($request->holdingNo)) {
                 return responseMsg(false, "the holding details contain invalid data", "");
             }
 

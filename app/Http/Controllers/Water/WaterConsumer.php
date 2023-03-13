@@ -270,17 +270,8 @@ class WaterConsumer extends Controller
                 throw new Exception("Connection Date can not be greater than Current Date!");
                 break;
             case ($request->connectionType != $refMeterConnType['Meter/Fixed']):
-                if ($consumerMeterDetails->final_meter_reading >= $request->newMeterInitialReading) {
-                    throw new Exception("New Initial Rading Should be Greater Than Old Meter Reading!");
-                }
-                break;
-            case ($request->connectionType == $refMeterConnType['Meter']):
-                $refMonth = $consumerMeterDetails->connection_date;
-                $refMonth = Carbon::parse($refMonth)->format('m');
-                if ($refMonth != Carbon::now()->format('m')) {
-                    if ($consumerMeterDetails->connection_type == $request->connectionType) {
-                        throw new Exception("You can not update same connection type as before!");
-                    }
+                if ($consumerMeterDetails->final_meter_reading >= $request->oldMeterFinalReading) {
+                    throw new Exception("Rading Should be Greater Than last Reading!");
                 }
                 break;
             case ($request->connectionType != $refMeterConnType['Meter']):
@@ -292,7 +283,7 @@ class WaterConsumer extends Controller
 
         if (isset($consumerMeterDetails)) {
             switch ($consumerMeterDetails) {
-                case ($consumerMeterDetails->connection_date >= $request->connectionDate):
+                case ($consumerMeterDetails->connection_date > $request->connectionDate):
                     throw new Exception("Connection Date should be grater than previous Connection date!");
             }
         }
@@ -319,6 +310,7 @@ class WaterConsumer extends Controller
             if ($consumerMeterDetails->connection_type == $refConnectionType && $consumerMeterDetails->meter_status == 0) {
                 throw new Exception("You can not update same connection type as before!");
             }
+            // if()
         }
     }
 
@@ -331,6 +323,5 @@ class WaterConsumer extends Controller
      */
     public function saveTheMeterDocument($request)
     {
-        # Save the Document 
     }
 }
