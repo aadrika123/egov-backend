@@ -227,6 +227,8 @@ class WaterConsumer extends Controller
         | Serial No : 04
         | Not working  
         | Check the parameter for the autherised person
+        | Generate Demand
+        | Save Document
      */
     public function saveUpdateMeterDetails(reqMeterEntry $request)
     {
@@ -258,6 +260,7 @@ class WaterConsumer extends Controller
      */
     public function checkParamForMeterEntry($request)
     {
+        $todayDate= Carbon::now()->format('d-m-Y');
         $mWaterWaterConsumer = new WaterWaterConsumer();
         $mWaterConsumerMeter = new WaterConsumerMeter();
         $mWaterConsumerDemand = new WaterConsumerDemand();
@@ -271,7 +274,7 @@ class WaterConsumer extends Controller
         $this->checkForMeterFixedCase($request, $consumerMeterDetails, $refMeterConnType);
 
         switch ($request) {
-            case ($request->connectionDate > Carbon::now()->format("d-m-Y")):
+            case ($request->connectionDate > $todayDate):
                 throw new Exception("Connection Date can not be greater than Current Date!");
                 break;
             case ($request->connectionType != $refMeterConnType['Meter/Fixed']):
@@ -334,5 +337,28 @@ class WaterConsumer extends Controller
      */
     public function saveTheMeterDocument($request)
     {
+    }
+
+    /**
+     * | Get all the meter details According to the consumer Id
+     * | @param request
+     * | @var 
+     * | @return 
+        | Serial No : 
+        | Not Working
+     */
+    public function getMeterList(Request $request)
+    {
+        try {
+            $request->validate([
+                'consumerId' => "required|digits_between:1,9223372036854775807",
+            ]);
+
+            $mWaterConsumerMeter = new WaterConsumerMeter();
+            $meterList = $mWaterConsumerMeter->getMeterDetailsByConsumerId($request->consumerId)->get();
+            return responseMsgs(true, "Meter List!", remove_null($meterList), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+        }
     }
 }

@@ -42,7 +42,7 @@ class WaterConsumerMeter extends Model
      * | Save Meter Details While intallation of the new meter 
      * | @param 
      */
-    public function saveMeterDetails($req,$documentPath)
+    public function saveMeterDetails($req, $documentPath)
     {
         $meterStatus = null;
         $refConnectionType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
@@ -59,9 +59,8 @@ class WaterConsumerMeter extends Model
         $mWaterConsumerMeter->emp_details_id            = authUser()->id;
         $mWaterConsumerMeter->connection_type           = $req->connectionType;
         $mWaterConsumerMeter->meter_no                  = $req->meterNo ?? null;
-        $mWaterConsumerMeter->final_meter_reading       = $req->finalMeterReading;
         $mWaterConsumerMeter->meter_intallation_date    = $installationDate ?? null;
-        $mWaterConsumerMeter->initial_reading           = $req->intialReading ?? null;
+        $mWaterConsumerMeter->initial_reading           = $req->newMeterInitialReading ?? null;
         // $mWaterConsumerMeter->rate_per_month            = $req->ratePerMonth ?? 0;
         $mWaterConsumerMeter->meter_status              = $meterStatus ?? 1;
         $mWaterConsumerMeter->save();
