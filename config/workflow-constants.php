@@ -26,5 +26,10 @@ return [
     "TRADE_NOTICE_ID"      => "229",
     "WATER_WORKFLOW_ID" => "16",
     "DEALING_ASSISTENT_WF_ID" => "6",
-    "WATER_JE_ROLE_ID" => "40"
+    "WATER_JE_ROLE_ID" => "40",
+
+    // User Types
+    "USER_TYPES" => [
+        "1" => "Citizen",
+    ],
 ];
