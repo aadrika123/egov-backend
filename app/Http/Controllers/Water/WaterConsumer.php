@@ -236,6 +236,11 @@ class WaterConsumer extends Controller
             DB::beginTransaction();
             $documentPath = $this->saveTheMeterDocument($request);
             $mWaterConsumerMeter->saveMeterDetails($request, $documentPath);
+            // $metaRequest = new Request([
+            //     "consumerId" => $request->consumerId;
+            //     ""
+            // ])
+            // $this->saveGenerateConsumerDemand();
             DB::commit();
             return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -282,14 +287,18 @@ class WaterConsumer extends Controller
         }
 
         if (isset($consumerMeterDetails)) {
+            $reqConnectionDate = $request->connectionDate;
+            $reqConnectionDate = Carbon::parse($reqConnectionDate)->format('Y-m-d');
             switch ($consumerMeterDetails) {
-                case ($consumerMeterDetails->connection_date > $request->connectionDate):
+                case ($consumerMeterDetails->connection_date > $reqConnectionDate):
                     throw new Exception("Connection Date should be grater than previous Connection date!");
             }
         }
         if (isset($consumerDemand)) {
+            $reqConnectionDate = $request->connectionDate;
+            $reqConnectionDate = Carbon::parse($reqConnectionDate)->format('Y-m-d');
             switch ($consumerDemand) {
-                case ($consumerDemand->demand_upto > $request->connectionDate):
+                case ($consumerDemand->demand_upto > $reqConnectionDate):
                     throw new Exception("Can not update Connection Date, Demand already generated upto that month!");
                     break;
             }
