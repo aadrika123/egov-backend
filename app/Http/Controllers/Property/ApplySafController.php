@@ -31,11 +31,13 @@ class ApplySafController extends Controller
     protected $_generatedDemand;
     protected $_propProperty;
     protected $_holdingNo;
+    protected $_citizenUserType;
     public function __construct()
     {
         $this->_todayDate = Carbon::now();
         $this->_safDemand = new PropSafsDemand();
         $this->_propProperty = new PropProperty();
+        $this->_citizenUserType = Config::get('workflow-constants.USER_TYPES.1');
     }
     /**
      * | Created On-17-02-2022 
@@ -98,7 +100,7 @@ class ApplySafController extends Controller
             $metaReqs['ulbId'] = $ulb_id;
             $metaReqs['userId'] = $user_id;
             $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->role_id;
-            if ($userType == 'Citizen') {
+            if ($userType == $this->_citizenUserType) {
                 $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->forward_role_id;         // Send to DA in Case of Citizen
                 $metaReqs['userId'] = null;
                 $metaReqs['citizenId'] = $user_id;
@@ -295,6 +297,11 @@ class ApplySafController extends Controller
             // Derivative Assignments
             $ulbWfId = $this->readAssessUlbWfId($req, $ulbId);
             $roadWidthType = $this->readRoadWidthType($req->roadWidth);          // Read Road Width Type
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWfId->id);                                // Get Current Initiator ID
+            $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
+
+            $refFinisherRoleId = $this->getFinisherId($ulbWfId->id);
+            $finisherRoleId = collect(DB::select($refFinisherRoleId))->first();
             $req = $req->merge(
                 [
                     'road_type_mstr_id' => $roadWidthType,
@@ -312,12 +319,7 @@ class ApplySafController extends Controller
             $demand['details'] = $generatedDemandDtls;
 
             // Send to Workflow
-            $refInitiatorRoleId = $this->getInitiatorId($ulbWfId->id);                                // Get Current Initiator ID
-            $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
-
-            $refFinisherRoleId = $this->getFinisherId($ulbWfId->id);
-            $finisherRoleId = collect(DB::select($refFinisherRoleId))->first();
-            $currentRole = ($userType == 'Citizen') ? $initiatorRoleId->forward_role_id : $initiatorRoleId->forward_role_id;
+            $currentRole = ($userType == $this->_citizenUserType) ? $initiatorRoleId->forward_role_id : $initiatorRoleId->forward_role_id;
             $safReq = [
                 'assessment_type' => $req->assessmentType,
                 'ulb_id' => $req->ulbId,
@@ -390,6 +392,7 @@ class ApplySafController extends Controller
                 $mPropSafDemand->postDemands($reqPostDemand);
             }
 
+            $demand['details'] = $demand['details']->groupBy('ruleSet');
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
