@@ -17,7 +17,6 @@ use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
@@ -32,11 +31,13 @@ class ApplySafController extends Controller
     protected $_generatedDemand;
     protected $_propProperty;
     protected $_holdingNo;
+    protected $_citizenUserType;
     public function __construct()
     {
         $this->_todayDate = Carbon::now();
         $this->_safDemand = new PropSafsDemand();
         $this->_propProperty = new PropProperty();
+        $this->_citizenUserType = Config::get('workflow-constants.USER_TYPES.1');
     }
     /**
      * | Created On-17-02-2022 
@@ -99,7 +100,7 @@ class ApplySafController extends Controller
             $metaReqs['ulbId'] = $ulb_id;
             $metaReqs['userId'] = $user_id;
             $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->role_id;
-            if ($userType == 'Citizen') {
+            if ($userType == $this->_citizenUserType) {
                 $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->forward_role_id;         // Send to DA in Case of Citizen
                 $metaReqs['userId'] = null;
                 $metaReqs['citizenId'] = $user_id;
@@ -281,15 +282,26 @@ class ApplySafController extends Controller
         try {
             // Variable Assignments
             $userId = auth()->user()->id;
+            $userType = authUser()->user_type;
             $ulbId = $req->ulbId ?? auth()->user()->ulb_id;
             $propActiveSafs = new PropActiveSaf();
             $safCalculation = new SafCalculation;
+            $mPropFloors = new PropActiveSafsFloor();
+            $mPropSafDemand = $this->_safDemand;
             $demand = array();
             $safReq = array();
+            $reqFloors = $req->floors;
+            $applicationDate = $this->_todayDate->format('Y-m-d');
             $assessmentId = $req->assessmentType;
+
             // Derivative Assignments
             $ulbWfId = $this->readAssessUlbWfId($req, $ulbId);
             $roadWidthType = $this->readRoadWidthType($req->roadWidth);          // Read Road Width Type
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWfId->id);                                // Get Current Initiator ID
+            $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
+
+            $refFinisherRoleId = $this->getFinisherId($ulbWfId->id);
+            $finisherRoleId = collect(DB::select($refFinisherRoleId))->first();
             $req = $req->merge(
                 [
                     'road_type_mstr_id' => $roadWidthType,
@@ -304,9 +316,11 @@ class ApplySafController extends Controller
             $safTaxes = $safCalculation->calculateTax($req);
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $generatedDemandDtls = $this->generateSafDemand($safTaxes->original['data']['details']);
-            $demand['details'] = $generatedDemandDtls->groupBy('ruleSet');
+            $demand['details'] = $generatedDemandDtls;
 
-            $safReq = new Request([
+            // Send to Workflow
+            $currentRole = ($userType == $this->_citizenUserType) ? $initiatorRoleId->forward_role_id : $initiatorRoleId->forward_role_id;
+            $safReq = [
                 'assessment_type' => $req->assessmentType,
                 'ulb_id' => $req->ulbId,
                 'building_name' => $req->buildingName,
@@ -333,11 +347,59 @@ class ApplySafController extends Controller
 
                 'is_water_harvesting' => $req->isWaterHarvesting,
                 'area_of_plot' => $req->areaOfPlot,
-            ]);
+                'is_gb_saf' => true,
+                'application_date' => $applicationDate,
+                'initiator_role_id' => $currentRole,
+                'current_role' => $currentRole,
+                'finisher_role_id' => $finisherRoleId->role_id
+            ];
 
             DB::beginTransaction();
-            $propActiveSafs->storeGBSaf();
+            $createSaf = $propActiveSafs->storeGBSaf($safReq);           // Store Saf
+            $safId = $createSaf->original['safId'];
+            $safNo = $createSaf->original['safNo'];
+
+            // Store Floors
+            foreach ($reqFloors as $floor) {
+                $mPropFloors->addfloor($floor, $safId, $userId);
+            }
+
+            $this->_generatedDemand = $generatedDemandDtls;
+            if ($assessmentId == 2) {                                    // In Case Of Reassessment Amount Adjustment
+                $this->_holdingNo = $req->holdingNo;
+                $generatedDemandDtls = $this->adjustDemand();            // (2.3)
+            }
+            // Insert Demand
+            foreach ($generatedDemandDtls as $item) {
+                $reqPostDemand = [
+                    'saf_id' => $safId,
+                    'qtr' => $item['qtr'],
+                    'holding_tax' => $item['holdingTax'],
+                    'water_tax' => $item['waterTax'],
+                    'education_cess' => $item['educationTax'],
+                    'health_cess' => $item['healthCess'],
+                    'latrine_tax' => $item['latrineTax'],
+                    'additional_tax' => $item['additionTax'],
+                    'fyear' => $item['qtr'],
+                    'due_date' => $item['dueDate'],
+                    'amount' => $item['totalTax'],
+                    'user_id' => $userId,
+                    'ulb_id' => $ulbId,
+                    'arv' => $item['arv'],
+                    'adjust_amount' => $item['adjustAmount'],
+                    'balance' => $item['balance'],
+                ];
+                $mPropSafDemand->postDemands($reqPostDemand);
+            }
+
+            $demand['details'] = $demand['details']->groupBy('ruleSet');
             DB::commit();
+            return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
+                "safNo" => $safNo,
+                "applyDate" => $applicationDate,
+                "safId" => $safId,
+                "demand" => $demand
+            ], "010102", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010103", "1.0", "", "POST", $req->deviceId ?? "");

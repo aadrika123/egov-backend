@@ -103,6 +103,18 @@ class PropActiveSaf extends Model
         ]);
     }
 
+    /**
+     * | Store GB Saf
+     */
+    public function storeGBSaf($req)
+    {
+        $propActiveSafs = PropActiveSaf::create($req);
+        return response()->json([
+            'safId' => $propActiveSafs->id,
+            'safNo' => $propActiveSafs->saf_no,
+        ]);
+    }
+
     // Update
     public function edit($req)
     {

@@ -17,8 +17,12 @@ class PropActiveSafObserver
     public function created(PropActiveSaf $propActiveSaf)
     {
         $paramId = Config::get('PropertyConstaint.PARAM_ID');
+        $gbParamId = Config::get('PropertyConstaint.GB_PARAM');
         $idGeneration = new IdGeneration;
-        $safNo = $idGeneration->generateId($paramId, true);
+        if ($propActiveSaf->is_gb_saf == false)
+            $safNo = $idGeneration->generateId($paramId, true);
+        else
+            $safNo = $idGeneration->generateId($gbParamId, true);
         $propActiveSaf->saf_no = $safNo;
         $propActiveSaf->save();
     }

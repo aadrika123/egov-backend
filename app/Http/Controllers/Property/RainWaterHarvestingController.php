@@ -696,55 +696,6 @@ class RainWaterHarvestingController extends Controller
     //     }
     // }
 
-    //doc upload
-    // public function docUpload(Request $req)
-    // {
-    //     try {
-    //         if ($file = $req->file('rwhImage')) {
-    //             $docName = "rwhImage";
-    //             $name = $this->moveFile($docName, $file);
-
-    //             $checkExisting = PropHarvestingDoc::where('harvesting_id', $req->id)
-    //                 ->where('doc_type', $docName)
-    //                 ->get()
-    //                 ->first();
-
-    //             if ($checkExisting) {
-    //                 $updateDocument = new PropHarvestingDoc();
-    //                 $updateDocument->updateDocument($req, $docName, $name);
-    //             } else {
-
-    //                 $harvestingDoc = new PropHarvestingDoc();
-    //                 $harvestingDoc->harvesting_id = $req->id;
-    //                 $harvestingDoc->citizenDocUpload($harvestingDoc, $name, $docName);
-    //             }
-    //         }
-
-    //         if ($file = $req->file('rwhForm')) {
-    //             $docName = "rwhForm";
-    //             $name = $this->moveFile($docName, $file);
-
-    //             $checkExisting = PropHarvestingDoc::where('harvesting_id', $req->id)
-    //                 ->where('doc_type', $docName)
-    //                 ->get()
-    //                 ->first();
-
-    //             if ($checkExisting) {
-    //                 $updateDocument = new PropHarvestingDoc();
-    //                 $updateDocument->updateDocument($req, $docName, $name);
-    //             } else {
-
-    //                 $harvestingDoc = new PropHarvestingDoc();
-    //                 $harvestingDoc->harvesting_id = $req->id;
-    //                 $harvestingDoc->citizenDocUpload($harvestingDoc, $name, $docName);
-    //             }
-    //         }
-    //         return responseMsgs(true, "Successfully Uploaded", '', '011106', 01, '313ms - 354ms', 'Post', $req->deviceId);
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
-
     /**
      * | Independent Comments
      */

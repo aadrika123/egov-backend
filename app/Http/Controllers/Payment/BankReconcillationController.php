@@ -6,12 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Payment\PaymentReconciliation;
 use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
+use App\Models\Trade\ActiveTradeLicence;
 use App\Models\Trade\TradeChequeDtl;
 use App\Models\Trade\TradeTransaction;
+use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterChequeDtl;
+use App\Models\Water\WaterConnectionCharge;
+use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterTran;
+use App\Models\Water\WaterTranDetail;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -195,9 +202,9 @@ class BankReconcillationController extends Controller
             // $validator = Validator::make($request->all(), [
             //     'moduleId' => 'required',
             //     'chequeId' => 'required',
-            //     'status' => 'required'
-            //     'remarks' => 'required'
-            //     'clearanceDate'=> 'required'|date
+            //     'status' => 'required',
+            //     // 'remarks' => 'required',
+            //     'clearanceDate' => 'required' | 'date'
             // ]);
 
             // if ($validator->fails()) {
@@ -223,7 +230,7 @@ class BankReconcillationController extends Controller
                 $mChequeDtl->clear_bounce_date = $request->clearanceDate;
                 $mChequeDtl->bounce_amount = $request->cancellationCharge;
                 $mChequeDtl->remarks = $request->remarks;
-                // $mChequeDtl->save();
+                $mChequeDtl->save();
 
                 $transaction = PropTransaction::where('id', $mChequeDtl->transaction_id)
                     ->first();
@@ -245,17 +252,40 @@ class BankReconcillationController extends Controller
                     PropTransaction::where('id', $mChequeDtl->transaction_id)
                         ->update(
                             [
-                                // 'verify_status' => 3,
-                                // 'verify_date' => Carbon::now(),
-                                // 'verified_by' => $userId
+                                'verify_status' => 1,
+                                'verify_date' => Carbon::now(),
+                                'verified_by' => $userId
                             ]
                         );
 
                     $propTranDtls = PropTranDtl::where('tran_id', $transaction->id)->get();
 
-                    foreach ($propTranDtls as $propTranDtl) {
 
-                        return PropDemand::where()->get();
+                    foreach ($propTranDtls as $propTranDtl) {
+                        $propDemandId = $propTranDtl->prop_demand_id;
+                        $safDemandId = $propTranDtl->saf_demand_id;
+
+                        if ($safDemandId) {
+                            $safDemandDtl =  PropSafsDemand::where('id', $safDemandId)->first();
+                            PropSafsDemand::where('id', $safDemandId)
+                                ->update(
+                                    [
+                                        'paid_status' => 0,
+                                        'balance' => $safDemandDtl->amount - $safDemandDtl->adjust_amount,
+                                    ]
+                                );
+                        }
+
+                        if ($propDemandId) {
+                            $propDemandDtl =  PropDemand::where('id', $propDemandId)->first();
+                            PropDemand::where('id', $propDemandId)
+                                ->update(
+                                    [
+                                        'paid_status' => 0,
+                                        'balance' => $propDemandDtl->amount - $propDemandDtl->adjust_amt,
+                                    ]
+                                );
+                        }
                     }
                 }
 
@@ -297,6 +327,70 @@ class BankReconcillationController extends Controller
                 $transaction = WaterTran::where('id', $mChequeDtl->transaction_id)
                     ->first();
 
+
+                if ($request->status == 'clear') {
+
+                    WaterTran::where('id', $mChequeDtl->transaction_id)
+                        ->update(
+                            [
+                                'verify_status' => 1,
+                                'verified_date' => Carbon::now(),
+                                'verified_by' => $userId
+                            ]
+                        );
+                }
+
+                if ($request->status == 'bounce') {
+
+                    WaterTran::where('id', $mChequeDtl->transaction_id)
+                        ->update(
+                            [
+                                'verify_status' => 1,
+                                'verified_date' => Carbon::now(),
+                                'verified_by' => $userId
+                            ]
+                        );
+
+                    $waterTranDtls = WaterTranDetail::where('tran_id', $transaction->id)->first();
+                    $demandId = $waterTranDtls->demand_id;
+
+                    if ($transaction->tran_type == 'Demand Collection') {
+                        WaterConsumerDemand::where('id', $demandId)
+                            ->update(
+                                [
+                                    'paid_status' => 0
+                                ]
+                            );
+                    }
+
+                    if ($transaction->tran_type != 'Demand Collection') {
+                        $connectionChargeDtl =  WaterConnectionCharge::find($demandId);
+                        WaterConnectionCharge::where('id', $demandId)
+                            ->update(
+                                [
+                                    'paid_status' => 0
+                                ]
+                            );
+
+                        WaterApplication::where('id', $connectionChargeDtl->application_id)
+                            ->update(
+                                [
+                                    'payment_status' => 0
+                                ]
+                            );
+
+                        //after penalty resolved
+
+                        // WaterPenaltyInstallment::where('apply_connection_id',$connectionChargeDtl->application_id)
+                        // ->update(
+                        //     [
+                        //         'payment_status' => 0
+                        //     ]
+                        // );
+                    }
+                }
+
+
                 $request->merge([
                     'id' => $mChequeDtl->id,
                     'paymentMode' => $transaction->payment_mode,
@@ -330,10 +424,43 @@ class BankReconcillationController extends Controller
                 $mChequeDtl->clear_bounce_date = $request->clearanceDate;
                 $mChequeDtl->bounce_amount = $request->cancellationCharge;
                 $mChequeDtl->remarks = $request->remarks;
-                $mChequeDtl->save();
+                // $mChequeDtl->save();
 
                 $transaction = TradeTransaction::where('id', $mChequeDtl->tran_id)
                     ->first();
+
+                if ($request->status == 'clear') {
+
+                    TradeTransaction::where('id', $mChequeDtl->tran_id)
+                        ->update(
+                            [
+                                'is_verified' => 1,
+                                'verify_date' => Carbon::now(),
+                                'verify_by' => $userId
+                            ]
+                        );
+                }
+
+                if ($request->status == 'bounce') {
+
+                    TradeTransaction::where('id', $mChequeDtl->tran_id)
+                        ->update(
+                            [
+                                'is_verified' => 1,
+                                'verify_date' => Carbon::now(),
+                                'verify_by' => $userId
+                            ]
+                        );
+                }
+
+                //  Update in trade applications
+                ActiveTradeLicence::where('id', $transaction->temp_id)
+                    ->update(
+                        [
+                            'payment_status' => 0
+                        ]
+                    );
+
 
                 $request->merge([
                     'id' => $mChequeDtl->id,

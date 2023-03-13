@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Models\Property\PropDemand;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IReport;
 use App\Traits\Auth;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -178,18 +180,70 @@ class ReportController extends Controller
     public function wardWiseHoldingReport(Request $request)
     {
         $wardMstrId = $request->wardMstrId;
+        $ulbId = authUser()->ulb_id;
+        $currentMonth = Carbon::now()->month;
+        $currentYear = Carbon::now()->year;
+        $start = Carbon::createFromDate($request->year, 4, 1);
+
+        $fromDate = $start->format('Y-m-d');
+        if ($currentMonth > 3) {
+            $end = Carbon::createFromDate($currentYear + 1, 3, 31);
+            $toDate = $end->format('Y-m-d');
+        } else
+            $toDate = ($currentYear . '-03-31');
 
 
+        $data =  PropDemand::select(
+            'holding_no',
+            'new_holding_no',
+            'owner_name',
+            'mobile_no',
+            'pt_no',
+            'prop_address',
+            'prop_demands.balance',
+            'prop_demands.ward_mstr_id',
+            'ward_name as ward_no',
+            'fyear',
+        )
+            ->join('prop_properties', 'prop_properties.id', 'prop_demands.property_id')
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_demands.property_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_demands.ward_mstr_id')
+            ->where('paid_status', 0)
+            ->whereBetween('due_date', [$fromDate, $toDate])
+            ->where('prop_demands.ulb_id', $ulbId)
+            ->where('prop_demands.ward_mstr_id', $wardMstrId)
+            ->groupby(
+                'prop_demands.property_id',
+                'holding_no',
+                'new_holding_no',
+                'pt_no',
+                'prop_demands.balance',
+                'prop_demands.ward_mstr_id',
+                'fyear',
+                'prop_address',
+                'owner_name',
+                'mobile_no',
+                'ward_name'
+            )
+            ->get();
+        return responseMsgs(true, "Ward Wise Holding Data!", $data, '010801', '01', '382ms-547ms', 'Post', '');
+    }
 
-        $sql = ("SELECT *  FROM prop_demands
-                    WHERE paid_status = 0 
-                    AND fyear = '2022-2023'
-                    AND ward_mstr_id = $wardMstrId
-                    AND ulb_id = $request->ulbId
-                    ORDER BY id desc
-                "
-        );
+    public function listFY(Request $request)
+    {
+        $currentYear = Carbon::now()->year;
+        $financialyear = $currentYear - 8;
+        $financialYears = [];
+        $start = Carbon::create($financialyear, 4, 1);
+        $end = Carbon::now();
 
-        return DB::select($sql);
+        while ($end >= $start) {
+            // Determine the end of the current financial year
+            $financialYearEnd = $end->month >= 4 ? Carbon::create($end->year, 3, 31) : Carbon::create($end->year - 1, 3, 31);
+            $financialYear = $financialYearEnd->format('Y') . '-' . $end->format('Y');
+            $financialYears[] = $financialYear;
+            $end->subYear();
+        }
+        return responseMsgs(true, "Financial Year List", $financialYears, '010801', '01', '382ms-547ms', 'Post', '');
     }
 }
