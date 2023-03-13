@@ -129,7 +129,8 @@ class WaterPaymentController extends Controller
                 "pipe_quality"          => $refMasterData['PIPE_QUALITY'],
                 "road_type"             => $refMasterData['ROAD_TYPE'],
                 "ferule_size"           => $refMasterData['FERULE_SIZE'],
-                "deactivation_criteria" => $refMasterData['DEACTIVATION_CRITERIA']
+                "deactivation_criteria" => $refMasterData['DEACTIVATION_CRITERIA'],
+                "meter_connection_type" => $refMasterData['METER_CONNECTION_TYPE']
             ];
             $returnValues = collect($masterValues)->merge($configMasterValues);
             return responseMsgs(true, "list of Water Master Data!", remove_null($returnValues), "", "01", "ms", "POST", "");

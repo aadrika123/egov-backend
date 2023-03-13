@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\reqDeactivate;
+use App\Http\Requests\Water\reqMeterEntry;
 use App\Models\Water\WaterConsumer as WaterWaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerDisconnection;
@@ -12,6 +13,7 @@ use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterDisconnection;
 use App\Repository\Water\Interfaces\IConsumer;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -226,15 +228,18 @@ class WaterConsumer extends Controller
         | Not working  
         | Check the parameter for the autherised person
      */
-    public function saveMeterDetails(Request $request)
+    public function saveUpdateMeterDetails(reqMeterEntry $request)
     {
         try {
             $mWaterConsumerMeter = new WaterConsumerMeter();
             $this->checkParamForMeterEntry($request);
-            
-            $mWaterConsumerMeter->saveMeterDetails($request);
+            DB::beginTransaction();
+            $documentPath = $this->saveTheMeterDocument($request);
+            $mWaterConsumerMeter->saveMeterDetails($request, $documentPath);
+            DB::commit();
             return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
@@ -249,25 +254,83 @@ class WaterConsumer extends Controller
     public function checkParamForMeterEntry($request)
     {
         $mWaterWaterConsumer = new WaterWaterConsumer();
-        $mWaterWaterConsumer->getConsumerDetailById($request->consumerId);
+        $mWaterConsumerMeter = new WaterConsumerMeter();
+        $mWaterConsumerDemand = new WaterConsumerDemand();
+        $refMeterConnType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
+
+        $refConsumerId = $request->consumerId;
+
+        $mWaterWaterConsumer->getConsumerDetailById($refConsumerId);
+        $consumerMeterDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
+        $consumerDemand = $mWaterConsumerDemand->getFirstConsumerDemand($refConsumerId)->first();
+        $this->checkForMeterFixedCase($request, $consumerMeterDetails, $refMeterConnType);
+
+        switch ($request) {
+            case ($request->connectionDate > Carbon::now()->format("d-m-Y")):
+                throw new Exception("Connection Date can not be greater than Current Date!");
+                break;
+            case ($request->connectionType != $refMeterConnType['Meter/Fixed']):
+                if ($consumerMeterDetails->final_meter_reading >= $request->newMeterInitialReading) {
+                    throw new Exception("New Initial Rading Should be Greater Than Old Meter Reading!");
+                }
+                break;
+            case ($request->connectionType == $refMeterConnType['Meter']):
+                $refMonth = $consumerMeterDetails->connection_date;
+                $refMonth = Carbon::parse($refMonth)->format('m');
+                if ($refMonth != Carbon::now()->format('m')) {
+                    if ($consumerMeterDetails->connection_type == $request->connectionType) {
+                        throw new Exception("You can not update same connection type as before!");
+                    }
+                }
+                break;
+            case ($request->connectionType != $refMeterConnType['Meter']):
+                if ($consumerMeterDetails->connection_type == $request->connectionType) {
+                    throw new Exception("You can not update same connection type as before!");
+                }
+                break;
+        }
+
+        if (isset($consumerMeterDetails)) {
+            switch ($consumerMeterDetails) {
+                case ($consumerMeterDetails->connection_date >= $request->connectionDate):
+                    throw new Exception("Connection Date should be grater than previous Connection date!");
+            }
+        }
+        if (isset($consumerDemand)) {
+            switch ($consumerDemand) {
+                case ($consumerDemand->demand_upto > $request->connectionDate):
+                    throw new Exception("Can not update Connection Date, Demand already generated upto that month!");
+                    break;
+            }
+        }
     }
 
+    /**
+     * | Check for the Meter/Fixed 
+     * | @param request
+     * | @param consumerMeterDetails
+        | Serial No : 04.01.01
+        | Not Working
+     */
+    public function checkForMeterFixedCase($request, $consumerMeterDetails, $refMeterConnType)
+    {
+        if ($request->connectionType == $refMeterConnType['Meter/Fixed']) {
+            $refConnectionType = 1;
+            if ($consumerMeterDetails->connection_type == $refConnectionType && $consumerMeterDetails->meter_status == 0) {
+                throw new Exception("You can not update same connection type as before!");
+            }
+        }
+    }
 
     /**
-     * | Deactivation Consumer Appliation 
+     * | Save the Document for the Meter Entry 
+     * | Return the Document Path
      * | @param request
-     * | @var 
-     * | @return 
-        | Serial No : 05
-        | Not Working 
+        | Serial No : 04.02
+        | Not Working
      */
-    public function consumerDeactivateApplication(Request $request)
+    public function saveTheMeterDocument($request)
     {
-        try {
-            $mWaterWaterConsumer = new WaterWaterConsumer();
-            $refWaterConsumer = $mWaterWaterConsumer->getConsumerDetailById($request->consumerId);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
-        }
+        # Save the Document 
     }
 }

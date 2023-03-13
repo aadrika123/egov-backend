@@ -96,6 +96,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/list-demand', 'listConsumerDemand');                                      // Consumer
         Route::post('admin/consumer/deactivation', 'deactivateConsumer');                               // Admin / Not Used
         Route::post('admin/consumer/generate-demand', 'saveGenerateConsumerDemand');                    // Admin /
+        Route::post('admin/consumer/save-connection-meter', 'saveUpdateMeterDetails');                     // Admin
     });
 });
 

@@ -73,4 +73,16 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand->created_at               =  Carbon::now();
         $mWaterConsumerDemand->save();
     }
+
+
+    /**
+     * | Get Demand According to consumerId and payment status false 
+     */
+    public function getFirstConsumerDemand($consumerId)
+    {
+        return WaterConsumerDemand::where('consumer_id', $consumerId)
+            ->where('paid_status', false)
+            ->where('status', true)
+            ->orderByDesc('id');
+    }
 }
