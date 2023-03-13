@@ -17,7 +17,6 @@ use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
@@ -281,6 +280,7 @@ class ApplySafController extends Controller
         try {
             // Variable Assignments
             $userId = auth()->user()->id;
+            $userType = authUser()->user_type;
             $ulbId = $req->ulbId ?? auth()->user()->ulb_id;
             $propActiveSafs = new PropActiveSaf();
             $safCalculation = new SafCalculation;
@@ -290,6 +290,7 @@ class ApplySafController extends Controller
             $safReq = array();
             $reqFloors = $req->floors;
             $applicationDate = $this->_todayDate->format('Y-m-d');
+            $assessmentId = $req->assessmentType;
 
             // Derivative Assignments
             $ulbWfId = $this->readAssessUlbWfId($req, $ulbId);
@@ -310,6 +311,13 @@ class ApplySafController extends Controller
             $generatedDemandDtls = $this->generateSafDemand($safTaxes->original['data']['details']);
             $demand['details'] = $generatedDemandDtls;
 
+            // Send to Workflow
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWfId->id);                                // Get Current Initiator ID
+            $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
+
+            $refFinisherRoleId = $this->getFinisherId($ulbWfId->id);
+            $finisherRoleId = collect(DB::select($refFinisherRoleId))->first();
+            $currentRole = ($userType == 'Citizen') ? $initiatorRoleId->forward_role_id : $initiatorRoleId->forward_role_id;
             $safReq = [
                 'assessment_type' => $req->assessmentType,
                 'ulb_id' => $req->ulbId,
@@ -338,7 +346,10 @@ class ApplySafController extends Controller
                 'is_water_harvesting' => $req->isWaterHarvesting,
                 'area_of_plot' => $req->areaOfPlot,
                 'is_gb_saf' => true,
-                'application_date' => $applicationDate
+                'application_date' => $applicationDate,
+                'initiator_role_id' => $currentRole,
+                'current_role' => $currentRole,
+                'finisher_role_id' => $finisherRoleId->role_id
             ];
 
             DB::beginTransaction();
@@ -350,25 +361,35 @@ class ApplySafController extends Controller
             foreach ($reqFloors as $floor) {
                 $mPropFloors->addfloor($floor, $safId, $userId);
             }
-            foreach ($demand['details'] as $item) {
-                $reqPostDemand = new Request([
+
+            $this->_generatedDemand = $generatedDemandDtls;
+            if ($assessmentId == 2) {                                    // In Case Of Reassessment Amount Adjustment
+                $this->_holdingNo = $req->holdingNo;
+                $generatedDemandDtls = $this->adjustDemand();            // (2.3)
+            }
+            // Insert Demand
+            foreach ($generatedDemandDtls as $item) {
+                $reqPostDemand = [
                     'saf_id' => $safId,
                     'qtr' => $item['qtr'],
                     'holding_tax' => $item['holdingTax'],
-                    'water_tax' => $item['qtr'],
-                    'education_cess' => $item['qtr'],
-                    'health_cess' => $item['qtr'],
-                    'latrine_tax' => $item['qtr'],
-                    'additional_tax' => $item['qtr'],
+                    'water_tax' => $item['waterTax'],
+                    'education_cess' => $item['educationTax'],
+                    'health_cess' => $item['healthCess'],
+                    'latrine_tax' => $item['latrineTax'],
+                    'additional_tax' => $item['additionTax'],
                     'fyear' => $item['qtr'],
-                    'due_date' => $item['qtr'],
-                    'amount' => $item['qtr'],
-                    'user_id' => $item['qtr'],
-                    'ulb_id' => $item['qtr'],
-                    'arv' => $item['qtr'],
-                ]);
+                    'due_date' => $item['dueDate'],
+                    'amount' => $item['totalTax'],
+                    'user_id' => $userId,
+                    'ulb_id' => $ulbId,
+                    'arv' => $item['arv'],
+                    'adjust_amount' => $item['adjustAmount'],
+                    'balance' => $item['balance'],
+                ];
+                $mPropSafDemand->postDemands($reqPostDemand);
             }
-            return $demand;
+
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
