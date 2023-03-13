@@ -353,7 +353,6 @@ class WaterConsumer extends Controller
             $request->validate([
                 'consumerId' => "required|digits_between:1,9223372036854775807",
             ]);
-
             $mWaterConsumerMeter = new WaterConsumerMeter();
             $meterList = $mWaterConsumerMeter->getMeterDetailsByConsumerId($request->consumerId)->get();
             return responseMsgs(true, "Meter List!", remove_null($meterList), "", "01", ".ms", "POST", $request->deviceId);
