@@ -180,7 +180,7 @@ class ReportController extends Controller
     public function wardWiseHoldingReport(Request $request)
     {
         $wardMstrId = $request->wardMstrId;
-        $ulbId = authUser()->id;
+        $ulbId = authUser()->ulb_id;
         $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
         $start = Carbon::createFromDate($request->year, 4, 1);
@@ -202,10 +202,12 @@ class ReportController extends Controller
             'prop_address',
             'prop_demands.balance',
             'prop_demands.ward_mstr_id',
+            'ward_name as ward_no',
             'fyear',
         )
             ->join('prop_properties', 'prop_properties.id', 'prop_demands.property_id')
             ->join('prop_owners', 'prop_owners.property_id', 'prop_demands.property_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_demands.ward_mstr_id')
             ->where('paid_status', 0)
             ->whereBetween('due_date', [$fromDate, $toDate])
             ->where('prop_demands.ulb_id', $ulbId)
@@ -221,8 +223,9 @@ class ReportController extends Controller
                 'prop_address',
                 'owner_name',
                 'mobile_no',
+                'ward_name'
             )
-            ->get();
+            ->paginate($request->perPage);
         return responseMsgs(true, "Ward Wise Holding Data!", $data, '010801', '01', '382ms-547ms', 'Post', '');
     }
 }
