@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\MicroServices\IdGeneration;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
-use App\Models\Property\PropDemand;
-use App\Models\Property\PropFloor;
-use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Workflows\WfRoleusermap;
@@ -15,13 +13,12 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
-use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Property\Concession;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Exception;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * | Created On-13-03-2023
@@ -32,12 +29,7 @@ use Illuminate\Support\Facades\DB;
 class GbSafController extends Controller
 {
     use Concession;
-    protected $Repository;
-    protected $saf_repository;
-    public function __construct(iSafRepository $saf_repository)
-    {
-        $this->Repository = $saf_repository;
-    }
+
     /**
      * | Inbox for GB Saf
      */
@@ -47,6 +39,7 @@ class GbSafController extends Controller
             $mWfRoleUser = new WfRoleusermap();
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $mpropActiveSafs = new PropActiveSaf();
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
@@ -183,6 +176,8 @@ class GbSafController extends Controller
             $mWfRoleUsermap = new WfRoleusermap();
             $mPropSafMemoDtl = new PropSafMemoDtl();
             $mPropSafDemand = new PropSafsDemand();
+            $idGeneration = new IdGeneration;
+            $ptNo = $idGeneration->generatePtNo(true, $safDetails->ulb_id);
             $todayDate = Carbon::now()->format('Y-m-d');
             $currentFinYear = calculateFYear($todayDate);
 
@@ -210,6 +205,7 @@ class GbSafController extends Controller
             // Approval
             if ($req->status == 1) {
                 $safDetails->saf_pending_status = 0;
+                $safDetails->pt_no = $ptNo;
                 $safDetails->save();
 
 
@@ -226,9 +222,10 @@ class GbSafController extends Controller
                     'ward_id' => $activeSaf->ward_mstr_id,
                     'saf_id' => $safId
                 ]);
+
                 $memoReqs = new Request($mergedDemand);
                 $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
-                $this->finalApprovalSafReplica($activeSaf, $floorDetails);
+                $this->finalApprovalSafReplica($activeSaf, $floorDetails, $ptNo);
                 $msg = "Application Approved Successfully";
             }
             // Rejection
@@ -238,7 +235,7 @@ class GbSafController extends Controller
             }
 
             DB::commit();
-            return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
+            return responseMsgs(true, $msg, ['holdingNo' => $safDetails->pt_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -248,14 +245,15 @@ class GbSafController extends Controller
     /**
      * | Replication of Final Approval SAf(10.1)
      */
-    public function finalApprovalSafReplica($activeSaf, $floorDetails)
+    public function finalApprovalSafReplica($activeSaf, $floorDetails, $ptNo)
     {
 
         // Approveed SAF Application replication
-        $rejectedSaf = $activeSaf->replicate();
-        $rejectedSaf->setTable('prop_safs');
-        $rejectedSaf->id = $activeSaf->id;
-        $rejectedSaf->push();
+        $approvedSaf = $activeSaf->replicate();
+        $approvedSaf->setTable('prop_safs');
+        $approvedSaf->id = $activeSaf->id;
+        $approvedSaf->pt_no = $ptNo;
+        $approvedSaf->push();
         $activeSaf->delete();
 
         // Saf Floors Replication

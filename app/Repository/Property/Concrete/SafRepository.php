@@ -41,38 +41,4 @@ class SafRepository implements iSafRepository
             ->where('payment_status', 1);
         return $data;
     }
-
-    /**
-     * | Get GB Saf Details
-     */
-    public function getGbSaf($workflowIds)
-    {
-        $data = DB::table('prop_active_safs')
-            ->join('ref_prop_gbpropusagetypes as p', 'p.id', '=', 'prop_active_safs.gb_usage_types')
-            ->join('ref_prop_gbbuildingusagetypes as q', 'q.id', '=', 'prop_active_safs.gb_prop_usage_types')
-            ->join('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
-            ->join('ref_prop_road_types as r', 'r.id', 'prop_active_safs.road_type_mstr_id')
-            ->select(
-                'prop_active_safs.id',
-                'prop_active_safs.saf_no',
-                'prop_active_safs.ward_mstr_id',
-                'ward.ward_name as ward_no',
-                'prop_active_safs.assessment_type as assessment',
-                'prop_active_safs.application_date as apply_date',
-                'prop_active_safs.parked',
-                'prop_active_safs.prop_address',
-                'gb_office_name',
-                'gb_usage_types',
-                'gb_prop_usage_types',
-                'prop_usage_type',
-                'building_type',
-                'road_type_mstr_id',
-                'road_type',
-                'area_of_plot'
-            )
-            ->whereIn('workflow_id', $workflowIds)
-            ->where('is_gb_saf', true)
-            ->where('payment_status', 1);
-        return $data;
-    }
 }
