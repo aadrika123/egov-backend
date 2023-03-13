@@ -5,10 +5,11 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PropGbOfficer extends Model
+class PropActiveGbOfficer extends Model
 {
     use HasFactory;
     protected $guarded = [];
+    protected $table = 'prop_active_gbofficers';
 
     /**
      * | Created By-Anshu Kumar
@@ -17,6 +18,6 @@ class PropGbOfficer extends Model
      */
     public function store($req)
     {
-        PropGbOfficer::create($req);
+        PropActiveGbOfficer::create($req);
     }
 }

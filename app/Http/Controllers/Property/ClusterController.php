@@ -175,6 +175,8 @@ class ClusterController extends Controller
             $notActive = "Not a valid cluter ID!";
             $mCluster = new Cluster();
             $checkActiveCluster =  $mCluster->checkActiveCluster($request->clusterId);
+            if (collect($checkActiveCluster)->isEmpty())
+                throw new Exception("Cluster Not Found");
             $verifyCluster = collect($checkActiveCluster)->first();
             if ($verifyCluster) {
                 $holdingList = collect($request->holdingNo);
