@@ -228,4 +228,22 @@ class ReportController extends Controller
             ->get();
         return responseMsgs(true, "Ward Wise Holding Data!", $data, '010801', '01', '382ms-547ms', 'Post', '');
     }
+
+    public function listFY(Request $request)
+    {
+        $currentYear = Carbon::now()->year;
+        $financialyear = $currentYear - 8;
+        $financialYears = [];
+        $start = Carbon::create($financialyear, 4, 1);
+        $end = Carbon::now();
+
+        while ($end >= $start) {
+            // Determine the end of the current financial year
+            $financialYearEnd = $end->month >= 4 ? Carbon::create($end->year, 3, 31) : Carbon::create($end->year - 1, 3, 31);
+            $financialYear = $financialYearEnd->format('Y') . '-' . $end->format('Y');
+            $financialYears[] = $financialYear;
+            $end->subYear();
+        }
+        return responseMsgs(true, "Financial Year List", $financialYears, '010801', '01', '382ms-547ms', 'Post', '');
+    }
 }

@@ -9,6 +9,7 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
+use App\Models\Trade\ActiveTradeLicence;
 use App\Models\Trade\TradeChequeDtl;
 use App\Models\Trade\TradeTransaction;
 use App\Models\Water\WaterApplication;
@@ -251,7 +252,7 @@ class BankReconcillationController extends Controller
                     PropTransaction::where('id', $mChequeDtl->transaction_id)
                         ->update(
                             [
-                                'verify_status' => 3,
+                                'verify_status' => 1,
                                 'verify_date' => Carbon::now(),
                                 'verified_by' => $userId
                             ]
@@ -341,14 +342,14 @@ class BankReconcillationController extends Controller
 
                 if ($request->status == 'bounce') {
 
-                    // WaterTran::where('id', $mChequeDtl->transaction_id)
-                    //     ->update(
-                    //         [
-                    //             'verify_status' => 3,
-                    //             'verified_date' => Carbon::now(),
-                    //             'verified_by' => $userId
-                    //         ]
-                    //     );
+                    WaterTran::where('id', $mChequeDtl->transaction_id)
+                        ->update(
+                            [
+                                'verify_status' => 1,
+                                'verified_date' => Carbon::now(),
+                                'verified_by' => $userId
+                            ]
+                        );
 
                     $waterTranDtls = WaterTranDetail::where('tran_id', $transaction->id)->first();
                     $demandId = $waterTranDtls->demand_id;
@@ -423,14 +424,14 @@ class BankReconcillationController extends Controller
                 $mChequeDtl->clear_bounce_date = $request->clearanceDate;
                 $mChequeDtl->bounce_amount = $request->cancellationCharge;
                 $mChequeDtl->remarks = $request->remarks;
-                $mChequeDtl->save();
+                // $mChequeDtl->save();
 
                 $transaction = TradeTransaction::where('id', $mChequeDtl->tran_id)
                     ->first();
 
                 if ($request->status == 'clear') {
 
-                    TradeTransaction::where('id', $mChequeDtl->transaction_id)
+                    TradeTransaction::where('id', $mChequeDtl->tran_id)
                         ->update(
                             [
                                 'is_verified' => 1,
@@ -442,10 +443,10 @@ class BankReconcillationController extends Controller
 
                 if ($request->status == 'bounce') {
 
-                    TradeTransaction::where('id', $mChequeDtl->transaction_id)
+                    TradeTransaction::where('id', $mChequeDtl->tran_id)
                         ->update(
                             [
-                                'is_verified' => 0,
+                                'is_verified' => 1,
                                 'verify_date' => Carbon::now(),
                                 'verify_by' => $userId
                             ]
@@ -453,6 +454,13 @@ class BankReconcillationController extends Controller
                 }
 
                 //  Update in trade applications
+                ActiveTradeLicence::where('id', $transaction->temp_id)
+                    ->update(
+                        [
+                            'payment_status' => 0
+                        ]
+                    );
+
 
                 $request->merge([
                     'id' => $mChequeDtl->id,

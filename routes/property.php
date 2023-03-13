@@ -421,5 +421,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/saf/saf-sam-fam-geotagging', 'safSamFamGeotagging');
 
     Route::post('reports/ward-wise-holding', 'wardWiseHoldingReport');
+    Route::post('reports/list-fy', 'listFY');
   });
 });
