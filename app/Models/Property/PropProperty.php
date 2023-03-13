@@ -44,7 +44,7 @@ class PropProperty extends Model
     // Get SAf Id by Holding No
     public function getSafIdByHoldingNo($holdingNo)
     {
-        return PropProperty::select('saf_id')
+        return PropProperty::select('saf_id', 'id')
             ->where('holding_no', $holdingNo)
             ->orWhere('new_holding_no', $holdingNo)
             ->first();

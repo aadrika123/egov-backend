@@ -278,10 +278,10 @@ class WaterConsumer extends Model
      */
     public function dissconnetConsumer($consumerId)
     {
-        WaterConsumer::where('id',$consumerId)
-        ->update([
-            'status' => 0
-        ]);
+        WaterConsumer::where('id', $consumerId)
+            ->update([
+                'status' => 0
+            ]);
     }
 
     /**
@@ -290,8 +290,7 @@ class WaterConsumer extends Model
      */
     public function getConsumerById($consumerId)
     {
-        WaterConsumer::where('id',$consumerId)
-        ->firstOrFail();
+        WaterConsumer::where('id', $consumerId)
+            ->firstOrFail();
     }
-
 }

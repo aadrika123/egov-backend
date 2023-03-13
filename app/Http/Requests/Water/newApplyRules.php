@@ -34,9 +34,7 @@ class newApplyRules extends FormRequest
         $rules['owners'] = "required|array";
         if (isset($this->owners) && $this->owners) {
             $rules["owners.*.ownerName"] = "required";
-            $rules["owners.*.guardianName"] = "required";
             $rules["owners.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
-            // $rules["owners.*.email"] = "required|email";
         }
         return $rules;
     }

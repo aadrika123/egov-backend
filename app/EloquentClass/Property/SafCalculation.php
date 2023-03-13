@@ -1061,7 +1061,7 @@ class SafCalculation
         if (isset($this->_propertyDetails['isGBSaf'])) {
             if ($this->_propertyDetails['isGBSaf'] == true && $this->_isResidential == true) {
                 $this->_GRID['demand']['isGBSaf'] = true;
-                $this->_GRID['demand']['totalTax'] = $this->_GRID['demand']['totalTax'] / 2;
+                $this->_GRID['demand']['totalTax'] = roundFigure($this->_GRID['demand']['totalTax'] / 2);
             }
         }
 

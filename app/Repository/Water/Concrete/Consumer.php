@@ -357,11 +357,11 @@ class Consumer implements IConsumer
 
                 if ($mPropertyTypeId == 1) 
                 {
-                    $where = " category='$mCategory' and ceil($diff_reading)>=from_unit ";
+                    $where = " category='$mCategory' and ceil($diff_reading)>=from_unit and ceil($diff_reading)<=upto_unit ";
                 } 
                 else 
                 {
-                    $where = " ceil($diff_reading)>=from_unit ";
+                    $where = " ceil($diff_reading)>=from_unit and ceil($diff_reading)<=upto_unit ";
                 }
                 $get_meter_calc["meter_rate"] = 9; 
                 if(isset( $refUlb->ulb_type) && $refUlb->ulb_type==2)
@@ -617,11 +617,11 @@ class Consumer implements IConsumer
                 
                 if ($property_type_id == 1) 
                 {
-                    $where = " category='$category' and ceil($diff_reading)>=from_unit ";
+                    $where = " category='$category' and ceil($diff_reading)>=from_unit and celi($diff_reading)<=upto_unit ";
                 } 
                 else 
                 {
-                    $where = " ceil($diff_reading)>=from_unit ";
+                    $where = " ceil($diff_reading)>=from_unit and celi($diff_reading)<=upto_unit ";
                 }
 
                 $temp_pro = $property_type_id;
