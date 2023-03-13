@@ -132,6 +132,7 @@ class HoldingTaxController extends Controller
             $mPropProperty = new PropProperty();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
             $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
+            $currentFYear = getFY();
             $loggedInUserType = authUser()->user_type ?? "Citizen";
             $mPropOwners = new PropOwner();
             $pendingFYears = collect();
@@ -170,7 +171,7 @@ class HoldingTaxController extends Controller
             $onePercTax = roundFigure($demandList->sum('onePercPenaltyTax'));
             $rwhPenaltyTax = roundFigure($demandList->sum('additional_tax'));
             $adjustAmt = roundFigure($demandList->sum('adjust_amt'));
-            $mLastQuarterDemand = $demandList->last()->balance;
+            $mLastQuarterDemand = $demandList->where('fyear', $currentFYear)->sum('balance');
 
             collect($demandList)->map(function ($value) use ($pendingFYears, $qtrs) {
                 $fYear = $value->fyear;

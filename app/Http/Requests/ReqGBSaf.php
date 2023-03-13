@@ -51,7 +51,9 @@ class ReqGBSaf extends FormRequest
             "isHoardingBoard" => "required|bool",
             "isPetrolPump" => "required|bool",
             "isWaterHarvesting" => "required|bool",
-            "areaOfPlot" => "required|numeric"
+            "areaOfPlot" => "required|numeric",
+            "officerMobile" => "nullable|numeric|digits:10",
+            "officerEmail" => "nullable|email"
         ];
 
         if ($this->isMobileTower == true) {

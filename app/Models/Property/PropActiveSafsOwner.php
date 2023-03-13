@@ -75,6 +75,15 @@ class PropActiveSafsOwner extends Model
     }
 
     /**
+     * | Get First Owner By Saf Id
+     */
+    public function getFirstOwnerBySafId($safId)
+    {
+        return PropActiveSafsOwner::where('saf_id', $safId)
+            ->first();
+    }
+
+    /**
      * | Citizen Owner Edit
      */
     public function ownerEdit($req, $citizenId)
