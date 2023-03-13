@@ -442,7 +442,7 @@ class BankReconcillationController extends Controller
 
                 if ($request->status == 'bounce') {
 
-                    WaterTran::where('id', $mChequeDtl->transaction_id)
+                    TradeTransaction::where('id', $mChequeDtl->transaction_id)
                         ->update(
                             [
                                 'is_verified' => 0,
