@@ -310,7 +310,9 @@ class WaterConsumer extends Controller
             if ($consumerMeterDetails->connection_type == $refConnectionType && $consumerMeterDetails->meter_status == 0) {
                 throw new Exception("You can not update same connection type as before!");
             }
-            // if()
+            if ($request->meterNo != $consumerMeterDetails->meter_no) {
+                throw new Exception("You Can Meter/Fixed The Connection On Priviuse Meter");
+            }
         }
     }
 
