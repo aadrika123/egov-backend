@@ -285,6 +285,7 @@ class ApplySafController extends Controller
             $propActiveSafs = new PropActiveSaf();
             $safCalculation = new SafCalculation;
             $mPropFloors = new PropActiveSafsFloor();
+            $mPropSafDemand = $this->_safDemand;
             $demand = array();
             $safReq = array();
             $reqFloors = $req->floors;
@@ -307,7 +308,7 @@ class ApplySafController extends Controller
             $safTaxes = $safCalculation->calculateTax($req);
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $generatedDemandDtls = $this->generateSafDemand($safTaxes->original['data']['details']);
-            $demand['details'] = $generatedDemandDtls->groupBy('ruleSet');
+            $demand['details'] = $generatedDemandDtls;
 
             $safReq = [
                 'assessment_type' => $req->assessmentType,
@@ -349,7 +350,25 @@ class ApplySafController extends Controller
             foreach ($reqFloors as $floor) {
                 $mPropFloors->addfloor($floor, $safId, $userId);
             }
-
+            foreach ($demand['details'] as $item) {
+                $reqPostDemand = new Request([
+                    'saf_id' => $safId,
+                    'qtr' => $item['qtr'],
+                    'holding_tax' => $item['holdingTax'],
+                    'water_tax' => $item['qtr'],
+                    'education_cess' => $item['qtr'],
+                    'health_cess' => $item['qtr'],
+                    'latrine_tax' => $item['qtr'],
+                    'additional_tax' => $item['qtr'],
+                    'fyear' => $item['qtr'],
+                    'due_date' => $item['qtr'],
+                    'amount' => $item['qtr'],
+                    'user_id' => $item['qtr'],
+                    'ulb_id' => $item['qtr'],
+                    'arv' => $item['qtr'],
+                ]);
+            }
+            return $demand;
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
