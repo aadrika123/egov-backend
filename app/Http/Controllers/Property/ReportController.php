@@ -225,7 +225,7 @@ class ReportController extends Controller
                 'mobile_no',
                 'ward_name'
             )
-            ->paginate($request->perPage);
+            ->get();
         return responseMsgs(true, "Ward Wise Holding Data!", $data, '010801', '01', '382ms-547ms', 'Post', '');
     }
 }
