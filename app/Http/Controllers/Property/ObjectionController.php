@@ -429,7 +429,7 @@ class ObjectionController extends Controller
 
             DB::beginTransaction();
             if ($req->action == 'forward') {
-                $this->checkPostCondition($senderRoleId, $wfLevels, $objection);          // Check Post Next level condition
+                // $this->checkPostCondition($senderRoleId, $wfLevels, $objection);          // Check Post Next level condition
                 $objection->current_role = $forwardBackwardIds->forward_role_id;
                 $objection->last_role_id =  $forwardBackwardIds->forward_role_id;         // Update Last Role Id
                 $metaReqs['verificationStatus'] = 1;
@@ -655,7 +655,7 @@ class ObjectionController extends Controller
 
 
     /**
-     * 
+     * | 
      */
     public function uploadDocument(Request $req)
     {
@@ -713,7 +713,7 @@ class ObjectionController extends Controller
     }
 
     /**
-     * get Doc List
+     * | Get Doc List
      */
     public function getDocList($refApplication, $ownerDetails)
     {
