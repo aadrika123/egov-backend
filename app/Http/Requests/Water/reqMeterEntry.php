@@ -25,10 +25,11 @@ class reqMeterEntry extends FormRequest
     public function rules()
     {
         $refMeterConnectionType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
-        $rules['connectionType']    = 'required|int:1,2,3,4';
-        $rules['consumerId']        = "required|digits_between:1,9223372036854775807";
-        $rules['connectionDate']    = 'required|date|date_format:d-m-Y';
-        $rules['oldMeterFinalReading'] = 'required';
+        $rules['connectionType']        = 'required|int:1,2,3,4';
+        $rules['consumerId']            = "required|digits_between:1,9223372036854775807";
+        $rules['connectionDate']        = 'required|date|date_format:Y-m-d';
+        $rules['oldMeterFinalReading']  = 'required';
+        $rules['document']              = 'required';
         if (isset($this->connectionType) && $this->connectionType && in_array($this->connectionType, [$refMeterConnectionType['Meter'], $refMeterConnectionType['Gallon']])) {
             $rules['meterNo'] = 'required';
             // $rule['MeterDoc'] = 'required|' # Meter doc should be in pdf only.
