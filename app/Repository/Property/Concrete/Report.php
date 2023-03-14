@@ -79,6 +79,8 @@ class Report implements IReport
             $data = PropTransaction::select(
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
+                            prop_properties.id,
+                            prop_transactions.id AS tran_id,
                             CONCAT('', prop_properties.holding_no, '') AS holding_no,
                             (
                                 CASE WHEN prop_properties.new_holding_no='' OR prop_properties.new_holding_no IS NULL THEN 'N/A' 
@@ -121,7 +123,7 @@ class Report implements IReport
                         AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
                         ".
                         ($userId?" AND prop_transactions.user_id = $userId ":"")
-                        .($paymentMode?" AND upper(prop_transactions.payment_mode) = upper($paymentMode) ":"")
+                        .($paymentMode?" AND upper(prop_transactions.payment_mode) = upper('$paymentMode') ":"")
                         .($ulbId?" AND prop_transactions.ulb_id = $ulbId": "")
                         ."
                         GROUP BY prop_owners.property_id
@@ -152,7 +154,9 @@ class Report implements IReport
                 {
                     $data=$data->where("prop_transactions.ulb_id",$ulbId);
                 }
-                // $data = $data->limit(200)->get();
+                $data2 = $data;
+                $totalHolding = $data2->count("prop_properties.id");
+                $totalAmount = $data2->sum("prop_transactions.amount");
                 $perPage = $request->perPage ? $request->perPage : 10;
                 $page = $request->page && $request->page > 0 ? $request->page : 1;
                 $paginator = $data->paginate($perPage);
@@ -161,7 +165,9 @@ class Report implements IReport
                 $numberOfPages = ceil($total/$perPage);                
                 $list=[
                     "perPage"=>$perPage,
-                    "page"=>$page,
+                    "page"=>$page,                    
+                    "totalHolding"=>$totalHolding,
+                    "totalAmount"=>$totalAmount,    
                     "items"=>$items,
                     "total"=>$total,
                     "numberOfPages"=>$numberOfPages
@@ -216,6 +222,8 @@ class Report implements IReport
             $activSaf = PropTransaction::select(
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
+                            prop_active_safs.id,
+                            prop_transactions.id AS tran_id,
                             CONCAT('', prop_active_safs.holding_no, '') AS holding_no,
                             (
                                 CASE WHEN prop_active_safs.saf_no='' OR prop_active_safs.saf_no IS NULL THEN 'N/A' 
@@ -260,7 +268,7 @@ class Report implements IReport
                         AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
                         ".
                         ($userId?" AND prop_transactions.user_id = $userId ":"")
-                        .($paymentMode?" AND upper(prop_transactions.payment_mode) = upper($paymentMode) ":"")
+                        .($paymentMode?" AND upper(prop_transactions.payment_mode) = upper('$paymentMode') ":"")
                         .($ulbId?" AND prop_transactions.ulb_id = $ulbId": "")
                         ."
                         GROUP BY prop_active_safs_owners.saf_id 
@@ -279,6 +287,8 @@ class Report implements IReport
             $rejectedSaf = PropTransaction::select(
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
+                            prop_rejected_safs.id,
+                            prop_transactions.id AS tran_id,
                             CONCAT('', prop_rejected_safs.holding_no, '') AS holding_no,
                             (
                                 CASE WHEN prop_rejected_safs.saf_no='' OR prop_rejected_safs.saf_no IS NULL THEN 'N/A' 
@@ -323,7 +333,7 @@ class Report implements IReport
                         AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
                         ".
                         ($userId?" AND prop_transactions.user_id = $userId ":"")
-                        .($paymentMode?" AND upper(prop_transactions.payment_mode) = upper($paymentMode) ":"")
+                        .($paymentMode?" AND upper(prop_transactions.payment_mode) = upper('$paymentMode') ":"")
                         .($ulbId?" AND prop_transactions.ulb_id = $ulbId": "")
                         ."
                         GROUP BY prop_rejected_safs_owners.saf_id 
@@ -342,6 +352,8 @@ class Report implements IReport
             $saf = PropTransaction::select(
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
+                            prop_safs.id,
+                            prop_transactions.id AS tran_id,
                             CONCAT('', prop_safs.holding_no, '') AS holding_no,
                             (
                                 CASE WHEN prop_safs.saf_no='' OR prop_safs.saf_no IS NULL THEN 'N/A' 
@@ -386,7 +398,7 @@ class Report implements IReport
                         AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
                         ".
                         ($userId?" AND prop_transactions.user_id = $userId ":"")
-                        .($paymentMode?" AND upper(prop_transactions.payment_mode) = upper($paymentMode) ":"")
+                        .($paymentMode?" AND upper(prop_transactions.payment_mode) = upper('$paymentMode') ":"")
                         .($ulbId?" AND prop_transactions.ulb_id = $ulbId": "")
                         ."
                         GROUP BY prop_safs_owners.saf_id 
@@ -428,7 +440,9 @@ class Report implements IReport
             }
             
             $data = $activSaf->union($rejectedSaf)->union($saf);
-            // dd(DB::getQueryLog());
+            $data2 = $data;
+            $totalSaf = $data2->count("id");
+            $totalAmount = $data2->sum("amount");
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
@@ -438,6 +452,8 @@ class Report implements IReport
             $list=[
                 "perPage"=>$perPage,
                 "page"=>$page,
+                "totalSaf"=>$totalSaf,
+                "totalAmount"=>$totalAmount,  
                 "items"=>$items,
                 "total"=>$total,
                 "numberOfPages"=>$numberOfPages
@@ -1116,6 +1132,528 @@ class Report implements IReport
 
             return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
         } 
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function PropPaymentModeWiseSummery(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;  
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $wardId = null;
+            $userId = null;
+            $paymentMode = null;
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            if($request->userId)
+            {
+                $userId = $request->userId;
+            }
+            if($request->paymentMode)
+            {
+                $paymentMode = $request->paymentMode;
+            }
+            $collection = DB::table(
+                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                                    FROM prop_transactions
+                                ) payment_modes")
+                        )
+                    ->select(
+                        DB::raw("payment_modes.mode AS transaction_mode,
+                        COUNT(DISTINCT(prop_transactions.property_id)) AS holding_count,
+                        COUNT(prop_transactions.id) AS tran_count, 
+                        SUM(COALESCE(prop_transactions.amount,0)) AS amount
+                        "))
+                ->LEFTJOIN("prop_transactions",function($join)use($fromDate,$uptoDate,$userId,$ulbId){
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode) "))
+                    ->WHERENOTNULL("prop_transactions.property_id")
+                    ->WHEREIN("prop_transactions.status",[1,2])
+                    ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
+                    if($userId)
+                    {
+                        $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                    }
+                    if($ulbId)
+                    {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                    }
+                })
+                ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
+                ->GROUPBY("payment_modes.mode"); 
+            if($paymentMode)
+            {
+                $collection=$collection->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+            }
+            $refund = DB::table(
+                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                                    FROM prop_transactions
+                                ) payment_modes")
+                        )
+                    ->select(
+                        DB::raw("payment_modes.mode AS transaction_mode,
+                        COUNT(DISTINCT(prop_transactions.property_id)) AS holding_count,
+                        COUNT(prop_transactions.id) AS tran_count, 
+                        SUM(COALESCE(prop_transactions.amount,0)) AS amount
+                        "))
+                ->LEFTJOIN("prop_transactions",function($join)use($fromDate,$uptoDate,$userId,$ulbId){
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode) "))
+                    ->WHERENOTNULL("prop_transactions.property_id")
+                    ->WHERENOTIN("prop_transactions.status",[1,2])
+                    ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
+                    if($userId)
+                    {
+                        $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                    }
+                    if($ulbId)
+                    {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                    }
+                })
+                ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
+                ->GROUPBY("payment_modes.mode"); 
+            if($paymentMode)
+            {
+                $refund=$refund->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+            }
+            $doorToDoor = DB::table(
+                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                                    FROM prop_transactions
+                                    WHERE UPPER(prop_transactions.payment_mode) <> UPPER('ONLINE')
+                                ) payment_modes")
+                        )
+                    ->select(
+                        DB::raw("payment_modes.mode AS transaction_mode,
+                        COUNT(DISTINCT(prop_transactions.property_id)) AS holding_count,
+                        COUNT(prop_transactions.id) AS tran_count, 
+                        SUM(COALESCE(prop_transactions.amount,0)) AS amount
+                        "))
+                ->LEFTJOIN(DB::RAW("(
+                                     SELECT * 
+                                     FROM prop_transactions
+                                     JOIN (
+                                        
+                                            SELECT wf_roleusermaps.user_id as role_user_id
+                                            FROM wf_roles
+                                            JOIN wf_roleusermaps ON wf_roleusermaps.wf_role_id = wf_roles.id 
+                                                AND wf_roleusermaps.is_suspended = FALSE
+                                            JOIN wf_workflowrolemaps ON wf_workflowrolemaps.wf_role_id = wf_roleusermaps.wf_role_id
+                                                AND wf_workflowrolemaps.is_suspended = FALSE
+                                            JOIN wf_workflows ON wf_workflows.id = wf_workflowrolemaps.workflow_id AND wf_workflows.is_suspended = FALSE 
+                                            JOIN ulb_masters ON ulb_masters.id = wf_workflows.ulb_id
+                                            WHERE wf_roles.is_suspended = FALSE 
+                                                AND wf_workflows.ulb_id = 2
+                                                AND wf_roles.id not in (8,108)
+                                                AND wf_workflows.id in (3,4,5)
+                                            GROUP BY wf_roleusermaps.user_id
+                                            ORDER BY wf_roleusermaps.user_id
+                                     ) collecter on prop_transactions.user_id  = collecter.role_user_id
+                                ) prop_transactions"),function($join)use($fromDate,$uptoDate,$userId,$ulbId){
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode)"))                    
+                    ->WHERENOTNULL("prop_transactions.property_id")
+                    ->WHEREIN("prop_transactions.status",[1,2])
+                    ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
+                    if($userId)
+                    {
+                        $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                    }
+                    if($ulbId)
+                    {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                    }
+                })
+                ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
+                ->GROUPBY("payment_modes.mode"); 
+            if($paymentMode)
+            {
+                $doorToDoor=$doorToDoor->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+            }
+            $jsk = DB::table(
+                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                                    FROM prop_transactions
+                                    WHERE UPPER(prop_transactions.payment_mode) <> UPPER('ONLINE')
+                                ) payment_modes")
+                        )
+                    ->select(
+                        DB::raw("payment_modes.mode AS transaction_mode,
+                        COUNT(DISTINCT(prop_transactions.property_id)) AS holding_count,
+                        COUNT(prop_transactions.id) AS tran_count, 
+                        SUM(COALESCE(prop_transactions.amount,0)) AS amount
+                        "))
+                    ->LEFTJOIN(DB::RAW("(
+                                        SELECT * 
+                                        FROM prop_transactions
+                                        JOIN (
+                                            
+                                                SELECT wf_roleusermaps.user_id as role_user_id
+                                                FROM wf_roles
+                                                JOIN wf_roleusermaps ON wf_roleusermaps.wf_role_id = wf_roles.id 
+                                                    AND wf_roleusermaps.is_suspended = FALSE
+                                                JOIN wf_workflowrolemaps ON wf_workflowrolemaps.wf_role_id = wf_roleusermaps.wf_role_id
+                                                    AND wf_workflowrolemaps.is_suspended = FALSE
+                                                JOIN wf_workflows ON wf_workflows.id = wf_workflowrolemaps.workflow_id AND wf_workflows.is_suspended = FALSE 
+                                                JOIN ulb_masters ON ulb_masters.id = wf_workflows.ulb_id
+                                                WHERE wf_roles.is_suspended = FALSE 
+                                                    AND wf_workflows.ulb_id = 2
+                                                    AND wf_roles.id in (8,108)
+                                                    AND wf_workflows.id in (3,4,5)
+                                                GROUP BY wf_roleusermaps.user_id
+                                                ORDER BY wf_roleusermaps.user_id
+                                        ) collecter on prop_transactions.user_id  = collecter.role_user_id
+                                    ) prop_transactions"),function($join)use($fromDate,$uptoDate,$userId,$ulbId){
+                        $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode)"))                    
+                        ->WHERENOTNULL("prop_transactions.property_id")
+                        ->WHEREIN("prop_transactions.status",[1,2])
+                        ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
+                        if($userId)
+                        {
+                            $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                        }
+                        if($ulbId)
+                        {
+                            $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                        }
+                    })
+                    ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
+                    ->GROUPBY("payment_modes.mode"); 
+            if($paymentMode)
+            {
+                $jsk=$jsk->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+            }
+
+            $collection = $collection->get();
+            $refund     = $refund->get();
+            $doorToDoor =$doorToDoor->get();
+            $jsk        =$jsk->get();
+
+            $totalCollection = $collection->sum("amount");
+            $totalHolding = $collection->sum("holding_count");
+            $totalTran = $collection->sum("tran_count");
+
+            $totalCollectionRefund = $refund->sum("amount");
+            $totalHoldingRefund = $refund->sum("holding_count");
+            $totalTranRefund = $refund->sum("tran_count");
+
+            $totalCollectionDoor = $doorToDoor->sum("amount");
+            $totalHoldingDoor = $doorToDoor->sum("holding_count");
+            $totalTranDoor = $doorToDoor->sum("tran_count");
+
+            $totalCollectionJsk = $jsk->sum("amount");
+            $totalHoldingJsk = $jsk->sum("holding_count");
+            $totalTranJsk = $jsk->sum("tran_count");
+
+            $collection[]=["transaction_mode" =>"Total Collection",
+                        "holding_count"    => $totalHolding,
+                        "tran_count"       => $totalTran,
+                        "amount"           => $totalCollection
+                    ];
+            $funal["collection"] = $collection;
+            $refund[]=["transaction_mode" =>"Total Refund",
+                    "holding_count"    => $totalHoldingRefund,
+                    "tran_count"       => $totalTranRefund,
+                    "amount"           => $totalCollectionRefund
+                ];
+            $funal["refund"] = $refund;            
+            $funal["netCollection"][] = [
+                                        "transaction_mode" =>"Net Collection",
+                                        "holding_count"    => $totalHolding - $totalHoldingRefund,
+                                        "tran_count"       => $totalTran - $totalTranRefund,
+                                        "amount"           => $totalCollection - $totalCollectionRefund
+                                    ];
+            
+            $doorToDoor[]=["transaction_mode" =>"Total Door To Door",
+                    "holding_count"    => $totalCollectionDoor,
+                    "tran_count"       => $totalHoldingDoor,
+                    "amount"           => $totalTranDoor
+                ];
+            $funal["doorToDoor"] = $doorToDoor;
+
+            $jsk[]=["transaction_mode" =>"Total JSK",
+                    "holding_count"    => $totalCollectionJsk,
+                    "tran_count"       => $totalHoldingJsk,
+                    "amount"           => $totalTranJsk
+                ];
+            $funal["jsk"] = $jsk;
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$funal,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function SafPaymentModeWiseSummery(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;  
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $wardId = null;
+            $userId = null;
+            $paymentMode = null;
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            if($request->userId)
+            {
+                $userId = $request->userId;
+            }
+            if($request->paymentMode)
+            {
+                $paymentMode = $request->paymentMode;
+            }
+            $collection = DB::table(
+                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                                    FROM prop_transactions
+                                ) payment_modes")
+                        )
+                    ->select(
+                        DB::raw("payment_modes.mode AS transaction_mode,
+                        COUNT(DISTINCT(prop_transactions.saf_id)) AS saf_count,
+                        COUNT(prop_transactions.id) AS tran_count, 
+                        SUM(COALESCE(prop_transactions.amount,0)) AS amount
+                        "))
+                ->LEFTJOIN("prop_transactions",function($join)use($fromDate,$uptoDate,$userId,$ulbId){
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode) "))
+                    ->WHERENOTNULL("prop_transactions.saf_id")
+                    ->WHEREIN("prop_transactions.status",[1,2])
+                    ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
+                    if($userId)
+                    {
+                        $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                    }
+                    if($ulbId)
+                    {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                    }
+                })
+                ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
+                ->GROUPBY("payment_modes.mode"); 
+            if($paymentMode)
+            {
+                $collection=$collection->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+            }
+            $refund = DB::table(
+                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                                    FROM prop_transactions
+                                ) payment_modes")
+                        )
+                    ->select(
+                        DB::raw("payment_modes.mode AS transaction_mode,
+                        COUNT(DISTINCT(prop_transactions.saf_id)) AS saf_count,
+                        COUNT(prop_transactions.id) AS tran_count, 
+                        SUM(COALESCE(prop_transactions.amount,0)) AS amount
+                        "))
+                ->LEFTJOIN("prop_transactions",function($join)use($fromDate,$uptoDate,$userId,$ulbId){
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode) "))
+                    ->WHERENOTNULL("prop_transactions.saf_id")
+                    ->WHERENOTIN("prop_transactions.status",[1,2])
+                    ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
+                    if($userId)
+                    {
+                        $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                    }
+                    if($ulbId)
+                    {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                    }
+                })
+                ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
+                ->GROUPBY("payment_modes.mode"); 
+            if($paymentMode)
+            {
+                $refund=$refund->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+            }
+            $doorToDoor = DB::table(
+                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                                    FROM prop_transactions
+                                    WHERE UPPER(prop_transactions.payment_mode) <> UPPER('ONLINE')
+                                ) payment_modes")
+                        )
+                    ->select(
+                        DB::raw("payment_modes.mode AS transaction_mode,
+                        COUNT(DISTINCT(prop_transactions.saf_id)) AS saf_count,
+                        COUNT(prop_transactions.id) AS tran_count, 
+                        SUM(COALESCE(prop_transactions.amount,0)) AS amount
+                        "))
+                ->LEFTJOIN(DB::RAW("(
+                                     SELECT * 
+                                     FROM prop_transactions
+                                     JOIN (
+                                        
+                                            SELECT wf_roleusermaps.user_id as role_user_id
+                                            FROM wf_roles
+                                            JOIN wf_roleusermaps ON wf_roleusermaps.wf_role_id = wf_roles.id 
+                                                AND wf_roleusermaps.is_suspended = FALSE
+                                            JOIN wf_workflowrolemaps ON wf_workflowrolemaps.wf_role_id = wf_roleusermaps.wf_role_id
+                                                AND wf_workflowrolemaps.is_suspended = FALSE
+                                            JOIN wf_workflows ON wf_workflows.id = wf_workflowrolemaps.workflow_id AND wf_workflows.is_suspended = FALSE 
+                                            JOIN ulb_masters ON ulb_masters.id = wf_workflows.ulb_id
+                                            WHERE wf_roles.is_suspended = FALSE 
+                                                AND wf_workflows.ulb_id = 2
+                                                AND wf_roles.id not in (8,108)
+                                                AND wf_workflows.id in (3,4,5)
+                                            GROUP BY wf_roleusermaps.user_id
+                                            ORDER BY wf_roleusermaps.user_id
+                                     ) collecter on prop_transactions.user_id  = collecter.role_user_id
+                                ) prop_transactions"),function($join)use($fromDate,$uptoDate,$userId,$ulbId){
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode)"))                    
+                    ->WHERENOTNULL("prop_transactions.saf_id")
+                    ->WHEREIN("prop_transactions.status",[1,2])
+                    ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
+                    if($userId)
+                    {
+                        $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                    }
+                    if($ulbId)
+                    {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                    }
+                })
+                ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
+                ->GROUPBY("payment_modes.mode"); 
+            if($paymentMode)
+            {
+                $doorToDoor=$doorToDoor->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+            }
+            $jsk = DB::table(
+                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                                    FROM prop_transactions
+                                    WHERE UPPER(prop_transactions.payment_mode) <> UPPER('ONLINE')
+                                ) payment_modes")
+                        )
+                    ->select(
+                        DB::raw("payment_modes.mode AS transaction_mode,
+                        COUNT(DISTINCT(prop_transactions.saf_id)) AS saf_count,
+                        COUNT(prop_transactions.id) AS tran_count, 
+                        SUM(COALESCE(prop_transactions.amount,0)) AS amount
+                        "))
+                    ->LEFTJOIN(DB::RAW("(
+                                        SELECT * 
+                                        FROM prop_transactions
+                                        JOIN (
+                                            
+                                                SELECT wf_roleusermaps.user_id as role_user_id
+                                                FROM wf_roles
+                                                JOIN wf_roleusermaps ON wf_roleusermaps.wf_role_id = wf_roles.id 
+                                                    AND wf_roleusermaps.is_suspended = FALSE
+                                                JOIN wf_workflowrolemaps ON wf_workflowrolemaps.wf_role_id = wf_roleusermaps.wf_role_id
+                                                    AND wf_workflowrolemaps.is_suspended = FALSE
+                                                JOIN wf_workflows ON wf_workflows.id = wf_workflowrolemaps.workflow_id AND wf_workflows.is_suspended = FALSE 
+                                                JOIN ulb_masters ON ulb_masters.id = wf_workflows.ulb_id
+                                                WHERE wf_roles.is_suspended = FALSE 
+                                                    AND wf_workflows.ulb_id = 2
+                                                    AND wf_roles.id in (8,108)
+                                                    AND wf_workflows.id in (3,4,5)
+                                                GROUP BY wf_roleusermaps.user_id
+                                                ORDER BY wf_roleusermaps.user_id
+                                        ) collecter on prop_transactions.user_id  = collecter.role_user_id
+                                    ) prop_transactions"),function($join)use($fromDate,$uptoDate,$userId,$ulbId){
+                        $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode)"))                    
+                        ->WHERENOTNULL("prop_transactions.saf_id")
+                        ->WHEREIN("prop_transactions.status",[1,2])
+                        ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
+                        if($userId)
+                        {
+                            $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                        }
+                        if($ulbId)
+                        {
+                            $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                        }
+                    })
+                    ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
+                    ->GROUPBY("payment_modes.mode"); 
+            if($paymentMode)
+            {
+                $jsk=$jsk->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+            }
+
+            $collection = $collection->get();
+            $refund     = $refund->get();
+            $doorToDoor =$doorToDoor->get();
+            $jsk        =$jsk->get();
+
+            $totalCollection = $collection->sum("amount");
+            $totalSaf = $collection->sum("saf_count");
+            $totalTran = $collection->sum("tran_count");
+
+            $totalCollectionRefund = $refund->sum("amount");
+            $totalSafRefund = $refund->sum("saf_count");
+            $totalTranRefund = $refund->sum("tran_count");
+
+            $totalCollectionDoor = $doorToDoor->sum("amount");
+            $totalSafDoor = $doorToDoor->sum("saf_count");
+            $totalTranDoor = $doorToDoor->sum("tran_count");
+
+            $totalCollectionJsk = $jsk->sum("amount");
+            $totalSafJsk = $jsk->sum("saf_count");
+            $totalTranJsk = $jsk->sum("tran_count");
+
+            $collection[]=["transaction_mode" =>"Total Collection",
+                        "saf_count"    => $totalSaf,
+                        "tran_count"       => $totalTran,
+                        "amount"           => $totalCollection
+                    ];
+            $funal["collection"] = $collection;
+            $refund[]=["transaction_mode" =>"Total Refund",
+                    "saf_count"    => $totalSafRefund,
+                    "tran_count"       => $totalTranRefund,
+                    "amount"           => $totalCollectionRefund
+                ];
+            $funal["refund"] = $refund;            
+            $funal["netCollection"][] = [
+                                        "transaction_mode" =>"Net Collection",
+                                        "saf_count"    => $totalSaf - $totalSafRefund,
+                                        "tran_count"       => $totalTran - $totalTranRefund,
+                                        "amount"           => $totalCollection - $totalCollectionRefund
+                                    ];
+            
+            $doorToDoor[]=["transaction_mode" =>"Total Door To Door",
+                    "saf_count"    => $totalCollectionDoor,
+                    "tran_count"       => $totalSafDoor,
+                    "amount"           => $totalTranDoor
+                ];
+            $funal["doorToDoor"] = $doorToDoor;
+
+            $jsk[]=["transaction_mode" =>"Total JSK",
+                    "saf_count"    => $totalCollectionJsk,
+                    "tran_count"       => $totalSafJsk,
+                    "amount"           => $totalTranJsk
+                ];
+            $funal["jsk"] = $jsk;
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$funal,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
         catch(Exception $e)
         {
             return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);

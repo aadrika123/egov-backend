@@ -422,5 +422,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     Route::post('reports/ward-wise-holding', 'wardWiseHoldingReport');
     Route::post('reports/list-fy', 'listFY');
+
+    Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery');
+    Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');
   });
 });
