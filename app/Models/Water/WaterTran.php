@@ -59,7 +59,7 @@ class WaterTran extends Model
      * | @param
      * | @var 
      */
-    public function saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId)
+    public function saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId, $connectionType)
     {
         $refIdGeneration = new IdGeneration();
         $transactionNo = $refIdGeneration->generateTransactionNo();
@@ -67,7 +67,7 @@ class WaterTran extends Model
         $Tradetransaction = new WaterTran;
         $Tradetransaction->related_id       = $applicationId;
         $Tradetransaction->ward_id          = $req->ward_id;
-        $Tradetransaction->tran_type        = $req->connectionType;
+        $Tradetransaction->tran_type        = $connectionType;
         $Tradetransaction->tran_date        = Carbon::now();
         $Tradetransaction->payment_mode     = "Default";
         $Tradetransaction->amount           = $totalConnectionCharges;

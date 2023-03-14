@@ -1531,18 +1531,21 @@ class NewConnectionController extends Controller
                 $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
                     ->where('paid_status', 0)
                     ->get();
-                $penaltyAmount = collect($penalty['penaltyInstallments'])->map(function ($value) {
-                    return $value['balance_amount'];
-                })->sum();
+                $refPenalty = collect($penalty['penaltyInstallments'])->first();
+                if ($refPenalty) {
+                    $penaltyAmount = collect($penalty['penaltyInstallments'])->map(function ($value) {
+                        return $value['balance_amount'];
+                    })->sum();
 
-                $calculation['calculation'] = [
-                    'connectionFee' => 0.00,           # Static
-                    'penalty' => $penaltyAmount,
-                    'totalAmount' => $penaltyAmount,
-                    'chargeCatagory' => $charges['charge_category'],
-                    'paidStatus' => $charges['paid_status']
-                ];
-                $waterTransDetail = array_merge($calculation, $waterTransDetail);
+                    $calculation['calculation'] = [
+                        'connectionFee' => 0.00,           # Static
+                        'penalty' => $penaltyAmount,
+                        'totalAmount' => $penaltyAmount,
+                        'chargeCatagory' => $charges['charge_category'],
+                        'paidStatus' => $charges['paid_status']
+                    ];
+                    $waterTransDetail = array_merge($calculation, $waterTransDetail);
+                }
             }
 
             # penalty Data 

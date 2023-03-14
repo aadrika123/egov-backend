@@ -226,7 +226,8 @@ class ReportController extends Controller
                 'ward_name'
             )
             ->get();
-        return responseMsgs(true, "Ward Wise Holding Data!", $data, '010801', '01', '382ms-547ms', 'Post', '');
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+        return responseMsgs(true, "Ward Wise Holding Data!", $data, 'pr6.1', '1.1', $queryRunTime, 'Post', '');
     }
 
     public function listFY(Request $request)
@@ -245,5 +246,39 @@ class ReportController extends Controller
             $end->subYear();
         }
         return responseMsgs(true, "Financial Year List", $financialYears, '010801', '01', '382ms-547ms', 'Post', '');
+    }
+    
+    #------------date 13/03/2023 -------------------------------------------------------------------------
+    #   Code By Sandeep Bara
+    #   Payment Mode Wise Collection Report
+    public function PropPaymentModeWiseSummery(Request $request)
+    {
+        $request->validate(
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "paymentMode" => "nullable",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr1.2", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->PropPaymentModeWiseSummery($request);
+    }
+    public function SafPaymentModeWiseSummery(Request $request)
+    {
+        $request->validate(
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "paymentMode" => "nullable",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr2.2", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->SafPaymentModeWiseSummery($request);
     }
 }
