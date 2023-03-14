@@ -436,7 +436,8 @@ class PropProperty extends Model
      */
     public function getCitizenHoldings($citizenId)
     {
-        return PropProperty::where('citizen_id', $citizenId)
+        return PropProperty::select('holding_no', 'new_holding_no', 'pt_no')
+            ->where('citizen_id', $citizenId)
             ->get();
     }
 }
