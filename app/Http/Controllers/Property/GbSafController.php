@@ -48,7 +48,7 @@ class GbSafController extends Controller
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $safInbox = $this->Repository->getGbSaf($workflowIds)                                          // Repository function to get SAF Details
+            $safInbox = $mpropActiveSafs->getGbSaf($workflowIds)                                          // Repository function to get SAF Details
                 ->where('parked', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->where('prop_active_safs.status', 1)
@@ -71,6 +71,7 @@ class GbSafController extends Controller
             $mWfRoleUser = new WfRoleusermap();
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $mpropActiveSafs = new PropActiveSaf();
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
@@ -79,7 +80,7 @@ class GbSafController extends Controller
             $wardId = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');
 
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
-            $safData = $this->Repository->getGbSaf($workflowIds)   // Repository function to get SAF
+            $safData = $mpropActiveSafs->getGbSaf($workflowIds)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereNotIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $wardId)
@@ -90,6 +91,42 @@ class GbSafController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | Fields Verified Inbox
+     */
+    public function fieldVerifiedInbox(Request $req)
+    {
+        try {
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $mpropActiveSafs = new PropActiveSaf();
+
+            $mUserId = authUser()->id;
+            $mUlbId = authUser()->ulb_id;
+            $mDeviceId = $req->deviceId ?? "";
+
+            $occupiedWardsId = $mWfWardUser->getWardsByUserId($mUserId)->pluck('ward_id');                  // Model function to get ward list
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($mUserId)->pluck('wf_role_id');                 // Model function to get Role By User Id
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
+
+            $safInbox = $mpropActiveSafs->getGbSaf($workflowIds)                 // Repository function getSAF
+                ->where('is_field_verified', true)
+                ->where('prop_active_safs.ulb_id', $mUlbId)
+                ->where('prop_active_safs.status', 1)
+                ->whereIn('current_role', $roleIds)
+                ->whereIn('ward_mstr_id', $occupiedWardsId)
+                ->orderByDesc('id')
+                ->get();
+
+            return responseMsgs(true, "field Verified Inbox!", remove_null($safInbox), 010125, 1.0, "", "POST", $mDeviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $mDeviceId);
+        }
+    }
+
+
 
     /**
      * | Post next level
