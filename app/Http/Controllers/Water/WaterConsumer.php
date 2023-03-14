@@ -240,7 +240,7 @@ class WaterConsumer extends Controller
             $metaRequest = new Request([
                 "consumerId"    => $request->consumerId,
                 "finalRading"   => $request->oldMeterFinalReading,
-                "demandUpto"    => Carbon::parse($request->connectionDate)->format('Y-m-d'),
+                "demandUpto"    => $request->connectionDate,
             ]);
             $this->saveGenerateConsumerDemand($metaRequest);
             $documentPath = $this->saveTheMeterDocument($request);
@@ -263,7 +263,7 @@ class WaterConsumer extends Controller
      */
     public function checkParamForMeterEntry($request)
     {
-        $todayDate = Carbon::now()->format('d-m-Y');
+        $todayDate = Carbon::now();
         $mWaterWaterConsumer = new WaterWaterConsumer();
         $mWaterConsumerMeter = new WaterConsumerMeter();
         $mWaterConsumerDemand = new WaterConsumerDemand();
@@ -277,7 +277,7 @@ class WaterConsumer extends Controller
         $this->checkForMeterFixedCase($request, $consumerMeterDetails, $refMeterConnType);
 
         switch ($request) {
-            case ($request->connectionDate > $todayDate):
+            case (strtotime($request->connectionDate) > strtotime($todayDate)):
                 throw new Exception("Connection Date can not be greater than Current Date!");
                 break;
             case ($request->connectionType != $refMeterConnType['Meter/Fixed']):
@@ -294,9 +294,8 @@ class WaterConsumer extends Controller
 
         if (isset($consumerMeterDetails)) {
             $reqConnectionDate = $request->connectionDate;
-            $reqConnectionDate = Carbon::parse($reqConnectionDate)->format('Y-m-d');
             switch ($consumerMeterDetails) {
-                case ($consumerMeterDetails->connection_date > $reqConnectionDate):
+                case (strtotime($consumerMeterDetails->connection_date) > strtotime($reqConnectionDate)):
                     throw new Exception("Connection Date should be grater than previous Connection date!");
             }
         }
