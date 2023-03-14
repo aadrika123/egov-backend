@@ -430,4 +430,13 @@ class PropProperty extends Model
             ->where('p.status', 1)
             ->get();
     }
+
+    /**
+     * | Get citizen holdings
+     */
+    public function getCitizenHoldings($citizenId)
+    {
+        return PropProperty::where('citizen_id', $citizenId)
+            ->get();
+    }
 }
