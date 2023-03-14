@@ -38,6 +38,7 @@ use App\Models\Property\RefPropRoadType;
 use App\Models\Property\RefPropTransferMode;
 use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
+use App\Models\Property\ZoneMaster;
 use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
@@ -124,6 +125,7 @@ class ActiveSafController extends Controller
             $refPropRoadType = new RefPropRoadType();
             $refPropGbbuildingusagetype = new RefPropGbbuildingusagetype();
             $refPropGbpropusagetype = new RefPropGbpropusagetype();
+            $mZoneMstrs = new ZoneMaster();
 
             // Getting Masters from Redis Cache
             $wardMaster = json_decode(Redis::get('wards-ulb-' . $ulbId));
@@ -137,6 +139,7 @@ class ActiveSafController extends Controller
             $roadType = json_decode(Redis::get('property-road-type'));
             $gbbuildingusagetypes = json_decode(Redis::get('property-gb-building-usage-types'));
             $gbpropusagetypes = json_decode(Redis::get('property-gb-prop-usage-types'));
+            $zoneMstrs = json_decode(Redis::get('zone-ulb-' . $ulbId));
 
             // Ward Masters
             if (!$wardMaster) {
@@ -225,6 +228,13 @@ class ActiveSafController extends Controller
             }
 
             $data['gbpropusage_type'] = $gbpropusagetypes;
+
+            // Zone Masters by Ulb
+            if (!$zoneMstrs) {
+                $zoneMstrs = $mZoneMstrs->getZone($ulbId);
+                $redisConn->set('zone-ulb-' . $ulbId, json_encode($zoneMstrs));
+            }
+            $data['zone_mstrs'] = $zoneMstrs;
 
             return responseMsgs(true, 'Property Masters', $data, "010101", "1.0", "317ms", "GET", "");
         } catch (Exception $e) {
@@ -941,6 +951,11 @@ class ActiveSafController extends Controller
                 'street_name',
                 'location',
                 'landmark',
+                'is_gb_saf',
+                'is_geo_tagged',
+                'gb_office_name',
+                'gb_usage_types',
+                'gb_prop_usage_types'
             )->first();
 
         $assessmentType = $activeSaf->assessment_type;

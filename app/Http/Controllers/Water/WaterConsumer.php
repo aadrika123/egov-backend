@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Water;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\reqDeactivate;
 use App\Http\Requests\Water\reqMeterEntry;
+use App\MicroServices\DocUpload;
 use App\Models\Water\WaterConsumer as WaterWaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerDisconnection;
@@ -12,6 +13,7 @@ use App\Models\Water\WaterConsumerInitialMeter;
 use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterDisconnection;
+use App\Repository\Water\Concrete\WaterNewConnection;
 use App\Repository\Water\Interfaces\IConsumer;
 use Carbon\Carbon;
 use Exception;
@@ -227,8 +229,7 @@ class WaterConsumer extends Controller
         | Serial No : 04
         | Not working  
         | Check the parameter for the autherised person
-        | Generate Demand
-        | Save Document
+        | Chack the Demand
      */
     public function saveUpdateMeterDetails(reqMeterEntry $request)
     {
@@ -236,13 +237,15 @@ class WaterConsumer extends Controller
             $mWaterConsumerMeter = new WaterConsumerMeter();
             $this->checkParamForMeterEntry($request);
             DB::beginTransaction();
+            $metaRequest = new Request([
+                "consumerId"    => $request->consumerId,
+                "finalRading"   => $request->oldMeterFinalReading,
+                "demandUpto"    =>  $request->connectionDate
+            ]);
+            $this->saveGenerateConsumerDemand($metaRequest);
             $documentPath = $this->saveTheMeterDocument($request);
+            $fixedRate = $this->getFixedRate($request);
             $mWaterConsumerMeter->saveMeterDetails($request, $documentPath);
-            // $metaRequest = new Request([
-            //     "consumerId" => $request->consumerId;
-            //     ""
-            // ])
-            // $this->saveGenerateConsumerDemand();
             DB::commit();
             return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -256,11 +259,11 @@ class WaterConsumer extends Controller
      * | Validate the Admin For entring the meter details
      * | @param req
         | Serial No : 04.01
-        | Not Working
+        | Working
      */
     public function checkParamForMeterEntry($request)
     {
-        $todayDate= Carbon::now()->format('d-m-Y');
+        $todayDate = Carbon::now()->format('d-m-Y');
         $mWaterWaterConsumer = new WaterWaterConsumer();
         $mWaterConsumerMeter = new WaterConsumerMeter();
         $mWaterConsumerDemand = new WaterConsumerDemand();
@@ -337,7 +340,28 @@ class WaterConsumer extends Controller
      */
     public function saveTheMeterDocument($request)
     {
+        $docUpload = new DocUpload;
+        $relativePath = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+        $refImageName = config::get('waterConstaint.WATER_METER_CODE');
+        $document = $request->document;
+        $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+        $doc = [
+            "document" => $imageName,
+            "relaivePath" => $relativePath
+        ];
+        return $doc;
     }
+
+    /**
+     * | Get the Fixed Rate According to the Rate Chart
+     * | Only in Case of Meter Connection Type Fixed
+    | Serial No : 
+    | Not Working
+     */
+    public function getFixedRate($request)
+    {
+    }
+
 
     /**
      * | Get all the meter details According to the consumer Id
@@ -353,9 +377,34 @@ class WaterConsumer extends Controller
             $request->validate([
                 'consumerId' => "required|digits_between:1,9223372036854775807",
             ]);
+            $meterConnectionType = null;
             $mWaterConsumerMeter = new WaterConsumerMeter();
+            $refWaterNewConnection  = new WaterNewConnection();
+            $refMeterConnType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
             $meterList = $mWaterConsumerMeter->getMeterDetailsByConsumerId($request->consumerId)->get();
-            return responseMsgs(true, "Meter List!", remove_null($meterList), "", "01", ".ms", "POST", $request->deviceId);
+            $returnData = collect($meterList)->map(function ($value)
+            use ($refMeterConnType, $meterConnectionType, $refWaterNewConnection) {
+                switch ($value['connection_type']) {
+                    case ($refMeterConnType['Meter']):
+                        if ($value['meter_status'] == 0) {
+                            $meterConnectionType = "Metre/Fixed";
+                        }
+                        $meterConnectionType = "Meter";
+                        break;
+
+                    case ($refMeterConnType['Gallon']):
+                        $meterConnectionType = "Gallon";
+                        break;
+                    case ($refMeterConnType['Fixed']):
+                        $meterConnectionType = "Fixed";
+                        break;
+                }
+                $value['meter_connection_type'] = $meterConnectionType;
+                $path = $refWaterNewConnection->readDocumentPath($value['doc_path']);
+                $value['doc_path'] = !empty(trim($value['doc_path'])) ? $path : null;
+                return $value;
+            });
+            return responseMsgs(true, "Meter List!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }

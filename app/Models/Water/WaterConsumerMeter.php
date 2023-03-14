@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 
 class WaterConsumerMeter extends Model
 {
@@ -17,7 +18,11 @@ class WaterConsumerMeter extends Model
      */
     public function getMeterDetailsByConsumerId($consumerId)
     {
-        return WaterConsumerMeter::where('consumer_id', $consumerId)
+        return WaterConsumerMeter::select(
+            '*',
+            DB::raw("concat(relative_path,'/',meter_doc) as doc_path"),
+        )
+            ->where('consumer_id', $consumerId)
             ->where('status', true)
             ->orderByDesc('id');
     }
@@ -53,6 +58,10 @@ class WaterConsumerMeter extends Model
         if ($req->connectionType = $refConnectionType['Meter']) {
             $installationDate = Carbon::now();
         }
+        // if($req->connectionType = $refConnectionType['Fixed'])
+        // {
+        //     $ratePerMonth = 
+        // }
         $mWaterConsumerMeter = new WaterConsumerMeter();
         $mWaterConsumerMeter->consumer_id               = $req->consumerId;
         $mWaterConsumerMeter->connection_date           = $req->connectionDate;
@@ -61,8 +70,10 @@ class WaterConsumerMeter extends Model
         $mWaterConsumerMeter->meter_no                  = $req->meterNo ?? null;
         $mWaterConsumerMeter->meter_intallation_date    = $installationDate ?? null;
         $mWaterConsumerMeter->initial_reading           = $req->newMeterInitialReading ?? null;
-        // $mWaterConsumerMeter->rate_per_month            = $req->ratePerMonth ?? 0;
         $mWaterConsumerMeter->meter_status              = $meterStatus ?? 1;
+        $mWaterConsumerMeter->rate_per_month            = $ratePerMonth ?? 0;
+        $mWaterConsumerMeter->relative_path             = $documentPath['relaivePath'];
+        $mWaterConsumerMeter->meter_doc                 = $documentPath['document'];
         $mWaterConsumerMeter->save();
     }
 }

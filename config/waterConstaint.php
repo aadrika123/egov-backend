@@ -94,5 +94,7 @@ return [
             "Fixed"         => 3,
             "Meter/Fixed"    => 4
         ],
-    ]
+    ],
+
+    "WATER_METER_CODE" => "meter",
 ];
