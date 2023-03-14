@@ -16,7 +16,7 @@ class PropSafsDemand extends Model
     {
         return PropSafsDemand::where('saf_id', $safId)
             ->where('paid_status', 0)
-            ->orderByDesc('id')
+            ->orderByDesc('due_date')
             ->get();
     }
 
