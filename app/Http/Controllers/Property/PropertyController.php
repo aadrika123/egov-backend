@@ -106,20 +106,22 @@ class PropertyController extends Controller
     {
         $req->validate([
             'type' => 'required|In:holding,saf',
+            'ulbId' => 'required|numeric'
         ]);
         try {
             $citizenId = authUser()->id;
+            $ulbId = $req->ulbId;
             $type = $req->type;
             $mPropSafs = new PropSaf();
             $mPropProperty = new PropProperty();
 
             if ($type == 'holding') {
-                $data = $mPropProperty->getCitizenHoldings($citizenId);
+                $data = $mPropProperty->getCitizenHoldings($citizenId, $ulbId);
                 $msg = 'Citizen Holdings';
             }
 
             if ($type == 'saf') {
-                $data = $mPropSafs->getCitizenSafs($citizenId);
+                $data = $mPropSafs->getCitizenSafs($citizenId, $ulbId);
                 $msg = 'Citizen Safs';
             }
             if ($data->isEmpty())
