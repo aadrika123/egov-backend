@@ -2037,7 +2037,7 @@ class ActiveSafController extends Controller
                 "doc_upload_status" => $req['doc_upload_status']
             ];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
-            $demand['details'] = collect($safTaxes->original['data']['details'])->groupBy('ruleSet')->values();
+            $demand['details'] = collect($safTaxes->original['data']['details']);
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", "", "POST", $req->deviceId ?? "");
