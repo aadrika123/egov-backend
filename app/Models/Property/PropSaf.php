@@ -12,10 +12,11 @@ class PropSaf extends Model
     /**
      * | Get citizen safs
      */
-    public function getCitizenSafs($citizenId)
+    public function getCitizenSafs($citizenId, $ulbId)
     {
-        return PropSaf::select('holding_no', 'pt_no')
+        return PropSaf::select('id', 'holding_no', 'pt_no')
             ->where('citizen_id', $citizenId)
+            ->where('ulb_id', $ulbId)
             ->get();
     }
 }
