@@ -1597,11 +1597,121 @@ class Report implements IReport
             {
                 $jsk=$jsk->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
             }
+            $assestmentType = DB::table(
+                        DB::raw("(SELECT DISTINCT(UPPER(assessment_type)) AS mode 
+                                    FROM (
+                                            (
+                                                select
+                                                    distinct(
+                                                        CASE WHEN assessment_type ILIKE '%MUTATION%' THEN 'MUTATION' 
+                                                        ELSE UPPER(assessment_type)   
+                                                        END 
+                                                    ) AS assessment_type
+                                                from prop_active_safs
+                                            )
+                                            union(
+                                                select
+                                                    distinct(
+                                                        CASE WHEN assessment_type ILIKE '%MUTATION%' THEN 'MUTATION' 
+                                                        ELSE UPPER(assessment_type)   
+                                                        END 
+                                                    ) AS assessment_type
+                                                from prop_rejected_safs
+                                            )
+                                            union(
+                                                    select
+                                                        distinct(
+                                                            CASE WHEN assessment_type ILIKE '%MUTATION%' THEN 'MUTATION' 
+                                                            ELSE UPPER(assessment_type)   
+                                                            END 
+                                                        ) AS assessment_type
+                                                    from prop_safs
+                                            )
+                                    )assesment_type
+                                ) assesment_type")
+                        )
+                    ->select(
+                        DB::raw("
+                        CASE WHEN assesment_type.mode ILIKE '%MUTATION%' THEN 'MUTATION' 
+                            ELSE assesment_type.mode 
+                            END AS transaction_mode,
+                        CASE WHEN assesment_type.mode ILIKE '%MUTATION%' THEN COUNT(DISTINCT(prop_transactions.saf_id)) 
+                            ELSE COUNT(DISTINCT(prop_transactions.saf_id))
+                            END AS saf_count,
+                        CASE WHEN assesment_type.mode ILIKE '%MUTATION%' THEN COUNT(prop_transactions.id) 
+                            ELSE COUNT(prop_transactions.id)
+                            END AS tran_count, 
+                        CASE WHEN assesment_type.mode ILIKE '%MUTATION%' THEN SUM(COALESCE(prop_transactions.amount,0)) 
+                            ELSE SUM(COALESCE(prop_transactions.amount,0))
+                            END AS amount
+                        "))
+                    ->LEFTJOIN(DB::RAW("(
+                                        SELECT * 
+                                        FROM(
+                                            (
+                                                SELECT prop_transactions.*, 
+                                                    CASE WHEN prop_active_safs.assessment_type ILIKE '%MUTATION%' THEN 'MUTATION'
+                                                        ELSE UPPER(prop_active_safs.assessment_type)
+                                                        END AS assessment_type
+                                                FROM prop_transactions
+                                                JOIN prop_active_safs ON  prop_active_safs.id = prop_transactions.saf_id 
+                                                WHERE prop_transactions.status in (1,2)
+                                                    AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                                    ".($userId ? " AND prop_transactions.user_id = $userId " : "")."
+                                                    ".($ulbId ? " AND prop_transactions.ulb_id = $ulbId " : "")."
+                                            )
+                                            UNION(
+                                                SELECT prop_transactions.*,
+                                                    CASE WHEN prop_rejected_safs.assessment_type ILIKE '%MUTATION%' THEN 'MUTATION'
+                                                        ELSE UPPER(prop_rejected_safs.assessment_type)
+                                                        END AS assessment_type 
+                                                FROM prop_transactions
+                                                JOIN prop_rejected_safs ON prop_transactions.id = prop_transactions.saf_id 
+                                                WHERE prop_transactions.status in (1,2)
+                                                    AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                                    ".($userId ? " AND prop_transactions.user_id = $userId " : "")."
+                                                    ".($ulbId ? " AND prop_transactions.ulb_id = $ulbId " : "")."
+                                            )
+                                            UNION(
+                                                SELECT prop_transactions.*,
+                                                    CASE WHEN prop_safs.assessment_type ILIKE '%MUTATION%' THEN 'MUTATION'
+                                                        ELSE UPPER(prop_safs.assessment_type)
+                                                        END AS assessment_type  
+                                                FROM prop_transactions
+                                                JOIN prop_safs ON prop_safs.id = prop_transactions.saf_id 
+                                                WHERE prop_transactions.status in (1,2)
+                                                    AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                                    ".($userId ? " AND prop_transactions.user_id = $userId " : "")."
+                                                    ".($ulbId ? " AND prop_transactions.ulb_id = $ulbId " : "")."
+                                            )
 
+                                        )prop_transactions
+                                    ) prop_transactions"),function($join)use($fromDate,$uptoDate,$userId,$ulbId){
+                        $sub = $join->on(DB::RAW("UPPER(prop_transactions.assessment_type)") ,"=",DB::RAW("UPPER(assesment_type.mode)"))                    
+                        ->WHERENOTNULL("prop_transactions.saf_id")
+                        ->WHEREIN("prop_transactions.status",[1,2])
+                        ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
+                        if($userId)
+                        {
+                            $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                        }
+                        if($ulbId)
+                        {
+                            $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                        }
+                    })
+                    ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
+                    ->GROUPBY("assesment_type.mode"); 
+            if($paymentMode)
+            {
+                $assestmentType=$assestmentType->where(DB::raw("upper(prop_transactions.payment_mode)"),$paymentMode);
+            }
+            // dd($assestmentType->get());
             $collection = $collection->get();
             $refund     = $refund->get();
             $doorToDoor =$doorToDoor->get();
             $jsk        =$jsk->get();
+            $assestmentType=$assestmentType->get();
 
             $totalCollection = $collection->sum("amount");
             $totalSaf = $collection->sum("saf_count");
@@ -1618,6 +1728,8 @@ class Report implements IReport
             $totalCollectionJsk = $jsk->sum("amount");
             $totalSafJsk = $jsk->sum("saf_count");
             $totalTranJsk = $jsk->sum("tran_count");
+
+           
 
             $collection[]=["transaction_mode" =>"Total Collection",
                         "saf_count"    => $totalSaf,
@@ -1651,6 +1763,7 @@ class Report implements IReport
                     "amount"           => $totalTranJsk
                 ];
             $funal["jsk"] = $jsk;
+            $funal["assestment_type"] = $assestmentType;
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$funal,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
