@@ -240,7 +240,7 @@ class WaterConsumer extends Controller
             $metaRequest = new Request([
                 "consumerId"    => $request->consumerId,
                 "finalRading"   => $request->oldMeterFinalReading,
-                "demandUpto"    =>  $request->connectionDate
+                "demandUpto"    => Carbon::parse($request->connectionDate)->format('Y-m-d'),
             ]);
             $this->saveGenerateConsumerDemand($metaRequest);
             $documentPath = $this->saveTheMeterDocument($request);
@@ -250,7 +250,7 @@ class WaterConsumer extends Controller
             return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
         }
     }
 
@@ -302,9 +302,10 @@ class WaterConsumer extends Controller
         }
         if (isset($consumerDemand)) {
             $reqConnectionDate = $request->connectionDate;
-            $reqConnectionDate = Carbon::parse($reqConnectionDate)->format('Y-m-d');
+            $reqConnectionDate = Carbon::parse($reqConnectionDate)->format('m');
+            $consumerDmandDate = Carbon::parse($consumerDemand->demand_upto)->format('m');
             switch ($consumerDemand) {
-                case ($consumerDemand->demand_upto > $reqConnectionDate):
+                case ($consumerDmandDate >= $reqConnectionDate):
                     throw new Exception("Can not update Connection Date, Demand already generated upto that month!");
                     break;
             }
