@@ -10,5 +10,4 @@ namespace App\Repository\Property\Interfaces;
 interface iSafRepository
 {
     public function getSaf($workflowIds);
-    public function getGbSaf($workflowIds);
 }
