@@ -46,16 +46,17 @@ class WaterConsumerMeter extends Model
     /**
      * | Save Meter Details While intallation of the new meter 
      * | @param 
+        | Get the fixed rate
      */
     public function saveMeterDetails($req, $documentPath)
     {
         $meterStatus = null;
         $refConnectionType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
-        if ($req->connectionType = $refConnectionType['Meter/Fixed']) {
+        if ($req->connectionType == $refConnectionType['Meter/Fixed']) {
             $req->connectionType = 1;
             $meterStatus = 0;
         }
-        if ($req->connectionType = $refConnectionType['Meter']) {
+        if ($req->connectionType == $refConnectionType['Meter']) {
             $installationDate = Carbon::now();
         }
         // if($req->connectionType = $refConnectionType['Fixed'])

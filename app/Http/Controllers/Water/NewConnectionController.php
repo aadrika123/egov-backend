@@ -1516,7 +1516,6 @@ class NewConnectionController extends Controller
 
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
-                ->where('charge_category', $applicationDetails['applicationDetails']['connection_type'])
                 ->firstOrFail();
 
             if ($charges['paid_status'] == false) {
