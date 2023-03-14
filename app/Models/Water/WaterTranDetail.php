@@ -45,4 +45,26 @@ class WaterTranDetail extends Model
         return WaterTranDetail::whereIn('tran_id', $transIds)
             ->where('status', 1);
     }
+
+
+    /**
+     * | Save the transaction details for a transaction
+     * | @param 
+     * | @param
+     * | @param
+     * | @param 
+     */
+    public function saveTransactionDetails(
+        $waterTrans,
+        $charges,
+        $applicationId,
+        $amount
+    ) {
+        $waterTranDetail = new WaterTranDetail();
+        $waterTranDetail->tran_id           = $waterTrans;
+        $waterTranDetail->demand_id         = $charges;
+        $waterTranDetail->application_id    = $applicationId;
+        $waterTranDetail->total_demand      = $amount;
+        $waterTranDetail->save();
+    }
 }

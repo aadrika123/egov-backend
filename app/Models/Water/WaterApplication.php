@@ -67,6 +67,11 @@ class WaterApplication extends Model
                     $saveNewApplication->payment_status = true;
                 }
                 break;
+            case ('JSK'):
+                if ($newConnectionCharges['conn_fee_charge']['amount'] == 0) {
+                    $saveNewApplication->payment_status = true;
+                }
+                break;
             default: # Check
                 $saveNewApplication->apply_from = auth()->user()->user_type;
                 $saveNewApplication->current_role = Config::get('waterConstaint.ROLE-LABEL.BO');
@@ -242,7 +247,6 @@ class WaterApplication extends Model
         $rejectedWaterRep->id = $rejectedWater->id;
         $rejectedWaterRep->save();
         $rejectedWater->delete();
-
     }
 
     /**
@@ -422,5 +426,16 @@ class WaterApplication extends Model
             ->update([
                 'current_role' => $waterRoles['DA']
             ]);
+    }
+
+    /**
+     * | Save The payment Status 
+     * | @param ApplicationId
+     */
+    public function updateOnlyPaymentstatus($applicationId)
+    {
+        $activeSaf = WaterApplication::find($applicationId);
+        $activeSaf->payment_status = 1;
+        $activeSaf->save();
     }
 }
