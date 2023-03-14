@@ -1029,6 +1029,16 @@ class WaterPaymentController extends Controller
                         break;
                 }
                 break;
+
+            case ($req->chargeCategory == $paramChargeCatagory['SITE_INSPECTON']):
+                $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
+                    ->where('charge_category', $paramChargeCatagory['SITE_INSPECTON'])
+                    ->where('paid_status', false)
+                    ->first();
+                if (!$actualCharge) {
+                    throw new Exception("there is no site Inspection Payment!");
+                }
+                break;
         }
     }
 
