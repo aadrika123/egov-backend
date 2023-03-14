@@ -16,7 +16,7 @@ class PropActiveHarvesting extends Model
      * | Get Harvesting List
      * | function for the harvesting list according to ulb/user details
      */
-    public function getHarvestingList($ulbId)
+    public function getHarvestingList($workflowIds)
     {
         return PropActiveHarvesting::select(
             'prop_active_harvestings.id',
@@ -36,7 +36,7 @@ class PropActiveHarvesting extends Model
             ->leftjoin('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
             ->where('prop_active_harvestings.status', 1)
-            ->where('prop_active_harvestings.ulb_id', $ulbId)
+            ->whereIn('workflow_id', $workflowIds)
             ->groupBy(
                 'prop_active_harvestings.id',
                 'a.ward_mstr_id',

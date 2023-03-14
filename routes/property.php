@@ -206,9 +206,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('objection/backtocitizen', 'backToCitizen');              //12
     Route::post('objection/btc-inbox', 'btcInboxList');                   //18
 
-    Route::get('objection/list', 'objectionList');                          //13
-    Route::post('objection/list-id', 'objectionByid');                      //14
-
     Route::post('objection/comment-independent', 'commentIndependent');     //18
     Route::post('objection/doc-list', 'objectionDocList');                  //14
     Route::post('objection/upload-document', 'uploadDocument');             //19
