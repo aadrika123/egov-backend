@@ -933,7 +933,6 @@ class NewConnectionController extends Controller
                     if ($checkExist) {
                         $areaInSqft['areaInSqFt'] = decimalToSqFt($application['total_area_in_desimal']);
                         $propUsageType = $this->getPropUsageType($request, $application['id']);
-                        // $getCatagory['catagory'] = $this->checkCatagory($request, $areaInSqft, $propUsageType);
                         $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners['owners'] = collect($mPropOwner->getOwnerByPropId($application['id']));
                         $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
@@ -951,7 +950,6 @@ class NewConnectionController extends Controller
                     if ($checkExist) {
                         $areaInSqft['areaInSqFt'] = decimalToSqFt($application['total_area_in_desimal']);
                         $safUsageType = $this->getPropUsageType($request, $application['id']);
-                        // $getCatagory['catagory'] = $this->checkCatagory($request, $areaInSqft, $safUsageType);
                         $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
                         $owners['owners'] = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
                         $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
@@ -962,32 +960,6 @@ class NewConnectionController extends Controller
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | check the catagory of the user 
-     * | calling function 01.01
-        | may Not Used
-     */
-    public function checkCatagory($request, $areaInSqFt, $propUsageType)
-    {
-        $refResidential = collect($propUsageType)->first()->first()['usageType'];
-        switch ($request->connectionThrough) {
-            case ('1'):
-                if ($areaInSqFt < 350 && $refResidential == "Residential")   // Static
-                {
-                    return "BPL";
-                }
-                return "APL";
-                break;
-            case ('2'):
-                if ($areaInSqFt < 350 && $refResidential == "Residential")   // Static
-                {
-                    return "BPL";
-                }
-                return "APL";
-                break;
         }
     }
 
@@ -1544,7 +1516,6 @@ class NewConnectionController extends Controller
 
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
-                ->where('charge_category', $applicationDetails['applicationDetails']['connection_type'])
                 ->firstOrFail();
 
             if ($charges['paid_status'] == false) {

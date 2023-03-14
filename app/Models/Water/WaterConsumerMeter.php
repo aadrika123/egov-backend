@@ -2,8 +2,11 @@
 
 namespace App\Models\Water;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 
 class WaterConsumerMeter extends Model
 {
@@ -15,7 +18,11 @@ class WaterConsumerMeter extends Model
      */
     public function getMeterDetailsByConsumerId($consumerId)
     {
-        return WaterConsumerMeter::where('consumer_id', $consumerId)
+        return WaterConsumerMeter::select(
+            '*',
+            DB::raw("concat(relative_path,'/',meter_doc) as doc_path"),
+        )
+            ->where('consumer_id', $consumerId)
             ->where('status', true)
             ->orderByDesc('id');
     }
@@ -39,19 +46,35 @@ class WaterConsumerMeter extends Model
     /**
      * | Save Meter Details While intallation of the new meter 
      * | @param 
+        | Get the fixed rate
      */
-    public function saveMeterDetails($req)
+    public function saveMeterDetails($req, $documentPath)
     {
+        $meterStatus = null;
+        $refConnectionType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
+        if ($req->connectionType == $refConnectionType['Meter/Fixed']) {
+            $req->connectionType = 1;
+            $meterStatus = 0;
+        }
+        if ($req->connectionType == $refConnectionType['Meter']) {
+            $installationDate = Carbon::now();
+        }
+        // if($req->connectionType = $refConnectionType['Fixed'])
+        // {
+        //     $ratePerMonth = 
+        // }
         $mWaterConsumerMeter = new WaterConsumerMeter();
         $mWaterConsumerMeter->consumer_id               = $req->consumerId;
         $mWaterConsumerMeter->connection_date           = $req->connectionDate;
         $mWaterConsumerMeter->emp_details_id            = authUser()->id;
         $mWaterConsumerMeter->connection_type           = $req->connectionType;
-        $mWaterConsumerMeter->meter_no                  = $req->meterNo;
-        $mWaterConsumerMeter->final_meter_reading       = $req->finalMeterReading;
-        $mWaterConsumerMeter->meter_intallation_date    = $req->installationDate;
-        $mWaterConsumerMeter->initial_reading           = $req->intialReading;
-        $mWaterConsumerMeter->rate_per_month            = $req->ratePerMonth ?? 0;
+        $mWaterConsumerMeter->meter_no                  = $req->meterNo ?? null;
+        $mWaterConsumerMeter->meter_intallation_date    = $installationDate ?? null;
+        $mWaterConsumerMeter->initial_reading           = $req->newMeterInitialReading ?? null;
+        $mWaterConsumerMeter->meter_status              = $meterStatus ?? 1;
+        $mWaterConsumerMeter->rate_per_month            = $ratePerMonth ?? 0;
+        $mWaterConsumerMeter->relative_path             = $documentPath['relaivePath'];
+        $mWaterConsumerMeter->meter_doc                 = $documentPath['document'];
         $mWaterConsumerMeter->save();
     }
 }

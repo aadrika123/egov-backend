@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActiveCitizen;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSaf;
 use App\Pipelines\SearchHolding;
 use App\Pipelines\SearchPtn;
 use Exception;
@@ -64,9 +65,9 @@ class PropertyController extends Controller
     /**
      * | Care taker property tag
      */
-    public function caretakerPropertyTag(Request $request)
+    public function caretakerPropertyTag(Request $req)
     {
-        $request->validate([
+        $req->validate([
             'holdingNo' => 'required_without:ptNo|max:255',
             'ptNo' => 'required_without:holdingNo|numeric',
         ]);
@@ -93,6 +94,40 @@ class PropertyController extends Controller
             $activeCitizen->save();
 
             return responseMsgs(true, "Property Tagged!", '', '010801', '01', '623ms', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Logged in citizen Holding & Saf
+     */
+    public function citizenHoldingSaf(Request $req)
+    {
+        $req->validate([
+            'type' => 'required|In:holding,saf',
+            'ulbId' => 'required|numeric'
+        ]);
+        try {
+            $citizenId = authUser()->id;
+            $ulbId = $req->ulbId;
+            $type = $req->type;
+            $mPropSafs = new PropSaf();
+            $mPropProperty = new PropProperty();
+
+            if ($type == 'holding') {
+                $data = $mPropProperty->getCitizenHoldings($citizenId, $ulbId);
+                $msg = 'Citizen Holdings';
+            }
+
+            if ($type == 'saf') {
+                $data = $mPropSafs->getCitizenSafs($citizenId, $ulbId);
+                $msg = 'Citizen Safs';
+            }
+            if ($data->isEmpty())
+                throw new Exception('No Data Found');
+
+            return responseMsgs(true, $msg, $data, '010801', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

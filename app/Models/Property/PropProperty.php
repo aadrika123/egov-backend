@@ -44,7 +44,7 @@ class PropProperty extends Model
     // Get SAf Id by Holding No
     public function getSafIdByHoldingNo($holdingNo)
     {
-        return PropProperty::select('saf_id')
+        return PropProperty::select('saf_id', 'id')
             ->where('holding_no', $holdingNo)
             ->orWhere('new_holding_no', $holdingNo)
             ->first();
@@ -428,6 +428,17 @@ class PropProperty extends Model
             ->leftJoin('prop_floors as f', 'f.property_id', '=', 'p.id')
             ->where('p.id', $propId)
             ->where('p.status', 1)
+            ->get();
+    }
+
+    /**
+     * | Get citizen holdings
+     */
+    public function getCitizenHoldings($citizenId, $ulbId)
+    {
+        return PropProperty::select('id', 'holding_no', 'new_holding_no', 'pt_no')
+            ->where('ulb_id', $ulbId)
+            ->where('citizen_id', $citizenId)
             ->get();
     }
 }

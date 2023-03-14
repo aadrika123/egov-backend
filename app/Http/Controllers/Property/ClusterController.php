@@ -168,13 +168,15 @@ class ClusterController extends Controller
             }
             $mPropProperty = new PropProperty();
             $results = $mPropProperty->searchCollectiveHolding($request->holdingNo);
-            if ($results->count() !== count($request->holdingNo)) {
+            if ($results->count() != count($request->holdingNo)) {
                 return responseMsg(false, "the holding details contain invalid data", "");
             }
 
             $notActive = "Not a valid cluter ID!";
             $mCluster = new Cluster();
             $checkActiveCluster =  $mCluster->checkActiveCluster($request->clusterId);
+            if (collect($checkActiveCluster)->isEmpty())
+                throw new Exception("Cluster Not Found");
             $verifyCluster = collect($checkActiveCluster)->first();
             if ($verifyCluster) {
                 $holdingList = collect($request->holdingNo);

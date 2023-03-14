@@ -50,7 +50,6 @@ class PenaltyRebateCalculation
         $rebateAmount = 0;
         $seniorCitizen = 60;
         $specialRebateAmt = 0;
-        $years = $currentDate->diffInYears(Carbon::parse($ownerDetails['dob']));
 
         if ($currentQuarter == 1) {                                                         // Rebate On Financial Year Payment On 1st Quarter
             $rebate1 += 5;
@@ -82,17 +81,20 @@ class PenaltyRebateCalculation
             ]);
         }
 
-        if (
-            $ownerDetails['is_armed_force'] == 1 || $ownerDetails['is_specially_abled'] == 1 ||
-            $ownerDetails['gender']  == 'Female' || $ownerDetails['gender'] == 'Transgender'  || $years >= $seniorCitizen
-        ) {
-            $rebate += $speciallyAbledRebatePerc;
-            $specialRebateAmt = roundFigure(($totalDemand * $speciallyAbledRebatePerc) / 100);
-            array_push($rebates, [
-                "rebateType" => "speciallyAbledRebate",
-                "rebatePerc" => $speciallyAbledRebatePerc,
-                "rebateAmount" => $specialRebateAmt,
-            ]);
+        if (isset($ownerDetails)) {
+            $years = $currentDate->diffInYears(Carbon::parse($ownerDetails['dob']));
+            if (
+                $ownerDetails['is_armed_force'] == 1 || $ownerDetails['is_specially_abled'] == 1 ||
+                $ownerDetails['gender']  == 'Female' || $ownerDetails['gender'] == 'Transgender'  || $years >= $seniorCitizen
+            ) {
+                $rebate += $speciallyAbledRebatePerc;
+                $specialRebateAmt = roundFigure(($totalDemand * $speciallyAbledRebatePerc) / 100);
+                array_push($rebates, [
+                    "rebateType" => "speciallyAbledRebate",
+                    "rebatePerc" => $speciallyAbledRebatePerc,
+                    "rebateAmount" => $specialRebateAmt,
+                ]);
+            }
         }
 
         $totalDuesList['rebatePerc'] = $rebate1;

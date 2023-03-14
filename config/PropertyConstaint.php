@@ -358,6 +358,14 @@ return [
         "EO" => "10"
     ],
 
+    //GB SAF levels
+    "GBSAF-LABEL" => [
+        "BO" => "11",
+        "DA" => "6",
+        "SI" => "9",
+        "EO" => "10"
+    ],
+
     //Harvesting Label Role ID
     "HARVESTING-LABEL" => [
         "BO" => "11",

@@ -16,6 +16,7 @@ use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
 use App\Http\Controllers\property\ClusterController;
 use App\Http\Controllers\Property\ConcessionDocController;
+use App\Http\Controllers\Property\GbSafController;
 use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Property\PropertyController;
 use App\Http\Controllers\Property\ReportController;
@@ -239,11 +240,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(RainWaterHarvestingController::class)->group(function () {
     Route::get('get-wardmaster-data', 'getWardMasterData');                     //01
     Route::post('water-harvesting-application', 'waterHarvestingApplication');  //02
-    // Route::post('get-harvesting-list', 'waterHarvestingList');                  //03
-    // Route::post('harvesting-list-id', 'harvestingListById');                    //04
-    // Route::post('harvesting-doc-id', 'harvestingDocList');                      //05
-    // Route::post('harvesting-doc-upload', 'docUpload');                          //06
-    // Route::post('harvesting-doc-status', 'docStatus');                          //07
     Route::post('harvesting/inbox', 'harvestingInbox');                         //08
     Route::post('harvesting/outbox', 'harvestingOutbox');                       //09
     Route::post('harvesting/next-level', 'postNextLevel');                      //10
@@ -359,8 +355,18 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(PropertyController::class)->group(function () {
     Route::post('caretaker-otp', 'caretakerOtp');                             // 01
     Route::post('caretaker-property-tagging', 'caretakerPropertyTag');        // 02
+    Route::post('citizen-holding-saf', 'citizenHoldingSaf');
+  });
 
-
+  /**
+    | Serial No : 20
+   */
+  Route::controller(GbSafController::class)->group(function () {
+    Route::post('gbsaf/inbox', 'inbox');                             // 01
+    Route::post('gbsaf/outbox', 'outbox');
+    Route::post('gbsaf/next-level', 'postNextLevel');
+    Route::post('gbsaf/final-approve-reject', 'approvalRejectionGbSaf');
+    Route::post('gbsaf/inbox-field-verification', 'fieldVerifiedInbox');
   });
 });
 

@@ -362,41 +362,4 @@ class CitizenController extends Controller
             return response()->json(["status" => false, "message" => $e->getMessage(), "data" => $request->password], 400);
         }
     }
-
-    /**
-     * | Care taker property tag
-     */
-    public function caretakerPropertyTag(Request $request)
-    {
-        $request->validate([
-            // 'holdingNo' => 'required'
-            //  'ptNo' => 'required'
-        ]);
-        try {
-            $userId = authUser()->id;
-            $activeCitizen = ActiveCitizen::find($userId);
-
-            $propDtl = app(Pipeline::class)
-                ->send(PropProperty::query()->where('status', 1))
-                ->through([
-                    SearchHolding::class,
-                    SearchPtn::class
-                ])
-                ->thenReturn()
-                ->first();
-
-            if (!isset($propDtl))
-                throw new Exception('Property Not Found');
-
-            if ($activeCitizen->caretaker == NULL)
-                $activeCitizen->caretaker = '{"propId":' . $propDtl->id . '}';
-            else
-                $activeCitizen->caretaker = $activeCitizen->caretaker .     ',{"propId":' . $propDtl->id . '}';
-            $activeCitizen->save();
-
-            return responseMsgs(true, "Property Tagged!", '', '010801', '01', '623ms', 'Post', '');
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 }

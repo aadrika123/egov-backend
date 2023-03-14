@@ -88,5 +88,13 @@ return [
             "Waiver Committee",
             "No Connection"
         ],
-    ]
+        "METER_CONNECTION_TYPE" => [
+            "Meter"         => 1,
+            "Gallon"        => 2,
+            "Fixed"         => 3,
+            "Meter/Fixed"    => 4
+        ],
+    ],
+
+    "WATER_METER_CODE" => "meter",
 ];
