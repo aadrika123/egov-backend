@@ -96,6 +96,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * Created On-20-06-2022 
      * Modified On-27-06-2022 
      */
+
+    Route::controller(UlbController::class)->group(function () {
+        Route::post('city/state/by-ulb-id', 'getCityStateByUlb');
+    });
+
     Route::controller(UserController::class)->group(function () {
         Route::post('authorised-register', 'authorizeStore');             // authorised user adding user // 
         Route::get('test', 'testing');
