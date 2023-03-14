@@ -886,9 +886,9 @@ class WaterPaymentController extends Controller
             # Save the Details for the Cheque,DD,nfet
             if (in_array($req['paymentMode'], $offlinePaymentModes)) {
                 $req->merge([
-                    'chequeDate' => $req['chequeDate'],
-                    'tranId' => $waterTrans['id'],
-                    'id' => $req->applicationId,
+                    'chequeDate'    => $req['chequeDate'],
+                    'tranId'        => $waterTrans['id'],
+                    'id'            => $req->applicationId,
                     'applicationNo' => $refWaterApplication['application_no']
                 ]);
                 $this->postOtherPaymentModes($req);
@@ -900,22 +900,20 @@ class WaterPaymentController extends Controller
                 $charges->save();
 
                 $waterTranDetail = new WaterTranDetail();
-                $waterTranDetail->tran_id           = $waterTrans['id'];
-                $waterTranDetail->demand_id         = $charges['id'];
-                $waterTranDetail->total_demand      = $charges['balance_amount'];
-                $waterTranDetail->application_id    = $req->applicationId;
-                $waterTranDetail->total_demand      = $req->amount;
-                $waterTranDetail->save();
+                $waterTranDetail->saveDefaultTrans(
+                    $req->amount,
+                    $req->applicationId,
+                    $waterTrans['id'],
+                    $charges['id'],
+                );
             }
 
             # Update Water Application Payment Status
             if ($refWaterApplication['payment_status'] == false) {
-                $activeSaf = WaterApplication::find($req['id']);
-                $activeSaf->payment_status = 1;
-                $activeSaf->save();
+                $mWaterApplication->updateOnlyPaymentstatus($req['id']);
             }
 
-            // Readjust Water Penalties
+            # Readjust Water Penalties
             $this->updatePenaltyPaymentStatus($req);
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "", "1.0", "ms", "POST", $req->deviceId);
@@ -1030,13 +1028,17 @@ class WaterPaymentController extends Controller
                 }
                 break;
 
+                # In case of Site Inspection
             case ($req->chargeCategory == $paramChargeCatagory['SITE_INSPECTON']):
                 $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                     ->where('charge_category', $paramChargeCatagory['SITE_INSPECTON'])
                     ->where('paid_status', false)
-                    ->first();
-                if (!$actualCharge) {
-                    throw new Exception("there is no site Inspection Payment!");
+                    ->firstOrFail();
+                if ($actualCharge['amount'] != $req->amount) {
+                    throw new Exception("Amount Not Matched!");
+                }
+                if ($req->isInstallment == "yes") {
+                    throw new Exception("No Installment in Site Inspection Charges!");
                 }
                 break;
         }

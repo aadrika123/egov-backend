@@ -35,6 +35,7 @@ class newApplyRules extends FormRequest
         if (isset($this->owners) && $this->owners) {
             $rules["owners.*.ownerName"] = "required";
             $rules["owners.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
+            $rules["owners.*.mobileNo"] = "nullable|email";
         }
         return $rules;
     }

@@ -166,7 +166,7 @@ class NewConnectionRepository implements iNewConnection
         $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $req, $newConnectionCharges);
         # in case of connection charge is 0
         if ($totalConnectionCharges == 0) {
-            $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId);
+            $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId,$connectionType);
         }
         DB::commit();
 

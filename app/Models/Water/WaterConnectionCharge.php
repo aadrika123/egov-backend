@@ -39,6 +39,9 @@ class WaterConnectionCharge extends Model
         if ($req->chargeCatagory) {
             $saveCharges->charge_category = $chargeCatagory['SITE_INSPECTON'];
         }
+        if ($newConnectionCharges['conn_fee_charge']['amount'] == 0) {
+            $saveCharges->paid_status = 1;
+        }
         $saveCharges->save();
         return $saveCharges->id;
     }
