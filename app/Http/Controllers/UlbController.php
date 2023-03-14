@@ -55,10 +55,11 @@ class UlbController extends Controller
     // Get City State by Ulb Id
     public function getCityStateByUlb(Request $req)
     {
-        // $req->validate([
-        //     'ulbId' => 'required|integer'
-        // ]);
-
+        if (!$req->bearerToken()) {
+            $req->validate([
+                'ulbId' => 'required|integer'
+            ]);
+        }
         try {
             $ulbId = $req->ulbId ?? authUser()->ulb_id;
             $mCity = new MCity();
