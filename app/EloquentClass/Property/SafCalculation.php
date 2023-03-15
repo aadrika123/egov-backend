@@ -1050,6 +1050,7 @@ class SafCalculation
      */
     public function calcLateAssessmentFee()
     {
+        $fine = 0;
         // Check Late Assessment Penalty for Building
         if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
             $floorDetails = collect($this->_floors);
