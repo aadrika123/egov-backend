@@ -431,5 +431,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery');
     Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');
+    Route::post('reports/property/dcb', 'PropDcb');
+    
   });
 });
