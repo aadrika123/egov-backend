@@ -68,6 +68,7 @@ class SafCalculation
     public $_paramRentalRate;
     public $_areaOfPlotInSqft;
     public $_point20TaxedUsageTypes;
+    public $_lateAssessmentStatus;
 
     /** 
      * | For Building
@@ -1018,43 +1019,14 @@ class SafCalculation
 
         $fine = 0;
 
-        // Check Late Assessment Penalty for Building
-        if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
-            $floorDetails = collect($this->_floors);
-            $lateAssementFloors = $floorDetails->filter(function ($value, $key) {                           // Collection of floors which have late Assessment
-                $currentDate = Carbon::now()->floorMonth();
-                $dateFrom = Carbon::createFromFormat('Y-m-d', $value['dateFrom'])->floorMonth();
-                $usageType = $value['useType'];
-                if ($usageType != 10) {                                                                     // Late Assessment Not Applicable for the Religious Floors
-                    $diffInMonths = $currentDate->diffInMonths($dateFrom);
-                    return $diffInMonths > 3;
-                }
-            });
-            $lateAssessmentStatus = $lateAssementFloors->isEmpty() == true ? false : true;
-
-            // Late Assessment Penalty
-            if ($lateAssessmentStatus == true)
-                $fine = $this->_isResidential == true ? 2000 : 5000;
-        }
-
-        // Check Late Assessment Penalty for Vacant Land
-        if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
-            $currentDate = Carbon::now()->floorMonth();
-            $dateFrom = Carbon::createFromFormat('Y-m-d', $this->_propertyDetails['landOccupationDate'])->floorMonth();
-            $diffInMonths = $currentDate->diffInMonths($dateFrom);
-            $lateAssessmentStatus = $diffInMonths > 3 ? true : false;
-            if ($lateAssessmentStatus == true) {
-                $fine = $this->_isResidential == true ? 2000 : 5000;
-            }
-        }
-
+        $fine = $this->calcLateAssessmentFee();
         // No Late Assessment For Property Yearly Holding Tax
         if ($this->_propertyDetails['isProperty'] ?? "" && $this->_propertyDetails['isProperty'] == true) {
-            $lateAssessmentStatus = false;
+            $this->_lateAssessmentStatus = false;
             $fine = 0;
         }
 
-        $this->_GRID['demand']['lateAssessmentStatus'] = $lateAssessmentStatus;
+        $this->_GRID['demand']['lateAssessmentStatus'] = $this->_lateAssessmentStatus;
         $this->_GRID['demand']['lateAssessmentPenalty'] = $fine;
 
         // For Government Building SAF The total Tax 
@@ -1071,6 +1043,43 @@ class SafCalculation
         $this->_GRID['demand']['totalDemand'] = roundFigure($totalDemandAmount);
         $this->readRebate();                                                                                         // Read Rebates by Current Objection function
         $this->_GRID['demand']['payableAmount'] = $this->calculatePayableAmount();
+    }
+
+    /**
+     * | Check Late Assessment Status
+     */
+    public function calcLateAssessmentFee()
+    {
+        // Check Late Assessment Penalty for Building
+        if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
+            $floorDetails = collect($this->_floors);
+            $lateAssementFloors = $floorDetails->filter(function ($value, $key) {                           // Collection of floors which have late Assessment
+                $currentDate = Carbon::now()->floorMonth();
+                $dateFrom = Carbon::createFromFormat('Y-m-d', $value['dateFrom'])->floorMonth();
+                $usageType = $value['useType'];
+                if ($usageType != 10) {                                                                     // Late Assessment Not Applicable for the Religious Floors
+                    $diffInMonths = $currentDate->diffInMonths($dateFrom);
+                    return $diffInMonths > 3;
+                }
+            });
+            $this->_lateAssessmentStatus = $lateAssementFloors->isEmpty() == true ? false : true;
+
+            // Late Assessment Penalty
+            if ($this->_lateAssessmentStatus == true)
+                $fine = $this->_isResidential == true ? 2000 : 5000;
+        }
+
+        // Check Late Assessment Penalty for Vacant Land
+        if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
+            $currentDate = Carbon::now()->floorMonth();
+            $dateFrom = Carbon::createFromFormat('Y-m-d', $this->_propertyDetails['landOccupationDate'])->floorMonth();
+            $diffInMonths = $currentDate->diffInMonths($dateFrom);
+            $this->_lateAssessmentStatus = $diffInMonths > 3 ? true : false;
+            if ($this->_lateAssessmentStatus == true) {
+                $fine = $this->_isResidential == true ? 2000 : 5000;
+            }
+        }
+        return $fine;
     }
 
     /**

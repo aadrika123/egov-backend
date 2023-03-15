@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqPayment;
@@ -1273,16 +1274,67 @@ class ActiveSafController extends Controller
      */
     public function calculateSafBySafId(Request $req)
     {
-        $safDetails = $this->details($req);
-        $safNo = $safDetails['saf_no'];
-        $req = $safDetails;
-        $array = $this->generateSafRequest($req);                                                                       // Generate SAF Request by SAF Id Using Trait
-        $safCalculation = new SafCalculation();
-        $request = new Request($array);
-        $safTaxes = $safCalculation->calculateTax($request);
-        $safTaxes = json_decode(json_encode($safTaxes), true);
-        $safTaxes['original']['safNo'] = $safNo;
-        return $safTaxes['original'];
+        try {
+            $demands = array();
+            $safId = $req->id;
+            $currentFYear = getFY();
+            $mPropSafDemand = new PropSafsDemand();
+            $mPropActiveSafOwner = new PropActiveSafsOwner();
+            $penaltyRebateCalc = new PenaltyRebateCalculation;
+
+            $activeSaf = PropActiveSaf::findOrFail($safId);
+            $loggedInUserType = authUser()->user_type ?? "Citizen";
+            $currentQuarter = calculateQtr($this->_todayDate->format('Y-m-d'));
+            $firstOwner = $mPropActiveSafOwner->getOwnerDtlsBySafId1($safId);
+            $safDemandList = $mPropSafDemand->getDemandBySafId($safId);
+
+            if ($safDemandList->isEmpty())
+                throw new Exception("Demand Not Found");
+
+            $safDemandList = $safDemandList->map(function ($item) {                                // One Perc Penalty Tax
+                return $this->calcOnePercPenalty($item);           // Function Calculation one perc penalty()
+            });
+            $dues = roundFigure($safDemandList->sum('balance'));
+            $onePercTax = roundFigure($safDemandList->sum('onePercPenaltyTax'));
+            $lateAssessementPenalty = $activeSaf->late_assess_penalty ?? 0;
+            $totalDemand = roundFigure($dues + $onePercTax + $lateAssessementPenalty);
+            $mLastQuarterDemand = $safDemandList->where('fyear', $currentFYear)->sum('balance');
+            $dueFrom = "Quarter " . $safDemandList->last()->qtr . "/ Year " . $safDemandList->last()->fyear;
+            $dueTo = "Quarter " . $safDemandList->first()->qtr . "/ Year " . $safDemandList->first()->fyear;
+            $totalDuesList = [
+                'totalTax' => $dues,
+                'totalOnePercPenalty' => $onePercTax,
+                'totalQuarters' => $safDemandList->count(),
+                'duesFrom' => $dueFrom,
+                'duesTo' => $dueTo,
+                'lateAssessmentStatus' => (empty($lateAssessementPenalty)) ? false : true,
+                'lateAssessmentPenalty' => $lateAssessementPenalty,
+                'totalDemand' => $totalDemand,
+            ];
+            $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $firstOwner, $dues, $totalDuesList);
+
+            $finalPayableAmt = $totalDemand - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
+            $totalDuesList['payableAmount'] = round($finalPayableAmt);
+
+            $demands['demand'] = $totalDuesList;
+            $demands['details'] = $safDemandList;
+            return responseMsgs(true, "Demand List", remove_null($demands));
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | One Percent Penalty Calculation(13.1)
+     */
+    public function calcOnePercPenalty($item)
+    {
+        $penaltyRebateCalc = new PenaltyRebateCalculation;
+        $onePercPenalty = $penaltyRebateCalc->calcOnePercPenalty($item->due_date);                  // Calculation One Percent Penalty
+        $item['onePercPenalty'] = $onePercPenalty;
+        $onePercPenaltyTax = ($item['balance'] * $onePercPenalty) / 100;
+        $item['onePercPenaltyTax'] = roundFigure($onePercPenaltyTax);
+        return $item;
     }
 
     /**
@@ -1306,15 +1358,15 @@ class ActiveSafController extends Controller
             $auth = auth()->user();
             $req->merge(['departmentId' => 1]);
             $calculateSafById = $this->calculateSafBySafId($req);
-            $safDemandDetails = $this->generateSafDemand($calculateSafById['data']['details']);
+            $safDemandDetails = $calculateSafById->original['data']['details'];
             $safDetails = PropActiveSaf::find($req->id);
-            $demands = $calculateSafById['data']['demand'];
+            $demands = $calculateSafById->original['data']['demand'];
             $totalAmount = $demands['payableAmount'];
             $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0]);
             DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
 
-            $this->postDemands($safDemandDetails, $req, $safDetails);                               // Update the data in saf prop demands
+            $this->postDemands($safDemandDetails, $req);                               // Update the data in saf prop demands
             $this->postPenaltyRebates($calculateSafById, $req);                                     // Post Penalty Rebates
 
             DB::commit();
@@ -1328,47 +1380,24 @@ class ActiveSafController extends Controller
     /**
      * | Post Demands (14.1)
      */
-    public function postDemands($safDemandDetails, $req, $safDetails)
+    public function postDemands($safDemandDetails, $req)
     {
-        $mSafDemand = new PropSafsDemand();
         $mPayPropPenalty = new PaymentPropPenalty();
-        collect($safDemandDetails)->map(function ($safDemandDetail) use ($mSafDemand, $req, $safDetails, $mPayPropPenalty) {
-            $propSafDemand = $mSafDemand->getPropSafDemands($safDemandDetail['quarterYear'], $safDemandDetail['qtr'], $req->id); // Get SAF demand from model function
-            $reqs = [
-                'saf_id' => $req->id,
-                'arv' => $safDemandDetail['arv'],
-                'water_tax' => $safDemandDetail['waterTax'],
-                'education_cess' => $safDemandDetail['educationTax'],
-                'health_cess' => $safDemandDetail['healthCess'],
-                'latrine_tax' => $safDemandDetail['latrineTax'],
-                'additional_tax' => $safDemandDetail['rwhPenalty'],
-                'holding_tax' => $safDemandDetail['holdingTax'],
-                'amount' => $safDemandDetail['totalTax'],
-                'fyear' => $safDemandDetail['quarterYear'],
-                'qtr' => $safDemandDetail['qtr'],
-                'due_date' => $safDemandDetail['dueDate'],
-                'user_id' => authUser()->id ?? null,
-                'ulb_id' => $safDetails->ulb_id,
-            ];
-            if ($propSafDemand)                                                     // <---------------- If The Data is already Existing then update the data
-                $mSafDemand->editDemands($propSafDemand['id'], $reqs);
-            else                                                                    // <----------------- If not Existing then add new 
-                $mSafDemand->postDemands($reqs);                                     // <--------- If Exist Update
-
-            $penaltyExist = $mPayPropPenalty->getPenaltyByDemandSafId($propSafDemand['id'], $req->id);
+        foreach ($safDemandDetails as $item) {
+            $penaltyExist = $mPayPropPenalty->getPenaltyByDemandSafId($item['id'], $req->id);
             $penaltyReqs = [
-                'saf_demand_id' => $propSafDemand['id'],
+                'saf_demand_id' => $item['id'],
                 'saf_id' => $req->id,
-                'fyear' => $safDemandDetail['quarterYear'],
+                'fyear' => $item['fyear'],
                 'head_name' => 'Monthly 1 % Penalty',
-                'penalty_date' => Carbon::now()->format('Y-m-d'),
-                'amount' => $safDemandDetail['onePercPenaltyTax']
+                'penalty_date' => $this->_todayDate->format('Y-m-d'),
+                'amount' => $item['onePercPenaltyTax']
             ];
             if ($penaltyExist)
                 $mPayPropPenalty->editPenalties($penaltyExist->id, $penaltyReqs);
             else
                 $mPayPropPenalty->postPenalties($penaltyReqs);
-        });
+        }
     }
 
     /**
@@ -1380,22 +1409,22 @@ class ActiveSafController extends Controller
         $headNames = [
             [
                 'keyString' => '1% Monthly Penalty',
-                'value' => $calculateSafById['data']['demand']['totalOnePercPenalty'],
+                'value' => $calculateSafById->original['data']['demand']['totalOnePercPenalty'],
                 'isRebate' => false
             ],
             [
                 'keyString' => 'Late Assessment Fine(Rule 14.1)',
-                'value' => $calculateSafById['data']['demand']['lateAssessmentPenalty'],
+                'value' => $calculateSafById->original['data']['demand']['lateAssessmentPenalty'],
                 'isRebate' => false
             ],
             [
                 'keyString' => 'Special Rebate',
-                'value' => $calculateSafById['data']['demand']['specialRebateAmount'],
+                'value' => $calculateSafById->original['data']['demand']['specialRebateAmt'],
                 'isRebate' => true
             ],
             [
                 'keyString' => 'Rebate',
-                'value' => $calculateSafById['data']['demand']['rebateAmount'],
+                'value' => $calculateSafById->original['data']['demand']['rebateAmt'],
                 'isRebate' => true
             ]
         ];
@@ -1990,11 +2019,8 @@ class ActiveSafController extends Controller
         ]);
         try {
             $safDetails = $this->details($req);
+            $safTaxes = $this->calculateSafBySafId($req);
             $req = $safDetails;
-            $array = $this->generateSafRequest($req);                                                                       // Generate SAF Request by SAF Id Using Trait
-            $safCalculation = new SafCalculation();
-            $request = new Request($array);
-            $safTaxes = $safCalculation->calculateTax($request);
             $demand['basicDetails'] = [
                 "ulb_id" => $req['ulb_id'],
                 "saf_no" => $req['saf_no'],
@@ -2011,7 +2037,7 @@ class ActiveSafController extends Controller
                 "doc_upload_status" => $req['doc_upload_status']
             ];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
-            $demand['details'] = collect($safTaxes->original['data']['details'])->groupBy('ruleSet');
+            $demand['details'] = collect($safTaxes->original['data']['details']);
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", "", "POST", $req->deviceId ?? "");

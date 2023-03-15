@@ -14,4 +14,6 @@ interface IReport
     public function levelUserPending(Request $request);
     public function userWiseWardWireLevelPending(Request $request);
     public function safSamFamGeotagging(Request $request);
+    public function PropPaymentModeWiseSummery(Request $request);
+    public function SafPaymentModeWiseSummery(Request $request);
 }

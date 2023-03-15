@@ -182,23 +182,18 @@ class RainWaterHarvestingController extends Controller
     public function harvestingInbox()
     {
         try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-            $wardId = $this->getWardByUserId($userId);
-
-            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
-                return $ward->ward_id;
-            });
-
-            $roles = $this->getRoleIdByUserId($userId);
-
-            $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
-                return $role->wf_role_id;
-            });
-
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
-            $harvesting = $harvestingList->getHarvestingList($ulbId)
+
+            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
+
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $harvesting = $harvestingList->getHarvestingList($workflowIds)
+                ->where('prop_active_harvestings.ulb_id', $ulbId)
                 ->whereIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_harvestings.id')
@@ -218,17 +213,18 @@ class RainWaterHarvestingController extends Controller
     public function specialInbox()
     {
         try {
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-            $wardId = $this->getWardByUserId($userId);
 
-            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
-                return $ward->ward_id;
-            });
+            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
 
-            $harvesting = $harvestingList->getHarvestingList($ulbId)                                         // Get harvesting
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $harvesting = $harvestingList->getHarvestingList($workflowIds)
+                ->where('prop_active_harvestings.ulb_id', $ulbId)                                        // Get harvesting
                 ->where('prop_active_harvestings.is_escalated', true)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_harvestings.id')
@@ -246,34 +242,27 @@ class RainWaterHarvestingController extends Controller
     public function fieldVerifiedInbox(Request $req)
     {
         try {
-            $mWfRoleUser = new WfRoleusermap();
-            $mWfWardUser = new WfWardUser();
-            $mharvestingList = new PropActiveHarvesting();
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $harvestingList = new PropActiveHarvesting();
 
-            $mUserId = authUser()->id;
-            $mUlbId = authUser()->ulb_id;
-            $mDeviceId = $req->deviceId ?? "";
+            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
 
-            $readWards = $mWfWardUser->getWardsByUserId($mUserId);                  // Model function to get ward list
-            $occupiedWardsId = collect($readWards)->map(function ($ward) {          // Collection filteration
-                return $ward->ward_id;
-            });
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
-            $readRoles = $mWfRoleUser->getRoleIdByUserId($mUserId);                 // Model function to get Role By User Id
-            $roleIds = $readRoles->map(function ($role, $key) {
-                return $role->wf_role_id;
-            });
-
-            $harvesting = $mharvestingList->getHarvestingList($mUlbId)                 // Repository function getSAF
+            $harvesting = $harvestingList->getHarvestingList($workflowIds)
+                ->where('prop_active_harvestings.ulb_id', $ulbId)                  // Repository function getSAF
                 ->where('is_field_verified', true)
-                ->whereIn('prop_active_harvestings.current_role', $roleIds)
-                ->whereIn('a.ward_mstr_id', $occupiedWardsId)
+                ->whereIn('prop_active_harvestings.current_role', $roleId)
+                ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_harvestings.id')
                 ->get();
 
             return responseMsgs(true, "field Verified Inbox!", remove_null($harvesting), 010125, 1.0, "", "POST", $mDeviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $mDeviceId);
+            return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $req->deviceId);
         }
     }
 
@@ -291,21 +280,18 @@ class RainWaterHarvestingController extends Controller
     public function harvestingOutbox()
     {
         try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
 
-            $workflowRoles = $this->getRoleIdByUserId($userId);
-            $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
-                return $value->wf_role_id;
-            });
+            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
 
-            $refWard = $this->getWardByUserId($userId);                                     // Get Ward List by user Id
-            $occupiedWards = $refWard->map(function ($value, $key) {
-                return $value->ward_id;
-            });
-            $harvesting = $harvestingList->getHarvestingList($ulbId)
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $harvesting = $harvestingList->getHarvestingList($workflowIds)
+                ->where('prop_active_harvestings.ulb_id', $ulbId)
                 ->whereNotIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_harvestings.id')
@@ -869,23 +855,18 @@ class RainWaterHarvestingController extends Controller
     public function btcInboxList()
     {
         try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-            $wardId = $this->getWardByUserId($userId);
-
-            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
-                return $ward->ward_id;
-            });
-
-            $roles = $this->getRoleIdByUserId($userId);
-
-            $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
-                return $role->wf_role_id;
-            });
-
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
-            $harvesting = $harvestingList->getHarvestingList($ulbId)
+
+            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
+
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $harvesting = $harvestingList->getHarvestingList($workflowIds)
+                ->where('prop_active_harvestings.ulb_id', $ulbId)
                 ->whereIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->where('parked', true)

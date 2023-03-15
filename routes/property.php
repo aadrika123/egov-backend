@@ -86,7 +86,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging(19)
     Route::post('saf/get-tc-verifications', 'getTcVerifications');                                      // Get TC Verifications  Data(20)
     Route::post('saf/proptransaction-by-id', 'getTransactionBySafPropId');                              // Get Property Transaction by Property ID or SAF id(22)
-    Route::post('saf/get-demand-by-id', 'getDemandBySafId');                                            // Get the demandable Amount of the Property after payment done(26)
+    Route::post('saf/get-demand-by-id', 'getDemandBySafId');                                            // Get the demandable Amount of the Property from Admin Side(26)
     // Route::post('saf/get-btc-fields', 'getBtcFields'); 
     Route::post('saf/verifications-comp', 'getVerifications');
     Route::post('saf/IndiVerificationsList', 'getSafVerificationList');
@@ -205,9 +205,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('objection/approvalrejection', 'approvalRejection');      //11
     Route::post('objection/backtocitizen', 'backToCitizen');              //12
     Route::post('objection/btc-inbox', 'btcInboxList');                   //18
-
-    Route::get('objection/list', 'objectionList');                          //13
-    Route::post('objection/list-id', 'objectionByid');                      //14
 
     Route::post('objection/comment-independent', 'commentIndependent');     //18
     Route::post('objection/doc-list', 'objectionDocList');                  //14
@@ -378,7 +375,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
 Route::controller(ActiveSafController::class)->group(function () {
   Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment(15)
-  Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID(13)
+  Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID From Citizen(13)
   Route::post('saf/independent/generate-order-id', 'generateOrderId');                                // Generate Order ID(14)
   Route::post('saf/payment-receipt', 'generatePaymentReceipt');                                       // Generate payment Receipt(16)
 });
@@ -428,5 +425,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     Route::post('reports/ward-wise-holding', 'wardWiseHoldingReport');
     Route::post('reports/list-fy', 'listFY');
+
+    Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery');
+    Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');
   });
 });
