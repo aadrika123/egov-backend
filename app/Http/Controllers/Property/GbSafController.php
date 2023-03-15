@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqGbSiteVerification;
+use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropSafVerification;
@@ -18,6 +20,7 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
+use App\Traits\Property\SAF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -32,6 +35,7 @@ use Exception;
 
 class GbSafController extends Controller
 {
+    use SAF;
 
     /**
      * | Inbox for GB Saf
@@ -396,8 +400,8 @@ class GbSafController extends Controller
     public function siteVerification(ReqGbSiteVerification $req)
     {
         try {
-            $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
-            $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
+            $taxCollectorRole = Config::get('PropertyConstaint.GBSAF-LABEL.TC');
+            $ulbTaxCollectorRole = Config::get('PropertyConstaint.GBSAF-LABEL.UTC');
             $propActiveSaf = new PropActiveSaf();
             $verification = new PropSafVerification();
             $mWfRoleUsermap = new WfRoleusermap();
@@ -468,6 +472,69 @@ class GbSafController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | geo tagging
+     */
+    public function geoTagging(Request $req)
+    {
+        $req->validate([
+            "safId" => "required|numeric",
+            "imagePath" => "required|array|min:3|max:3",
+            "imagePath.*" => "required|image|mimes:jpeg,jpg,png,gif",
+            "directionType" => "required|array|min:3|max:3",
+            "directionType.*" => "required|In:Left,Right,Front",
+            "longitude" => "required|array|min:3|max:3",
+            "longitude.*" => "required|numeric",
+            "latitude" => "required|array|min:3|max:3",
+            "latitude.*" => "required|numeric"
+        ]);
+        try {
+            $docUpload = new DocUpload;
+            $geoTagging = new PropSafGeotagUpload();
+            $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
+            $safDtls = PropActiveSaf::findOrFail($req->safId);
+            $images = $req->imagePath;
+            $directionTypes = $req->directionType;
+            $longitude = $req->longitude;
+            $latitude = $req->latitude;
+
+            DB::beginTransaction();
+            collect($images)->map(function ($image, $key) use ($directionTypes, $relativePath, $req, $docUpload, $longitude, $latitude, $geoTagging) {
+                $refImageName = 'saf-geotagging-' . $directionTypes[$key] . '-' . $req->safId;
+                $docExistReqs = new Request([
+                    'safId' => $req->safId,
+                    'directionType' => $directionTypes[$key]
+                ]);
+                $imageName = $docUpload->upload($refImageName, $image, $relativePath);         // <------- Get uploaded image name and move the image in folder
+                $isDocExist = $geoTagging->getGeoTagBySafIdDirectionType($docExistReqs);
+
+                $docReqs = [
+                    'saf_id' => $req->safId,
+                    'image_path' => $imageName,
+                    'direction_type' => $directionTypes[$key],
+                    'longitude' => $longitude[$key],
+                    'latitude' => $latitude[$key],
+                    'relative_path' => $relativePath,
+                    'user_id' => authUser()->id
+                ];
+                if ($isDocExist)
+                    $geoTagging->edit($isDocExist, $docReqs);
+                else
+                    $geoTagging->store($docReqs);
+            });
+
+            $safDtls->is_geo_tagged = true;
+            $safDtls->save();
+
+            DB::commit();
+            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
 
     public function approvalRejectionGbSaf(Request $req)
     {
