@@ -974,11 +974,11 @@ class NewConnectionController extends Controller
         $refPropertyTypeId = config::get('waterConstaint.PROPERTY_TYPE');
         switch ($request->connectionThrough) {
             case ('1'):
-
-                $mPropProperty = new PropProperty();
-
+                // $porpDetails = $this->checkPropInfo($request, $id);
+                // if ($porpDetails == false) {
                 $mPropFloor = new PropFloor();
                 $usageCatagory = $mPropFloor->getPropUsageCatagory($id);
+                // }
                 break;
             case ('2'):
                 $mPropActiveSafsFloor = new PropActiveSafsFloor();
@@ -1029,6 +1029,13 @@ class NewConnectionController extends Controller
         $returnData['usageType'] = $usage->unique()->values();
         return $returnData;
     }
+
+
+    /**
+     * | Get the 
+     */
+
+
 
     // final submition of the Water Application
     /**
@@ -1589,6 +1596,7 @@ class NewConnectionController extends Controller
         ]);
         try {
             $mWaterConnectionCharge  = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
             $mWaterApplication = new WaterApplication();
             $refTimeDate = [
                 "refStartTime" => date($request->fromDate),
@@ -1599,9 +1607,14 @@ class NewConnectionController extends Controller
                 ->where('water_applications.user_id', authUser()->id)
                 ->get();
             # Final Data to return
-            $returnValue = collect($refApplications)->map(function ($value, $key) use ($mWaterConnectionCharge) {
+            $returnValue = collect($refApplications)->map(function ($value, $key)
+            use ($mWaterConnectionCharge, $mWaterPenaltyInstallment) {
+
                 # calculation details
+                $penaltyList = $mWaterPenaltyInstallment->getPenaltyByApplicationId($value['id'])->get();
                 $charges = $mWaterConnectionCharge->getWaterchargesById($value['id'])->get();
+
+                $value['all_payment_status'] = $this->getAllPaymentStatus($charges, $penaltyList);
                 $value['calculation'] = collect($charges)->map(function ($values) {
                     return  [
                         'connectionFee'     => $values['conn_fee'],
@@ -1618,6 +1631,41 @@ class NewConnectionController extends Controller
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
+
+    /**
+     * | Get all the payment list and payment Status
+     * | Checking the payment Satatus
+     * | @param 
+     * | @param
+        | Serial No :
+     */
+    public function getAllPaymentStatus($charges, $penalties)
+    {
+        # Connection Charges
+        $chargePaymentList = collect($charges)->map(function ($value1) {
+            if ($value1['paid_status'] == false) {
+                return false;
+            }
+            return true;
+        });
+        if ($chargePaymentList->contains(false)) {
+            return false;
+        }
+
+        # Penaty listing 
+        $penaltyPaymentList = collect($penalties)->map(function ($value2) {
+            if ($value2['paid_status'] == false) {
+                return false;
+            }
+            return true;
+        });
+        if ($penaltyPaymentList->contains(false)) {
+            return false;
+        }
+        return true;
+    }
+
+
 
     #----------------------------------------- Site Inspection ----------------------------------------|
     /**
