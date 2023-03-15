@@ -206,9 +206,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('objection/backtocitizen', 'backToCitizen');              //12
     Route::post('objection/btc-inbox', 'btcInboxList');                   //18
 
-    Route::get('objection/list', 'objectionList');                          //13
-    Route::post('objection/list-id', 'objectionByid');                      //14
-
     Route::post('objection/comment-independent', 'commentIndependent');     //18
     Route::post('objection/doc-list', 'objectionDocList');                  //14
     Route::post('objection/upload-document', 'uploadDocument');             //19
@@ -367,6 +364,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('gbsaf/next-level', 'postNextLevel');
     Route::post('gbsaf/final-approve-reject', 'approvalRejectionGbSaf');
     Route::post('gbsaf/inbox-field-verification', 'fieldVerifiedInbox');
+    Route::post('gbsaf/site-verification', 'siteVerification');
+    Route::post('gbsaf/geo-tagging', 'geoTagging');
   });
 });
 
@@ -401,7 +400,8 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('independent/generate-prop-orderid', 'generateOrderId');                      // (08) Generate Property Order ID
   Route::post('prop-payment-history', 'propPaymentHistory');                                // (06) Property Payment History
   Route::post('prop-ulb-receipt', 'proUlbReceipt');                                         // (09) Property Ulb Payment Receipt
-  Route::post('prop-comparative-demand', 'comparativeDemand');                               // (10) Property Comparative Demand
+  Route::post('prop-comparative-demand', 'comparativeDemand');                              // (10) Property Comparative Demand
+  Route::post('prop/get-cluster-holding-due', 'getClusterHoldingDues');                     // (11) Property Cluster Dues
 });
 
 

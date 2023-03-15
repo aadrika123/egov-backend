@@ -557,6 +557,7 @@ class WaterPaymentController extends Controller
 
                         $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                         $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
+                        return;
                     }
                     # for the Case of no extra penalty 
                     $unpaidPenalty = $this->checkOldPenalty($applicationId, $chargeCatagory);
@@ -566,9 +567,12 @@ class WaterPaymentController extends Controller
                         $newConnectionCharges['conn_fee_charge']['penalty'] = $refInstallment['installment_amount'] ?? 0;
                         $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                         $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
+                        return;
                     }
                     # if there is no old penalty and all penalty is paid
-                    $newConnectionCharges['conn_fee_charge']['penalty'] = 0;
+                    if ($newConnectionCharges['conn_fee_charge']['penalty'] == 0) {
+                        $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
+                    }
                     $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
                     $mWaterApplication->updatePaymentStatus($applicationId, false);
                 }
@@ -587,15 +591,7 @@ class WaterPaymentController extends Controller
 
                 break;
             case ($newCharge == 0):
-                $oldPenalty = $mWaterPenaltyInstallment->getPenaltyByApplicationId($applicationId)
-                    ->where('water_penalty_installments.payment_from', '!=', $chargeCatagory['SITE_INSPECTON'])
-                    ->get();
-                $unpaidPenaltyIds = collect($oldPenalty)->map(function ($value) {
-                    if ($value['paid_status'] == 0) {
-                        return $value['id'];
-                    }
-                });
-
+                $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                 $mWaterApplication->updatePaymentStatus($applicationId, true);
                 break;
         }

@@ -102,10 +102,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 
     Route::controller(UserController::class)->group(function () {
-        Route::post('authorised-register', 'authorizeStore');             // authorised user adding user // 
+        Route::post('authorised-register', 'authorizeStore');               // authorised user adding user // 
         Route::get('test', 'testing');
         Route::post('logout', 'logOut');
-        Route::post('change-password', 'changePass');
+        Route::post('change-password', 'changePass');                       // Change password with login
+        Route::post('otp/change-password', 'changePasswordByOtp');           // Change Password With OTP   
 
         // User Profile APIs
         Route::get('my-profile-details', 'myProfileDetails');   // For get My profile Details
@@ -204,6 +205,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('citizens/independent-comment', 'commentIndependent');                                     // Independent Comment for the Citizen to be Tracked
         Route::get('citizens/get-transactions', 'getTransactionHistory');                                      // Get User Transaction History
         Route::post('change-citizen-pass', 'changeCitizenPass');                                               // Change the Password of The Citizen Using its Old Password 
+        Route::post('otp/change-citizen-pass', 'changeCitizenPassByOtp');                                      // Change Password using OTP for Citizen
         Route::post('citizen-profile-details', 'profileDetails');
     });
 

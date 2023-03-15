@@ -953,7 +953,6 @@ class ActiveSafController extends Controller
                 'location',
                 'landmark',
                 'is_gb_saf',
-                'is_geo_tagged',
                 'gb_office_name',
                 'gb_usage_types',
                 'gb_prop_usage_types'
@@ -1959,7 +1958,7 @@ class ActiveSafController extends Controller
                 if ($isDocExist)
                     $geoTagging->edit($isDocExist, $docReqs);
                 else
-                    $geoTagging->store($isDocExist, $docReqs);
+                    $geoTagging->store($docReqs);
             });
 
             $safDtls->is_geo_tagged = true;
