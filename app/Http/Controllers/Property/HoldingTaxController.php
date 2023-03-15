@@ -896,4 +896,26 @@ class HoldingTaxController extends Controller
         }
         return $array;
     }
+
+    /**
+     * | Cluster Holding Dues
+     */
+    public function getClusterHoldingDues(Request $req)
+    {
+        $req->validate([
+            'clusterId' => 'required|integer'
+        ]);
+        try {
+            $clusterId = $req->clusterId;
+            $mPropProperty = new PropProperty();
+            $properties = $mPropProperty->getPropsByClusterId($clusterId);
+            if ($properties->isEmpty())
+                throw new Exception("Properties Not Available");
+
+
+            return responseMsgs(true, "Generated Demand of the Cluster", "", "011611", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011611", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
 }
