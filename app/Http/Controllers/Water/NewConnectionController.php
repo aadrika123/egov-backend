@@ -911,6 +911,8 @@ class NewConnectionController extends Controller
 
     /**
      * | Serch the holding and the saf details
+     * | Serch the property details for filling the water Application Form
+     * | @param request
      * | 01
      */
     public function getSafHoldingDetails(Request $request)
@@ -972,6 +974,9 @@ class NewConnectionController extends Controller
         $refPropertyTypeId = config::get('waterConstaint.PROPERTY_TYPE');
         switch ($request->connectionThrough) {
             case ('1'):
+
+                $mPropProperty = new PropProperty();
+
                 $mPropFloor = new PropFloor();
                 $usageCatagory = $mPropFloor->getPropUsageCatagory($id);
                 break;
@@ -1570,6 +1575,7 @@ class NewConnectionController extends Controller
 
     /**
      * | List application applied according to its user type
+     * | Serch Application btw Dates
      * | @param request
      * | @var 
      * | @return 
@@ -1578,15 +1584,15 @@ class NewConnectionController extends Controller
     public function listApplicationBydate(Request $request)
     {
         $request->validate([
-            'date' => 'required|date_format:d-m-Y',
+            'fromDate' => 'required|date_format:Y-m-d',
+            'toDate'   => 'required|date_format:Y-m-d',
         ]);
         try {
             $mWaterConnectionCharge  = new WaterConnectionCharge();
             $mWaterApplication = new WaterApplication();
-            $reqDate = Carbon::parse($request->date)->format('Y-m-d');
             $refTimeDate = [
-                "refStartTime" => date($reqDate),
-                "refEndTime" => date($reqDate)
+                "refStartTime" => date($request->fromDate),
+                "refEndTime" => date($request->toDate)
             ];
             #application Details according to date
             $refApplications = $mWaterApplication->getapplicationByDate($refTimeDate)
@@ -1598,11 +1604,11 @@ class NewConnectionController extends Controller
                 $charges = $mWaterConnectionCharge->getWaterchargesById($value['id'])->get();
                 $value['calculation'] = collect($charges)->map(function ($values) {
                     return  [
-                        'connectionFee' => $values['conn_fee'],
-                        'penalty' => $values['penalty'],
-                        'totalAmount' => $values['amount'],
-                        'chargeCatagory' => $values['charge_category'],
-                        'paidStatus' => $values['paid_status']
+                        'connectionFee'     => $values['conn_fee'],
+                        'penalty'           => $values['penalty'],
+                        'totalAmount'       => $values['amount'],
+                        'chargeCatagory'    => $values['charge_category'],
+                        'paidStatus'        => $values['paid_status']
                     ];
                 });
                 return $value;

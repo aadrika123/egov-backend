@@ -13,9 +13,11 @@ class WaterConnectionCharge extends Model
 
     /**
      * |---------------------------------- Save water connection charges ---------------------------------------------|
-     * | @param 
-     * | @var
-        | 
+     * | Saving the water Connection charges
+     * | @param applicationId
+     * | @param req
+     * | @param newConnectionCharges
+     * | @var chargeCatagory
      */
     public function saveWaterCharge($applicationId, $req, $newConnectionCharges)
     {
