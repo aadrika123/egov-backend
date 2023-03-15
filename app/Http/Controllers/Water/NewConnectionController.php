@@ -1654,7 +1654,7 @@ class NewConnectionController extends Controller
 
         # Penaty listing 
         $penaltyPaymentList = collect($penalties)->map(function ($value2) {
-            if ($value2['paid_status'] == false) {
+            if ($value2['paid_status'] == 0) {
                 return false;
             }
             return true;
