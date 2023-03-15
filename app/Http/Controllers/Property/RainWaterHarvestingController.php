@@ -260,7 +260,7 @@ class RainWaterHarvestingController extends Controller
                 ->orderByDesc('prop_active_harvestings.id')
                 ->get();
 
-            return responseMsgs(true, "field Verified Inbox!", remove_null($harvesting), 010125, 1.0, "", "POST", $mDeviceId);
+            return responseMsgs(true, "field Verified Inbox!", remove_null($harvesting), 010125, 1.0, "", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $req->deviceId);
         }

@@ -116,6 +116,8 @@ class ApplySafController extends Controller
             }
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
 
+            $lateAssessmentPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
+            $metaReqs['lateAssessmentPenalty'] = ($lateAssessmentPenalty > 0) ? $lateAssessmentPenalty : null;
             $request->merge($metaReqs);
             $this->_REQUEST = $request;
             $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
@@ -149,7 +151,6 @@ class ApplySafController extends Controller
                 $this->_holdingNo = $request->holdingNo;
                 $generatedDemandDtls = $this->adjustDemand();            // (2.3)
 
-                $lateAssessmentPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
                 $totalBalance = $generatedDemandDtls->sum('balance');
                 $totalOnePercPenalty = $generatedDemandDtls->sum('onePercPenaltyTax');
                 $totalDemand = $totalBalance + $totalOnePercPenalty + $lateAssessmentPenalty;
@@ -325,7 +326,7 @@ class ApplySafController extends Controller
 
             // Derivative Assignments
             $ulbWfId = $this->readAssessUlbWfId($req, $ulbId);
-            $roadWidthType = $this->readRoadWidthType($req->roadWidth);          // Read Road Width Type
+            $roadWidthType = $this->readRoadWidthType($req->roadWidth);                               // Read Road Width Type
             $refInitiatorRoleId = $this->getInitiatorId($ulbWfId->id);                                // Get Current Initiator ID
             $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
 
@@ -346,9 +347,10 @@ class ApplySafController extends Controller
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $generatedDemandDtls = $this->generateSafDemand($safTaxes->original['data']['details']);
             $demand['details'] = $generatedDemandDtls;
-
+            $lateAssessmentPenalty = $demand['amounts']['lateAssessmentPenalty'];
+            $lateAssessmentPenalty = ($lateAssessmentPenalty > 0) ? $lateAssessmentPenalty : null;
             // Send to Workflow
-            $currentRole = ($userType == $this->_citizenUserType) ? $initiatorRoleId->forward_role_id : $initiatorRoleId->forward_role_id;
+            $currentRole = ($userType == $this->_citizenUserType) ? $initiatorRoleId->role_id : $initiatorRoleId->role_id;
             $safReq = [
                 'assessment_type' => $req->assessmentType,
                 'ulb_id' => $req->ulbId,
@@ -381,7 +383,8 @@ class ApplySafController extends Controller
                 'initiator_role_id' => $currentRole,
                 'current_role' => $currentRole,
                 'finisher_role_id' => $finisherRoleId->role_id,
-                'workflow_id' => $ulbWfId->wf_master_id
+                'workflow_id' => $ulbWfId->wf_master_id,
+                'late_assess_penalty' => $lateAssessmentPenalty
             ];
             DB::beginTransaction();
             $createSaf = $propActiveSafs->storeGBSaf($safReq);           // Store Saf
