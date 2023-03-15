@@ -436,7 +436,18 @@ class PropProperty extends Model
      */
     public function getCitizenHoldings($citizenId, $ulbId)
     {
-        return PropProperty::select('id', 'holding_no', 'new_holding_no', 'pt_no')
+        return PropProperty::select('id', 'new_holding_no', 'citizen_id')
+            ->where('ulb_id', $ulbId)
+            ->where('citizen_id', $citizenId)
+            ->get();
+    }
+
+    /**
+     * | Get citizen Ptn
+     */
+    public function getCitizenPtn($citizenId, $ulbId)
+    {
+        return $data = PropProperty::select('id', 'pt_no', 'citizen_id')
             ->where('ulb_id', $ulbId)
             ->where('citizen_id', $citizenId)
             ->get();

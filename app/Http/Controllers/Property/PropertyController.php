@@ -105,7 +105,7 @@ class PropertyController extends Controller
     public function citizenHoldingSaf(Request $req)
     {
         $req->validate([
-            'type' => 'required|In:holding,saf',
+            'type' => 'required|In:holding,saf,ptn',
             'ulbId' => 'required|numeric'
         ]);
         try {
@@ -124,10 +124,14 @@ class PropertyController extends Controller
                 $data = $mPropSafs->getCitizenSafs($citizenId, $ulbId);
                 $msg = 'Citizen Safs';
             }
+            if ($type == 'ptn') {
+                $data = $mPropProperty->getCitizenPtn($citizenId, $ulbId);
+                $msg = 'Citizen Ptn';
+            }
             if ($data->isEmpty())
                 throw new Exception('No Data Found');
 
-            return responseMsgs(true, $msg, $data, '010801', '01', '623ms', 'Post', '');
+            return responseMsgs(true, $msg, remove_null($data), '010801', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
