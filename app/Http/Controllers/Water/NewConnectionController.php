@@ -974,6 +974,9 @@ class NewConnectionController extends Controller
         $refPropertyTypeId = config::get('waterConstaint.PROPERTY_TYPE');
         switch ($request->connectionThrough) {
             case ('1'):
+
+                $mPropProperty = new PropProperty();
+
                 $mPropFloor = new PropFloor();
                 $usageCatagory = $mPropFloor->getPropUsageCatagory($id);
                 break;
