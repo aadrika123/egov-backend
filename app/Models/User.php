@@ -42,12 +42,5 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    /**
-     * |---------- get all details of the users ----------|
-        | Under Construction
-     */
-    public function getAllUSers()
-    {
 
-    }
 }

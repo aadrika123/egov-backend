@@ -242,8 +242,6 @@ class EloquentAuthRepository implements AuthRepository
     public function changePass(ChangePassRequest $request)
     {
         try {
-            $validator = $request->validated();
-
             $id = auth()->user()->id;
             $user = User::find($id);
             $validPassword = Hash::check($request->password, $user->password);

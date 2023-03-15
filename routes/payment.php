@@ -64,6 +64,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {
-    Route::post('razerpay-webhook', 'gettingWebhookDetails');                                       // 14 collecting the all data provided by the webhook and updating the related database
+    Route::post('razorpay-webhook', 'gettingWebhookDetails');                                       // 14 collecting the all data provided by the webhook and updating the related database
     Route::post('get-tran-by-orderid', 'getTranByOrderId');                                     // 15 Get Transaction by Order ID and payment ID
 });
