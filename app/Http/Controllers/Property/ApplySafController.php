@@ -348,7 +348,7 @@ class ApplySafController extends Controller
             $demand['details'] = $generatedDemandDtls;
 
             // Send to Workflow
-            $currentRole = ($userType == $this->_citizenUserType) ? $initiatorRoleId->forward_role_id : $initiatorRoleId->forward_role_id;
+            $currentRole = ($userType == $this->_citizenUserType) ? $initiatorRoleId->role_id : $initiatorRoleId->role_id;
             $safReq = [
                 'assessment_type' => $req->assessmentType,
                 'ulb_id' => $req->ulbId,

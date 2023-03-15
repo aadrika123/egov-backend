@@ -634,8 +634,7 @@ class PropActiveSaf extends Model
                 'area_of_plot'
             )
             ->whereIn('workflow_id', $workflowIds)
-            ->where('is_gb_saf', true)
-            ->where('payment_status', 1);
+            ->where('is_gb_saf', true);
         return $data;
     }
 }

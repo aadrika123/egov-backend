@@ -364,6 +364,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('gbsaf/next-level', 'postNextLevel');
     Route::post('gbsaf/final-approve-reject', 'approvalRejectionGbSaf');
     Route::post('gbsaf/inbox-field-verification', 'fieldVerifiedInbox');
+    Route::post('gbsaf/site-verification', 'siteVerification');
   });
 });
 
