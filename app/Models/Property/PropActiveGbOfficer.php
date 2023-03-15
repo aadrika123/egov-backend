@@ -9,7 +9,7 @@ class PropActiveGbOfficer extends Model
 {
     use HasFactory;
     protected $guarded = [];
-    protected $table = 'prop_active_gbofficers';
+    protected $table = 'prop_active_safgbofficers';
 
     /**
      * | Created By-Anshu Kumar

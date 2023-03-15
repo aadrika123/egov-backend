@@ -452,4 +452,13 @@ class PropProperty extends Model
             ->where('citizen_id', $citizenId)
             ->get();
     }
+
+    /**
+     * | Get Properties By Cluster Id
+     */
+    public function getPropsByClusterId($clusterId)
+    {
+        return PropProperty::where('cluster_id', $clusterId)
+            ->get();
+    }
 }
