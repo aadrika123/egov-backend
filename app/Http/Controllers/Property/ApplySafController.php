@@ -381,9 +381,8 @@ class ApplySafController extends Controller
                 'initiator_role_id' => $currentRole,
                 'current_role' => $currentRole,
                 'finisher_role_id' => $finisherRoleId->role_id,
-                'workflow_id' => $ulbWfId
+                'workflow_id' => $ulbWfId->wf_master_id
             ];
-
             DB::beginTransaction();
             $createSaf = $propActiveSafs->storeGBSaf($safReq);           // Store Saf
             $safId = $createSaf->original['safId'];
