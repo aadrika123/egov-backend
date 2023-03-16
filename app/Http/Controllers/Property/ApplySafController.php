@@ -23,6 +23,15 @@ use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * | Created On-16-03-2023 
+ * | Created By-Anshu Kumar
+ * | Created For
+ *      - Apply Saf 
+ *      - Apply GB Saf
+ * | Status-Closed
+ */
+
 class ApplySafController extends Controller
 {
     use SAF;
@@ -147,6 +156,10 @@ class ApplySafController extends Controller
             $generatedDemandDtls = $this->generateSafDemand($safTaxes->original['data']['details']);
             $demand['details'] = $generatedDemandDtls;
             $this->_generatedDemand = $generatedDemandDtls;
+            $totalBalance = $generatedDemandDtls->sum('balance');
+            $totalOnePercPenalty = $generatedDemandDtls->sum('onePercPenaltyTax');
+            $totalDemand = $totalBalance + $totalOnePercPenalty + $lateAssessmentPenalty;
+
             if ($assessmentId == 2) {                                    // In Case Of Reassessment Amount Adjustment
                 $this->_holdingNo = $request->holdingNo;
                 $generatedDemandDtls = $this->adjustDemand();            // (2.3)
@@ -158,17 +171,18 @@ class ApplySafController extends Controller
                 $safTaxes->original['data']['demand']['totalTax'] = roundFigure($totalBalance);
                 $safTaxes->original['data']['demand']['totalOnePercPenalty'] = roundFigure($totalOnePercPenalty);
                 $safTaxes->original['data']['demand']['totalDemand'] = roundFigure($totalDemand);
-
-                $mLastQuarterDemand = collect($generatedDemandDtls)->where('quarterYear', $this->_currentFYear)->sum('balance');
-                $firstOwner = $mOwner->getFirstOwnerBySafId($safId);
-
-                $this->_penaltyRebateCalc->readRebates($this->_currentQuarter, $userType, $mLastQuarterDemand, $firstOwner, $totalDemand, $safTaxes->original['data']['demand']);
-                $totalRebate = $safTaxes->original['data']['demand']['rebateAmt'] + $safTaxes->original['data']['demand']['specialRebateAmt'];
-                $payableAmount = $totalDemand - $totalRebate;
-                $safTaxes->original['data']['demand']['payableAmount'] = round($payableAmount);
             }
+
+            $mLastQuarterDemand = collect($generatedDemandDtls)->where('quarterYear', $this->_currentFYear)->sum('balance');
+            $firstOwner = $mOwner->getFirstOwnerBySafId($safId);
+
+            $this->_penaltyRebateCalc->readRebates($this->_currentQuarter, $userType, $mLastQuarterDemand, $firstOwner, $totalDemand, $safTaxes->original['data']['demand']);
+            $totalRebate = $safTaxes->original['data']['demand']['rebateAmt'] + $safTaxes->original['data']['demand']['specialRebateAmt'];
+            $payableAmount = $totalDemand - $totalRebate;
+            $safTaxes->original['data']['demand']['payableAmount'] = round($payableAmount);
             $demandResponse['amounts'] = $safTaxes->original['data']['demand'];
             $demandResponse['details'] =  $generatedDemandDtls->groupBy('ruleSet');
+
             $tax->insertTax($safId, $ulb_id, $generatedDemandDtls);      // Insert SAF Tax
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
@@ -397,11 +411,14 @@ class ApplySafController extends Controller
             }
 
             $this->_generatedDemand = $generatedDemandDtls;
+            $lateAssessmentPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
+            $totalBalance = $safTaxes->original['data']['demand']['totalTax'];  // In case of New Assessment the total Tax will be calculated total Tax which is 50% of Total Balance in case or Residential Building
+            $totalOnePercPenalty = $generatedDemandDtls->sum('onePercPenaltyTax');
+            $totalDemand = $totalBalance + $totalOnePercPenalty + $lateAssessmentPenalty;
             if ($assessmentId == 2) {                                    // In Case Of Reassessment Amount Adjustment
                 $this->_holdingNo = $req->holdingNo;
                 $generatedDemandDtls = $this->adjustDemand();            // (2.3)
 
-                $lateAssessmentPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
                 $totalBalance = $generatedDemandDtls->sum('balance');
                 $totalOnePercPenalty = $generatedDemandDtls->sum('onePercPenaltyTax');
                 $totalDemand = $totalBalance + $totalOnePercPenalty + $lateAssessmentPenalty;
@@ -409,14 +426,13 @@ class ApplySafController extends Controller
                 $safTaxes->original['data']['demand']['totalTax'] = roundFigure($totalBalance);
                 $safTaxes->original['data']['demand']['totalOnePercPenalty'] = roundFigure($totalOnePercPenalty);
                 $safTaxes->original['data']['demand']['totalDemand'] = roundFigure($totalDemand);
-
-                $mLastQuarterDemand = collect($generatedDemandDtls)->where('quarterYear', $this->_currentFYear)->sum('balance');
-
-                $this->_penaltyRebateCalc->readRebates($this->_currentQuarter, $userType, $mLastQuarterDemand, null, $totalDemand, $safTaxes->original['data']['demand']);
-                $totalRebate = $safTaxes->original['data']['demand']['rebateAmt'] + $safTaxes->original['data']['demand']['specialRebateAmt'];
-                $payableAmount = $totalDemand - $totalRebate;
-                $safTaxes->original['data']['demand']['payableAmount'] = round($payableAmount);
             }
+            $mLastQuarterDemand = collect($generatedDemandDtls)->where('quarterYear', $this->_currentFYear)->sum('balance');
+
+            $this->_penaltyRebateCalc->readRebates($this->_currentQuarter, $userType, $mLastQuarterDemand, null, $totalDemand, $safTaxes->original['data']['demand']);
+            $totalRebate = $safTaxes->original['data']['demand']['rebateAmt'] + $safTaxes->original['data']['demand']['specialRebateAmt'];
+            $payableAmount = $totalDemand - $totalRebate;
+            $safTaxes->original['data']['demand']['payableAmount'] = round($payableAmount);
             // Insert Demand
             foreach ($generatedDemandDtls as $item) {
                 $reqPostDemand = [

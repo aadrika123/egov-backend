@@ -87,10 +87,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/get-tc-verifications', 'getTcVerifications');                                      // Get TC Verifications  Data(20)
     Route::post('saf/proptransaction-by-id', 'getTransactionBySafPropId');                              // Get Property Transaction by Property ID or SAF id(22)
     Route::post('saf/get-demand-by-id', 'getDemandBySafId');                                            // Get the demandable Amount of the Property from Admin Side(26)
-    // Route::post('saf/get-btc-fields', 'getBtcFields'); 
     Route::post('saf/verifications-comp', 'getVerifications');
     Route::post('saf/IndiVerificationsList', 'getSafVerificationList');
     Route::post('saf/static-saf-dtls', 'getStaticSafDetails');                                          // (27) Static SAf Details
+    Route::post('saf/offline-saf-payment', 'paymentSaf');                                               // SAF Payment(15)
   });
 
   /**
@@ -332,6 +332,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('generate-holding-demand', 'generateHoldingDemand');              // (01) Property/Holding Yearly Holding Tax Generation
     Route::post('get-holding-dues', 'getHoldingDues');                            // (02) Property/ Holding Dues
     Route::post('generate-prop-orderid', 'generateOrderId');                      // (03) Generate Property Order ID
+    Route::post('offline-payment-holding', 'paymentHolding');                     // (04) Payment Holding
+    Route::post('prop/get-cluster-holding-due', 'getClusterHoldingDues');                     // (11) Property Cluster Dues
+
   });
 
   /**
@@ -344,6 +347,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/verify-holding', 'verifyHoldingNo');             // 05
     Route::post('saf/list-apartment', 'getAptList');                  // 05
     Route::post('saf/pending-geotagging-list', 'pendingGeoTaggingList'); // 06
+    Route::post('saf/get-cluster-saf-due', 'getClusterSafDues');                     // (07) Saf Cluster Dues
   });
 
   /**
@@ -366,9 +370,24 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('gbsaf/inbox-field-verification', 'fieldVerifiedInbox');
     Route::post('gbsaf/site-verification', 'siteVerification');
     Route::post('gbsaf/geo-tagging', 'geoTagging');
+    Route::post('gbsaf/tc-verification', 'getTcVerifications');
+    Route::post('gbsaf/back-to-citizen', 'backToCitizen');
+    Route::post('gbsaf/btc-inbox', 'btcInbox');
+    Route::post('gbsaf/post-escalate', 'postEscalate');
+    Route::post('gbsaf/special-inbox', 'specialInbox');
+    Route::post('gbsaf/static-details', 'getStaticSafDetails');
+    Route::post('gbsaf/get-uploaded-document', 'getUploadedDocuments');
+    Route::post('gbsaf/upload-documents', 'uploadDocument');
+    Route::post('gbsaf/get-doc-list', 'getDocList');
+    Route::post('gbsaf/doc-verify-reject', 'docVerifyReject');
+    Route::post('gbsaf/independent-comment', 'commentIndependent');
   });
 });
 
+
+/**
+ * | Not Authenticated Apis
+ */
 
 /**
  * | SAF
@@ -401,7 +420,6 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('prop-payment-history', 'propPaymentHistory');                                // (06) Property Payment History
   Route::post('prop-ulb-receipt', 'proUlbReceipt');                                         // (09) Property Ulb Payment Receipt
   Route::post('prop-comparative-demand', 'comparativeDemand');                              // (10) Property Comparative Demand
-  Route::post('prop/get-cluster-holding-due', 'getClusterHoldingDues');                     // (11) Property Cluster Dues
 });
 
 
@@ -432,6 +450,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery');
     Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');
     Route::post('reports/property/dcb', 'PropDcb');
+    Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');
     
   });
 });
