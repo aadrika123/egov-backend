@@ -995,4 +995,78 @@ class GbSafController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
+
+    /**
+     * | Get Doc List
+     */
+    public function getDocList(Request $req)
+    {
+        try {
+            $mPropActiveHarvesting = new PropActiveHarvesting();
+
+            $refApplication = $mPropActiveHarvesting->getHarvestingNo($req->applicationId);
+            if (!$refApplication)
+                throw new Exception("Application Not Found for this id");
+
+            $harvestingDoc['listDocs'] = $this->getHarvestingDoc($refApplication);
+
+            return responseMsgs(true, "Doc List", remove_null($harvestingDoc), 010717, 1.0, "271ms", "POST", "", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+
+    /**
+     * 
+     */
+    public function getHarvestingDoc($refApplication)
+    {
+        $mRefReqDocs = new RefRequiredDocument();
+        $mWfActiveDocument = new WfActiveDocument();
+        $applicationId = $refApplication->id;
+        $workflowId = $refApplication->workflow_id;
+        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_RAIN_WATER_HARVESTING")->requirements;
+
+        $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
+        $explodeDocs = collect(explode('#', $documentList));
+
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
+            $document = explode(',', $explodeDoc);
+            $key = array_shift($document);
+            $label = array_shift($document);
+            $documents = collect();
+
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
+                if ($uploadedDoc) {
+                    $response = [
+                        "documentCode" => $item,
+                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
+                        "docPath" => $uploadedDoc->doc_path ?? ""
+                    ];
+                    $documents->push($response);
+                }
+            });
+            $reqDoc['docType'] = $key;
+            $reqDoc['uploadedDoc'] = $documents->first();
+
+            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
+                $strLower = strtolower($doc);
+                $strReplace = str_replace('_', ' ', $strLower);
+                $arr = [
+                    "documentCode" => $doc,
+                    "docVal" => ucwords($strReplace),
+                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
+                    "uploadedDocId" => $uploadedDoc->id ?? "",
+                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
+                    "remarks" => $uploadedDoc->remarks ?? "",
+                ];
+                return $arr;
+            });
+            return $reqDoc;
+        });
+        return $filteredDocs;
+    }
 }

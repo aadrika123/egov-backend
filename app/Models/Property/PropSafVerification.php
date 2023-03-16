@@ -47,14 +47,19 @@ class PropSafVerification extends Model
                 'p.property_type',
                 'r.road_type as road_type_master',
                 'u.ward_name as old_ward_no',
-                'u.ward_name as new_ward_no'
+                'u.ward_name as new_ward_no',
+                'building_type',
+                'prop_usage_type'
             )
-            ->leftjoin('ref_prop_types as p', 'p.id', '=', 'v.prop_type_id')
             ->join('ref_prop_road_types as r', 'r.id', '=', 'v.road_type_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'v.ward_id')
+            ->leftjoin('ref_prop_types as p', 'p.id', '=', 'v.prop_type_id')
             ->leftJoin('ulb_ward_masters as u1', 'u1.id', '=', 'v.new_ward_id')
+            ->leftJoin('ref_prop_gbbuildingusagetypes as gbu', 'gbu.id', 'v.gb_usage_types')
+            ->leftJoin('ref_prop_gbpropusagetypes as gbp', 'gbp.id', 'v.gb_prop_usage_types')
             ->where('v.saf_id', $safId)
             ->where('v.agency_verification', true)
+            ->orderByDesc('id')
             ->first();
     }
 
@@ -82,7 +87,10 @@ class PropSafVerification extends Model
             'has_water_harvesting' => $req->isHarvesting,
             'zone_id' => $req->zone,
             'user_id' => $req->userId,
-            'ulb_id' => $req->ulbId
+            'ulb_id' => $req->ulbId,
+            'gb_usage_types' => $req->gbUsageTypes,
+            'gb_prop_usage_types' => $req->gbPropUsageTypes,
+
         ];
 
         return PropSafVerification::create($metaReqs)->id;
