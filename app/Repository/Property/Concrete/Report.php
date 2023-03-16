@@ -2093,7 +2093,6 @@ class Report implements IReport
                 "total"=>$total,
                 "numberOfPages"=>$numberOfPages
             ];
-            // dd(DB::getQueryLog());
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
 
