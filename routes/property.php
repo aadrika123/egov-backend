@@ -372,6 +372,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('gbsaf/post-escalate', 'postEscalate');
     Route::post('gbsaf/special-inbox', 'specialInbox');
     Route::post('gbsaf/static-details', 'getStaticSafDetails');
+    Route::post('gbsaf/get-uploaded-document', 'getUploadedDocuments');
+    Route::post('gbsaf/upload-documents', 'uploadDocument');
   });
 });
 
@@ -438,6 +440,5 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery');
     Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');
     Route::post('reports/property/dcb', 'PropDcb');
-    
   });
 });

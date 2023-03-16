@@ -8,8 +8,8 @@ use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
 use App\Models\Property\PropActiveGbOfficer;
 use App\Models\Property\PropActiveSaf;
-use App\Models\Property\PropActiveSafGbOfficer;
 use App\Models\Property\PropActiveSafsFloor;
+use App\Models\Property\PropDemand;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropGbofficer;
 use App\Models\Property\PropProperty;
@@ -18,6 +18,7 @@ use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
@@ -253,9 +254,11 @@ class GbSafController extends Controller
             case $wfLevels['TC']:
                 if ($saf->is_geo_tagged == false)
                     throw new Exception("Geo Tagging Not Done");
+                break;
             case $wfLevels['UTC']:
                 if ($saf->is_field_verified == false)
                     throw new Exception("Field Verification Not Done");
+                break;
         }
         return [
             'holdingNo' =>  $holdingNo ?? "",
@@ -760,10 +763,13 @@ class GbSafController extends Controller
             // Check if the Current User is Finisher or Not (Variable Assignments)
             $safDetails = PropActiveSaf::findOrFail($req->applicationId);
             $mWfRoleUsermap = new WfRoleusermap();
+            $propSafVerification = new PropSafVerification();
+            $propSafVerificationDtl = new PropSafVerificationDtl();
             $mPropSafMemoDtl = new PropSafMemoDtl();
             $mPropSafDemand = new PropSafsDemand();
-            $idGeneration = new IdGeneration;
-            $ptNo = $idGeneration->generatePtNo(true, $safDetails->ulb_id);
+            $mPropProperties = new PropProperty();
+            $mPropFloors = new PropFloor();
+            $mPropDemand = new PropDemand();
             $todayDate = Carbon::now()->format('Y-m-d');
             $currentFinYear = calculateFYear($todayDate);
 
@@ -783,19 +789,27 @@ class GbSafController extends Controller
             $activeSaf = PropActiveSaf::query()
                 ->where('id', $req->applicationId)
                 ->first();
+            $officerDetails = PropActiveGbOfficer::query()
+                ->where('saf_id', $safId)
+                ->first();
             $floorDetails = PropActiveSafsFloor::query()
                 ->where('saf_id', $req->applicationId)
                 ->get();
 
+            $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
+            $propId = $propDtls->id;
+            $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
+            if ($fieldVerifiedSaf->isEmpty())
+                throw new Exception("Site Verification not Exist");
             DB::beginTransaction();
             // Approval
             if ($req->status == 1) {
                 $safDetails->saf_pending_status = 0;
-                $safDetails->pt_no = $ptNo;
                 $safDetails->save();
 
-
-                $demand = $mPropSafDemand->getFirstDemandByFyearSafId($safId, $currentFinYear);
+                $demand = $mPropDemand->getFirstDemandByFyearPropId($propId, $currentFinYear);
+                if (collect($demand)->isEmpty())
+                    $demand = $mPropSafDemand->getFirstDemandByFyearSafId($safId, $currentFinYear);
                 if (collect($demand)->isEmpty())
                     throw new Exception("Demand Not Available for the Current Year to Generate FAM");
                 // SAF Application replication
@@ -806,22 +820,24 @@ class GbSafController extends Controller
                     'holding_no' => $activeSaf->new_holding_no ?? $activeSaf->holding_no,
                     'pt_no' => $activeSaf->pt_no,
                     'ward_id' => $activeSaf->ward_mstr_id,
+                    'prop_id' => $propId,
                     'saf_id' => $safId
                 ]);
-
                 $memoReqs = new Request($mergedDemand);
                 $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
-                $this->finalApprovalSafReplica($activeSaf, $floorDetails, $ptNo);
+                $this->finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $officerDetails, $floorDetails, $mPropFloors, $safId);
                 $msg = "Application Approved Successfully";
             }
             // Rejection
             if ($req->status == 0) {
-                $this->finalRejectionSafReplica($activeSaf, $floorDetails);
+                $this->finalRejectionSafReplica($activeSaf, $officerDetails, $floorDetails);
                 $msg = "Application Rejected Successfully";
             }
 
+            $propSafVerification->deactivateVerifications($req->applicationId);                 // Deactivate Verification From Table
+            $propSafVerificationDtl->deactivateVerifications($req->applicationId);              // Deactivate Verification from Saf floor Dtls
             DB::commit();
-            return responseMsgs(true, $msg, ['holdingNo' => $safDetails->pt_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
+            return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -831,16 +847,23 @@ class GbSafController extends Controller
     /**
      * | Replication of Final Approval SAf(10.1)
      */
-    public function finalApprovalSafReplica($activeSaf, $floorDetails, $ptNo)
+    public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $officerDetails, $floorDetails, $mPropFloors, $safId)
     {
-
-        // Approveed SAF Application replication
+        $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());             // Replicate to Saf Table
         $approvedSaf = $activeSaf->replicate();
         $approvedSaf->setTable('prop_safs');
         $approvedSaf->id = $activeSaf->id;
-        $approvedSaf->pt_no = $ptNo;
-        $approvedSaf->push();
+        $approvedSaf->property_id = $propId;
+        $approvedSaf->save();
         $activeSaf->delete();
+
+        // Saf Officer Replication
+        $approvedOfficers = $officerDetails->replicate();
+        $approvedOfficers->setTable('prop_safgbofficers');
+        $approvedOfficers->id = $officerDetails->id;
+        $approvedOfficers->save();
+        $officerDetails->delete();
+
 
         // Saf Floors Replication
         foreach ($floorDetails as $floorDetail) {
@@ -850,12 +873,34 @@ class GbSafController extends Controller
             $approvedFloor->save();
             $floorDetail->delete();
         }
+
+        foreach ($fieldVerifiedSaf as $key) {
+            $ifFloorExist = $mPropFloors->getFloorBySafFloorIdSafId($safId, $key->saf_floor_id);
+
+            $floorReqs = new Request([
+                'floor_mstr_id' => $key->floor_mstr_id,
+                'usage_type_mstr_id' => $key->usage_type_id,
+                'const_type_mstr_id' => $key->construction_type_id,
+                'occupancy_type_mstr_id' => $key->occupancy_type_id,
+                'builtup_area' => $key->builtup_area,
+                'date_from' => $key->date_from,
+                'date_upto' => $key->date_to,
+                'carpet_area' => $key->carpet_area,
+                'property_id' => $propId,
+                'saf_id' => $safId
+
+            ]);
+            if ($ifFloorExist) {
+                $mPropFloors->editFloor($ifFloorExist, $floorReqs);
+            } else
+                $mPropFloors->postFloor($floorReqs);
+        }
     }
 
     /**
      * | Replication of Final Rejection Saf(10.2)
      */
-    public function finalRejectionSafReplica($activeSaf, $floorDetails)
+    public function finalRejectionSafReplica($activeSaf, $officerDetails, $floorDetails)
     {
         // Rejected SAF Application replication
         $rejectedSaf = $activeSaf->replicate();
@@ -864,6 +909,13 @@ class GbSafController extends Controller
         $rejectedSaf->push();
         $activeSaf->delete();
 
+        // Saf Officer Replication
+        $approvedOfficers = $officerDetails->replicate();
+        $approvedOfficers->setTable('prop_rejected_safgbofficers');
+        $approvedOfficers->id = $officerDetails->id;
+        $approvedOfficers->save();
+        $officerDetails->delete();
+
         // SAF Floors Replication
         foreach ($floorDetails as $floorDetail) {
             $approvedFloor = $floorDetail->replicate();
@@ -871,6 +923,76 @@ class GbSafController extends Controller
             $approvedFloor->id = $floorDetail->id;
             $approvedFloor->save();
             $floorDetail->delete();
+        }
+    }
+
+    /**
+     * | Get uploaded documents
+     */
+    public function getUploadedDocuments(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $mPropActiveSaf = new PropActiveSaf();
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+
+            $safDetails = $mPropActiveSaf->getSafNo($req->applicationId);
+            if (!$safDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $workflowId = $safDetails->workflow_id;
+            $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
+            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | To upload document
+     */
+    public function uploadDocument(Request $req)
+    {
+        $req->validate([
+            "applicationId" => "required|numeric",
+            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "docCode" => "required",
+        ]);
+
+        try {
+            $metaReqs = array();
+            $docUpload = new DocUpload;
+            $mWfActiveDocument = new WfActiveDocument();
+            $mActiveSafs = new PropActiveSaf();
+            $relativePath = Config::get('PropertyConstaint.SAF_RELATIVE_PATH');
+            $propModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+
+            $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
+            $refImageName = $req->docCode;
+            $refImageName = $getSafDtls->id . '-' . $refImageName;
+            $document = $req->document;
+            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+
+            $metaReqs['moduleId'] = $propModuleId;
+            $metaReqs['activeId'] = $getSafDtls->id;
+            $metaReqs['workflowId'] = $getSafDtls->workflow_id;
+            $metaReqs['ulbId'] = $getSafDtls->ulb_id;
+            $metaReqs['relativePath'] = $relativePath;
+            $metaReqs['document'] = $imageName;
+            $metaReqs['docCode'] = $req->docCode;
+
+            $metaReqs = new Request($metaReqs);
+            $mWfActiveDocument->postDocuments($metaReqs);
+
+            $getSafDtls->doc_upload_status = 1;
+            $getSafDtls->save();
+
+            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }

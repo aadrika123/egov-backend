@@ -866,9 +866,11 @@ class ActiveSafController extends Controller
             case $wfLevels['TC']:
                 if ($saf->is_geo_tagged == false)
                     throw new Exception("Geo Tagging Not Done");
+                break;
             case $wfLevels['UTC']:
                 if ($saf->is_field_verified == false)
                     throw new Exception("Field Verification Not Done");
+                break;
         }
         return [
             'holdingNo' =>  $holdingNo ?? "",
