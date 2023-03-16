@@ -17,4 +17,5 @@ interface IReport
     public function PropPaymentModeWiseSummery(Request $request);
     public function SafPaymentModeWiseSummery(Request $request);
     public function PropDCB(Request $request);
+    public function PropWardWiseDCB(Request $request);
 }

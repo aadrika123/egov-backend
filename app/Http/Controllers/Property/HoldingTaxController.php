@@ -919,12 +919,18 @@ class HoldingTaxController extends Controller
             'clusterId' => 'required|integer'
         ]);
         try {
+            $todayDate = Carbon::now();
             $clusterId = $req->clusterId;
             $mPropProperty = new PropProperty();
+            $penaltyRebateCalc = new PenaltyRebateCalculation;
             $properties = $mPropProperty->getPropsByClusterId($clusterId);
             $clusterDemands = array();
             $finalClusterDemand = array();
             $clusterDemandList = array();
+            $currentQuarter = calculateQtr($todayDate->format('Y-m-d'));
+            $loggedInUserType = authUser()->user_type;
+            $currentFYear = getFY();
+
             if ($properties->isEmpty())
                 throw new Exception("Properties Not Available");
 
@@ -942,7 +948,7 @@ class HoldingTaxController extends Controller
 
             $groupedByYear = $collapsedDemand->groupBy('quarteryear');                        // Grouped By Financial Year and Quarter for the Separation of Demand  
 
-            $summedDemand = $groupedByYear->map(function ($item) {
+            $summedDemand = $groupedByYear->map(function ($item) {                            // Sum of all the Demands of Quarter and Financial Year
                 return [
                     'quarterYear' => $item->first()['quarteryear'],
                     'arv' => roundFigure($item->sum('arv')),
@@ -970,7 +976,6 @@ class HoldingTaxController extends Controller
             $finalOnePerc = roundFigure($finalOnePerc);
 
             $finalAmt = $finalDues + $finalOnePerc;
-
             $duesFrom = collect($clusterDemands)->first()['duesList']['duesFrom'] ?? collect($clusterDemands)->last()['duesList']['duesFrom'];
             $duesTo = collect($clusterDemands)->first()['duesList']['duesTo'] ?? collect($clusterDemands)->last()['duesList']['duesTo'];
             $paymentUptoYrs = collect($clusterDemands)->first()['duesList']['paymentUptoYrs'] ?? collect($clusterDemands)->last()['duesList']['paymentUptoYrs'];
@@ -983,8 +988,13 @@ class HoldingTaxController extends Controller
                 'duesTo' => $duesTo,
                 'totalDues' => $finalDues,
                 'onePercPenalty' => $finalOnePerc,
-                'finalAmt' => $finalAmt
+                'finalAmt' => $finalAmt,
             ];
+            $mLastQuarterDemand = collect($summedDemand)->where('quarterYear', $currentFYear)->sum('balance');
+            $finalClusterDemand['duesList'] = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, null, $finalAmt, $finalClusterDemand['duesList']);
+            $payableAmount = $finalAmt - ($finalClusterDemand['duesList']['rebateAmt'] + $finalClusterDemand['duesList']['specialRebateAmt']);
+            $finalClusterDemand['duesList']['payableAmount'] = round($payableAmount);
+
             $finalClusterDemand['demandList'] = $summedDemand;
             return responseMsgs(true, "Generated Demand of the Cluster", remove_null($finalClusterDemand), "011611", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {

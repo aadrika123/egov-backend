@@ -335,4 +335,21 @@ class ActiveSafControllerV2 extends Controller
             return responseMsgs(false, $e->getMessage(), "", "011806", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
+
+
+    /**
+     * | Cluster Demand
+     */
+    public function getClusterSafDues(Request $req)
+    {
+        $req->validate([
+            'clusterId' => 'required|integer'
+        ]);
+
+        try {
+            return responseMsgs(true, "Cluster Saf Demand", "", "011807", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011807", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
 }
