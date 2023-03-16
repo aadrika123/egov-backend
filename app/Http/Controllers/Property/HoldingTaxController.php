@@ -350,8 +350,11 @@ class HoldingTaxController extends Controller
             if ($demands->isEmpty())
                 throw new Exception("No Dues For this Property");
             // Property Transactions
-            if (in_array($req['paymentMode'], $offlinePaymentModes))
-                $userId = auth()->user()->id;
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $userId = auth()->user()->id ?? null;
+                if (!$userId)
+                    throw new Exception("User Should Be Logged In");
+            }
             $req->merge([
                 'userId' => $userId,
                 'todayDate' => $todayDate->format('Y-m-d'),
@@ -459,6 +462,12 @@ class HoldingTaxController extends Controller
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
 
+            $rebatePenalMstrs = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
+            $onePercKey = $rebatePenalMstrs->where('id', 1)->first()['value'];
+            $specialRebateKey = $rebatePenalMstrs->where('id', 6)->first()['value'];
+            $firstQtrKey = $rebatePenalMstrs->where('id', 2)->first()['value'];
+            $onlineRebate = $rebatePenalMstrs->where('id', 3)->first()['value'];
+
             $propTrans = $mTransaction->getPropByTranPropId($req->tranNo);
 
             $reqPropId = new Request(['propertyId' => $propTrans->property_id]);
@@ -470,12 +479,12 @@ class HoldingTaxController extends Controller
             // Get Property Penalty and Rebates
             $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
 
-            $onePercPenalty = collect($penalRebates)->where('head_name', '1% Monthly Penalty')->first()->amount ?? 0;
+            $onePercPenalty = collect($penalRebates)->where('head_name', $onePercKey)->first()->amount ?? 0;
             $this->_holdingTaxInterest = $onePercPenalty;
             $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
-            $specialRebate = collect($penalRebates)->where('head_name', 'Special Rebate')->first()->amount ?? 0;
-            $firstQtrRebate = collect($penalRebates)->where('head_name', 'First Qtr Rebate')->first()->amount ?? 0;
-            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', 'Rebate From Jsk/Online Payment')->first()->amount ?? 0;
+            $specialRebate = collect($penalRebates)->where('head_name', $specialRebateKey)->first()->amount ?? 0;
+            $firstQtrRebate = collect($penalRebates)->where('head_name', $firstQtrKey)->first()->amount ?? 0;
+            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
             $lateAssessmentPenalty = 0;
 
             $taxDetails = $safController->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);

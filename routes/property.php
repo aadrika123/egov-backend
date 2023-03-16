@@ -91,6 +91,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/verifications-comp', 'getVerifications');
     Route::post('saf/IndiVerificationsList', 'getSafVerificationList');
     Route::post('saf/static-saf-dtls', 'getStaticSafDetails');                                          // (27) Static SAf Details
+    Route::post('saf/offline-saf-payment', 'paymentSaf');                                               // SAF Payment(15)
   });
 
   /**
@@ -332,6 +333,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('generate-holding-demand', 'generateHoldingDemand');              // (01) Property/Holding Yearly Holding Tax Generation
     Route::post('get-holding-dues', 'getHoldingDues');                            // (02) Property/ Holding Dues
     Route::post('generate-prop-orderid', 'generateOrderId');                      // (03) Generate Property Order ID
+    Route::post('offline-payment-holding', 'paymentHolding');                     // (04) Payment Holding
+
   });
 
   /**
@@ -375,6 +378,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   });
 });
 
+
+/**
+ * | Not Authenticated Apis
+ */
 
 /**
  * | SAF
@@ -438,6 +445,5 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery');
     Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');
     Route::post('reports/property/dcb', 'PropDcb');
-    
   });
 });
