@@ -1169,4 +1169,58 @@ class GbSafController extends Controller
         else
             return 1;
     }
+
+    /**
+     * | Independent Comment
+     */
+    public function commentIndependent(Request $request)
+    {
+        $request->validate([
+            'comment' => 'required',
+            'applicationId' => 'required|integer',
+        ]);
+
+        try {
+            $userId = authUser()->id;
+            $userType = authUser()->user_type;
+            $workflowTrack = new WorkflowTrack();
+            $mWfRoleUsermap = new WfRoleusermap();
+            $saf = PropActiveSaf::findOrFail($request->applicationId);                // SAF Details
+            $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs = array();
+            // Save On Workflow Track For Level Independent
+            $metaReqs = [
+                'workflowId' => $saf->workflow_id,
+                'moduleId' => $mModuleId,
+                'refTableDotId' => "prop_active_safs.id",
+                'refTableIdValue' => $saf->id,
+                'message' => $request->comment
+            ];
+            if ($userType != 'Citizen') {
+                $roleReqs = new Request([
+                    'workflowId' => $saf->workflow_id,
+                    'userId' => $userId,
+                ]);
+                $wfRoleId = $mWfRoleUsermap->getRoleByUserWfId($roleReqs);
+                $metaReqs = array_merge($metaReqs, ['senderRoleId' => $wfRoleId->wf_role_id]);
+                $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
+            }
+            DB::beginTransaction();
+            // For Citizen Independent Comment
+            if ($userType == 'Citizen') {
+                $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
+                $metaReqs = array_merge($metaReqs, ['ulb_id' => $saf->ulb_id]);
+                $metaReqs = array_merge($metaReqs, ['user_id' => NULL]);
+            }
+
+            $request->request->add($metaReqs);
+            $workflowTrack->saveTrack($request);
+
+            DB::commit();
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "", "POST", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 }
