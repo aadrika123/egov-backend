@@ -924,6 +924,7 @@ class HoldingTaxController extends Controller
             $properties = $mPropProperty->getPropsByClusterId($clusterId);
             $clusterDemands = array();
             $finalClusterDemand = array();
+            $clusterDemandList = array();
             if ($properties->isEmpty())
                 throw new Exception("Properties Not Available");
 
@@ -931,20 +932,45 @@ class HoldingTaxController extends Controller
                 $propIdReq = new Request([
                     'propId' => $item['id']
                 ]);
-                $propDues['duesList'] = $this->getHoldingDues($propIdReq)->original['data']['duesList'] ?? [];
-                $propDues['demandList'] = $this->getHoldingDues($propIdReq)->original['data']['demandList'] ?? [];
+                $demandList = $this->getHoldingDues($propIdReq)->original['data'];
+                $propDues['duesList'] = $demandList['duesList'] ?? [];
+                $propDues['demandList'] = $demandList['demandList'] ?? [];
+                array_push($clusterDemandList, $propDues['demandList']);
                 array_push($clusterDemands, $propDues);
             }
+            $collapsedDemand = collect($clusterDemandList)->collapse();                       // Clusters Demands Collapsed into One
 
-            $finalDues = collect($clusterDemands)->sum(function ($item) {
-                return $item['duesList']['totalDues'] ?? 0;
-            });
+            $groupedByYear = $collapsedDemand->groupBy('quarteryear');                        // Grouped By Financial Year and Quarter for the Separation of Demand  
 
-            $finalOnePerc = collect($clusterDemands)->sum(function ($item) {
-                return $item['duesList']['onePercPenalty'] ?? 0;
-            });
+            $summedDemand = $groupedByYear->map(function ($item) {
+                return [
+                    'quarterYear' => $item->first()['quarteryear'],
+                    'arv' => roundFigure($item->sum('arv')),
+                    'qtr' => $item->first()['qtr'],
+                    'holding_tax' => roundFigure($item->sum('holding_tax')),
+                    'water_tax' => roundFigure($item->sum('water_tax')),
+                    'education_cess' => roundFigure($item->sum('education_cess')),
+                    'health_cess' => roundFigure($item->sum('health_cess')),
+                    'latrine_tax' => roundFigure($item->sum('latrine_tax')),
+                    'additional_tax' => roundFigure($item->sum('additional_tax')),
+                    'amount' => roundFigure($item->sum('amount')),
+                    'balance' => roundFigure($item->sum('balance')),
+                    'fyear' => $item->first()['fyear'],
+                    'adjust_amt' => roundFigure($item->sum('adjust_amt')),
+                    'due_date' => $item->first()['due_date'],
+                    'onePercPenalty' => roundFigure($item->sum('onePercPenalty')),
+                    'onePercPenaltyTax' => roundFigure($item->sum('onePercPenaltyTax')),
+                ];
+            })->values();
+
+            $finalDues = collect($summedDemand)->sum('balance');
+            $finalDues = roundFigure($finalDues);
+
+            $finalOnePerc = collect($summedDemand)->sum('onePercPenaltyTax');
+            $finalOnePerc = roundFigure($finalOnePerc);
 
             $finalAmt = $finalDues + $finalOnePerc;
+
             $duesFrom = collect($clusterDemands)->first()['duesList']['duesFrom'] ?? collect($clusterDemands)->last()['duesList']['duesFrom'];
             $duesTo = collect($clusterDemands)->first()['duesList']['duesTo'] ?? collect($clusterDemands)->last()['duesList']['duesTo'];
             $paymentUptoYrs = collect($clusterDemands)->first()['duesList']['paymentUptoYrs'] ?? collect($clusterDemands)->last()['duesList']['paymentUptoYrs'];
@@ -959,6 +985,7 @@ class HoldingTaxController extends Controller
                 'onePercPenalty' => $finalOnePerc,
                 'finalAmt' => $finalAmt
             ];
+            $finalClusterDemand['demandList'] = $summedDemand;
             return responseMsgs(true, "Generated Demand of the Cluster", remove_null($finalClusterDemand), "011611", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011611", "1.0", "", "POST", $req->deviceId ?? "");
