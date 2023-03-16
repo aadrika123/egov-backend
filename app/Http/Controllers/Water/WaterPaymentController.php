@@ -845,7 +845,7 @@ class WaterPaymentController extends Controller
     {
         try {
             # Variable Assignments
-            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE_WATER');
             $todayDate = Carbon::now();
             $mWaterApplication = new WaterApplication();
             $mWaterConnectionCharge = new WaterConnectionCharge();
@@ -1044,6 +1044,7 @@ class WaterPaymentController extends Controller
     /**
      * | Post Other Payment Modes for Cheque,DD,Neft
         | Serial No : 07.02
+        | Write Funtion in the Model for Saving Cheq Details 
      */
     public function postOtherPaymentModes($req)
     {

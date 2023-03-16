@@ -25,7 +25,7 @@ class ReqWaterPayment extends FormRequest
     public function rules()
     {
         $rules = array();
-        $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+        $offlinePaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE_WATER');
         $cash = Config::get('payment-constants.PAYMENT_MODE.3');
         $rules['isInstallment'] = 'required|';
         if (isset($this['isInstallment']) && $this['isInstallment'] == "yes") {

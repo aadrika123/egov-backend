@@ -1138,7 +1138,7 @@ class NewConnectionController extends Controller
             $waterTypeDocs['listDocs'] = collect($documentList)->map(function ($value, $key) use ($refWaterApplication) {
                 return $filteredDocs = $this->filterDocument($value, $refWaterApplication)->first();
             });
-            return $waterOwnerDocs['ownerDocs'] = collect($refWaterApplicant)->map(function ($owner) use ($refWaterApplication) {
+            $waterOwnerDocs['ownerDocs'] = collect($refWaterApplicant)->map(function ($owner) use ($refWaterApplication) {
                 return $this->getOwnerDocLists($owner, $refWaterApplication);
             });
 
