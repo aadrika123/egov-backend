@@ -378,6 +378,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('gbsaf/get-uploaded-document', 'getUploadedDocuments');
     Route::post('gbsaf/upload-documents', 'uploadDocument');
     Route::post('gbsaf/get-doc-list', 'getDocList');
+    Route::post('gbsaf/doc-verify-reject', 'docVerifyReject');
   });
 });
 
