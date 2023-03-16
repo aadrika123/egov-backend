@@ -1597,6 +1597,13 @@ class ActiveSafController extends Controller
             $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
+            $rebatePenalMstrs = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
+
+            $onePercKey = $rebatePenalMstrs->where('id', 1)->first()['value'];
+            $specialRebateKey = $rebatePenalMstrs->where('id', 6)->first()['value'];
+            $firstQtrKey = $rebatePenalMstrs->where('id', 2)->first()['value'];
+            $lateAssessKey = $rebatePenalMstrs->where('id', 5)->first()['value'];
+            $onlineRebate = $rebatePenalMstrs->where('id', 3)->first()['value'];
 
             $safTrans = $transaction->getPropByTranPropId($req->tranNo);
             // Saf Payment
@@ -1615,12 +1622,12 @@ class ActiveSafController extends Controller
 
             // Get Property Penalties against property transaction
             $penalRebates = $propPenalties->getPropPenalRebateByTranId($safTrans->id);
-            $onePercPanalAmt = $penalRebates->where('head_name', '1% Monthly Penalty')->first()['amount'] ?? "";
+            $onePercPanalAmt = $penalRebates->where('head_name', $onePercKey)->first()['amount'] ?? "";
             $rebateAmt = $penalRebates->where('head_name', 'Rebate')->first()['amount'] ?? "";
-            $specialRebateAmt = $penalRebates->where('head_name', 'Special Rebate')->first()['amount'] ?? "";
-            $firstQtrRebate = $penalRebates->where('head_name', 'First Qtr Rebate')->first()['amount'] ?? "";
-            $lateAssessPenalty = $penalRebates->where('head_name', 'Late Assessment Fine(Rule 14.1)')->first()['amount'] ?? "";
-            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', 'Rebate From Jsk/Online Payment')->first()->amount ?? 0;
+            $specialRebateAmt = $penalRebates->where('head_name', $specialRebateKey)->first()['amount'] ?? "";
+            $firstQtrRebate = $penalRebates->where('head_name', $firstQtrKey)->first()['amount'] ?? "";
+            $lateAssessPenalty = $penalRebates->where('head_name', $lateAssessKey)->first()['amount'] ?? "";
+            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
 
             $taxDetails = $this->readPenalyPmtAmts($lateAssessPenalty, $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $safTrans->amount, $jskOrOnlineRebate);   // Get Holding Tax Dtls
             // Response Return Data
