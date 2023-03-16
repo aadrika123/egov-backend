@@ -1405,29 +1405,31 @@ class ActiveSafController extends Controller
     public function postPenaltyRebates($calculateSafById, $req)
     {
         $mPaymentRebatePanelties = new PaymentPropPenaltyrebate();
+        $calculatedRebates = collect($calculateSafById->original['data']['demand']['rebates']);
+        $rebateList = array();
+        $rebatePenalList = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
+
+        foreach ($calculatedRebates as $item) {
+            $rebate = [
+                'keyString' => $item['keyString'],
+                'value' => $item['rebateAmount'],
+                'isRebate' => true
+            ];
+            array_push($rebateList, $rebate);
+        }
         $headNames = [
             [
-                'keyString' => '1% Monthly Penalty',
+                'keyString' => $rebatePenalList->where('id', 1)->first()['value'],
                 'value' => $calculateSafById->original['data']['demand']['totalOnePercPenalty'],
                 'isRebate' => false
             ],
             [
-                'keyString' => 'Late Assessment Fine(Rule 14.1)',
+                'keyString' => $rebatePenalList->where('id', 5)->first()['value'],
                 'value' => $calculateSafById->original['data']['demand']['lateAssessmentPenalty'],
                 'isRebate' => false
-            ],
-            [
-                'keyString' => 'Special Rebate',
-                'value' => $calculateSafById->original['data']['demand']['specialRebateAmt'],
-                'isRebate' => true
-            ],
-            [
-                'keyString' => 'Rebate',
-                'value' => $calculateSafById->original['data']['demand']['rebateAmt'],
-                'isRebate' => true
             ]
         ];
-
+        $headNames = array_merge($headNames, $rebateList);
         collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $req) {
             $propPayRebatePenalty = $mPaymentRebatePanelties->getRebatePanelties('saf_id', $req->id, $headName['keyString']);
             if ($headName['value'] > 0) {
@@ -1610,14 +1612,14 @@ class ActiveSafController extends Controller
 
             // Get Property Penalties against property transaction
             $penalRebates = $propPenalties->getPropPenalRebateByTranId($safTrans->id);
-
             $onePercPanalAmt = $penalRebates->where('head_name', '1% Monthly Penalty')->first()['amount'] ?? "";
             $rebateAmt = $penalRebates->where('head_name', 'Rebate')->first()['amount'] ?? "";
             $specialRebateAmt = $penalRebates->where('head_name', 'Special Rebate')->first()['amount'] ?? "";
             $firstQtrRebate = $penalRebates->where('head_name', 'First Qtr Rebate')->first()['amount'] ?? "";
             $lateAssessPenalty = $penalRebates->where('head_name', 'Late Assessment Fine(Rule 14.1)')->first()['amount'] ?? "";
+            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', 'Rebate From Jsk/Online Payment')->first()->amount ?? 0;
 
-            $taxDetails = $this->readPenalyPmtAmts($lateAssessPenalty, $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $safTrans->amount);   // Get Holding Tax Dtls
+            $taxDetails = $this->readPenalyPmtAmts($lateAssessPenalty, $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $safTrans->amount, $jskOrOnlineRebate);   // Get Holding Tax Dtls
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,

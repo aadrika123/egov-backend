@@ -289,23 +289,27 @@ class HoldingTaxController extends Controller
     public function postPaymentPenaltyRebate($dueList, $req)
     {
         $mPaymentRebatePanelties = new PaymentPropPenaltyrebate();
+        $rebateList = array();
+        $calculatedRebates = $dueList['rebates'];
+        $rebatePenalList = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
+
+        foreach ($calculatedRebates as $item) {
+            $rebate = [
+                'keyString' => $item['keyString'],
+                'value' => $item['rebateAmount'],
+                'isRebate' => true
+            ];
+            array_push($rebateList, $rebate);
+        }
+
         $headNames = [
             [
-                'keyString' => '1% Monthly Penalty',
+                'keyString' => $rebatePenalList->where('id', 1)->first()['value'],
                 'value' => $dueList['onePercPenalty'],
                 'isRebate' => false
-            ],
-            [
-                'keyString' => 'Special Rebate',
-                'value' => $dueList['specialRebateAmt'],
-                'isRebate' => true
-            ],
-            [
-                'keyString' => 'Rebate',
-                'value' => $dueList['rebateAmt'],
-                'isRebate' => true
             ]
         ];
+        $headNames = array_merge($headNames, $rebateList);
 
         collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $req) {
             $propPayRebatePenalty = $mPaymentRebatePanelties->getRebatePanelties('prop_id', $req->propId, $headName['keyString']);
