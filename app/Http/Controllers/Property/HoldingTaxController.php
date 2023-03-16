@@ -289,23 +289,27 @@ class HoldingTaxController extends Controller
     public function postPaymentPenaltyRebate($dueList, $req)
     {
         $mPaymentRebatePanelties = new PaymentPropPenaltyrebate();
+        $rebateList = array();
+        $calculatedRebates = $dueList['rebates'];
+        $rebatePenalList = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
+
+        foreach ($calculatedRebates as $item) {
+            $rebate = [
+                'keyString' => $item['keyString'],
+                'value' => $item['rebateAmount'],
+                'isRebate' => true
+            ];
+            array_push($rebateList, $rebate);
+        }
+
         $headNames = [
             [
-                'keyString' => '1% Monthly Penalty',
+                'keyString' => $rebatePenalList->where('id', 1)->first()['value'],
                 'value' => $dueList['onePercPenalty'],
                 'isRebate' => false
-            ],
-            [
-                'keyString' => 'Special Rebate',
-                'value' => $dueList['specialRebateAmt'],
-                'isRebate' => true
-            ],
-            [
-                'keyString' => 'Rebate',
-                'value' => $dueList['rebateAmt'],
-                'isRebate' => true
             ]
         ];
+        $headNames = array_merge($headNames, $rebateList);
 
         collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $req) {
             $propPayRebatePenalty = $mPaymentRebatePanelties->getRebatePanelties('prop_id', $req->propId, $headName['keyString']);
@@ -909,11 +913,44 @@ class HoldingTaxController extends Controller
             $clusterId = $req->clusterId;
             $mPropProperty = new PropProperty();
             $properties = $mPropProperty->getPropsByClusterId($clusterId);
+            $clusterDemands = array();
+            $finalClusterDemand = array();
             if ($properties->isEmpty())
                 throw new Exception("Properties Not Available");
 
+            foreach ($properties as $item) {
+                $propIdReq = new Request([
+                    'propId' => $item['id']
+                ]);
+                $propDues['duesList'] = $this->getHoldingDues($propIdReq)->original['data']['duesList'] ?? [];
+                $propDues['demandList'] = $this->getHoldingDues($propIdReq)->original['data']['demandList'] ?? [];
+                array_push($clusterDemands, $propDues);
+            }
 
-            return responseMsgs(true, "Generated Demand of the Cluster", "", "011611", "1.0", "", "POST", $req->deviceId ?? "");
+            $finalDues = collect($clusterDemands)->sum(function ($item) {
+                return $item['duesList']['totalDues'] ?? 0;
+            });
+
+            $finalOnePerc = collect($clusterDemands)->sum(function ($item) {
+                return $item['duesList']['onePercPenalty'] ?? 0;
+            });
+
+            $finalAmt = $finalDues + $finalOnePerc;
+            $duesFrom = collect($clusterDemands)->first()['duesList']['duesFrom'] ?? collect($clusterDemands)->last()['duesList']['duesFrom'];
+            $duesTo = collect($clusterDemands)->first()['duesList']['duesTo'] ?? collect($clusterDemands)->last()['duesList']['duesTo'];
+            $paymentUptoYrs = collect($clusterDemands)->first()['duesList']['paymentUptoYrs'] ?? collect($clusterDemands)->last()['duesList']['paymentUptoYrs'];
+            $paymentUptoQtrs = collect($clusterDemands)->first()['duesList']['paymentUptoQtrs'] ?? collect($clusterDemands)->last()['duesList']['paymentUptoQtrs'];
+
+            $finalClusterDemand['duesList'] = [
+                'paymentUptoYrs' => $paymentUptoYrs,
+                'paymentUptoQtrs' => $paymentUptoQtrs,
+                'duesFrom' => $duesFrom,
+                'duesTo' => $duesTo,
+                'totalDues' => $finalDues,
+                'onePercPenalty' => $finalOnePerc,
+                'finalAmt' => $finalAmt
+            ];
+            return responseMsgs(true, "Generated Demand of the Cluster", remove_null($finalClusterDemand), "011611", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011611", "1.0", "", "POST", $req->deviceId ?? "");
         }

@@ -6,6 +6,7 @@ use App\MicroServices\IdGeneration;
 use App\Models\ActiveCitizen;
 use App\Models\OtpMaster;
 use App\Models\OtpRequest;
+use App\Models\User;
 use Seshac\Otp\Otp;
 use Exception;
 use Illuminate\Http\Request;
@@ -32,9 +33,17 @@ class ThirdPartyController extends Controller
         try {
             $request->validate([
                 'mobileNo' => "required|digits:10|regex:/[0-9]{10}/", #exists:active_citizens,mobile|
+                'type' => "nullable|in:Register",
             ]);
             $refIdGeneration = new IdGeneration();
             $mOtpRequest = new OtpRequest();
+            if ($request->type == "Register") {
+                $userDetails = ActiveCitizen::where('mobile', $request->mobileNo)
+                    ->first();
+                if ($userDetails) {
+                    throw new Exception("Respective mobile no $request->mobileNo is Registered to An Existing Account!");
+                }
+            }
             $generateOtp = $refIdGeneration->generateOtp();
             DB::beginTransaction();
             $mOtpRequest->saveOtp($request, $generateOtp);
@@ -42,7 +51,7 @@ class ThirdPartyController extends Controller
             return responseMsgs(true, "OTP send to your mobile No!", $generateOtp, "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "0101", "01", ".ms", "POST", "");
+            return responseMsgs(false, $e->getMessage(), "", "0101", "01", ".ms", "POST", "");
         }
     }
 

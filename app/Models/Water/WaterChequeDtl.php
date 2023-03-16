@@ -23,7 +23,23 @@ class WaterChequeDtl extends Model
      */
     public function getChequeDtlsByTransId($transId)
     {
-        return WaterChequeDtl::where('id',$transId)
-        ->where('status', 2);
+        return WaterChequeDtl::where('id', $transId)
+            ->where('status', 2);
+    }
+
+    /**
+     * | Save the cheque details 
+     */
+    public function postChequeDtl($req)
+    {
+        $mPropChequeDtl = new WaterChequeDtl();
+        $mPropChequeDtl->application_id    =  $req['application_id'];
+        $mPropChequeDtl->transaction_id    =  $req['transaction_id'];
+        $mPropChequeDtl->cheque_date       =  $req['cheque_date'];
+        $mPropChequeDtl->bank_name         =  $req['bank_name'];
+        $mPropChequeDtl->branch_name       =  $req['branch_name'];
+        $mPropChequeDtl->cheque_no         =  $req['cheque_no'];
+        $mPropChequeDtl->user_id           =  $req['user_id'];
+        $mPropChequeDtl->save();
     }
 }

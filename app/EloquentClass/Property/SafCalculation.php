@@ -1041,8 +1041,8 @@ class SafCalculation
         $totalDemandAmount = $taxes->sum();                                                                             // Total Demand with Penalty
         $this->_GRID['demand']['adjustAmount'] = 0;
         $this->_GRID['demand']['totalDemand'] = roundFigure($totalDemandAmount);
-        $this->readRebate();                                                                                         // Read Rebates by Current Objection function
-        $this->_GRID['demand']['payableAmount'] = $this->calculatePayableAmount();
+        $totalDemand = $this->_GRID['demand']['totalDemand'];
+        $this->_GRID['demand']['payableAmount'] = round($totalDemand);
     }
 
     /**
@@ -1081,110 +1081,6 @@ class SafCalculation
             }
         }
         return $fine;
-    }
-
-    /**
-     * | Total Rebate Percent(1.6.1)
-     * | @var ownerDetails the first Prefered owner to be given the discount rebate
-     * | @var rebate the Rebate Percentage
-     */
-    public function readRebate()
-    {
-        $mTodayDate = Carbon::now()->format("Y-m-d");
-        $rebates = array();
-        $rebate = 0;
-        $rebate1 = 0;
-        $rebateAmount = 0;
-        $currentQuarter = calculateQtr($mTodayDate);
-        $currentDate = Carbon::now();
-
-        $seniorCitizen = 60;                                                                // Define for year of senior citizen
-        // Rebate Percentage Amount
-        $citizenRebatePerc = $this->_citizenRebatePerc;
-        $jskRebatePerc = $this->_jskRebatePerc;
-        $speciallyAbledRebatePerc = $this->_speciallyAbledRebatePerc;
-
-        $mLastQuarterDemand = (collect($this->_GRID['details'])->last()['totalTax']) * 4;   // Final Quarterly Tax 
-
-        if ($currentQuarter == 1) {                                                         // Rebate On Financial Year Payment On 1st Quarter
-            $rebate1 += 5;
-            $this->_GRID['demand']['firstQuartPmtRebate'] = 5;
-            $this->_GRID['rebates']['firstQuartPmtRebate'] = 5;
-            $rebateAmount += roundFigure(($mLastQuarterDemand * 5) / 100);
-            array_push($rebates, [
-                "rebateTypeId" => 5,
-                "rebateType" => 'firstQuartPmtRebate',
-                "rebatePerc" => 5,
-                "rebateAmount" =>  $rebateAmount
-            ]);
-        }
-
-        if ($this->_loggedInUserType == 'Citizen') {                                         // In Case of Citizen
-            $rebate1 += $citizenRebatePerc;
-            $this->_GRID['demand']['citizenRebate'] = $citizenRebatePerc;
-            $this->_GRID['rebates']['citizenRebate'] = $citizenRebatePerc;
-            $rebateAmount += roundFigure(($mLastQuarterDemand * $citizenRebatePerc) / 100);
-            array_push($rebates, [
-                "rebateTypeId" => $this->_citizenRebateID,
-                "rebateType" => "citizenRebate",
-                "rebatePerc" => $citizenRebatePerc,
-                "rebateAmount" => $rebateAmount
-            ]);
-        }
-        if ($this->_loggedInUserType == 'JSK') {                                              // In Case of JSK
-            $rebate1 += $jskRebatePerc;
-            $this->_GRID['demand']['jskRebate'] = $jskRebatePerc;
-            $this->_GRID['rebates']['jskRebate'] = $jskRebatePerc;
-            $rebateAmount += roundFigure(($mLastQuarterDemand * $jskRebatePerc) / 100);
-            array_push($rebates, [
-                "rebateTypeId" => $this->_jskRebateID,
-                "rebateType" => "jskRebate",
-                "rebatePerc" => $jskRebatePerc,
-                "rebateAmount" => $rebateAmount
-            ]);
-        }
-
-        if (isset($this->_propertyDetails['owner'])) {
-            $ownerDetails = collect($this->_propertyDetails['owner'])->first();
-            $years = $currentDate->diffInYears(Carbon::parse($ownerDetails['dob']));
-
-            if ($ownerDetails['isArmedForce'] == 1 || $ownerDetails['isSpeciallyAbled'] == 1 || $ownerDetails['gender']  == 'Female' || $ownerDetails['gender'] == 'Transgender' || $years >= $seniorCitizen) {
-                $rebate += $speciallyAbledRebatePerc;
-                $specialRebateAmt = roundFigure(($this->_GRID['demand']['totalTax'] * $speciallyAbledRebatePerc) / 100);
-                array_push($rebates, [
-                    "rebateTypeId" => $this->_speciallyAbledRebateID,
-                    "rebateType" => "speciallyAbledRebate",
-                    "rebatePerc" => $speciallyAbledRebatePerc,
-                    "rebateAmount" => $specialRebateAmt
-                ]);
-            }
-        }
-
-
-        $this->_GRID['demand']['rebatePerc'] = $rebate1;
-        $this->_GRID['rebates'] = $rebates;
-        $this->_GRID['demand']['specialRebatePerc'] = $rebate;
-        $this->_GRID['demand']['rebateAmount'] = $rebateAmount;
-        $this->_GRID['demand']['specialRebateAmount'] = $specialRebateAmt ?? 0;
-    }
-
-    /**
-     * | Final Payable Amount
-     * --------------------- Initialization ------------------
-     * | @var totalDemand generated total demand with all the penalties 
-     * | @var specialRebatePerc rebate Percent to be given to the user
-     * ----------------- Calculation -------------------------
-     * | $rebateAmount = ($totalDemand * $rebatePerc) / 100;
-     * | $payableAmount = $totalDemand - $rebateAmount;
-     * @return payableAmount Final Payable Amount of the User
-     */
-    public function calculatePayableAmount()
-    {
-        $totalDemand = $this->_GRID['demand']['totalDemand'];
-        $mRebateAmount = $this->_GRID['demand']['rebateAmount'];
-        $mSpecialRebateAmount = $this->_GRID['demand']['specialRebateAmount'];
-        $payableAmount = $totalDemand - ($mSpecialRebateAmount + $mRebateAmount);
-        return round($payableAmount);
     }
 
     /**

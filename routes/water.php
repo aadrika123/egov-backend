@@ -67,7 +67,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/application/save-inspection-date', 'saveInspectionDateTime');
         Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');
         Route::post('admin/application/cancel-inspection-scheduling', 'cancelSiteInspection');
-        Route::post('final-submit-application', 'finalSubmitionApplication');                           // Not Used
     });
 
     /**

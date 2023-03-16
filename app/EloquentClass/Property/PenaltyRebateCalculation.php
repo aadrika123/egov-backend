@@ -3,6 +3,7 @@
 namespace App\EloquentClass\Property;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 
 /**
  * | Created On-31-01-2023 
@@ -40,10 +41,13 @@ class PenaltyRebateCalculation
      */
     public function readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $totalDemand, $totalDuesList)
     {
+        $rebatePenalMstrs = Config::get('PropertyConstaint.REBATE_PENAL_MASTERS');
         $currentDate = Carbon::now();
-        $citizenRebatePerc = 5;
-        $jskRebatePerc = 2.5;
-        $speciallyAbledRebatePerc = 5;
+        $firstQtrRebate = collect($rebatePenalMstrs)->where('id', 2)->first();
+        $citizenRebate = collect($rebatePenalMstrs)->where('id', 3)->first();
+        $jskRebate = collect($rebatePenalMstrs)->where('id', 4)->first();
+        $speciallyAbledRebate = collect($rebatePenalMstrs)->where('id', 6)->first();
+
         $rebates = array();
         $rebate1 = 0;
         $rebate = 0;
@@ -52,32 +56,40 @@ class PenaltyRebateCalculation
         $specialRebateAmt = 0;
 
         if ($currentQuarter == 1) {                                                         // Rebate On Financial Year Payment On 1st Quarter
-            $rebate1 += 5;
-            $rebateAmount += roundFigure(($mLastQuarterDemand * 5) / 100);
+            $rebate1 += $firstQtrRebate['perc'];
+            $rebateValue = roundFigure(($mLastQuarterDemand * 5) / 100);
+            $rebateAmount += $rebateValue;
             array_push($rebates, [
-                "rebateTypeId" => 5,
-                "rebateType" => 'firstQuartPmtRebate',
-                "rebatePerc" => 5,
-                "rebateAmount" =>  $rebateAmount
+                "rebateTypeId" => $firstQtrRebate['id'],
+                "rebateType" => $firstQtrRebate['key'],
+                "rebatePerc" => $firstQtrRebate['perc'],
+                "rebateAmount" =>  $rebateAmount,
+                "keyString" => $firstQtrRebate['value']
             ]);
         }
 
         if ($loggedInUserType == 'Citizen') {                                         // In Case of Citizen
-            $rebate1 += $citizenRebatePerc;
-            $rebateAmount += roundFigure(($mLastQuarterDemand * $citizenRebatePerc) / 100);
+            $rebate1 += $citizenRebate['perc'];
+            $rebateValue = roundFigure(($mLastQuarterDemand * $citizenRebate['perc']) / 100);
+            $rebateAmount += $rebateValue;
             array_push($rebates, [
-                "rebateType" => "citizenRebate",
-                "rebatePerc" => $citizenRebatePerc,
-                "rebateAmount" => $rebateAmount
+                "rebateTypeId" => $citizenRebate['id'],
+                "rebateType" => $citizenRebate['key'],
+                "rebatePerc" => $citizenRebate['perc'],
+                "rebateAmount" => $rebateValue,
+                "keyString" => $citizenRebate['value']
             ]);
         }
         if ($loggedInUserType == 'JSK') {                                              // In Case of JSK
-            $rebate1 += $jskRebatePerc;
-            $rebateAmount += roundFigure(($mLastQuarterDemand * $jskRebatePerc) / 100);
+            $rebate1 += $jskRebate['perc'];
+            $rebateValue = roundFigure(($mLastQuarterDemand * $jskRebate['perc']) / 100);
+            $rebateAmount += $rebateValue;
             array_push($rebates, [
-                "rebateType" => "jskRebate",
-                "rebatePerc" => $jskRebatePerc,
-                "rebateAmount" => $rebateAmount
+                "rebateTypeId" => $jskRebate['id'],
+                "rebateType" => $jskRebate['key'],
+                "rebatePerc" => $jskRebate['perc'],
+                "rebateAmount" => $rebateAmount,
+                "keyString" => $jskRebate['value']
             ]);
         }
 
@@ -87,16 +99,18 @@ class PenaltyRebateCalculation
                 $ownerDetails['is_armed_force'] == 1 || $ownerDetails['is_specially_abled'] == 1 ||
                 $ownerDetails['gender']  == 'Female' || $ownerDetails['gender'] == 'Transgender'  || $years >= $seniorCitizen
             ) {
-                $rebate += $speciallyAbledRebatePerc;
-                $specialRebateAmt = roundFigure(($totalDemand * $speciallyAbledRebatePerc) / 100);
+                $rebate += $speciallyAbledRebate['perc'];
+                $specialRebateAmt = roundFigure(($totalDemand * $speciallyAbledRebate['perc']) / 100);
                 array_push($rebates, [
-                    "rebateType" => "speciallyAbledRebate",
-                    "rebatePerc" => $speciallyAbledRebatePerc,
+                    "rebateType" => $speciallyAbledRebate['key'],
+                    "rebatePerc" => $speciallyAbledRebate['perc'],
                     "rebateAmount" => $specialRebateAmt,
+                    "keyString" => $speciallyAbledRebate['value']
                 ]);
             }
         }
 
+        $totalDuesList['rebates'] = $rebates;
         $totalDuesList['rebatePerc'] = $rebate1;
         $totalDuesList['rebateAmt'] = $rebateAmount;
         $totalDuesList['specialRebatePerc'] = $rebate;

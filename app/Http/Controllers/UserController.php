@@ -6,9 +6,14 @@ use App\Http\Requests\Auth\AuthorizeRequestUser;
 use App\Http\Requests\Auth\AuthUserRequest;
 use App\Http\Requests\Auth\LoginUserRequest;
 use App\Http\Requests\Auth\ChangePassRequest;
+use App\Http\Requests\Auth\OtpChangePass as AuthOtpChangePass;
+use App\Models\User;
 use App\Repository\Auth\EloquentAuthRepository;
 use App\Traits\Auth;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * Controller for user data login, logout, changing password
@@ -134,5 +139,24 @@ class UserController extends Controller
     public function deactivateNotification(Request $request)
     {
         return $this->EloquentAuth->deactivateNotification($request);
+    }
+
+    /**
+     * | Change Password by OTP 
+     * | Api Used after the OTP Validation
+     */
+    public function changePasswordByOtp(AuthOtpChangePass $request)
+    {
+        try {
+            $id = auth()->user()->id;
+            $user = User::find($id);
+            $user->password = Hash::make($request->password);
+            $user->save();
+
+            Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
+            return response()->json(['Status' => 'True', 'Message' => 'Successfully Changed the Password'], 200);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
+        }
     }
 }

@@ -16,4 +16,5 @@ interface IReport
     public function safSamFamGeotagging(Request $request);
     public function PropPaymentModeWiseSummery(Request $request);
     public function SafPaymentModeWiseSummery(Request $request);
+    public function PropDCB(Request $request);
 }

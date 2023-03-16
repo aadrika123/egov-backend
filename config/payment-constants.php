@@ -21,6 +21,12 @@ return [
         'DD',
         'NEFT'
     ],
+    'PAYMENT_OFFLINE_MODE_WATER' => [
+        'Cash',
+        'Cheque',
+        'DD',
+        'Neft'
+    ],
 
     'ONLINE' => "Online",
     "PAYMENT_OFFLINE_MODE" => [

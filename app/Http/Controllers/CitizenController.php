@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Auth\ChangePassRequest;
+use App\Http\Requests\Auth\OtpChangePass;
 use App\MicroServices\DocUpload;
 use App\Models\ActiveCitizen;
 use App\Models\Property\PropProperty;
@@ -344,8 +345,6 @@ class CitizenController extends Controller
     public function changeCitizenPass(ChangePassRequest $request)
     {
         try {
-            $validator = $request->validated();
-
             $id = auth()->user()->id;
             $citizen = ActiveCitizen::where('id', $id)->firstOrFail();
             $validPassword = Hash::check($request->password, $citizen->password);
@@ -360,6 +359,25 @@ class CitizenController extends Controller
             throw new Exception("Old Password dosen't Match!");
         } catch (Exception $e) {
             return response()->json(["status" => false, "message" => $e->getMessage(), "data" => $request->password], 400);
+        }
+    }
+
+
+    /**
+     * |
+     */
+    public function changeCitizenPassByOtp(OtpChangePass $request)
+    {
+        try {
+            $id = auth()->user()->id;
+            $citizen = ActiveCitizen::where('id', $id)->firstOrFail();
+            $citizen->password = Hash::make($request->password);
+            $citizen->save();
+
+            Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
+            return responseMsgs(true, "Successfully Changed the Password", "", "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 }
