@@ -229,11 +229,11 @@ class NewConnectionController extends Controller
         try {
             $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
             $request->validate([
-                'applicationId' => 'required',
-                'senderRoleId' => 'required',
-                'receiverRoleId' => 'required',
-                'action' => 'required|In:forward,backward',
-                'comment' => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+                'applicationId'     => 'required',
+                'senderRoleId'      => 'required',
+                'receiverRoleId'    => 'required',
+                'action'            => 'required|In:forward,backward',
+                'comment'           => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
             ]);
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
@@ -346,7 +346,10 @@ class NewConnectionController extends Controller
                 if (isset($refMeterData)) {
                     switch ($refMeterData['connection_type']) {
                         case (1):
-                            $connectionName = $refConnectionName['1'];
+                            if ($refMeterData['meter_status'] == 1) {
+                                $connectionName = $refConnectionName['1'];
+                            }
+                            $connectionName = $refConnectionName['4'];
                             break;
                         case (2):
                             $connectionName = $refConnectionName['2'];
@@ -1030,76 +1033,6 @@ class NewConnectionController extends Controller
         return $returnData;
     }
 
-
-    /**
-     * | Get the 
-     */
-
-
-
-    // final submition of the Water Application
-    /**
-        | dont check the application payment status 
-        | call the payment ineciate function
-        | Change / not used 
-     */
-    public function finalSubmitionApplication(Request $request)
-    {
-        try {
-            $request->validate([
-                'applicationId' => 'required|int',
-            ]);
-
-            $mWaterApplication = new WaterApplication();
-            $refApplicationList = $mWaterApplication->getWaterApplicationsDetails($request->applicationId);
-            $checkExist = collect($refApplicationList)->first();
-            if (!$checkExist) {
-                throw new Exception("Application Data Not found!");
-            }
-
-            $documentList = $this->getDocToUpload($request);
-            $refDoc = collect($documentList)['original']['data']['documentsList'];
-            $checkDocument = collect($refDoc)->map(function ($value, $key) {
-                if ($value['isMadatory'] == 1) {
-                    $doc = collect($value['uploadDoc'])->first();
-                    if (is_null($doc)) {
-                        return false;
-                    }
-                    return true;
-                }
-                return true;
-            });
-
-            if ($checkDocument->contains(false)) {
-                throw new Exception("Please Upload Req Documents before Final Submition!");
-            }
-            if ($refApplicationList->payment_status == false) {
-                throw new Exception("Payment Not done!");
-            }
-            if ($refApplicationList->apply_from != 'Online') {
-                throw new Exception("Respective Application is Not Applied Online by Citizen!");
-            }
-            if (isset($refApplicationList->current_role)) {
-                throw new Exception("Application is already In workflow!");
-            }
-            switch ($refApplicationList->user_type) {
-                case ('Citizen'):
-                    // call the payment function
-                    WaterApplication::where('id', $request->applicationId)
-                        ->update([
-                            'current_role' => $this->_dealingAssistent
-                        ]);
-                    return responseMsgs(true, "Application Submited to Workflow!", $request, "", "01", "", "POST", "");
-                    break;
-                default:
-                    throw new Exception("Citizen Application Not found!");
-                    break;
-            }
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
     /**
         |-------------------------------------------------------------------------------------------------------|
      */
@@ -1298,47 +1231,39 @@ class NewConnectionController extends Controller
             'parameter' => 'required'
         ]);
         try {
+
+            $mWaterConsumer = new WaterConsumer();
             $key = $request->filterBy;
             $paramenter = $request->parameter;
+            $string = preg_replace("/([A-Z])/", "_$1", $key);
+            $refstring = strtolower($string);
+
             switch ($key) {
                 case ("consumerNo"):
-                    $mWaterConsumer = new WaterConsumer();
-                    $string = preg_replace("/([A-Z])/", "_$1", $key);
-                    $refstring = strtolower($string);
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data Not Found!");
                     break;
                 case ("holdingNo"):
-                    $mWaterConsumer = new WaterConsumer();
-                    $string = preg_replace("/([A-Z])/", "_$1", $key);
-                    $refstring = strtolower($string);
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data Not Found!");
                     break;
                 case ("safNo"):
-                    $mWaterConsumer = new WaterConsumer();
-                    $string = preg_replace("/([A-Z])/", "_$1", $key);
-                    $refstring = strtolower($string);
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data Not Found!");
                     break;
                 case ("applicantName"):
-                    $mWaterConsumer = new WaterConsumer();
-                    $string = preg_replace("/([A-Z])/", "_$1", $key);
-                    $refstring = strtolower($string);
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data Not Found!");
                     break;
                 case ('mobileNo'):
-                    $mWaterConsumer = new WaterConsumer();
                     $string = preg_replace("/([A-Z])/", "_$1", $key);
                     $refstring = strtolower($string);
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);

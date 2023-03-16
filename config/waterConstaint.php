@@ -6,7 +6,8 @@ return [
     "METER_CONN_TYPE" => [
         "1" => "Meter",
         "2" => "Gallon",
-        "3" => "Fixed"
+        "3" => "Fixed",
+        "4" => "Meter/Fixed"
     ],
     "ROLE-LABEL" => [
         "BO" => 11,
