@@ -366,6 +366,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('gbsaf/inbox-field-verification', 'fieldVerifiedInbox');
     Route::post('gbsaf/site-verification', 'siteVerification');
     Route::post('gbsaf/geo-tagging', 'geoTagging');
+    Route::post('gbsaf/tc-verification', 'getTcVerifications');
+    Route::post('gbsaf/back-to-citizen', 'backToCitizen');
+    Route::post('gbsaf/btc-inbox', 'btcInbox');
+    Route::post('gbsaf/post-escalate', 'postEscalate');
+    Route::post('gbsaf/special-inbox', 'specialInbox');
+    Route::post('gbsaf/static-details', 'getStaticSafDetails');
   });
 });
 

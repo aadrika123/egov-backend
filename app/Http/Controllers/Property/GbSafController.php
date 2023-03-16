@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqGbSiteVerification;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
+use App\Models\Property\PropActiveGbOfficer;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafGbOfficer;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropFloor;
+use App\Models\Property\PropGbofficer;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafMemoDtl;
@@ -132,8 +135,6 @@ class GbSafController extends Controller
             return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $mDeviceId);
         }
     }
-
-
 
     /**
      * | Post next level
@@ -270,6 +271,9 @@ class GbSafController extends Controller
         $activeSaf = PropActiveSaf::query()
             ->where('id', $safId)
             ->first();
+        $officerDetails = PropActiveGbOfficer::query()
+            ->where('saf_id', $safId)
+            ->first();
         $floorDetails = PropActiveSafsFloor::query()
             ->where('saf_id', $safId)
             ->get();
@@ -351,6 +355,12 @@ class GbSafController extends Controller
             $propProperties->new_holding_no = $activeSaf->new_holding_no;
             $propProperties->save();
 
+            // SAF Officer replication
+            $approvedOfficers = $officerDetails->replicate();
+            $approvedOfficers->setTable('prop_gbofficers');
+            $approvedOfficers->property_id = $propProperties->id;
+            $approvedOfficers->save();
+
             // SAF Floors Replication
             foreach ($floorDetails as $floorDetail) {
                 $propFloor = $floorDetail->replicate();
@@ -364,9 +374,19 @@ class GbSafController extends Controller
         if (in_array($assessmentType, ['Re Assessment'])) {         // Edit Property In case of Reassessment
             $propId = $activeSaf->previous_holding_id;
             $mProperty = new PropProperty();
+            $mPropOfficer = new PropGbofficer();
             $mPropFloors = new PropFloor();
             // Edit Property
             $mProperty->editPropBySaf($propId, $activeSaf);
+
+            // Edit Owners 
+            $ifOwnerExist = $mPropOfficer->getPropOfficerByOfficerId($officerDetails->id);
+            $officerDetail = array_merge($officerDetails->toArray(), ['property_id' => $propId]);
+            $officerDetail = new Request($officerDetail);
+            if ($ifOwnerExist)
+                $mPropOfficer->editOfficer($officerDetail);
+            else
+                $mPropOfficer->postOfficer($officerDetail);
 
             // Edit Floors
             foreach ($floorDetails as $floorDetail) {
@@ -394,8 +414,6 @@ class GbSafController extends Controller
 
     /**
      * | Site Verification
-     * | @param req requested parameter
-     * | Status-Closed
      */
     public function siteVerification(ReqGbSiteVerification $req)
     {
@@ -474,7 +492,7 @@ class GbSafController extends Controller
     }
 
     /**
-     * | geo tagging
+     * | Geo tagging
      */
     public function geoTagging(Request $req)
     {
@@ -535,7 +553,202 @@ class GbSafController extends Controller
         }
     }
 
+    /**
+     * | Get The Verification done by Agency Tc
+     */
+    public function getTcVerifications(Request $req)
+    {
+        $req->validate([
+            'safId' => 'required|numeric'
+        ]);
+        try {
+            $data = array();
+            $safVerifications = new PropSafVerification();
+            $safVerificationDtls = new PropSafVerificationDtl();
+            $mSafGeoTag = new PropSafGeotagUpload();
 
+            $data = $safVerifications->getVerificationsData($req->safId);                       // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
+            if (collect($data)->isEmpty())
+                throw new Exception("Tc Verification Not Done");
+
+            $data = json_decode(json_encode($data), true);
+
+            $verificationDtls = $safVerificationDtls->getFullVerificationDtls($data['id']);     // <----- Prop Saf Verification Model Function to Get Verification Floor Dtls
+            $existingFloors = $verificationDtls->where('saf_floor_id', '!=', NULL);
+            $newFloors = $verificationDtls->where('saf_floor_id', NULL);
+            $data['newFloors'] = $newFloors->values();
+            $data['existingFloors'] = $existingFloors->values();
+            $geoTags = $mSafGeoTag->getGeoTags($req->safId);
+            $data['geoTagging'] = $geoTags;
+            return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Back to citizen
+     */
+    public function backToCitizen(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|integer',
+            'comment' => 'required|string'
+        ]);
+
+        try {
+            $saf = PropActiveSaf::find($req->applicationId);
+            $track = new WorkflowTrack();
+            DB::beginTransaction();
+            $initiatorRoleId = $saf->initiator_role_id;
+            $saf->current_role = $initiatorRoleId;
+            $saf->parked = true;                        //<------ SAF Pending Status true
+            $saf->save();
+
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $saf->workflow_id;
+            $metaReqs['refTableDotId'] = 'prop_active_safs.id';
+            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['user_id'] = authUser()->id;
+            $req->request->add($metaReqs);
+            $track->saveTrack($req);
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | BTC Inbox
+     */
+    public function btcInbox(Request $req)
+    {
+        try {
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $mpropActiveSafs = new PropActiveSaf();
+
+            $mUserId = authUser()->id;
+            $mUlbId = authUser()->ulb_id;
+            $mDeviceId = $req->deviceId ?? "";
+
+            $occupiedWardsId = $mWfWardUser->getWardsByUserId($mUserId)->pluck('ward_id');                  // Model function to get ward list
+
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($mUserId)->pluck('wf_role_id');                 // Model function to get Role By User Id
+
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
+            $safInbox = $mpropActiveSafs->getGbSaf($workflowIds)
+                ->where('parked', true)
+                ->where('prop_active_safs.ulb_id', $mUlbId)
+                ->where('prop_active_safs.status', 1)
+                ->whereIn('current_role', $roleIds)
+                ->whereIn('ward_mstr_id', $occupiedWardsId)
+                ->orderByDesc('id')
+                ->get();
+
+            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, "271ms", "POST", $mDeviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
+        }
+    }
+
+    /**
+     * | Post Escalate
+     */
+    public function postEscalate(Request $request)
+    {
+        $request->validate([
+            "escalateStatus" => "required|int",
+            "applicationId" => "required|int",
+        ]);
+        try {
+            $userId = auth()->user()->id;
+            $saf_id = $request->applicationId;
+            $data = PropActiveSaf::find($saf_id);
+            $data->is_escalate = $request->escalateStatus;
+            $data->escalate_by = $userId;
+            $data->save();
+            return responseMsgs(true, $request->escalateStatus == 1 ? 'Saf is Escalated' : "Saf is removed from Escalated", '', "010106", "1.0", "353ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    /**
+     * | Escalatee Inbox
+     */
+    public function specialInbox()
+    {
+        try {
+            $mWfWardUser = new WfWardUser();
+            $mWfRoleUserMaps = new WfRoleusermap();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $mpropActiveSafs = new PropActiveSaf();
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+
+            $wardIds = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                        // Get All Occupied Ward By user id using trait
+            $roleIds = $mWfRoleUserMaps->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
+
+            $safData = $mpropActiveSafs->getGbSaf($workflowIds)                      // Repository function to get SAF Details
+                ->where('is_escalate', 1)
+                ->where('prop_active_safs.ulb_id', $ulbId)
+                ->whereIn('ward_mstr_id', $wardIds)
+                ->orderByDesc('id')
+                ->get();
+            return responseMsgs(true, "Data Fetched", remove_null($safData), "010107", "1.0", "251ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Get Static Saf Details
+     */
+    public function getStaticSafDetails(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807'
+        ]);
+
+        try {
+            // Variable Assignments
+            $mPropActiveSaf = new PropActiveSaf();
+            $mPropActiveGbOfficer = new PropActiveGbOfficer();
+            $mActiveSafsFloors = new PropActiveSafsFloor();
+            $mPropSafMemoDtls = new PropSafMemoDtl();
+            $memoDtls = array();
+            $data = array();
+
+            // Derivative Assignments
+            $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
+                ->where('prop_active_safs.id', $req->applicationId)
+                ->first();
+            if (!$data)
+                throw new Exception("Data Not Found");
+            $data = json_decode(json_encode($data), true);
+
+            $officerDtls = $mPropActiveGbOfficer->getOfficerBySafId($data['id']);
+            $data['officer'] = $officerDtls;
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
+            $data['floors'] = $getFloorDtls;
+
+            $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
+            $data['memoDtls'] = $memoDtls;
+            return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * | Final Approval Rejection
+     */
     public function approvalRejectionGbSaf(Request $req)
     {
         $req->validate([

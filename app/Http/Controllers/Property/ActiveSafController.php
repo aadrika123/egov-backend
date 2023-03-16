@@ -1250,6 +1250,7 @@ class ActiveSafController extends Controller
             $metaReqs['workflowId'] = $saf->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_safs.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['user_id'] = authUser()->id;
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 

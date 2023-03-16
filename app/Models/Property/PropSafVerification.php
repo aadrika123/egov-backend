@@ -49,7 +49,7 @@ class PropSafVerification extends Model
                 'u.ward_name as old_ward_no',
                 'u.ward_name as new_ward_no'
             )
-            ->join('ref_prop_types as p', 'p.id', '=', 'v.prop_type_id')
+            ->leftjoin('ref_prop_types as p', 'p.id', '=', 'v.prop_type_id')
             ->join('ref_prop_road_types as r', 'r.id', '=', 'v.road_type_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'v.ward_id')
             ->leftJoin('ulb_ward_masters as u1', 'u1.id', '=', 'v.new_ward_id')
