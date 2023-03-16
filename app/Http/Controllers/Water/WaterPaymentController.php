@@ -885,7 +885,9 @@ class WaterPaymentController extends Controller
                     'chequeDate'    => $req['chequeDate'],
                     'tranId'        => $waterTrans['id'],
                     'id'            => $req->applicationId,
-                    'applicationNo' => $refWaterApplication['application_no']
+                    'applicationNo' => $refWaterApplication['application_no'],
+                    'workflowId'    => $refWaterApplication['workflow_id'],
+                    'ward_no'       => $refWaterApplication['ward_id']
                 ]);
                 $this->postOtherPaymentModes($req);
             }
@@ -1054,32 +1056,33 @@ class WaterPaymentController extends Controller
         if ($req['paymentMode'] != $cash) {
             $mPropChequeDtl = new WaterChequeDtl();
             $chequeReqs = [
-                'user_id' => $req['userId'],
-                'prop_id' => $req['id'],
-                'transaction_id' => $req['tranId'],
-                'cheque_date' => $req['chequeDate'],
-                'bank_name' => $req['bankName'],
-                'branch_name' => $req['branchName'],
-                'cheque_no' => $req['chequeNo']
+                'user_id'           => $req['userId'],
+                'application_id'    => $req['id'],
+                'transaction_id'    => $req['tranId'],
+                'cheque_date'       => $req['chequeDate'],
+                'bank_name'         => $req['bankName'],
+                'branch_name'       => $req['branchName'],
+                'cheque_no'         => $req['chequeNo']
             ];
 
             $mPropChequeDtl->postChequeDtl($chequeReqs);
         }
 
         $tranReqs = [
-            'transaction_id' => $req['tranId'],
-            'application_id' => $req['id'],
-            'module_id' => $moduleId,
-            'workflow_id' => $req['workflowId'],
-            'transaction_no' => $req['tranNo'],
-            'application_no' => $req['applicationNo'],
-            'amount' => $req['amount'],
-            'payment_mode' => $req['paymentMode'],
-            'cheque_dd_no' => $req['chequeNo'],
-            'bank_name' => $req['bankName'],
-            'tran_date' => $req['todayDate'],
-            'user_id' => $req['userId'],
-            'ulb_id' => $req['ulbId']
+            'transaction_id'    => $req['tranId'],
+            'application_id'    => $req['id'],
+            'module_id'         => $moduleId,
+            'workflow_id'       => $req['workflowId'],
+            'transaction_no'    => $req['tranNo'],
+            'application_no'    => $req['applicationNo'],
+            'amount'            => $req['amount'],
+            'payment_mode'      => strtoupper($req['paymentMode']),
+            'cheque_dd_no'      => $req['chequeNo'],
+            'bank_name'         => $req['bankName'],
+            'tran_date'         => $req['todayDate'],
+            'user_id'           => $req['userId'],
+            'ulb_id'            => $req['ulbId'],
+            'ward_id'           => $req['ward_id']
         ];
         $mTempTransaction->tempTransaction($tranReqs);
     }
