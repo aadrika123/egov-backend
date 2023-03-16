@@ -176,7 +176,8 @@ class PropActiveSaf extends Model
                 'a.no_of_block',
                 'a.apartment_name',
                 'building_type',
-                'prop_usage_type'
+                'prop_usage_type',
+                'zone'
             )
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
             ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
@@ -186,7 +187,7 @@ class PropActiveSaf extends Model
             ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id')
             ->leftJoin('ref_prop_transfer_modes as t', 't.id', '=', 'prop_active_safs.transfer_mode_mstr_id')
             ->leftJoin('prop_apartment_dtls as a', 'a.id', '=', 'prop_active_safs.apartment_details_id')
-
+            ->leftJoin('zone_masters', 'zone_masters.id', 'prop_active_safs.zone_mstr_id')
             ->leftJoin('ref_prop_gbbuildingusagetypes as gbu', 'gbu.id', 'prop_active_safs.gb_usage_types')
             ->leftJoin('ref_prop_gbpropusagetypes as gbp', 'gbp.id', 'prop_active_safs.gb_prop_usage_types');
     }

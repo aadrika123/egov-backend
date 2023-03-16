@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqGbSiteVerification;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
+use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveGbOfficer;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
@@ -1002,15 +1003,14 @@ class GbSafController extends Controller
     public function getDocList(Request $req)
     {
         try {
-            $mPropActiveHarvesting = new PropActiveHarvesting();
-
-            $refApplication = $mPropActiveHarvesting->getHarvestingNo($req->applicationId);
-            if (!$refApplication)
+            $mActiveSafs = new PropActiveSaf();
+            $refSafs = $mActiveSafs->getSafNo($req->applicationId);                      // Get Saf Details
+            if (!$refSafs)
                 throw new Exception("Application Not Found for this id");
 
-            $harvestingDoc['listDocs'] = $this->getHarvestingDoc($refApplication);
+            $gbSafDocs['listDocs'] = $this->getGbSafDocLists($refSafs);
 
-            return responseMsgs(true, "Doc List", remove_null($harvestingDoc), 010717, 1.0, "271ms", "POST", "", "");
+            return responseMsgs(true, "Doc List", remove_null($gbSafDocs), 010717, 1.0, "271ms", "POST", "", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
@@ -1019,14 +1019,14 @@ class GbSafController extends Controller
     /**
      * 
      */
-    public function getHarvestingDoc($refApplication)
+    public function getGbSafDocLists($refSafs)
     {
         $mRefReqDocs = new RefRequiredDocument();
         $mWfActiveDocument = new WfActiveDocument();
-        $applicationId = $refApplication->id;
-        $workflowId = $refApplication->workflow_id;
+        $applicationId = $refSafs->id;
+        $workflowId = $refSafs->workflow_id;
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_RAIN_WATER_HARVESTING")->requirements;
+        $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_GB_SAF")->requirements;
 
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
         $explodeDocs = collect(explode('#', $documentList));
