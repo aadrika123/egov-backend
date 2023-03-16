@@ -1909,7 +1909,7 @@ class Report implements IReport
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
                         ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
-                        AND prop_transactions.tran_date<='$fromDate'
+                        AND prop_transactions.tran_date<'$fromDate'
                     GROUP BY prop_demands.property_id
                 )prev_collection ON prev_collection.property_id = prop_properties.id 
                 JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
@@ -1988,7 +1988,7 @@ class Report implements IReport
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
                         ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
-                        AND prop_transactions.tran_date<='$fromDate'
+                        AND prop_transactions.tran_date<'$fromDate'
                     GROUP BY prop_demands.property_id
                 )prev_collection ON prev_collection.property_id = prop_properties.id 
                 JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
@@ -2096,6 +2096,156 @@ class Report implements IReport
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
 
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function PropWardWiseDCB(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id; 
+            $wardId = null;
+            $fiYear = getFY();
+            if($request->fiYear)
+            {
+                $fiYear = $request->fiYear;                
+            }
+            list($fromYear,$toYear)=explode("-",$fiYear);
+            if($toYear-$fromYear !=1)
+            {
+                throw new Exception("Enter Valide Financial Year");
+            }
+            $fromDate = $fromYear."-04-01";
+            $uptoDate = $toYear."-03-31";
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }            
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            $from = "
+                FROM ulb_ward_masters 
+                LEFT JOIN(
+                    SELECT prop_properties.ward_mstr_id,
+                        COUNT(DISTINCT(prop_properties.id)) AS current_hh,
+                        SUM(
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                    ELSE 0
+                                    END
+                        ) AS currend_demand,
+                        SUM(
+                            CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.amount
+                                ELSE 0
+                                END
+                            ) AS arrear_demand,
+                    SUM(prop_demands.amount) AS total_demand
+                    FROM prop_demands
+                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+                    WHERE prop_demands.status =1 
+                        AND prop_demands.ulb_id =$ulbId
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        AND prop_demands.due_date<='$uptoDate'
+                    GROUP BY prop_properties.ward_mstr_id    
+                )demands ON demands.ward_mstr_id = ulb_ward_masters.id 
+                LEFT JOIN (
+                    SELECT prop_properties.ward_mstr_id,
+                        COUNT(DISTINCT(prop_properties.id)) AS collection_from_no_of_hh,
+                        SUM(
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                    ELSE 0
+                                    END
+                        ) AS currend_collection,
+                        SUM(
+                            cASe when prop_demands.due_date <'$fromDate' then prop_demands.amount
+                                ELSE 0
+                                END
+                            ) AS arrear_collection,
+                    SUM(prop_demands.amount) AS total_collection
+                    FROM prop_demands
+                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+                    JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
+                        AND prop_tran_dtls.prop_demand_id is not null 
+                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
+                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                    WHERE prop_demands.status =1 
+                        AND prop_demands.ulb_id =$ulbId
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
+                        AND prop_demands.due_date<='$uptoDate'
+                    GROUP BY prop_properties.ward_mstr_id
+                )collection ON collection.ward_mstr_id = ulb_ward_masters.id
+                LEFT JOIN ( 
+                    SELECT prop_properties.ward_mstr_id,
+                    SUM(prop_demands.amount) AS total_prev_collection
+                    FROM prop_demands
+                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+                    JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
+                        AND prop_tran_dtls.prop_demand_id is not null 
+                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
+                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                    WHERE prop_demands.status =1 
+                        AND prop_demands.ulb_id =$ulbId
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        AND prop_transactions.tran_date<'$fromDate'
+                    GROUP BY prop_properties.ward_mstr_id
+                )prev_collection ON prev_collection.ward_mstr_id = ulb_ward_masters.id                 
+                WHERE  ulb_ward_masters.ulb_id = $ulbId  
+                    ".($wardId?" AND ulb_ward_masters.id = $wardId":"")."           
+            ";
+            $select = "SELECT CASE WHEN ulb_ward_masters.old_ward_name IS NOT NULL THEN ulb_ward_masters.old_ward_name
+                                ELSE  ulb_ward_masters.ward_name ::text
+                                END AS ward_no, 
+                            ulb_ward_masters.id, 
+                            COALESCE(demands.current_hh, 0::numeric) AS current_hh,   
+                            COALESCE(collection.collection_from_no_of_hh, 0::numeric) AS collection_from_hh,
+                            COALESCE(
+                                COALESCE(demands.current_hh, 0::numeric) 
+                                - COALESCE(collection.collection_from_no_of_hh, 0::numeric), 0::numeric
+                            ) AS balance_hh,                       
+                            COALESCE(
+                                COALESCE(demands.arrear_demand, 0::numeric) 
+                                - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
+                            ) AS outstanding_at_begin,
+                    
+                            COALESCE(prev_collection.total_prev_collection, 0::numeric) AS prev_coll,
+                            COALESCE(demands.currend_demand, 0::numeric) AS current_demand,
+                            COALESCE(collection.arrear_collection, 0::numeric) AS arrear_coll,
+                            COALESCE(collection.currend_collection, 0::numeric) AS curr_coll,
+                    
+                            (COALESCE(
+                                    COALESCE(demands.arrear_demand, 0::numeric) 
+                                    - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
+                                ) 
+                                - COALESCE(collection.arrear_collection, 0::numeric) )AS old_due,
+                    
+                            (COALESCE(demands.currend_demand, 0::numeric) - COALESCE(collection.currend_collection, 0::numeric)) AS curr_due,
+                    
+                            (
+                                COALESCE(
+                                    COALESCE(demands.currend_demand, 0::numeric) 
+                                    + (
+                                        COALESCE(demands.arrear_demand, 0::numeric) 
+                                        - COALESCE(prev_collection.total_prev_collection, 0::numeric)
+                                    ), 0::numeric
+                                ) 
+                                - COALESCE(
+                                    COALESCE(collection.currend_collection, 0::numeric) 
+                                    + COALESCE(collection.arrear_collection, 0::numeric), 0::numeric
+                                )
+                            ) AS outstanding                                 
+            ";
+            $data = DB::select($select . $from);            
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
         {
