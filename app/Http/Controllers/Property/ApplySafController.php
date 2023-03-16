@@ -23,6 +23,15 @@ use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * | Created On-16-03-2023 
+ * | Created By-Anshu Kumar
+ * | Created For
+ *      - Apply Saf 
+ *      - Apply GB Saf
+ * | Status-Closed
+ */
+
 class ApplySafController extends Controller
 {
     use SAF;
