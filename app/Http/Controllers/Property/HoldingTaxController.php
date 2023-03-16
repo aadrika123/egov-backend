@@ -993,7 +993,7 @@ class HoldingTaxController extends Controller
             $mLastQuarterDemand = collect($summedDemand)->where('quarterYear', $currentFYear)->sum('balance');
             $finalClusterDemand['duesList'] = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, null, $finalAmt, $finalClusterDemand['duesList']);
             $payableAmount = $finalAmt - ($finalClusterDemand['duesList']['rebateAmt'] + $finalClusterDemand['duesList']['specialRebateAmt']);
-            $finalClusterDemand['duesList']['payableAmt'] = round($payableAmount);
+            $finalClusterDemand['duesList']['payableAmount'] = round($payableAmount);
 
             $finalClusterDemand['demandList'] = $summedDemand;
             return responseMsgs(true, "Generated Demand of the Cluster", remove_null($finalClusterDemand), "011611", "1.0", "", "POST", $req->deviceId ?? "");
