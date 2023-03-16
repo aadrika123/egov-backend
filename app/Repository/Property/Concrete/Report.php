@@ -76,7 +76,7 @@ class Report implements IReport
             }
 
             // DB::enableQueryLog();
-            $data = PropTransaction::select(
+            $data = PropTransaction::SELECT(
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
                             prop_properties.id,
@@ -486,7 +486,7 @@ class Report implements IReport
             if($toYear-$fromYear !=1)
             {
                 throw new Exception("Enter Valide Financial Year");
-            }
+            }            
             if($request->key)
             {
                 $key = $request->key;
@@ -1766,6 +1766,337 @@ class Report implements IReport
             $funal["assestment_type"] = $assestmentType;
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$funal,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function PropDCB(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id; 
+            $wardId = null;
+            $fiYear = getFY();
+            if($request->fiYear)
+            {
+                $fiYear = $request->fiYear;                
+            }
+            list($fromYear,$toYear)=explode("-",$fiYear);
+            if($toYear-$fromYear !=1)
+            {
+                throw new Exception("Enter Valide Financial Year");
+            }
+            $fromDate = $fromYear."-04-01";
+            $uptoDate = $toYear."-03-31";
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }            
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $limit = $perPage;
+            $offset =  $request->page && $request->page > 0 ? $request->page:0;
+
+            $from = "
+                FROM (
+                    SELECT *
+                    FROM prop_properties
+                    WHERE prop_properties.ulb_id = 2
+                    ORDER BY id
+                    limit $limit offset $offset
+                  )prop_properties
+                LEFT JOIN (
+                    SELECT STRING_AGG(owner_name, ', ') AS owner_name,
+                        STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
+                        prop_properties.id AS property_id
+                    FROM prop_owners 
+                    JOIN (
+                        SELECT * 
+                        FROM prop_properties
+                        WHERE prop_properties.ulb_id = 2
+                        ORDER BY id
+                        limit $limit offset $offset
+                      )prop_properties ON prop_properties.id = prop_owners.property_id
+                        AND prop_properties.ulb_id = $ulbId
+                    WHERE prop_owners.status =1
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                    GROUP BY prop_properties.id
+                )prop_owner_detail ON prop_owner_detail.property_id = prop_properties.id
+                LEFT JOIN (
+                    SELECT prop_demands.property_id,
+                        SUM(
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                    ELSE 0
+                                    END
+                        ) AS currend_demand,
+                        SUM(
+                            CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.amount
+                                ELSE 0
+                                END
+                            ) AS arrear_demand,
+                    SUM(prop_demands.amount) AS total_demand
+                    FROM prop_demands
+                    JOIN (
+                        SELECT * 
+                        FROM prop_properties
+                        WHERE prop_properties.ulb_id = 2
+                        ORDER BY id
+                        limit $limit offset $offset
+                      )prop_properties ON prop_properties.id = prop_demands.property_id
+                    WHERE prop_demands.status =1 
+                        AND prop_demands.ulb_id =$ulbId
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        AND prop_demands.due_date<='$uptoDate'
+                    GROUP BY prop_demands.property_id    
+                )demands ON demands.property_id = prop_properties.id
+                LEFT JOIN (
+                    SELECT prop_demands.property_id,
+                        SUM(
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                    ELSE 0
+                                    END
+                        ) AS currend_collection,
+                        SUM(
+                            cASe when prop_demands.due_date <'$fromDate' then prop_demands.amount
+                                ELSE 0
+                                END
+                            ) AS arrear_collection,
+                    SUM(prop_demands.amount) AS total_collection
+                    FROM prop_demands
+                    JOIN (
+                        SELECT * 
+                        FROM prop_properties
+                        WHERE prop_properties.ulb_id = 2
+                        ORDER BY id
+                        limit $limit offset $offset
+                      )prop_properties ON prop_properties.id = prop_demands.property_id
+                    JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
+                        AND prop_tran_dtls.prop_demand_id is not null 
+                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
+                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                    WHERE prop_demands.status =1 
+                        AND prop_demands.ulb_id =$ulbId
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
+                        AND prop_demands.due_date<='$uptoDate'
+                    GROUP BY prop_demands.property_id
+                )collection ON collection.property_id = prop_properties.id
+                LEFT JOIN ( 
+                    SELECT prop_demands.property_id,
+                    SUM(prop_demands.amount) AS total_prev_collection
+                    FROM prop_demands
+                    JOIN (
+                        SELECT * 
+                        FROM prop_properties
+                        WHERE prop_properties.ulb_id = 2
+                        ORDER BY id
+                        limit $limit offset $offset
+                      )prop_properties ON prop_properties.id = prop_demands.property_id
+                    JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
+                        AND prop_tran_dtls.prop_demand_id is not null 
+                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
+                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                    WHERE prop_demands.status =1 
+                        AND prop_demands.ulb_id =$ulbId
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        AND prop_transactions.tran_date<='$fromDate'
+                    GROUP BY prop_demands.property_id
+                )prev_collection ON prev_collection.property_id = prop_properties.id 
+                JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
+                WHERE  prop_properties.ulb_id = $ulbId  
+                    ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."           
+            ";
+            $footerfrom = "
+                FROM prop_properties
+                LEFT JOIN (
+                    SELECT STRING_AGG(owner_name, ', ') AS owner_name,
+                        STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
+                        prop_properties.id AS property_id
+                    FROM prop_owners 
+                    JOIN prop_properties ON prop_properties.id = prop_owners.property_id
+                        AND prop_properties.ulb_id = $ulbId
+                    WHERE prop_owners.status =1
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                    GROUP BY prop_properties.id
+                )prop_owner_detail ON prop_owner_detail.property_id = prop_properties.id
+                LEFT JOIN (
+                    SELECT prop_demands.property_id,
+                        SUM(
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                    ELSE 0
+                                    END
+                        ) AS currend_demand,
+                        SUM(
+                            CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.amount
+                                ELSE 0
+                                END
+                            ) AS arrear_demand,
+                    SUM(prop_demands.amount) AS total_demand
+                    FROM prop_demands
+                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+                    WHERE prop_demands.status =1 
+                        AND prop_demands.ulb_id =$ulbId
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        AND prop_demands.due_date<='$uptoDate'
+                    GROUP BY prop_demands.property_id    
+                )demands ON demands.property_id = prop_properties.id
+                LEFT JOIN (
+                    SELECT prop_demands.property_id,
+                        SUM(
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                    ELSE 0
+                                    END
+                        ) AS currend_collection,
+                        SUM(
+                            cASe when prop_demands.due_date <'$fromDate' then prop_demands.amount
+                                ELSE 0
+                                END
+                            ) AS arrear_collection,
+                    SUM(prop_demands.amount) AS total_collection
+                    FROM prop_demands
+                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+                    JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
+                        AND prop_tran_dtls.prop_demand_id is not null 
+                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
+                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                    WHERE prop_demands.status =1 
+                        AND prop_demands.ulb_id =$ulbId
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
+                        AND prop_demands.due_date<='$uptoDate'
+                    GROUP BY prop_demands.property_id
+                )collection ON collection.property_id = prop_properties.id
+                LEFT JOIN ( 
+                    SELECT prop_demands.property_id,
+                    SUM(prop_demands.amount) AS total_prev_collection
+                    FROM prop_demands
+                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+                    JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
+                        AND prop_tran_dtls.prop_demand_id is not null 
+                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
+                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                    WHERE prop_demands.status =1 
+                        AND prop_demands.ulb_id =$ulbId
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        AND prop_transactions.tran_date<='$fromDate'
+                    GROUP BY prop_demands.property_id
+                )prev_collection ON prev_collection.property_id = prop_properties.id 
+                JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
+                WHERE  prop_properties.ulb_id = $ulbId  
+                    ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."           
+            ";
+            $select = "SELECT  prop_properties.id,
+                            ulb_ward_masters.ward_name AS ward_no,
+                            CONCAT('', prop_properties.holding_no, '') AS holding_no,
+                            (
+                                CASE WHEN prop_properties.new_holding_no='' OR prop_properties.new_holding_no IS NULL THEN 'N/A' 
+                                ELSE prop_properties.new_holding_no END
+                            ) AS new_holding_no,
+                            prop_owner_detail.owner_name,
+                            prop_owner_detail.mobile_no,
+                    
+                            COALESCE(
+                                COALESCE(demands.arrear_demand, 0::numeric) 
+                                - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
+                            ) AS outstanding_at_begin,
+                    
+                            COALESCE(prev_collection.total_prev_collection, 0::numeric) AS prev_coll,
+                            COALESCE(demands.currend_demand, 0::numeric) AS current_demand,
+                            COALESCE(collection.arrear_collection, 0::numeric) AS arrear_coll,
+                            COALESCE(collection.currend_collection, 0::numeric) AS curr_coll,
+                    
+                            (COALESCE(
+                                    COALESCE(demands.arrear_demand, 0::numeric) 
+                                    - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
+                                ) 
+                                - COALESCE(collection.arrear_collection, 0::numeric) )AS old_due,
+                    
+                            (COALESCE(demands.currend_demand, 0::numeric) - COALESCE(collection.currend_collection, 0::numeric)) AS curr_due,
+                    
+                            (
+                                COALESCE(
+                                    COALESCE(demands.currend_demand, 0::numeric) 
+                                    + (
+                                        COALESCE(demands.arrear_demand, 0::numeric) 
+                                        - COALESCE(prev_collection.total_prev_collection, 0::numeric)
+                                    ), 0::numeric
+                                ) 
+                                - COALESCE(
+                                    COALESCE(collection.currend_collection, 0::numeric) 
+                                    + COALESCE(collection.arrear_collection, 0::numeric), 0::numeric
+                                )
+                            ) AS outstanding                                 
+            ";
+            $footerselect = "SELECT
+                        COUNT(prop_properties.id)AS total_prop,
+                        COUNT(DISTINCT(ulb_ward_masters.ward_name)) AS total_ward,
+                        SUM(
+                            COALESCE(
+                                COALESCE(demands.arrear_demand, 0::numeric) 
+                                - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
+                            )
+                        ) AS outstanding_at_begin,
+                
+                        SUM(COALESCE(prev_collection.total_prev_collection, 0::numeric)) AS prev_coll,
+                        SUM(COALESCE(demands.currend_demand, 0::numeric)) AS current_demand,
+                        SUM(COALESCE(collection.arrear_collection, 0::numeric)) AS arrear_coll,
+                        SUM(COALESCE(collection.currend_collection, 0::numeric)) AS curr_coll,
+                
+                        SUM(
+                            (
+                                COALESCE(
+                                    COALESCE(demands.arrear_demand, 0::numeric) 
+                                    - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
+                                ) 
+                                - COALESCE(collection.arrear_collection, 0::numeric) 
+                            )
+                        )AS old_due,
+                
+                        SUM((COALESCE(demands.currend_demand, 0::numeric) - COALESCE(collection.currend_collection, 0::numeric))) AS curr_due,
+                
+                        SUM(
+                            (
+                                COALESCE(
+                                    COALESCE(demands.currend_demand, 0::numeric) 
+                                    + (
+                                        COALESCE(demands.arrear_demand, 0::numeric) 
+                                        - COALESCE(prev_collection.total_prev_collection, 0::numeric)
+                                    ), 0::numeric
+                                ) 
+                                - COALESCE(
+                                    COALESCE(collection.currend_collection, 0::numeric) 
+                                    + COALESCE(collection.arrear_collection, 0::numeric), 0::numeric
+                                )
+                            )
+                        ) AS outstanding               
+            ";
+            $data = DB::TABLE(DB::RAW("($select $from)AS prop"))->get();
+            // $footer = DB::TABLE(DB::RAW("($footerselect $footerfrom)AS prop"))->get();
+            $items = $data;
+            $total = (collect(DB::SELECT("SELECT COUNT(*) AS total $footerfrom"))->first())->total??0;
+            $numberOfPages = ceil($total/$perPage);                
+            $list=[
+                "perPage"=>$perPage,
+                "page"=>$page,
+                "items"=>$items,
+                // "footer"=>$footer,
+                "total"=>$total,
+                "numberOfPages"=>$numberOfPages
+            ];
+            // dd(DB::getQueryLog());
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+
         }
         catch(Exception $e)
         {
