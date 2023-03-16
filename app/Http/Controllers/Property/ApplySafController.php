@@ -460,7 +460,6 @@ class ApplySafController extends Controller
             $mPropGbOfficer->store($gbOfficerReq);
 
             $demand['details'] = $demand['details']->groupBy('ruleSet');
-            return $demand;
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
