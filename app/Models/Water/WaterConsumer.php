@@ -43,7 +43,7 @@ class WaterConsumer extends Model
         $mWaterConsumer->user_id                     = $consumerDetails->user_id;
         $mWaterConsumer->pin                         = $consumerDetails->pin;
         $mWaterConsumer->user_type                   = $consumerDetails->user_type;
-        $mWaterConsumer->area_sqmt                   = $consumerDetails->area_sqmt;
+        $mWaterConsumer->area_sqmt                   = $consumerDetails->area_sqft;
         $mWaterConsumer->save();
         return $mWaterConsumer->id;
     }

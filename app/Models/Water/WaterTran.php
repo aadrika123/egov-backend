@@ -69,7 +69,7 @@ class WaterTran extends Model
         $Tradetransaction->ward_id          = $req->ward_id;
         $Tradetransaction->tran_type        = $connectionType;
         $Tradetransaction->tran_date        = Carbon::now();
-        $Tradetransaction->payment_mode     = "Default";
+        $Tradetransaction->payment_mode     = "Other";
         $Tradetransaction->amount           = $totalConnectionCharges;
         $Tradetransaction->emp_dtl_id       = authUser()->id;
         $Tradetransaction->created_at       = Carbon::now();

@@ -414,6 +414,16 @@ if (!function_exists('decimalToSqFt')) {
     }
 }
 
+// sqFt to SqMt Conversion
+if (!function_exists('decimalToSqFt')) {
+    function sqFtToSqMt(float $num)
+    {
+        $num = $num * 0.09290304;
+        // $num = number_format((float)$num, 2, '.', '');
+        return $num;
+    }
+}
+
 // Decimal to Acre Conversion
 if (!function_exists('decimalToAcre')) {
     function decimalToAcre(float $num)
