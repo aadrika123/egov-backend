@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Water;
 
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Config;
 
@@ -25,8 +27,9 @@ class ReqWaterPayment extends FormRequest
     public function rules()
     {
         $rules = array();
-        $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
-        $cash = Config::get('payment-constants.PAYMENT_MODE.3');
+        $offlinePaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE_WATER');
+        $cash = Config::get('payment-constants.PAYMENT_OFFLINE_MODE.1');
+        $refDate = Carbon::now()->format('Y-m-d');
         $rules['isInstallment'] = 'required|';
         if (isset($this['isInstallment']) && $this['isInstallment'] == "yes") {
             $rules['penaltyIds'] = "required|array";
@@ -36,6 +39,9 @@ class ReqWaterPayment extends FormRequest
             $rules['bankName'] = "required";
             $rules['branchName'] = "required";
             $rules['chequeNo'] = "required";
+            if (isset($this['chequeDate']) && $this['chequeDate'] < $refDate) {
+                # throw error
+            }
         }
         $rules['chargeCategory'] = 'required';
         $rules['applicationId'] = 'required';

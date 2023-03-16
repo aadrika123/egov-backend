@@ -408,13 +408,12 @@ return [
     "CONCESSION_RELATIVE_PATH" => "Uploads/Property/Concession",
     "HARVESTING_RELATIVE_PATH" => "Uploads/Property/Harvesting",
 
-
-
     // Rebates
     "REBATES" => [
         "CITIZEN" => [
             "ID" => 1,
-            "PERC" => 5
+            "PERC" => 5,
+            "KEY" => ""
         ],
         "JSK" => [
             "ID" => 2,
@@ -437,6 +436,46 @@ return [
     ],
 
     "PARAM_ID" => 1,
-    "GB_PARAM" => 4
+    "GB_PARAM" => 4,
+
+    /**
+     * | Rebate and Penalty Masters
+     */
+    "REBATE_PENAL_MASTERS" => [
+        [
+            "id" => 1,
+            "key" => "onePercPenalty",
+            "value" => "1% Monthly Penalty"
+        ],
+        [
+            "id" => 2,
+            "key" => "firstQtrRebate",
+            "value" => "First Qtr Rebate",
+            "perc" => 5,
+        ],
+        [
+            "id" => 3,
+            "key" => "onlineRebate",
+            "value" => "Rebate From Jsk/Online Payment",
+            "perc" => 5
+        ],
+        [
+            "id" => 4,
+            "key" => "onlineRebate",
+            "value" => "Rebate From Jsk/Online Payment",
+            "perc" => 2.5
+        ],
+        [
+            "id" => 5,
+            "key" => "lateAssessmentFine",
+            "value" => "Late Assessment Fine(Rule 14.1)"
+        ],
+        [
+            "id" => 6,
+            "key" => "specialRebate",
+            "value" => "Special Rebate",
+            "perc" => 5
+        ],
+    ]
 
 ];

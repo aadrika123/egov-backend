@@ -412,7 +412,7 @@ class NewConnectionRepository implements iNewConnection
     {
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
-                if ($application->doc_upload_status == 0)
+                if ($application->doc_upload_status == false)
                     throw new Exception("Document Not Fully Uploaded");
                 break;
                 // case $wfLevels['DA']:                       // DA Condition

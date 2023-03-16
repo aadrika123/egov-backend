@@ -20,4 +20,13 @@ class PropActiveGbOfficer extends Model
     {
         PropActiveGbOfficer::create($req);
     }
+
+    /**
+     * | Get Officer by SAF Id
+     */
+    public function getOfficerBySafId($safId)
+    {
+        return PropActiveGbOfficer::where('saf_id', $safId)
+            ->first();
+    }
 }

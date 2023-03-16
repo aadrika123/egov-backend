@@ -289,23 +289,27 @@ class HoldingTaxController extends Controller
     public function postPaymentPenaltyRebate($dueList, $req)
     {
         $mPaymentRebatePanelties = new PaymentPropPenaltyrebate();
+        $rebateList = array();
+        $calculatedRebates = $dueList['rebates'];
+        $rebatePenalList = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
+
+        foreach ($calculatedRebates as $item) {
+            $rebate = [
+                'keyString' => $item['keyString'],
+                'value' => $item['rebateAmount'],
+                'isRebate' => true
+            ];
+            array_push($rebateList, $rebate);
+        }
+
         $headNames = [
             [
-                'keyString' => '1% Monthly Penalty',
+                'keyString' => $rebatePenalList->where('id', 1)->first()['value'],
                 'value' => $dueList['onePercPenalty'],
                 'isRebate' => false
-            ],
-            [
-                'keyString' => 'Special Rebate',
-                'value' => $dueList['specialRebateAmt'],
-                'isRebate' => true
-            ],
-            [
-                'keyString' => 'Rebate',
-                'value' => $dueList['rebateAmt'],
-                'isRebate' => true
             ]
         ];
+        $headNames = array_merge($headNames, $rebateList);
 
         collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $req) {
             $propPayRebatePenalty = $mPaymentRebatePanelties->getRebatePanelties('prop_id', $req->propId, $headName['keyString']);
@@ -346,8 +350,11 @@ class HoldingTaxController extends Controller
             if ($demands->isEmpty())
                 throw new Exception("No Dues For this Property");
             // Property Transactions
-            if (in_array($req['paymentMode'], $offlinePaymentModes))
-                $userId = auth()->user()->id;
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $userId = auth()->user()->id ?? null;
+                if (!$userId)
+                    throw new Exception("User Should Be Logged In");
+            }
             $req->merge([
                 'userId' => $userId,
                 'todayDate' => $todayDate->format('Y-m-d'),
@@ -455,6 +462,12 @@ class HoldingTaxController extends Controller
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
 
+            $rebatePenalMstrs = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
+            $onePercKey = $rebatePenalMstrs->where('id', 1)->first()['value'];
+            $specialRebateKey = $rebatePenalMstrs->where('id', 6)->first()['value'];
+            $firstQtrKey = $rebatePenalMstrs->where('id', 2)->first()['value'];
+            $onlineRebate = $rebatePenalMstrs->where('id', 3)->first()['value'];
+
             $propTrans = $mTransaction->getPropByTranPropId($req->tranNo);
 
             $reqPropId = new Request(['propertyId' => $propTrans->property_id]);
@@ -466,12 +479,12 @@ class HoldingTaxController extends Controller
             // Get Property Penalty and Rebates
             $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
 
-            $onePercPenalty = collect($penalRebates)->where('head_name', '1% Monthly Penalty')->first()->amount ?? 0;
+            $onePercPenalty = collect($penalRebates)->where('head_name', $onePercKey)->first()->amount ?? 0;
             $this->_holdingTaxInterest = $onePercPenalty;
             $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
-            $specialRebate = collect($penalRebates)->where('head_name', 'Special Rebate')->first()->amount ?? 0;
-            $firstQtrRebate = collect($penalRebates)->where('head_name', 'First Qtr Rebate')->first()->amount ?? 0;
-            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', 'Rebate From Jsk/Online Payment')->first()->amount ?? 0;
+            $specialRebate = collect($penalRebates)->where('head_name', $specialRebateKey)->first()->amount ?? 0;
+            $firstQtrRebate = collect($penalRebates)->where('head_name', $firstQtrKey)->first()->amount ?? 0;
+            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
             $lateAssessmentPenalty = 0;
 
             $taxDetails = $safController->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
@@ -906,11 +919,18 @@ class HoldingTaxController extends Controller
             'clusterId' => 'required|integer'
         ]);
         try {
+            $todayDate = Carbon::now();
             $clusterId = $req->clusterId;
             $mPropProperty = new PropProperty();
+            $penaltyRebateCalc = new PenaltyRebateCalculation;
             $properties = $mPropProperty->getPropsByClusterId($clusterId);
             $clusterDemands = array();
             $finalClusterDemand = array();
+            $clusterDemandList = array();
+            $currentQuarter = calculateQtr($todayDate->format('Y-m-d'));
+            $loggedInUserType = authUser()->user_type;
+            $currentFYear = getFY();
+
             if ($properties->isEmpty())
                 throw new Exception("Properties Not Available");
 
@@ -918,18 +938,42 @@ class HoldingTaxController extends Controller
                 $propIdReq = new Request([
                     'propId' => $item['id']
                 ]);
-                $propDues['duesList'] = $this->getHoldingDues($propIdReq)->original['data']['duesList'] ?? [];
-                $propDues['demandList'] = $this->getHoldingDues($propIdReq)->original['data']['demandList'] ?? [];
+                $demandList = $this->getHoldingDues($propIdReq)->original['data'];
+                $propDues['duesList'] = $demandList['duesList'] ?? [];
+                $propDues['demandList'] = $demandList['demandList'] ?? [];
+                array_push($clusterDemandList, $propDues['demandList']);
                 array_push($clusterDemands, $propDues);
             }
+            $collapsedDemand = collect($clusterDemandList)->collapse();                       // Clusters Demands Collapsed into One
 
-            $finalDues = collect($clusterDemands)->sum(function ($item) {
-                return $item['duesList']['totalDues'] ?? 0;
-            });
+            $groupedByYear = $collapsedDemand->groupBy('quarteryear');                        // Grouped By Financial Year and Quarter for the Separation of Demand  
 
-            $finalOnePerc = collect($clusterDemands)->sum(function ($item) {
-                return $item['duesList']['onePercPenalty'] ?? 0;
-            });
+            $summedDemand = $groupedByYear->map(function ($item) {                            // Sum of all the Demands of Quarter and Financial Year
+                return [
+                    'quarterYear' => $item->first()['quarteryear'],
+                    'arv' => roundFigure($item->sum('arv')),
+                    'qtr' => $item->first()['qtr'],
+                    'holding_tax' => roundFigure($item->sum('holding_tax')),
+                    'water_tax' => roundFigure($item->sum('water_tax')),
+                    'education_cess' => roundFigure($item->sum('education_cess')),
+                    'health_cess' => roundFigure($item->sum('health_cess')),
+                    'latrine_tax' => roundFigure($item->sum('latrine_tax')),
+                    'additional_tax' => roundFigure($item->sum('additional_tax')),
+                    'amount' => roundFigure($item->sum('amount')),
+                    'balance' => roundFigure($item->sum('balance')),
+                    'fyear' => $item->first()['fyear'],
+                    'adjust_amt' => roundFigure($item->sum('adjust_amt')),
+                    'due_date' => $item->first()['due_date'],
+                    'onePercPenalty' => roundFigure($item->sum('onePercPenalty')),
+                    'onePercPenaltyTax' => roundFigure($item->sum('onePercPenaltyTax')),
+                ];
+            })->values();
+
+            $finalDues = collect($summedDemand)->sum('balance');
+            $finalDues = roundFigure($finalDues);
+
+            $finalOnePerc = collect($summedDemand)->sum('onePercPenaltyTax');
+            $finalOnePerc = roundFigure($finalOnePerc);
 
             $finalAmt = $finalDues + $finalOnePerc;
             $duesFrom = collect($clusterDemands)->first()['duesList']['duesFrom'] ?? collect($clusterDemands)->last()['duesList']['duesFrom'];
@@ -944,8 +988,14 @@ class HoldingTaxController extends Controller
                 'duesTo' => $duesTo,
                 'totalDues' => $finalDues,
                 'onePercPenalty' => $finalOnePerc,
-                'finalAmt' => $finalAmt
+                'finalAmt' => $finalAmt,
             ];
+            $mLastQuarterDemand = collect($summedDemand)->where('quarterYear', $currentFYear)->sum('balance');
+            $finalClusterDemand['duesList'] = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, null, $finalAmt, $finalClusterDemand['duesList']);
+            $payableAmount = $finalAmt - ($finalClusterDemand['duesList']['rebateAmt'] + $finalClusterDemand['duesList']['specialRebateAmt']);
+            $finalClusterDemand['duesList']['payableAmount'] = round($payableAmount);
+
+            $finalClusterDemand['demandList'] = $summedDemand;
             return responseMsgs(true, "Generated Demand of the Cluster", remove_null($finalClusterDemand), "011611", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011611", "1.0", "", "POST", $req->deviceId ?? "");
