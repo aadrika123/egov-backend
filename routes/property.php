@@ -452,3 +452,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');
   });
 });
+
+/**
+    | Serial No : 
+ */
+Route::controller(PropertyController::class)->group(function () {
+  Route::post('getpropLatLong', 'getpropLatLong');                             // 01
+});

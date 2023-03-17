@@ -136,4 +136,27 @@ class PropertyController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+
+    /**
+     * | Get the Saf LatLong for map
+     * | Using wardId 
+     * | @param request
+     * | @var 
+     * | @return
+        | For MVP testing
+     */
+    public function getpropLatLong(Request $req)
+    {
+        try {
+            $req->validate([
+                'wardId' => 'required|integer',
+            ]);
+            $mPropSaf = new PropSaf();
+            $propDetails = $mPropSaf->getpropLatLongDetails($req->wardId);
+            return responseMsgs(true,"latLong Details",remove_null($propDetails),"","01",".ms","POST",$req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
 }
