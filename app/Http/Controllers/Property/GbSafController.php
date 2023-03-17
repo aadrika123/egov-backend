@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqGbSiteVerification;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
+use App\Models\CustomDetail;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveGbOfficer;
 use App\Models\Property\PropActiveSaf;
@@ -25,11 +26,14 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Traits\Property\SAF;
+use App\Traits\Property\SafDetailsTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Database\Eloquent\Collection;
 use Exception;
 
 /**
@@ -41,6 +45,7 @@ use Exception;
 class GbSafController extends Controller
 {
     use SAF;
+    use SafDetailsTrait;
 
     /**
      * | Inbox for GB Saf
@@ -1220,6 +1225,111 @@ class GbSafController extends Controller
             return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | GBSaf Details
+     */
+    public function gbSafDetails(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807'
+        ]);
+
+        try {
+            $mPropActiveSaf = new PropActiveSaf();
+            $mActiveSafsFloors = new PropActiveSafsFloor();
+            $mPropActiveGbOfficer = new PropActiveGbOfficer();
+            $mWorkflowTracks = new WorkflowTrack();
+            $mCustomDetails = new CustomDetail();
+            $forwardBackward = new WorkflowMap;
+            $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            // Saf Details
+            $data = array();
+            $fullDetailsData = array();
+            if ($req->applicationId) {                                       //<------- Search By SAF ID
+                $data = $mPropActiveSaf->getActiveSafDtls()      // <------- Model function Active SAF Details
+                    ->where('prop_active_safs.id', $req->applicationId)
+                    ->first();
+            }
+            if ($req->safNo) {                                  // <-------- Search By SAF No
+                $data = $mPropActiveSaf->getActiveSafDtls()    // <------- Model Function Active SAF Details
+                    ->where('prop_active_safs.saf_no', $req->safNo)
+                    ->first();
+            }
+            // return $data;
+            if (!$data)
+                throw new Exception("Application Not Found for this id");
+
+            // Basic Details
+            $basicDetails = $this->generateGbBasicDetails($data);      // Trait function to get Basic Details
+            $basicElement = [
+                'headerTitle' => "Basic Details",
+                "data" => $basicDetails
+            ];
+
+            // Property Details
+            $propertyDetails = $this->generateGbPropertyDetails($data);   // Trait function to get Property Details
+            $propertyElement = [
+                'headerTitle' => "Property Details & Address",
+                'data' => $propertyDetails
+            ];
+
+            $fullDetailsData['application_no'] = $data->saf_no;
+            $fullDetailsData['apply_date'] = $data->application_date;
+            $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
+            $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement]);
+            // Table Array
+            // Owner Details
+            $getOfficerDetails = $mPropActiveGbOfficer->getOfficerBySafId($data->id);    // Model function to get Owner Details
+            $officerDetails = $this->generateOfficerDetails($getOfficerDetails);
+            $officerElement = [
+                'headerTitle' => 'Officer Details',
+                'tableHead' => ["#", "Officer Name", "Designation", "Mobile No", "Email", "Adddress"],
+                'tableData' => [$officerDetails]
+            ];
+            // Floor Details
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);      // Model Function to Get Floor Details
+            $floorDetails = $this->generateFloorDetails($getFloorDtls);
+            $floorElement = [
+                'headerTitle' => 'Floor Details',
+                'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
+                'tableData' => $floorDetails
+            ];
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$officerElement, $floorElement]);
+            // Card Detail Format
+            $cardDetails = $this->generateCardDetails($data, $getOfficerDetails);
+            $cardElement = [
+                'headerTitle' => "About Property",
+                'data' => $cardDetails
+            ];
+            $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardElement);
+            $data = json_decode(json_encode($data), true);
+            $metaReqs['customFor'] = 'GBSAF';
+            $metaReqs['wfRoleId'] = $data['current_role'];
+            $metaReqs['workflowId'] = $data['workflow_id'];
+            $metaReqs['lastRoleId'] = $data['last_role_id'];
+
+            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['id']);
+            $fullDetailsData['levelComment'] = $levelComment;
+
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $data['id'], $data['user_id']);
+            $fullDetailsData['citizenComment'] = $citizenComment;
+
+            $req->request->add($metaReqs);
+            $forwardBackward = $forwardBackward->getRoleDetails($req);
+            $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
+
+            $fullDetailsData['timelineData'] = collect($req);
+
+            $custom = $mCustomDetails->getCustomDetails($req);
+            $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
+
+            return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
