@@ -66,7 +66,16 @@ class WaterPaymentController extends Controller
     /**
      * | Get The Master Data Related to Water 
      * | Fetch all master Data At Once
-     * | @var 
+     * | @var redisConn
+     * | @var returnValues
+     * | @var mWaterParamPipelineType
+     * | @var mWaterConnectionTypeMstr
+     * | @var mWaterConnectionThroughMstr
+     * | @var mWaterPropertyTypeMstr
+     * | @var mWaterOwnerTypeMstr
+     * | @var masterValues
+     * | @var refMasterData
+     * | @var configMasterValues
      * | @return returnValues
         | Serial No : 00 
      */
@@ -312,7 +321,21 @@ class WaterPaymentController extends Controller
     /**
      * | Generate the payment Receipt for Demand / In Bulk amd Indipendent
      * | @param request
-     * | @var 
+     * | @var refTransactionNo
+     * | @var mWaterConnectionCharge
+     * | @var mWaterPenaltyInstallment
+     * | @var mWaterApplication
+     * | @var mWaterChequeDtl
+     * | @var mWaterTran
+     * | @var mTowards
+     * | @var mAccDescription
+     * | @var mDepartmentSection
+     * | @var mPaymentModes
+     * | @var transactionDetails
+     * | @var applicationDetails
+     * | @var connectionCharges
+     * | @var individulePenaltyCharges
+     * | @var refDate
      * | @return 
         | Serial No : 03
         | Recheck

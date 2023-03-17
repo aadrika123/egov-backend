@@ -240,6 +240,7 @@ class WaterApplication extends Model
                 'property_type_id'      => $siteDetails['property_type_id'],
                 'category'              => $siteDetails['category'],
                 'area_sqft'             => $siteDetails['area_sqft'],
+                'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
             ];
         }
 

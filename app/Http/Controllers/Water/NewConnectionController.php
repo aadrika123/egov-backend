@@ -316,8 +316,11 @@ class NewConnectionController extends Controller
                 'applicationId' => 'required',
                 'senderRoleId' => 'nullable|integer'
             ]);
+            DB::beginTransaction();
             return $this->newConnection->commentIndependent($request);
+            DB::commit();
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -390,6 +393,7 @@ class NewConnectionController extends Controller
     // Field Verification of water Applications // Recheck
     /**
         | Recheck
+        | Not Used
      */
     public function fieldVerification(reqSiteVerification $request)
     {
@@ -880,7 +884,7 @@ class NewConnectionController extends Controller
                 $doc["ownerName"] = $val->applicant_name;
                 $doc["docName"]   = "ID Proof";
                 $doc['isMadatory'] = 1;
-                $ref['docValue'] = $refWaterNewConnection->getDocumentList(["ID_PROOF","CONSUMER_PHOTO"]);   #"CONSUMER_PHOTO"
+                $ref['docValue'] = $refWaterNewConnection->getDocumentList(["ID_PROOF", "CONSUMER_PHOTO"]);   #"CONSUMER_PHOTO"
                 $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
                     $refDoc = $value['doc_name'];
                     $refText = str_replace('_', ' ', $refDoc);
@@ -1804,6 +1808,59 @@ class NewConnectionController extends Controller
             throw new Exception("Invalid data!");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
+        }
+    }
+
+
+    /**
+     * | Online site Inspection 
+     * | Assistent Enginer site detail Entry
+     * | @param request
+     * | @var 
+     * | @return 
+        | Not Working
+        | Make the concept clear
+        | opration shoul be adding new record
+     */
+    public function onlineSiteInspection(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicationId' => 'required',
+            ]);
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $mWaterApplication = new WaterApplication();
+            $this->onlineSitePreConditionCheck($request);
+            $mWaterSiteInspection->saveOnlineSiteDetails($request);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Check the Pre Site inspection Details 
+     * | pre conditional Check for the AE online Site inspection
+     * | @param
+     * | @var mWfRoleUser
+     * | 
+     */
+    public function onlineSitePreConditionCheck($request)
+    {
+        $mWfRoleUser = new WfRoleusermap();
+        $refApplication = WaterApplication::findOrFail($request->applicationId);
+        $WaterRoles = Config::get('waterConstaint.ROLE-LABEL');
+        $workflowId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
+        $metaReqs =  new Request([
+            'userId'        => authUser()->id,
+            'workflowId'    => $workflowId
+        ]);
+        $readRoles = $mWfRoleUser->getRoleByUserWfId($metaReqs);                      // Model to () get Role By User Id
+
+        if ($refApplication['current_role'] != $WaterRoles['AE']) {
+            throw new Exception("Application is not Under the Assistent Engineer!");
+        }
+        if ($readRoles->wf_role_id != $WaterRoles['AE']) {
+            throw new Exception("you Are Not Autherised for the process!");
         }
     }
 }
