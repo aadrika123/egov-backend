@@ -88,4 +88,22 @@ class WaterSiteInspection extends Model
         $mWaterSiteInspection->inspection_time        =   $request->inspectionTime;
         $mWaterSiteInspection->save();
     }
+
+    /**
+     * | Get Site inspection Details 
+     * | Site inspection details with payment true 
+     * | @param applicationId
+     */
+    public function getSiteDetails($applicationId)
+    {
+        return WaterSiteInspection::select(
+            'water_site_inspections.*',
+            'id as site_inspection_id',
+            'property_type_id as site_inspection_property_type_id',
+            'area_sqft as site_inspection_area_sqft'
+        )
+            ->where('apply_connection_id', $applicationId)
+            ->where('status', true)
+            ->orderByDesc('water_site_inspections.id');
+    }
 }

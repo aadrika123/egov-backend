@@ -23,6 +23,7 @@ class WaterApplication extends Model
      */
     public function saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId, $newConnectionCharges)
     {
+
         $saveNewApplication = new WaterApplication();
         $saveNewApplication->connection_type_id     = $req->connectionTypeId;
         $saveNewApplication->property_type_id       = $req->propertyTypeId;
@@ -45,6 +46,7 @@ class WaterApplication extends Model
         $saveNewApplication->apply_date             = date('Y-m-d H:i:s');
         $saveNewApplication->user_id                = auth()->user()->id;    // <--------- here
         $saveNewApplication->user_type              = auth()->user()->user_type;
+        $saveNewApplication->area_sqmt              = sqFtToSqMt($req->areaSqft);
 
         # condition entry 
         if (!is_null($req->holdingNo)) {
@@ -208,6 +210,7 @@ class WaterApplication extends Model
      */
     public function finalApproval($request, $consumerNo)
     {
+        $mWaterSiteInspection = new WaterSiteInspection();
         $approvedWater = WaterApplication::query()
             ->where('id', $request->applicationId)
             ->first();
@@ -225,6 +228,20 @@ class WaterApplication extends Model
         $approvedWaterRep->setTable('water_approval_application_details');
         $approvedWaterRep->id = $approvedWater->id;
         $approvedWaterRep->save();
+
+        $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
+            ->where('payment_status', 1)
+            ->first();
+        if (isset($siteDetails)) {
+            $approvedWaterRep = [
+                'connection_type_id'    => $siteDetails['connection_type_id'],
+                'connection_through'    => $siteDetails['connection_through'],
+                'pipeline_type_id'      => $siteDetails['pipeline_type_id'],
+                'property_type_id'      => $siteDetails['property_type_id'],
+                'category'              => $siteDetails['category'],
+                'area_sqft'             => $siteDetails['area_sqft'],
+            ];
+        }
 
         $mWaterConsumer = new WaterConsumer();
         $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);

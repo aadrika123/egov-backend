@@ -13,6 +13,7 @@ use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerOwner;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
+use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfRoleusermap;
@@ -166,7 +167,7 @@ class NewConnectionRepository implements iNewConnection
         $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $req, $newConnectionCharges);
         # in case of connection charge is 0
         if ($totalConnectionCharges == 0) {
-            $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId,$connectionType);
+            $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId, $connectionType);
         }
         DB::commit();
 
@@ -491,11 +492,45 @@ class NewConnectionRepository implements iNewConnection
      * | @var rejectedWater
      * | @var msg
         | Serial No : 07 
-        | Working / Check it / remove the comment ?? for delete
+        | Working / Check it / remove the comment ?? for delete / save the Details of the site inspection
+        | Use the micrervice for the consumerId 
      */
     public function approvalRejectionWater($request, $roleId)
     {
         # Condition while the final Check
+        $mWaterApplication = new WaterApplication();
+        $mWaterApplicant = new WaterApplicant();
+        $this->preApprovalConditionCheck($request, $roleId);
+
+        DB::beginTransaction();
+        # Approval of water application 
+        if ($request->status == 1) {
+            $now = Carbon::now();
+            $consumerNo = 'CON' . $now->getTimeStamp();
+            $consumerId = $mWaterApplication->finalApproval($request, $consumerNo);
+            $mWaterApplicant->finalApplicantApproval($request, $consumerId);
+            $msg = "Application Successfully Approved !!";
+        }
+        # Rejection of water application
+        if ($request->status == 0) {
+            $mWaterApplication->finalRejectionOfAppication($request);
+            $mWaterApplicant->finalOwnerRejection($request);
+            $msg = "Application Successfully Rejected !!";
+        }
+        DB::commit();
+        return responseMsgs(true, $msg, $consumerNo ?? "Empty", '', 01, '.ms', 'Post', $request->deviceId);
+    }
+
+
+    /**
+     * | Check the Conditions for the approval of the application
+     * | Only for the EO approval
+     * | @param request
+     * | @param roleId
+        | check the field verified status 
+     */
+    public function preApprovalConditionCheck($request, $roleId)
+    {
         $waterDetails = WaterApplication::find($request->applicationId);
         if ($waterDetails->finisher != $roleId) {
             throw new Exception("You're Not the finisher ie. EO!");
@@ -515,32 +550,6 @@ class NewConnectionRepository implements iNewConnection
         // if ($waterDetails->is_field_verified == false) {
         //     throw new Exception("Field Verification Not Done!!");
         // }
-
-        DB::beginTransaction();
-        # Approval of water application 
-        if ($request->status == 1) {
-
-            $now = Carbon::now();
-            $mWaterApplication = new WaterApplication();
-            $mWaterApplicant = new WaterApplicant();
-            $consumerNo = 'CON' . $now->getTimeStamp();
-
-            $consumerId = $mWaterApplication->finalApproval($request, $consumerNo);
-            $mWaterApplicant->finalApplicantApproval($request, $consumerId);
-            $msg = "Application Successfully Approved !!";
-        }
-        # Rejection of water application
-        if ($request->status == 0) {
-
-            $mWaterApplication = new WaterApplication();
-            $mWaterApplicant = new WaterApplicant();
-
-            $mWaterApplication->finalRejectionOfAppication($request);
-            $mWaterApplicant->finalOwnerRejection($request);
-            $msg = "Application Successfully Rejected !!";
-        }
-        DB::commit();
-        return responseMsgs(true, $msg, $consumerNo ?? "Empty", '', 01, '.ms', 'Post', $request->deviceId);
     }
 
 
@@ -700,7 +709,7 @@ class NewConnectionRepository implements iNewConnection
             array_push($propertyDetails, ['displayString' => 'Holding No',    'key' => 'AppliedBy',  'value' => $collectionApplications->holding_no]);
         }
         if (!is_null($collectionApplications->saf_no)) {
-            array_push($propertyDetails, ['displayString' => 'Saf No',        'key' => 'AppliedBy',    'value' => $collectionApplications->saf_no]);
+            array_push($propertyDetails, ['displayString' => 'Saf No',        'key' => 'AppliedBy',   'value' => $collectionApplications->saf_no]);
         }
         if (is_null($collectionApplications->saf_no) && is_null($collectionApplications->holding_no)) {
             array_push($propertyDetails, ['displayString' => 'Applied By',    'key' => 'AppliedBy',   'value' => 'Id Proof']);

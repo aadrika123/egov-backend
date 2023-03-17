@@ -25,7 +25,7 @@ class ThirdPartyController extends Controller
      * | @var 
      * | @return 
         | Serial No : 01
-        | Not Checked
+        | Working
         | Dont share otp 
      */
     public function sendOtp(Request $request)
@@ -41,7 +41,7 @@ class ThirdPartyController extends Controller
                 $userDetails = ActiveCitizen::where('mobile', $request->mobileNo)
                     ->first();
                 if ($userDetails) {
-                    throw new Exception("Respective mobile no $request->mobileNo is Registered to An Existing Account!");
+                    throw new Exception("Mobile no $request->mobileNo is registered to An existing account!");
                 }
             }
             $generateOtp = $refIdGeneration->generateOtp();
@@ -60,27 +60,33 @@ class ThirdPartyController extends Controller
      * | Check OTP and Create a Token
      * | @param request
         | Serial No : 02
-        | Not Checked
+        | Working
      */
     public function verifyOtp(Request $request)
     {
         try {
             $request->validate([
                 'otp' => "required|digits:6",
-                'mobileNo' => "required|digits:10|regex:/[0-9]{10}/"
+                'mobileNo' => "required|digits:10|regex:/[0-9]{10}/|exists:otp_requests,mobile_no"
             ]);
-            $mOtpMaster = new OtpRequest();
+            # model
+            $mOtpMaster     = new OtpRequest();
             $mActiveCitizen = new ActiveCitizen();
+
+            # logi 
+            DB::beginTransaction();
             $checkOtp = $mOtpMaster->checkOtp($request);
             if (!$checkOtp) {
-                $msg = "Oops! Given OTP or mobileNo dosent match!";
+                $msg = "OTP not match!";
                 return responseMsgs(false, $msg, "", "", "01", ".ms", "POST", "");
             }
             $token = $mActiveCitizen->changeToken($request);
             $checkOtp->delete();
+            DB::commit();
             return responseMsgs(true, "OTP Validated!", remove_null($token), "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
         }
     }
 }
