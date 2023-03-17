@@ -1313,7 +1313,7 @@ class ActiveSafController extends Controller
                 'lateAssessmentPenalty' => $lateAssessementPenalty,
                 'totalDemand' => $totalDemand,
             ];
-            $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $firstOwner, $dues, $totalDuesList);
+            $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $firstOwner, $totalDemand, $totalDuesList);
 
             $finalPayableAmt = $totalDemand - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
             $totalDuesList['payableAmount'] = round($finalPayableAmt);
@@ -1369,8 +1369,6 @@ class ActiveSafController extends Controller
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
 
             $this->postDemands($safDemandDetails, $req);                               // Update the data in saf prop demands
-            $this->postPenaltyRebates($calculateSafById, $req);                                     // Post Penalty Rebates
-
             DB::commit();
             return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010114", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -1405,9 +1403,9 @@ class ActiveSafController extends Controller
     /**
      * | Post Penalty Rebates (14.2)
      */
-    public function postPenaltyRebates($calculateSafById, $req)
+    public function postPenaltyRebates($calculateSafById, $safId, $tranId)
     {
-        $mPaymentRebatePanelties = new PaymentPropPenaltyrebate();
+        $mPaymentRebatePanelties = new PropPenaltyrebate();
         $calculatedRebates = collect($calculateSafById->original['data']['demand']['rebates']);
         $rebateList = array();
         $rebatePenalList = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
@@ -1433,21 +1431,18 @@ class ActiveSafController extends Controller
             ]
         ];
         $headNames = array_merge($headNames, $rebateList);
-        collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $req) {
-            $propPayRebatePenalty = $mPaymentRebatePanelties->getRebatePanelties('saf_id', $req->id, $headName['keyString']);
+        collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $safId, $tranId) {
             if ($headName['value'] > 0) {
                 $reqs = [
-                    'saf_id' => $req->id,
+                    'tran_id' => $tranId,
+                    'saf_id' => $safId,
                     'head_name' => $headName['keyString'],
                     'amount' => $headName['value'],
                     'is_rebate' => $headName['isRebate'],
                     'tran_date' => Carbon::now()->format('Y-m-d')
                 ];
 
-                if ($propPayRebatePenalty)
-                    $mPaymentRebatePanelties->editRebatePenalty($propPayRebatePenalty->id, $reqs);
-                else
-                    $mPaymentRebatePanelties->postRebatePenalty($reqs);
+                $mPaymentRebatePanelties->postRebatePenalty($reqs);
             }
         });
     }
@@ -1466,10 +1461,15 @@ class ActiveSafController extends Controller
             // Variable Assignments
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $todayDate = Carbon::now();
-            $propSafsDemand = new PropSafsDemand();
             $idGeneration = new IdGeneration;
             $propTrans = new PropTransaction();
+            $mPropSafsDemands = new PropSafsDemand();
+
             $userId = $req['userId'];
+            $safId = $req['id'];
+
+            $activeSaf = PropActiveSaf::findOrFail($req['id']);
+
             if (!$userId)
                 $userId = auth()->user()->id ?? 0;                                      // Authenticated user or Ghost User
 
@@ -1477,7 +1477,10 @@ class ActiveSafController extends Controller
             // Derivative Assignments
             if (!$tranNo)
                 $tranNo = $idGeneration->generateTransactionNo();
-            $demands = $propSafsDemand->getDemandBySafId($req['id']);
+
+            $safCalculation = $this->calculateSafBySafId($req);
+            $demands = $safCalculation->original['data']['details'];
+            $amount = $safCalculation->original['data']['demand']['payableAmount'];
 
             if (!$demands || collect($demands)->isEmpty())
                 throw new Exception("Demand Not Available for Payment");
@@ -1485,7 +1488,9 @@ class ActiveSafController extends Controller
             $req->merge([
                 'userId' => $userId,
                 'todayDate' => $todayDate->format('Y-m-d'),
-                'tranNo' => $tranNo
+                'tranNo' => $tranNo,
+                'workflowId' => $activeSaf->workflow_id,
+                'amount' => $amount
             ]);
             DB::beginTransaction();
             $propTrans = $propTrans->postSafTransaction($req, $demands);
@@ -1497,12 +1502,12 @@ class ActiveSafController extends Controller
                 ]);
                 $this->postOtherPaymentModes($req);
             }
-
             // Reflect on Prop Tran Details
             foreach ($demands as $demand) {
-                $demand->balance = 0;
-                $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
-                $demand->save();
+                $safDemand = $mPropSafsDemands->getDemandById($demand['id']);
+                $safDemand->balance = 0;
+                $safDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $safDemand->save();
 
                 $propTranDtl = new PropTranDtl();
                 $propTranDtl->tran_id = $propTrans['id'];
@@ -1511,23 +1516,11 @@ class ActiveSafController extends Controller
                 $propTranDtl->save();
             }
 
+            // Replication Prop Rebates Penalties
+            $this->postPenaltyRebates($safCalculation, $safId, $propTrans['id']);
             // Update SAF Payment Status
-            $activeSaf = PropActiveSaf::find($req['id']);
             $activeSaf->payment_status = 1;
             $activeSaf->save();
-
-            // Replication Prop Rebates Penalties
-            $mPropPenalRebates = new PaymentPropPenaltyrebate();
-            $rebatePenalties = $mPropPenalRebates->getPenalRebatesBySafId($req['id']);
-
-            collect($rebatePenalties)->map(function ($rebatePenalty) use ($propTrans) {
-                $replicate = $rebatePenalty->replicate();
-                $replicate->setTable('prop_penaltyrebates');
-                $replicate->tran_id = $propTrans['id'];
-                $replicate->tran_date = $this->_todayDate->format('Y-m-d');
-                $replicate->save();
-            });
-
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {
