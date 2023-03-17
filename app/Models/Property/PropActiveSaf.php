@@ -648,4 +648,24 @@ class PropActiveSaf extends Model
             ->where('is_gb_saf', true);
         return $data;
     }
+
+
+    /**
+     * | 
+     */
+    public function getpropLatLongDetails($wardId)
+    {
+        return PropActiveSaf::select(
+            'prop_active_safs.id as saf_id',
+            'prop_saf_geotag_uploads.id as geo_id',
+            'prop_active_safs.holding_no',
+            'prop_active_safs.prop_address',
+            'prop_saf_geotag_uploads.latitude',
+            'prop_saf_geotag_uploads.longitude'
+        )
+            ->leftjoin('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_active_safs.id')
+            ->where('prop_active_safs.ward_mstr_id', $wardId)
+            ->orderByDesc('prop_active_safs.id')
+            ->paginate(50);
+    }
 }

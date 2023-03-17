@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActiveCitizen;
+use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
@@ -134,6 +135,29 @@ class PropertyController extends Controller
             return responseMsgs(true, $msg, remove_null($data), '010801', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    /**
+     * | Get the Saf LatLong for map
+     * | Using wardId 
+     * | @param request
+     * | @var 
+     * | @return
+        | For MVP testing
+     */
+    public function getpropLatLong(Request $req)
+    {
+        try {
+            $req->validate([
+                'wardId' => 'required|integer',
+            ]);
+            $mPropSaf = new PropActiveSaf();
+            $propDetails = $mPropSaf->getpropLatLongDetails($req->wardId);
+            return responseMsgs(true, "latLong Details", remove_null($propDetails), "", "01", ".ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $req->deviceId);
         }
     }
 }
