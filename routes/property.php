@@ -455,7 +455,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 });
 
 /**
-    | Serial No : 
+    | Test Purpose
+    | map locating 
  */
 Route::controller(PropertyController::class)->group(function () {
   Route::post('getpropLatLong', 'getpropLatLong');                             // 01

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActiveCitizen;
+use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
@@ -152,9 +153,9 @@ class PropertyController extends Controller
             $req->validate([
                 'wardId' => 'required|integer',
             ]);
-            $mPropSaf = new PropSaf();
+            $mPropSaf = new PropActiveSaf();
             $propDetails = $mPropSaf->getpropLatLongDetails($req->wardId);
-            return responseMsgs(true,"latLong Details",remove_null($propDetails),"","01",".ms","POST",$req->deviceId);
+            return responseMsgs(true, "latLong Details", remove_null($propDetails), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $req->deviceId);
         }
