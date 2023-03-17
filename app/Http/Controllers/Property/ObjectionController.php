@@ -17,6 +17,7 @@ use App\Traits\Workflow\Workflow as WorkflowTrait;
 use App\Traits\Property\Objection;
 use App\Models\Property\RefPropObjectionType;
 use App\Models\Property\PropOwner;
+use App\Models\Property\PropProperty;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
@@ -456,13 +457,29 @@ class ObjectionController extends Controller
                 "applicationId" => "required",
                 "status" => "required"
             ]);
-            $activeObjection = PropActiveObjection::query()
-                ->where('id', $req->applicationId)
+            $mWfRoleUsermap = new WfRoleusermap();
+            $mPropOwner = new PropOwner();
+            $mPropActiveObjectionOwner = new PropActiveObjectionOwner();
+            $userId = authUser()->id;
+            $activeObjection = PropActiveObjection::where('id', $req->applicationId)
                 ->first();
+
+            if (!$activeObjection)
+                throw new Exception('Application does not Exist');
+
             // Check if the Current User is Finisher or Not
             $getFinisherQuery = $this->getFinisherId($activeObjection->workflow_id);                 // Get Finisher using Trait
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
-            if ($refGetFinisher->role_id != $req->roleId) {
+
+            $workflowId = $activeObjection->workflow_id;
+            $getRoleReq = new Request([                                                 // make request to get role id of the user
+                'userId' => $userId,
+                'workflowId' => $workflowId
+            ]);
+            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            $roleId = $readRoleDtls->wf_role_id;
+
+            if ($refGetFinisher->role_id != $roleId) {
                 return responseMsg(false, "Forbidden Access", "");
             }
             DB::beginTransaction();
@@ -470,11 +487,66 @@ class ObjectionController extends Controller
             // Approval
             if ($req->status == 1) {
                 // Objection Application replication
-                $approvedObjection = $activeObjection->replicate();
-                $approvedObjection->setTable('prop_objections');
-                $approvedObjection->id = $activeObjection->id;
-                $approvedObjection->save();
-                $activeObjection->delete();
+
+                // $approvedObjection = $activeObjection->replicate();
+                // $approvedObjection->setTable('prop_objections');
+                // $approvedObjection->id = $activeObjection->id;
+                // $approvedObjection->save();
+                // $activeObjection->delete();
+
+
+                if ($activeObjection->objection_for == 'Clerical Mistake') {
+
+                    $ownerDtl =  $mPropActiveObjectionOwner->getOwnerEditDetail($activeObjection->id);
+
+                    //create log missing
+                    if ($ownerDtl->prop_owner_id) {
+                        PropOwner::where('id', $ownerDtl->prop_owner_id)
+                            ->update(
+                                [
+                                    'owner_name' => $ownerDtl->owner_name,
+                                    'mobile_no' => $ownerDtl->owner_mobile,
+                                ]
+                            );
+                    }
+                    //create log missing
+                    if ($ownerDtl->corr_address) {
+                        PropProperty::where('id', $activeObjection->id)
+                            ->update(
+                                [
+                                    'corr_address' => $ownerDtl->corr_address,
+                                    'corr_city' => $ownerDtl->corr_city,
+                                    'corr_dist' => $ownerDtl->corr_dist,
+                                    'corr_pin_code' => $ownerDtl->corr_pin_code,
+                                    'corr_state' => $ownerDtl->corr_state,
+                                ]
+                            );
+                    }
+
+                    $ownerDetails =  $mPropActiveObjectionOwner->getOwnerDetail($activeObjection->id);
+
+                    foreach ($ownerDetails as $ownerDetail) {
+                        $metaReqs =  new Request([
+                            'property_id' => $activeObjection->property_id,
+                            'owner_name' => $ownerDetail->owner_name,
+                            'guardian_name' => $ownerDetail->guardian_name,
+                            'relation_type' => $ownerDetail->relation,
+                            'mobile_no' => $ownerDetail->owner_mobile,
+                            'email' => $ownerDetail->email,
+                            'pan_no' => $ownerDetail->pan,
+                            'gender' => $ownerDetail->gender,
+                            'dob' => $ownerDetail->dob,
+                            'is_armed_force' => $ownerDetail->is_armed_force,
+                            'is_specially_abled' => $ownerDetail->is_specially_abled,
+                        ]);
+                        $mPropOwner->postOwner($metaReqs);
+                    }
+                }
+
+                if ($activeObjection->objection_for == 'Assessment Error') {
+                }
+
+
 
                 $msg =  "Application Successfully Approved !!";
             }

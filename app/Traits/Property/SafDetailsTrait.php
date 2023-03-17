@@ -261,7 +261,6 @@ trait SafDetailsTrait
                 $objectionList['type'],
                 $objectionList['asses_valu'],
                 $objectionList['obj_valu'],
-                // $objectionList['guardian_name'],
             ];
         });
     }
@@ -325,7 +324,6 @@ trait SafDetailsTrait
      */
     public function generateOfficerDetails($officerDetails)
     {
-        // return collect($officerDetails)->map(function ($officerDetails, $key) {
         return [
             1,
             $officerDetails['officer_name'],
@@ -334,6 +332,5 @@ trait SafDetailsTrait
             $officerDetails['email'],
             $officerDetails['address'],
         ];
-        // });
     }
 }
