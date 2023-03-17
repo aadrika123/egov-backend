@@ -108,4 +108,12 @@ class PropDemand extends Model
             ->orderBy('id')
             ->first();
     }
+
+    /**
+     * Get Demand By Demand Id
+     */
+    public function getDemandById($id)
+    {
+        return PropDemand::find($id);
+    }
 }

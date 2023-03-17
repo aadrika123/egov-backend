@@ -44,6 +44,7 @@ class PaymentPropPenaltyrebate extends Model
     public function getPenalRebatesBySafId($safId)
     {
         return PaymentPropPenaltyrebate::where('saf_id', $safId)
+            ->where('status', 1)
             ->get();
     }
 

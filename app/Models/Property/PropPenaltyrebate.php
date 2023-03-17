@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PropPenaltyrebate extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     /**
      * | Get Rebate Or Penalty Amount by tranid
@@ -28,5 +29,13 @@ class PropPenaltyrebate extends Model
         return PropPenaltyrebate::where('tran_id', $tranId)
             ->orderByDesc('id')
             ->get();
+    }
+
+    /**
+     * | Post Rebate Penalties
+     */
+    public function postRebatePenalty($reqs)
+    {
+        PropPenaltyrebate::create($reqs);
     }
 }

@@ -65,6 +65,7 @@ class PropActiveSafsOwner extends Model
             ->select(
                 'owner_name',
                 'mobile_no',
+                'dob',
                 'guardian_name',
                 'email',
                 'is_armed_force',
