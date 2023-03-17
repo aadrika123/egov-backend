@@ -620,6 +620,7 @@ class PropActiveSaf extends Model
         $data = DB::table('prop_active_safs')
             ->join('ref_prop_gbpropusagetypes as p', 'p.id', '=', 'prop_active_safs.gb_usage_types')
             ->join('ref_prop_gbbuildingusagetypes as q', 'q.id', '=', 'prop_active_safs.gb_prop_usage_types')
+            ->leftjoin('prop_active_safgbofficers as gbo', 'gbo.saf_id', 'prop_active_safs.id')
             ->join('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
             ->join('ref_prop_road_types as r', 'r.id', 'prop_active_safs.road_type_mstr_id')
             ->select(
@@ -638,7 +639,10 @@ class PropActiveSaf extends Model
                 'building_type',
                 'road_type_mstr_id',
                 'road_type',
-                'area_of_plot'
+                'area_of_plot',
+                'officer_name',
+                'designation',
+                'mobile_no'
             )
             ->whereIn('workflow_id', $workflowIds)
             ->where('is_gb_saf', true);
