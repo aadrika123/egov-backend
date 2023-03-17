@@ -880,7 +880,7 @@ class NewConnectionController extends Controller
                 $doc["ownerName"] = $val->applicant_name;
                 $doc["docName"]   = "ID Proof";
                 $doc['isMadatory'] = 1;
-                $ref['docValue'] = $refWaterNewConnection->getDocumentList(["ID_PROOF"]);   #"CONSUMER_PHOTO"
+                $ref['docValue'] = $refWaterNewConnection->getDocumentList(["ID_PROOF","CONSUMER_PHOTO"]);   #"CONSUMER_PHOTO"
                 $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
                     $refDoc = $value['doc_name'];
                     $refText = str_replace('_', ' ', $refDoc);
@@ -1352,10 +1352,10 @@ class NewConnectionController extends Controller
 
             $senderRoleId = $senderRoleDtls->wf_role_id;
 
-            if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
+            if ($senderRoleId != $wfLevel['DA'])                                    // Authorization for Dealing Assistant Only
                 throw new Exception("You are not Authorized");
 
-            $ifFullDocVerified = $this->ifFullDocVerified($applicationId);       // (Current Object Derivative Function 0.1)
+            $ifFullDocVerified = $this->ifFullDocVerified($applicationId);          // (Current Object Derivative Function 0.1)
 
             if ($ifFullDocVerified == 1)
                 throw new Exception("Document Fully Verified");
@@ -1380,7 +1380,7 @@ class NewConnectionController extends Controller
             $mWfDocument->docVerifyReject($wfDocId, $reqs);
             $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
 
-            if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
+            if ($ifFullDocVerifiedV1 == 1) {                                        // If The Document Fully Verified Update Verify Status
                 $waterApplicationDtl->doc_status = 1;
                 $waterApplicationDtl->save();
             }

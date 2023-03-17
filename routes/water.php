@@ -22,7 +22,6 @@ Route::post('/apply-new-connection', function () {
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     /**
      * | Created On-07-10-2022 
-     * | Created by-Anshu Kumar
      * | Updated by-Sam kerketta
      * | ------------------- Apply New Water Connection ------------------------ |
      */
@@ -62,11 +61,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/get-listed-details', 'approvedWaterApplications');                        // Consumer
 
         # Site Inspection
-        Route::post('admin/search-application', 'searchApplicationByParameter');
-        Route::post('site-verification/comparision', 'listComparision');
-        Route::post('admin/application/save-inspection-date', 'saveInspectionDateTime');
-        Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');
-        Route::post('admin/application/cancel-inspection-scheduling', 'cancelSiteInspection');
+        Route::post('admin/search-application', 'searchApplicationByParameter');                        // Admin
+        Route::post('admin/site-verification/comparision', 'listComparision');                          // Admin
+        Route::post('admin/application/save-inspection-date', 'saveInspectionDateTime');                // Admin
+        Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');           // Admin
+        Route::post('admin/application/cancel-inspection-scheduling', 'cancelSiteInspection');          // Admin
     });
 
     /**
@@ -103,6 +102,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 /**
  * | Created On:09-12-2022 
  * | Created by:Sandeep Bara
+ * | Modified by: Sam kerketta
+ * | Modified on: 11-01-2023
  * | ------------------- Water Connection / mobile ------------------------ |
  */
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {

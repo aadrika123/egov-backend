@@ -27,7 +27,7 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->category               =   $req->category;
         $saveSiteVerify->flat_count             =   $req->flatCount ?? null;
         $saveSiteVerify->ward_id                =   $waterDetails['ward_id'];
-        $saveSiteVerify->area_sqft              =   $req->areaSqFt;
+        $saveSiteVerify->area_sqft              =   $req->areaSqft;
         $saveSiteVerify->rate_id                =   $req->rateId ?? null;                    // what is rate Id
         $saveSiteVerify->emp_details_id         =   authUser()->id;
         $saveSiteVerify->pipeline_size          =   $req->pipelineSize;
@@ -87,5 +87,23 @@ class WaterSiteInspection extends Model
         $mWaterSiteInspection->inspection_date        =   $inspectionDate;
         $mWaterSiteInspection->inspection_time        =   $request->inspectionTime;
         $mWaterSiteInspection->save();
+    }
+
+    /**
+     * | Get Site inspection Details 
+     * | Site inspection details with payment true 
+     * | @param applicationId
+     */
+    public function getSiteDetails($applicationId)
+    {
+        return WaterSiteInspection::select(
+            'water_site_inspections.*',
+            'id as site_inspection_id',
+            'property_type_id as site_inspection_property_type_id',
+            'area_sqft as site_inspection_area_sqft'
+        )
+            ->where('apply_connection_id', $applicationId)
+            ->where('status', true)
+            ->orderByDesc('water_site_inspections.id');
     }
 }

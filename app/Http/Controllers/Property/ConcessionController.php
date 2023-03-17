@@ -7,13 +7,12 @@ use App\MicroServices\DocUpload;
 use App\Models\CustomDetail;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveConcession;
-use App\Models\Property\PropConcessionDocDtl;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
-use App\Models\Property\RefPropDocsRequired;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
@@ -26,10 +25,10 @@ use App\Traits\Property\Concession;
 use App\Traits\Property\SafDetailsTrait;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
-use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Redis;
+use Exception;
 
 /**
  * | Created On-15-11-2022 
@@ -264,23 +263,20 @@ class ConcessionController extends Controller
     public function inbox()
     {
         try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-            $wardId = $this->getWardByUserId($userId);
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
-            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
-                return $ward->ward_id;
-            });
+            $userId = auth()->user()->id;
+            $ulbId = auth()->user()->ulb_id;
+            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
 
-            $roles = $this->getRoleIdByUserId($userId);
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
-                return $role->wf_role_id;
-            });
-
-            $concessions = $this->getConcessionList($ulbId)
-                ->whereIn('prop_active_concessions.current_role', $roleId)
+            $concessions = $this->getConcessionList($workflowIds)
+                ->where('prop_active_concessions.ulb_id', $ulbId)
+                ->whereIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_concessions.id')
                 ->get();
@@ -302,22 +298,20 @@ class ConcessionController extends Controller
     public function outbox()
     {
         try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
-            $workflowRoles = $this->getRoleIdByUserId($userId);
-            $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
-                return $value->wf_role_id;
-            });
+            $userId = auth()->user()->id;
+            $ulbId = auth()->user()->ulb_id;
+            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
 
-            $refWard = $this->getWardByUserId($userId);                                     // Get Ward List by user Id
-            $occupiedWards = $refWard->map(function ($value, $key) {
-                return $value->ward_id;
-            });
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $concessions = $this->getConcessionList($ulbId)
-                ->whereNotIn('prop_active_concessions.current_role', $roleId)
+            $concessions = $this->getConcessionList($workflowIds)
+                ->where('prop_active_concessions.ulb_id', $ulbId)
+                ->whereNotIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_concessions.id')
                 ->get();
@@ -463,16 +457,19 @@ class ConcessionController extends Controller
     public function specialInbox()
     {
         try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-            $wardId = $this->getWardByUserId($userId);
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
-            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
-                return $ward->ward_id;
-            });
+            $userId = auth()->user()->id;
+            $ulbId = auth()->user()->ulb_id;
+            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
 
-            $concessions = $this->getConcessionList($ulbId)                                         // Get Concessions
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
+
+            $concessions = $this->getConcessionList($workflowIds)                                        // Get Concessions
+                ->where('prop_active_concessions.ulb_id', $ulbId)
                 ->where('prop_active_concessions.is_escalate', true)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_concessions.id')
@@ -490,23 +487,20 @@ class ConcessionController extends Controller
     public function btcInbox(Request $req)
     {
         try {
-            $auth = auth()->user();
-            $userId = $auth->id;
-            $ulbId = $auth->ulb_id;
-            $wardId = $this->getWardByUserId($userId);
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
-            $occupiedWards = collect($wardId)->map(function ($ward) {                               // Get Occupied Ward of the User
-                return $ward->ward_id;
-            });
+            $userId = auth()->user()->id;
+            $ulbId = auth()->user()->ulb_id;
+            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
 
-            $roles = $this->getRoleIdByUserId($userId);
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $roleId = collect($roles)->map(function ($role) {                                       // get Roles of the user
-                return $role->wf_role_id;
-            });
-
-            $concessions = $this->getConcessionList($ulbId)
-                ->whereIn('prop_active_concessions.current_role', $roleId)
+            $concessions = $this->getConcessionList($workflowIds)                                        // Get Concessions
+                ->where('prop_active_concessions.ulb_id', $ulbId)
+                ->whereIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->where('parked', true)
                 ->orderByDesc('prop_active_concessions.id')
@@ -931,7 +925,7 @@ class ConcessionController extends Controller
     }
 
     /**
-     * 
+     * | Concession Document List
      */
     public function concessionDocList(Request $req)
     {

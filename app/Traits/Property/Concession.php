@@ -31,8 +31,7 @@ trait Concession
             ->leftJoin('prop_properties as a', 'a.id', '=', 'prop_active_concessions.property_id')
             ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
-            ->where('prop_active_concessions.status', 1)
-            ->where('prop_active_concessions.ulb_id', $ulbId);
+            ->where('prop_active_concessions.status', 1);
     }
 
     /**

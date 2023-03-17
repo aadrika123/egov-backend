@@ -381,7 +381,7 @@ class WaterPaymentController extends Controller
                 "paymentMode" => $transactionDetails['payment_mode'],
                 "bankName" => $chequeDetails[''] ?? null,                                   // in case of cheque,dd,nfts
                 "branchName" => $chequeDetails[''] ?? null,                                 // in case of chque,dd,nfts
-                "chequeNo" => $chequeDetails['']  ?? null,                                   // in case of chque,dd,nfts
+                "chequeNo" => $chequeDetails['']  ?? null,                                  // in case of chque,dd,nfts
                 "chequeDate" => $chequeDetails[''] ?? null,                                 // in case of chque,dd,nfts
                 "monthlyRate" => "",
                 "demandAmount" => $transactionDetails->amount,
@@ -457,7 +457,7 @@ class WaterPaymentController extends Controller
             $newChargeAmount = $newConnectionCharges['conn_fee_charge']['amount'];
 
             # If the Adjustment Hamper
-            return $this->adjustmentInConnection($request, $newConnectionCharges, $installment, $waterDetails, $applicationCharge);
+            $this->adjustmentInConnection($request, $newConnectionCharges, $installment, $waterDetails, $applicationCharge);
 
             # Store the site inspection details
             $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId, $waterDetails, $refRoleDetails);
@@ -533,6 +533,7 @@ class WaterPaymentController extends Controller
         $mWaterApplication = new WaterApplication();
         $mWaterTran = new WaterTran();
         $chargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
+        $refInstallment['penalty_head'] = Config::get('waterConstaint.PENALTY_HEAD.1');
 
         # connection charges
         $request->merge([
@@ -554,41 +555,46 @@ class WaterPaymentController extends Controller
                         $unpaidPenalty = $this->checkOldPenalty($applicationId, $chargeCatagory);
                         $calculetedPenalty = $newConnectionCharges['conn_fee_charge']['penalty'] - $applicationCharge['penalty'];
                         $refInstallment['installment_amount'] = $calculetedPenalty + $unpaidPenalty;
+                        $refInstallment['balance_amount'] =  $refInstallment['installment_amount'];
 
                         $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                         $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
-                        return;
                     }
                     # for the Case of no extra penalty 
                     $unpaidPenalty = $this->checkOldPenalty($applicationId, $chargeCatagory);
                     if ($unpaidPenalty != 0) {
                         $refInstallment['installment_amount'] = $unpaidPenalty;
-
+                        $refInstallment['balance_amount'] =  $refInstallment['installment_amount'];
                         $newConnectionCharges['conn_fee_charge']['penalty'] = $refInstallment['installment_amount'] ?? 0;
+
                         $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                         $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
-                        return;
                     }
                     # if there is no old penalty and all penalty is paid
                     if ($newConnectionCharges['conn_fee_charge']['penalty'] == 0) {
                         $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                     }
+
+                    $newConnectionCharges['conn_fee_charge']['amount'] = $newConnectionCharges['conn_fee_charge']['penalty'] + $newConnectionCharges['conn_fee_charge']['conn_fee'];
                     $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
                     $mWaterApplication->updatePaymentStatus($applicationId, false);
+                    break;
                 }
                 # in case of no change in connection charges but the old penalty is unpaid
                 $unpaidPenalty = $this->checkOldPenalty($applicationId, $chargeCatagory);
                 if ($unpaidPenalty != 0) {
                     $refInstallment['installment_amount'] = $unpaidPenalty;
-                    $newConnectionCharges['conn_fee_charge']['penalty'] = $refInstallment['installment_amount'] ?? 0;
+                    $refInstallment['balance_amount'] =  $unpaidPenalty;
+                    $newConnectionCharges['conn_fee_charge']['penalty'] = $unpaidPenalty;
 
                     $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                     $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
 
+                    # Static Connection fee
                     $newConnectionCharges['conn_fee_charge']['conn_fee'] = 0;
+                    $newConnectionCharges['conn_fee_charge']['amount'] = $unpaidPenalty;
                     $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
                 }
-
                 break;
             case ($newCharge == 0):
                 $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
@@ -598,11 +604,12 @@ class WaterPaymentController extends Controller
     }
 
 
-
     /**
      * | Check for the old penalty 
      * | @param applicationID
-        | Serial No   
+     * | @param chargeCatagory
+        | Serial No : 04.02.01
+        | Working
      */
     public function checkOldPenalty($applicationId, $chargeCatagory)
     {
@@ -617,7 +624,6 @@ class WaterPaymentController extends Controller
         })->sum();
         return $unpaidPenalty;
     }
-
 
 
     /**
@@ -685,18 +691,6 @@ class WaterPaymentController extends Controller
     //         return responseMsg(false, $e->getMessage(), $request->all());
     //     }
     // }
-
-    /**
-     * | Check the params for the payment Initiation
-     * | @param
-        | Serial No : 05.01
-        | Not Working  
-     */
-    public function getWaterConsumerDemand($request)
-    {
-        $mWaterConsumerDemand = new WaterConsumerDemand();
-    }
-
 
 
     /**
@@ -1045,14 +1039,16 @@ class WaterPaymentController extends Controller
 
     /**
      * | Post Other Payment Modes for Cheque,DD,Neft
+     * | @param req
         | Serial No : 07.02
-        | Write Funtion in the Model for Saving Cheq Details 
+        | Working
      */
     public function postOtherPaymentModes($req)
     {
         $cash = Config::get('payment-constants.PAYMENT_MODE.3');
         $moduleId = Config::get('module-constants.WATER_MODULE_ID');
         $mTempTransaction = new TempTransaction();
+
         if ($req['paymentMode'] != $cash) {
             $mPropChequeDtl = new WaterChequeDtl();
             $chequeReqs = [
@@ -1164,8 +1160,7 @@ class WaterPaymentController extends Controller
                         case ($checkPenalty->contains(false)):
                             $penaltyPaymentStatus = false;
                             break;
-
-                        case (!$checkPenalty->contains(false)):
+                        default:
                             $penaltyPaymentStatus = true;
                             break;
                     }
