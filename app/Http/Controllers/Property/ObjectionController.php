@@ -460,6 +460,7 @@ class ObjectionController extends Controller
             $mWfRoleUsermap = new WfRoleusermap();
             $mPropOwner = new PropOwner();
             $mPropActiveObjectionOwner = new PropActiveObjectionOwner();
+            $mPropActiveObjectionDtl = new PropActiveObjectionDtl();
             $userId = authUser()->id;
             $activeObjection = PropActiveObjection::where('id', $req->applicationId)
                 ->first();
@@ -544,6 +545,26 @@ class ObjectionController extends Controller
                 }
 
                 if ($activeObjection->objection_for == 'Assessment Error') {
+                    $objDtls = $mPropActiveObjectionDtl->getDtlbyObjectionId($activeObjection->id);
+
+                    foreach ($objDtls as $objDtl) {
+                        switch ($objDtl->objection_type_id) {
+                            case (2):
+                                PropProperty::where('id', $activeObjection->id)
+                                    ->update(['is_water_harvesting' => $objDtl->applicant_data]);
+                                break;
+
+                            case (3):
+                                PropProperty::where('id', $activeObjection->id)
+                                    ->update(['road_type_mstr_id' => $objDtl->applicant_data]);
+                                break;
+
+                            case (4):
+                                PropProperty::where('id', $activeObjection->id)
+                                    ->update(['prop_type_mstr_id' => $objDtl->applicant_data]);
+                                break;
+                        }
+                    }
                 }
 
 
