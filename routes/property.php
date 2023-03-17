@@ -380,6 +380,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('gbsaf/get-doc-list', 'getDocList');
     Route::post('gbsaf/doc-verify-reject', 'docVerifyReject');
     Route::post('gbsaf/independent-comment', 'commentIndependent');
+    Route::post('gbsaf/details', 'gbSafDetails');
   });
 });
 

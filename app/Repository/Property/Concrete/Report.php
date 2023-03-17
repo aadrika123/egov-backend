@@ -1838,7 +1838,7 @@ class Report implements IReport
                                 CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
                                     ELSE 0
                                     END
-                        ) AS currend_demand,
+                        ) AS current_demand,
                         SUM(
                             CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.amount
                                 ELSE 0
@@ -1865,7 +1865,7 @@ class Report implements IReport
                                 CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
                                     ELSE 0
                                     END
-                        ) AS currend_collection,
+                        ) AS current_collection,
                         SUM(
                             cASe when prop_demands.due_date <'$fromDate' then prop_demands.amount
                                 ELSE 0
@@ -1935,7 +1935,7 @@ class Report implements IReport
                                 CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
                                     ELSE 0
                                     END
-                        ) AS currend_demand,
+                        ) AS current_demand,
                         SUM(
                             CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.amount
                                 ELSE 0
@@ -1956,7 +1956,7 @@ class Report implements IReport
                                 CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
                                     ELSE 0
                                     END
-                        ) AS currend_collection,
+                        ) AS current_collection,
                         SUM(
                             cASe when prop_demands.due_date <'$fromDate' then prop_demands.amount
                                 ELSE 0
@@ -2008,12 +2008,12 @@ class Report implements IReport
                             COALESCE(
                                 COALESCE(demands.arrear_demand, 0::numeric) 
                                 - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
-                            ) AS outstanding_at_begin,
-                    
-                            COALESCE(prev_collection.total_prev_collection, 0::numeric) AS prev_coll,
-                            COALESCE(demands.currend_demand, 0::numeric) AS current_demand,
-                            COALESCE(collection.arrear_collection, 0::numeric) AS arrear_coll,
-                            COALESCE(collection.currend_collection, 0::numeric) AS curr_coll,
+                            ) AS arrear_demand,
+                            COALESCE(demands.current_demand, 0::numeric) AS current_demand,   
+                            COALESCE(prev_collection.total_prev_collection, 0::numeric) AS previous_collection,
+                            
+                            COALESCE(collection.arrear_collection, 0::numeric) AS arrear_collection,
+                            COALESCE(collection.current_collection, 0::numeric) AS current_collection,
                     
                             (COALESCE(
                                     COALESCE(demands.arrear_demand, 0::numeric) 
@@ -2021,18 +2021,18 @@ class Report implements IReport
                                 ) 
                                 - COALESCE(collection.arrear_collection, 0::numeric) )AS old_due,
                     
-                            (COALESCE(demands.currend_demand, 0::numeric) - COALESCE(collection.currend_collection, 0::numeric)) AS curr_due,
+                            (COALESCE(demands.current_demand, 0::numeric) - COALESCE(collection.current_collection, 0::numeric)) AS current_due,
                     
                             (
                                 COALESCE(
-                                    COALESCE(demands.currend_demand, 0::numeric) 
+                                    COALESCE(demands.current_demand, 0::numeric) 
                                     + (
                                         COALESCE(demands.arrear_demand, 0::numeric) 
                                         - COALESCE(prev_collection.total_prev_collection, 0::numeric)
                                     ), 0::numeric
                                 ) 
                                 - COALESCE(
-                                    COALESCE(collection.currend_collection, 0::numeric) 
+                                    COALESCE(collection.current_collection, 0::numeric) 
                                     + COALESCE(collection.arrear_collection, 0::numeric), 0::numeric
                                 )
                             ) AS outstanding                                 
@@ -2046,11 +2046,11 @@ class Report implements IReport
                                 - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
                             )
                         ) AS outstanding_at_begin,
+                        SUM(COALESCE(demands.currend_demand, 0::numeric)) AS current_demand,
                 
                         SUM(COALESCE(prev_collection.total_prev_collection, 0::numeric)) AS prev_coll,
-                        SUM(COALESCE(demands.currend_demand, 0::numeric)) AS current_demand,
-                        SUM(COALESCE(collection.arrear_collection, 0::numeric)) AS arrear_coll,
-                        SUM(COALESCE(collection.currend_collection, 0::numeric)) AS curr_coll,
+                        SUM(COALESCE(collection.arrear_collection, 0::numeric)) AS arrear_ollection,
+                        SUM(COALESCE(collection.current_collection, 0::numeric)) AS current_collection,
                 
                         SUM(
                             (
@@ -2062,12 +2062,12 @@ class Report implements IReport
                             )
                         )AS old_due,
                 
-                        SUM((COALESCE(demands.currend_demand, 0::numeric) - COALESCE(collection.currend_collection, 0::numeric))) AS curr_due,
+                        SUM((COALESCE(demands.current_demand, 0::numeric) - COALESCE(collection.current_collection, 0::numeric))) AS current_due,
                 
                         SUM(
                             (
                                 COALESCE(
-                                    COALESCE(demands.currend_demand, 0::numeric) 
+                                    COALESCE(demands.current_demand, 0::numeric) 
                                     + (
                                         COALESCE(demands.arrear_demand, 0::numeric) 
                                         - COALESCE(prev_collection.total_prev_collection, 0::numeric)
@@ -2141,7 +2141,7 @@ class Report implements IReport
                                 CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
                                     ELSE 0
                                     END
-                        ) AS currend_demand,
+                        ) AS current_demand,
                         SUM(
                             CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.amount
                                 ELSE 0
@@ -2163,7 +2163,7 @@ class Report implements IReport
                                 CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
                                     ELSE 0
                                     END
-                        ) AS currend_collection,
+                        ) AS current_collection,
                         SUM(
                             cASe when prop_demands.due_date <'$fromDate' then prop_demands.amount
                                 ELSE 0
@@ -2214,12 +2214,12 @@ class Report implements IReport
                             COALESCE(
                                 COALESCE(demands.arrear_demand, 0::numeric) 
                                 - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
-                            ) AS outstanding_at_begin,
+                            ) AS arrear_demand,
                     
-                            COALESCE(prev_collection.total_prev_collection, 0::numeric) AS prev_coll,
-                            COALESCE(demands.currend_demand, 0::numeric) AS current_demand,
-                            COALESCE(collection.arrear_collection, 0::numeric) AS arrear_coll,
-                            COALESCE(collection.currend_collection, 0::numeric) AS curr_coll,
+                            COALESCE(prev_collection.total_prev_collection, 0::numeric) AS previous_collection,
+                            COALESCE(demands.current_demand, 0::numeric) AS current_demand,
+                            COALESCE(collection.arrear_collection, 0::numeric) AS arrear_collection,
+                            COALESCE(collection.current_collection, 0::numeric) AS current_collection,
                     
                             (COALESCE(
                                     COALESCE(demands.arrear_demand, 0::numeric) 
@@ -2227,18 +2227,18 @@ class Report implements IReport
                                 ) 
                                 - COALESCE(collection.arrear_collection, 0::numeric) )AS old_due,
                     
-                            (COALESCE(demands.currend_demand, 0::numeric) - COALESCE(collection.currend_collection, 0::numeric)) AS curr_due,
+                            (COALESCE(demands.current_demand, 0::numeric) - COALESCE(collection.current_collection, 0::numeric)) AS current_due,
                     
                             (
                                 COALESCE(
-                                    COALESCE(demands.currend_demand, 0::numeric) 
+                                    COALESCE(demands.current_demand, 0::numeric) 
                                     + (
                                         COALESCE(demands.arrear_demand, 0::numeric) 
                                         - COALESCE(prev_collection.total_prev_collection, 0::numeric)
                                     ), 0::numeric
                                 ) 
                                 - COALESCE(
-                                    COALESCE(collection.currend_collection, 0::numeric) 
+                                    COALESCE(collection.current_collection, 0::numeric) 
                                     + COALESCE(collection.arrear_collection, 0::numeric), 0::numeric
                                 )
                             ) AS outstanding                                 
@@ -2251,5 +2251,10 @@ class Report implements IReport
         {
             return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
         }
+    }
+
+    public function PropFineRebate(Request $request)
+    {
+
     }
 }

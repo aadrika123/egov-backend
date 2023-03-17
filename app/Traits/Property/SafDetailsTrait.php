@@ -118,8 +118,6 @@ trait SafDetailsTrait
                 $floorDetail->builtup_area,
                 $floorDetail->date_from,
                 $floorDetail->date_upto
-                // $floorDetail->date_from,
-                // $floorDetail->date_upto
             ];
         });
     }
@@ -269,13 +267,11 @@ trait SafDetailsTrait
     }
 
     /**
-     * |objection floor detaild
+     * | Objection floor details
      */
 
     public function generateObjectionFloorDetails($objectionFlooorDtl)
     {
-        // return $objectionFlooorDtl;
-        // return collect($objectionFlooorDtls)->map(function ($objectionFlooorDtl, $key) {
         return
             [
                 $objectionFlooorDtl['floor_name'],
@@ -286,14 +282,58 @@ trait SafDetailsTrait
                 $objectionFlooorDtl['carpet_area'],
 
             ];
+    }
 
-        // $objectionFlooorDtl->prop_floor_id;
-        // $objectionFlooorDtl->usage_type_mstr_id;
-        // $objectionFlooorDtl->occupancy_type_mstr_id;
-        // $objectionFlooorDtl->const_type_mstr_id;
-        // $objectionFlooorDtl->builtup_area;
-        // $objectionFlooorDtl->date_from;
-        // ];
+    /**
+     * | Get GB Basic Details
+     */
+    public function generateGbBasicDetails($data)
+    {
+        return new Collection([
+            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $data->old_ward_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'New Ward No', 'key' => 'newWardNo', 'value' => $data->new_ward_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Building Type', 'key' => 'buildingType', 'value' => $data->building_type, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Property Usage Type', 'key' => 'propertyUsageType', 'value' => $data->prop_usage_type, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Zone', 'key' => 'zone', 'value' => ($data->zone_mstr_id == 1) ? 'Zone 1' : 'Zone 2', 'canBtc' => 'true', 'canEdit' => 'false'],
+            ['displayString' => 'Property has Mobile Tower(s) ?', 'key' => 'isMobileTower', 'value' => ($data->is_mobile_tower == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Property has Hoarding Board(s) ?', 'key' => 'isHoardingBoard', 'value' => ($data->is_hoarding_board == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Property has Rain Water Harvesting ?', 'key' => 'isWaterHarvesting', 'value' => ($data->is_water_harvesting == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true']
+        ]);
+    }
+
+    /**
+     * | Generating GB Property Details
+     */
+    public function generateGbPropertyDetails($data)
+    {
+        return new Collection([
+            ['displayString' => 'Building Name', 'key' => 'buildingName', 'value' => $data->building_name, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Street Name', 'key' => 'streetName', 'value' => $data->street_name, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Location', 'key' => 'location', 'value' => $data->location, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Landmark', 'key' => 'landmark', 'value' => $data->landmark, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Road Width', 'key' => 'roadWidth', 'value' => $data->road_width ?? "", 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'City', 'key' => 'city', 'value' => $data->prop_city, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'District', 'key' => 'district', 'value' => $data->prop_dist, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'State', 'key' => 'state', 'value' => $data->prop_state, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Pin', 'key' => 'pin', 'value' => $data->prop_pin_code, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Locality', 'key' => 'locality', 'value' => $data->prop_address, 'canBtc' => 'true', 'canEdit' => 'true'],
+        ]);
+    }
+
+    /**
+     * | Officer Details
+     */
+    public function generateOfficerDetails($officerDetails)
+    {
+        // return collect($officerDetails)->map(function ($officerDetails, $key) {
+        return [
+            1,
+            $officerDetails['officer_name'],
+            $officerDetails['designation'],
+            $officerDetails['mobile_no'],
+            $officerDetails['email'],
+            $officerDetails['address'],
+        ];
         // });
     }
 }
