@@ -144,6 +144,7 @@ class PropTransaction extends Model
         $propTrans->from_qtr = collect($demands)->last()['qtr'];
         $propTrans->to_qtr = collect($demands)->first()['qtr'];
         $propTrans->demand_amt = collect($demands)->sum('amount');
+        $propTrans->tran_by_type = $req['tranBy'];
         $propTrans->save();
 
         return [
