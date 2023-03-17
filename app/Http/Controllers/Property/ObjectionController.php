@@ -84,12 +84,6 @@ class ObjectionController extends Controller
         }
     }
 
-    //assesment details
-    public function assesmentDetails(Request $request)
-    {
-        return $this->Repository->assesmentDetails($request);
-    }
-
     /**
      * | Get Inbox List of Objection Workflow
      */
