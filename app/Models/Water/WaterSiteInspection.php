@@ -27,7 +27,7 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->category               =   $req->category;
         $saveSiteVerify->flat_count             =   $req->flatCount ?? null;
         $saveSiteVerify->ward_id                =   $waterDetails['ward_id'];
-        $saveSiteVerify->area_sqft              =   $req->areaSqFt;
+        $saveSiteVerify->area_sqft              =   $req->areaSqft;
         $saveSiteVerify->rate_id                =   $req->rateId ?? null;                    // what is rate Id
         $saveSiteVerify->emp_details_id         =   authUser()->id;
         $saveSiteVerify->pipeline_size          =   $req->pipelineSize;
