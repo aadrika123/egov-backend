@@ -15,4 +15,11 @@ class PropActiveObjectionOwner extends Model
             ->where('objection_id', $objId)
             ->get();
     }
+
+    public function getOwnerEditDetail($objId)
+    {
+        return PropActiveObjectionOwner::select('*')
+            ->where('objection_id', $objId)
+            ->first();
+    }
 }
