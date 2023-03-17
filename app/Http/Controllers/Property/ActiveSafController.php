@@ -1751,15 +1751,9 @@ class ActiveSafController extends Controller
     public function getPropTransactions(Request $req)
     {
         try {
-            $redis = Redis::connection();
             $propTransaction = new PropTransaction();
             $userId = auth()->user()->id;
-
-            $propTrans = json_decode(Redis::get('property-transactions-user-' . $userId));                      // Should Be Deleted SAF Payment
-            if (!$propTrans) {
-                $propTrans = $propTransaction->getPropTransByUserId($userId);
-                $redis->set('property-transactions-user-' . $userId, json_encode($propTrans));
-            }
+            $propTrans = $propTransaction->getPropTransByUserId($userId);
             return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", "265ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010117", "1.0", "265ms", "POST", $req->deviceId);
