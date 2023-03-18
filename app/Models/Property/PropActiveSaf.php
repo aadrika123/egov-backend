@@ -661,11 +661,15 @@ class PropActiveSaf extends Model
             'prop_active_safs.holding_no',
             'prop_active_safs.prop_address',
             'prop_saf_geotag_uploads.latitude',
-            'prop_saf_geotag_uploads.longitude'
+            'prop_saf_geotag_uploads.longitude',
+            DB::raw("concat(relative_path,'/',image_path) as doc_path"),
         )
             ->leftjoin('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_active_safs.id')
             ->where('prop_active_safs.ward_mstr_id', $wardId)
+            ->where('prop_active_safs.holding_no', '!=', null)
             ->orderByDesc('prop_active_safs.id')
-            ->paginate(50);
+            ->skip(0)
+            ->take(50)
+            ->get();
     }
 }

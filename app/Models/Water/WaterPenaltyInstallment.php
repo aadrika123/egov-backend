@@ -73,7 +73,7 @@ class WaterPenaltyInstallment extends Model
     {
         WaterPenaltyInstallment::whereIn('id', $penaltyId)
             ->update([
-                'paid_status' => true
+                'paid_status' => 1
             ]);
     }
 
