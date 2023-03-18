@@ -552,22 +552,28 @@ class RainWaterHarvestingController extends Controller
     {
         try {
             $req->validate([
-                'roleId' => 'required',
                 'applicationId' => 'required',
                 'status' => 'required',
 
             ]);
-            // Check if the Current User is Finisher or Not         
-            $activeHarvesting = PropActiveHarvesting::query()
-                ->where('id', $req->applicationId)
-                ->first();
-
+            // Check if the Current User is Finisher or Not    
+            $mWfRoleUsermap = new WfRoleusermap();
+            $userId = authUser()->id;
+            $activeHarvesting = PropActiveHarvesting::find($req->applicationId);
             $propProperties = PropProperty::where('id', $activeHarvesting->property_id)
                 ->first();
 
+            $workflowId = $activeHarvesting->workflow_id;
+            $getRoleReq = new Request([                                                 // make request to get role id of the user
+                'userId' => $userId,
+                'workflowId' => $workflowId
+            ]);
+            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            $roleId = $readRoleDtls->wf_role_id;
+
             $getFinisherQuery = $this->getFinisherId($activeHarvesting->workflow_id);                                 // Get Finisher using Trait
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
-            if ($refGetFinisher->role_id != $req->roleId) {
+            if ($refGetFinisher->role_id != $roleId) {
                 return responseMsg(false, " Access Forbidden", "");
             }
 

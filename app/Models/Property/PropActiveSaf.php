@@ -672,4 +672,15 @@ class PropActiveSaf extends Model
             ->take(50)
             ->get();
     }
+
+    /**
+     * | Get citizen safs
+     */
+    public function getCitizenSafs($citizenId, $ulbId)
+    {
+        return PropActiveSaf::select('id', 'saf_no', 'citizen_id')
+            ->where('citizen_id', $citizenId)
+            ->where('ulb_id', $ulbId)
+            ->get();
+    }
 }

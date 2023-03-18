@@ -1301,7 +1301,7 @@ class GbSafController extends Controller
             ];
             $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$officerElement, $floorElement]);
             // Card Detail Format
-            $cardDetails = $this->generateCardDetails($data, $getOfficerDetails);
+            $cardDetails = $this->generateGbCardDetails($data, $getOfficerDetails);
             $cardElement = [
                 'headerTitle' => "About Property",
                 'data' => $cardDetails

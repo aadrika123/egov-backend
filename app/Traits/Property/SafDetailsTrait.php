@@ -333,4 +333,23 @@ trait SafDetailsTrait
             $officerDetails['address'],
         ];
     }
+
+    /**
+     * | Generate Card Details
+     */
+    public function generateGbCardDetails($req, $officerDetails)
+    {
+        return new Collection([
+            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
+            ['displayString' => 'SAF No.', 'key' => 'safNo', 'value' => $req->saf_no],
+            ['displayString' => 'Officer', 'key' => 'officerName', 'value' => $officerDetails->officer_name],
+            ['displayString' => 'Assessment Type', 'key' => 'assessmentType', 'value' => $req->assessment_type],
+            ['displayString' => 'Building Type', 'key' => 'buildingType', 'value' => $req->building_type, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Property Usage Type', 'key' => 'propertyUsageType', 'value' => $req->prop_usage_type, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $req->application_date],
+            ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
+        ]);
+    }
 }

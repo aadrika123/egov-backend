@@ -115,15 +115,25 @@ class PropertyController extends Controller
             $ulbId = $req->ulbId;
             $type = $req->type;
             $mPropSafs = new PropSaf();
+            $mPropActiveSafs = new PropActiveSaf();
             $mPropProperty = new PropProperty();
 
             if ($type == 'holding') {
                 $data = $mPropProperty->getCitizenHoldings($citizenId, $ulbId);
+                $data = collect($data)->map(function ($value) {
+                    if (isset($value['new_holding_no'])) {
+                        return $value;
+                    }
+                })->filter()->values();
                 $msg = 'Citizen Holdings';
             }
 
             if ($type == 'saf') {
                 $data = $mPropSafs->getCitizenSafs($citizenId, $ulbId);
+
+                if ($data->isEmpty())
+                    $data = $mPropActiveSafs->getCitizenSafs($citizenId, $ulbId);
+
                 $msg = 'Citizen Safs';
             }
             if ($type == 'ptn') {
