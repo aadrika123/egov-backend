@@ -668,4 +668,15 @@ class PropActiveSaf extends Model
             ->orderByDesc('prop_active_safs.id')
             ->paginate(50);
     }
+
+    /**
+     * | Get citizen safs
+     */
+    public function getCitizenSafs($citizenId, $ulbId)
+    {
+        return PropActiveSaf::select('id', 'saf_no', 'citizen_id')
+            ->where('citizen_id', $citizenId)
+            ->where('ulb_id', $ulbId)
+            ->get();
+    }
 }

@@ -461,6 +461,7 @@ class ObjectionController extends Controller
             $mPropOwner = new PropOwner();
             $mPropActiveObjectionOwner = new PropActiveObjectionOwner();
             $mPropActiveObjectionDtl = new PropActiveObjectionDtl();
+            $mPropActiveObjectionFloor = new PropActiveObjectionFloor();
             $userId = authUser()->id;
             $activeObjection = PropActiveObjection::where('id', $req->applicationId)
                 ->first();
@@ -489,11 +490,11 @@ class ObjectionController extends Controller
             if ($req->status == 1) {
                 // Objection Application replication
 
-                // $approvedObjection = $activeObjection->replicate();
-                // $approvedObjection->setTable('prop_objections');
-                // $approvedObjection->id = $activeObjection->id;
-                // $approvedObjection->save();
-                // $activeObjection->delete();
+                $approvedObjection = $activeObjection->replicate();
+                $approvedObjection->setTable('prop_objections');
+                $approvedObjection->id = $activeObjection->id;
+                $approvedObjection->save();
+                $activeObjection->delete();
 
 
                 if ($activeObjection->objection_for == 'Clerical Mistake') {
@@ -527,6 +528,7 @@ class ObjectionController extends Controller
                     $ownerDetails =  $mPropActiveObjectionOwner->getOwnerDetail($activeObjection->id);
 
                     foreach ($ownerDetails as $ownerDetail) {
+
                         $metaReqs =  new Request([
                             'property_id' => $activeObjection->property_id,
                             'owner_name' => $ownerDetail->owner_name,
@@ -547,28 +549,47 @@ class ObjectionController extends Controller
                 if ($activeObjection->objection_for == 'Assessment Error') {
                     $objDtls = $mPropActiveObjectionDtl->getDtlbyObjectionId($activeObjection->id);
 
-                    foreach ($objDtls as $objDtl) {
-                        switch ($objDtl->objection_type_id) {
-                            case (2):
-                                PropProperty::where('id', $activeObjection->id)
-                                    ->update(['is_water_harvesting' => $objDtl->applicant_data]);
-                                break;
+                    //create log
+                    if ($objDtls->isNotEmpty()) {
 
-                            case (3):
-                                PropProperty::where('id', $activeObjection->id)
-                                    ->update(['road_type_mstr_id' => $objDtl->applicant_data]);
-                                break;
+                        foreach ($objDtls as $objDtl) {
+                            switch ($objDtl->objection_type_id) {
+                                case (2):
+                                    PropProperty::where('id', $activeObjection->id)
+                                        ->update(['is_water_harvesting' => $objDtl->applicant_data]);
+                                    break;
 
-                            case (4):
-                                PropProperty::where('id', $activeObjection->id)
-                                    ->update(['prop_type_mstr_id' => $objDtl->applicant_data]);
-                                break;
+                                case (3):
+                                    PropProperty::where('id', $activeObjection->id)
+                                        ->update(['road_type_mstr_id' => $objDtl->applicant_data]);
+                                    break;
+
+                                case (4):
+                                    PropProperty::where('id', $activeObjection->id)
+                                        ->update(['prop_type_mstr_id' => $objDtl->applicant_data]);
+                                    break;
+                            }
                         }
                     }
                 }
+                $floorDtls = $mPropActiveObjectionFloor->getfloorObjectionId($activeObjection->id);
+                //create log
+                if ($floorDtls->isNotEmpty()) {
 
-
-
+                    foreach ($floorDtls as $floorDtl) {
+                        PropFloor::where('id', $floorDtl->prop_floor_id)
+                            ->update(
+                                [
+                                    'floor_mstr_id' => $ownerDtl->floor_mstr_id,
+                                    'usage_type_mstr_id' => $ownerDtl->usage_type_mstr_id,
+                                    'occupancy_type_mstr_id' => $ownerDtl->occupancy_type_mstr_id,
+                                    'const_type_mstr_id' => $ownerDtl->const_type_mstr_id,
+                                    'builtup_area' => $ownerDtl->builtup_area,
+                                    'carpet_area' => $ownerDtl->carpet_area,
+                                ]
+                            );
+                    }
+                }
                 $msg =  "Application Successfully Approved !!";
             }
 
