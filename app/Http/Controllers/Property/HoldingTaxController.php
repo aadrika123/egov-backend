@@ -285,7 +285,7 @@ class HoldingTaxController extends Controller
     /**
      * | Post Payment Penalty Rebates(3.1)
      */
-    public function postPaymentPenaltyRebate($dueList, $propId, $tranId)
+    public function postPaymentPenaltyRebate($dueList, $propId = null, $tranId, $clusterId = null)
     {
         $mPaymentRebatePanelties = new PropPenaltyrebate();
         $rebateList = array();
@@ -310,10 +310,11 @@ class HoldingTaxController extends Controller
         ];
         $headNames = array_merge($headNames, $rebateList);
 
-        collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $propId, $tranId) {
+        collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $propId, $tranId, $clusterId) {
             if ($headName['value'] > 0) {
                 $reqs = [
                     'tran_id' => $tranId,
+                    'cluster_id' => $clusterId,
                     'prop_id' => $propId,
                     'head_name' => $headName['keyString'],
                     'amount' => $headName['value'],
@@ -994,7 +995,7 @@ class HoldingTaxController extends Controller
                 'onePercPenalty' => $finalOnePerc,
                 'finalAmt' => $finalAmt,
             ];
-            $mLastQuarterDemand = collect($summedDemand)->where('quarterYear', $currentFYear)->sum('balance');
+            $mLastQuarterDemand = collect($summedDemand)->where('fyear', $currentFYear)->sum('balance');
             $finalClusterDemand['duesList'] = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, null, $finalAmt, $finalClusterDemand['duesList']);
             $payableAmount = $finalAmt - ($finalClusterDemand['duesList']['rebateAmt'] + $finalClusterDemand['duesList']['specialRebateAmt']);
             $finalClusterDemand['duesList']['payableAmount'] = round($payableAmount);
@@ -1003,6 +1004,81 @@ class HoldingTaxController extends Controller
             return responseMsgs(true, "Generated Demand of the Cluster", remove_null($finalClusterDemand), "011611", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011611", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+
+    /**
+     * | Cluster Property Payments
+     */
+    public function clusterPayment(ReqPayment $req)
+    {
+        try {
+            $dueReq = new Request([
+                'clusterId' => $req->id
+            ]);
+            $clusterId = $req->id;
+            $todayDate = Carbon::now();
+            $idGeneration = new IdGeneration;
+            $mPropTrans = new PropTransaction();
+            $mPropDemand = new PropDemand();
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+
+            $dues = $this->getClusterHoldingDues($dueReq);
+            $dues = $dues->original['data'];
+            $demands = $dues['demandList'];
+            $tranNo = $idGeneration->generateTransactionNo();
+            $payableAmount = $dues['duesList']['payableAmount'];
+            // Property Transactions
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $userId = auth()->user()->id ?? null;
+                if (!$userId)
+                    throw new Exception("User Should Be Logged In");
+                $tranBy = authUser()->user_type;
+            }
+            $req->merge([
+                'userId' => $userId,
+                'todayDate' => $todayDate->format('Y-m-d'),
+                'tranNo' => $tranNo,
+                'amount' => $payableAmount,
+                'tranBy' => $tranBy
+            ]);
+
+            DB::beginTransaction();
+            $propTrans = $mPropTrans->postClusterTransactions($req, $demands);
+
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $req->merge([
+                    'chequeDate' => $req['chequeDate'],
+                    'tranId' => $propTrans['id']
+                ]);
+                $this->postOtherPaymentModes($req);
+            }
+
+            $clusterDemand = $mPropDemand->getDemandsByClusterId($clusterId);
+            if ($clusterDemand->isEmpty())
+                throw new Exception("Demand Not Available");
+            // Reflect on Prop Tran Details
+            foreach ($clusterDemand as $demand) {
+                $propDemand = $mPropDemand->getDemandById($demand['id']);
+                $propDemand->balance = 0;
+                $propDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $propDemand->save();
+
+                $propTranDtl = new PropTranDtl();
+                $propTranDtl->tran_id = $propTrans['id'];
+                $propTranDtl->prop_demand_id = $demand['id'];
+                $propTranDtl->total_demand = $demand['amount'];
+                $propTranDtl->ulb_id = $req['ulbId'];
+                $propTranDtl->save();
+            }
+            // Replication Prop Rebates Penalties
+            $this->postPaymentPenaltyRebate($dues['duesList'], null, $propTrans['id'], $clusterId);
+            DB::commit();
+            return responseMsgs(true, "Payment Successfully Done", "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }

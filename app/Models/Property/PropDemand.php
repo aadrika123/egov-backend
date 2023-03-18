@@ -116,4 +116,15 @@ class PropDemand extends Model
     {
         return PropDemand::find($id);
     }
+
+
+    /**
+     * | Get Demands By Cluster Id
+     */
+    public function getDemandsByClusterId($clusterId)
+    {
+        return PropDemand::where('cluster_id', $clusterId)
+            ->where('paid_status', 0)
+            ->get();
+    }
 }

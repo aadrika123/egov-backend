@@ -333,7 +333,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('generate-prop-orderid', 'generateOrderId');                      // (03) Generate Property Order ID
     Route::post('offline-payment-holding', 'paymentHolding');                     // (04) Payment Holding
     Route::post('prop/get-cluster-holding-due', 'getClusterHoldingDues');                     // (11) Property Cluster Dues
-
+    Route::post('prop/cluster-payment', 'clusterPayment');                        // (12) Cluster Payment
   });
 
   /**
