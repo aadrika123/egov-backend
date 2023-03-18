@@ -159,7 +159,13 @@ class NewConnectionController extends Controller
      * |--------------------------------------------- Water workflow -----------------------------------------------|
      */
 
-    // Water Inbox
+    /**
+     * | Water Inbox
+     * | workflow
+     * | Repositiory Call
+        | Serial No :
+        | Working
+     */
     public function waterInbox()
     {
         try {
@@ -169,7 +175,13 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Water Outbox
+    /**
+     * | Water Outbox
+     * | Workflow
+     * | Reposotory Call
+        | Serial No :
+        | Working
+     */
     public function waterOutbox()
     {
         try {
@@ -179,7 +191,24 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Back to citizen Inbox
+    /**
+     * | Back to citizen Inbox
+     * | Workflow
+     * | @param req
+     * | @var mWfWardUser
+     * | @var userId
+     * | @var ulbId
+     * | @var mDeviceId
+     * | @var workflowRoles
+     * | @var roleId
+     * | @var refWard
+     * | @var wardId
+     * | @var waterList
+     * | @var filterWaterList
+     * | @return filterWaterList 
+        | Serial No : 
+        | Use
+     */
     public function btcInbox(Request $req)
     {
         try {
