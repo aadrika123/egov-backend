@@ -728,6 +728,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param applicationDetails
      * | @var collectionApplications
         | Serial No : 08.03
+        | May Not used
      */
     public function getElectricDetails($applicationDetails)
     {
@@ -770,12 +771,15 @@ class NewConnectionRepository implements iNewConnection
      */
     public function getCardDetails($applicationDetails, $ownerDetails)
     {
-        $ownerDetail = collect($ownerDetails)->first();
+        $ownerName = collect($ownerDetails)->map(function ($value) {
+            return $value['owner_name'];
+        });
+        $ownerDetail = $ownerName->implode(',');
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
             ['displayString' => 'Ward No.',             'key' => 'WardNo.',           'value' => $collectionApplications->ward_id],
             ['displayString' => 'Application No.',      'key' => 'ApplicationNo.',    'value' => $collectionApplications->application_no],
-            ['displayString' => 'Owner Name',           'key' => 'OwnerName',         'value' => $ownerDetail['owner_name']],
+            ['displayString' => 'Owner Name',           'key' => 'OwnerName',         'value' => $ownerDetail],
             ['displayString' => 'Property Type',        'key' => 'PropertyType',      'value' => $collectionApplications->property_type],
             ['displayString' => 'Connection Type',      'key' => 'ConnectionType',    'value' => $collectionApplications->connection_type],
             ['displayString' => 'Connection Through',   'key' => 'ConnectionThrough', 'value' => $collectionApplications->connection_through],
@@ -799,9 +803,11 @@ class NewConnectionRepository implements iNewConnection
     {
         $applicationId = WaterApplication::find($request->applicationId);
         $workflowTrack = new WorkflowTrack();
-        $mSafWorkflowId = $this->_waterWorkId;
+        $mWfRoleUsermap = new WfRoleusermap();
         $mModuleId =  $this->_waterModulId;
         $metaReqs = array();
+        $userType = authUser()->user_type;
+        $userId = authUser()->id;
 
         if (!$applicationId) {
             throw new Exception("Application Don't Exist!");
@@ -809,16 +815,27 @@ class NewConnectionRepository implements iNewConnection
 
         # Save On Workflow Track
         $metaReqs = [
-            'workflowId' => $mSafWorkflowId,
+            'workflowId' => $applicationId->mSafWorkflowId,
             'moduleId' => $mModuleId,
-            'workflowId' => $mSafWorkflowId,
             'refTableDotId' => "water_applications.id",
             'refTableIdValue' => $applicationId->id,
+            'message' => $request->comment
         ];
 
+        if ($userType != 'Citizen') {
+            $roleReqs = new Request([
+                'workflowId' => $applicationId->workflow_id,
+                'userId' => $userId,
+            ]);
+            $wfRoleId = $mWfRoleUsermap->getRoleByUserWfId($roleReqs);
+            $metaReqs = array_merge($metaReqs, ['senderRoleId' => $wfRoleId->wf_role_id]);
+            $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
+        }
         # For Citizen Independent Comment
-        if (!$request->senderRoleId) {
-            $metaReqs = array_merge($metaReqs, ['citizenId' => auth()->user()->id]);
+        if ($userType == 'Citizen') {
+            $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
+            $metaReqs = array_merge($metaReqs, ['ulb_id' => $applicationId->ulb_id]);
+            $metaReqs = array_merge($metaReqs, ['user_id' => NULL]);
         }
         $request->request->add($metaReqs);
         $workflowTrack->saveTrack($request);

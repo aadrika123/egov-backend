@@ -334,6 +334,7 @@ class HoldingTaxController extends Controller
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $todayDate = Carbon::now();
             $userId = $req['userId'];
+            $tranBy = 'ONLINE';
             $propDemand = new PropDemand();
             $idGeneration = new IdGeneration;
             $mPropTrans = new PropTransaction();
@@ -356,12 +357,14 @@ class HoldingTaxController extends Controller
                 $userId = auth()->user()->id ?? null;
                 if (!$userId)
                     throw new Exception("User Should Be Logged In");
+                $tranBy = authUser()->user_type;
             }
             $req->merge([
                 'userId' => $userId,
                 'todayDate' => $todayDate->format('Y-m-d'),
                 'tranNo' => $tranNo,
-                'amount' => $dueList['payableAmount']
+                'amount' => $dueList['payableAmount'],
+                'tranBy' => $tranBy
             ]);
             DB::beginTransaction();
             $propTrans = $mPropTrans->postPropTransactions($req, $demands);

@@ -415,7 +415,7 @@ if (!function_exists('decimalToSqFt')) {
 }
 
 // sqFt to SqMt Conversion
-if (!function_exists('decimalToSqFt')) {
+if (!function_exists('sqFtToSqMt')) {
     function sqFtToSqMt(float $num)
     {
         $num = $num * 0.09290304;
