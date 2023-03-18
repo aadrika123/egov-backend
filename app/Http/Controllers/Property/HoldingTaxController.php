@@ -1022,11 +1022,11 @@ class HoldingTaxController extends Controller
             $idGeneration = new IdGeneration;
             $mPropTrans = new PropTransaction();
             $mPropDemand = new PropDemand();
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
 
             $dues = $this->getClusterHoldingDues($dueReq);
             $dues = $dues->original['data'];
             $demands = $dues['demandList'];
-            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $tranNo = $idGeneration->generateTransactionNo();
             $payableAmount = $dues['duesList']['payableAmount'];
             // Property Transactions
@@ -1075,10 +1075,10 @@ class HoldingTaxController extends Controller
             // Replication Prop Rebates Penalties
             $this->postPaymentPenaltyRebate($dues['duesList'], null, $propTrans['id'], $clusterId);
             DB::commit();
-            return responseMsgs(true, "Payment Successful", "");
+            return responseMsgs(true, "Payment Successfully Done", "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }
