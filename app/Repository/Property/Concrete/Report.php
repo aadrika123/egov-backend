@@ -939,7 +939,6 @@ class Report implements IReport
         }
         catch(Exception $e)
         {
-            dd($e->getMessage(),$e->getLine(),$e->getFile());
             return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
         }
     }
@@ -2255,6 +2254,183 @@ class Report implements IReport
 
     public function PropFineRebate(Request $request)
     {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id; 
+            $wardId = null;
+            $fiYear = getFY();
+            if($request->fiYear)
+            {
+                $fiYear = $request->fiYear;                
+            }
+            list($fromYear,$toYear)=explode("-",$fiYear);
+            if($toYear-$fromYear !=1)
+            {
+                throw new Exception("Enter Valide Financial Year");
+            }
+            $fromDate = $fromYear."-04-01";
+            $uptoDate = $toYear."-03-31";
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }            
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }            
+            $data = PropProperty::SELECT(
+                        DB::RAW("
+                        ulb_ward_masters.ward_name as ward_no,
+                        CASE WHEN prop_properties.new_holding_no!='' 
+                            THEN prop_properties.new_holding_no 
+                            ELSE prop_properties.holding_no 
+                            END AS holding_no,
+                        prop_properties.id,
+                        (COALESCE(demands.total_demand, 0)) AS total_demand,
+                        (
+                            COALESCE(prop_transactions.paid_amt,0)
+                        )AS paid_amt,
+                       (COALESCE(prop_transactions.demand_amt, 0))AS actual_demand_amt,
+                       (COALESCE(fine_rebate.total_rebate, 0)) AS total_rebate,
+                        (COALESCE(fine_rebate.first_qtr_rebate, 0)) AS first_qtr_rebate,
+                        (COALESCE(fine_rebate.online_rebate, 0)) AS online_rebate,
+                        (COALESCE(fine_rebate.jsk_rebate, 0)) AS jsk_rebate,        
+                        (COALESCE(fine_rebate.special_rebate, 0)) AS special_rebate,
+                        
+                        (COALESCE(fine_rebate.total_fine, 0)) AS total_fine,
+                        (COALESCE(fine_rebate.one_percent_penalty, 0)) AS one_percent_penalty,
+                        (COALESCE(fine_rebate.late_assessment_penalty, 0)) AS late_assessment_penalty
+                        ")
+                    )
+                    ->JOIN("ulb_ward_masters","ulb_ward_masters.id","prop_properties.ward_mstr_id")
+                    ->JOIN(DB::RAW("
+                                (
+                                    SELECT 
+                                        prop_demands.property_id, 
+                                        SUM(
+                                            COALESCE(
+                                               prop_tran_dtls.total_demand 
+                                                , 0
+                                            )
+                                        ) AS total_demand
+                                    FROM prop_demands
+                                    JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
+                                        AND  prop_tran_dtls.prop_demand_id NOTNULL
+                                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
+                                        AND prop_transactions.property_id = prop_demands.property_id                                        
+                                    WHERE prop_demands.status=1
+                                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                                        AND prop_transactions.tran_date BETWEEN '$fromDate'AND '$uptoDate'
+                                        ".($ulbId?" AND prop_transactions.ulb_id=$ulbId":"")."
+                                    GROUP BY prop_demands.property_id 
+                                )demands
+                            "),function($join){
+                                $join->on("demands.property_id","prop_properties.id");
+                            }
+                    )
+                    ->JOIN(DB::RAW("
+                                    (
+                                        SELECT
+                                            prop_transactions.property_id AS property_id,
+                                            SUM(COALESCE(prop_transactions.amount, 0)) AS paid_amt,
+                                            SUM(COALESCE(prop_transactions.demand_amt, 0)) AS demand_amt        
+                                        FROM prop_transactions
+                                        WHERE 
+                                            prop_transactions.property_id NOTNULL
+                                            AND prop_transactions.status IN(1,2)
+                                            AND prop_transactions.tran_date BETWEEN '$fromDate'AND '$uptoDate'
+                                            ".($ulbId?" AND prop_transactions.ulb_id=$ulbId":"")."
+                                        GROUP BY prop_transactions.property_id
+                                    )prop_transactions
+                                "),function($join){
+                                    $join->on("prop_transactions.property_id","prop_properties.id");
+                                }
+                    )                    
+                    ->LEFTJOIN(DB::RAW("
+                            (
+                                SELECT
+                                    prop_transactions.property_id, 
+                                    SUM(COALESCE((CASE WHEN prop_penaltyrebates.is_rebate=TRUE 
+                                                THEN prop_penaltyrebates.amount ELSE 0 END), 0)
+                                    ) AS total_rebate,
+                                    SUM(COALESCE((CASE WHEN prop_penaltyrebates.is_rebate=TRUE 
+                                                            AND prop_penaltyrebates.head_name ILIKE'%First Qtr%' 
+                                                        THEN prop_penaltyrebates.amount 
+                                                        ELSE 0 END), 0)
+                                    ) AS first_qtr_rebate,
+                                    SUM(COALESCE((CASE WHEN prop_penaltyrebates.is_rebate=TRUE 
+                                                            AND prop_penaltyrebates.head_name ILIKE'%JSK%' AND UPPER(prop_transactions.payment_mode)='ONLINE'
+                                                        THEN prop_penaltyrebates.amount 
+                                                        ELSE 0 END), 0)
+                                    ) AS online_rebate,
+                                    SUM(COALESCE((CASE WHEN prop_penaltyrebates.is_rebate=TRUE 
+                                                            AND (prop_penaltyrebates.head_name ILIKE'%JSK%' OR prop_penaltyrebates.head_name ILIKE'%ONLINE%') AND UPPER(prop_transactions.payment_mode)!='ONLINE'
+                                                        THEN prop_penaltyrebates.amount 
+                                                        ELSE 0 END), 0)
+                                    ) AS jsk_rebate,
+                                    SUM(COALESCE((CASE WHEN prop_penaltyrebates.is_rebate=TRUE 
+                                                            AND prop_penaltyrebates.head_name ILIKE'%Special Rebate%' 
+                                                        THEN prop_penaltyrebates.amount 
+                                                        ELSE 0 END), 0)
+                                    ) AS special_rebate,
 
+                                    SUM(COALESCE((CASE WHEN prop_penaltyrebates.is_rebate=FALSE THEN prop_penaltyrebates.amount 
+                                                ELSE 0 END), 0)
+                                    ) AS total_fine,
+                                    SUM(COALESCE((CASE WHEN prop_penaltyrebates.is_rebate=FALSE 
+                                                            AND prop_penaltyrebates.head_name ILIKE'%Monthly Penalty%' 
+                                                        THEN prop_penaltyrebates.amount 
+                                                        ELSE 0 END), 0)
+                                    ) AS one_percent_penalty,
+                                    SUM(COALESCE((CASE WHEN prop_penaltyrebates.is_rebate=FALSE 
+                                                            AND prop_penaltyrebates.head_name ILIKE'%Late Assessment%' 
+                                                        THEN prop_penaltyrebates.amount 
+                                                        ELSE 0 END), 0)
+                                    ) AS late_assessment_penalty
+                                FROM prop_penaltyrebates
+                                JOIN prop_transactions ON prop_penaltyrebates.tran_id = prop_transactions.id       
+                                WHERE 
+                                    prop_transactions.property_id NOTNULL 
+                                    AND prop_transactions.status IN(1,2)
+                                    AND prop_transactions.tran_date BETWEEN '$fromDate'AND '$uptoDate'
+                                    ".($ulbId?" AND prop_transactions.ulb_id=$ulbId":"")."
+                                GROUP BY prop_transactions.property_id
+                            )fine_rebate
+                            "),function($join){
+                                $join->on("fine_rebate.property_id","prop_properties.id");
+                            }
+                    );
+            if($wardId)
+            {
+                $data = $data->WHERE("ulb_ward_masters.id",$wardId);
+            }
+            if($ulbId)
+            {
+                
+                $data = $data->WHERE("prop_properties.ulb_id",$ulbId);
+            }
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total/$perPage);                
+            $list=[
+                "perPage"=>$perPage,
+                "page"=>$page,
+                "items"=>$items,
+                "total"=>$total,
+                "numberOfPages"=>$numberOfPages
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
     }
 }
