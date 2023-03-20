@@ -17,6 +17,7 @@ use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Concrete\PropertyDeactivate;
 use App\Repository\Property\Interfaces\IPropertyDeactivate;
 use App\Repository\Property\Interfaces\iSafRepository;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -132,7 +133,7 @@ class PropertyDeactivateController extends Controller
             if($refDeactivationReq->pending_status==5)
             {
                 throw new Exception("Deactivation Request Is Already Approved");
-            }
+            }            
             if($refDeactivationReq->current_role!=$role->role_id)
             {
                 throw new Exception("You are not authorised for this action");
@@ -153,7 +154,7 @@ class PropertyDeactivateController extends Controller
             $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
             
             $sms ="Application BackWord To ".$receiverRole["role_name"]??"";
-            if($refDeactivationReq->max_level_attained > $receiverRole["serial_no"]??0)
+            if($refDeactivationReq->max_level_attained < ($receiverRole["serial_no"]??0))
             {
                 $sms ="Application Forward To ".$receiverRole["role_name"]??"";
             }
@@ -196,6 +197,9 @@ class PropertyDeactivateController extends Controller
         ]);
 
         try {
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
             // Check if the Current User is Finisher or Not
             $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId);
             if(!$refDeactivationReq)
@@ -218,6 +222,8 @@ class PropertyDeactivateController extends Controller
                 $verifired = new PropDeactivationRequest();
                 $this->transeferData($verifired,$refDeactivationReq);
                 $verifired->status = 5;
+                $verifired->approve_date = Carbon::now()->formate('Y-m-d');
+                $verifired->approve_by = $user_id;
                 $PropProperty->status=0;
                 $PropProperty->update(); 
                 $msg = "Property Deactivated Successfully !! Holding No " . $PropProperty->holding_no;
@@ -228,6 +234,8 @@ class PropertyDeactivateController extends Controller
                 $verifired = new PropRejectedDeactivationRequest();
                 $this->transeferData($verifired,$refDeactivationReq);
                 $verifired->status = 0;
+                $verifired->approve_date = Carbon::now()->formate('Y-m-d');
+                $verifired->approve_by = $user_id;
                 $msg = "Application Rejected Successfully";
             } 
             $verifired->save();
