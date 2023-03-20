@@ -279,4 +279,13 @@ class PropTransaction extends Model
             ->take(10)
             ->get();
     }
+
+    /**
+     * | 
+     */
+    public function tranDtl($userId, $fromDate, $toDate)
+    {
+        return PropTransaction::where('user_id', $userId)
+            ->whereBetween('tran_date', [$fromDate, $toDate]);
+    }
 }

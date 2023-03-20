@@ -213,6 +213,12 @@ class PropertyController extends Controller
      */
     public function bulkReceipt(Request $req, iSafRepository $safRepo)
     {
+        $req->validate([
+            'fromDate' => 'required|date',
+            'toDate' => 'required|date',
+            'tranType' => 'required|In:Property,Saf',
+            'userId' => 'required|numeric',
+        ]);
         try {
             $fromDate = $req->fromDate;
             $toDate = $req->toDate;
@@ -220,35 +226,36 @@ class PropertyController extends Controller
             $tranType = $req->tranType;
             $mpropTransaction = new PropTransaction();
             $holdingCotroller = new HoldingTaxController($safRepo);
-            $documents = collect();
+            $propReceipts = collect();
+            $receipts = collect();
 
-            $data =  PropTransaction::where('user_id', 1)
-                ->whereBetween('tran_date', ['2020-10-09', '2020-10-10'])
-                ->get();
+            $transaction = $mpropTransaction->tranDtl($userId, $fromDate, $toDate);
+
+            if ($tranType == 'Property')
+                $data = $transaction->whereNotNull('property_id')->get();
+
+            if ($tranType == 'Saf')
+                $data = $transaction->whereNotNull('saf_id')->get();
+
+            if ($data->isEmpty())
+                throw new Exception('No Data Found');
 
             $tranNos = collect($data)->pluck('tran_no');
 
             foreach ($tranNos as $tranNo) {
-
                 $mreq = new Request(
                     ["tranNo" => $tranNo]
                 );
-
                 $data = $holdingCotroller->propPaymentReceipt($mreq);
-
-                $documents->push($data);
+                $propReceipts->push($data);
             }
 
-            // return $documents;
-
-            foreach ($documents as $document) {
-                $a = $document['original'];
+            foreach ($propReceipts as $propReceipt) {
+                $receipt = $propReceipt->original['data'];
+                $receipts->push($receipt);
             }
-            return $a;
 
-
-            $receipts =  $documents->first()->original['data'];
-            $queryRunTime = (collect(DB::getQueryLog($receipts))->sum("time"));
+            $queryRunTime = (collect(DB::getQueryLog($data))->sum("time"));
 
             return responseMsgs(true, 'Bulk Receipt', remove_null($receipts), '010801', '01', $queryRunTime, 'Post', '');
         } catch (Exception $e) {
@@ -285,7 +292,7 @@ class PropertyController extends Controller
             );
             $mPropProperty->editProp($propId, $mreq);
 
-            collect($mOwners)->map(function ($owner) use ($mPropOwners, $propId) {            // Updation of Owner Basic Details
+            collect($mOwners)->map(function ($owner) use ($mPropOwners) {            // Updation of Owner Basic Details
                 if (isset($owner['ownerId'])) {
 
                     $req = new Request([
