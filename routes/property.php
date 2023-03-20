@@ -356,7 +356,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(PropertyController::class)->group(function () {
     Route::post('caretaker-otp', 'caretakerOtp');                             // 01
     Route::post('caretaker-property-tagging', 'caretakerPropertyTag');        // 02
-    Route::post('citizen-holding-saf', 'citizenHoldingSaf');
+    Route::post('citizen-holding-saf', 'citizenHoldingSaf');                  // 03
+
+    Route::post('reports/deactivated-holding', 'deactivatedHolding');
+    Route::post('reports/print-bulk-receipt', 'bulkReceipt');
+    Route::post('basic-edit', 'basicPropertyEdit');
   });
 
   /**

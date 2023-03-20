@@ -358,7 +358,15 @@ class PropProperty extends Model
             'old_prop_id' => $req->old_prop_id,
             'citizen_id' => $req->citizen_id,
             'saf_no' => $req->saf_no,
-            'pt_no' => $req->pt_no
+            'pt_no' => $req->pt_no,
+            'building_name' => $req->building_name,
+            'street_name' => $req->street_name,
+            'location' => $req->location,
+            'landmark' => $req->landmark,
+            'is_gb_saf' => $req->is_gb_saf,
+            'gb_office_name' => $req->gb_office_name,
+            'gb_usage_types' => $req->gb_usage_types,
+            'gb_prop_usage_types' => $req->gb_prop_usage_types,
         ];
         return $reqs;
     }
@@ -460,5 +468,28 @@ class PropProperty extends Model
     {
         return PropProperty::where('cluster_id', $clusterId)
             ->get();
+    }
+
+    /**
+     * | Property Basic Edit
+     */
+    public function editProp($propId, $propDtl)
+    {
+        $property = PropProperty::find($propId);
+        $reqs = [
+            "new_ward_mstr_id" => $propDtl->new_ward_mstr_id,
+            "khata_no" => $propDtl->khata_no,
+            "plot_no" => $propDtl->plot_no,
+            "village_mauja_name" => $propDtl->village_mauja_name,
+            "prop_pin_code" => $propDtl->prop_pin_code,
+            "building_name" => $propDtl->building_name,
+            "street_name" => $propDtl->street_name,
+            "location" => $propDtl->location,
+            "landmark" => $propDtl->landmark,
+            "prop_address" => $propDtl->prop_address,
+            "corr_pin_code" => $propDtl->corr_pin_code,
+            "corr_address" => $propDtl->corr_address
+        ];
+        $property->update($reqs);
     }
 }
