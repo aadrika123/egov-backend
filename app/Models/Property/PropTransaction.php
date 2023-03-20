@@ -128,12 +128,13 @@ class PropTransaction extends Model
     /**
      * | Property Cluster Demand
      */
-    public function postClusterTransactions($req, $demands)
+    public function postClusterTransactions($req, $demands, $tranType = 'Property')
     {
         $propTrans = new PropTransaction();
         $propTrans->cluster_id = $req['id'];
+        $propTrans->cluster_type = $req['clusterType'];
         $propTrans->amount = $req['amount'];
-        $propTrans->tran_type = 'Property';
+        $propTrans->tran_type = $tranType;
         $propTrans->tran_date = $req['todayDate'];
         $propTrans->tran_no = $req['tranNo'];
         $propTrans->payment_mode = $req['paymentMode'];

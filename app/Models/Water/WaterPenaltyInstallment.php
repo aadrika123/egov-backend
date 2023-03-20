@@ -105,4 +105,17 @@ class WaterPenaltyInstallment extends Model
                 'status' => 2
             ]);
     }
+
+    /**
+     * | Deactivate site inspection penalty
+     * | @param 
+     */
+    public function deactivateSitePenalty($applicationId,$siteInspection)
+    {
+        WaterPenaltyInstallment::where('apply_connection_id', $applicationId)
+        ->where('payment_from',$siteInspection)
+        ->update([
+            'status' => false
+        ]);
+    }
 }

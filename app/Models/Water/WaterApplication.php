@@ -208,7 +208,7 @@ class WaterApplication extends Model
      * | @param request
      * | @param consumerNo
      */
-    public function finalApproval($request, $consumerNo)
+    public function finalApproval($request, $consumerNo, $refJe)
     {
         $mWaterSiteInspection = new WaterSiteInspection();
         $approvedWater = WaterApplication::query()
@@ -231,6 +231,7 @@ class WaterApplication extends Model
 
         $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
             ->where('payment_status', 1)
+            ->where('order_officer', $refJe)
             ->first();
         if (isset($siteDetails)) {
             $approvedWaterRep = [

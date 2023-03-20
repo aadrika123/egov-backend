@@ -1041,7 +1041,8 @@ class HoldingTaxController extends Controller
                 'todayDate' => $todayDate->format('Y-m-d'),
                 'tranNo' => $tranNo,
                 'amount' => $payableAmount,
-                'tranBy' => $tranBy
+                'tranBy' => $tranBy,
+                'clusterType' => "Property"
             ]);
 
             DB::beginTransaction();
