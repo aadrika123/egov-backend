@@ -299,8 +299,9 @@ class SafCalculation
 
             $readConstructionType = $readfloor['constructionType'];
             $col2 = Config::get("PropertyConstaint.CIRCALE-RATE-PROP.$this->_effectiveDateRule3.$readConstructionType");
+            if ($this->_propertyDetails['propertyType'] == 3)
+                $col2 = '_apt';
             $column = $col1 . $col2 . $col3;
-
             $capitalValueRate = json_decode(Redis::get('propMCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-col-' . $column));
             if (!$capitalValueRate) {
                 $capitalValueRate = MPropCvRate::select($column)

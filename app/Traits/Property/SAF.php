@@ -283,7 +283,7 @@ trait SAF
         $filtered = collect($collection)->map(function ($value) {
             return collect($value)->only([
                 'qtr', 'holdingTax', 'waterTax', 'educationTax',
-                'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv', 'rwhPenalty', 'onePercPenaltyTax', 'ruleSet'
+                'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv', 'rwhPenalty', 'onePercPenalty', 'onePercPenaltyTax', 'ruleSet'
             ]);
         });
 
@@ -297,6 +297,7 @@ trait SAF
                     'qtr' => $collection->first()['qtr'],
                     'dueDate' => $collection->first()['dueDate'],
                     'rwhPenalty' => roundFigure($collection->sum('rwhPenalty')),
+                    'onePercPenalty' => roundFigure($collection->sum('onePercPenalty')),
                     'onePercPenaltyTax' => roundFigure($collection->sum('onePercPenaltyTax')),
                     'arv' => roundFigure($collection->sum('arv')),
                     'holdingTax' => roundFigure($collection->sum('holdingTax')),
