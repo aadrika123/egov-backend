@@ -1895,7 +1895,6 @@ class NewConnectionController extends Controller
                 'applicationId' => 'required',
             ]);
             $mWaterSiteInspection = new WaterSiteInspection();
-            $mWaterApplication = new WaterApplication();
             $this->onlineSitePreConditionCheck($request);
             $mWaterSiteInspection->saveOnlineSiteDetails($request);
             return responseMsgs(true, "Technical Inspection Completed!", "", "", "01", ".ms", "POST", $request->deviceId);
@@ -1909,7 +1908,7 @@ class NewConnectionController extends Controller
      * | pre conditional Check for the AE online Site inspection
      * | @param
      * | @var mWfRoleUser
-     * | 
+        | Not Working 
      */
     public function onlineSitePreConditionCheck($request)
     {
@@ -1935,7 +1934,10 @@ class NewConnectionController extends Controller
     /**
      * | Get Site Inspection Details done by Je
      * | Details Filled by JE
-     * | @param
+     * | @param request
+     * | @var 
+     * | @return 
+        | Working
      */
     public function getJeSiteDetails(Request $request)
     {
@@ -1943,17 +1945,19 @@ class NewConnectionController extends Controller
             $request->validate([
                 'applicationId' => 'required',
             ]);
+            $returnData['final_verify'] = false;
             $mWaterSiteInspection = new WaterSiteInspection();
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $refJe = Config::get("waterConstaint.ROLE-LABEL.JE");
             $sheduleDate = $mWaterSiteInspectionsScheduling->getInspectionData($request->applicationId)->first();
             if ($sheduleDate->site_verify_status == true) {
+                $returnData['final_verify'] = true;
                 $returnData = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                     ->where('order_officer', $refJe)
                     ->first();
                 return responseMsgs(true, "JE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
             }
-            throw new Exception("Data not Found!");
+            return responseMsgs(true, "Dat not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
