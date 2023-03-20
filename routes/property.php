@@ -333,7 +333,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('generate-prop-orderid', 'generateOrderId');                      // (03) Generate Property Order ID
     Route::post('offline-payment-holding', 'paymentHolding');                     // (04) Payment Holding
     Route::post('prop/get-cluster-holding-due', 'getClusterHoldingDues');                     // (11) Property Cluster Dues
-
+    Route::post('prop/cluster-payment', 'clusterPayment');                        // (12) Cluster Payment
   });
 
   /**
@@ -380,6 +380,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('gbsaf/get-doc-list', 'getDocList');
     Route::post('gbsaf/doc-verify-reject', 'docVerifyReject');
     Route::post('gbsaf/independent-comment', 'commentIndependent');
+    Route::post('gbsaf/details', 'gbSafDetails');
   });
 });
 
@@ -452,4 +453,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');
     Route::post('reports/property/holding-wise-fine-rebate', 'PropFineRebate');
   });
+});
+
+/**
+    | Test Purpose
+    | map locating 
+ */
+Route::controller(PropertyController::class)->group(function () {
+  Route::post('getpropLatLong', 'getpropLatLong');                             // 01
 });

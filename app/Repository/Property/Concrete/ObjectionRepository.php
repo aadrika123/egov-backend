@@ -293,7 +293,6 @@ class ObjectionRepository implements iObjectionRepository
                 }
                 $floor = $floorData;
                 $floor = collect($floor);
-                $floorId = $assesmentData['floor'];
                 foreach ($floor as $floors) {
                     if ($floors instanceof stdClass) {
                         $floors = (array)$floors;
@@ -344,10 +343,11 @@ class ObjectionRepository implements iObjectionRepository
             'prop_type_mstr_id'
         )
             ->where('prop_properties.id', $request->propId)
-            ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
-            ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
-            ->join('ref_prop_road_types', 'ref_prop_road_types.id', '=', 'prop_properties.road_type_mstr_id')
+            ->leftjoin('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
+            ->leftjoin('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
+            ->leftjoin('ref_prop_road_types', 'ref_prop_road_types.id', '=', 'prop_properties.road_type_mstr_id')
             ->get();
+
         foreach ($assesmentDetails as $assesmentDetailss) {
             $assesmentDetailss['floor'] = PropProperty::select(
                 'ref_prop_floors.floor_name as floorNo',

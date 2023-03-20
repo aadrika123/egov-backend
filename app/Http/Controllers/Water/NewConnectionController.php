@@ -159,7 +159,13 @@ class NewConnectionController extends Controller
      * |--------------------------------------------- Water workflow -----------------------------------------------|
      */
 
-    // Water Inbox
+    /**
+     * | Water Inbox
+     * | workflow
+     * | Repositiory Call
+        | Serial No :
+        | Working
+     */
     public function waterInbox()
     {
         try {
@@ -169,7 +175,13 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Water Outbox
+    /**
+     * | Water Outbox
+     * | Workflow
+     * | Reposotory Call
+        | Serial No :
+        | Working
+     */
     public function waterOutbox()
     {
         try {
@@ -179,7 +191,24 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Back to citizen Inbox
+    /**
+     * | Back to citizen Inbox
+     * | Workflow
+     * | @param req
+     * | @var mWfWardUser
+     * | @var userId
+     * | @var ulbId
+     * | @var mDeviceId
+     * | @var workflowRoles
+     * | @var roleId
+     * | @var refWard
+     * | @var wardId
+     * | @var waterList
+     * | @var filterWaterList
+     * | @return filterWaterList 
+        | Serial No : 
+        | Use
+     */
     public function btcInbox(Request $req)
     {
         try {
@@ -316,8 +345,11 @@ class NewConnectionController extends Controller
                 'applicationId' => 'required',
                 'senderRoleId' => 'nullable|integer'
             ]);
+            DB::beginTransaction();
             return $this->newConnection->commentIndependent($request);
+            DB::commit();
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -390,6 +422,7 @@ class NewConnectionController extends Controller
     // Field Verification of water Applications // Recheck
     /**
         | Recheck
+        | Not Used
      */
     public function fieldVerification(reqSiteVerification $request)
     {
@@ -480,7 +513,7 @@ class NewConnectionController extends Controller
             if (!$applicantDetals) {
                 throw new Exception("Relted Data or Owner not found!");
             }
-            if ($applicantDetals->payment_status == true) {
+            if ($applicantDetals->payment_status == 1) {
                 throw new Exception("Your paymnet is done application Cannot be Deleted!");
             }
             if ($applicantDetals->user_id == $userId) {
@@ -570,7 +603,7 @@ class NewConnectionController extends Controller
                 if ($refApplication->user_id != authUser()->id) {
                     throw new Exception("You are not the Autherised Person!");
                 }
-                if ($refApplication->payment_status == true) {
+                if ($refApplication->payment_status == 1) {
                     throw new Exception("Payment has been made Water Cannot be Modified!");
                 }
                 break;
@@ -649,7 +682,7 @@ class NewConnectionController extends Controller
 
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
-                ->where('paid_status', false)
+                ->where('paid_status', 0)
                 ->first();
             if ($charges) {
                 $calculation['calculation'] = [
@@ -777,7 +810,7 @@ class NewConnectionController extends Controller
         $mWaterApplication = new WaterApplication();
         $waterRoles = $this->_waterRoles;
         $mWaterApplication->activateUploadStatus($req->applicationId);
-        if ($application->payment_status == true) {
+        if ($application->payment_status == 1) {
             $mWaterApplication->updateCurrentRoleForDa($$req->applicationId, $waterRoles);
         }
     }
@@ -874,31 +907,34 @@ class NewConnectionController extends Controller
                 array_push($requiedDocs, $doc);
             }
             foreach ($refOwneres as $key => $val) {
-                $doc = (array) null;
-                $testOwnersDoc[] = (array) null;
-                $doc["ownerId"] = $val->id;
-                $doc["ownerName"] = $val->applicant_name;
-                $doc["docName"]   = "ID Proof";
-                $doc['isMadatory'] = 1;
-                $ref['docValue'] = $refWaterNewConnection->getDocumentList(["ID_PROOF","CONSUMER_PHOTO"]);   #"CONSUMER_PHOTO"
-                $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
-                    $refDoc = $value['doc_name'];
-                    $refText = str_replace('_', ' ', $refDoc);
-                    $value['dispayName'] = ucwords(strtolower($refText));
-                    return $value;
-                });
-                $refdocForId = collect($ref['docValue'])->map(function ($value, $key) {
-                    return $value['doc_name'];
-                });
-                $doc['uploadDoc'] = [];
-                $uploadDoc = $refWfActiveDocument->getOwnerDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $refdocForId, $doc["ownerId"]); # Check Document is Uploaded Of That Type
-                if (isset($uploadDoc->first()->doc_path)) {
-                    $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
-                    $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
-                    $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()->doc_code;
-                    $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()->verify_status;
+                $docRefList = ["CONSUMER_PHOTO", "ID_PROOF"];
+                foreach ($docRefList as $key => $refOwnerDoc) {
+                    $doc = (array) null;
+                    $testOwnersDoc[] = (array) null;
+                    $doc["ownerId"] = $val->id;
+                    $doc["ownerName"] = $val->applicant_name;
+                    $doc["docName"]   = $refOwnerDoc;
+                    $doc['isMadatory'] = 1;
+                    $ref['docValue'] = $refWaterNewConnection->getDocumentList([$refOwnerDoc]);   #"CONSUMER_PHOTO"
+                    $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
+                        $refDoc = $value['doc_name'];
+                        $refText = str_replace('_', ' ', $refDoc);
+                        $value['dispayName'] = ucwords(strtolower($refText));
+                        return $value;
+                    });
+                    $refdocForId = collect($ref['docValue'])->map(function ($value, $key) {
+                        return $value['doc_name'];
+                    });
+                    $doc['uploadDoc'] = [];
+                    $uploadDoc = $refWfActiveDocument->getOwnerDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $refdocForId, $doc["ownerId"]); # Check Document is Uploaded Of That Type
+                    if (isset($uploadDoc->first()->doc_path)) {
+                        $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
+                        $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
+                        $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()->doc_code;
+                        $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()->verify_status;
+                    }
+                    array_push($testOwnersDoc, $doc);
                 }
-                array_push($testOwnersDoc, $doc);
             }
             $ownerDoc = collect($testOwnersDoc)->filter()->values();
 
@@ -1058,7 +1094,6 @@ class NewConnectionController extends Controller
         $req->validate([
             'applicationId' => 'required|numeric'
         ]);
-
         try {
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
@@ -1162,7 +1197,7 @@ class NewConnectionController extends Controller
         $moduleId = Config::get('module-constants.WATER_MODULE_ID');
 
         $type   = ["METER_BILL", "ADDRESS_PROOF", "OTHER"];
-        if (in_array($application->connection_through_id, [1, 2]))      // Holding No, SAF No
+        if (in_array($application->connection_through, [1, 2]))      // Holding No, SAF No
         {
             $type[] = "HOLDING_PROOF";
         }
@@ -1274,7 +1309,7 @@ class NewConnectionController extends Controller
             }
             return responseMsgs(true, "Water Consumer Data According To Parameter!", $waterReturnDetails, "", "01", "652 ms", "POST", "");
         } catch (Exception $e) {
-            return responseMsg(true, $e->getMessage(), "");
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -1455,7 +1490,7 @@ class NewConnectionController extends Controller
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
                 ->firstOrFail();
 
-            if ($charges['paid_status'] == false) {
+            if ($charges['paid_status'] == 0) {
                 $calculation['calculation'] = [
                     'connectionFee' => $charges['conn_fee'],
                     'penalty' => $charges['penalty'],
@@ -1568,7 +1603,7 @@ class NewConnectionController extends Controller
     {
         # Connection Charges
         $chargePaymentList = collect($charges)->map(function ($value1) {
-            if ($value1['paid_status'] == false) {
+            if ($value1['paid_status'] == 0) {
                 return false;
             }
             return true;
@@ -1804,6 +1839,59 @@ class NewConnectionController extends Controller
             throw new Exception("Invalid data!");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
+        }
+    }
+
+
+    /**
+     * | Online site Inspection 
+     * | Assistent Enginer site detail Entry
+     * | @param request
+     * | @var 
+     * | @return 
+        | Not Working
+        | Make the concept clear
+        | opration shoul be adding new record
+     */
+    public function onlineSiteInspection(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicationId' => 'required',
+            ]);
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $mWaterApplication = new WaterApplication();
+            $this->onlineSitePreConditionCheck($request);
+            $mWaterSiteInspection->saveOnlineSiteDetails($request);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Check the Pre Site inspection Details 
+     * | pre conditional Check for the AE online Site inspection
+     * | @param
+     * | @var mWfRoleUser
+     * | 
+     */
+    public function onlineSitePreConditionCheck($request)
+    {
+        $mWfRoleUser = new WfRoleusermap();
+        $refApplication = WaterApplication::findOrFail($request->applicationId);
+        $WaterRoles = Config::get('waterConstaint.ROLE-LABEL');
+        $workflowId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
+        $metaReqs =  new Request([
+            'userId'        => authUser()->id,
+            'workflowId'    => $workflowId
+        ]);
+        $readRoles = $mWfRoleUser->getRoleByUserWfId($metaReqs);                      // Model to () get Role By User Id
+
+        if ($refApplication['current_role'] != $WaterRoles['AE']) {
+            throw new Exception("Application is not Under the Assistent Engineer!");
+        }
+        if ($readRoles->wf_role_id != $WaterRoles['AE']) {
+            throw new Exception("you Are Not Autherised for the process!");
         }
     }
 }

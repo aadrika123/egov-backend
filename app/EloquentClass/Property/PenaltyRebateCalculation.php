@@ -2,7 +2,9 @@
 
 namespace App\EloquentClass\Property;
 
+use App\Models\Property\PropActiveSafsOwner;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Config;
 
 /**
@@ -14,6 +16,14 @@ use Illuminate\Support\Facades\Config;
 
 class PenaltyRebateCalculation
 {
+    public $_todayDate;
+    public $_currentQuarter;
+
+    public function __construct()
+    {
+        $this->_todayDate = Carbon::now();
+        $this->_currentQuarter = calculateQtr($this->_todayDate->format('Y-m-d'));
+    }
     /**
      * | One Percent Penalty Calculation
      * | @param quarterDueDate The floor/Property Due Date

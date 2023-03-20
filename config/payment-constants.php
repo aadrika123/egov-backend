@@ -21,6 +21,13 @@ return [
         'DD',
         'NEFT'
     ],
+
+    "VERIFICATION_PAYMENT_MODES" => [           // The Verification payment modes which needs the verification
+        "CHEQUE",
+        "DD"
+    ],
+
+
     'PAYMENT_OFFLINE_MODE_WATER' => [
         'Cash',
         'Cheque',

@@ -106,4 +106,14 @@ class WaterSiteInspection extends Model
             ->where('status', true)
             ->orderByDesc('water_site_inspections.id');
     }
+
+
+    /**
+     * | Update the Online Site Inspection details by AE
+     * | @param request
+     */
+    public function saveOnlineSiteDetails($request)
+    {
+        
+    }
 }

@@ -243,7 +243,8 @@ class HoldingTaxController extends Controller
     public function calcOnePercPenalty($item)
     {
         $penaltyRebateCalc = new PenaltyRebateCalculation;
-        $onePercPenalty = $penaltyRebateCalc->calcOnePercPenalty($item->due_date);        // Calculation One Percent Penalty
+        $dueDate = $item->due_date ?? $item['due_date'];
+        $onePercPenalty = $penaltyRebateCalc->calcOnePercPenalty($dueDate);        // Calculation One Percent Penalty
         $item['onePercPenalty'] = $onePercPenalty;
         $onePercPenaltyTax = ($item['balance'] * $onePercPenalty) / 100;
         $item['onePercPenaltyTax'] = roundFigure($onePercPenaltyTax);
@@ -272,11 +273,9 @@ class HoldingTaxController extends Controller
                 if (!$demandData)
                     throw new Exception("Demand Not Available");
 
-            $dueList = $demandData['duesList'];
             $propDtls = $propProperties->getPropById($req->propId);
             $req->request->add(['workflowId' => '0', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId, 'ghostUserId' => 0]);
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
-            $this->postPaymentPenaltyRebate($dueList, $req);
             return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011603", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011603", "1.0", "", "POST", $req->deviceId ?? "");
@@ -286,9 +285,9 @@ class HoldingTaxController extends Controller
     /**
      * | Post Payment Penalty Rebates(3.1)
      */
-    public function postPaymentPenaltyRebate($dueList, $req)
+    public function postPaymentPenaltyRebate($dueList, $propId = null, $tranId, $clusterId = null)
     {
-        $mPaymentRebatePanelties = new PaymentPropPenaltyrebate();
+        $mPaymentRebatePanelties = new PropPenaltyrebate();
         $rebateList = array();
         $calculatedRebates = $dueList['rebates'];
         $rebatePenalList = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
@@ -311,21 +310,18 @@ class HoldingTaxController extends Controller
         ];
         $headNames = array_merge($headNames, $rebateList);
 
-        collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $req) {
-            $propPayRebatePenalty = $mPaymentRebatePanelties->getRebatePanelties('prop_id', $req->propId, $headName['keyString']);
+        collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $propId, $tranId, $clusterId) {
             if ($headName['value'] > 0) {
                 $reqs = [
-                    'prop_id' => $req->propId,
+                    'tran_id' => $tranId,
+                    'cluster_id' => $clusterId,
+                    'prop_id' => $propId,
                     'head_name' => $headName['keyString'],
                     'amount' => $headName['value'],
                     'is_rebate' => $headName['isRebate'],
                     'tran_date' => Carbon::now()->format('Y-m-d')
                 ];
-
-                if ($propPayRebatePenalty)
-                    $mPaymentRebatePanelties->editRebatePenalty($propPayRebatePenalty->id, $reqs);
-                else
-                    $mPaymentRebatePanelties->postRebatePenalty($reqs);
+                $mPaymentRebatePanelties->postRebatePenalty($reqs);
             }
         });
     }
@@ -339,14 +335,22 @@ class HoldingTaxController extends Controller
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $todayDate = Carbon::now();
             $userId = $req['userId'];
+            $tranBy = 'ONLINE';
             $propDemand = new PropDemand();
             $idGeneration = new IdGeneration;
             $mPropTrans = new PropTransaction();
+            $propId = $req['id'];
 
             $tranNo = $req['transactionNo'];
             if (!$tranNo)
                 $tranNo = $idGeneration->generateTransactionNo();
-            $demands = $propDemand->getDemandByPropId($req['id']);
+            $propCalReq = new Request([
+                'propId' => $req['id']
+            ]);
+            $propCalculation = $this->getHoldingDues($propCalReq);
+
+            $demands = $propCalculation->original['data']['demandList'];
+            $dueList = $propCalculation->original['data']['duesList'];
             if ($demands->isEmpty())
                 throw new Exception("No Dues For this Property");
             // Property Transactions
@@ -354,11 +358,14 @@ class HoldingTaxController extends Controller
                 $userId = auth()->user()->id ?? null;
                 if (!$userId)
                     throw new Exception("User Should Be Logged In");
+                $tranBy = authUser()->user_type;
             }
             $req->merge([
                 'userId' => $userId,
                 'todayDate' => $todayDate->format('Y-m-d'),
-                'tranNo' => $tranNo
+                'tranNo' => $tranNo,
+                'amount' => $dueList['payableAmount'],
+                'tranBy' => $tranBy
             ]);
             DB::beginTransaction();
             $propTrans = $mPropTrans->postPropTransactions($req, $demands);
@@ -373,9 +380,10 @@ class HoldingTaxController extends Controller
 
             // Reflect on Prop Tran Details
             foreach ($demands as $demand) {
-                $demand->balance = 0;
-                $demand->paid_status = 1;           // <-------- Update Demand Paid Status 
-                $demand->save();
+                $propDemand = $propDemand->getDemandById($demand['id']);
+                $propDemand->balance = 0;
+                $propDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $propDemand->save();
 
                 $propTranDtl = new PropTranDtl();
                 $propTranDtl->tran_id = $propTrans['id'];
@@ -386,17 +394,7 @@ class HoldingTaxController extends Controller
             }
 
             // Replication Prop Rebates Penalties
-            $mPropPenalRebates = new PaymentPropPenaltyrebate();
-            $rebatePenalties = $mPropPenalRebates->getPenalRebatesByPropId($req['id']);
-
-            collect($rebatePenalties)->map(function ($rebatePenalty) use ($propTrans, $todayDate) {
-                $replicate = $rebatePenalty->replicate();
-                $replicate->setTable('prop_penaltyrebates');
-                $replicate->tran_id = $propTrans['id'];
-                $replicate->tran_date = $todayDate->format('Y-m-d');
-                $replicate->save();
-            });
-
+            $this->postPaymentPenaltyRebate($dueList, $propId, $propTrans['id']);
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011604", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -948,7 +946,14 @@ class HoldingTaxController extends Controller
 
             $groupedByYear = $collapsedDemand->groupBy('quarteryear');                        // Grouped By Financial Year and Quarter for the Separation of Demand  
 
-            $summedDemand = $groupedByYear->map(function ($item) {                            // Sum of all the Demands of Quarter and Financial Year
+            $summedDemand = $groupedByYear->map(function ($item) use ($penaltyRebateCalc) {                            // Sum of all the Demands of Quarter and Financial Year
+                $quarterDueDate = $item->first()['due_date'];
+                $onePercPenaltyPerc = $penaltyRebateCalc->calcOnePercPenalty($quarterDueDate);
+                $balance = roundFigure($item->sum('balance'));
+
+                $onePercPenaltyTax = ($balance * $onePercPenaltyPerc) / 100;
+                $onePercPenaltyTax = roundFigure($onePercPenaltyTax);
+
                 return [
                     'quarterYear' => $item->first()['quarteryear'],
                     'arv' => roundFigure($item->sum('arv')),
@@ -960,12 +965,12 @@ class HoldingTaxController extends Controller
                     'latrine_tax' => roundFigure($item->sum('latrine_tax')),
                     'additional_tax' => roundFigure($item->sum('additional_tax')),
                     'amount' => roundFigure($item->sum('amount')),
-                    'balance' => roundFigure($item->sum('balance')),
+                    'balance' => $balance,
                     'fyear' => $item->first()['fyear'],
                     'adjust_amt' => roundFigure($item->sum('adjust_amt')),
-                    'due_date' => $item->first()['due_date'],
-                    'onePercPenalty' => roundFigure($item->sum('onePercPenalty')),
-                    'onePercPenaltyTax' => roundFigure($item->sum('onePercPenaltyTax')),
+                    'due_date' => $quarterDueDate,
+                    'onePercPenalty' => $onePercPenaltyPerc,
+                    'onePercPenaltyTax' => $onePercPenaltyTax,
                 ];
             })->values();
 
@@ -990,7 +995,7 @@ class HoldingTaxController extends Controller
                 'onePercPenalty' => $finalOnePerc,
                 'finalAmt' => $finalAmt,
             ];
-            $mLastQuarterDemand = collect($summedDemand)->where('quarterYear', $currentFYear)->sum('balance');
+            $mLastQuarterDemand = collect($summedDemand)->where('fyear', $currentFYear)->sum('balance');
             $finalClusterDemand['duesList'] = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, null, $finalAmt, $finalClusterDemand['duesList']);
             $payableAmount = $finalAmt - ($finalClusterDemand['duesList']['rebateAmt'] + $finalClusterDemand['duesList']['specialRebateAmt']);
             $finalClusterDemand['duesList']['payableAmount'] = round($payableAmount);
@@ -999,6 +1004,81 @@ class HoldingTaxController extends Controller
             return responseMsgs(true, "Generated Demand of the Cluster", remove_null($finalClusterDemand), "011611", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011611", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+
+    /**
+     * | Cluster Property Payments
+     */
+    public function clusterPayment(ReqPayment $req)
+    {
+        try {
+            $dueReq = new Request([
+                'clusterId' => $req->id
+            ]);
+            $clusterId = $req->id;
+            $todayDate = Carbon::now();
+            $idGeneration = new IdGeneration;
+            $mPropTrans = new PropTransaction();
+            $mPropDemand = new PropDemand();
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+
+            $dues = $this->getClusterHoldingDues($dueReq);
+            $dues = $dues->original['data'];
+            $demands = $dues['demandList'];
+            $tranNo = $idGeneration->generateTransactionNo();
+            $payableAmount = $dues['duesList']['payableAmount'];
+            // Property Transactions
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $userId = auth()->user()->id ?? null;
+                if (!$userId)
+                    throw new Exception("User Should Be Logged In");
+                $tranBy = authUser()->user_type;
+            }
+            $req->merge([
+                'userId' => $userId,
+                'todayDate' => $todayDate->format('Y-m-d'),
+                'tranNo' => $tranNo,
+                'amount' => $payableAmount,
+                'tranBy' => $tranBy
+            ]);
+
+            DB::beginTransaction();
+            $propTrans = $mPropTrans->postClusterTransactions($req, $demands);
+
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $req->merge([
+                    'chequeDate' => $req['chequeDate'],
+                    'tranId' => $propTrans['id']
+                ]);
+                $this->postOtherPaymentModes($req);
+            }
+
+            $clusterDemand = $mPropDemand->getDemandsByClusterId($clusterId);
+            if ($clusterDemand->isEmpty())
+                throw new Exception("Demand Not Available");
+            // Reflect on Prop Tran Details
+            foreach ($clusterDemand as $demand) {
+                $propDemand = $mPropDemand->getDemandById($demand['id']);
+                $propDemand->balance = 0;
+                $propDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $propDemand->save();
+
+                $propTranDtl = new PropTranDtl();
+                $propTranDtl->tran_id = $propTrans['id'];
+                $propTranDtl->prop_demand_id = $demand['id'];
+                $propTranDtl->total_demand = $demand['amount'];
+                $propTranDtl->ulb_id = $req['ulbId'];
+                $propTranDtl->save();
+            }
+            // Replication Prop Rebates Penalties
+            $this->postPaymentPenaltyRebate($dues['duesList'], null, $propTrans['id'], $clusterId);
+            DB::commit();
+            return responseMsgs(true, "Payment Successfully Done", "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }

@@ -105,6 +105,12 @@ class CustomDetail extends Model
                 $customDetails->save();
             }
 
+            if ($customFor == 'GBSAF') {
+                $customDetails->ref_type = 'GBSAF';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
             return responseMsg(true, "Successfully Saved", $customDetails);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

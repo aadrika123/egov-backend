@@ -589,9 +589,25 @@ class ConcessionController extends Controller
                 "status" => "required"
             ]);
             // Check if the Current User is Finisher or Not
+            $mWfRoleUsermap = new WfRoleusermap();
+            $mActiveConcession = new PropActiveConcession();
+
+            $activeConcession = $mActiveConcession->getConcessionById($req->applicationId);
+            $propOwners = PropOwner::where('id', $activeConcession->prop_owner_id)
+                ->first();
+            $userId = authUser()->id;
             $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
-            if ($refGetFinisher->role_id != $req->roleId) {
+
+            $workflowId = $activeConcession->workflow_id;
+            $getRoleReq = new Request([                                                 // make request to get role id of the user
+                'userId' => $userId,
+                'workflowId' => $workflowId
+            ]);
+            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            $roleId = $readRoleDtls->wf_role_id;
+
+            if ($refGetFinisher->role_id != $roleId) {
                 return responseMsg(false, "Forbidden Access", "");
             }
             DB::beginTransaction();
@@ -599,12 +615,6 @@ class ConcessionController extends Controller
             // Approval
             if ($req->status == 1) {
                 // Concession Application replication
-                $activeConcession = PropActiveConcession::query()
-                    ->where('id', $req->applicationId)
-                    ->first();
-
-                $propOwners = PropOwner::where('id', $activeConcession->prop_owner_id)
-                    ->first();
 
                 $approvedConcession = $activeConcession->replicate();
                 $approvedConcession->setTable('prop_concessions');

@@ -66,12 +66,12 @@ class WaterApplication extends Model
             case ('Citizen'):
                 $saveNewApplication->apply_from = "Online";
                 if ($newConnectionCharges['conn_fee_charge']['amount'] == 0) {
-                    $saveNewApplication->payment_status = true;
+                    $saveNewApplication->payment_status = 1;
                 }
                 break;
             case ('JSK'):
                 if ($newConnectionCharges['conn_fee_charge']['amount'] == 0) {
-                    $saveNewApplication->payment_status = true;
+                    $saveNewApplication->payment_status = 1;
                 }
                 break;
             default: # Check
@@ -240,6 +240,7 @@ class WaterApplication extends Model
                 'property_type_id'      => $siteDetails['property_type_id'],
                 'category'              => $siteDetails['category'],
                 'area_sqft'             => $siteDetails['area_sqft'],
+                'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
             ];
         }
 
@@ -353,7 +354,7 @@ class WaterApplication extends Model
             case (false):
                 WaterApplication::where('id', $applicationId)
                     ->update([
-                        'payment_status' => false,
+                        'payment_status' => 0,
                         'is_field_verified' => true
                     ]);
                 break;
@@ -361,7 +362,7 @@ class WaterApplication extends Model
             case (true):
                 WaterApplication::where('id', $applicationId)
                     ->update([
-                        'payment_status' => true,
+                        'payment_status' => 1,
                         'is_field_verified' => true
                     ]);
                 break;

@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActiveCitizen;
+use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Pipelines\SearchHolding;
 use App\Pipelines\SearchPtn;
+use App\Repository\Water\Concrete\WaterNewConnection;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pipeline\Pipeline;
@@ -113,15 +115,25 @@ class PropertyController extends Controller
             $ulbId = $req->ulbId;
             $type = $req->type;
             $mPropSafs = new PropSaf();
+            $mPropActiveSafs = new PropActiveSaf();
             $mPropProperty = new PropProperty();
 
             if ($type == 'holding') {
                 $data = $mPropProperty->getCitizenHoldings($citizenId, $ulbId);
+                $data = collect($data)->map(function ($value) {
+                    if (isset($value['new_holding_no'])) {
+                        return $value;
+                    }
+                })->filter()->values();
                 $msg = 'Citizen Holdings';
             }
 
             if ($type == 'saf') {
                 $data = $mPropSafs->getCitizenSafs($citizenId, $ulbId);
+
+                if ($data->isEmpty())
+                    $data = $mPropActiveSafs->getCitizenSafs($citizenId, $ulbId);
+
                 $msg = 'Citizen Safs';
             }
             if ($type == 'ptn') {
@@ -134,6 +146,36 @@ class PropertyController extends Controller
             return responseMsgs(true, $msg, remove_null($data), '010801', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    /**
+     * | Get the Saf LatLong for map
+     * | Using wardId 
+     * | @param request
+     * | @var 
+     * | @return
+        | For MVP testing
+     */
+    public function getpropLatLong(Request $req)
+    {
+        try {
+            $req->validate([
+                'wardId' => 'required|integer',
+            ]);
+            $mPropSaf = new PropActiveSaf();
+            $refWaterNewConnection  = new WaterNewConnection();
+            $propDetails = $mPropSaf->getpropLatLongDetails($req->wardId);
+            $propDetails = collect($propDetails)->map(function ($value)
+            use ($refWaterNewConnection) {
+                $path = $refWaterNewConnection->readDocumentPath($value['doc_path']);
+                $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
+                return $value;
+            });
+            return responseMsgs(true, "latLong Details", remove_null($propDetails), "", "01", ".ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $req->deviceId);
         }
     }
 }
