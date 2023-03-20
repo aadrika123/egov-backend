@@ -110,9 +110,9 @@ class WaterSiteInspection extends Model
         $mWaterSiteInspection = new WaterSiteInspection();
         $mWaterSiteInspection->water_lock_arng  =   $req->waterLockArng;
         $mWaterSiteInspection->gate_valve       =   $req->gateValve;
-        $mWaterSiteInspection->pipeline_size    =   $req->gateValve;
-        $mWaterSiteInspection->pipe_size        =   $req->gateValve;
-        $mWaterSiteInspection->ferrule_type     =   $req->gateValve;
+        $mWaterSiteInspection->pipeline_size    =   $req->pipelineSize;
+        $mWaterSiteInspection->pipe_size        =   $req->pipeSize;
+        $mWaterSiteInspection->ferrule_type     =   $req->ferruleType;
         $mWaterSiteInspection->save();
     }
 }

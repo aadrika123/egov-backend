@@ -19,6 +19,7 @@ class PropTransaction extends Model
     public function getPropTransactions($id, $key)
     {
         return PropTransaction::where("$key", $id)
+            ->where('status', 1)
             ->get();
     }
 
