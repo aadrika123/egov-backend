@@ -1245,7 +1245,7 @@ class NewConnectionController extends Controller
             $ownerPhoto = $mWfActiveDocument->getWaterOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);
             $ownerDocList['ownerDetails'] = [
                 'ownerId' => $refOwners['id'],
-                'name' => $refOwners['owner_name'],
+                'name' => $refOwners['applicant_name'],
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
                 'uploadedDoc' => $ownerPhoto->doc_path ?? "",
@@ -1770,15 +1770,14 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 'applicationId' => 'required',
-                'inspectionDate' => 'required|date|date_format:d-m-Y',
+                'inspectionDate' => 'required|date|date_format:Y-m-d',
                 'inspectionTime' => 'required|date_format:H:i'
             ]);
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $refDate = Carbon::now();
-            $TodaysDate = date('d-m-Y', strtotime($refDate));
             $this->checkForSaveDateTime($request);
             $mWaterSiteInspectionsScheduling->saveSiteDateTime($request);
-            if ($request->inspectionDate == $TodaysDate) {
+            if ($request->inspectionDate == $refDate) {
                 $canView['canView'] = true;
             } else {
                 $canView['canView'] = false;
