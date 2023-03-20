@@ -106,4 +106,14 @@ class PropSafsDemand extends Model
             ->get();
         return $safDemand;
     }
+
+    /**
+     * | Get Demands by Cluster ID
+     */
+    public function getDemandsByClusterId($clusterId)
+    {
+        return PropSafsDemand::where('cluster_id', $clusterId)
+            ->where('paid_status', 0)
+            ->get();
+    }
 }

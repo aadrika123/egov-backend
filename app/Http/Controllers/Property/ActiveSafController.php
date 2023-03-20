@@ -1403,7 +1403,7 @@ class ActiveSafController extends Controller
     /**
      * | Post Penalty Rebates (14.2)
      */
-    public function postPenaltyRebates($calculateSafById, $safId, $tranId)
+    public function postPenaltyRebates($calculateSafById, $safId, $tranId, $clusterId = null)
     {
         $mPaymentRebatePanelties = new PropPenaltyrebate();
         $calculatedRebates = collect($calculateSafById->original['data']['demand']['rebates']);
@@ -1431,11 +1431,12 @@ class ActiveSafController extends Controller
             ]
         ];
         $headNames = array_merge($headNames, $rebateList);
-        collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $safId, $tranId) {
+        collect($headNames)->map(function ($headName) use ($mPaymentRebatePanelties, $safId, $tranId, $clusterId) {
             if ($headName['value'] > 0) {
                 $reqs = [
                     'tran_id' => $tranId,
                     'saf_id' => $safId,
+                    'cluster_id' => $clusterId,
                     'head_name' => $headName['keyString'],
                     'amount' => $headName['value'],
                     'is_rebate' => $headName['isRebate'],
@@ -1542,7 +1543,7 @@ class ActiveSafController extends Controller
     /**
      * | Post Other Payment Modes for Cheque,DD,Neft
      */
-    public function postOtherPaymentModes($req)
+    public function postOtherPaymentModes($req, $clusterId = null)
     {
         $cash = Config::get('payment-constants.PAYMENT_MODE.3');
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -1556,7 +1557,8 @@ class ActiveSafController extends Controller
                 'cheque_date' => $req['chequeDate'],
                 'bank_name' => $req['bankName'],
                 'branch_name' => $req['branchName'],
-                'cheque_no' => $req['chequeNo']
+                'cheque_no' => $req['chequeNo'],
+                'cluster_id' => $clusterId
             ];
 
             $mPropChequeDtl->postChequeDtl($chequeReqs);
@@ -1575,7 +1577,8 @@ class ActiveSafController extends Controller
             'bank_name' => $req['bankName'],
             'tran_date' => $req['todayDate'],
             'user_id' => $req['userId'],
-            'ulb_id' => $req['ulbId']
+            'ulb_id' => $req['ulbId'],
+            'cluster_id' => $clusterId
         ];
         $mTempTransaction->tempTransaction($tranReqs);
     }
