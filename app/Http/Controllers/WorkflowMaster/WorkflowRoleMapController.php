@@ -5,11 +5,15 @@ namespace App\Http\Controllers\WorkflowMaster;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
+use App\Http\Controllers\Property\GbSafController;
 use App\Http\Controllers\Property\ObjectionController;
 use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Models\User;
+use App\Models\Workflows\WfWorkflow;
 use Illuminate\Http\Request;
 use App\Models\Workflows\WfWorkflowrolemap;
+use App\Pipelines\SearchPtn;
+use App\Pipelines\Waterinbox;
 use App\Repository\Property\Concrete\PropertyDeactivate;
 use App\Repository\Property\Interfaces\iConcessionRepository;
 use App\Repository\Property\Interfaces\iObjectionRepository;
@@ -19,8 +23,8 @@ use App\Repository\Water\Concrete\NewConnectionRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Exception;
 use App\Traits\Workflow\Workflow;
-
-use function PHPUnit\Framework\isNull;
+use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Facades\Config;
 
 /**
  * Created On-14-10-2022 
@@ -31,14 +35,14 @@ class WorkflowRoleMapController extends Controller
 {
     use Workflow;
     //create master
-    private $saf_repository;
-    private $concession;
-    private $objection;
+    private $_safRepository;
+    private $_concession;
+    private $_objection;
     public function __construct(iSafRepository $saf_repository, iConcessionRepository $concession, iObjectionRepository $objection)
     {
-        $this->saf_repository = new ActiveSafController($saf_repository);
-        $this->concession = new ConcessionController($concession);
-        $this->objection = new ObjectionController($objection);
+        $this->_safRepository = new ActiveSafController($saf_repository);
+        $this->_concession = new ConcessionController($concession);
+        $this->_objection = new ObjectionController($objection);
     }
 
     public function createRoleMap(Request $req)
@@ -121,82 +125,148 @@ class WorkflowRoleMapController extends Controller
         try {
             //workflow members
             $mWorkflowMap = new WorkflowMap();
-            $data = $mWorkflowMap->getRoleByWorkflow($req);
-            $a['members'] = collect($data)['original']['data'];
+            $mWfWorkflows = new WfWorkflow();
+
+            $propConcessionMstrId = Config::get('workflow-constants.PROPERTY_CONCESSION_ID');
+            $propclericalObjectionMstrId = Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL');
+            $propassessmentObjectionMstrId = Config::get('workflow-constants.PROPERTY_OBJECTION_ASSESSMENT');
+            $propforgeryObjectionMstrId = Config::get('workflow-constants.PROPERTY_OBJECTION_FORGERY');
+            $propWaterHarvestingMstrId = Config::get('workflow-constants.RAIN_WATER_HARVESTING_ID');
+            $propDeactivationMstrId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_MASTER_ID');
+
+            $propSafMstrId = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            $propReassementMstrId = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
+            $propMutationMstrId = Config::get('workflow-constants.SAF_MUTATION_ID');
+            $propBifurcationtMstrId = Config::get('workflow-constants.SAF_BIFURCATION_ID');
+            $propAmalgamationMstrId = Config::get('workflow-constants.SAF_AMALGAMATION_ID');
+            $propGbNewassementMstrId = Config::get('workflow-constants.GBSAF_NEW_ASSESSMENT');
+            $propGbReassessmentMstrId = Config::get('workflow-constants.GBSAF_REASSESSMENT');
+
+            $waterMstrId = Config::get('workflow-constants.WATER_MASTER_ID');
+            $tradeMstrId = Config::get('workflow-constants.TRADE_MASTER_ID');
+            $baseUrl = Config::get('workflow-constants.baseUrl');
+
+            $role = $mWorkflowMap->getRoleByWorkflow($req);
+            $wfMasters = $mWfWorkflows->getWfDetails($req->workflowId);
+            $wfMstrId =  $wfMasters->wf_master_id;
+
+
+            $data['members'] = collect($role)['original']['data'];
 
             //logged in user role
-            // $role = new WorkflowMap();
             $role = $this->getRole($req);
             if ($role->isEmpty())
                 throw new Exception("You are not authorised");
             $roleId  = collect($role)['wf_role_id'];
 
             //members permission
-            $a['permissions'] = $this->permission($req, $roleId);
+            $data['permissions'] = $this->permission($req, $roleId);
 
             // pseudo users
-            $a['pseudoUsers'] = $this->pseudoUser();
+            $data['pseudoUsers'] = $this->pseudoUser();
+
+            $req->merge([
+                'wf_mstr_id' =>  $wfMstrId,
+                'bearerToken' => $req->bearerToken(),
+            ]);
+            // return $propDtl = app(Pipeline::class)
+            //     ->through([
+            //         WaterInbox::class,
+            //         SearchPtn::class
+            //     ])
+            //     ->thenReturn()
+            //     ->get();
 
             //inbox
-            switch ($req->workflowId) {
+            switch ($wfMstrId) {
 
-                    //Water
-                case (16):
-                    $inbox = new NewConnectionRepository;
-                    $ab = $inbox->waterInbox();
-                    collect($ab)['original']['data'];
-                    $a['inbox'] = collect($ab)['original']['data'];
-                    break;
-
-                    //Concession
-                case (106):
-                    $inbox = $this->concession;
-                    $ab = $inbox->inbox();
-                    $a['inbox'] = collect($ab);
-                    break;
-
-                    //objection for clerical
-                case (169):
-                    $inbox = $this->objection;
+                    // SAF
+                case (in_array(
+                    $wfMstrId,
+                    [
+                        $propSafMstrId, $propReassementMstrId,
+                        $propMutationMstrId, $propBifurcationtMstrId,
+                        $propAmalgamationMstrId
+                    ]
+                )):
+                    $inbox = $this->_safRepository;
                     $ab = $inbox->inbox();
                     collect($ab)['original']['data'];
-                    $a['inbox'] = collect($ab)['original']['data'];
+                    $data['inbox'] = collect($ab)['original']['data'];
                     break;
 
-                    //rain water harvesting
-                case (197):
+                    // GB Saf
+                case (in_array(
+                    $wfMstrId,
+                    [
+                        $propGbNewassementMstrId, $propGbReassessmentMstrId,
+                    ]
+                )):
+                    $inbox = new GbSafController;
+                    $ab = $inbox->inbox();
+                    collect($ab)['original']['data'];
+                    $data['inbox'] = collect($ab)['original']['data'];
+                    break;
+
+                    // Concession
+                case ($propConcessionMstrId):
+                    $inbox = $this->_concession;
+                    $ab = $inbox->inbox();
+                    collect($ab)['original']['data'];
+                    $data['inbox'] = collect($ab)['original']['data'];
+                    break;
+
+                    // Objection
+                case (in_array(
+                    $wfMstrId,
+                    [
+                        $propclericalObjectionMstrId, $propassessmentObjectionMstrId,
+                        $propforgeryObjectionMstrId
+                    ]
+                )):
+                    $inbox = $this->_objection;
+                    $ab = $inbox->inbox();
+                    collect($ab)['original']['data'];
+                    $data['inbox'] = collect($ab)['original']['data'];
+                    break;
+
+                    // Rain water harvesting
+                case ($propWaterHarvestingMstrId):
                     $inbox = new RainWaterHarvestingController;
                     $ab = $inbox->harvestingInbox();
                     collect($ab)['original']['data'];
-                    $a['inbox'] = collect($ab)['original']['data'];
+                    $data['inbox'] = collect($ab)['original']['data'];
                     break;
 
-                    //trade
-                case (10):
-                    $inbox = new Trade();
-                    $ab = $inbox->inbox($req);
-                    collect($ab)['original']['data'];
-                    $a['inbox'] = collect($ab)['original']['data'];
-                    break;
-
-                    //deactivation
-                case (167):
+                    // Property deactivation
+                case ($propDeactivationMstrId):
                     $inbox = new PropertyDeactivate();
                     $ab = $inbox->inbox($req);
                     collect($ab)['original']['data'];
-                    $a['inbox'] = collect($ab)['original']['data'];
+                    $data['inbox'] = collect($ab)['original']['data'];
                     break;
 
-                    //SAF
-                case (3 || 4 || 5 || 182 || 381):
-                    $inbox = $this->saf_repository;
-                    $ab = $inbox->inbox();
+                    // Water
+                case ($waterMstrId):
+                    $inbox = new NewConnectionRepository;
+                    $ab = $inbox->waterInbox();
                     collect($ab)['original']['data'];
-                    $a['inbox'] = collect($ab)['original']['data'];
+                    $data['inbox'] = collect($ab)['original']['data'];
                     break;
+
+                    // Trade
+                case ($tradeMstrId):
+                    $inbox = new Trade();
+                    $ab = $inbox->inbox($req);
+                    collect($ab)['original']['data'];
+                    $data['inbox'] = collect($ab)['original']['data'];
+                    break;
+
+                default:
+                    $data['inbox'] =   "Workflow Not Assigned";
             }
 
-            return responseMsgs(true, "Workflow Information", remove_null($a));
+            return responseMsgs(true, "Workflow Information", remove_null($data));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -210,27 +280,6 @@ class WorkflowRoleMapController extends Controller
             ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
             ->where('wf_workflowrolemaps.wf_role_id', $roleId)
             ->first();
-
-        // switch ($req->workflowId) {
-        //     case (3 || 4 || 5):
-        //         $permission = WfWorkflowrolemap::select('wf_workflowrolemaps.*')
-        //             // ->join('prop_active_safs', 'prop_active_safs.current_role', 'wf_workflowrolemaps.wf_role_id')
-        //             ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
-        //             ->where('wf_workflowrolemaps.wf_role_id', $roleId)
-        //             // ->where('prop_active_safs.id', $req->applicationId)
-        //             ->first();
-        //         break;
-
-        //         //concession
-        //     case (106):
-        //         $permission = WfWorkflowrolemap::select('wf_workflowrolemaps.*')
-        //             ->join('prop_active_concessions', 'prop_active_concessions.current_role', 'wf_workflowrolemaps.wf_role_id')
-        //             ->where('wf_workflowrolemaps.workflow_id', $req->workflowId)
-        //             ->where('wf_workflowrolemaps.wf_role_id', $roleId)
-        //             ->where('prop_active_concessions.id', $req->applicationId)
-        //             ->get();
-        //         break;
-        // }
 
         $data = [
             'allow_full_list' => $permission->allow_full_list,

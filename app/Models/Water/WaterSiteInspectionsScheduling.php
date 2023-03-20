@@ -61,8 +61,20 @@ class WaterSiteInspectionsScheduling extends Model
     {
         $refData = WaterSiteInspectionsScheduling::where('apply_connection_id', $request->applicationId)
             ->where('site_verify_status', 0)
+            ->orderByDesc('id')
             ->first();
         $refData->site_verify_status = true;
         $refData->save();
+    }
+
+     /**
+     * | Get Site inspection Details by ApplicationId
+     * | @param applicationId
+     */
+    public function getInspectionData($applicationId)
+    {
+        return WaterSiteInspectionsScheduling::where('apply_connection_id', $applicationId)
+            ->where('status', true)
+            ->orderByDesc('id');
     }
 }

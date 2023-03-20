@@ -192,12 +192,13 @@ class WorkflowMap implements iWorkflowMapRepository
     //wards in a workflow
     public function getWardsInWorkflow(Request $request)
     {
-        $users = WfWorkflowrolemap::where('workflow_id', $request->workflowId)
+        $users = WfWorkflowrolemap::select('ulb_ward_masters.ward_name', 'ulb_ward_masters.id')
+            ->where('workflow_id', $request->workflowId)
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_workflowrolemaps.wf_role_id')
             ->join('wf_roleusermaps', 'wf_roleusermaps.wf_role_id', '=', 'wf_roles.id')
             ->join('wf_ward_users', 'wf_ward_users.user_id', '=', 'wf_roleusermaps.user_id')
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'wf_ward_users.ward_id')
-            ->get('ulb_ward_masters.ward_name');
+            ->get();
         return responseMsg(true, "Data Retrived", $users);
     }
 
