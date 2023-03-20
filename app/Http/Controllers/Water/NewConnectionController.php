@@ -159,7 +159,13 @@ class NewConnectionController extends Controller
      * |--------------------------------------------- Water workflow -----------------------------------------------|
      */
 
-    // Water Inbox
+    /**
+     * | Water Inbox
+     * | workflow
+     * | Repositiory Call
+        | Serial No :
+        | Working
+     */
     public function waterInbox()
     {
         try {
@@ -169,7 +175,13 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Water Outbox
+    /**
+     * | Water Outbox
+     * | Workflow
+     * | Reposotory Call
+        | Serial No :
+        | Working
+     */
     public function waterOutbox()
     {
         try {
@@ -179,7 +191,24 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Back to citizen Inbox
+    /**
+     * | Back to citizen Inbox
+     * | Workflow
+     * | @param req
+     * | @var mWfWardUser
+     * | @var userId
+     * | @var ulbId
+     * | @var mDeviceId
+     * | @var workflowRoles
+     * | @var roleId
+     * | @var refWard
+     * | @var wardId
+     * | @var waterList
+     * | @var filterWaterList
+     * | @return filterWaterList 
+        | Serial No : 
+        | Use
+     */
     public function btcInbox(Request $req)
     {
         try {
@@ -484,7 +513,7 @@ class NewConnectionController extends Controller
             if (!$applicantDetals) {
                 throw new Exception("Relted Data or Owner not found!");
             }
-            if ($applicantDetals->payment_status == true) {
+            if ($applicantDetals->payment_status == 1) {
                 throw new Exception("Your paymnet is done application Cannot be Deleted!");
             }
             if ($applicantDetals->user_id == $userId) {
@@ -574,7 +603,7 @@ class NewConnectionController extends Controller
                 if ($refApplication->user_id != authUser()->id) {
                     throw new Exception("You are not the Autherised Person!");
                 }
-                if ($refApplication->payment_status == true) {
+                if ($refApplication->payment_status == 1) {
                     throw new Exception("Payment has been made Water Cannot be Modified!");
                 }
                 break;
@@ -653,7 +682,7 @@ class NewConnectionController extends Controller
 
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
-                ->where('paid_status', false)
+                ->where('paid_status', 0)
                 ->first();
             if ($charges) {
                 $calculation['calculation'] = [
@@ -781,7 +810,7 @@ class NewConnectionController extends Controller
         $mWaterApplication = new WaterApplication();
         $waterRoles = $this->_waterRoles;
         $mWaterApplication->activateUploadStatus($req->applicationId);
-        if ($application->payment_status == true) {
+        if ($application->payment_status == 1) {
             $mWaterApplication->updateCurrentRoleForDa($$req->applicationId, $waterRoles);
         }
     }
@@ -1065,7 +1094,6 @@ class NewConnectionController extends Controller
         $req->validate([
             'applicationId' => 'required|numeric'
         ]);
-
         try {
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
@@ -1217,7 +1245,7 @@ class NewConnectionController extends Controller
             $ownerPhoto = $mWfActiveDocument->getWaterOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);
             $ownerDocList['ownerDetails'] = [
                 'ownerId' => $refOwners['id'],
-                'name' => $refOwners['owner_name'],
+                'name' => $refOwners['applicant_name'],
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
                 'uploadedDoc' => $ownerPhoto->doc_path ?? "",
@@ -1281,7 +1309,7 @@ class NewConnectionController extends Controller
             }
             return responseMsgs(true, "Water Consumer Data According To Parameter!", $waterReturnDetails, "", "01", "652 ms", "POST", "");
         } catch (Exception $e) {
-            return responseMsg(true, $e->getMessage(), "");
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -1462,7 +1490,7 @@ class NewConnectionController extends Controller
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
                 ->firstOrFail();
 
-            if ($charges['paid_status'] == false) {
+            if ($charges['paid_status'] == 0) {
                 $calculation['calculation'] = [
                     'connectionFee' => $charges['conn_fee'],
                     'penalty' => $charges['penalty'],
@@ -1575,7 +1603,7 @@ class NewConnectionController extends Controller
     {
         # Connection Charges
         $chargePaymentList = collect($charges)->map(function ($value1) {
-            if ($value1['paid_status'] == false) {
+            if ($value1['paid_status'] == 0) {
                 return false;
             }
             return true;
@@ -1742,15 +1770,14 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 'applicationId' => 'required',
-                'inspectionDate' => 'required|date|date_format:d-m-Y',
+                'inspectionDate' => 'required|date|date_format:Y-m-d',
                 'inspectionTime' => 'required|date_format:H:i'
             ]);
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $refDate = Carbon::now();
-            $TodaysDate = date('d-m-Y', strtotime($refDate));
             $this->checkForSaveDateTime($request);
             $mWaterSiteInspectionsScheduling->saveSiteDateTime($request);
-            if ($request->inspectionDate == $TodaysDate) {
+            if ($request->inspectionDate == $refDate) {
                 $canView['canView'] = true;
             } else {
                 $canView['canView'] = false;

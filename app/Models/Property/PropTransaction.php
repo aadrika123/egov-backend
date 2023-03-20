@@ -126,6 +126,33 @@ class PropTransaction extends Model
     }
 
     /**
+     * | Property Cluster Demand
+     */
+    public function postClusterTransactions($req, $demands)
+    {
+        $propTrans = new PropTransaction();
+        $propTrans->cluster_id = $req['id'];
+        $propTrans->amount = $req['amount'];
+        $propTrans->tran_type = 'Property';
+        $propTrans->tran_date = $req['todayDate'];
+        $propTrans->tran_no = $req['tranNo'];
+        $propTrans->payment_mode = $req['paymentMode'];
+        $propTrans->user_id = $req['userId'];
+        $propTrans->ulb_id = $req['ulbId'];
+        $propTrans->from_fyear = collect($demands)->last()['fyear'];
+        $propTrans->to_fyear = collect($demands)->first()['fyear'];
+        $propTrans->from_qtr = collect($demands)->last()['qtr'];
+        $propTrans->to_qtr = collect($demands)->first()['qtr'];
+        $propTrans->demand_amt = collect($demands)->sum('balance');
+        $propTrans->tran_by_type = $req['tranBy'];
+        $propTrans->save();
+
+        return [
+            'id' => $propTrans->id
+        ];
+    }
+
+    /**
      * | Post Saf Transaction
      */
     public function postSafTransaction($req, $demands)

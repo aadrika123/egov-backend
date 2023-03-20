@@ -41,7 +41,7 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->ts_map                 =   $req->tsMap;
         $saveSiteVerify->order_officer          =   $refRoleDetails;
         $saveSiteVerify->save();
-        
+
         // $saveSiteVerify->scheduled_status       =   $req->scheduledStatus;
         // $saveSiteVerify->water_lock_arng        =   $req->waterLockArng;
         // $saveSiteVerify->gate_valve             =   $req->gateValve;
@@ -112,8 +112,14 @@ class WaterSiteInspection extends Model
      * | Update the Online Site Inspection details by AE
      * | @param request
      */
-    public function saveOnlineSiteDetails($request)
+    public function saveOnlineSiteDetails($req)
     {
-        
+        $mWaterSiteInspection = new WaterSiteInspection();
+        $mWaterSiteInspection->scheduled_status       =   $req->scheduledStatus;
+        $mWaterSiteInspection->water_lock_arng        =   $req->waterLockArng;
+        $mWaterSiteInspection->gate_valve             =   $req->gateValve;
+        $mWaterSiteInspection->payment_status         =   $req->paymentStatus;
+        $mWaterSiteInspection->road_app_fee_id        =   $req->roadAppFeeId;
+        $mWaterSiteInspection->verified_status        =   true;
     }
 }

@@ -10,6 +10,7 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Pipelines\SearchHolding;
 use App\Pipelines\SearchPtn;
+use App\Repository\Water\Concrete\WaterNewConnection;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pipeline\Pipeline;
@@ -164,7 +165,14 @@ class PropertyController extends Controller
                 'wardId' => 'required|integer',
             ]);
             $mPropSaf = new PropActiveSaf();
+            $refWaterNewConnection  = new WaterNewConnection();
             $propDetails = $mPropSaf->getpropLatLongDetails($req->wardId);
+            $propDetails = collect($propDetails)->map(function ($value)
+            use ($refWaterNewConnection) {
+                $path = $refWaterNewConnection->readDocumentPath($value['doc_path']);
+                $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
+                return $value;
+            });
             return responseMsgs(true, "latLong Details", remove_null($propDetails), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $req->deviceId);

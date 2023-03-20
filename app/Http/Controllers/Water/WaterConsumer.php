@@ -13,6 +13,7 @@ use App\Models\Water\WaterConsumerInitialMeter;
 use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterDisconnection;
+use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use App\Repository\Water\Interfaces\IConsumer;
 use Carbon\Carbon;
@@ -355,8 +356,9 @@ class WaterConsumer extends Controller
     /**
      * | Get the Fixed Rate According to the Rate Chart
      * | Only in Case of Meter Connection Type Fixed
-    | Serial No : 
-    | Not Working
+        | Serial No : 
+        | Not Working
+        | find the fixed rate for the fixed charges from the table
      */
     public function getFixedRate($request)
     {
@@ -408,5 +410,63 @@ class WaterConsumer extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
+    }
+
+    /**
+     * | Apply For Deactivation
+     * | Save the details for Deactivation
+     * | @param request
+     * | @var 
+        | Not Working
+        | Serial No : 
+     */
+    public function applyDeactivation(Request $request)
+    {
+        try {
+            $request->validate([
+                'consumerId' => "required|digits_between:1,9223372036854775807",
+            ]);
+
+            $mWaterConsumerDisconnection = new WaterConsumerDisconnection();
+            $this->PreConsumerDeactivationCheck($request);
+            $mWaterConsumerDisconnection->saveDissconnection($request);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Check the condition before appling for deactivation
+     * | @param
+     * | @var 
+        | Not Working
+        | Serial No : 
+        | Recheck
+     */
+    public function PreConsumerDeactivationCheck($request)
+    {
+        $mWaterWaterConsumer = new WaterWaterConsumer();
+        // $m = new ;
+        $refConsumerDetails = $mWaterWaterConsumer->getConsumerDetailById($request->consumerId);
+        if (isset($refConsumerDetails)) {
+            throw new Exception("Consumer Not Exist!");
+        }
+
+        // $mWfRoleUser = new WfRoleusermap();
+        // $refApplication = WaterApplication::findOrFail($request->applicationId);
+        // $WaterRoles = Config::get('waterConstaint.ROLE-LABEL');
+        // $workflowId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
+        // $metaReqs =  new Request([
+        //     'userId'        => authUser()->id,
+        //     'workflowId'    => $workflowId
+        // ]);
+        // $readRoles = $mWfRoleUser->getRoleByUserWfId($metaReqs);                      // Model to () get Role By User Id
+
+        // if ($refApplication['current_role'] != $WaterRoles['AE']) {
+        //     throw new Exception("Application is not Under the Assistent Engineer!");
+        // }
+        // if ($readRoles->wf_role_id != $WaterRoles['AE']) {
+        //     throw new Exception("you Are Not Autherised for the process!");
+        // }
     }
 }

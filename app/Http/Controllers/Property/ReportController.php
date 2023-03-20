@@ -311,4 +311,19 @@ class ReportController extends Controller
         $request->request->add(["metaData" => ["pr8.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->PropWardWiseDCB($request);
     }
+
+    public function PropFineRebate(Request $request)
+    {
+        $request->validate(
+            [
+                "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr9.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->PropFineRebate($request);  
+    }
 }

@@ -125,7 +125,7 @@ class WfActiveDocument extends Model
             ->where('d.active_id', $applicationId)
             ->where('d.workflow_id', $workflowId)
             ->where('d.module_id', $moduleId)
-            ->where('doc_code', ($docCode ? $docCode : 'PHOTOGRAPH'))
+            ->where('doc_code', ($docCode ? $docCode : 'CONSUMER_PHOTO'))
             ->where('owner_dtl_id', $ownerId)
             ->first();
     }

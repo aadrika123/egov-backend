@@ -541,7 +541,7 @@ class NewConnectionRepository implements iNewConnection
         if ($waterDetails->doc_status == false) {
             throw new Exception("Documet is Not verified!");
         }
-        if ($waterDetails->payment_status == false) {
+        if ($waterDetails->payment_status == 0) {
             throw new Exception("Payment Not Done!");
         }
         if ($waterDetails->doc_upload_status == false) {
@@ -815,7 +815,7 @@ class NewConnectionRepository implements iNewConnection
 
         # Save On Workflow Track
         $metaReqs = [
-            'workflowId' => $applicationId->mSafWorkflowId,
+            'workflowId' => $applicationId->workflow_id,
             'moduleId' => $mModuleId,
             'refTableDotId' => "water_applications.id",
             'refTableIdValue' => $applicationId->id,
