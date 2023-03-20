@@ -74,7 +74,7 @@ class WaterSiteInspectionsScheduling extends Model
     public function getInspectionData($applicationId)
     {
         return WaterSiteInspectionsScheduling::where('apply_connection_id', $applicationId)
-            ->where('status', true)
+            ->where('status', 1)
             ->orderByDesc('id');
     }
 }

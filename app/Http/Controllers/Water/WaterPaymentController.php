@@ -656,68 +656,70 @@ class WaterPaymentController extends Controller
         | Serial No : 05
         | Recheck / Not Working
      */
-    public function initiateOnlineDemandPayment(Request $request)
-    {
-        try {
-            $request->validate([
-                'id'                => 'required|digits_between:1,9223372036854775807',
-                'applycationType'   => 'required|string|in:connection,consumer',
-                'fromDate'          => 'nullable|date|format:Y-m-d',
-                'toDate'            => 'nullable|date|format:Y-m-d'
-            ]);
+    // public function initiateOnlineDemandPayment(Request $request)
+    // {
+    //     try {
+    //         $request->validate([
+    //             'id'                => 'required|digits_between:1,9223372036854775807',
+    //             'applycationType'   => 'required|string|in:connection,consumer',
+    //             'fromDate'          => 'nullable|date|format:Y-m-d',
+    //             'toDate'            => 'nullable|date|format:Y-m-d'
+    //         ]);
 
-            $refUser            = Auth()->user();
-            #------------ new connection --------------------
-            DB::beginTransaction();
-            $this->preOnlinePaymentParams($request);
-            if ($request->applycationType == "consumer") {
-                $application = WaterConsumer::find($request->id);
-                if (!$application) {
-                    throw new Exception("Data Not Found!......");
-                }
-                $cahges = $this->getWaterConsumerDemand($application->id);
-                if (!$cahges) {
-                    throw new Exception("No Anny Due Amount!......");
-                }
-                $myRequest = new \Illuminate\Http\Request();
-                $myRequest->setMethod('POST');
-                $myRequest->request->add(['amount' => $cahges->amount]);
-                $myRequest->request->add(['workflowId' => $application->workflow_id]);
-                $myRequest->request->add(['id' => $application->id]);
-                $myRequest->request->add(['departmentId' => 2]);
-                $temp = $this->saveGenerateOrderid($myRequest);
-                $RazorPayRequest = new WaterRazorPayRequest;
-                $RazorPayRequest->related_id   = $application->id;
-                $RazorPayRequest->payment_from = "New Connection";
-                $RazorPayRequest->amount       = $cahges->amount;
-                $RazorPayRequest->demand_from_upto = $cahges->ids;
-                $RazorPayRequest->ip_address   = $request->ip();
-                $RazorPayRequest->order_id        = $temp["orderId"];
-                $RazorPayRequest->department_id = $temp["departmentId"];
-                $RazorPayRequest->save();
-            }
-            #--------------------water Consumer----------------------
-            else {
-            }
-            DB::commit();
-            $temp['name']       = $refUser->user_name;
-            $temp['mobile']     = $refUser->mobile;
-            $temp['email']      = $refUser->email;
-            $temp['userId']     = $refUser->id;
-            $temp['ulbId']      = $refUser->ulb_id;
-            $temp["applycationType"] = $request->applycationType;
-            return responseMsg(true, "", $temp);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
+    //         $refUser            = Auth()->user();
+    //         #------------ new connection --------------------
+    //         DB::beginTransaction();
+    //         $this->preOnlinePaymentParams($request);
+    //         if ($request = 1) {
+    //             $myRequest = new \Illuminate\Http\Request();
+    //             $myRequest->setMethod('POST');
+    //             $myRequest->request->add(['amount' => $cahges->amount]);
+    //             $myRequest->request->add(['workflowId' => $application->workflow_id]);
+    //             $myRequest->request->add(['id' => $application->id]);
+    //             $myRequest->request->add(['departmentId' => 2]);
+    //             $temp = $this->saveGenerateOrderid($myRequest);
+    //             $RazorPayRequest = new WaterRazorPayRequest;
+    //             $RazorPayRequest->related_id   = $application->id;
+    //             $RazorPayRequest->payment_from = "New Connection";
+    //             $RazorPayRequest->amount       = $cahges->amount;
+    //             $RazorPayRequest->demand_from_upto = $cahges->ids;
+    //             $RazorPayRequest->ip_address   = $request->ip();
+    //             $RazorPayRequest->order_id        = $temp["orderId"];
+    //             $RazorPayRequest->department_id = $temp["departmentId"];
+    //             $RazorPayRequest->save();
+    //             #--------------------water Consumer----------------------
+    //         } else {
+    //         }
+    //         DB::commit();
+    //         $temp['name']       = $refUser->user_name;
+    //         $temp['mobile']     = $refUser->mobile;
+    //         $temp['email']      = $refUser->email;
+    //         $temp['userId']     = $refUser->id;
+    //         $temp['ulbId']      = $refUser->ulb_id;
+    //         $temp["applycationType"] = $request->applycationType;
+    //         return responseMsg(true, "", $temp);
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return responseMsg(false, $e->getMessage(), $request->all());
+    //     }
+    // }
 
     /**
      * | 
      */
     public function preOnlinePaymentParams($request)
     {
+        if ($request->applycationType != "consumer") {
+            throw new Exception("Payment is not for consumer!");
+        }
+        $application = WaterConsumer::find($request->id);
+        if (!$application) {
+            throw new Exception("Consumer Not Found!");
+        }
+        $cahges = $this->getWaterConsumerDemand($application->id);
+        if (!$cahges) {
+            throw new Exception("No Anny Due Amount!......");
+        }
     }
 
 
