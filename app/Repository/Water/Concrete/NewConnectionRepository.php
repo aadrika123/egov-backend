@@ -500,6 +500,7 @@ class NewConnectionRepository implements iNewConnection
         # Condition while the final Check
         $mWaterApplication = new WaterApplication();
         $mWaterApplicant = new WaterApplicant();
+        $refJe = Config::get("waterConstaint.ROLE-LABEL.JE");
         $this->preApprovalConditionCheck($request, $roleId);
 
         DB::beginTransaction();
@@ -507,7 +508,7 @@ class NewConnectionRepository implements iNewConnection
         if ($request->status == 1) {
             $now = Carbon::now();
             $consumerNo = 'CON' . $now->getTimeStamp();
-            $consumerId = $mWaterApplication->finalApproval($request, $consumerNo);
+            $consumerId = $mWaterApplication->finalApproval($request, $consumerNo, $refJe);
             $mWaterApplicant->finalApplicantApproval($request, $consumerId);
             $msg = "Application Successfully Approved !!";
         }

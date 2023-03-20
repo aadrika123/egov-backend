@@ -115,11 +115,10 @@ class WaterSiteInspection extends Model
     public function saveOnlineSiteDetails($req)
     {
         $mWaterSiteInspection = new WaterSiteInspection();
-        $mWaterSiteInspection->scheduled_status       =   $req->scheduledStatus;
-        $mWaterSiteInspection->water_lock_arng        =   $req->waterLockArng;
-        $mWaterSiteInspection->gate_valve             =   $req->gateValve;
-        $mWaterSiteInspection->payment_status         =   $req->paymentStatus;
-        $mWaterSiteInspection->road_app_fee_id        =   $req->roadAppFeeId;
-        $mWaterSiteInspection->verified_status        =   true;
+        $mWaterSiteInspection->water_lock_arng  =   $req->waterLockArng;
+        $mWaterSiteInspection->gate_valve       =   $req->gateValve;
+        $mWaterSiteInspection->pipeline_size    =   $req->gateValve;
+        $mWaterSiteInspection->pipe_size        =   $req->gateValve;
+        $mWaterSiteInspection->ferrule_type     =   $req->gateValve;
     }
 }

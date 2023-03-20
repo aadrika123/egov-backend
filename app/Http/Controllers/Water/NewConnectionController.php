@@ -1774,7 +1774,7 @@ class NewConnectionController extends Controller
                 'inspectionTime' => 'required|date_format:H:i'
             ]);
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
-            $refDate = Carbon::now();
+            $refDate = Carbon::now()->format('Y-m-d');
             $this->checkForSaveDateTime($request);
             $mWaterSiteInspectionsScheduling->saveSiteDateTime($request);
             if ($request->inspectionDate == $refDate) {
@@ -1862,6 +1862,7 @@ class NewConnectionController extends Controller
             $mWaterApplication = new WaterApplication();
             $this->onlineSitePreConditionCheck($request);
             $mWaterSiteInspection->saveOnlineSiteDetails($request);
+            return responseMsgs(true, "Technical Inspection Completed!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
