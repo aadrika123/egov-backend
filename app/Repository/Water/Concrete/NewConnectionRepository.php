@@ -377,9 +377,13 @@ class NewConnectionRepository implements iNewConnection
         DB::beginTransaction();
         if ($req->action == 'forward') {
             $this->checkPostCondition($req->senderRoleId, $wfLevels, $waterApplication);            // Check Post Next level condition
+            if ($waterApplication->current_role == $wfLevels['JE']) {
+                $waterApplication->is_field_verified = true;
+            }
             $metaReqs['verificationStatus'] = 1;
             $waterApplication->current_role = $forwardBackwardIds->forward_role_id;
             $waterApplication->last_role_id =  $forwardBackwardIds->forward_role_id;                                      // Update Last Role Id
+
         }
         if ($req->action == 'backward') {
             $waterApplication->current_role = $forwardBackwardIds->backward_role_id;
@@ -906,7 +910,7 @@ class NewConnectionRepository implements iNewConnection
         $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
         $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
-        $waterList = $this->getWaterApplicatioList($workflowIds,$ulbId)
+        $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
             ->where('water_applications.current_role', $roleId)
             ->whereIn('water_applications.ward_id', $wardId)
             ->where('is_field_verified', true)

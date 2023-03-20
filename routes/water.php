@@ -49,6 +49,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('doc-verify-reject', 'docVerifyRejects');                                           // Workflow
         Route::post('upload-document', 'uploadWaterDoc');                                               // Workflow/Citizen
         Route::post('get-upload-documents', 'getUploadDocuments');                                      // Workflow/Citizen  
+
         Route::Post('application/delete', 'deleteWaterApplication');                                    // Citizen     
         Route::post('application/get-by-id', 'getApplicationDetails');                                  // Citizen
         Route::post('citizen/get-doc-list', 'getDocToUpload');                                          // Citizen  

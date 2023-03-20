@@ -464,7 +464,6 @@ class WaterPaymentController extends Controller
             $applicationCharge = $mWaterConnectionCharge->getWaterchargesById($request->applicationId)
                 ->where('charge_category', '!=', $connectionCatagory['SITE_INSPECTON'])
                 ->firstOrFail();
-            $oldChargeAmount = $applicationCharge['amount'];
 
             DB::beginTransaction();
             # Generating Demand for new InspectionData
@@ -475,12 +474,10 @@ class WaterPaymentController extends Controller
                 );
             }
             # Param Value for the new Charges
-            $installment = $newConnectionCharges['installment_amount'];
             $waterFeeId = $newConnectionCharges['water_fee_mstr_id'];
-            $newChargeAmount = $newConnectionCharges['conn_fee_charge']['amount'];
 
             # If the Adjustment Hamper
-            $this->adjustmentInConnection($request, $newConnectionCharges, $installment, $waterDetails, $applicationCharge);
+            $this->adjustmentInConnection($request, $newConnectionCharges, $waterDetails, $applicationCharge);
 
             # Store the site inspection details
             $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId, $waterDetails, $refRoleDetails);
@@ -547,14 +544,13 @@ class WaterPaymentController extends Controller
         | Serial No : 04.02
         | Working
      */
-    public function adjustmentInConnection($request, $newConnectionCharges, $installment, $waterApplicationDetails, $applicationCharge)
+    public function adjustmentInConnection($request, $newConnectionCharges, $waterApplicationDetails, $applicationCharge)
     {
         $applicationId = $request->applicationId;
         $newCharge = $newConnectionCharges['conn_fee_charge']['amount'];
         $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
         $mWaterConnectionCharge = new WaterConnectionCharge();
         $mWaterApplication = new WaterApplication();
-        $mWaterTran = new WaterTran();
         $chargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
         $refInstallment['penalty_head'] = Config::get('waterConstaint.PENALTY_HEAD.1');
 
@@ -720,7 +716,6 @@ class WaterPaymentController extends Controller
      */
     public function preOnlinePaymentParams($request)
     {
-
     }
 
 

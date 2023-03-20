@@ -41,14 +41,6 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->ts_map                 =   $req->tsMap;
         $saveSiteVerify->order_officer          =   $refRoleDetails;
         $saveSiteVerify->save();
-
-        // $saveSiteVerify->scheduled_status       =   $req->scheduledStatus;
-        // $saveSiteVerify->water_lock_arng        =   $req->waterLockArng;
-        // $saveSiteVerify->gate_valve             =   $req->gateValve;
-        // $saveSiteVerify->payment_status         =   $req->paymentStatus;
-        // $saveSiteVerify->road_app_fee_id        =   $req->roadAppFeeId;
-        // $saveSiteVerify->verified_status        =   true;
-
     }
 
 

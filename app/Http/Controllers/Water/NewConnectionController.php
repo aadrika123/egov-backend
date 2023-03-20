@@ -1665,21 +1665,22 @@ class NewConnectionController extends Controller
      */
     public function searchApplicationByParameter(Request $request)
     {
+        $mWaterApplicant = new WaterApplication();
+        $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
+        $mWaterSiteInspection = new WaterSiteInspection();
         $filterBy = Config::get('waterConstaint.FILTER_BY');
         $roleId = Config::get('waterConstaint.ROLE-LABEL.JE');
         $request->validate([
             'filterBy'  => 'required',
             'parameter' => $request->filterBy == $filterBy['APPLICATION'] ? 'required' : 'nullable',
-            'fromDate'  => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:d-m-Y' : 'nullable',
-            'toDate'    => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:d-m-Y' : 'nullable',
+            'fromDate'  => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:Y-m-d' : 'nullable',
+            'toDate'    => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:Y-m-d' : 'nullable',
         ]);
         try {
             $key = $request->filterBy;
             switch ($key) {
                 case ("byApplication"):
                     $refSiteDetails['SiteInspectionDate'] = null;
-                    $mWaterApplicant = new WaterApplication();
-                    $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
                     $refApplication = $mWaterApplicant->getApplicationByNo($request->parameter, $roleId)->get();
                     $returnData = collect($refApplication)->map(function ($value) use ($mWaterSiteInspectionsScheduling) {
                         $refViewSiteDetails['viewSiteDetails'] = false;
@@ -1688,13 +1689,12 @@ class NewConnectionController extends Controller
                             $refViewSiteDetails['viewSiteDetails'] = $this->canViewSiteDetails($refSiteDetails['SiteInspectionDate']);
                             return  collect($value)->merge(collect($refSiteDetails))->merge(collect($refViewSiteDetails));
                         }
+                        $refSiteDetails['SiteInspectionDate'] = $mWaterSiteInspectionsScheduling->getInspectionData($value['id'])->first();
                         return  collect($value)->merge(collect($refSiteDetails))->merge(collect($refViewSiteDetails));
                     });
 
                     break;
                 case ("byDate"):
-                    $mWaterApplicant = new WaterApplication();
-                    $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
                     $refTimeDate = [
                         "refStartTime" => Carbon::parse($request->fromDate)->format('Y-m-d'),
                         "refEndTime" => Carbon::parse($request->toDate)->format('Y-m-d')
@@ -1708,6 +1708,7 @@ class NewConnectionController extends Controller
                                 $refViewSiteDetails['viewSiteDetails'] = $this->canViewSiteDetails($refSiteDetails['SiteInspectionDate']);
                                 return  collect($value)->merge(collect($refSiteDetails))->merge(collect($refViewSiteDetails));
                             }
+                            $refSiteDetails['SiteInspectionDate'] = $mWaterSiteInspectionsScheduling->getInspectionData($value['id'])->first();
                             return  collect($value)->merge(collect($refSiteDetails))->merge(collect($refViewSiteDetails));
                             return $value;
                         }

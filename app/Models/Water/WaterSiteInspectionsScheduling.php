@@ -66,4 +66,15 @@ class WaterSiteInspectionsScheduling extends Model
         $refData->site_verify_status = true;
         $refData->save();
     }
+
+     /**
+     * | Get Site inspection Details by ApplicationId
+     * | @param applicationId
+     */
+    public function getInspectionData($applicationId)
+    {
+        return WaterSiteInspectionsScheduling::where('apply_connection_id', $applicationId)
+            ->where('status', true)
+            ->orderByDesc('id');
+    }
 }
