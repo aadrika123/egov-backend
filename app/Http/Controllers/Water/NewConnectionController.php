@@ -39,6 +39,7 @@ use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\Water\Concrete\NewConnectionRepository;
 use App\Repository\Water\Concrete\WaterNewConnection;
@@ -213,7 +214,7 @@ class NewConnectionController extends Controller
     {
         try {
             $mWfWardUser = new WfWardUser();
-
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
             $mDeviceId = $req->deviceId ?? "";
@@ -227,8 +228,9 @@ class NewConnectionController extends Controller
             $wardId = $refWard->map(function ($value, $key) {
                 return $value->ward_id;
             });
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
-            $waterList = $this->getWaterApplicatioList($ulbId)
+            $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
                 ->whereIn('water_applications.current_role', $roleId)
                 ->whereIn('water_applications.ward_id', $wardId)
                 ->where('parked', true)
@@ -1829,9 +1831,11 @@ class NewConnectionController extends Controller
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $siteInspection = $mWaterSiteInspectionsScheduling->getInspectionById($request->applicationId)->first();
             if (isset($siteInspection)) {
+                $canInspect = $this->checkCanInspect($siteInspection);
                 $returnData = [
                     "inspectionDate" => $siteInspection->inspection_date,
-                    "inspectionTime" => $siteInspection->inspection_time
+                    "inspectionTime" => $siteInspection->inspection_time,
+                    "canInspect"     => $canInspect
                 ];
                 return responseMsgs(true, "Site InspectionDetails!", $returnData, "", "01", ".ms", "POST", "");
             }
@@ -1839,6 +1843,25 @@ class NewConnectionController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
         }
+    }
+
+
+    /**
+     * | Check if the current Application will be Inspected
+     * | Checking the sheduled Date for inspection
+     * | @param
+     * | @var 
+    | Working
+     */
+    public function checkCanInspect($siteInspection)
+    {
+        $refDate = Carbon::now()->format('Y-m-d');
+        if ($siteInspection->inspection_date == $refDate) {
+            $canInspect = true;
+        } else {
+            $canInspect = false;
+        }
+        return $canInspect;
     }
 
 
@@ -1880,7 +1903,7 @@ class NewConnectionController extends Controller
         $mWfRoleUser = new WfRoleusermap();
         $refApplication = WaterApplication::findOrFail($request->applicationId);
         $WaterRoles = Config::get('waterConstaint.ROLE-LABEL');
-        $workflowId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
+        $workflowId = $refApplication->workflow_id;
         $metaReqs =  new Request([
             'userId'        => authUser()->id,
             'workflowId'    => $workflowId

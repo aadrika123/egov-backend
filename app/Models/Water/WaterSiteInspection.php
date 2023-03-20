@@ -120,5 +120,6 @@ class WaterSiteInspection extends Model
         $mWaterSiteInspection->pipeline_size    =   $req->gateValve;
         $mWaterSiteInspection->pipe_size        =   $req->gateValve;
         $mWaterSiteInspection->ferrule_type     =   $req->gateValve;
+        $mWaterSiteInspection->save();
     }
 }

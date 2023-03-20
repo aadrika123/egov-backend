@@ -286,23 +286,17 @@ class NewConnectionRepository implements iNewConnection
      */
     public function waterInbox()
     {
-        $mWfRoleUser = new WfRoleusermap();
-        $mWfWardUser = new WfWardUser();
+        $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
         $userId = auth()->user()->id;
         $ulbId = auth()->user()->ulb_id;
 
-        $readWards = $mWfWardUser->getWardsByUserId($userId);                       // Model () to get Occupied Wards of Current User
-        $occupiedWards = collect($readWards)->map(function ($ward) {
-            return $ward->ward_id;
-        });
+        $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
 
-        $readRoles = $mWfRoleUser->getRoleIdByUserId($userId);                      // Model to () get Role By User Id
-        $roleIds = $readRoles->map(function ($role, $key) {
-            return $role->wf_role_id;
-        });
+        $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+        $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
-        $waterList = $this->getWaterApplicatioList($ulbId,)
-            ->whereIn('water_applications.current_role', $roleIds)
+        $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
+            ->whereIn('water_applications.current_role', $roleId)
             ->whereIn('water_applications.ward_id', $occupiedWards)
             ->where('water_applications.is_escalate', false)
             ->where('water_applications.parked', false)
@@ -329,6 +323,7 @@ class NewConnectionRepository implements iNewConnection
     public function waterOutbox()
     {
         $mWfWardUser = new WfWardUser();
+        $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
         $userId = auth()->user()->id;
         $ulbId = auth()->user()->ulb_id;
 
@@ -342,7 +337,9 @@ class NewConnectionRepository implements iNewConnection
             return $value->ward_id;
         });
 
-        $waterList = $this->getWaterApplicatioList($ulbId)
+        $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+        $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
             ->whereNotIn('water_applications.current_role', $roleId)
             ->whereIn('water_applications.ward_id', $wardId)
             ->orderByDesc('water_applications.id')
@@ -445,6 +442,7 @@ class NewConnectionRepository implements iNewConnection
     public function waterSpecialInbox($request)
     {
         $mWfWardUser = new WfWardUser();
+        $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
         $userId = authUser()->id;
         $ulbId = authUser()->ulb_id;
 
@@ -452,7 +450,11 @@ class NewConnectionRepository implements iNewConnection
         $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
             return $item->ward_id;
         });
-        $waterData = $this->getWaterApplicatioList($ulbId)                              // Repository function to get SAF Details
+
+        $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+        $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+        $waterData = $this->getWaterApplicatioList($workflowIds, $ulbId)                              // Repository function to get SAF Details
             ->where('water_applications.is_escalate', 1)
             ->whereIn('water_applications.ward_id', $wardId)
             ->orderByDesc('water_applications.id')
@@ -892,17 +894,19 @@ class NewConnectionRepository implements iNewConnection
     public function fieldVerifiedInbox($req)
     {
         $mWfWardUser = new WfWardUser();
+        $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
         $userId = auth()->user()->id;
         $ulbId = auth()->user()->ulb_id;
-
-        $roleId = Config::get('waterConstaint.ROLE-LABEL.JE');
 
         $refWard = $mWfWardUser->getWardsByUserId($userId);
         $wardId = $refWard->map(function ($value, $key) {
             return $value->ward_id;
         });
 
-        $waterList = $this->getWaterApplicatioList($ulbId)
+        $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+        $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+        $waterList = $this->getWaterApplicatioList($workflowIds,$ulbId)
             ->where('water_applications.current_role', $roleId)
             ->whereIn('water_applications.ward_id', $wardId)
             ->where('is_field_verified', true)
