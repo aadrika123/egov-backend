@@ -2433,4 +2433,96 @@ class Report implements IReport
             return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
         }
     }
+
+    public function PropDeactedList(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();        
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $wardId = null;
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;                
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;                
+            }
+
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }            
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            } 
+
+            $data = PropProperty::select(DB::RAW("
+                            prop_properties.id,
+                            ulb_ward_masters.ward_name AS ward_no,
+                            CASE WHEN prop_properties.new_holding_no!='' 
+                                THEN prop_properties.new_holding_no 
+                                ELSE prop_properties.holding_no 
+                                END AS holding_no ,
+                            owners_details.owner_name,  
+                            owners_details.mobile_no,
+                            CONCAT(prop_properties.prop_address, 
+                                    ', City - ', prop_properties.prop_city, 
+                                    ', Pin Code - ', prop_properties.prop_pin_code
+                                ) AS address,
+                            prop_deactivation_requests.remarks,
+                            prop_deactivation_requests.documents
+                            ")
+                    )
+                    ->JOIN("ulb_ward_masters","ulb_ward_masters.id","prop_properties.ward_mstr_id")
+                    ->JOIN("prop_deactivation_requests","prop_deactivation_requests.property_id","prop_properties.id")
+                    ->LEFTJOIN(DB::raw("(
+                        SELECT
+                            property_id,
+                            STRING_AGG(owner_name,',')as owner_name,
+                            STRING_AGG(guardian_name,',')as guardian_name,
+                            STRING_AGG(mobile_no::text,',')as mobile_no
+                        FROM view_owners_details
+                        GROUP BY property_id
+                        )owners_details"),function($join){
+                            $join->on("owners_details.property_id","prop_properties.id");
+                        })
+                        ->WHERE("prop_properties.status",0)
+                        ->WHEREBETWEEN("prop_deactivation_requests.approve_date",[$fromDate,$uptoDate]);
+
+            if($wardId)
+            {
+                $data = $data->WHERE("ulb_ward_masters.id",$wardId);
+            }
+            if($ulbId)
+            {
+                
+                $data = $data->WHERE("prop_properties.ulb_id",$ulbId);
+            }
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total/$perPage);                
+            $list=[
+                "perPage"=>$perPage,
+                "page"=>$page,
+                "items"=>$items,
+                "total"=>$total,
+                "numberOfPages"=>$numberOfPages
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
 }

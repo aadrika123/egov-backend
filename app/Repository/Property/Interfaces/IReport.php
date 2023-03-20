@@ -19,4 +19,5 @@ interface IReport
     public function PropDCB(Request $request);
     public function PropWardWiseDCB(Request $request);
     public function PropFineRebate(Request $request);
+    public function PropDeactedList(Request $request);
 }
