@@ -399,6 +399,8 @@ class WaterPaymentController extends Controller
                 "address" => $applicationDetails['address'],
                 "paidFrom" => $connectionCharges['charge_category'],
                 "paidFromQtr" => "",
+                "holdingNo" => $applicationDetails['holding_no'],
+                "safNo" => $applicationDetails['saf_no'],
                 "paidUpto" => "",
                 "paidUptoQtr" => "",
                 "paymentMode" => $transactionDetails['payment_mode'],

@@ -40,6 +40,7 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->inspection_time        =   Carbon::now();
         $saveSiteVerify->ts_map                 =   $req->tsMap;
         $saveSiteVerify->order_officer          =   $refRoleDetails;
+        $saveSiteVerify->pipe_type              =   $req->pipeQuality;
         $saveSiteVerify->save();
     }
 
