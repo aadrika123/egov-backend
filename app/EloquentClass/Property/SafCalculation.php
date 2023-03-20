@@ -8,6 +8,7 @@ use App\Models\Property\MPropCvRate;
 use App\Models\Property\MPropMultiFactor;
 use App\Models\Property\MPropRentalValue;
 use App\Models\Property\MPropVacantRentalrate;
+use App\Models\Property\PropApartmentDtl;
 use App\Models\UlbWardMaster;
 use Carbon\Carbon;
 use Exception;
@@ -158,8 +159,15 @@ class SafCalculation
 
         $this->_rentalValue = $this->readRentalValue();
         $this->_multiFactors = $this->readMultiFactor();                                                            // Calculation of Rental rate and Storing in Global Variable (function 1.1.1)
-        $this->_readRoadType[$this->_effectiveDateRule2] = $this->readRoadType($this->_effectiveDateRule2);         // Road Type ID According to ruleset2 effective Date
-        $this->_readRoadType[$this->_effectiveDateRule3] = $this->readRoadType($this->_effectiveDateRule3);         // Road Type id according to ruleset3 effective Date
+        if ($this->_propertyDetails['propertyType'] == 3) {                                                         // Means the Property is Apartment or Flat
+            $this->getAptRoadType();                                                                                // Function (1.1.5)
+        }
+
+        if ($this->_propertyDetails['propertyType'] != 3) {
+            $this->_readRoadType[$this->_effectiveDateRule2] = $this->readRoadType($this->_effectiveDateRule2);         // Road Type ID According to ruleset2 effective Date
+            $this->_readRoadType[$this->_effectiveDateRule3] = $this->readRoadType($this->_effectiveDateRule3);         // Road Type id according to ruleset3 effective Date
+        }
+
         $this->_rentalRates = $this->calculateRentalRates();
         $this->_capitalValueRate = $this->readCapitalvalueRate();        // Calculate Capital Value Rate 
         if (!$this->_capitalValueRate)
@@ -263,6 +271,25 @@ class SafCalculation
 
         $roadTypeId = $refRoadType->prop_road_typ_id;
         return $roadTypeId;
+    }
+
+    /**
+     * | Get Flat Road Type
+     */
+    public function getAptRoadType()
+    {
+        $ulbId = $this->_propertyDetails['ulbId'];
+        $aptId = $this->_propertyDetails['apartmentId'];
+
+        $aptDtls = json_decode(Redis::get('apt-dtl-ulb-' . $ulbId . '-apt-' . $aptId));
+        if (!$aptDtls) {
+            $mPropApartmentDtls = new PropApartmentDtl();
+            $aptDtls = $mPropApartmentDtls->getAptRoadTypeById($aptId, $ulbId);
+            $this->_redis->set('apt-dtl-ulb-' . $ulbId . '-apt-' . $aptId, json_encode($aptDtls));
+        }
+        $roadTypeId = $aptDtls->road_type_mstr_id;
+        $this->_readRoadType[$this->_effectiveDateRule2] = $roadTypeId;         // Road Type ID According to ruleset2 effective Date
+        $this->_readRoadType[$this->_effectiveDateRule3] = $roadTypeId;         // Road Type id according to ruleset3 effective Date
     }
 
     /**
