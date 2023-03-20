@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
@@ -19,7 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Repository\Property\Interfaces\iSafRepository;
-
+use Carbon\Carbon;
 
 /**
  * | Created On-10-02-2023 
@@ -340,14 +341,92 @@ class ActiveSafControllerV2 extends Controller
     /**
      * | Cluster Demand
      */
-    public function getClusterSafDues(Request $req)
+    public function getClusterSafDues(Request $req, iSafRepository $iSafRepository)
     {
         $req->validate([
             'clusterId' => 'required|integer'
         ]);
 
         try {
-            return responseMsgs(true, "Cluster Saf Demand", "", "011807", "1.0", "", "POST", $req->deviceId ?? "");
+            $todayDate = Carbon::now();
+            $clusterId = $req->clusterId;
+            $mPropActiveSaf = new PropActiveSaf();
+            $penaltyRebateCal = new PenaltyRebateCalculation;
+            $activeSafController = new ActiveSafController($iSafRepository);
+
+            $clusterDemands = array();
+            $finalClusterDemand = array();
+            $clusterDemandList = array();
+            $currentQuarter = calculateQtr($todayDate->format('Y-m-d'));
+            $loggedInUserType = authUser()->user_type;
+            $currentFYear = getFY();
+
+            $clusterSafs = $mPropActiveSaf->getSafsByClusterId($clusterId);
+            if ($clusterSafs->isEmpty())
+                throw new Exception("Safs Not Available");
+
+            foreach ($clusterSafs as $item) {
+                $propIdReq = new Request([
+                    'id' => $item['id']
+                ]);
+                $demandList = $activeSafController->calculateSafBySafId($propIdReq)->original['data'];
+                $safDues['demand'] = $demandList['demand'] ?? [];
+                $safDues['details'] = $demandList['details'] ?? [];
+                array_push($clusterDemandList, $safDues['details']);
+                array_push($clusterDemands, $safDues);
+            }
+            $collapsedDemand = collect($clusterDemandList)->collapse();                       // Clusters Demands Collapsed into One
+            $groupedByYear = $collapsedDemand->groupBy('due_date');                        // Grouped By Financial Year and Quarter for the Separation of Demand  
+            $summedDemand = $groupedByYear->map(function ($item) use ($penaltyRebateCal) {    // Sum of all the Demands of Quarter and Financial Year
+                $quarterDueDate = $item->first()['due_date'];
+                $onePercPenaltyPerc = $penaltyRebateCal->calcOnePercPenalty($quarterDueDate);
+                $balance = roundFigure($item->sum('balance'));
+
+                $onePercPenaltyTax = ($balance * $onePercPenaltyPerc) / 100;
+                $onePercPenaltyTax = roundFigure($onePercPenaltyTax);
+
+                return [
+                    'quarterYear' => $item->first()['qtr']  . "/" . $item->first()['fyear'],
+                    'arv' => roundFigure($item->sum('arv')),
+                    'qtr' => $item->first()['qtr'],
+                    'holding_tax' => roundFigure($item->sum('holding_tax')),
+                    'water_tax' => roundFigure($item->sum('water_tax')),
+                    'education_cess' => roundFigure($item->sum('education_cess')),
+                    'health_cess' => roundFigure($item->sum('health_cess')),
+                    'latrine_tax' => roundFigure($item->sum('latrine_tax')),
+                    'additional_tax' => roundFigure($item->sum('additional_tax')),
+                    'amount' => roundFigure($item->sum('amount')),
+                    'balance' => $balance,
+                    'fyear' => $item->first()['fyear'],
+                    'adjust_amt' => roundFigure($item->sum('adjust_amt')),
+                    'due_date' => $quarterDueDate,
+                    'onePercPenalty' => $onePercPenaltyPerc,
+                    'onePercPenaltyTax' => $onePercPenaltyTax,
+                ];
+            })->values();
+            $finalDues = collect($summedDemand)->sum('balance');
+            $finalDues = roundFigure($finalDues);
+
+            $finalOnePerc = collect($summedDemand)->sum('onePercPenaltyTax');
+            $finalOnePerc = roundFigure($finalOnePerc);
+            $finalAmt = $finalDues + $finalOnePerc;
+            $duesFrom = collect($clusterDemands)->first()['demand']['duesFrom'] ?? collect($clusterDemands)->last()['demand']['duesFrom'];
+            $duesTo = collect($clusterDemands)->first()['demand']['duesTo'] ?? collect($clusterDemands)->last()['demand']['duesTo'];
+
+            $finalClusterDemand['demand'] = [
+                'duesFrom' => $duesFrom,
+                'duesTo' => $duesTo,
+                'totalDues' => $finalDues,
+                'onePercPenalty' => $finalOnePerc,
+                'finalAmt' => $finalAmt,
+            ];
+            $mLastQuarterDemand = collect($summedDemand)->where('fyear', $currentFYear)->sum('balance');
+            $finalClusterDemand['demand'] = $penaltyRebateCal->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, null, $finalAmt, $finalClusterDemand['demand']);
+            $payableAmount = $finalAmt - ($finalClusterDemand['demand']['rebateAmt'] + $finalClusterDemand['demand']['specialRebateAmt']);
+            $finalClusterDemand['demand']['payableAmount'] = round($payableAmount);
+
+            $finalClusterDemand['details'] = $summedDemand;
+            return responseMsgs(true, "Cluster Saf Demand", remove_null($finalClusterDemand), "011807", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011807", "1.0", "", "POST", $req->deviceId ?? "");
         }

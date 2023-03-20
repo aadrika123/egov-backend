@@ -474,6 +474,15 @@ class PropActiveSaf extends Model
     }
 
     /**
+     * | get Safs By Cluster Id
+     */
+    public function getSafsByClusterId($clusterId)
+    {
+        return PropActiveSaf::where('cluster_id', $clusterId)
+            ->get();
+    }
+
+    /**
      * | Edit citizen safs
      */
     public function safEdit($req, $mPropActiveSaf, $citizenId)
