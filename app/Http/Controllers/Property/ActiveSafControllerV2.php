@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Property;
 
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Property\ReqPayment;
+use App\MicroServices\IdGeneration;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
@@ -12,6 +14,8 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
+use App\Models\Property\PropTranDtl;
+use App\Models\Property\PropTransaction;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflowrolemap;
@@ -339,7 +343,7 @@ class ActiveSafControllerV2 extends Controller
 
 
     /**
-     * | Cluster Demand
+     * | Cluster Demand for Saf
      */
     public function getClusterSafDues(Request $req, iSafRepository $iSafRepository)
     {
@@ -375,6 +379,10 @@ class ActiveSafControllerV2 extends Controller
                 array_push($clusterDemandList, $safDues['details']);
                 array_push($clusterDemands, $safDues);
             }
+            $totalLateAssessmentPenalty = collect($clusterDemands)->map(function ($item) {      // Total Collective Late Assessment Penalty
+                return $item['demand']['lateAssessmentPenalty'];
+            })->sum();
+
             $collapsedDemand = collect($clusterDemandList)->collapse();                       // Clusters Demands Collapsed into One
             $groupedByYear = $collapsedDemand->groupBy('due_date');                        // Grouped By Financial Year and Quarter for the Separation of Demand  
             $summedDemand = $groupedByYear->map(function ($item) use ($penaltyRebateCal) {    // Sum of all the Demands of Quarter and Financial Year
@@ -409,7 +417,7 @@ class ActiveSafControllerV2 extends Controller
 
             $finalOnePerc = collect($summedDemand)->sum('onePercPenaltyTax');
             $finalOnePerc = roundFigure($finalOnePerc);
-            $finalAmt = $finalDues + $finalOnePerc;
+            $finalAmt = $finalDues + $finalOnePerc + $totalLateAssessmentPenalty;
             $duesFrom = collect($clusterDemands)->first()['demand']['duesFrom'] ?? collect($clusterDemands)->last()['demand']['duesFrom'];
             $duesTo = collect($clusterDemands)->first()['demand']['duesTo'] ?? collect($clusterDemands)->last()['demand']['duesTo'];
 
@@ -417,7 +425,8 @@ class ActiveSafControllerV2 extends Controller
                 'duesFrom' => $duesFrom,
                 'duesTo' => $duesTo,
                 'totalDues' => $finalDues,
-                'onePercPenalty' => $finalOnePerc,
+                'totalOnePercPenalty' => $finalOnePerc,
+                'lateAssessmentPenalty' => $totalLateAssessmentPenalty,
                 'finalAmt' => $finalAmt,
             ];
             $mLastQuarterDemand = collect($summedDemand)->where('fyear', $currentFYear)->sum('balance');
@@ -429,6 +438,82 @@ class ActiveSafControllerV2 extends Controller
             return responseMsgs(true, "Cluster Saf Demand", remove_null($finalClusterDemand), "011807", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011807", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Cluster Payment
+     */
+    public function clusterSafPayment(ReqPayment $req, iSafRepository $iSafRepository)
+    {
+        try {
+            $dueReq = new Request([
+                'clusterId' => $req->id
+            ]);
+            $clusterId = $req->id;
+            $todayDate = Carbon::now();
+            $idGeneration = new IdGeneration;
+            $mPropTrans = new PropTransaction();
+            $mPropSafsDemand = new PropSafsDemand();
+            $activeSafController = new ActiveSafController($iSafRepository);
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+
+            $dues1 = $this->getClusterSafDues($dueReq, $iSafRepository);
+            $dues = $dues1->original['data'];
+
+            $demands = $dues['details'];
+            $tranNo = $idGeneration->generateTransactionNo();
+            $payableAmount = $dues['demand']['payableAmount'];
+            // Property Transactions
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $userId = auth()->user()->id ?? null;
+                if (!$userId)
+                    throw new Exception("User Should Be Logged In");
+                $tranBy = authUser()->user_type;
+            }
+            $req->merge([
+                'userId' => $userId,
+                'todayDate' => $todayDate->format('Y-m-d'),
+                'tranNo' => $tranNo,
+                'amount' => $payableAmount,
+                'tranBy' => $tranBy,
+                'clusterType' => "Saf"
+            ]);
+
+            DB::beginTransaction();
+            $propTrans = $mPropTrans->postClusterTransactions($req, $demands, 'Saf');
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $req->merge([
+                    'chequeDate' => $req['chequeDate'],
+                    'tranId' => $propTrans['id'],
+                    'id' => null
+                ]);
+                $activeSafController->postOtherPaymentModes($req, $clusterId);
+            }
+            $clusterDemand = $mPropSafsDemand->getDemandsByClusterId($clusterId);
+            if ($clusterDemand->isEmpty())
+                throw new Exception("Demand Not Available");
+            // Reflect on Prop Tran Details
+            foreach ($clusterDemand as $demand) {
+                $propDemand = $mPropSafsDemand->getDemandById($demand['id']);
+                $propDemand->balance = 0;
+                $propDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $propDemand->save();
+
+                $propTranDtl = new PropTranDtl();
+                $propTranDtl->tran_id = $propTrans['id'];
+                $propTranDtl->saf_demand_id = $demand['id'];
+                $propTranDtl->total_demand = $demand['amount'];
+                $propTranDtl->ulb_id = $req['ulbId'];
+                $propTranDtl->save();
+            }
+            // Replication Prop Rebates Penalties
+            $activeSafController->postPenaltyRebates($dues1, null, $propTrans['id'], $clusterId);
+            DB::commit();
+            return responseMsgs(true, "Payment Successfully Done", "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }

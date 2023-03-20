@@ -347,6 +347,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/list-apartment', 'getAptList');                  // 05
     Route::post('saf/pending-geotagging-list', 'pendingGeoTaggingList'); // 06
     Route::post('saf/get-cluster-saf-due', 'getClusterSafDues');                     // (07) Saf Cluster Dues
+    Route::post('saf/cluster-saf-payment', 'clusterSafPayment');                     // (08) Saf Cluster Dues
   });
 
   /**
