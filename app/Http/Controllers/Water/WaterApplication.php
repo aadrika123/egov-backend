@@ -95,17 +95,33 @@ class WaterApplication extends Controller
             $refTransaction = $mWaterTran->tranDetailByDate();
             $applicationDetails = DB::select($rawApplication);
             $transactionDetails = DB::select($refTransaction);
-            
+
             $returnData['applicationCount'] = collect($applicationDetails)->count();
-            $returnData['totalCollection'] = collect($transactionDetails)->pluck('amount')->sum();
+            $returnData['totalCollection']  = collect($transactionDetails)->pluck('amount')->sum();
             $returnData['chequeCollection'] = collect($transactionDetails)->where('payment_mode', 'Cheque')->count();
             $returnData['onlineCollection'] = collect($transactionDetails)->where('payment_mode', 'Online')->count();
-            $returnData['cashCollection'] = collect($transactionDetails)->where('payment_mode', 'Cash')->count();
-            $returnData['ddCollection'] = collect($transactionDetails)->where('payment_mode', 'DD')->count();
-            $returnData['neftCollection'] = collect($transactionDetails)->where('payment_mode', 'Neft')->count();
+            $returnData['cashCollection']   = collect($transactionDetails)->where('payment_mode', 'Cash')->count();
+            $returnData['ddCollection']     = collect($transactionDetails)->where('payment_mode', 'DD')->count();
+            $returnData['neftCollection']   = collect($transactionDetails)->where('payment_mode', 'Neft')->count();
             return responseMsgs(true,"dashbord Data!" ,remove_null($returnData),"","02",".ms","POST","");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
+    }
+
+
+    /**
+     * | Workflow dasboarding details
+     * | @param request 
+     */
+    public function workflowDashordDetails(Request $req)
+    {
+        try{
+            
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$e->getFile(),"","01",".ms","POST","")
+;        }
     }
 }

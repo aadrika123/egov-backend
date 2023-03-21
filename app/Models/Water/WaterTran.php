@@ -112,7 +112,7 @@ class WaterTran extends Model
         $waterTrans->tran_no        = $req['tranNo'];
         $waterTrans->payment_mode   = $req['paymentMode'];
         $waterTrans->emp_dtl_id     = $req['userId'];
-        $waterTrans->emp_dtl_id     = $req['userType'];
+        $waterTrans->user_type      = $req['userType'];
         $waterTrans->ulb_id         = $req['ulbId'];
         $waterTrans->ward_id        = $consumer['ward_mstr_id'];
         $waterTrans->save();
