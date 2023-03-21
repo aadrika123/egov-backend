@@ -45,6 +45,9 @@ class reqApplySaf extends FormRequest
         if (isset($this->isGBSaf))
             $rules['isGBSaf'] = "required|bool";
 
+        if ($this->propertyType == 3)
+            $rules['apartmentId'] = "required|integer";
+
         $rules['ward']          = "required|digits_between:1,9223372036854775807";
         $rules['propertyType']  = "required|int";
         $rules['ownershipType'] = "required|int";

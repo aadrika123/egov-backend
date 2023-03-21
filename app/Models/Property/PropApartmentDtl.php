@@ -19,4 +19,15 @@ class PropApartmentDtl extends Model
             ->where('ulb_id', $req->ulbId)
             ->get();
     }
+
+    /**
+     * | Get Apartment Road Type by ApartmentId
+     */
+    public function getAptRoadTypeById($id, $ulbId)
+    {
+        return PropApartmentDtl::where('id', $id)
+            ->where('ulb_id', $ulbId)
+            ->select('road_type_mstr_id')
+            ->firstOrFail();
+    }
 }

@@ -19,6 +19,7 @@ class PropTransaction extends Model
     public function getPropTransactions($id, $key)
     {
         return PropTransaction::where("$key", $id)
+            ->where('status', 1)
             ->get();
     }
 
@@ -278,5 +279,14 @@ class PropTransaction extends Model
             ->orderBydesc('id')
             ->take(10)
             ->get();
+    }
+
+    /**
+     * | 
+     */
+    public function tranDtl($userId, $fromDate, $toDate)
+    {
+        return PropTransaction::where('user_id', $userId)
+            ->whereBetween('tran_date', [$fromDate, $toDate]);
     }
 }
