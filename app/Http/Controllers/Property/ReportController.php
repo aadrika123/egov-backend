@@ -339,7 +339,7 @@ class ReportController extends Controller
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr9.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["pr10.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->PropDeactedList($request);  
     }
 }
