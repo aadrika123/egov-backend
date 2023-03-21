@@ -1646,7 +1646,7 @@ class NewConnectionController extends Controller
             $mWaterSiteInspection = new WaterSiteInspection();
             $mWaterApplication = new WaterApplication();
             $applicationDetails = $mWaterApplication->getApplicationById($request->applicationId)->firstOrFail();
-            $siteInspectiondetails = $mWaterSiteInspection->getInspectionById($request->applicationId)->get();
+            $siteInspectiondetails = $mWaterSiteInspection->getInspectionById($request->applicationId)->first();
             $returnData = [
                 "applicationDetails" => $applicationDetails,
                 "siteInspectiondetails" => $siteInspectiondetails
@@ -1743,7 +1743,7 @@ class NewConnectionController extends Controller
      * | @var
      * | @return  
         | Make Route
-        | Recheck
+        | Working
      */
     public function cancelSiteInspection(Request $request)
     {
@@ -1753,9 +1753,21 @@ class NewConnectionController extends Controller
             ]);
             $this->checkForSaveDateTime($request);
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
-            $mWaterSiteInspectionsScheduling->cancelInspectionDateTime($request->applicationId);
+            $mWaterConnectionCharge = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+            $mWaterApplication = new WaterApplication();
+            $refSiteInspection = Config::get("waterConstaint.CHARGE_CATAGORY.SITE_INSPECTON");
+            $refApplicationId = $request->applicationId;
+
+            DB::beginTransaction();
+            $mWaterSiteInspectionsScheduling->cancelInspectionDateTime($refApplicationId);
+            $mWaterConnectionCharge->deactivateSiteCharges($refApplicationId, $refSiteInspection);
+            $mWaterPenaltyInstallment->deactivateSitePenalty($refApplicationId, $refSiteInspection);
+            $mWaterApplication->updateOnlyPaymentstatus($refApplicationId);
+            DB::commit();
             return responseMsgs(true, "Scheduled Date is Cancelled!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
@@ -1883,7 +1895,6 @@ class NewConnectionController extends Controller
                 'applicationId' => 'required',
             ]);
             $mWaterSiteInspection = new WaterSiteInspection();
-            $mWaterApplication = new WaterApplication();
             $this->onlineSitePreConditionCheck($request);
             $mWaterSiteInspection->saveOnlineSiteDetails($request);
             return responseMsgs(true, "Technical Inspection Completed!", "", "", "01", ".ms", "POST", $request->deviceId);
@@ -1897,7 +1908,7 @@ class NewConnectionController extends Controller
      * | pre conditional Check for the AE online Site inspection
      * | @param
      * | @var mWfRoleUser
-     * | 
+        | Not Working 
      */
     public function onlineSitePreConditionCheck($request)
     {
@@ -1916,6 +1927,41 @@ class NewConnectionController extends Controller
         }
         if ($readRoles->wf_role_id != $WaterRoles['AE']) {
             throw new Exception("you Are Not Autherised for the process!");
+        }
+    }
+
+
+    /**
+     * | Get Site Inspection Details done by Je
+     * | Details Filled by JE
+     * | @param request
+     * | @var 
+     * | @return 
+        | Working
+     */
+    public function getJeSiteDetails(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicationId' => 'required',
+            ]);
+            # variable defining
+            $returnData['final_verify'] = false;
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
+            $refJe = Config::get("waterConstaint.ROLE-LABEL.JE");
+            # level logic
+            $sheduleDate = $mWaterSiteInspectionsScheduling->getInspectionData($request->applicationId)->first();
+            if ($sheduleDate->site_verify_status == true) {
+                $returnData = $mWaterSiteInspection->getSiteDetails($request->applicationId)
+                    ->where('order_officer', $refJe)
+                    ->first();
+                $returnData['final_verify'] = true;
+                return responseMsgs(true, "JE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
+            }
+            return responseMsgs(true, "Dat not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 }

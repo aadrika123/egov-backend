@@ -8,12 +8,16 @@ use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
+use App\Models\Property\PropTransaction;
 use App\Pipelines\SearchHolding;
 use App\Pipelines\SearchPtn;
+use App\Repository\Property\Interfaces\iSafRepository;
 use App\Repository\Water\Concrete\WaterNewConnection;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -149,6 +153,167 @@ class PropertyController extends Controller
         }
     }
 
+
+    /**
+     * | Deactivated Holding
+     */
+    public function deactivatedHolding(Request $req)
+    {
+        try {
+            $mPropProperty = new PropProperty();
+            $sql = NULL;
+            DB::enableQueryLog();
+
+            if ($req->wardMstrId) {
+                $sql = "SELECT 
+                        prop_properties.id,
+                        holding_no,
+                        ward_mstr_id,
+                        ward_name,
+                        prop_address,
+				        string_agg(owner_name,',') AS owner_name,
+                        string_agg(mobile_no::VARCHAR,',') AS mobile_no
+         
+			FROM prop_properties
+			JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
+			JOIN prop_owners ON prop_owners.property_id = prop_properties.id
+            WHERE prop_properties.status = 0
+            AND prop_properties.ward_mstr_id = $req->wardMstrId
+			GROUP BY prop_properties.id,ulb_ward_masters.ward_name";
+            }
+
+            if (!$sql) {
+                $sql = "SELECT 
+                        prop_properties.id,
+                        holding_no,
+                        ward_mstr_id,
+                        ward_name,
+                        prop_address,
+				        string_agg(owner_name,',') AS owner_name,
+                        string_agg(mobile_no::VARCHAR,',') AS mobile_no
+         
+			FROM prop_properties
+			JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
+			JOIN prop_owners ON prop_owners.property_id = prop_properties.id
+			WHERE prop_properties.status = 0
+			GROUP BY prop_properties.id,ulb_ward_masters.ward_name";
+            }
+
+            $deactivatedHolding = DB::select($sql);
+            $queryRunTime = (collect(DB::getQueryLog($sql))->sum("time"));
+
+            return responseMsgs(true, 'Deactivated Holdings', remove_null($deactivatedHolding), '010801', '01', $queryRunTime, 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Printing of bulk receipt
+     */
+    public function bulkReceipt(Request $req, iSafRepository $safRepo)
+    {
+        $req->validate([
+            'fromDate' => 'required|date',
+            'toDate' => 'required|date',
+            'tranType' => 'required|In:Property,Saf',
+            'userId' => 'required|numeric',
+        ]);
+        try {
+            $fromDate = $req->fromDate;
+            $toDate = $req->toDate;
+            $userId = $req->userId;
+            $tranType = $req->tranType;
+            $mpropTransaction = new PropTransaction();
+            $holdingCotroller = new HoldingTaxController($safRepo);
+            $propReceipts = collect();
+            $receipts = collect();
+
+            $transaction = $mpropTransaction->tranDtl($userId, $fromDate, $toDate);
+
+            if ($tranType == 'Property')
+                $data = $transaction->whereNotNull('property_id')->get();
+
+            if ($tranType == 'Saf')
+                $data = $transaction->whereNotNull('saf_id')->get();
+
+            if ($data->isEmpty())
+                throw new Exception('No Data Found');
+
+            $tranNos = collect($data)->pluck('tran_no');
+
+            foreach ($tranNos as $tranNo) {
+                $mreq = new Request(
+                    ["tranNo" => $tranNo]
+                );
+                $data = $holdingCotroller->propPaymentReceipt($mreq);
+                $propReceipts->push($data);
+            }
+
+            foreach ($propReceipts as $propReceipt) {
+                $receipt = $propReceipt->original['data'];
+                $receipts->push($receipt);
+            }
+
+            $queryRunTime = (collect(DB::getQueryLog($data))->sum("time"));
+
+            return responseMsgs(true, 'Bulk Receipt', remove_null($receipts), '010801', '01', $queryRunTime, 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Property Basic Edit
+     */
+    public function basicPropertyEdit(Request $req)
+    {
+        try {
+            $mPropProperty = new PropProperty();
+            $mPropOwners = new PropOwner();
+            $propId = $req->propertyId;
+            $mOwners = $req->owner;
+
+            $mreq = new Request(
+                [
+                    "new_ward_mstr_id" => $req->newWardMstrId,
+                    "khata_no" => $req->khataNo,
+                    "plot_no" => $req->plotNo,
+                    "village_mauja_name" => $req->villageMauja,
+                    "prop_pin_code" => $req->pinCode,
+                    "building_name" => $req->buildingName,
+                    "street_name" => $req->streetName,
+                    "location" => $req->location,
+                    "landmark" => $req->landmark,
+                    "prop_address" => $req->address,
+                    "corr_pin_code" => $req->corrPin,
+                    "corr_address" => $req->corrAddress
+                ]
+            );
+            $mPropProperty->editProp($propId, $mreq);
+
+            collect($mOwners)->map(function ($owner) use ($mPropOwners) {            // Updation of Owner Basic Details
+                if (isset($owner['ownerId'])) {
+
+                    $req = new Request([
+                        'id' =>  $owner['ownerId'],
+                        'owner_name' => $owner['ownerName'],
+                        'guardian_name' => $owner['guardianName'],
+                        'relation_type' => $owner['relation'],
+                        'mobile_no' => $owner['mobileNo'],
+                        'aadhar_no' => $owner['aadhar'],
+                        'pan_no' => $owner['pan'],
+                        'email' => $owner['email'],
+                    ]);
+                    $mPropOwners->editPropOwner($req);
+                }
+            });
+
+            return responseMsgs(true, 'Data Updated', '', '010801', '01', '', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 
     /**
      * | Get the Saf LatLong for map

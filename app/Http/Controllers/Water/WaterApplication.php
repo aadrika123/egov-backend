@@ -72,4 +72,26 @@ class WaterApplication extends Controller
     {
         return $this->Repository->calWaterConCharge($request);
     }
+
+    #--------------------------------------------------------Dashbording----------------------------------------------------------#
+
+    /**
+     * | Get All application Applied from jsk
+     * | @param
+     * | @var 
+     * | @return 
+        | Serial No : 
+        | Not Working
+     */
+    public function getJskAppliedApplication(Request $request)
+    {
+        try {
+            $mWaterApplication = new WaterWaterApplication();
+            $mWaterApplication->getJskAppliedApplications($request);
+            $returnData = 123;
+            return responseMsgs(true, "Data of application applied today!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
 }

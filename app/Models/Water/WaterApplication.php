@@ -457,4 +457,16 @@ class WaterApplication extends Model
         $activeSaf->payment_status = 1;
         $activeSaf->save();
     }
+
+    #--------------------------------------------------------------------------------------------------------------------#
+
+    /**
+     * | Dash bording 
+     */
+    public function getJskAppliedApplications($request)
+    {
+        $query = "SELECT * FROM water_applications 
+			        WHERE apply_from = 'JSK'
+				    AND apply_date = '2023-03-14'";
+    }
 }

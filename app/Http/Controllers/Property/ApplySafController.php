@@ -182,7 +182,6 @@ class ApplySafController extends Controller
             $safTaxes->original['data']['demand']['payableAmount'] = round($payableAmount);
             $demandResponse['amounts'] = $safTaxes->original['data']['demand'];
             $demandResponse['details'] =  $generatedDemandDtls->groupBy('ruleSet');
-
             $tax->insertTax($safId, $ulb_id, $generatedDemandDtls);      // Insert SAF Tax
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [

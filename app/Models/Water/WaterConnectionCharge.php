@@ -108,4 +108,18 @@ class WaterConnectionCharge extends Model
         return WaterConnectionCharge::whereIn('id', $id)
             ->where('status', 1);
     }
+
+
+    /**
+     * | Deactivate Site Inspection Demand 
+     * | @param req
+     */
+    public function deactivateSiteCharges($applicationId, $siteInspection)
+    {
+        WaterConnectionCharge::where('application_id', $applicationId)
+            ->where('charge_category', $siteInspection)
+            ->update([
+                'status' => 0
+            ]);
+    }
 }

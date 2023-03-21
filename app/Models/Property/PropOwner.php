@@ -81,6 +81,7 @@ class PropOwner extends Model
             'mobile_no' => $req->mobile_no,
             'email' => $req->email,
             'pan_no' => $req->pan_no,
+            'aadhar_no' => $req->aadhar_no,
             'gender' => $req->gender,
             'dob' => $req->dob,
             'is_armed_force' => $req->is_armed_force,
@@ -107,5 +108,23 @@ class PropOwner extends Model
         $owner = new PropOwner();
         $req = $this->reqOwner($safOwner);
         $owner->create($req);
+    }
+
+    /**
+     * | Edit Prop Owner
+     */
+    public function editPropOwner($safOwner)
+    {
+        $owner = PropOwner::find($safOwner->id);
+        $req = [
+            'owner_name' => $safOwner->owner_name,
+            'guardian_name' => $safOwner->guardian_name,
+            'relation_type' => $safOwner->relation_type,
+            'mobile_no' => $safOwner->mobile_no,
+            'email' => $safOwner->email,
+            'pan_no' => $safOwner->pan_no,
+            'aadhar_no' => $safOwner->aadhar_no
+        ];
+        $owner->update($req);
     }
 }

@@ -347,6 +347,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/list-apartment', 'getAptList');                  // 05
     Route::post('saf/pending-geotagging-list', 'pendingGeoTaggingList'); // 06
     Route::post('saf/get-cluster-saf-due', 'getClusterSafDues');                     // (07) Saf Cluster Dues
+    Route::post('saf/cluster-saf-payment', 'clusterSafPayment');                     // (08) Saf Cluster Dues
   });
 
   /**
@@ -355,7 +356,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(PropertyController::class)->group(function () {
     Route::post('caretaker-otp', 'caretakerOtp');                             // 01
     Route::post('caretaker-property-tagging', 'caretakerPropertyTag');        // 02
-    Route::post('citizen-holding-saf', 'citizenHoldingSaf');
+    Route::post('citizen-holding-saf', 'citizenHoldingSaf');                  // 03
+
+    Route::post('reports/deactivated-holding', 'deactivatedHolding');
+    Route::post('reports/print-bulk-receipt', 'bulkReceipt');
+    Route::post('basic-edit', 'basicPropertyEdit');
   });
 
   /**
