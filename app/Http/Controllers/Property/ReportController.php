@@ -293,19 +293,29 @@ class ReportController extends Controller
                 ->leftJoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 't.id')
                 ->where('is_gb_saf', true)
                 ->whereBetween('tran_date', [$fromDate, $uptoDate])
-                ->union($first_query)
-                ->get();
+                ->union($first_query);
 
             if ($req->wardMstrId)
-                $gbsafCollection = collect($gbsafCollection)->where('ward_mstr_id', $req->wardMstrId)->values();
+                $gbsafCollection = $gbsafCollection->where('ward_mstr_id', $req->wardMstrId);
 
             if ($req->paymentMode)
-                $gbsafCollection = collect($gbsafCollection)->where('payment_mode', $req->paymentMode)->values();
+                $gbsafCollection = $gbsafCollection->where('payment_mode', $req->paymentMode);
 
-            if ($gbsafCollection->isEmpty())
-                throw new Exception('No data Found');
+            $perPage = $req->perPage ? $req->perPage : 10;
+            $page = $req->page && $req->page > 0 ? $req->page : 1;
+            $paginator = $gbsafCollection->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
+            ];
 
-            return responseMsgs(true, "GB Saf Collection!", $gbsafCollection, '010801', '01', '623ms', 'Post', '');
+            return responseMsgs(true, "GB Saf Collection!", $list, '010801', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
