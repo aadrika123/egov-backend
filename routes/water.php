@@ -118,7 +118,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
 
         # Dashbording Api
-        Route::post('jsk/application/get-applied-list', 'getJskAppliedApplication'); // Route
+        Route::post('admin/application/get-applied-list', 'getJskAppliedApplication'); // Route
     });
 });
 Route::controller(WaterApplication::class)->group(function () {
