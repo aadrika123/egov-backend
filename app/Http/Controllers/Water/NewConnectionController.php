@@ -1945,16 +1945,18 @@ class NewConnectionController extends Controller
             $request->validate([
                 'applicationId' => 'required',
             ]);
+            # variable defining
             $returnData['final_verify'] = false;
             $mWaterSiteInspection = new WaterSiteInspection();
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $refJe = Config::get("waterConstaint.ROLE-LABEL.JE");
+            # level logic
             $sheduleDate = $mWaterSiteInspectionsScheduling->getInspectionData($request->applicationId)->first();
             if ($sheduleDate->site_verify_status == true) {
-                $returnData['final_verify'] = true;
                 $returnData = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                     ->where('order_officer', $refJe)
                     ->first();
+                $returnData['final_verify'] = true;
                 return responseMsgs(true, "JE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
             }
             return responseMsgs(true, "Dat not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);

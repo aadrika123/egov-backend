@@ -116,6 +116,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::get('citizenApplications', 'getCitizenApplication');                                     //10
         Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
+
+        # Dashbording Api
+        Route::post(''); // Route
     });
 });
 Route::controller(WaterApplication::class)->group(function () {

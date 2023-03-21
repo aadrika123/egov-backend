@@ -113,6 +113,15 @@ class WaterSiteInspection extends Model
         $mWaterSiteInspection->pipeline_size    =   $req->pipelineSize;
         $mWaterSiteInspection->pipe_size        =   $req->pipeSize;
         $mWaterSiteInspection->ferrule_type     =   $req->ferruleType;
+
+        // $mWaterSiteInspection->ward_id              =   $req->ferruleType;
+        // $mWaterSiteInspection->emp_details_id       =   $req->ferruleType;
+        // $mWaterSiteInspection->apply_connection_id  =   $req->ferruleType;
+        // $mWaterSiteInspection->verified_by          =   $req->ferruleType;
+        // $mWaterSiteInspection->order_officer        =   $req->ferruleType;
+        // $mWaterSiteInspection->ferrule_type         =   $req->ferruleType;
+        // $mWaterSiteInspection->ferrule_type         =   $req->ferruleType;
+        // $mWaterSiteInspection->ferrule_type         =   $req->ferruleType;
         $mWaterSiteInspection->save();
     }
 }

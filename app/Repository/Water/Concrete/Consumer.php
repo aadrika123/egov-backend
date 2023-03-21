@@ -931,5 +931,4 @@ class Consumer implements IConsumer
         $data["day_diff"] = $date[2]; 
         return($data);
     }
-
 }

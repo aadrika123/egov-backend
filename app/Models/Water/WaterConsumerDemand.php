@@ -3,8 +3,10 @@
 namespace App\Models\Water;
 
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class WaterConsumerDemand extends Model
 {
@@ -23,9 +25,11 @@ class WaterConsumerDemand extends Model
 
     /**
      * | Get Demand According to consumerId and payment status false 
+        | Here Changes
      */
     public function getConsumerDemand($consumerId)
     {
+        // $this->impos_penalty($consumerId);
         return WaterConsumerDemand::where('consumer_id', $consumerId)
             ->where('paid_status', false)
             ->where('status', true)
@@ -84,5 +88,88 @@ class WaterConsumerDemand extends Model
             ->where('paid_status', false)
             ->where('status', true)
             ->orderByDesc('id');
+    }
+
+
+    /**
+     * | impose penalty
+     * 
+     */
+    public function impos_penalty($consumerId)
+    {
+        try {
+            $fine_months = 0;
+            $penalty = 0.00;
+            $penalty_amt = 0.00;
+            $demand = array();
+            $currend_date = Carbon::now()->format("Y-m-d");
+            $meter_demand_sql = "SELECT * FROM  water_consumer_demands where consumer_id=$consumerId and paid_status= false and status=true and connection_type in ('Metered', 'Meter')";
+            $meter_demand = DB::select($meter_demand_sql);
+            DB::beginTransaction();
+            #meter Demand
+            foreach ($meter_demand as $val) {
+                $val = collect($val)->all();
+                if ($val["panelty_updated_on"] == $currend_date) {
+                    continue;
+                }
+                if ($val["demand_upto"] >= '2021-01-01') {
+                    $fine_months_sql = "SELECT ((DATE_PART('year', '$currend_date'::date) - DATE_PART('year', '" . ($val["demand_upto"]) . "'::date)) * 12 +
+                                            (DATE_PART('month', '$currend_date'::date) - DATE_PART('month', '" . ($val["demand_upto"]) . "'::date))) :: integer as months
+                                            ";
+                    $fine_months = ((DB::select($fine_months_sql))[0]->months) ?? 0;
+                }
+                if ($fine_months >= 3) {
+                    $penalty = ($val["amount"] / 100) * 1.5;
+                    $penalty_amt = ($penalty * ($fine_months - 2));
+                    $upate_sql = "update water_consumer_demands  set penalty=" . ($penalty_amt) . ", 
+                                    balance_amount=(" . ($val["amount"] + $penalty_amt) . "), 
+                                    panelty_updated_on='" . $currend_date . "' 
+                                    where id=" . $val["id"] . " ";
+                    $id = DB::select($upate_sql);
+                } else {
+                    $upate_sql = "update water_consumer_demands  set penalty=" . $penalty . ", 
+                                    balance_amount=(" . ($val["amount"] + $penalty_amt) . "), 
+                                    panelty_updated_on='" . $currend_date . "' 
+                                    where id=" . $val["id"] . "";
+                    $id = DB::select($upate_sql);
+                }
+            }
+
+            #fixed Demand
+            $fixed_demand_sql = "SELECT * FROM water_consumer_demands  where consumer_id=$consumerId and paid_status=false and status=true and connection_type='Fixed'";
+            $fixed_demand = DB::select($fixed_demand_sql);
+            foreach ($fixed_demand as $val) {
+                $val = collect($val)->all();
+                if ($val["panelty_updated_on"] == $currend_date) {
+                    continue;
+                }
+                if ($val["demand_upto"] >= '2015-07-01') {
+                    $fine_months_sql = "SELECT ((DATE_PART('year', '$currend_date'::date) - DATE_PART('year', '" . ($val["demand_upto"]) . "'::date)) * 12 +
+                                            (DATE_PART('month', '$currend_date'::date) - DATE_PART('month', '" . ($val["demand_upto"]) . "'::date))) :: integer
+                                            ";
+                    $fine_months = ((DB::select($fine_months_sql))[0]->months) ?? 0;
+                }
+                if ($fine_months >= 1) {
+                    $penalty = ($val["amount"] / 100) * 10;
+                    $penalty_amt = $penalty;
+                    $upate_sql = "update water_consumer_demands  set penalty=" . $penalty_amt . ", 
+                                    balance_amount=(" . ($val["amount"] + $penalty_amt) . "), 
+                                    panelty_updated_on='" . $currend_date . "' 
+                                    where id=" . $val["id"] . " ";
+                    DB::select($upate_sql);
+                } else {
+                    $upate_sql = "update water_consumer_demands  set penalty=" . $penalty . ", 
+                                    balance_amount=(" . ($val["amount"] + $penalty_amt) . "), 
+                                    panelty_updated_on='" . $currend_date . "' 
+                                    where id=" . $val["id"] . "";
+                    DB::select($upate_sql);
+                }
+            }
+            DB::commit();
+            return true;
+        } catch (Exception $e) {
+            DB::rollBack();
+            return false;
+        }
     }
 }
