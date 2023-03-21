@@ -38,10 +38,10 @@ class Report implements IReport
     }
     public function collectionReport(Request $request)
     {
-        $metaData= collect($request->metaData)->all();
-        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
@@ -50,28 +50,22 @@ class Report implements IReport
             $paymentMode = null;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
 
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
-            if($request->wardId)
-            {
+            if ($request->wardId) {
                 $wardId = $request->wardId;
             }
-            if($request->userId)
-            {
+            if ($request->userId) {
                 $userId = $request->userId;
             }
-            if($request->paymentMode)
-            {
+            if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
             }
-            if($request->ulbId)
-            {
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
 
@@ -113,78 +107,75 @@ class Report implements IReport
                                 ELSE prop_cheque_dtls.branch_name END
                             ) AS branch_name
                 "),
-                )
-                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
-                ->JOIN(DB::RAW("(
+            )
+                ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
+                ->JOIN(
+                    DB::RAW("(
                         SELECT STRING_AGG(owner_name, ', ') AS owner_name, STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, prop_owners.property_id 
                         FROM prop_owners 
                         JOIN prop_transactions on prop_transactions.property_id = prop_owners.property_id 
                         WHERE prop_transactions.property_id IS NOT NULL AND prop_transactions.status in (1, 2) 
                         AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-                        ".
-                        ($userId?" AND prop_transactions.user_id = $userId ":"")
-                        .($paymentMode?" AND upper(prop_transactions.payment_mode) = upper('$paymentMode') ":"")
-                        .($ulbId?" AND prop_transactions.ulb_id = $ulbId": "")
-                        ."
+                        " .
+                        ($userId ? " AND prop_transactions.user_id = $userId " : "")
+                        . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode') " : "")
+                        . ($ulbId ? " AND prop_transactions.ulb_id = $ulbId" : "")
+                        . "
                         GROUP BY prop_owners.property_id
                         ) AS prop_owner_detail
-                        "),function($join){
-                            $join->on("prop_owner_detail.property_id","=","prop_transactions.property_id");
-                        }
+                        "),
+                    function ($join) {
+                        $join->on("prop_owner_detail.property_id", "=", "prop_transactions.property_id");
+                    }
                 )
-                ->JOIN("ulb_ward_masters","ulb_ward_masters.id","prop_properties.ward_mstr_id")
-                ->LEFTJOIN("users","users.id","prop_transactions.user_id")
-                ->LEFTJOIN("prop_cheque_dtls","prop_cheque_dtls.transaction_id","prop_transactions.id")
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_properties.ward_mstr_id")
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
                 ->WHERENOTNULL("prop_transactions.property_id")
-                ->WHEREIN("prop_transactions.status",[1,2])
-                ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
-                if($wardId)
-                {
-                    $data=$data->where("ulb_ward_masters.id",$wardId);
-                }
-                if($userId)
-                {
-                    $data=$data->where("prop_transactions.user_id",$userId);
-                }
-                if($paymentMode)
-                {
-                    $data=$data->where(DB::raw("upper(prop_transactions.payment_mode)"),$paymentMode);
-                }
-                if($ulbId)
-                {
-                    $data=$data->where("prop_transactions.ulb_id",$ulbId);
-                }
-                $data2 = $data;
-                $totalHolding = $data2->count("prop_properties.id");
-                $totalAmount = $data2->sum("prop_transactions.amount");
-                $perPage = $request->perPage ? $request->perPage : 10;
-                $page = $request->page && $request->page > 0 ? $request->page : 1;
-                $paginator = $data->paginate($perPage);
-                $items = $paginator->items();
-                $total = $paginator->total();
-                $numberOfPages = ceil($total/$perPage);                
-                $list=[
-                    "perPage"=>$perPage,
-                    "page"=>$page,                    
-                    "totalHolding"=>$totalHolding,
-                    "totalAmount"=>$totalAmount,    
-                    "items"=>$items,
-                    "total"=>$total,
-                    "numberOfPages"=>$numberOfPages
-                ];
-                $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-                return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+            if ($wardId) {
+                $data = $data->where("ulb_ward_masters.id", $wardId);
+            }
+            if ($userId) {
+                $data = $data->where("prop_transactions.user_id", $userId);
+            }
+            if ($paymentMode) {
+                $data = $data->where(DB::raw("upper(prop_transactions.payment_mode)"), $paymentMode);
+            }
+            if ($ulbId) {
+                $data = $data->where("prop_transactions.ulb_id", $ulbId);
+            }
+
+            $data2 = $data;
+            $totalHolding = $data2->count("prop_properties.id");
+            $totalAmount = $data2->sum("prop_transactions.amount");
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "totalHolding" => $totalHolding,
+                "totalAmount" => $totalAmount,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
     public function safCollection(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
@@ -193,29 +184,26 @@ class Report implements IReport
             $paymentMode = null;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
 
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
-            if($request->wardId)
-            {
+            if ($request->wardId) {
                 $wardId = $request->wardId;
             }
-            if($request->userId)
-            {
+            if ($request->userId) {
                 $userId = $request->userId;
             }
-            if($request->paymentMode)
-            {
+            if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
             }
-            if($request->ulbId)
-            {
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
+            }
+            if ($request->is_gbsaf) {
+                $isGbsaf = $request->is_gbsaf;
             }
 
             // DB::enableQueryLog();
@@ -256,9 +244,10 @@ class Report implements IReport
                                 ELSE prop_cheque_dtls.branch_name END
                             ) AS branch_name
                 "),
-                )
-                ->JOIN("prop_active_safs","prop_active_safs.id","prop_transactions.saf_id")
-                ->JOIN(DB::RAW("(
+            )
+                ->JOIN("prop_active_safs", "prop_active_safs.id", "prop_transactions.saf_id")
+                ->JOIN(
+                    DB::RAW("(
                         SELECT STRING_AGG(owner_name, ', ') AS owner_name, 
                             STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
                             prop_active_safs_owners.saf_id 
@@ -266,23 +255,24 @@ class Report implements IReport
                         JOIN prop_transactions on prop_transactions.saf_id = prop_active_safs_owners.saf_id 
                         WHERE prop_transactions.saf_id IS NOT NULL AND prop_transactions.status in (1, 2) 
                         AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-                        ".
-                        ($userId?" AND prop_transactions.user_id = $userId ":"")
-                        .($paymentMode?" AND upper(prop_transactions.payment_mode) = upper('$paymentMode') ":"")
-                        .($ulbId?" AND prop_transactions.ulb_id = $ulbId": "")
-                        ."
+                        " .
+                        ($userId ? " AND prop_transactions.user_id = $userId " : "")
+                        . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode') " : "")
+                        . ($ulbId ? " AND prop_transactions.ulb_id = $ulbId" : "")
+                        . "
                         GROUP BY prop_active_safs_owners.saf_id 
                         ) AS owner_detail
-                        "),function($join){
-                            $join->on("owner_detail.saf_id","=","prop_transactions.saf_id");
-                        }
+                        "),
+                    function ($join) {
+                        $join->on("owner_detail.saf_id", "=", "prop_transactions.saf_id");
+                    }
                 )
-                ->JOIN("ulb_ward_masters","ulb_ward_masters.id","prop_active_safs.ward_mstr_id")
-                ->LEFTJOIN("users","users.id","prop_transactions.user_id")
-                ->LEFTJOIN("prop_cheque_dtls","prop_cheque_dtls.transaction_id","prop_transactions.id")
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_active_safs.ward_mstr_id")
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
                 ->WHERENOTNULL("prop_transactions.saf_id")
-                ->WHEREIN("prop_transactions.status",[1,2])
-                ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
             $rejectedSaf = PropTransaction::select(
                 DB::raw("
@@ -321,9 +311,10 @@ class Report implements IReport
                                 ELSE prop_cheque_dtls.branch_name END
                             ) AS branch_name
                 "),
-                )
-                ->JOIN("prop_rejected_safs","prop_rejected_safs.id","prop_transactions.saf_id")
-                ->JOIN(DB::RAW("(
+            )
+                ->JOIN("prop_rejected_safs", "prop_rejected_safs.id", "prop_transactions.saf_id")
+                ->JOIN(
+                    DB::RAW("(
                         SELECT STRING_AGG(owner_name, ', ') AS owner_name, 
                             STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
                             prop_rejected_safs_owners.saf_id 
@@ -331,23 +322,24 @@ class Report implements IReport
                         JOIN prop_transactions on prop_transactions.saf_id = prop_rejected_safs_owners.saf_id 
                         WHERE prop_transactions.saf_id IS NOT NULL AND prop_transactions.status in (1, 2) 
                         AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-                        ".
-                        ($userId?" AND prop_transactions.user_id = $userId ":"")
-                        .($paymentMode?" AND upper(prop_transactions.payment_mode) = upper('$paymentMode') ":"")
-                        .($ulbId?" AND prop_transactions.ulb_id = $ulbId": "")
-                        ."
+                        " .
+                        ($userId ? " AND prop_transactions.user_id = $userId " : "")
+                        . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode') " : "")
+                        . ($ulbId ? " AND prop_transactions.ulb_id = $ulbId" : "")
+                        . "
                         GROUP BY prop_rejected_safs_owners.saf_id 
                         ) AS owner_detail
-                        "),function($join){
-                            $join->on("owner_detail.saf_id","=","prop_transactions.saf_id");
-                        }
+                        "),
+                    function ($join) {
+                        $join->on("owner_detail.saf_id", "=", "prop_transactions.saf_id");
+                    }
                 )
-                ->JOIN("ulb_ward_masters","ulb_ward_masters.id","prop_rejected_safs.ward_mstr_id")
-                ->LEFTJOIN("users","users.id","prop_transactions.user_id")
-                ->LEFTJOIN("prop_cheque_dtls","prop_cheque_dtls.transaction_id","prop_transactions.id")
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_rejected_safs.ward_mstr_id")
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
                 ->WHERENOTNULL("prop_transactions.saf_id")
-                ->WHEREIN("prop_transactions.status",[1,2])
-                ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
             $saf = PropTransaction::select(
                 DB::raw("
@@ -386,9 +378,10 @@ class Report implements IReport
                                 ELSE prop_cheque_dtls.branch_name END
                             ) AS branch_name
                 "),
-                )
-                ->JOIN("prop_safs","prop_safs.id","prop_transactions.saf_id")
-                ->JOIN(DB::RAW("(
+            )
+                ->JOIN("prop_safs", "prop_safs.id", "prop_transactions.saf_id")
+                ->JOIN(
+                    DB::RAW("(
                         SELECT STRING_AGG(owner_name, ', ') AS owner_name, 
                             STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
                             prop_safs_owners.saf_id 
@@ -396,49 +389,46 @@ class Report implements IReport
                         JOIN prop_transactions on prop_transactions.saf_id = prop_safs_owners.saf_id 
                         WHERE prop_transactions.saf_id IS NOT NULL AND prop_transactions.status in (1, 2) 
                         AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-                        ".
-                        ($userId?" AND prop_transactions.user_id = $userId ":"")
-                        .($paymentMode?" AND upper(prop_transactions.payment_mode) = upper('$paymentMode') ":"")
-                        .($ulbId?" AND prop_transactions.ulb_id = $ulbId": "")
-                        ."
+                        " .
+                        ($userId ? " AND prop_transactions.user_id = $userId " : "")
+                        . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode') " : "")
+                        . ($ulbId ? " AND prop_transactions.ulb_id = $ulbId" : "")
+                        . "
                         GROUP BY prop_safs_owners.saf_id 
                         ) AS owner_detail
-                        "),function($join){
-                            $join->on("owner_detail.saf_id","=","prop_transactions.saf_id");
-                        }
+                        "),
+                    function ($join) {
+                        $join->on("owner_detail.saf_id", "=", "prop_transactions.saf_id");
+                    }
                 )
-                ->JOIN("ulb_ward_masters","ulb_ward_masters.id","prop_safs.ward_mstr_id")
-                ->LEFTJOIN("users","users.id","prop_transactions.user_id")
-                ->LEFTJOIN("prop_cheque_dtls","prop_cheque_dtls.transaction_id","prop_transactions.id")
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_safs.ward_mstr_id")
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
                 ->WHERENOTNULL("prop_transactions.saf_id")
-                ->WHEREIN("prop_transactions.status",[1,2])
-                ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
-            if($wardId)
-            {
-                $activSaf = $activSaf->where("ulb_ward_masters.id",$wardId);
-                $rejectedSaf = $rejectedSaf->where("ulb_ward_masters.id",$wardId);
-                $saf = $saf->where("ulb_ward_masters.id",$wardId);
+            if ($wardId) {
+                $activSaf = $activSaf->where("ulb_ward_masters.id", $wardId);
+                $rejectedSaf = $rejectedSaf->where("ulb_ward_masters.id", $wardId);
+                $saf = $saf->where("ulb_ward_masters.id", $wardId);
             }
-            if($userId)
-            {
-                $activSaf=$activSaf->where("prop_transactions.user_id",$userId);
-                $rejectedSaf=$rejectedSaf->where("prop_transactions.user_id",$userId);
-                $saf=$saf->where("prop_transactions.user_id",$userId);
+            if ($userId) {
+                $activSaf = $activSaf->where("prop_transactions.user_id", $userId);
+                $rejectedSaf = $rejectedSaf->where("prop_transactions.user_id", $userId);
+                $saf = $saf->where("prop_transactions.user_id", $userId);
             }
-            if($paymentMode)
-            {
-                $activSaf=$activSaf->where(DB::row("prop_transactions.upper(payment_mode)"),$paymentMode);
-                $rejectedSaf=$rejectedSaf->where(DB::row("prop_transactions.upper(payment_mode)"),$paymentMode);
-                $saf=$saf->where(DB::row("prop_transactions.upper(payment_mode)"),$paymentMode);
+            if ($paymentMode) {
+                $activSaf = $activSaf->where(DB::row("prop_transactions.upper(payment_mode)"), $paymentMode);
+                $rejectedSaf = $rejectedSaf->where(DB::row("prop_transactions.upper(payment_mode)"), $paymentMode);
+                $saf = $saf->where(DB::row("prop_transactions.upper(payment_mode)"), $paymentMode);
             }
-            if($ulbId)
-            {
-                $activSaf=$activSaf->where("prop_transactions.ulb_id",$ulbId);
-                $rejectedSaf=$rejectedSaf->where("prop_transactions.ulb_id",$ulbId);
-                $saf=$saf->where("prop_transactions.ulb_id",$ulbId);
+            if ($ulbId) {
+                $activSaf = $activSaf->where("prop_transactions.ulb_id", $ulbId);
+                $rejectedSaf = $rejectedSaf->where("prop_transactions.ulb_id", $ulbId);
+                $saf = $saf->where("prop_transactions.ulb_id", $ulbId);
             }
-            
+
             $data = $activSaf->union($rejectedSaf)->union($saf);
             $data2 = $data;
             $totalSaf = $data2->count("id");
@@ -448,55 +438,48 @@ class Report implements IReport
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
             $total = $paginator->total();
-            $numberOfPages = ceil($total/$perPage);                
-            $list=[
-                "perPage"=>$perPage,
-                "page"=>$page,
-                "totalSaf"=>$totalSaf,
-                "totalAmount"=>$totalAmount,  
-                "items"=>$items,
-                "total"=>$total,
-                "numberOfPages"=>$numberOfPages
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "totalSaf" => $totalSaf,
+                "totalAmount" => $totalAmount,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
     public function safPropIndividualDemandAndCollection(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
             $key = null;
             $fiYear = getFY();
-            if($request->fiYear)
-            {
-                $fiYear = $request->fiYear;                
+            if ($request->fiYear) {
+                $fiYear = $request->fiYear;
             }
-            list($fromYear,$toYear)=explode("-",$fiYear);
-            if($toYear-$fromYear !=1)
-            {
+            list($fromYear, $toYear) = explode("-", $fiYear);
+            if ($toYear - $fromYear != 1) {
                 throw new Exception("Enter Valide Financial Year");
-            }            
-            if($request->key)
-            {
+            }
+            if ($request->key) {
                 $key = $request->key;
             }
-            if($request->wardId)
-            {
+            if ($request->wardId) {
                 $wardId = $request->wardId;
             }
-            if($request->ulbId)
-            {
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
 
@@ -567,10 +550,11 @@ class Report implements IReport
                            COALESCE(collection.arrear_collection, 0)+COALESCE(collection.current_collection, 0)
                         ) AS total_due
                 "),
-                )
-                ->JOIN("ulb_ward_masters","ulb_ward_masters.id","prop_properties.ward_mstr_id")
-                ->LEFTJOIN("prop_safs","prop_safs.id","prop_properties.saf_id")
-                ->JOIN(DB::RAW("(
+            )
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_properties.ward_mstr_id")
+                ->LEFTJOIN("prop_safs", "prop_safs.id", "prop_properties.saf_id")
+                ->JOIN(
+                    DB::RAW("(
                         SELECT 
                             prop_owners.property_id, 
                             STRING_AGG(prop_owners.owner_name, ',') AS owner_name, 
@@ -579,11 +563,13 @@ class Report implements IReport
                         WHERE prop_owners.status=1
                         GROUP BY prop_owners.property_id
                         ) AS owner_detail
-                        "),function($join){
-                            $join->on("owner_detail.property_id","=","prop_properties.id");
-                        }
+                        "),
+                    function ($join) {
+                        $join->on("owner_detail.property_id", "=", "prop_properties.id");
+                    }
                 )
-                ->LEFTJOIN(DB::RAW("(
+                ->LEFTJOIN(
+                    DB::RAW("(
                         SELECT 
                             prop_floors.property_id, 
                             STRING_AGG(ref_prop_usage_types.usage_type, ',') AS usage_type, 
@@ -594,11 +580,13 @@ class Report implements IReport
                         WHERE prop_floors.status=1 
                         GROUP BY prop_floors.property_id
                         )AS floor_details
-                        "),function($join){
-                            $join->on("floor_details.property_id","=","prop_properties.id");
-                        }
+                        "),
+                    function ($join) {
+                        $join->on("floor_details.property_id", "=", "prop_properties.id");
+                    }
                 )
-                ->LEFTJOIN(DB::RAW("(
+                ->LEFTJOIN(
+                    DB::RAW("(
                     SELECT 
                         property_id, 
                         SUM(CASE WHEN fyear < '$fiYear' THEN amount ELSE 0 END) AS arrear_demand,
@@ -607,11 +595,13 @@ class Report implements IReport
                     WHERE status=1 AND paid_status IN (0,1)  
                     GROUP BY property_id
                     )AS demands
-                    "),function($join){
-                        $join->on("demands.property_id","=","prop_properties.id");
+                    "),
+                    function ($join) {
+                        $join->on("demands.property_id", "=", "prop_properties.id");
                     }
                 )
-                ->LEFTJOIN(DB::RAW("(
+                ->LEFTJOIN(
+                    DB::RAW("(
                     SELECT 
                         property_id, 
                         SUM(CASE WHEN fyear < '$fiYear' THEN amount ELSE 0 END) AS arrear_collection,
@@ -620,11 +610,13 @@ class Report implements IReport
                     WHERE status=1 AND paid_status=1 
                     GROUP BY property_id
                     )AS collection
-                    "),function($join){
-                        $join->on("collection.property_id","=","prop_properties.id");
+                    "),
+                    function ($join) {
+                        $join->on("collection.property_id", "=", "prop_properties.id");
                     }
                 )
-                ->LEFTJOIN(DB::RAW("(
+                ->LEFTJOIN(
+                    DB::RAW("(
                     SELECT
                         prop_transactions.property_id AS property_id,
                         SUM(prop_penaltyrebates.amount) AS penalty
@@ -635,11 +627,13 @@ class Report implements IReport
                             AND prop_penaltyrebates.is_rebate = FALSE
                     GROUP BY prop_transactions.property_id
                     )AS tbl_penalty
-                    "),function($join){
-                        $join->on("tbl_penalty.property_id","=","prop_properties.id");
+                    "),
+                    function ($join) {
+                        $join->on("tbl_penalty.property_id", "=", "prop_properties.id");
                     }
                 )
-                ->LEFTJOIN(DB::RAW("(
+                ->LEFTJOIN(
+                    DB::RAW("(
                     SELECT
                         prop_transactions.property_id AS property_id,
                         SUM(prop_penaltyrebates.amount) AS rebate
@@ -650,66 +644,64 @@ class Report implements IReport
                             AND prop_penaltyrebates.is_rebate=true
                     GROUP BY prop_transactions.property_id
                     )AS tbl_rebate
-                    "),function($join){
-                        $join->on("tbl_rebate.property_id","=","prop_properties.id");
+                    "),
+                    function ($join) {
+                        $join->on("tbl_rebate.property_id", "=", "prop_properties.id");
                     }
                 )
-                ->WHERE("prop_properties.status",1)
-                ->WHERE(function($where)use ($key){
+                ->WHERE("prop_properties.status", 1)
+                ->WHERE(function ($where) use ($key) {
                     $where->ORWHERE('prop_properties.holding_no', 'ILIKE', '%' . $key . '%')
-                    ->ORWHERE('prop_properties.new_holding_no', 'ILIKE', '%' . $key . '%')
-                    ->ORWHERE('prop_safs.saf_no', 'ILIKE', '%' . $key . '%')
-                    ->ORWHERE('owner_detail.owner_name', 'ILIKE', '%' . $key . '%')
-                    ->ORWHERE('owner_detail.mobile_no', 'ILIKE', '%' . $key . '%')
-                    ->ORWHERE('prop_properties.prop_address', 'ILIKE', '%' . $key . '%');
+                        ->ORWHERE('prop_properties.new_holding_no', 'ILIKE', '%' . $key . '%')
+                        ->ORWHERE('prop_safs.saf_no', 'ILIKE', '%' . $key . '%')
+                        ->ORWHERE('owner_detail.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->ORWHERE('owner_detail.mobile_no', 'ILIKE', '%' . $key . '%')
+                        ->ORWHERE('prop_properties.prop_address', 'ILIKE', '%' . $key . '%');
                 });
-                if($wardId)
-                {
-                    $data=$data->where("ulb_ward_masters.id",$wardId);
-                }                
-                if($ulbId)
-                {
-                    $data=$data->where("prop_properties.ulb_id",$ulbId);
-                }         
-                $perPage = $request->perPage ? $request->perPage : 10;
-                $page = $request->page && $request->page > 0 ? $request->page : 1;
-                $paginator = $data->paginate($perPage);
-                $items = $paginator->items();
-                $total = $paginator->total();
-                $numberOfPages = ceil($total/$perPage);                
-                $list=[
-                    "perPage"=>$perPage,
-                    "page"=>$page,
-                    "items"=>$items,
-                    "total"=>$total,
-                    "numberOfPages"=>$numberOfPages
-                ];
-                $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-                return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            if ($wardId) {
+                $data = $data->where("ulb_ward_masters.id", $wardId);
+            }
+            if ($ulbId) {
+                $data = $data->where("prop_properties.ulb_id", $ulbId);
+            }
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
     public function levelwisependingform(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
-            if($request->ulbId)
-            {
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
 
             // DB::enableQueryLog();
-            $data = WfRole::SELECT("wf_roles.id","wf_roles.role_name",
-                    DB::RAW("COUNT(prop_active_safs.id) AS total")
-                    )
+            $data = WfRole::SELECT(
+                "wf_roles.id",
+                "wf_roles.role_name",
+                DB::RAW("COUNT(prop_active_safs.id) AS total")
+            )
                 ->JOIN(DB::RAW("(
                                         SELECT distinct(wf_role_id) as wf_role_id
                                         FROM wf_workflowrolemaps 
@@ -717,87 +709,80 @@ class Report implements IReport
                                             AND workflow_id IN(3,4,5) 
                                         GROUP BY wf_role_id 
                                 ) AS roles
-                    "),function($join){
-                        $join->on("wf_roles.id","roles.wf_role_id");
-                    })
-                ->LEFTJOIN("prop_active_safs",function($join) use($ulbId){
-                    $join->ON("prop_active_safs.current_role","roles.wf_role_id")
-                    ->WHERE("prop_active_safs.ulb_id",$ulbId)
-                    ->WHERE(function($where){
-                        $where->ORWHERE("prop_active_safs.payment_status","<>",0)
-                        ->ORWHERENOTNULL("prop_active_safs.payment_status");
-                    });
+                    "), function ($join) {
+                    $join->on("wf_roles.id", "roles.wf_role_id");
                 })
-                ->GROUPBY(["wf_roles.id","wf_roles.role_name"])
+                ->LEFTJOIN("prop_active_safs", function ($join) use ($ulbId) {
+                    $join->ON("prop_active_safs.current_role", "roles.wf_role_id")
+                        ->WHERE("prop_active_safs.ulb_id", $ulbId)
+                        ->WHERE(function ($where) {
+                            $where->ORWHERE("prop_active_safs.payment_status", "<>", 0)
+                                ->ORWHERENOTNULL("prop_active_safs.payment_status");
+                        });
+                })
+                ->GROUPBY(["wf_roles.id", "wf_roles.role_name"])
                 ->UNION(
                     PropActiveSaf::SELECT(
                         DB::RAW("8 AS id, 'JSK' AS role_name,
                                 COUNT(prop_active_safs.id)")
                     )
-                    ->WHERE("prop_active_safs.ulb_id",$ulbId)
-                    ->WHERENOTNULL("prop_active_safs.user_id")
-                    ->WHERE(function($where){
-                        $where->WHERE("prop_active_safs.payment_status","=",0)
-                            ->ORWHERENULL("prop_active_safs.payment_status");
-                    })
+                        ->WHERE("prop_active_safs.ulb_id", $ulbId)
+                        ->WHERENOTNULL("prop_active_safs.user_id")
+                        ->WHERE(function ($where) {
+                            $where->WHERE("prop_active_safs.payment_status", "=", 0)
+                                ->ORWHERENULL("prop_active_safs.payment_status");
+                        })
                 )
                 ->GET();
-                $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-                return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
     public function levelformdetail(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id;            
+            $ulbId          = $refUser->ulb_id;
             $roleId = $roleId2 = $userId = null;
             $mWardPermission = collect([]);
-            
+
             $safWorkFlow = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-            if($request->ulbId)
-            {
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
-            if($request->roleId)
-            {
+            if ($request->roleId) {
                 $roleId = $request->roleId;
             }
-            if($request->userId)
-            {
-                $userId = $request->userId; 
-                $roleId2 = ($this->_common->getUserRoll($userId,$ulbId,$safWorkFlow))->role_id??0;
+            if ($request->userId) {
+                $userId = $request->userId;
+                $roleId2 = ($this->_common->getUserRoll($userId, $ulbId, $safWorkFlow))->role_id ?? 0;
             }
-            if(($request->roleId && $request->userId) && ($roleId!=$roleId2))
-            {
+            if (($request->roleId && $request->userId) && ($roleId != $roleId2)) {
                 throw new Exception("Invalid RoleId Pass");
             }
-            $roleId = $roleId2?$roleId2:$roleId;
-            if(!in_array($roleId,[11,8]))
-            {
+            $roleId = $roleId2 ? $roleId2 : $roleId;
+            if (!in_array($roleId, [11, 8])) {
                 $mWfWardUser = new WfWardUser();
                 $mWardPermission = $mWfWardUser->getWardsByUserId($userId);
             }
-           
-            $mWardIds = $mWardPermission->implode("id",",");
-            $mWardIds = explode(',',($mWardIds?$mWardIds:"0"));
+
+            $mWardIds = $mWardPermission->implode("id", ",");
+            $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
             // DB::enableQueryLog();
             $data = PropActiveSaf::SELECT(
-                    DB::RAW("wf_roles.id AS role_id, wf_roles.role_name,
+                DB::RAW("wf_roles.id AS role_id, wf_roles.role_name,
                     prop_active_safs.id, prop_active_safs.saf_no, prop_active_safs.prop_address,
                     ward_name as ward_no, 
                     owner.owner_name, owner.mobile_no")
             )
-            ->JOIN("ulb_ward_masters","ulb_ward_masters.id","prop_active_safs.ward_mstr_id")
-            ->LEFTJOIN(DB::RAW("( 
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_active_safs.ward_mstr_id")
+                ->LEFTJOIN(DB::RAW("( 
                                 SELECT DISTINCT(prop_active_safs_owners.saf_id) AS saf_id,STRING_AGG(owner_name,',') AS owner_name, 
                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no
                                 FROM prop_active_safs_owners
@@ -806,91 +791,82 @@ class Report implements IReport
                                     AND prop_active_safs.ulb_id = $ulbId
                                 GROUP BY prop_active_safs_owners.saf_id
                                 ) AS owner
-                                "),function($join){
-                                    $join->on("owner.saf_id","=","prop_active_safs.id");
-                                });
-            if($roleId==8)
-            {
-                $data = $data->LEFTJOIN("wf_roles","wf_roles.id","prop_active_safs.current_role")
-                        ->WHERENOTNULL("prop_active_safs.user_id")
-                        ->WHERE(function($where){
-                            $where->WHERE("prop_active_safs.payment_status","=",0)
+                                "), function ($join) {
+                    $join->on("owner.saf_id", "=", "prop_active_safs.id");
+                });
+            if ($roleId == 8) {
+                $data = $data->LEFTJOIN("wf_roles", "wf_roles.id", "prop_active_safs.current_role")
+                    ->WHERENOTNULL("prop_active_safs.user_id")
+                    ->WHERE(function ($where) {
+                        $where->WHERE("prop_active_safs.payment_status", "=", 0)
                             ->ORWHERENULL("prop_active_safs.payment_status");
-                        });
+                    });
+            } else {
+                $data = $data->JOIN("wf_roles", "wf_roles.id", "prop_active_safs.current_role")
+                    ->WHERE("wf_roles.id", $roleId);
             }
-            else
-            {
-                $data = $data->JOIN("wf_roles","wf_roles.id","prop_active_safs.current_role") 
-                        ->WHERE("wf_roles.id",$roleId);
-            }
-            $data = $data->WHERE("prop_active_safs.ulb_id",$ulbId);
-            if(!in_array($roleId,[11,8]) && $userId)
-            {
-                $data = $data->WHEREIN("prop_active_safs.ward_mstr_id",$mWardIds);
+            $data = $data->WHERE("prop_active_safs.ulb_id", $ulbId);
+            if (!in_array($roleId, [11, 8]) && $userId) {
+                $data = $data->WHEREIN("prop_active_safs.ward_mstr_id", $mWardIds);
             }
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
             $total = $paginator->total();
-            $numberOfPages = ceil($total/$perPage);                
-            $list=[
-                "perPage"=>$perPage,
-                "page"=>$page,
-                "items"=>$items,
-                "total"=>$total,
-                "numberOfPages"=>$numberOfPages
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
     public function levelUserPending(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id;            
+            $ulbId          = $refUser->ulb_id;
             $roleId = $roleId2 = $userId = null;
             $joins = "join";
-            
+
             $safWorkFlow = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-            if($request->ulbId)
-            {
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
-            if($request->roleId)
-            {
+            if ($request->roleId) {
                 $roleId = $request->roleId;
-            }            
-            if(($request->roleId && $request->userId) && ($roleId!=$roleId2))
-            {
+            }
+            if (($request->roleId && $request->userId) && ($roleId != $roleId2)) {
                 throw new Exception("Invalid RoleId Pass");
             }
-            if(in_array($roleId,[11,8]))
-            {
-                $joins="leftjoin";
+            if (in_array($roleId, [11, 8])) {
+                $joins = "leftjoin";
             }
-           
+
             // DB::enableQueryLog();
             $data = PropActiveSaf::SELECT(
-                    DB::RAW(
-                        "count(prop_active_safs.id),
+                DB::RAW(
+                    "count(prop_active_safs.id),
                     users_role.user_id ,
                     users_role.user_name,
                     users_role.wf_role_id as role_id,
-                    users_role.role_name")
+                    users_role.role_name"
+                )
             )
-            ->$joins(
-                DB::RAW("(
+                ->$joins(
+                    DB::RAW("(
                         select wf_role_id,user_id,user_name,role_name,concat('{',ward_ids,'}') as ward_ids
                         from (
                             select wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,
@@ -906,104 +882,91 @@ class Report implements IReport
                             group by wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,users.user_name,wf_roles.role_name
                         )role_user_ward
                     ) users_role
-                    "),function($join)use($joins){
-                        if($joins=="join")
-                        {
-                            $join->on("users_role.wf_role_id","=","prop_active_safs.current_role")
-                            ->where("prop_active_safs.ward_mstr_id",DB::raw("ANY (ward_ids::int[])"));
-                        }
-                        else
-                        {
-                            $join->on(DB::raw("1"),DB::raw("1"));
+                    "),
+                    function ($join) use ($joins) {
+                        if ($joins == "join") {
+                            $join->on("users_role.wf_role_id", "=", "prop_active_safs.current_role")
+                                ->where("prop_active_safs.ward_mstr_id", DB::raw("ANY (ward_ids::int[])"));
+                        } else {
+                            $join->on(DB::raw("1"), DB::raw("1"));
                         }
                     }
-            )
-            ->WHERE("prop_active_safs.ulb_id",$ulbId)
-            ->groupBy(["users_role.user_id" ,"users_role.user_name","users_role.wf_role_id" ,"users_role.role_name"]);
-            
+                )
+                ->WHERE("prop_active_safs.ulb_id", $ulbId)
+                ->groupBy(["users_role.user_id", "users_role.user_name", "users_role.wf_role_id", "users_role.role_name"]);
+
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
             $total = $paginator->total();
-            $numberOfPages = ceil($total/$perPage);                
-            $list=[
-                "perPage"=>$perPage,
-                "page"=>$page,
-                "items"=>$items,
-                "total"=>$total,
-                "numberOfPages"=>$numberOfPages
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
     public function userWiseWardWireLevelPending(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id;            
+            $ulbId          = $refUser->ulb_id;
             $roleId = $roleId2 = $userId = null;
             $mWardPermission = collect([]);
-            
+
             $safWorkFlow = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-            if($request->ulbId)
-            {
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
-            if($request->roleId)
-            {
+            if ($request->roleId) {
                 $roleId = $request->roleId;
             }
-            if($request->userId)
-            {
-                $userId = $request->userId; 
-                $roleId2 = ($this->_common->getUserRoll($userId,$ulbId,$safWorkFlow))->role_id??0;
+            if ($request->userId) {
+                $userId = $request->userId;
+                $roleId2 = ($this->_common->getUserRoll($userId, $ulbId, $safWorkFlow))->role_id ?? 0;
             }
-            if(($request->roleId && $request->userId) && ($roleId!=$roleId2))
-            {
+            if (($request->roleId && $request->userId) && ($roleId != $roleId2)) {
                 throw new Exception("Invalid RoleId Pass");
             }
-            $roleId = $roleId2?$roleId2:$roleId;
-            if(!in_array($roleId,[11,8]))
-            {
+            $roleId = $roleId2 ? $roleId2 : $roleId;
+            if (!in_array($roleId, [11, 8])) {
                 $mWfWardUser = new WfWardUser();
                 $mWardPermission = $mWfWardUser->getWardsByUserId($userId);
             }
-           
-            $mWardIds = $mWardPermission->implode("id",",");
-            $mWardIds = explode(',',($mWardIds?$mWardIds:"0"));
+
+            $mWardIds = $mWardPermission->implode("id", ",");
+            $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
             // DB::enableQueryLog();
             $data = UlbWardMaster::SELECT(
-                    DB::RAW(" DISTINCT(ward_name) as ward_no, COUNT(prop_active_safs.id) AS total")
+                DB::RAW(" DISTINCT(ward_name) as ward_no, COUNT(prop_active_safs.id) AS total")
             )
-            ->LEFTJOIN("prop_active_safs","ulb_ward_masters.id","prop_active_safs.ward_mstr_id");
-            if($roleId==8)
-            {
-                $data = $data->LEFTJOIN("wf_roles","wf_roles.id","prop_active_safs.current_role")
-                        ->WHERENOTNULL("prop_active_safs.user_id")
-                        ->WHERE(function($where){
-                            $where->WHERE("prop_active_safs.payment_status","=",0)
+                ->LEFTJOIN("prop_active_safs", "ulb_ward_masters.id", "prop_active_safs.ward_mstr_id");
+            if ($roleId == 8) {
+                $data = $data->LEFTJOIN("wf_roles", "wf_roles.id", "prop_active_safs.current_role")
+                    ->WHERENOTNULL("prop_active_safs.user_id")
+                    ->WHERE(function ($where) {
+                        $where->WHERE("prop_active_safs.payment_status", "=", 0)
                             ->ORWHERENULL("prop_active_safs.payment_status");
-                        });
+                    });
+            } else {
+                $data = $data->JOIN("wf_roles", "wf_roles.id", "prop_active_safs.current_role")
+                    ->WHERE("wf_roles.id", $roleId);
             }
-            else
-            {
-                $data = $data->JOIN("wf_roles","wf_roles.id","prop_active_safs.current_role") 
-                        ->WHERE("wf_roles.id",$roleId);
+            if (!in_array($roleId, [11, 8]) && $userId) {
+                $data = $data->WHEREIN("prop_active_safs.ward_mstr_id", $mWardIds);
             }
-            if(!in_array($roleId,[11,8]) && $userId)
-            {
-                $data = $data->WHEREIN("prop_active_safs.ward_mstr_id",$mWardIds);
-            }
-            $data = $data->WHERE("prop_active_safs.ulb_id",$ulbId);
+            $data = $data->WHERE("prop_active_safs.ulb_id", $ulbId);
             $data = $data->groupBy(["ward_name"]);
 
             $perPage = $request->perPage ? $request->perPage : 10;
@@ -1011,57 +974,50 @@ class Report implements IReport
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
             $total = $paginator->total();
-            $numberOfPages = ceil($total/$perPage);                
-            $list=[
-                "perPage"=>$perPage,
-                "page"=>$page,
-                "items"=>$items,
-                "total"=>$total,
-                "numberOfPages"=>$numberOfPages
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
 
     public function safSamFamGeotagging(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id;  
+            $ulbId          = $refUser->ulb_id;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             $wardId = null;
-            if($request->ulbId)
-            {
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
-            if($request->wardId)
-            {
+            if ($request->wardId) {
                 $wardId = $request->wardId;
             }
             $where = " WHERE status = 1 AND  ulb_id = $ulbId
                         AND created_at::date BETWEEN '$fromDate' AND '$uptoDate'";
-            if($wardId)
-            {
+            if ($wardId) {
                 $where .= " AND ward_mstr_id = $wardId ";
-            }            
-            $sql ="
+            }
+            $sql = "
                 WITH saf AS (
                     SELECT 
                     distinct saf.* 
@@ -1129,120 +1085,110 @@ class Report implements IReport
             $data = DB::select($sql);
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
 
-            return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
-        } 
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
     public function PropPaymentModeWiseSummery(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id;  
+            $ulbId          = $refUser->ulb_id;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             $wardId = null;
             $userId = null;
             $paymentMode = null;
-            if($request->ulbId)
-            {
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
-            if($request->userId)
-            {
+            if ($request->userId) {
                 $userId = $request->userId;
             }
-            if($request->paymentMode)
-            {
+            if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
             }
             $collection = DB::table(
-                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                 ) payment_modes")
-                        )
-                    ->select(
-                        DB::raw("payment_modes.mode AS transaction_mode,
+            )
+                ->select(
+                    DB::raw("payment_modes.mode AS transaction_mode,
                         COUNT(DISTINCT(prop_transactions.property_id)) AS holding_count,
                         COUNT(prop_transactions.id) AS tran_count, 
                         SUM(COALESCE(prop_transactions.amount,0)) AS amount
-                        "))
-                ->LEFTJOIN("prop_transactions",function($join)use($fromDate,$uptoDate,$userId,$ulbId){
-                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode) "))
-                    ->WHERENOTNULL("prop_transactions.property_id")
-                    ->WHEREIN("prop_transactions.status",[1,2])
-                    ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
-                    if($userId)
-                    {
-                        $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                        ")
+                )
+                ->LEFTJOIN("prop_transactions", function ($join) use ($fromDate, $uptoDate, $userId, $ulbId) {
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode) "))
+                        ->WHERENOTNULL("prop_transactions.property_id")
+                        ->WHEREIN("prop_transactions.status", [1, 2])
+                        ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                    if ($userId) {
+                        $sub = $sub->WHERE("prop_transactions.user_id", $userId);
                     }
-                    if($ulbId)
-                    {
-                        $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                    if ($ulbId) {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id", $ulbId);
                     }
                 })
-                ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
-                ->GROUPBY("payment_modes.mode"); 
-            if($paymentMode)
-            {
-                $collection=$collection->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->GROUPBY("payment_modes.mode");
+            if ($paymentMode) {
+                $collection = $collection->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
             $refund = DB::table(
-                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                 ) payment_modes")
-                        )
-                    ->select(
-                        DB::raw("payment_modes.mode AS transaction_mode,
+            )
+                ->select(
+                    DB::raw("payment_modes.mode AS transaction_mode,
                         COUNT(DISTINCT(prop_transactions.property_id)) AS holding_count,
                         COUNT(prop_transactions.id) AS tran_count, 
                         SUM(COALESCE(prop_transactions.amount,0)) AS amount
-                        "))
-                ->LEFTJOIN("prop_transactions",function($join)use($fromDate,$uptoDate,$userId,$ulbId){
-                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode) "))
-                    ->WHERENOTNULL("prop_transactions.property_id")
-                    ->WHERENOTIN("prop_transactions.status",[1,2])
-                    ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
-                    if($userId)
-                    {
-                        $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                        ")
+                )
+                ->LEFTJOIN("prop_transactions", function ($join) use ($fromDate, $uptoDate, $userId, $ulbId) {
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode) "))
+                        ->WHERENOTNULL("prop_transactions.property_id")
+                        ->WHERENOTIN("prop_transactions.status", [1, 2])
+                        ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                    if ($userId) {
+                        $sub = $sub->WHERE("prop_transactions.user_id", $userId);
                     }
-                    if($ulbId)
-                    {
-                        $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                    if ($ulbId) {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id", $ulbId);
                     }
                 })
-                ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
-                ->GROUPBY("payment_modes.mode"); 
-            if($paymentMode)
-            {
-                $refund=$refund->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->GROUPBY("payment_modes.mode");
+            if ($paymentMode) {
+                $refund = $refund->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
             $doorToDoor = DB::table(
-                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                     WHERE UPPER(prop_transactions.payment_mode) <> UPPER('ONLINE')
                                 ) payment_modes")
-                        )
-                    ->select(
-                        DB::raw("payment_modes.mode AS transaction_mode,
+            )
+                ->select(
+                    DB::raw("payment_modes.mode AS transaction_mode,
                         COUNT(DISTINCT(prop_transactions.property_id)) AS holding_count,
                         COUNT(prop_transactions.id) AS tran_count, 
                         SUM(COALESCE(prop_transactions.amount,0)) AS amount
-                        "))
+                        ")
+                )
                 ->LEFTJOIN(DB::RAW("(
                                      SELECT * 
                                      FROM prop_transactions
@@ -1263,39 +1209,37 @@ class Report implements IReport
                                             GROUP BY wf_roleusermaps.user_id
                                             ORDER BY wf_roleusermaps.user_id
                                      ) collecter on prop_transactions.user_id  = collecter.role_user_id
-                                ) prop_transactions"),function($join)use($fromDate,$uptoDate,$userId,$ulbId){
-                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode)"))                    
-                    ->WHERENOTNULL("prop_transactions.property_id")
-                    ->WHEREIN("prop_transactions.status",[1,2])
-                    ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
-                    if($userId)
-                    {
-                        $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                                ) prop_transactions"), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId) {
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode)"))
+                        ->WHERENOTNULL("prop_transactions.property_id")
+                        ->WHEREIN("prop_transactions.status", [1, 2])
+                        ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                    if ($userId) {
+                        $sub = $sub->WHERE("prop_transactions.user_id", $userId);
                     }
-                    if($ulbId)
-                    {
-                        $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                    if ($ulbId) {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id", $ulbId);
                     }
                 })
-                ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
-                ->GROUPBY("payment_modes.mode"); 
-            if($paymentMode)
-            {
-                $doorToDoor=$doorToDoor->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->GROUPBY("payment_modes.mode");
+            if ($paymentMode) {
+                $doorToDoor = $doorToDoor->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
             $jsk = DB::table(
-                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                     WHERE UPPER(prop_transactions.payment_mode) <> UPPER('ONLINE')
                                 ) payment_modes")
-                        )
-                    ->select(
-                        DB::raw("payment_modes.mode AS transaction_mode,
+            )
+                ->select(
+                    DB::raw("payment_modes.mode AS transaction_mode,
                         COUNT(DISTINCT(prop_transactions.property_id)) AS holding_count,
                         COUNT(prop_transactions.id) AS tran_count, 
                         SUM(COALESCE(prop_transactions.amount,0)) AS amount
-                        "))
-                    ->LEFTJOIN(DB::RAW("(
+                        ")
+                )
+                ->LEFTJOIN(DB::RAW("(
                                         SELECT * 
                                         FROM prop_transactions
                                         JOIN (
@@ -1315,31 +1259,28 @@ class Report implements IReport
                                                 GROUP BY wf_roleusermaps.user_id
                                                 ORDER BY wf_roleusermaps.user_id
                                         ) collecter on prop_transactions.user_id  = collecter.role_user_id
-                                    ) prop_transactions"),function($join)use($fromDate,$uptoDate,$userId,$ulbId){
-                        $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode)"))                    
+                                    ) prop_transactions"), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId) {
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode)"))
                         ->WHERENOTNULL("prop_transactions.property_id")
-                        ->WHEREIN("prop_transactions.status",[1,2])
-                        ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
-                        if($userId)
-                        {
-                            $sub = $sub->WHERE("prop_transactions.user_id",$userId);
-                        }
-                        if($ulbId)
-                        {
-                            $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
-                        }
-                    })
-                    ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
-                    ->GROUPBY("payment_modes.mode"); 
-            if($paymentMode)
-            {
-                $jsk=$jsk->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+                        ->WHEREIN("prop_transactions.status", [1, 2])
+                        ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                    if ($userId) {
+                        $sub = $sub->WHERE("prop_transactions.user_id", $userId);
+                    }
+                    if ($ulbId) {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id", $ulbId);
+                    }
+                })
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->GROUPBY("payment_modes.mode");
+            if ($paymentMode) {
+                $jsk = $jsk->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
 
             $collection = $collection->get();
             $refund     = $refund->get();
-            $doorToDoor =$doorToDoor->get();
-            $jsk        =$jsk->get();
+            $doorToDoor = $doorToDoor->get();
+            $jsk        = $jsk->get();
 
             $totalCollection = $collection->sum("amount");
             $totalHolding = $collection->sum("holding_count");
@@ -1357,153 +1298,147 @@ class Report implements IReport
             $totalHoldingJsk = $jsk->sum("holding_count");
             $totalTranJsk = $jsk->sum("tran_count");
 
-            $collection[]=["transaction_mode" =>"Total Collection",
-                        "holding_count"    => $totalHolding,
-                        "tran_count"       => $totalTran,
-                        "amount"           => $totalCollection
-                    ];
+            $collection[] = [
+                "transaction_mode" => "Total Collection",
+                "holding_count"    => $totalHolding,
+                "tran_count"       => $totalTran,
+                "amount"           => $totalCollection
+            ];
             $funal["collection"] = $collection;
-            $refund[]=["transaction_mode" =>"Total Refund",
-                    "holding_count"    => $totalHoldingRefund,
-                    "tran_count"       => $totalTranRefund,
-                    "amount"           => $totalCollectionRefund
-                ];
-            $funal["refund"] = $refund;            
+            $refund[] = [
+                "transaction_mode" => "Total Refund",
+                "holding_count"    => $totalHoldingRefund,
+                "tran_count"       => $totalTranRefund,
+                "amount"           => $totalCollectionRefund
+            ];
+            $funal["refund"] = $refund;
             $funal["netCollection"][] = [
-                                        "transaction_mode" =>"Net Collection",
-                                        "holding_count"    => $totalHolding - $totalHoldingRefund,
-                                        "tran_count"       => $totalTran - $totalTranRefund,
-                                        "amount"           => $totalCollection - $totalCollectionRefund
-                                    ];
-            
-            $doorToDoor[]=["transaction_mode" =>"Total Door To Door",
-                    "holding_count"    => $totalCollectionDoor,
-                    "tran_count"       => $totalHoldingDoor,
-                    "amount"           => $totalTranDoor
-                ];
+                "transaction_mode" => "Net Collection",
+                "holding_count"    => $totalHolding - $totalHoldingRefund,
+                "tran_count"       => $totalTran - $totalTranRefund,
+                "amount"           => $totalCollection - $totalCollectionRefund
+            ];
+
+            $doorToDoor[] = [
+                "transaction_mode" => "Total Door To Door",
+                "holding_count"    => $totalCollectionDoor,
+                "tran_count"       => $totalHoldingDoor,
+                "amount"           => $totalTranDoor
+            ];
             $funal["doorToDoor"] = $doorToDoor;
 
-            $jsk[]=["transaction_mode" =>"Total JSK",
-                    "holding_count"    => $totalCollectionJsk,
-                    "tran_count"       => $totalHoldingJsk,
-                    "amount"           => $totalTranJsk
-                ];
+            $jsk[] = [
+                "transaction_mode" => "Total JSK",
+                "holding_count"    => $totalCollectionJsk,
+                "tran_count"       => $totalHoldingJsk,
+                "amount"           => $totalTranJsk
+            ];
             $funal["jsk"] = $jsk;
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$funal,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true, "", $funal, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
     public function SafPaymentModeWiseSummery(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id;  
+            $ulbId          = $refUser->ulb_id;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             $wardId = null;
             $userId = null;
             $paymentMode = null;
-            if($request->ulbId)
-            {
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
-            if($request->userId)
-            {
+            if ($request->userId) {
                 $userId = $request->userId;
             }
-            if($request->paymentMode)
-            {
+            if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
             }
             $collection = DB::table(
-                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                 ) payment_modes")
-                        )
-                    ->select(
-                        DB::raw("payment_modes.mode AS transaction_mode,
+            )
+                ->select(
+                    DB::raw("payment_modes.mode AS transaction_mode,
                         COUNT(DISTINCT(prop_transactions.saf_id)) AS saf_count,
                         COUNT(prop_transactions.id) AS tran_count, 
                         SUM(COALESCE(prop_transactions.amount,0)) AS amount
-                        "))
-                ->LEFTJOIN("prop_transactions",function($join)use($fromDate,$uptoDate,$userId,$ulbId){
-                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode) "))
-                    ->WHERENOTNULL("prop_transactions.saf_id")
-                    ->WHEREIN("prop_transactions.status",[1,2])
-                    ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
-                    if($userId)
-                    {
-                        $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                        ")
+                )
+                ->LEFTJOIN("prop_transactions", function ($join) use ($fromDate, $uptoDate, $userId, $ulbId) {
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode) "))
+                        ->WHERENOTNULL("prop_transactions.saf_id")
+                        ->WHEREIN("prop_transactions.status", [1, 2])
+                        ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                    if ($userId) {
+                        $sub = $sub->WHERE("prop_transactions.user_id", $userId);
                     }
-                    if($ulbId)
-                    {
-                        $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                    if ($ulbId) {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id", $ulbId);
                     }
                 })
-                ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
-                ->GROUPBY("payment_modes.mode"); 
-            if($paymentMode)
-            {
-                $collection=$collection->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->GROUPBY("payment_modes.mode");
+            if ($paymentMode) {
+                $collection = $collection->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
             $refund = DB::table(
-                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                 ) payment_modes")
-                        )
-                    ->select(
-                        DB::raw("payment_modes.mode AS transaction_mode,
+            )
+                ->select(
+                    DB::raw("payment_modes.mode AS transaction_mode,
                         COUNT(DISTINCT(prop_transactions.saf_id)) AS saf_count,
                         COUNT(prop_transactions.id) AS tran_count, 
                         SUM(COALESCE(prop_transactions.amount,0)) AS amount
-                        "))
-                ->LEFTJOIN("prop_transactions",function($join)use($fromDate,$uptoDate,$userId,$ulbId){
-                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode) "))
-                    ->WHERENOTNULL("prop_transactions.saf_id")
-                    ->WHERENOTIN("prop_transactions.status",[1,2])
-                    ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
-                    if($userId)
-                    {
-                        $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                        ")
+                )
+                ->LEFTJOIN("prop_transactions", function ($join) use ($fromDate, $uptoDate, $userId, $ulbId) {
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode) "))
+                        ->WHERENOTNULL("prop_transactions.saf_id")
+                        ->WHERENOTIN("prop_transactions.status", [1, 2])
+                        ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                    if ($userId) {
+                        $sub = $sub->WHERE("prop_transactions.user_id", $userId);
                     }
-                    if($ulbId)
-                    {
-                        $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                    if ($ulbId) {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id", $ulbId);
                     }
                 })
-                ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
-                ->GROUPBY("payment_modes.mode"); 
-            if($paymentMode)
-            {
-                $refund=$refund->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->GROUPBY("payment_modes.mode");
+            if ($paymentMode) {
+                $refund = $refund->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
             $doorToDoor = DB::table(
-                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                     WHERE UPPER(prop_transactions.payment_mode) <> UPPER('ONLINE')
                                 ) payment_modes")
-                        )
-                    ->select(
-                        DB::raw("payment_modes.mode AS transaction_mode,
+            )
+                ->select(
+                    DB::raw("payment_modes.mode AS transaction_mode,
                         COUNT(DISTINCT(prop_transactions.saf_id)) AS saf_count,
                         COUNT(prop_transactions.id) AS tran_count, 
                         SUM(COALESCE(prop_transactions.amount,0)) AS amount
-                        "))
+                        ")
+                )
                 ->LEFTJOIN(DB::RAW("(
                                      SELECT * 
                                      FROM prop_transactions
@@ -1524,39 +1459,37 @@ class Report implements IReport
                                             GROUP BY wf_roleusermaps.user_id
                                             ORDER BY wf_roleusermaps.user_id
                                      ) collecter on prop_transactions.user_id  = collecter.role_user_id
-                                ) prop_transactions"),function($join)use($fromDate,$uptoDate,$userId,$ulbId){
-                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode)"))                    
-                    ->WHERENOTNULL("prop_transactions.saf_id")
-                    ->WHEREIN("prop_transactions.status",[1,2])
-                    ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
-                    if($userId)
-                    {
-                        $sub = $sub->WHERE("prop_transactions.user_id",$userId);
+                                ) prop_transactions"), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId) {
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode)"))
+                        ->WHERENOTNULL("prop_transactions.saf_id")
+                        ->WHEREIN("prop_transactions.status", [1, 2])
+                        ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                    if ($userId) {
+                        $sub = $sub->WHERE("prop_transactions.user_id", $userId);
                     }
-                    if($ulbId)
-                    {
-                        $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
+                    if ($ulbId) {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id", $ulbId);
                     }
                 })
-                ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
-                ->GROUPBY("payment_modes.mode"); 
-            if($paymentMode)
-            {
-                $doorToDoor=$doorToDoor->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->GROUPBY("payment_modes.mode");
+            if ($paymentMode) {
+                $doorToDoor = $doorToDoor->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
             $jsk = DB::table(
-                        DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
+                DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                     WHERE UPPER(prop_transactions.payment_mode) <> UPPER('ONLINE')
                                 ) payment_modes")
-                        )
-                    ->select(
-                        DB::raw("payment_modes.mode AS transaction_mode,
+            )
+                ->select(
+                    DB::raw("payment_modes.mode AS transaction_mode,
                         COUNT(DISTINCT(prop_transactions.saf_id)) AS saf_count,
                         COUNT(prop_transactions.id) AS tran_count, 
                         SUM(COALESCE(prop_transactions.amount,0)) AS amount
-                        "))
-                    ->LEFTJOIN(DB::RAW("(
+                        ")
+                )
+                ->LEFTJOIN(DB::RAW("(
                                         SELECT * 
                                         FROM prop_transactions
                                         JOIN (
@@ -1576,28 +1509,25 @@ class Report implements IReport
                                                 GROUP BY wf_roleusermaps.user_id
                                                 ORDER BY wf_roleusermaps.user_id
                                         ) collecter on prop_transactions.user_id  = collecter.role_user_id
-                                    ) prop_transactions"),function($join)use($fromDate,$uptoDate,$userId,$ulbId){
-                        $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)") ,"=",DB::RAW("UPPER(payment_modes.mode)"))                    
+                                    ) prop_transactions"), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId) {
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode)"))
                         ->WHERENOTNULL("prop_transactions.saf_id")
-                        ->WHEREIN("prop_transactions.status",[1,2])
-                        ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
-                        if($userId)
-                        {
-                            $sub = $sub->WHERE("prop_transactions.user_id",$userId);
-                        }
-                        if($ulbId)
-                        {
-                            $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
-                        }
-                    })
-                    ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
-                    ->GROUPBY("payment_modes.mode"); 
-            if($paymentMode)
-            {
-                $jsk=$jsk->where(DB::raw("upper(payment_modes.mode)"),$paymentMode);
+                        ->WHEREIN("prop_transactions.status", [1, 2])
+                        ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                    if ($userId) {
+                        $sub = $sub->WHERE("prop_transactions.user_id", $userId);
+                    }
+                    if ($ulbId) {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id", $ulbId);
+                    }
+                })
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->GROUPBY("payment_modes.mode");
+            if ($paymentMode) {
+                $jsk = $jsk->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
             $assestmentType = DB::table(
-                        DB::raw("(SELECT DISTINCT(UPPER(assessment_type)) AS mode 
+                DB::raw("(SELECT DISTINCT(UPPER(assessment_type)) AS mode 
                                     FROM (
                                             (
                                                 select
@@ -1628,9 +1558,9 @@ class Report implements IReport
                                             )
                                     )assesment_type
                                 ) assesment_type")
-                        )
-                    ->select(
-                        DB::raw("
+            )
+                ->select(
+                    DB::raw("
                         CASE WHEN assesment_type.mode ILIKE '%MUTATION%' THEN 'MUTATION' 
                             ELSE assesment_type.mode 
                             END AS transaction_mode,
@@ -1643,8 +1573,9 @@ class Report implements IReport
                         CASE WHEN assesment_type.mode ILIKE '%MUTATION%' THEN SUM(COALESCE(prop_transactions.amount,0)) 
                             ELSE SUM(COALESCE(prop_transactions.amount,0))
                             END AS amount
-                        "))
-                    ->LEFTJOIN(DB::RAW("(
+                        ")
+                )
+                ->LEFTJOIN(DB::RAW("(
                                         SELECT * 
                                         FROM(
                                             (
@@ -1656,8 +1587,8 @@ class Report implements IReport
                                                 JOIN prop_active_safs ON  prop_active_safs.id = prop_transactions.saf_id 
                                                 WHERE prop_transactions.status in (1,2)
                                                     AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-                                                    ".($userId ? " AND prop_transactions.user_id = $userId " : "")."
-                                                    ".($ulbId ? " AND prop_transactions.ulb_id = $ulbId " : "")."
+                                                    " . ($userId ? " AND prop_transactions.user_id = $userId " : "") . "
+                                                    " . ($ulbId ? " AND prop_transactions.ulb_id = $ulbId " : "") . "
                                             )
                                             UNION(
                                                 SELECT prop_transactions.*,
@@ -1668,8 +1599,8 @@ class Report implements IReport
                                                 JOIN prop_rejected_safs ON prop_transactions.id = prop_transactions.saf_id 
                                                 WHERE prop_transactions.status in (1,2)
                                                     AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-                                                    ".($userId ? " AND prop_transactions.user_id = $userId " : "")."
-                                                    ".($ulbId ? " AND prop_transactions.ulb_id = $ulbId " : "")."
+                                                    " . ($userId ? " AND prop_transactions.user_id = $userId " : "") . "
+                                                    " . ($ulbId ? " AND prop_transactions.ulb_id = $ulbId " : "") . "
                                             )
                                             UNION(
                                                 SELECT prop_transactions.*,
@@ -1680,37 +1611,34 @@ class Report implements IReport
                                                 JOIN prop_safs ON prop_safs.id = prop_transactions.saf_id 
                                                 WHERE prop_transactions.status in (1,2)
                                                     AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-                                                    ".($userId ? " AND prop_transactions.user_id = $userId " : "")."
-                                                    ".($ulbId ? " AND prop_transactions.ulb_id = $ulbId " : "")."
+                                                    " . ($userId ? " AND prop_transactions.user_id = $userId " : "") . "
+                                                    " . ($ulbId ? " AND prop_transactions.ulb_id = $ulbId " : "") . "
                                             )
 
                                         )prop_transactions
-                                    ) prop_transactions"),function($join)use($fromDate,$uptoDate,$userId,$ulbId){
-                        $sub = $join->on(DB::RAW("UPPER(prop_transactions.assessment_type)") ,"=",DB::RAW("UPPER(assesment_type.mode)"))                    
+                                    ) prop_transactions"), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId) {
+                    $sub = $join->on(DB::RAW("UPPER(prop_transactions.assessment_type)"), "=", DB::RAW("UPPER(assesment_type.mode)"))
                         ->WHERENOTNULL("prop_transactions.saf_id")
-                        ->WHEREIN("prop_transactions.status",[1,2])
-                        ->WHEREBETWEEN("prop_transactions.tran_date",[$fromDate,$uptoDate]);
-                        if($userId)
-                        {
-                            $sub = $sub->WHERE("prop_transactions.user_id",$userId);
-                        }
-                        if($ulbId)
-                        {
-                            $sub = $sub->WHERE("prop_transactions.ulb_id",$ulbId);
-                        }
-                    })
-                    ->LEFTJOIN("users","users.id","prop_transactions.user_id")                
-                    ->GROUPBY("assesment_type.mode"); 
-            if($paymentMode)
-            {
-                $assestmentType=$assestmentType->where(DB::raw("upper(prop_transactions.payment_mode)"),$paymentMode);
+                        ->WHEREIN("prop_transactions.status", [1, 2])
+                        ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                    if ($userId) {
+                        $sub = $sub->WHERE("prop_transactions.user_id", $userId);
+                    }
+                    if ($ulbId) {
+                        $sub = $sub->WHERE("prop_transactions.ulb_id", $ulbId);
+                    }
+                })
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->GROUPBY("assesment_type.mode");
+            if ($paymentMode) {
+                $assestmentType = $assestmentType->where(DB::raw("upper(prop_transactions.payment_mode)"), $paymentMode);
             }
             // dd($assestmentType->get());
             $collection = $collection->get();
             $refund     = $refund->get();
-            $doorToDoor =$doorToDoor->get();
-            $jsk        =$jsk->get();
-            $assestmentType=$assestmentType->get();
+            $doorToDoor = $doorToDoor->get();
+            $jsk        = $jsk->get();
+            $assestmentType = $assestmentType->get();
 
             $totalCollection = $collection->sum("amount");
             $totalSaf = $collection->sum("saf_count");
@@ -1728,83 +1656,81 @@ class Report implements IReport
             $totalSafJsk = $jsk->sum("saf_count");
             $totalTranJsk = $jsk->sum("tran_count");
 
-           
 
-            $collection[]=["transaction_mode" =>"Total Collection",
-                        "saf_count"    => $totalSaf,
-                        "tran_count"       => $totalTran,
-                        "amount"           => $totalCollection
-                    ];
+
+            $collection[] = [
+                "transaction_mode" => "Total Collection",
+                "saf_count"    => $totalSaf,
+                "tran_count"       => $totalTran,
+                "amount"           => $totalCollection
+            ];
             $funal["collection"] = $collection;
-            $refund[]=["transaction_mode" =>"Total Refund",
-                    "saf_count"    => $totalSafRefund,
-                    "tran_count"       => $totalTranRefund,
-                    "amount"           => $totalCollectionRefund
-                ];
-            $funal["refund"] = $refund;            
+            $refund[] = [
+                "transaction_mode" => "Total Refund",
+                "saf_count"    => $totalSafRefund,
+                "tran_count"       => $totalTranRefund,
+                "amount"           => $totalCollectionRefund
+            ];
+            $funal["refund"] = $refund;
             $funal["netCollection"][] = [
-                                        "transaction_mode" =>"Net Collection",
-                                        "saf_count"    => $totalSaf - $totalSafRefund,
-                                        "tran_count"       => $totalTran - $totalTranRefund,
-                                        "amount"           => $totalCollection - $totalCollectionRefund
-                                    ];
-            
-            $doorToDoor[]=["transaction_mode" =>"Total Door To Door",
-                    "saf_count"    => $totalCollectionDoor,
-                    "tran_count"       => $totalSafDoor,
-                    "amount"           => $totalTranDoor
-                ];
+                "transaction_mode" => "Net Collection",
+                "saf_count"    => $totalSaf - $totalSafRefund,
+                "tran_count"       => $totalTran - $totalTranRefund,
+                "amount"           => $totalCollection - $totalCollectionRefund
+            ];
+
+            $doorToDoor[] = [
+                "transaction_mode" => "Total Door To Door",
+                "saf_count"    => $totalCollectionDoor,
+                "tran_count"       => $totalSafDoor,
+                "amount"           => $totalTranDoor
+            ];
             $funal["doorToDoor"] = $doorToDoor;
 
-            $jsk[]=["transaction_mode" =>"Total JSK",
-                    "saf_count"    => $totalCollectionJsk,
-                    "tran_count"       => $totalSafJsk,
-                    "amount"           => $totalTranJsk
-                ];
+            $jsk[] = [
+                "transaction_mode" => "Total JSK",
+                "saf_count"    => $totalCollectionJsk,
+                "tran_count"       => $totalSafJsk,
+                "amount"           => $totalTranJsk
+            ];
             $funal["jsk"] = $jsk;
             $funal["assestment_type"] = $assestmentType;
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$funal,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true, "", $funal, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
     public function PropDCB(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id; 
+            $ulbId          = $refUser->ulb_id;
             $wardId = null;
             $fiYear = getFY();
-            if($request->fiYear)
-            {
-                $fiYear = $request->fiYear;                
+            if ($request->fiYear) {
+                $fiYear = $request->fiYear;
             }
-            list($fromYear,$toYear)=explode("-",$fiYear);
-            if($toYear-$fromYear !=1)
-            {
+            list($fromYear, $toYear) = explode("-", $fiYear);
+            if ($toYear - $fromYear != 1) {
                 throw new Exception("Enter Valide Financial Year");
             }
-            $fromDate = $fromYear."-04-01";
-            $uptoDate = $toYear."-03-31";
-            if($request->ulbId)
-            {
+            $fromDate = $fromYear . "-04-01";
+            $uptoDate = $toYear . "-03-31";
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
-            }            
-            if($request->wardId)
-            {
+            }
+            if ($request->wardId) {
                 $wardId = $request->wardId;
             }
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $limit = $perPage;
-            $offset =  $request->page && $request->page > 0 ? $request->page:0;
+            $offset =  $request->page && $request->page > 0 ? $request->page : 0;
 
             $from = "
                 FROM (
@@ -1828,7 +1754,7 @@ class Report implements IReport
                       )prop_properties ON prop_properties.id = prop_owners.property_id
                         AND prop_properties.ulb_id = $ulbId
                     WHERE prop_owners.status =1
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                     GROUP BY prop_properties.id
                 )prop_owner_detail ON prop_owner_detail.property_id = prop_properties.id
                 LEFT JOIN (
@@ -1854,7 +1780,7 @@ class Report implements IReport
                       )prop_properties ON prop_properties.id = prop_demands.property_id
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_demands.due_date<='$uptoDate'
                     GROUP BY prop_demands.property_id    
                 )demands ON demands.property_id = prop_properties.id
@@ -1885,7 +1811,7 @@ class Report implements IReport
                         AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
                         AND prop_demands.due_date<='$uptoDate'
                     GROUP BY prop_demands.property_id
@@ -1907,13 +1833,13 @@ class Report implements IReport
                         AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_transactions.tran_date<'$fromDate'
                     GROUP BY prop_demands.property_id
                 )prev_collection ON prev_collection.property_id = prop_properties.id 
                 JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
                 WHERE  prop_properties.ulb_id = $ulbId  
-                    ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."           
+                    " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "           
             ";
             $footerfrom = "
                 FROM prop_properties
@@ -1925,7 +1851,7 @@ class Report implements IReport
                     JOIN prop_properties ON prop_properties.id = prop_owners.property_id
                         AND prop_properties.ulb_id = $ulbId
                     WHERE prop_owners.status =1
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                     GROUP BY prop_properties.id
                 )prop_owner_detail ON prop_owner_detail.property_id = prop_properties.id
                 LEFT JOIN (
@@ -1945,7 +1871,7 @@ class Report implements IReport
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_demands.due_date<='$uptoDate'
                     GROUP BY prop_demands.property_id    
                 )demands ON demands.property_id = prop_properties.id
@@ -1970,7 +1896,7 @@ class Report implements IReport
                         AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
                         AND prop_demands.due_date<='$uptoDate'
                     GROUP BY prop_demands.property_id
@@ -1986,13 +1912,13 @@ class Report implements IReport
                         AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_transactions.tran_date<'$fromDate'
                     GROUP BY prop_demands.property_id
                 )prev_collection ON prev_collection.property_id = prop_properties.id 
                 JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
                 WHERE  prop_properties.ulb_id = $ulbId  
-                    ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."           
+                    " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "           
             ";
             $select = "SELECT  prop_properties.id,
                             ulb_ward_masters.ward_name AS ward_no,
@@ -2082,53 +2008,46 @@ class Report implements IReport
             $data = DB::TABLE(DB::RAW("($select $from)AS prop"))->get();
             // $footer = DB::TABLE(DB::RAW("($footerselect $footerfrom)AS prop"))->get();
             $items = $data;
-            $total = (collect(DB::SELECT("SELECT COUNT(*) AS total $footerfrom"))->first())->total??0;
-            $numberOfPages = ceil($total/$perPage);                
-            $list=[
-                "perPage"=>$perPage,
-                "page"=>$page,
-                "items"=>$items,
+            $total = (collect(DB::SELECT("SELECT COUNT(*) AS total $footerfrom"))->first())->total ?? 0;
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
                 // "footer"=>$footer,
-                "total"=>$total,
-                "numberOfPages"=>$numberOfPages
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
-
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
     public function PropWardWiseDCB(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id; 
+            $ulbId          = $refUser->ulb_id;
             $wardId = null;
             $fiYear = getFY();
-            if($request->fiYear)
-            {
-                $fiYear = $request->fiYear;                
+            if ($request->fiYear) {
+                $fiYear = $request->fiYear;
             }
-            list($fromYear,$toYear)=explode("-",$fiYear);
-            if($toYear-$fromYear !=1)
-            {
+            list($fromYear, $toYear) = explode("-", $fiYear);
+            if ($toYear - $fromYear != 1) {
                 throw new Exception("Enter Valide Financial Year");
             }
-            $fromDate = $fromYear."-04-01";
-            $uptoDate = $toYear."-03-31";
-            if($request->ulbId)
-            {
+            $fromDate = $fromYear . "-04-01";
+            $uptoDate = $toYear . "-03-31";
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
-            }            
-            if($request->wardId)
-            {
+            }
+            if ($request->wardId) {
                 $wardId = $request->wardId;
             }
             $from = "
@@ -2151,7 +2070,7 @@ class Report implements IReport
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_demands.due_date<='$uptoDate'
                     GROUP BY prop_properties.ward_mstr_id    
                 )demands ON demands.ward_mstr_id = ulb_ward_masters.id 
@@ -2177,7 +2096,7 @@ class Report implements IReport
                         AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
                         AND prop_demands.due_date<='$uptoDate'
                     GROUP BY prop_properties.ward_mstr_id
@@ -2193,12 +2112,12 @@ class Report implements IReport
                         AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId":"")."
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_transactions.tran_date<'$fromDate'
                     GROUP BY prop_properties.ward_mstr_id
                 )prev_collection ON prev_collection.ward_mstr_id = ulb_ward_masters.id                 
                 WHERE  ulb_ward_masters.ulb_id = $ulbId  
-                    ".($wardId?" AND ulb_ward_masters.id = $wardId":"")."           
+                    " . ($wardId ? " AND ulb_ward_masters.id = $wardId" : "") . "           
             ";
             $select = "SELECT CASE WHEN ulb_ward_masters.old_ward_name IS NOT NULL THEN ulb_ward_masters.old_ward_name
                                 ELSE  ulb_ward_masters.ward_name ::text
@@ -2242,47 +2161,41 @@ class Report implements IReport
                                 )
                             ) AS outstanding                                 
             ";
-            $data = DB::select($select . $from);            
+            $data = DB::select($select . $from);
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
     public function PropFineRebate(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id; 
+            $ulbId          = $refUser->ulb_id;
             $wardId = null;
             $fiYear = getFY();
-            if($request->fiYear)
-            {
-                $fiYear = $request->fiYear;                
+            if ($request->fiYear) {
+                $fiYear = $request->fiYear;
             }
-            list($fromYear,$toYear)=explode("-",$fiYear);
-            if($toYear-$fromYear !=1)
-            {
+            list($fromYear, $toYear) = explode("-", $fiYear);
+            if ($toYear - $fromYear != 1) {
                 throw new Exception("Enter Valide Financial Year");
             }
-            $fromDate = $fromYear."-04-01";
-            $uptoDate = $toYear."-03-31";
-            if($request->ulbId)
-            {
+            $fromDate = $fromYear . "-04-01";
+            $uptoDate = $toYear . "-03-31";
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
-            }            
-            if($request->wardId)
-            {
+            }
+            if ($request->wardId) {
                 $wardId = $request->wardId;
-            }            
+            }
             $data = PropProperty::SELECT(
-                        DB::RAW("
+                DB::RAW("
                         ulb_ward_masters.ward_name as ward_no,
                         CASE WHEN prop_properties.new_holding_no!='' 
                             THEN prop_properties.new_holding_no 
@@ -2304,9 +2217,10 @@ class Report implements IReport
                         (COALESCE(fine_rebate.one_percent_penalty, 0)) AS one_percent_penalty,
                         (COALESCE(fine_rebate.late_assessment_penalty, 0)) AS late_assessment_penalty
                         ")
-                    )
-                    ->JOIN("ulb_ward_masters","ulb_ward_masters.id","prop_properties.ward_mstr_id")
-                    ->JOIN(DB::RAW("
+            )
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_properties.ward_mstr_id")
+                ->JOIN(
+                    DB::RAW("
                                 (
                                     SELECT 
                                         prop_demands.property_id, 
@@ -2324,14 +2238,16 @@ class Report implements IReport
                                     WHERE prop_demands.status=1
                                         AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
                                         AND prop_transactions.tran_date BETWEEN '$fromDate'AND '$uptoDate'
-                                        ".($ulbId?" AND prop_transactions.ulb_id=$ulbId":"")."
+                                        " . ($ulbId ? " AND prop_transactions.ulb_id=$ulbId" : "") . "
                                     GROUP BY prop_demands.property_id 
                                 )demands
-                            "),function($join){
-                                $join->on("demands.property_id","prop_properties.id");
-                            }
-                    )
-                    ->JOIN(DB::RAW("
+                            "),
+                    function ($join) {
+                        $join->on("demands.property_id", "prop_properties.id");
+                    }
+                )
+                ->JOIN(
+                    DB::RAW("
                                     (
                                         SELECT
                                             prop_transactions.property_id AS property_id,
@@ -2342,14 +2258,16 @@ class Report implements IReport
                                             prop_transactions.property_id NOTNULL
                                             AND prop_transactions.status IN(1,2)
                                             AND prop_transactions.tran_date BETWEEN '$fromDate'AND '$uptoDate'
-                                            ".($ulbId?" AND prop_transactions.ulb_id=$ulbId":"")."
+                                            " . ($ulbId ? " AND prop_transactions.ulb_id=$ulbId" : "") . "
                                         GROUP BY prop_transactions.property_id
                                     )prop_transactions
-                                "),function($join){
-                                    $join->on("prop_transactions.property_id","prop_properties.id");
-                                }
-                    )                    
-                    ->LEFTJOIN(DB::RAW("
+                                "),
+                    function ($join) {
+                        $join->on("prop_transactions.property_id", "prop_properties.id");
+                    }
+                )
+                ->LEFTJOIN(
+                    DB::RAW("
                             (
                                 SELECT
                                     prop_transactions.property_id, 
@@ -2396,73 +2314,67 @@ class Report implements IReport
                                     prop_transactions.property_id NOTNULL 
                                     AND prop_transactions.status IN(1,2)
                                     AND prop_transactions.tran_date BETWEEN '$fromDate'AND '$uptoDate'
-                                    ".($ulbId?" AND prop_transactions.ulb_id=$ulbId":"")."
+                                    " . ($ulbId ? " AND prop_transactions.ulb_id=$ulbId" : "") . "
                                 GROUP BY prop_transactions.property_id
                             )fine_rebate
-                            "),function($join){
-                                $join->on("fine_rebate.property_id","prop_properties.id");
-                            }
-                    );
-            if($wardId)
-            {
-                $data = $data->WHERE("ulb_ward_masters.id",$wardId);
+                            "),
+                    function ($join) {
+                        $join->on("fine_rebate.property_id", "prop_properties.id");
+                    }
+                );
+            if ($wardId) {
+                $data = $data->WHERE("ulb_ward_masters.id", $wardId);
             }
-            if($ulbId)
-            {
-                
-                $data = $data->WHERE("prop_properties.ulb_id",$ulbId);
+            if ($ulbId) {
+
+                $data = $data->WHERE("prop_properties.ulb_id", $ulbId);
             }
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
             $total = $paginator->total();
-            $numberOfPages = ceil($total/$perPage);                
-            $list=[
-                "perPage"=>$perPage,
-                "page"=>$page,
-                "items"=>$items,
-                "total"=>$total,
-                "numberOfPages"=>$numberOfPages
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
     public function PropDeactedList(Request $request)
     {
-        $metaData= collect($request->metaData)->all();        
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             $wardId = null;
-            if($request->fromDate)
-            {
-                $fromDate = $request->fromDate;                
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
-                $uptoDate = $request->uptoDate;                
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
             }
 
-            if($request->ulbId)
-            {
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
-            }            
-            if($request->wardId)
-            {
+            }
+            if ($request->wardId) {
                 $wardId = $request->wardId;
-            } 
+            }
 
-            $data = PropProperty::select(DB::RAW("
+            $data = PropProperty::select(
+                DB::RAW("
                             prop_properties.id,
                             ulb_ward_masters.ward_name AS ward_no,
                             CASE WHEN prop_properties.new_holding_no!='' 
@@ -2478,10 +2390,10 @@ class Report implements IReport
                             prop_deactivation_requests.remarks,
                             prop_deactivation_requests.documents
                             ")
-                    )
-                    ->JOIN("ulb_ward_masters","ulb_ward_masters.id","prop_properties.ward_mstr_id")
-                    ->JOIN("prop_deactivation_requests","prop_deactivation_requests.property_id","prop_properties.id")
-                    ->LEFTJOIN(DB::raw("(
+            )
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_properties.ward_mstr_id")
+                ->JOIN("prop_deactivation_requests", "prop_deactivation_requests.property_id", "prop_properties.id")
+                ->LEFTJOIN(DB::raw("(
                         SELECT
                             property_id,
                             STRING_AGG(owner_name,',')as owner_name,
@@ -2489,40 +2401,36 @@ class Report implements IReport
                             STRING_AGG(mobile_no::text,',')as mobile_no
                         FROM view_owners_details
                         GROUP BY property_id
-                        )owners_details"),function($join){
-                            $join->on("owners_details.property_id","prop_properties.id");
-                        })
-                        ->WHERE("prop_properties.status",0)
-                        ->WHEREBETWEEN("prop_deactivation_requests.approve_date",[$fromDate,$uptoDate]);
+                        )owners_details"), function ($join) {
+                    $join->on("owners_details.property_id", "prop_properties.id");
+                })
+                ->WHERE("prop_properties.status", 0)
+                ->WHEREBETWEEN("prop_deactivation_requests.approve_date", [$fromDate, $uptoDate]);
 
-            if($wardId)
-            {
-                $data = $data->WHERE("ulb_ward_masters.id",$wardId);
+            if ($wardId) {
+                $data = $data->WHERE("ulb_ward_masters.id", $wardId);
             }
-            if($ulbId)
-            {
-                
-                $data = $data->WHERE("prop_properties.ulb_id",$ulbId);
+            if ($ulbId) {
+
+                $data = $data->WHERE("prop_properties.ulb_id", $ulbId);
             }
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
             $total = $paginator->total();
-            $numberOfPages = ceil($total/$perPage);                
-            $list=[
-                "perPage"=>$perPage,
-                "page"=>$page,
-                "items"=>$items,
-                "total"=>$total,
-                "numberOfPages"=>$numberOfPages
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 }

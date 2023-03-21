@@ -692,4 +692,41 @@ class PropActiveSaf extends Model
             ->where('ulb_id', $ulbId)
             ->get();
     }
+
+    /**
+     * | Get GB SAf details by saf No
+     */
+    public function getGbSafDtlsBySafNo($safNo)
+    {
+        return DB::table('prop_active_safs as s')
+            ->where('s.saf_no', $safNo)
+            ->select(
+                's.id',
+                's.saf_no',
+                's.ward_mstr_id',
+                's.new_ward_mstr_id',
+                's.prop_address',
+                's.prop_pin_code',
+                's.assessment_type',
+                's.applicant_name',
+                's.application_date',
+                's.area_of_plot as total_area_in_decimal',
+                'u.ward_name as old_ward_no',
+                'u1.ward_name as new_ward_no',
+                'doc_upload_status',
+                'payment_status',
+                'role_name as currentRole',
+                's.user_id',
+                's.citizen_id',
+                DB::raw(
+                    "case when s.user_id is not null then 'TC/TL/JSK' when 
+                    s.citizen_id is not null then 'Citizen' end as appliedBy
+                "
+                ),
+            )
+            ->join('wf_roles', 'wf_roles.id', 's.current_role')
+            ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
+            ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
+            ->first();
+    }
 }

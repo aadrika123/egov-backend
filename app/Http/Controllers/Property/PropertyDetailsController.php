@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\Http\Controllers\Controller;
 use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropActiveDeactivationRequest;
+use App\Models\Property\PropActiveGbOfficer;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
@@ -51,6 +52,13 @@ class PropertyDetailsController extends Controller
                     $mPropActiveSafOwners = new PropActiveSafsOwner();
                     $application = collect($mPropActiveSaf->getSafDtlsBySafNo($applicationNo));
                     $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId1($application['id']));
+                    $details = $application->merge($owners);
+                    break;
+                case ("gbsaf"):
+                    $mPropActiveSaf = new PropActiveSaf();
+                    $mPropActiveGbOfficer = new PropActiveGbOfficer();
+                    $application = collect($mPropActiveSaf->getGbSafDtlsBySafNo($applicationNo));
+                    $owners = collect($mPropActiveGbOfficer->getOfficerBySafId($application['id']));
                     $details = $application->merge($owners);
                     break;
                 case ("concession"):

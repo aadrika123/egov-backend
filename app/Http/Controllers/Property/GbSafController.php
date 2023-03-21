@@ -367,6 +367,7 @@ class GbSafController extends Controller
             // SAF Officer replication
             $approvedOfficers = $officerDetails->replicate();
             $approvedOfficers->setTable('prop_gbofficers');
+            $approvedOfficers->id = $officerDetails->id;
             $approvedOfficers->property_id = $propProperties->id;
             $approvedOfficers->save();
 

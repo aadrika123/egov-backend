@@ -153,61 +153,6 @@ class PropertyController extends Controller
         }
     }
 
-
-    /**
-     * | Deactivated Holding
-     */
-    public function deactivatedHolding(Request $req)
-    {
-        try {
-            $mPropProperty = new PropProperty();
-            $sql = NULL;
-            DB::enableQueryLog();
-
-            if ($req->wardMstrId) {
-                $sql = "SELECT 
-                        prop_properties.id,
-                        holding_no,
-                        ward_mstr_id,
-                        ward_name,
-                        prop_address,
-				        string_agg(owner_name,',') AS owner_name,
-                        string_agg(mobile_no::VARCHAR,',') AS mobile_no
-         
-			FROM prop_properties
-			JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
-			JOIN prop_owners ON prop_owners.property_id = prop_properties.id
-            WHERE prop_properties.status = 0
-            AND prop_properties.ward_mstr_id = $req->wardMstrId
-			GROUP BY prop_properties.id,ulb_ward_masters.ward_name";
-            }
-
-            if (!$sql) {
-                $sql = "SELECT 
-                        prop_properties.id,
-                        holding_no,
-                        ward_mstr_id,
-                        ward_name,
-                        prop_address,
-				        string_agg(owner_name,',') AS owner_name,
-                        string_agg(mobile_no::VARCHAR,',') AS mobile_no
-         
-			FROM prop_properties
-			JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
-			JOIN prop_owners ON prop_owners.property_id = prop_properties.id
-			WHERE prop_properties.status = 0
-			GROUP BY prop_properties.id,ulb_ward_masters.ward_name";
-            }
-
-            $deactivatedHolding = DB::select($sql);
-            $queryRunTime = (collect(DB::getQueryLog($sql))->sum("time"));
-
-            return responseMsgs(true, 'Deactivated Holdings', remove_null($deactivatedHolding), '010801', '01', $queryRunTime, 'Post', '');
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
     /**
      * | Printing of bulk receipt
      */

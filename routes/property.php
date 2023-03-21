@@ -358,7 +358,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('caretaker-property-tagging', 'caretakerPropertyTag');        // 02
     Route::post('citizen-holding-saf', 'citizenHoldingSaf');                  // 03
 
-    Route::post('reports/deactivated-holding', 'deactivatedHolding');
     Route::post('reports/print-bulk-receipt', 'bulkReceipt');
     Route::post('basic-edit', 'basicPropertyEdit');
   });
@@ -458,6 +457,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');
     Route::post('reports/property/holding-wise-fine-rebate', 'PropFineRebate');
     Route::post('reports/property/deactivated-list', 'PropDeactedList');
+    Route::post('reports/property/gbsaf-collection', 'gbSafCollection');
   });
 });
 

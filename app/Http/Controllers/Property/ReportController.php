@@ -8,6 +8,7 @@ use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IReport;
 use App\Traits\Auth;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -179,6 +180,7 @@ class ReportController extends Controller
      */
     public function wardWiseHoldingReport(Request $request)
     {
+        $mPropDemand = new PropDemand();
         $wardMstrId = $request->wardMstrId;
         $ulbId = authUser()->ulb_id;
         $currentMonth = Carbon::now()->month;
@@ -192,44 +194,22 @@ class ReportController extends Controller
         } else
             $toDate = ($currentYear . '-03-31');
 
+        $mreq = new Request([
+            "fromDate" => $fromDate,
+            "toDate" => $toDate,
+            "ulbId" => $ulbId,
+            "wardMstrId" => $wardMstrId
+        ]);
 
-        $data =  PropDemand::select(
-            'holding_no',
-            'new_holding_no',
-            'owner_name',
-            'mobile_no',
-            'pt_no',
-            'prop_address',
-            'prop_demands.balance',
-            'prop_demands.ward_mstr_id',
-            'ward_name as ward_no',
-            'fyear',
-        )
-            ->join('prop_properties', 'prop_properties.id', 'prop_demands.property_id')
-            ->join('prop_owners', 'prop_owners.property_id', 'prop_demands.property_id')
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_demands.ward_mstr_id')
-            ->where('paid_status', 0)
-            ->whereBetween('due_date', [$fromDate, $toDate])
-            ->where('prop_demands.ulb_id', $ulbId)
-            ->where('prop_demands.ward_mstr_id', $wardMstrId)
-            ->groupby(
-                'prop_demands.property_id',
-                'holding_no',
-                'new_holding_no',
-                'pt_no',
-                'prop_demands.balance',
-                'prop_demands.ward_mstr_id',
-                'fyear',
-                'prop_address',
-                'owner_name',
-                'mobile_no',
-                'ward_name'
-            )
-            ->get();
-            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+        $data = $mPropDemand->wardWiseHolding($mreq);
+
+        $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
         return responseMsgs(true, "Ward Wise Holding Data!", $data, 'pr6.1', '1.1', $queryRunTime, 'Post', '');
     }
 
+    /**
+     * | List of financial year
+     */
     public function listFY(Request $request)
     {
         $currentYear = Carbon::now()->year;
@@ -247,7 +227,105 @@ class ReportController extends Controller
         }
         return responseMsgs(true, "Financial Year List", $financialYears, '010801', '01', '382ms-547ms', 'Post', '');
     }
-    
+
+
+    /**
+     * | GbSafCollection
+     */
+    public function gbSafCollection(Request $req)
+    {
+        $req->validate(
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+            ]
+        );
+        try {
+            $fromDate = $req->fromDate;
+            $uptoDate = $req->uptoDate;
+
+            $first_query = DB::table('prop_active_safs')
+                ->select(
+                    't.id',
+                    'ward_name as ward_no',
+                    'saf_no as application_no',
+                    'ward_mstr_id',
+                    'prop_address',
+                    'tran_date',
+                    'payment_mode as transaction_mode',
+                    't.user_id as tc_id',
+                    'user_name as emp_name',
+                    'tran_no',
+                    'cheque_no',
+                    'bank_name',
+                    'branch_name',
+                    'amount',
+                    DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS payment_year"),
+                )
+                ->join('prop_transactions as t', 't.saf_id', 'prop_active_safs.id')
+                ->join('users', 'users.id', 't.user_id')
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_active_safs.ward_mstr_id')
+                ->leftJoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 't.id')
+                ->where('is_gb_saf', true)
+                ->whereBetween('tran_date', [$fromDate, $uptoDate]);
+            // ->get();
+
+            $gbsafCollection = DB::table('prop_safs')
+                ->select(
+                    't.id',
+                    'ward_name as ward_no',
+                    'saf_no as application_no',
+                    'ward_mstr_id',
+                    'prop_address',
+                    'tran_date',
+                    'payment_mode as transaction_mode',
+                    't.user_id as tc_id',
+                    'user_name as emp_name',
+                    'tran_no',
+                    'cheque_no',
+                    'bank_name',
+                    'branch_name',
+                    'amount',
+                    DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS from_upto_fy_qtr"),
+
+                )
+                ->join('prop_transactions as t', 't.saf_id', 'prop_safs.id')
+                ->join('users', 'users.id', 't.user_id')
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_safs.ward_mstr_id')
+                ->leftJoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 't.id')
+                ->where('is_gb_saf', true)
+                ->whereBetween('tran_date', [$fromDate, $uptoDate])
+                ->union($first_query);
+
+            if ($req->wardMstrId)
+                $gbsafCollection = $gbsafCollection->where('ward_mstr_id', $req->wardMstrId);
+
+            if ($req->paymentMode)
+                $gbsafCollection = $gbsafCollection->where('payment_mode', $req->paymentMode);
+
+            $perPage = $req->perPage ? $req->perPage : 10;
+            $page = $req->page && $req->page > 0 ? $req->page : 1;
+            $paginator = $gbsafCollection->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
+            ];
+
+            return responseMsgs(true, "GB Saf Collection!", $list, '010801', '01', '623ms', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+
+
     #------------date 13/03/2023 -------------------------------------------------------------------------
     #   Code By Sandeep Bara
     #   Payment Mode Wise Collection Report
@@ -324,7 +402,7 @@ class ReportController extends Controller
             ]
         );
         $request->request->add(["metaData" => ["pr9.1", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->PropFineRebate($request);  
+        return $this->Repository->PropFineRebate($request);
     }
 
     public function PropDeactedList(Request $request)
@@ -339,7 +417,7 @@ class ReportController extends Controller
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr9.1", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->PropDeactedList($request);  
+        $request->request->add(["metaData" => ["pr10.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->PropDeactedList($request);
     }
 }

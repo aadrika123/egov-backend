@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment\PaymentReconciliation;
+use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
@@ -230,10 +232,12 @@ class BankReconcillationController extends Controller
                 $mChequeDtl->clear_bounce_date = $request->clearanceDate;
                 $mChequeDtl->bounce_amount = $request->cancellationCharge;
                 $mChequeDtl->remarks = $request->remarks;
-                $mChequeDtl->save();
+                // $mChequeDtl->save();
 
                 $transaction = PropTransaction::where('id', $mChequeDtl->transaction_id)
                     ->first();
+                $propId = $transaction->property_id;
+                $safId = $transaction->saf_id;
 
                 if ($request->status == 'clear') {
 
@@ -245,6 +249,11 @@ class BankReconcillationController extends Controller
                                 'verified_by' => $userId
                             ]
                         );
+                    if ($safId)
+                        PropActiveSaf::where('id', $safId)
+                            ->update(
+                                ['payment_status' => 1]
+                            );
                 }
 
                 if ($request->status == 'bounce') {
@@ -258,8 +267,13 @@ class BankReconcillationController extends Controller
                             ]
                         );
 
-                    $propTranDtls = PropTranDtl::where('tran_id', $transaction->id)->get();
+                    if ($safId)
+                        PropActiveSaf::where('id', $safId)
+                            ->update(
+                                ['payment_status' => 0]
+                            );
 
+                    $propTranDtls = PropTranDtl::where('tran_id', $transaction->id)->get();
 
                     foreach ($propTranDtls as $propTranDtl) {
                         $propDemandId = $propTranDtl->prop_demand_id;
@@ -456,9 +470,7 @@ class BankReconcillationController extends Controller
                 //  Update in trade applications
                 ActiveTradeLicence::where('id', $transaction->temp_id)
                     ->update(
-                        [
-                            'payment_status' => 0
-                        ]
+                        ['payment_status' => 0]
                     );
 
 
